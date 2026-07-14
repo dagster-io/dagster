@@ -9,6 +9,7 @@ from dagster._config.pythonic_config import (
     ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableResourceFactoryResourceDefinition,
 )
+from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -136,6 +137,24 @@ def _resolve_unresolved_job_def_lambda(
             ) from e
 
     return resolve_unresolved_job_def
+
+
+def _conditioned_asset_job_keys_by_name(
+    unresolved_jobs: dict[str, UnresolvedAssetJobDefinition],
+    jobs: dict[str, JobDefinition | Callable[[], JobDefinition]],
+) -> dict[str, AssetJobKey]:
+    """Names of jobs defined with an automation condition, mapped to their AssetJobKey.
+
+    Conditioned jobs can arrive either unresolved (from ``define_asset_job``) or already
+    resolved (e.g. ``graph.to_job(automation_condition=...)`` passed directly).
+    """
+    names = {name for name, uj in unresolved_jobs.items() if uj.automation_condition is not None}
+    names |= {
+        name
+        for name, job in jobs.items()
+        if isinstance(job, JobDefinition) and job.automation_condition is not None
+    }
+    return {name: AssetJobKey(name) for name in names}
 
 
 def _process_resolved_job(
@@ -323,9 +342,14 @@ def build_caching_repository_data_from_list(
             *source_assets_by_key.values(),  # only ever one key per source asset so no need to dedupe
         ]
     )
+    # record the names of jobs that carry an automation condition
+    automation_asset_jobs = _conditioned_asset_job_keys_by_name(unresolved_jobs, jobs)
+
     # add a default automation condition sensor if necessary
     default_automation_condition_sensor = get_default_automation_condition_sensor(
-        list(sensors.values()), asset_graph
+        list(sensors.values()),
+        asset_graph,
+        additional_automatable_asset_job_keys=set(automation_asset_jobs.values()),
     )
     if default_automation_condition_sensor:
         sensors[default_automation_condition_sensor.name] = default_automation_condition_sensor
@@ -384,6 +408,7 @@ def build_caching_repository_data_from_list(
         utilized_env_vars=utilized_env_vars,
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
         component_tree=component_tree,
+        automation_asset_job_names=set(automation_asset_jobs),
     )
 
 
@@ -445,6 +470,7 @@ def build_caching_repository_data_from_dict(
         asset_checks_defs_by_key={},
         top_level_resources={},
         utilized_env_vars={},
+        automation_asset_job_names=None,
         unresolved_partitioned_asset_schedules={},
         component_tree=None,
     )

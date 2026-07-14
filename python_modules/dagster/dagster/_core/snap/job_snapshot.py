@@ -26,6 +26,9 @@ from dagster._config import (
     get_builtin_scalar_by_name,
 )
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
@@ -73,6 +76,8 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
     #     deserialization errors.
     # v5:
     #     - run_tags added
+    # v6:
+    #     - automation_condition added
     def before_unpack(
         self,
         context,
@@ -96,7 +101,7 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
     storage_name="PipelineSnapshot",
     serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
-    skip_when_none_fields={"run_tags", "owners"},
+    skip_when_none_fields={"run_tags", "owners", "automation_condition"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
@@ -120,6 +125,7 @@ class JobSnap(IHaveNew):
     graph_def_name: str
     metadata: Mapping[str, MetadataValue]
     owners: Sequence[str] | None
+    automation_condition: AutomationCondition | None
 
     def __new__(
         cls,
@@ -136,6 +142,7 @@ class JobSnap(IHaveNew):
         graph_def_name: str,
         metadata: Mapping[str, RawMetadataValue] | None,
         owners: Sequence[str] | None = None,
+        automation_condition: AutomationCondition | None = None,
     ):
         return super().__new__(
             cls,
@@ -154,11 +161,19 @@ class JobSnap(IHaveNew):
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
             owners=owners,
+            automation_condition=automation_condition,
         )
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> "JobSnap":
+        from dagster._core.remote_representation.external_data import (
+            resolve_automation_condition_args,
+        )
+
         check.inst_param(job_def, "job_def", JobDefinition)
+
+        automation_condition, _ = resolve_automation_condition_args(job_def.automation_condition)
+
         lineage = None
         if job_def.op_selection_data:
             lineage = JobLineageSnap(
@@ -187,6 +202,7 @@ class JobSnap(IHaveNew):
             lineage_snapshot=lineage,
             graph_def_name=job_def.graph.name,
             owners=job_def.owners,
+            automation_condition=automation_condition,
         )
 
     @cached_property

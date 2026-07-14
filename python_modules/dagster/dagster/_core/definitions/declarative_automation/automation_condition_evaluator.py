@@ -9,7 +9,13 @@ from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetOrCheckKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetJobKey,
+    AssetKey,
+    AssetOrCheckKey,
+    EntityKey,
+)
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -17,7 +23,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_datetime
@@ -41,7 +46,7 @@ class AutomationConditionEvaluator:
     def __init__(
         self,
         *,
-        entity_keys: AbstractSet[AssetOrCheckKey],
+        entity_keys: AbstractSet[EntityKey],
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
@@ -51,7 +56,15 @@ class AutomationConditionEvaluator:
         evaluation_time: datetime.datetime | None = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
-        self.entity_keys = entity_keys
+        job_keys = {key for key in entity_keys if isinstance(key, AssetJobKey)}
+        if job_keys:
+            raise NotImplementedError(
+                "Automation conditions on jobs cannot yet be evaluated. Requested job keys: "
+                f"{', '.join(sorted(k.to_user_string() for k in job_keys))}"
+            )
+        self.entity_keys: AbstractSet[AssetOrCheckKey] = {
+            key for key in entity_keys if not isinstance(key, AssetJobKey)
+        }
         self.asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
                 effective_dt=evaluation_time or get_current_datetime(),
@@ -168,7 +181,11 @@ class AutomationConditionEvaluator:
             coroutines = [
                 _evaluate_entity_async(entity_key, offset)
                 for offset, entity_key in enumerate(topo_level)
-                if entity_key in self.entity_keys
+                # the isinstance check narrows the topo-level key type; job keys can never be
+                # in self.entity_keys (the constructor raises on them until job-condition
+                # evaluation is wired through)
+                if isinstance(entity_key, (AssetKey, AssetCheckKey))
+                and entity_key in self.entity_keys
             ]
             await asyncio.gather(*coroutines)
             num_evaluated += len(coroutines)

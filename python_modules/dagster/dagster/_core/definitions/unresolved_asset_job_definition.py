@@ -2,12 +2,18 @@ import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Optional, Union  # noqa: UP035
 
 from dagster_shared.record import IHaveNew, record_custom, replace
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import (
+    deprecated,
+    deprecated_param,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+    public,
+)
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import build_asset_job, get_asset_graph_for_job
@@ -28,12 +34,17 @@ from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.utils import validate_definition_owner
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._record import ImportFrom
 from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition
+    from dagster._core.definitions.asset_key import AssetJobKey
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
     from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -51,6 +62,13 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     hooks: AbstractSet[HookDefinition] | None
     op_retry_policy: RetryPolicy | None
     owners: Sequence[str] | None
+    automation_condition: (
+        Annotated[
+            "AutomationCondition",
+            ImportFrom("dagster._core.definitions.declarative_automation.automation_condition"),
+        ]
+        | None
+    )
 
     def __new__(
         cls,
@@ -67,6 +85,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         hooks: AbstractSet[HookDefinition] | None = None,
         op_retry_policy: RetryPolicy | None = None,
         owners: Sequence[str] | None = None,
+        automation_condition: Optional["AutomationCondition[AssetJobKey]"] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -91,6 +110,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
             hooks=hooks,
             op_retry_policy=op_retry_policy,
             owners=owners,
+            automation_condition=automation_condition,
         )
 
     @deprecated(
@@ -233,6 +253,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
             resource_defs=resource_defs,
             allow_different_partitions_defs=False,
             owners=self.owners,
+            automation_condition=self.automation_condition,
         )
 
     def with_metadata(
@@ -245,6 +266,13 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     param="partitions_def",
     breaking_version="2.0.0",
     additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
+)
+@hidden_param(
+    param="automation_condition",
+    breaking_version="",
+    additional_warn_text="This parameter is hidden while job-level declarative automation is "
+    "under development and will be made public in a future release.",
+    emit_runtime_warning=False,
 )
 @public
 def define_asset_job(
@@ -260,6 +288,7 @@ def define_asset_job(
     hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: Optional["RetryPolicy"] = None,
     owners: Sequence[str] | None = None,
+    **kwargs: Any,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
@@ -329,7 +358,6 @@ def define_asset_job(
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
 
-
     Returns:
         UnresolvedAssetJobDefinition: The job, which can be placed inside a project.
 
@@ -386,6 +414,11 @@ def define_asset_job(
     """
     from dagster._core.definitions import AssetSelection
 
+    only_allow_hidden_params_in_kwargs(define_asset_job, kwargs)
+    automation_condition: AutomationCondition[AssetJobKey] | None = kwargs.get(
+        "automation_condition"
+    )
+
     # convert string-based selections to AssetSelection objects
     if selection is None:
         resolved_selection = AssetSelection.all()
@@ -406,4 +439,5 @@ def define_asset_job(
         hooks=hooks,
         op_retry_policy=op_retry_policy,
         owners=owners,
+        automation_condition=automation_condition,
     )

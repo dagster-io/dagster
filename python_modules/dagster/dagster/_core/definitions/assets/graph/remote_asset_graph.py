@@ -10,15 +10,17 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetOrCheckKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey, EntityKey
 from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
 )
 from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
+    AssetJobKey,
     AssetKey,
     BaseAssetGraph,
+    BaseAssetJobNode,
     BaseAssetNode,
 )
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
@@ -35,6 +37,7 @@ from dagster._core.definitions.partitions.mapping import PartitionMapping
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import partition_set_snap_name_for_job_name
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster._record import ImportFrom, record
@@ -54,6 +57,57 @@ class RemoteAssetCheckNode:
         ImportFrom("dagster._core.remote_representation.external_data"),
     ]
     execution_set_entity_keys: AbstractSet[AssetOrCheckKey]
+
+
+class RemoteAssetJobNode(BaseAssetJobNode):
+    """Asset-job entity node built from a repository snapshot on the host side."""
+
+    def __init__(
+        self,
+        handle: RepositoryHandle,
+        key: AssetJobKey,
+        partitions_def: PartitionsDefinition | None,
+        automation_condition: AutomationCondition | None,
+    ):
+        self._handle = handle
+        self.key = key
+        self._partitions_def = partitions_def
+        self._automation_condition = automation_condition
+
+    @property
+    def handle(self) -> RepositoryHandle:
+        return self._handle
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition | None:
+        return self._partitions_def
+
+    @property
+    def automation_condition(self) -> AutomationCondition | None:
+        return self._automation_condition
+
+
+def partitions_def_for_remote_job(
+    repo: RemoteRepository, job_name: str
+) -> PartitionsDefinition | None:
+    """Resolve a job's partitions definition from repository partition sets.
+
+    Job snapshots do not embed a PartitionsDefinition; the canonical source on a
+    RepositorySnap is the PartitionSetSnap entries built from JobDefinition.partitions_def
+    (the same source the GraphQL partition-set APIs use).
+    """
+    candidates = [
+        ps
+        for ps in repo.get_partition_sets()
+        if ps.job_name == job_name and ps.has_partitions_definition()
+    ]
+    if not candidates:
+        return None
+    canonical_name = partition_set_snap_name_for_job_name(job_name)
+    for ps in candidates:
+        if ps.name == canonical_name:
+            return ps.get_partitions_definition()
+    return candidates[0].get_partitions_definition()
 
 
 class RemoteAssetNode(BaseAssetNode, ABC):
@@ -452,6 +506,14 @@ TRemoteAssetNode = TypeVar("TRemoteAssetNode", bound=RemoteAssetNode)
 
 
 class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAssetNode]):
+    # Overridden with real mappings by RemoteRepositoryAssetGraph and
+    # RemoteWorkspaceAssetGraph; remains a placeholder for subclasses that lazily load
+    # their graphs (e.g. the cloud server workspace graph), which do not surface job
+    # entity nodes yet.
+    @property
+    def _asset_job_nodes_by_key(self) -> Mapping[AssetJobKey, BaseAssetJobNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
+        return {}
+
     @property
     @abstractmethod
     def remote_asset_nodes_by_key(self) -> Mapping[AssetKey, TRemoteAssetNode]: ...
@@ -614,10 +676,15 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
     remote_asset_nodes_by_key: Mapping[AssetKey, RemoteRepositoryAssetNode]
     remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode]
+    remote_asset_job_nodes_by_key: Mapping[AssetJobKey, RemoteAssetJobNode]
 
     @property
     def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteRepositoryAssetNode]:
         return self.remote_asset_nodes_by_key
+
+    @property
+    def _asset_job_nodes_by_key(self) -> Mapping[AssetJobKey, RemoteAssetJobNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
+        return self.remote_asset_job_nodes_by_key
 
     @classmethod
     def build(cls, repo: RemoteRepository):
@@ -680,9 +747,33 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
                 execution_set_entity_keys=execution_sets_by_id[id] if id is not None else {key},
             )
 
+        # Build RemoteAssetJobNode instances from job snaps that have automation conditions.
+        # Asset keys for each job are derived on-demand from the graph's job_names reverse mapping.
+        asset_job_nodes_by_key: dict[AssetJobKey, RemoteAssetJobNode] = {}
+
+        def _add_asset_job_node(job_name: str, condition: AutomationCondition) -> None:
+            job_key = AssetJobKey(job_name=job_name)
+            asset_job_nodes_by_key[job_key] = RemoteAssetJobNode(
+                handle=repo.handle,
+                key=job_key,
+                partitions_def=partitions_def_for_remote_job(repo, job_name),
+                automation_condition=condition,
+            )
+
+        repository_snap = repo.repository_snap
+        if repository_snap.job_datas is not None:
+            for job_data in repository_snap.job_datas:
+                if job_data.job.automation_condition is not None:
+                    _add_asset_job_node(job_data.name, job_data.job.automation_condition)
+        elif repository_snap.job_refs is not None:
+            for job_ref in repository_snap.job_refs:
+                if job_ref.automation_condition is not None:
+                    _add_asset_job_node(job_ref.name, job_ref.automation_condition)
+
         return cls(
             remote_asset_nodes_by_key=assets_by_key,
             remote_asset_check_nodes_by_key=asset_checks_by_key,
+            remote_asset_job_nodes_by_key=asset_job_nodes_by_key,
         )
 
     @classmethod
@@ -690,6 +781,7 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
         return cls(
             remote_asset_nodes_by_key={},
             remote_asset_check_nodes_by_key={},
+            remote_asset_job_nodes_by_key={},
         )
 
 
@@ -698,9 +790,11 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         self,
         remote_asset_nodes_by_key: Mapping[AssetKey, RemoteWorkspaceAssetNode],
         remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode],
+        remote_asset_job_nodes_by_key: Mapping[AssetJobKey, RemoteAssetJobNode],
     ):
         self._remote_asset_nodes_by_key = remote_asset_nodes_by_key
         self._remote_asset_check_nodes_by_key = remote_asset_check_nodes_by_key
+        self._remote_asset_job_nodes_by_key = remote_asset_job_nodes_by_key
 
     @property
     def remote_asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:
@@ -717,6 +811,10 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return self.remote_asset_nodes_by_key
 
     @property
+    def _asset_job_nodes_by_key(self) -> Mapping[AssetJobKey, RemoteAssetJobNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
+        return self._remote_asset_job_nodes_by_key
+
+    @property
     def asset_node_snaps_by_key(self) -> Mapping[AssetKey, "AssetNodeSnap"]:
         # This exists to support existing callsites but it should be removed ASAP, since it exposes
         # `AssetNodeSnap` instances directly. All sites using this should use RemoteAssetNode
@@ -727,20 +825,25 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         }
 
     @cached_property
-    def repository_handles_by_key(self) -> Mapping[AssetOrCheckKey, RepositoryHandle]:
+    def repository_handles_by_key(self) -> Mapping[EntityKey, RepositoryHandle]:
         return {
             **{
                 k: node.resolve_to_singular_repo_scoped_node().repository_handle
                 for k, node in self._asset_nodes_by_key.items()
             },
             **{k: v.handle for k, v in self.remote_asset_check_nodes_by_key.items()},
+            **{k: v.handle for k, v in self._remote_asset_job_nodes_by_key.items()},
         }
 
-    def get_repository_handle(self, key: AssetOrCheckKey) -> RepositoryHandle:
+    def get_repository_handle(self, key: EntityKey) -> RepositoryHandle:
         if isinstance(key, AssetKey):
             return self.get(key).resolve_to_singular_repo_scoped_node().repository_handle
-        else:
+        elif isinstance(key, AssetCheckKey):
             return self.get_remote_asset_check_node(key).handle
+        elif isinstance(key, AssetJobKey):
+            return self._remote_asset_job_nodes_by_key[key].handle
+        else:
+            check.assert_never(key)
 
     def get_repo_scoped_node(
         self, key: AssetOrCheckKey, repository_selector: "RepositorySelector"
@@ -784,6 +887,8 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
 
         asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)
         asset_checks_by_key: dict[AssetCheckKey, RemoteAssetCheckNode] = {}
+        asset_job_nodes_by_key: dict[AssetJobKey, RemoteAssetJobNode] = {}
+        job_key_locations: dict[AssetJobKey, list[str]] = defaultdict(list)
         for repo in repos:
             for key, asset_node in repo.asset_graph.remote_asset_nodes_by_key.items():
                 asset_infos_by_key[key].append(
@@ -799,6 +904,11 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
                 )
             # NOTE: matches previous behavior of completely ignoring asset check collisions
             asset_checks_by_key.update(repo.asset_graph.remote_asset_check_nodes_by_key)
+            # AssetJobKey is only the job name, so same-named jobs in different code
+            # locations collide; last-wins, matching the asset check behavior above
+            for job_key, job_node in repo.asset_graph.remote_asset_job_nodes_by_key.items():
+                job_key_locations[job_key].append(job_node.handle.location_name)
+            asset_job_nodes_by_key.update(repo.asset_graph.remote_asset_job_nodes_by_key)
 
         asset_nodes_by_key = {}
         nodes_with_multiple = []
@@ -811,10 +921,12 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
                 nodes_with_multiple.append(node)
 
         _warn_on_duplicate_nodes(nodes_with_multiple)
+        _warn_on_duplicate_job_keys(job_key_locations)
 
         return cls(
             remote_asset_nodes_by_key=asset_nodes_by_key,
             remote_asset_check_nodes_by_key=asset_checks_by_key,
+            remote_asset_job_nodes_by_key=asset_job_nodes_by_key,
         )
 
 
@@ -867,4 +979,23 @@ def _warn_on_duplicates_within_subset(
         warnings.warn(
             f"Found {execution_type.value} nodes for some asset keys in multiple code locations."
             f" Only one {execution_type.value} node is allowed per asset key. Duplicates:\n {duplicate_str}"
+        )
+
+
+def _warn_on_duplicate_job_keys(
+    job_key_locations: Mapping[AssetJobKey, Sequence[str]],
+) -> None:
+    duplicates = {
+        job_key: loc_names for job_key, loc_names in job_key_locations.items() if len(loc_names) > 1
+    }
+    if duplicates:
+        duplicate_lines = []
+        for job_key, loc_names in duplicates.items():
+            duplicate_lines.append(f"  {job_key.to_user_string()}: {loc_names}")
+        duplicate_str = "\n".join(duplicate_lines)
+
+        warnings.warn(
+            f"Found asset job automation conditions with the same job name in multiple code locations."
+            f" Only one automation condition per job name is supported. The last-loaded location's"
+            f" condition will be used. Duplicates:\n{duplicate_str}"
         )

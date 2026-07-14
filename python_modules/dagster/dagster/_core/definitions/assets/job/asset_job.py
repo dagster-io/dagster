@@ -7,7 +7,7 @@ from toposort import CircularDependencyError
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks.asset_checks_definition import has_only_asset_checks
-from dagster._core.definitions.asset_key import AssetOrCheckKey
+from dagster._core.definitions.asset_key import AssetJobKey, AssetOrCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph, AssetNode
@@ -45,6 +45,9 @@ IMPLICIT_ASSET_JOB_NAME = "__ASSET_JOB"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.run_config import RunConfig
 
 
@@ -92,6 +95,7 @@ def build_asset_job(
     hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: RetryPolicy | None = None,
     owners: Sequence[str] | None = None,
+    automation_condition: "AutomationCondition | None" = None,
     _asset_selection_data: AssetSelectionData | None = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets. This is a private function that is used
@@ -189,6 +193,7 @@ def build_asset_job(
             logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job.op_retry_policy,
+            automation_condition=automation_condition or original_job.automation_condition,
         )
     return graph.to_job(
         resource_defs=all_resource_defs,
@@ -202,6 +207,7 @@ def build_asset_job(
         hooks=hooks,
         op_retry_policy=op_retry_policy,
         owners=owners,
+        automation_condition=automation_condition,
         _asset_selection_data=_asset_selection_data,
     )
 
@@ -631,6 +637,11 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
     # dfs for each root node; will throw an error if there are key-level cycles
     root_keys = asset_graph.toposorted_entity_keys_by_level[0]
     for key in root_keys:
+        if isinstance(key, AssetJobKey):
+            # job entity nodes currently have no dep-graph edges, so they appear at the root
+            # level. a job is never computed by an op (it is the run container, not a step), so
+            # it contributes nothing to op-graph construction or cycle resolution.
+            continue
         _dfs(key, 0)
 
     color_mapping_by_assets_defs: dict[AssetsDefinition, Any] = defaultdict(

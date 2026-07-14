@@ -3178,3 +3178,43 @@ def test_asset_subset_preserves_run_tags() -> None:
     subset_job = job_def.get_subset(asset_selection={dg.AssetKey("asset_a")})
 
     assert subset_job.run_tags == {"dagster/max_retries": "1", "my_tag": "my_value"}
+
+
+def test_automation_condition_stored_and_preserved() -> None:
+    @dg.asset
+    def asset_a():
+        return 1
+
+    condition = dg.AutomationCondition.eager()
+    job = dg.define_asset_job(
+        name="my_job",
+        selection=[asset_a],
+        automation_condition=condition,
+    )
+    assert job.automation_condition == condition
+
+    defs = dg.Definitions(assets=[asset_a], jobs=[job])
+    job_def = defs.resolve_job_def("my_job")
+    assert job_def.automation_condition == condition
+
+    # preserved through asset-selection subsetting
+    subset_job = job_def.get_subset(asset_selection={dg.AssetKey("asset_a")})
+    assert subset_job.automation_condition == condition
+
+    # preserved through _copy-based methods
+    assert job_def.with_top_level_resources({}).automation_condition == condition
+
+
+def test_automation_condition_rejected_on_non_asset_job() -> None:
+    @dg.op
+    def my_op():
+        pass
+
+    @dg.graph
+    def my_graph():
+        my_op()
+
+    with pytest.raises(
+        check.CheckError, match="AutomationCondition can only be provided for asset jobs"
+    ):
+        my_graph.to_job(automation_condition=dg.AutomationCondition.eager())

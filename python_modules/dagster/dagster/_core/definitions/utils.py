@@ -1,7 +1,12 @@
 import keyword
 import os
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import (
+    Iterable,
+    Mapping,
+    Sequence,
+    Set as AbstractSet,
+)
 from glob import glob
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
@@ -9,7 +14,7 @@ import yaml
 from dagster_shared.yaml_utils import merge_yaml_strings, merge_yamls
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetOrCheckKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetJobKey, EntityKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.utils import is_valid_email
 from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
@@ -365,6 +370,7 @@ def dedupe_object_refs(objects: Iterable[T] | None) -> Sequence[T]:
 def get_default_automation_condition_sensor(
     sensors: Sequence["SensorDefinition"],
     asset_graph: "BaseAssetGraph",
+    additional_automatable_asset_job_keys: AbstractSet["AssetJobKey"] | None = None,
 ) -> Optional["SensorDefinition"]:
     """Given a list of existing sensors, adds an AutomationConditionSensorDefinition with name
     `default_automation_condition_sensor` that targets all assets/asset_checks that have an
@@ -377,7 +383,11 @@ def get_default_automation_condition_sensor(
     )
 
     with disable_dagster_warnings():
-        sensor_selection = get_default_automation_condition_sensor_selection(sensors, asset_graph)
+        sensor_selection = get_default_automation_condition_sensor_selection(
+            sensors,
+            asset_graph,
+            additional_automatable_asset_job_keys=additional_automatable_asset_job_keys,
+        )
         if sensor_selection:
             return AutomationConditionSensorDefinition(
                 DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, target=sensor_selection
@@ -387,7 +397,9 @@ def get_default_automation_condition_sensor(
 
 
 def get_default_automation_condition_sensor_selection(
-    sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]], asset_graph: "BaseAssetGraph"
+    sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]],
+    asset_graph: "BaseAssetGraph",
+    additional_automatable_asset_job_keys: AbstractSet["AssetJobKey"] | None = None,
 ) -> Optional["AssetSelection"]:
     from dagster._core.definitions.asset_selection import AssetSelection
     from dagster._core.definitions.sensor_definition import SensorType
@@ -416,8 +428,14 @@ def get_default_automation_condition_sensor_selection(
             has_auto_observe_keys = True
             automation_condition_keys.add(k)
 
-    # get the set of keys that are handled by an existing sensor
-    covered_keys: set[AssetOrCheckKey] = set()
+    automation_condition_keys |= asset_graph.automatable_asset_job_keys
+    if additional_automatable_asset_job_keys:
+        automation_condition_keys |= additional_automatable_asset_job_keys
+
+    # get the set of keys that are handled by an existing sensor. sensor asset
+    # selections cannot express job keys, so a conditioned job is never covered by an
+    # explicit sensor and always lands on the default sensor
+    covered_keys: set[EntityKey] = set()
     for sensor in automation_condition_sensors:
         selection = check.not_none(sensor.asset_selection)
         covered_keys = covered_keys.union(

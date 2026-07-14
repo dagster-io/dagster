@@ -215,7 +215,11 @@ class NestedResource(NamedTuple):
     name: str
 
 
-@whitelist_for_serdes(storage_name="ExternalJobRef", old_fields={"is_legacy_pipeline": False})
+@whitelist_for_serdes(
+    storage_name="ExternalJobRef",
+    old_fields={"is_legacy_pipeline": False},
+    skip_when_none_fields={"automation_condition"},
+)
 @record
 class JobRefSnap:
     name: str
@@ -224,10 +228,13 @@ class JobRefSnap:
     parent_snapshot_id: str | None
     preview_tags: Mapping[str, str] | None = None
     owners: Sequence[str] | None = None
+    automation_condition: AutomationCondition | None = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
         check.inst_param(job_def, "job_def", JobDefinition)
+
+        automation_condition, _ = resolve_automation_condition_args(job_def.automation_condition)
 
         return cls(
             name=job_def.name,
@@ -236,6 +243,7 @@ class JobRefSnap:
             active_presets=active_presets_from_job_def(job_def),
             preview_tags=get_preview_tags(job_def),
             owners=job_def.owners,
+            automation_condition=automation_condition,
         )
 
     def get_preview_tags(self) -> Mapping[str, str]:

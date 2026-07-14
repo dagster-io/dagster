@@ -9,6 +9,8 @@ from dagster._core.definitions.assets.definition.asset_spec import AssetExecutio
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
+    AssetJobKey,
+    AssetJobNode,
     BaseAssetGraph,
     BaseAssetNode,
 )
@@ -183,8 +185,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         self,
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
+        asset_job_nodes_by_key: Mapping[AssetJobKey, AssetJobNode] | None = None,
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
+        self._asset_job_nodes_by_key = asset_job_nodes_by_key or {}
         self._asset_check_nodes_by_key = {
             k: AssetCheckNode(
                 k,
@@ -271,6 +275,20 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             asset_nodes_by_key=asset_nodes_by_key,
             assets_defs_by_check_key=assets_defs_by_check_key,
         )
+
+    def with_job_nodes(self, job_nodes: Iterable[AssetJobNode]) -> "AssetGraph":
+        """Returns a copy of this graph with the given asset-job entity nodes attached."""
+        return AssetGraph(
+            asset_nodes_by_key=self._asset_nodes_by_key,
+            assets_defs_by_check_key=self._assets_defs_by_check_key,
+            asset_job_nodes_by_key={node.key: node for node in job_nodes},
+        )
+
+    def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
+        # only jobs with an automation condition have a node; the asset keys were
+        # resolved when the node was built (see _asset_job_node_from_resolved_job)
+        node = self._asset_job_nodes_by_key.get(AssetJobKey(job_name))
+        return node.asset_keys if isinstance(node, AssetJobNode) else set()
 
     def get_execution_set_asset_and_check_keys(
         self, asset_key_or_check_key: AssetOrCheckKey

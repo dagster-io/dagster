@@ -1,7 +1,9 @@
 import dagster as dg
 import pytest
 from dagster import AutoMaterializePolicy
+from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
@@ -272,4 +274,106 @@ def test_custom_sensors_cover_all():
         dg.AssetKey(["auto_observe_asset"]),
         dg.AssetKey(["other_auto_materialize_asset"]),
         dg.AssetKey(["other_auto_observe_asset"]),
+    }
+
+
+def _local_sensor_names(defs: dg.Definitions) -> set[str]:
+    return {s.name for s in defs.get_repository_def().sensor_defs}
+
+
+def _remote_sensor_names(defs: dg.Definitions) -> set[str]:
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(defs.get_repository_def()),
+        repository_handle=RepositoryHandle.for_test(
+            location_name="foo_location", repository_name="bar_repo"
+        ),
+        auto_materialize_use_sensors=True,
+    )
+    return {s.name for s in remote_repo.get_sensors()}
+
+
+def _unresolved_conditioned_job(asset, automation_condition):
+    # arrives via define_asset_job; lands in the builder's `unresolved_jobs`
+    return dg.define_asset_job(
+        name="the_job", selection=[asset], automation_condition=automation_condition
+    )
+
+
+def _resolved_conditioned_job(asset, automation_condition):
+    # an already-resolved asset job (e.g. via .resolve()) passed directly into Definitions;
+    # lands in the builder's `jobs` dict rather than `unresolved_jobs`
+    return dg.define_asset_job(
+        name="the_job", selection=[asset], automation_condition=automation_condition
+    ).resolve(asset_graph=AssetGraph.from_assets([asset]))
+
+
+# local: the sensor is added during Definitions construction (repository_data_builder,
+# which passes conditioned-job names explicitly). remote: it is computed from the remote
+# graph's own job nodes (external.py), exercising automatable_asset_job_keys.
+@pytest.mark.parametrize(
+    "sensor_names_from_defs", [_local_sensor_names, _remote_sensor_names], ids=["local", "remote"]
+)
+# a conditioned job reaches the builder either unresolved (define_asset_job) or already
+# resolved (JobDefinition passed directly); both must summon the default sensor.
+@pytest.mark.parametrize(
+    "job_factory",
+    [_unresolved_conditioned_job, _resolved_conditioned_job],
+    ids=["unresolved", "resolved"],
+)
+@pytest.mark.parametrize(
+    "automation_condition,expect_default_sensor",
+    [(dg.AutomationCondition.eager(), True), (None, False)],
+    ids=["conditioned_job", "unconditioned_job"],
+)
+def test_default_sensor_for_automation_conditioned_job(
+    sensor_names_from_defs,
+    job_factory,
+    automation_condition,
+    expect_default_sensor: bool,
+) -> None:
+    """A job's automation condition alone (no conditioned assets or checks anywhere)
+    must decide whether the default automation condition sensor is created.
+    """
+
+    @dg.asset
+    def plain_asset():
+        return 1
+
+    job = job_factory(plain_asset, automation_condition)
+    defs = dg.Definitions(assets=[plain_asset], jobs=[job])
+
+    sensor_names = sensor_names_from_defs(defs)
+    assert ("default_automation_condition_sensor" in sensor_names) == expect_default_sensor
+
+
+def test_conditioned_jobs_collected_from_both_unresolved_and_resolved() -> None:
+    """The builder must collect conditioned jobs from BOTH sources at once: unresolved
+    (define_asset_job) and already-resolved (JobDefinition passed directly).
+    """
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    @dg.asset
+    def asset_b():
+        return 1
+
+    unresolved_job = dg.define_asset_job(
+        name="unresolved_job",
+        selection=[asset_a],
+        automation_condition=dg.AutomationCondition.eager(),
+    )
+    resolved_job = dg.define_asset_job(
+        name="resolved_job",
+        selection=[asset_b],
+        automation_condition=dg.AutomationCondition.eager(),
+    ).resolve(asset_graph=AssetGraph.from_assets([asset_b]))
+
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[unresolved_job, resolved_job])
+
+    asset_graph = defs.get_repository_def().asset_graph
+    assert asset_graph.automatable_asset_job_keys == {
+        AssetJobKey("unresolved_job"),
+        AssetJobKey("resolved_job"),
     }

@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import AssetJobKey
+from dagster._core.definitions.assets.graph.base_asset_graph import AssetJobNode
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
@@ -31,6 +33,23 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
+
+
+def _asset_job_node_from_resolved_job(job: JobDefinition) -> AssetJobNode:
+    """Build an :class:`AssetJobNode` from a resolved asset :class:`JobDefinition`."""
+    check.invariant(
+        job.is_asset_job, f"job {job.name} was recorded as automatable but is not an asset job"
+    )
+    automation_condition = check.not_none(
+        job.automation_condition,
+        f"job {job.name} was recorded as automatable but has no automation_condition",
+    )
+    return AssetJobNode(
+        key=AssetJobKey(job_name=job.name),
+        asset_keys=frozenset(job.asset_layer.selected_asset_keys),
+        partitions_def=job.partitions_def,
+        automation_condition=automation_condition,
+    )
 
 
 @public
@@ -193,6 +212,10 @@ class RepositoryData(ABC):
     def get_component_tree(self) -> Optional["ComponentTree"]:
         return None
 
+    def get_asset_job_nodes(self) -> Sequence[AssetJobNode]:
+        """Asset-graph entity nodes for asset jobs that carry an automation condition."""
+        return []
+
     def load_all_definitions(self):
         # force load of all lazy constructed code artifacts
         self.get_all_jobs()
@@ -221,6 +244,7 @@ class CachingRepositoryData(RepositoryData):
             str, "UnresolvedPartitionedAssetScheduleDefinition"
         ],
         component_tree: Optional["ComponentTree"],
+        automation_asset_job_names: AbstractSet[str] | None = None,
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -312,6 +336,8 @@ class CachingRepositoryData(RepositoryData):
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
         self._component_tree = component_tree
+        self._automation_asset_job_names = frozenset(automation_asset_job_names or ())
+        self._asset_job_nodes_cache: Sequence[AssetJobNode] | None = None
 
         self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
@@ -515,6 +541,17 @@ class CachingRepositoryData(RepositoryData):
 
     def get_component_tree(self) -> Optional["ComponentTree"]:
         return self._component_tree
+
+    def get_asset_job_nodes(self) -> Sequence[AssetJobNode]:
+        if self._asset_job_nodes_cache is None:
+            self._asset_job_nodes_cache = sorted(
+                (
+                    _asset_job_node_from_resolved_job(self.get_job(name))
+                    for name in self._automation_asset_job_names
+                ),
+                key=lambda node: node.key.job_name,
+            )
+        return self._asset_job_nodes_cache
 
     def _check_node_defs(self, job_defs: Sequence[JobDefinition]) -> None:
         node_defs = {}

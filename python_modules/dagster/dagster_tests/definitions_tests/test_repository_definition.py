@@ -1481,3 +1481,102 @@ def test_external_job_assets() -> None:
         return [my_job, my_asset]
 
     assert repo.assets_defs_by_key[my_asset.key] == my_asset
+
+
+def test_repository_asset_graph_contains_automatable_job_nodes() -> None:
+    from dagster._core.definitions.asset_key import AssetJobKey
+    from dagster._core.definitions.assets.graph.base_asset_graph import AssetJobNode
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    @dg.asset
+    def asset_b(asset_a):
+        return 2
+
+    conditioned = dg.define_asset_job(
+        name="conditioned_job",
+        selection=[asset_a, asset_b],
+        automation_condition=dg.AutomationCondition.eager(),
+    )
+    unconditioned = dg.define_asset_job(name="unconditioned_job", selection=[asset_a])
+
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[conditioned, unconditioned])
+    graph = defs.get_repository_def().asset_graph
+
+    # only jobs with an automation condition become graph nodes
+    assert graph.has(AssetJobKey("conditioned_job"))
+    assert not graph.has(AssetJobKey("unconditioned_job"))
+
+    node = graph.get(AssetJobKey("conditioned_job"))
+    assert isinstance(node, AssetJobNode)
+    assert node.automation_condition is not None
+    assert node.asset_keys == {asset_a.key, asset_b.key}
+
+
+def test_directly_provided_job_definition_with_automation_condition() -> None:
+    """A resolved JobDefinition (not an UnresolvedAssetJobDefinition) carrying an
+    automation condition also becomes an asset-graph job node.
+    """
+    from dagster._core.definitions.asset_key import AssetJobKey
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import AssetJobNode
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    resolved_job = dg.define_asset_job(
+        name="direct_job",
+        selection=[asset_a],
+        automation_condition=dg.AutomationCondition.eager(),
+    ).resolve(asset_graph=AssetGraph.from_assets([asset_a]))
+    assert isinstance(resolved_job, dg.JobDefinition)
+
+    defs = dg.Definitions(assets=[asset_a], jobs=[resolved_job])
+    graph = defs.get_repository_def().asset_graph
+
+    assert graph.has(AssetJobKey("direct_job"))
+    node = graph.get(AssetJobKey("direct_job"))
+    assert isinstance(node, AssetJobNode)
+    assert node.automation_condition is not None
+    assert node.asset_keys == {asset_a.key}
+
+    # node list is cached: repeated access returns the identical object
+    repo_data = defs.get_repository_def()._repository_data  # noqa: SLF001
+    assert repo_data.get_asset_job_nodes() is repo_data.get_asset_job_nodes()
+
+
+def test_custom_repository_data_has_no_job_nodes() -> None:
+    """The base RepositoryData.get_asset_job_nodes default keeps custom (non-caching)
+    RepositoryData subclasses working: no job nodes, no errors.
+    """
+    from dagster._core.definitions.repository_definition import RepositoryData
+
+    @dg.op
+    def do_something():
+        pass
+
+    @dg.job
+    def some_job():
+        do_something()
+
+    class CustomRepositoryData(RepositoryData):
+        def get_all_jobs(self):
+            return [some_job]
+
+        def get_top_level_resources(self):
+            return {}
+
+        def get_env_vars_by_top_level_resource(self):
+            return {}
+
+    repo_data = CustomRepositoryData()
+    assert repo_data.get_asset_job_nodes() == []
+
+    @dg.repository
+    def custom_repo():
+        return CustomRepositoryData()
+
+    assert list(custom_repo.asset_graph.asset_job_nodes) == []

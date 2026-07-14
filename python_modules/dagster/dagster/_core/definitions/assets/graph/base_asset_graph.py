@@ -16,7 +16,13 @@ from typing import (  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, AssetOrCheckKey, T_EntityKey
+from dagster._core.definitions.asset_key import (
+    AssetJobKey,
+    AssetKey,
+    AssetOrCheckKey,
+    EntityKey,
+    T_EntityKey,
+)
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness import FreshnessPolicy
@@ -259,12 +265,67 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return self._metadata
 
 
+class BaseAssetJobNode(BaseEntityNode[AssetJobKey]):
+    """Base class for asset-job entity nodes: a user-defined asset job that carries an
+    AutomationCondition, addressable in the asset graph by AssetJobKey.
+    """
+
+    @property
+    def description(self) -> str | None:
+        return None
+
+    @property
+    def partition_mappings(self) -> Mapping[AssetOrCheckKey, PartitionMapping]:
+        return {}
+
+    # Job nodes are currently isolated in the entity dep graph (no edges to their member
+    # assets), so they toposort at level 0. If job-condition evaluation ever needs to see
+    # same-tick asset results (e.g. will_be_requested), these should instead return the
+    # job's selected asset keys so jobs sort after their members.
+    @property
+    def parent_entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
+        return frozenset()
+
+    @property
+    def child_entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
+        return frozenset()
+
+
+class AssetJobNode(BaseAssetJobNode):
+    """Asset-job node for the local (in-process) case, storing pre-resolved asset keys."""
+
+    def __init__(
+        self,
+        key: AssetJobKey,
+        asset_keys: AbstractSet[AssetKey],
+        partitions_def: PartitionsDefinition | None,
+        automation_condition: Optional["AutomationCondition[AssetJobKey]"],
+    ):
+        self.key = key
+        self._asset_keys = frozenset(asset_keys)
+        self._partitions_def = partitions_def
+        self._automation_condition = automation_condition
+
+    @property
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        return self._asset_keys
+
+    @property
+    def partitions_def(self) -> PartitionsDefinition | None:
+        return self._partitions_def
+
+    @property
+    def automation_condition(self) -> Optional["AutomationCondition[AssetJobKey]"]:
+        return self._automation_condition
+
+
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
     _asset_check_nodes_by_key: Mapping[AssetCheckKey, AssetCheckNode]
+    _asset_job_nodes_by_key: Mapping[AssetJobKey, BaseAssetJobNode]
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
@@ -275,14 +336,32 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return self._asset_check_nodes_by_key.values()
 
     @property
+    def asset_job_nodes(self) -> Iterable[BaseAssetJobNode]:
+        return self._asset_job_nodes_by_key.values()
+
+    @property
+    def automatable_asset_job_keys(self) -> AbstractSet[AssetJobKey]:
+        """Keys of asset jobs that carry an automation condition."""
+        return {
+            key
+            for key, node in self._asset_job_nodes_by_key.items()
+            if node.automation_condition is not None
+        }
+
+    @property
     def nodes(self) -> Iterable[BaseEntityNode]:
         return [
             *self._asset_nodes_by_key.values(),
             *self._asset_check_nodes_by_key.values(),
+            *self._asset_job_nodes_by_key.values(),
         ]
 
-    def has(self, key: AssetOrCheckKey) -> bool:
-        return key in self._asset_nodes_by_key or key in self._asset_check_nodes_by_key
+    def has(self, key: EntityKey) -> bool:
+        return (
+            key in self._asset_nodes_by_key
+            or key in self._asset_check_nodes_by_key
+            or key in self._asset_job_nodes_by_key
+        )
 
     @overload
     def get(self, key: AssetKey) -> T_AssetNode: ...
@@ -291,13 +370,26 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
 
     @overload
+    def get(self, key: AssetJobKey) -> BaseAssetJobNode: ...
+
+    @overload
     def get(self, key: AssetOrCheckKey) -> T_AssetNode | AssetCheckNode: ...
 
-    def get(self, key: AssetOrCheckKey) -> T_AssetNode | AssetCheckNode:
+    @overload
+    def get(self, key: EntityKey) -> T_AssetNode | AssetCheckNode | BaseAssetJobNode: ...
+
+    def get(self, key: EntityKey) -> T_AssetNode | AssetCheckNode | BaseAssetJobNode:
         if isinstance(key, AssetKey):
             return self._asset_nodes_by_key[key]
-        else:
+        elif isinstance(key, AssetCheckKey):
             return self._asset_check_nodes_by_key[key]
+        else:
+            return self._asset_job_nodes_by_key[key]
+
+    @abstractmethod
+    def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
+        """Returns all asset keys that belong to the given asset job."""
+        ...
 
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
@@ -307,7 +399,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         }
 
     @cached_property
-    def entity_dep_graph(self) -> DependencyGraph[AssetOrCheckKey]:
+    def entity_dep_graph(self) -> DependencyGraph[EntityKey]:
         return {
             "upstream": {node.key: node.parent_entity_keys for node in self.nodes},
             "downstream": {node.key: node.child_entity_keys for node in self.nodes},
@@ -356,12 +448,11 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ]
 
     @cached_property
-    def toposorted_entity_keys_by_level(self) -> Sequence[Sequence[AssetOrCheckKey]]:
+    def toposorted_entity_keys_by_level(self) -> Sequence[Sequence[EntityKey]]:
         """Return topologically sorted levels for entity keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
         """
-        sort_key = lambda e: (e, None) if isinstance(e, AssetKey) else (e.asset_key, e.name)
-        return toposort(self.entity_dep_graph["upstream"], sort_key=sort_key)
+        return toposort(self.entity_dep_graph["upstream"], sort_key=lambda e: e.to_db_string())
 
     @cached_property
     def toposorted_asset_keys_by_level(self) -> Sequence[AbstractSet[AssetKey]]:
