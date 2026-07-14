@@ -3,6 +3,7 @@ import io
 import os
 import pickle
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
 import dagster._check as check
 import requests
@@ -134,7 +135,7 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
                 DagsterCloudInstanceScope.DEPLOYMENT,
                 deployment_name=self._deployment_name,
             ),
-            params={"key": key, "method": method},
+            params={"key": quote(key, safe="/"), "method": method},
             timeout=self._timeout,
         )
         resp.raise_for_status()

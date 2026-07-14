@@ -159,6 +159,27 @@ def test_dump_to_path_calls_put():
         assert pickle.loads(put_data) == obj
 
 
+def test_key_is_percent_encoded():
+    # Asset/partition identifiers contain characters that are unsafe in an S3 key / URL
+    # (here, the ":" of an hourly partition). They must be percent-encoded on the wire,
+    # while "/" stays a separator.
+    manager = _make_manager()
+    path = UPath("storage/my_asset/2023-06-01-14:00")
+
+    with (
+        mock.patch.object(manager._session, "get") as mock_get_url,
+        mock.patch.object(manager._session, "put") as mock_put,
+    ):
+        mock_get_url.return_value = _presigned_url_response(PRESIGNED_PUT_URL)
+        mock_put.return_value = _s3_success_response()
+
+        manager.dump_to_path(mock.MagicMock(), {"v": 1}, path)
+
+        sent_key = mock_get_url.call_args.kwargs["params"]["key"]
+        assert sent_key == "storage/my_asset/2023-06-01-14%3A00"
+        assert ":" not in sent_key
+
+
 def test_load_from_path_calls_get():
     manager = _make_manager()
     obj = {"value": 99}
