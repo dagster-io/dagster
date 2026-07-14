@@ -10,7 +10,6 @@ from typing import Any, Callable, ContextManager, NamedTuple, cast  # noqa: UP03
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
-from dagster_shared.serdes import deserialize_values
 from dagster_shared.seven import JSONDecodeError
 from sqlalchemy.engine import Connection
 
@@ -1094,9 +1093,7 @@ class SqlRunStorage(RunStorage):
             # also have the requested tags. This requires fetching the backfills from the db and filtering them
             query = self._backfills_query(filters=filters)
             rows = self.fetchall(query)
-            backfill_candidates = deserialize_values(
-                (row["body"] for row in rows), PartitionBackfill
-            )
+            backfill_candidates = self._deserialize_backfill_rows(rows)
             return len(
                 self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
             )

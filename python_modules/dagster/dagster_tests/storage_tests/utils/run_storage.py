@@ -24,7 +24,7 @@ from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
-from dagster._core.storage.runs.schema import BulkActionsTable
+from dagster._core.storage.runs.schema import BackfillTagsTable, BulkActionsTable
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
@@ -1450,6 +1450,14 @@ class TestRunStorage:
             backfill_timestamp=time.time(),
         )
         storage.add_backfill(valid_backfill)
+        storage.add_run(
+            create_dagster_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar", BACKFILL_ID_TAG: valid_backfill.backfill_id},
+            )
+        )
 
         with storage.connect() as conn:
             conn.execute(
@@ -1507,6 +1515,66 @@ class TestRunStorage:
 
         with caplog.at_level("WARNING", logger="dagster"):
             assert storage.get_backfills(limit=2) == [newer_backfill, older_backfill]
+
+        assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
+
+    def test_get_backfills_count_with_tags_skips_corrupt_rows(
+        self, storage: RunStorage, caplog: pytest.LogCaptureFixture
+    ):
+        if not isinstance(storage, SqlRunStorage):
+            pytest.skip("storage is not SQL-backed")
+        if not self.supports_backfill_tags_filtering_queries():
+            pytest.skip("storage does not support filtering backfills by tag")
+        if not self.supports_backfills_count():
+            pytest.skip("storage does not support backfill count")
+
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        valid_backfill = PartitionBackfill(
+            "valid",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={"foo": "bar"},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(valid_backfill)
+        storage.add_run(
+            create_dagster_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar", BACKFILL_ID_TAG: valid_backfill.backfill_id},
+            )
+        )
+
+        with storage.connect() as conn:
+            conn.execute(
+                BulkActionsTable.insert().values(
+                    key="corrupt",
+                    status=BulkActionStatus.REQUESTED.value,
+                    timestamp=datetime_from_timestamp(time.time()),
+                    body='{"truncated"',
+                )
+            )
+            conn.execute(
+                BackfillTagsTable.insert().values(
+                    backfill_id="corrupt",
+                    key="foo",
+                    value="bar",
+                )
+            )
+        storage.add_run(
+            create_dagster_run(
+                run_id=make_new_run_id(),
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={"foo": "bar", BACKFILL_ID_TAG: "corrupt"},
+            )
+        )
+
+        with caplog.at_level("WARNING", logger="dagster"):
+            assert storage.get_backfills_count(BulkActionsFilter(tags={"foo": "bar"})) == 1
 
         assert "Skipping backfill corrupt because it could not be deserialized." in caplog.text
 
