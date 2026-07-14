@@ -113,7 +113,6 @@ def test_partitioned_check_requested_without_its_asset() -> None:
         asset_graph=asset_graph,
         run_tags={},
         emit_backfills=False,
-        resolve_check_keys_enabled=True,
     )
 
     assert len(run_requests) == 1

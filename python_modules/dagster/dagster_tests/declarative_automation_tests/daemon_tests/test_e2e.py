@@ -6,7 +6,6 @@ import time
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from typing import AbstractSet, Any, cast  # noqa: UP035
-from unittest import mock
 
 import dagster as dg
 import dagster._check as check
@@ -18,7 +17,6 @@ from dagster._core.definitions.partitions.context import partition_loading_conte
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.methods.asset_methods import AssetMethods
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.remote_origin import InProcessCodeLocationOrigin
 from dagster._core.remote_representation.external import RemoteSensor
@@ -336,25 +334,12 @@ def test_checks_and_assets_in_same_run() -> None:
             }
 
 
-@contextmanager
-def _resolve_check_keys_gate(enabled: bool):
-    """Toggle the declarative-automation asset-check-resolution feature gate for a test by patching
-    the instance method that Dagster Cloud overrides to consult Statsig.
-    """
-    with mock.patch.object(
-        AssetMethods, "automation_resolve_asset_check_keys_enabled", return_value=enabled
-    ):
-        yield
-
-
-@pytest.mark.parametrize("gate_enabled", [True, False])
-def test_no_da_checks_falls_back_to_none_selection(gate_enabled: bool) -> None:
+def test_no_da_checks_falls_back_to_none_selection() -> None:
     # `processed_files` is requested by an automation tick, and neither of its checks
-    # (`row_count`, `non_null`) uses declarative automation. Whether or not the feature is enabled,
-    # the run records `asset_check_selection=None`
+    # (`row_count`, `non_null`) uses declarative automation, so the run records
+    # `asset_check_selection=None`
     time = get_current_datetime()
     with (
-        _resolve_check_keys_gate(gate_enabled),
         get_workspace_request_context(["check_without_condition"]) as context,
         get_threadpool_executor() as executor,
     ):
@@ -378,29 +363,17 @@ def test_no_da_checks_falls_back_to_none_selection(gate_enabled: bool) -> None:
             assert run.asset_check_selection is None
 
 
-@pytest.mark.parametrize(
-    "gate_enabled, expected_check_selection",
-    [
-        # gate on: explicitly-requested `row_count` unioned with the unconditioned ride-along
-        # `non_null`.
-        (
-            True,
-            {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count"),
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null"),
-            },
-        ),
-        # gate off: legacy behavior -- only the explicitly-requested check, no ride-along union.
-        (False, {dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")}),
-    ],
-)
-def test_requested_conditioned_check_selection(gate_enabled, expected_check_selection) -> None:
+def test_requested_conditioned_check_selection() -> None:
     # `processed_files` has a conditional `row_count` check and an unconditional `non_null` check.
     # Updating `raw_files` requests `processed_files` AND fires `row_count`'s condition, but does
-    # not fire any condition for `non_null` (it has none).
+    # not fire any condition for `non_null` (it has none). The explicitly-requested `row_count` is
+    # unioned with the unconditioned ride-along `non_null`.
+    expected_check_selection = {
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count"),
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null"),
+    }
     time = get_current_datetime()
     with (
-        _resolve_check_keys_gate(gate_enabled),
         get_workspace_request_context(["check_subset_with_unconditioned_sibling"]) as context,
         get_threadpool_executor() as executor,
     ):
@@ -423,23 +396,15 @@ def test_requested_conditioned_check_selection(gate_enabled, expected_check_sele
             assert run.asset_check_selection == expected_check_selection
 
 
-@pytest.mark.parametrize(
-    "gate_enabled, expected_check_selection",
-    [
-        # gate on: only the unconditioned `non_null` rides along; `yearly_check` is excluded from
-        # the default set because it owns an automation condition (and did not fire this tick).
-        (True, {dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null")}),
-        # gate off: legacy behavior -- no check was explicitly requested, so None is recorded.
-        (False, None),
-    ],
-)
-def test_unconditioned_default_check_selection(gate_enabled, expected_check_selection) -> None:
+def test_unconditioned_default_check_selection() -> None:
     # `processed_files` has `yearly_check` (owns an automation condition that does NOT fire in the
     # test window) and `non_null` (no condition). Updating `raw_files` requests `processed_files`
-    # with no check individually requested.
+    # with no check individually requested. Only the unconditioned `non_null` rides along;
+    # `yearly_check` is excluded from the default set because it owns an automation condition (and
+    # did not fire this tick).
+    expected_check_selection = {dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null")}
     time = get_current_datetime()
     with (
-        _resolve_check_keys_gate(gate_enabled),
         get_workspace_request_context(["check_conditioned_sibling_not_firing"]) as context,
         get_threadpool_executor() as executor,
     ):
@@ -461,28 +426,17 @@ def test_unconditioned_default_check_selection(gate_enabled, expected_check_sele
             assert run.asset_check_selection == expected_check_selection
 
 
-@pytest.mark.parametrize(
-    "gate_enabled, expected_check_selection",
-    [
-        # gate on: requested `row_count` unioned with the unconditioned sibling `non_null`.
-        (
-            True,
-            {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count"),
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null"),
-            },
-        ),
-        # gate off: legacy -- only the explicitly-requested `row_count`.
-        (False, {dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")}),
-    ],
-)
-def test_check_on_other_asset_not_included(gate_enabled, expected_check_selection) -> None:
+def test_check_on_other_asset_not_included() -> None:
     # `processed_files` is requested with a conditioned `row_count` check (which fires) and an
-    # unconditioned `non_null` sibling. `other_check` targets a DIFFERENT asset (`other_asset`), so
-    # it must NOT be attached to `processed_files`'s run -- in either gate state.
+    # unconditioned `non_null` sibling; the requested `row_count` is unioned with the unconditioned
+    # ride-along `non_null`. `other_check` targets a DIFFERENT asset (`other_asset`), so it must
+    # NOT be attached to `processed_files`'s run.
+    expected_check_selection = {
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count"),
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null"),
+    }
     time = get_current_datetime()
     with (
-        _resolve_check_keys_gate(gate_enabled),
         get_workspace_request_context(["check_on_other_asset_excluded"]) as context,
         get_threadpool_executor() as executor,
     ):
@@ -508,17 +462,15 @@ def test_check_on_other_asset_not_included(gate_enabled, expected_check_selectio
             )
 
 
-@pytest.mark.parametrize("gate_enabled", [True, False])
-def test_cross_location_check_excluded_from_ride_along(gate_enabled: bool) -> None:
+def test_cross_location_check_excluded_from_ride_along() -> None:
     # `processed_files` (location A) has a SAME-location conditioned check `row_count` (which fires)
     # plus an unconditioned check `external_not_null` in a DIFFERENT location. The run records only
-    # `row_count`; `external_not_null` is excluded in either gate state (gate on: by the ride-along
-    # repo-filter; gate off: it was never requested). With the gate ON this specifically exercises
-    # the repo-filter branch of `_ride_along_check_keys_for_assets`, which the no-DA-check
-    # cross-location case (fast-path) does not reach -- and building the run must not fail.
+    # `row_count`; `external_not_null` is excluded by the ride-along repo-filter. This specifically
+    # exercises the repo-filter branch of `_ride_along_check_keys_for_assets`, which the
+    # no-DA-check cross-location case (fast-path) does not reach -- and building the run must not
+    # fail.
     time = get_current_datetime()
     with (
-        _resolve_check_keys_gate(gate_enabled),
         get_workspace_request_context(
             ["cross_location_da_check_asset", "cross_location_da_check_other"]
         ) as context,
@@ -699,10 +651,7 @@ def test_cross_location_checks() -> None:
                 assert len(no_nulls_run.asset_selection or []) == 0
 
 
-@pytest.mark.parametrize("gate_enabled", [True, False])
-def test_unconditioned_check_in_other_location_not_pulled_into_asset_run(
-    gate_enabled: bool,
-) -> None:
+def test_unconditioned_check_in_other_location_not_pulled_into_asset_run() -> None:
     # `processed_files` lives in one code location; an unconditioned check on it
     # (`external_non_null`) lives in a *different* location. When `processed_files` is
     # requested by an automation tick and no check is individually requested, the run for
@@ -710,7 +659,6 @@ def test_unconditioned_check_in_other_location_not_pulled_into_asset_run(
     # this location's implicit asset job, so selecting it would make the run un-submittable.
     time = get_current_datetime()
     with (
-        _resolve_check_keys_gate(gate_enabled),
         get_workspace_request_context(
             ["cross_location_unconditioned_check_asset", "cross_location_unconditioned_check"]
         ) as context,
