@@ -6,14 +6,17 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import (
-    AssetGraphView,
-    TemporalContext,
-    U_EntityKey,
-)
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetJobKey,
+    AssetKey,
+    AssetOrCheckKey,
+    EntityKey,
+    T_EntityKey,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -40,6 +43,10 @@ if TYPE_CHECKING:
 
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
 
+U_EntityKey = TypeVar(
+    "U_EntityKey", AssetKey, AssetCheckKey, AssetJobKey, AssetOrCheckKey, EntityKey
+)
+
 
 def _has_legacy_condition(condition: AutomationCondition):
     """Detects if the given condition has any legacy rules."""
@@ -59,7 +66,7 @@ class AutomationContext(Generic[T_EntityKey]):
     create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
-    request_subsets_by_key: Mapping[EntityKey, EntitySubset]
+    request_subsets_by_key: Mapping[AssetOrCheckKey, EntitySubset]
 
     parent_context: Optional["AutomationContext"]
 
@@ -70,7 +77,9 @@ class AutomationContext(Generic[T_EntityKey]):
     _root_log: logging.Logger
 
     @staticmethod
-    def create(key: EntityKey, evaluator: "AutomationConditionEvaluator") -> "AutomationContext":
+    def create(
+        key: AssetOrCheckKey, evaluator: "AutomationConditionEvaluator"
+    ) -> "AutomationContext":
         asset_graph_view = evaluator.asset_graph_view
         condition = check.not_none(
             evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition

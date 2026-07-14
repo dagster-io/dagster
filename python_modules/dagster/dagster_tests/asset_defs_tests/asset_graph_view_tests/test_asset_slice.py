@@ -4,6 +4,7 @@ import dagster as dg
 import pytest
 from dagster import DagsterInstance
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, SerializableEntitySubset
+from dagster._core.definitions.asset_key import AssetJobKey
 
 partitions_defs = [
     None,
@@ -85,3 +86,18 @@ def test_round_trip(partitions_def: dg.PartitionsDefinition | None) -> None:
     empty_asset_graph_view = AssetGraphView.for_test(dg.Definitions(), instance)
     subset = empty_asset_graph_view.get_subset_from_serializable_subset(inner_subset)
     assert subset is None
+
+
+def test_unsupported_key_type_returns_none() -> None:
+    @dg.asset
+    def foo() -> None: ...
+
+    defs = dg.Definitions([foo])
+    instance = DagsterInstance.ephemeral()
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+    # a persisted subset may reference a key type this version cannot evaluate (e.g. a
+    # job-keyed subset written by a newer version before a rollback); it is dropped rather
+    # than raising
+    job_subset = SerializableEntitySubset(key=AssetJobKey("my_job"), value=True)
+    assert asset_graph_view.get_subset_from_serializable_subset(job_subset) is None

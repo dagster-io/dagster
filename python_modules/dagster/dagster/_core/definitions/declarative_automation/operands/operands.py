@@ -7,7 +7,7 @@ from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetOrCheckKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
     BuiltinAutomationCondition,
@@ -43,7 +43,7 @@ class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
 
 @whitelist_for_serdes
 @record
-class InitialEvaluationCondition(BuiltinAutomationCondition):
+class InitialEvaluationCondition(BuiltinAutomationCondition[AssetOrCheckKey]):
     """Condition to determine if this is the initial evaluation of a given AutomationCondition with a particular PartitionsDefinition."""
 
     @property
@@ -85,7 +85,7 @@ class InitialEvaluationCondition(BuiltinAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class MissingAutomationCondition(SubsetAutomationCondition):
+class MissingAutomationCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "missing"
@@ -98,7 +98,7 @@ class MissingAutomationCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes(storage_name="InProgressAutomationCondition")
 @record
-class RunInProgressAutomationCondition(SubsetAutomationCondition):
+class RunInProgressAutomationCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "run_in_progress"
@@ -111,7 +111,7 @@ class RunInProgressAutomationCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
+class BackfillInProgressAutomationCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "backfill_in_progress"
@@ -124,7 +124,7 @@ class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes(storage_name="FailedAutomationCondition")
 @record
-class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
+class ExecutionFailedAutomationCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "execution_failed"
@@ -137,7 +137,7 @@ class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class WillBeRequestedCondition(SubsetAutomationCondition):
+class WillBeRequestedCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -177,7 +177,7 @@ class WillBeRequestedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class NewlyRequestedCondition(TimedSubsetAutomationCondition):
+class NewlyRequestedCondition(TimedSubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "newly_requested"
@@ -195,7 +195,7 @@ class NewlyRequestedCondition(TimedSubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class NewlyUpdatedCondition(TimedSubsetAutomationCondition):
+class NewlyUpdatedCondition(TimedSubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "newly_updated"
@@ -277,7 +277,7 @@ class DataVersionChangedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class CronTickPassedCondition(TimedSubsetAutomationCondition):
+class CronTickPassedCondition(TimedSubsetAutomationCondition[AssetOrCheckKey]):
     cron_schedule: str
     cron_timezone: str
 
@@ -306,7 +306,7 @@ class CronTickPassedCondition(TimedSubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class InLatestTimeWindowCondition(SubsetAutomationCondition):
+class InLatestTimeWindowCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     serializable_lookback_timedelta: SerializableTimeDelta | None = None
 
     @staticmethod

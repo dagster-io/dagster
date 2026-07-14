@@ -7,7 +7,7 @@ from toposort import CircularDependencyError
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks.asset_checks_definition import has_only_asset_checks
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph, AssetNode
@@ -590,7 +590,7 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
     that asset via a different node (i.e. there will be no cycles).
     """
     # color for each entity
-    colors: dict[EntityKey, int] = {}
+    colors: dict[AssetOrCheckKey, int] = {}
 
     # AssetNode.child_entity_keys does not include checks that list this asset only in their
     # additional_deps (only checks that target the asset). For cycle resolution we need to
@@ -605,7 +605,7 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
                 extra_check_children[dep.asset_key].add(spec.key)
 
     # recursively color an entity and all of its downstream entities
-    def _dfs(key: EntityKey, cur_color: int):
+    def _dfs(key: AssetOrCheckKey, cur_color: int):
         node = asset_graph.get(key)
         colors[key] = cur_color
         # in an external asset, treat all downstream as if they're in the same node

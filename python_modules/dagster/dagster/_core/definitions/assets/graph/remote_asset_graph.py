@@ -10,7 +10,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
@@ -53,7 +53,7 @@ class RemoteAssetCheckNode:
         "AssetCheckNodeSnap",
         ImportFrom("dagster._core.remote_representation.external_data"),
     ]
-    execution_set_entity_keys: AbstractSet[EntityKey]
+    execution_set_entity_keys: AbstractSet[AssetOrCheckKey]
 
 
 class RemoteAssetNode(BaseAssetNode, ABC):
@@ -153,7 +153,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
     parent_keys: AbstractSet[AssetKey]
     child_keys: AbstractSet[AssetKey]
     check_keys: AbstractSet[AssetCheckKey]
-    execution_set_entity_keys: AbstractSet[EntityKey]
+    execution_set_entity_keys: AbstractSet[AssetOrCheckKey]
 
     def __hash__(self):
         # we create sets of these objects in the context of asset graphs but don't want to
@@ -489,13 +489,15 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
-    def get_execution_set_asset_and_check_keys(  # ty: ignore[invalid-method-override]
-        self, entity_key: EntityKey
-    ) -> AbstractSet[EntityKey]:
-        if isinstance(entity_key, AssetKey):
-            return self.get(entity_key).execution_set_entity_keys
-        else:  # AssetCheckKey
-            return self.get_remote_asset_check_node(entity_key).execution_set_entity_keys
+    def get_execution_set_asset_and_check_keys(
+        self, asset_key_or_check_key: AssetOrCheckKey
+    ) -> AbstractSet[AssetOrCheckKey]:
+        if isinstance(asset_key_or_check_key, AssetKey):
+            return self.get(asset_key_or_check_key).execution_set_entity_keys
+        else:
+            return self.get_remote_asset_check_node(
+                asset_key_or_check_key
+            ).execution_set_entity_keys
 
     ##### REMOTE-SPECIFIC METHODS
 
@@ -629,7 +631,7 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
         # that must be executed together. AssetNodeSnaps and AssetCheckNodeSnaps already have an
         # optional execution_set_identifier set. A null execution_set_identifier indicates that the
         # node or check can be executed independently.
-        execution_sets_by_id: dict[str, set[EntityKey]] = defaultdict(set)
+        execution_sets_by_id: dict[str, set[AssetOrCheckKey]] = defaultdict(set)
 
         # * Map checks to their corresponding asset keys
         check_keys_by_asset_key: dict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
@@ -725,7 +727,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         }
 
     @cached_property
-    def repository_handles_by_key(self) -> Mapping[EntityKey, RepositoryHandle]:
+    def repository_handles_by_key(self) -> Mapping[AssetOrCheckKey, RepositoryHandle]:
         return {
             **{
                 k: node.resolve_to_singular_repo_scoped_node().repository_handle
@@ -734,14 +736,14 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
             **{k: v.handle for k, v in self.remote_asset_check_nodes_by_key.items()},
         }
 
-    def get_repository_handle(self, key: EntityKey) -> RepositoryHandle:
+    def get_repository_handle(self, key: AssetOrCheckKey) -> RepositoryHandle:
         if isinstance(key, AssetKey):
             return self.get(key).resolve_to_singular_repo_scoped_node().repository_handle
         else:
             return self.get_remote_asset_check_node(key).handle
 
     def get_repo_scoped_node(
-        self, key: EntityKey, repository_selector: "RepositorySelector"
+        self, key: AssetOrCheckKey, repository_selector: "RepositorySelector"
     ) -> RemoteRepositoryAssetNode | RemoteAssetCheckNode | None:
         if not self.has(key):
             return None
@@ -752,8 +754,8 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
             return node  # type: ignore
 
     def split_entity_keys_by_repository(
-        self, keys: AbstractSet[EntityKey]
-    ) -> Sequence[AbstractSet[EntityKey]]:
+        self, keys: AbstractSet[AssetOrCheckKey]
+    ) -> Sequence[AbstractSet[AssetOrCheckKey]]:
         keys_by_repo = defaultdict(set)
         for key in keys:
             repo_handle = self.get_repository_handle(key)

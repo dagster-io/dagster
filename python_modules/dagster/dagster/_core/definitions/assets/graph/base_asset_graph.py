@@ -16,7 +16,7 @@ from typing import (  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.asset_key import AssetKey, AssetOrCheckKey, T_EntityKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness import FreshnessPolicy
@@ -67,7 +67,7 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
     @property
     @abstractmethod
-    def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]: ...
+    def partition_mappings(self) -> Mapping[AssetOrCheckKey, PartitionMapping]: ...
 
     @property
     @abstractmethod
@@ -75,11 +75,11 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
     @property
     @abstractmethod
-    def parent_entity_keys(self) -> AbstractSet[EntityKey]: ...
+    def parent_entity_keys(self) -> AbstractSet[AssetOrCheckKey]: ...
 
     @property
     @abstractmethod
-    def child_entity_keys(self) -> AbstractSet[EntityKey]: ...
+    def child_entity_keys(self) -> AbstractSet[AssetOrCheckKey]: ...
 
     @property
     @abstractmethod
@@ -96,7 +96,7 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
         return self.parent_keys
 
     @property
-    def child_entity_keys(self) -> AbstractSet[EntityKey]:
+    def child_entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
         return self.child_keys | self.check_keys
 
     @property
@@ -235,7 +235,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return {self.key.asset_key, *self._additional_deps}
 
     @property
-    def child_entity_keys(self) -> AbstractSet[EntityKey]:
+    def child_entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
         return set()
 
     @property
@@ -243,7 +243,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return self._partitions_def
 
     @property
-    def partition_mappings(self) -> Mapping[EntityKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetOrCheckKey, PartitionMapping]:
         return {}
 
     @property
@@ -281,7 +281,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             *self._asset_check_nodes_by_key.values(),
         ]
 
-    def has(self, key: EntityKey) -> bool:
+    def has(self, key: AssetOrCheckKey) -> bool:
         return key in self._asset_nodes_by_key or key in self._asset_check_nodes_by_key
 
     @overload
@@ -290,7 +290,10 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     @overload
     def get(self, key: AssetCheckKey) -> AssetCheckNode: ...
 
-    def get(self, key: EntityKey) -> T_AssetNode | AssetCheckNode:
+    @overload
+    def get(self, key: AssetOrCheckKey) -> T_AssetNode | AssetCheckNode: ...
+
+    def get(self, key: AssetOrCheckKey) -> T_AssetNode | AssetCheckNode:
         if isinstance(key, AssetKey):
             return self._asset_nodes_by_key[key]
         else:
@@ -304,7 +307,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         }
 
     @cached_property
-    def entity_dep_graph(self) -> DependencyGraph[EntityKey]:
+    def entity_dep_graph(self) -> DependencyGraph[AssetOrCheckKey]:
         return {
             "upstream": {node.key: node.parent_entity_keys for node in self.nodes},
             "downstream": {node.key: node.child_entity_keys for node in self.nodes},
@@ -353,7 +356,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         ]
 
     @cached_property
-    def toposorted_entity_keys_by_level(self) -> Sequence[Sequence[EntityKey]]:
+    def toposorted_entity_keys_by_level(self) -> Sequence[Sequence[AssetOrCheckKey]]:
         """Return topologically sorted levels for entity keys in graph. Keys with the same topological level are
         sorted alphabetically to provide stability.
         """
@@ -434,7 +437,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return {a.group_name for a in self.asset_nodes if a.group_name is not None}
 
     def get_partition_mapping(
-        self, key: T_EntityKey, parent_asset_key: EntityKey
+        self, key: T_EntityKey, parent_asset_key: AssetOrCheckKey
     ) -> PartitionMapping:
         node = self.get(key)  # ty: ignore[no-matching-overload]
         return infer_partition_mapping(
@@ -451,7 +454,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """Returns all asset nodes that are direct dependencies on the given asset node."""
         return {self._asset_nodes_by_key[key] for key in self.get(node.key).parent_keys}
 
-    def get_non_virtual_ancestor_keys(self, key: EntityKey) -> AbstractSet[AssetKey]:
+    def get_non_virtual_ancestor_keys(self, key: AssetOrCheckKey) -> AbstractSet[AssetKey]:
         """Direct parent asset keys, recursively expanding any parent that is a virtual asset.
 
         Virtual assets are excluded from the result; their upstream parents are walked instead.
@@ -728,8 +731,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
 
     @abstractmethod
     def get_execution_set_asset_and_check_keys(
-        self, asset_key_or_check_key: EntityKey
-    ) -> AbstractSet[EntityKey]:
+        self, asset_key_or_check_key: AssetOrCheckKey
+    ) -> AbstractSet[AssetOrCheckKey]:
         """For a given asset/check key, return the set of asset/check keys that must be
         materialized/computed at the same time.
         """
@@ -851,8 +854,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         return result
 
     def split_entity_keys_by_repository(
-        self, keys: AbstractSet[EntityKey]
-    ) -> Sequence[AbstractSet[EntityKey]]:
+        self, keys: AbstractSet[AssetOrCheckKey]
+    ) -> Sequence[AbstractSet[AssetOrCheckKey]]:
         return [keys]
 
     def __hash__(self) -> int:

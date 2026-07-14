@@ -190,7 +190,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
     ) -> AbstractSet[AssetKey]:
         dep_keys = (
-            set(asset_graph.get_non_virtual_ancestor_keys(key))
+            set(asset_graph.get_non_virtual_ancestor_keys(key))  # ty: ignore[invalid-argument-type]
             if self.resolves_virtual_deps
             else set(asset_graph.get(key).parent_entity_keys)  # ty: ignore[no-matching-overload]
         )

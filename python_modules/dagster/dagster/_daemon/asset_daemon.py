@@ -23,7 +23,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetOrCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
@@ -917,7 +917,7 @@ class AssetDaemon(DagsterDaemon):
                 eligible_keys = workspace_asset_graph.get_all_asset_keys()
                 eligibility_graph = workspace_asset_graph
 
-            auto_materialize_entity_keys = {
+            auto_materialize_entity_keys: set[EntityKey] = {
                 target_key
                 for target_key in eligible_keys
                 if eligibility_graph.get(target_key).automation_condition is not None
@@ -1330,7 +1330,7 @@ class AssetDaemon(DagsterDaemon):
         reserved_run_id: str,
         run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-    ) -> tuple[str, AbstractSet[EntityKey]]:
+    ) -> tuple[str, AbstractSet[AssetOrCheckKey]]:
         # check that the run_request requires the backfill daemon rather than if the setting is enabled to
         # account for the setting changing between tick retries
         if run_request.requires_backfill_daemon():
@@ -1406,7 +1406,7 @@ class AssetDaemon(DagsterDaemon):
 
         async def submit_run_request(
             run_id_with_run_request: tuple[int, tuple[str, RunRequest]],
-        ) -> tuple[str, AbstractSet[EntityKey]]:
+        ) -> tuple[str, AbstractSet[AssetOrCheckKey]]:
             i, (run_id, run_request) = run_id_with_run_request
             return await self._submit_run_request(
                 i=i,

@@ -10,7 +10,7 @@ import dagster._check as check
 from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetOrCheckKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -226,7 +226,9 @@ class AutomationTickEvaluationContext:
         )
 
 
-_PartitionsDefKeyMapping = dict[tuple[PartitionsDefinition | None, str | None], set[EntityKey]]
+_PartitionsDefKeyMapping = dict[
+    tuple[PartitionsDefinition | None, str | None], set[AssetOrCheckKey]
+]
 
 
 def _get_mapping_from_entity_subsets(
@@ -265,20 +267,20 @@ def _get_mapping_from_entity_subsets(
 
 
 def _build_backfill_request(
-    entity_subsets: Sequence[EntitySubset[EntityKey]],
+    entity_subsets: Sequence[EntitySubset[AssetOrCheckKey]],
     asset_graph: BaseAssetGraph,
     run_tags: Mapping[str, str] | None,
-) -> tuple[RunRequest | None, Sequence[EntitySubset[EntityKey]]]:
+) -> tuple[RunRequest | None, Sequence[EntitySubset[AssetOrCheckKey]]]:
     """Determines a set of entity subsets that can be executed using a backfill.
     If any entity subset has size greater than 1, then it and all assets connected
     to it will be grouped into the backfill. Returns the corresponding backfill
     run request, and all entity subsets not handled in this process.
     """
     entity_subsets_by_key = {es.key: es for es in entity_subsets}
-    visited: set[EntityKey] = set()
+    visited: set[AssetOrCheckKey] = set()
     backfill_subsets: list[EntitySubset[AssetKey]] = []
 
-    def _flood_fill_asset_subsets(k: EntityKey):
+    def _flood_fill_asset_subsets(k: AssetOrCheckKey):
         if k in visited or k not in entity_subsets_by_key:
             return []
         visited.add(k)
@@ -388,7 +390,7 @@ def _ride_along_check_keys_for_assets(
         # is necessarily defined alongside the assets.
         return candidate_check_keys
 
-    def repo_selector(entity_key: EntityKey) -> RepositorySelector:
+    def repo_selector(entity_key: AssetOrCheckKey) -> RepositorySelector:
         return asset_graph.get_repository_handle(entity_key).to_selector()
 
     # All assets in `asset_keys` share a repository (the mapping is split per-repository before
@@ -502,7 +504,7 @@ def build_run_requests_with_backfill_policies(
             )
         elif backfill_policy is None:
             # just use the normal single-partition behavior
-            entity_keys = cast("set[EntityKey]", asset_keys)
+            entity_keys = cast("set[AssetOrCheckKey]", asset_keys)
             mapping: _PartitionsDefKeyMapping = {
                 (partitions_def, pk): entity_keys for pk in (partition_keys or [None])
             }

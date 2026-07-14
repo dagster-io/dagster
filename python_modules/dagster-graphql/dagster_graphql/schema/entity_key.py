@@ -36,8 +36,12 @@ class GrapheneEntityKey(graphene.Union):
     def from_entity_key(key: EntityKey) -> "GrapheneEntityKey":
         if isinstance(key, AssetKey):
             return GrapheneAssetKey(path=key.path)  # ty: ignore[invalid-return-type]
-        else:
+        elif isinstance(key, AssetCheckKey):
             return GrapheneAssetCheckHandle(handle=key)  # ty: ignore[invalid-return-type]
+        else:
+            raise NotImplementedError(
+                f"GraphQL representation not yet supported for {type(key).__name__}"
+            )
 
 
 class GrapheneAssetLineageInfo(graphene.ObjectType):

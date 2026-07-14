@@ -9,7 +9,7 @@ import yaml
 from dagster_shared.yaml_utils import merge_yaml_strings, merge_yamls
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetOrCheckKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.utils import is_valid_email
 from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
@@ -417,7 +417,7 @@ def get_default_automation_condition_sensor_selection(
             automation_condition_keys.add(k)
 
     # get the set of keys that are handled by an existing sensor
-    covered_keys: set[EntityKey] = set()
+    covered_keys: set[AssetOrCheckKey] = set()
     for sensor in automation_condition_sensors:
         selection = check.not_none(sensor.asset_selection)
         covered_keys = covered_keys.union(

@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import AbstractSet, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
@@ -80,13 +80,13 @@ class AssetGraphComputation(IHaveNew):
         return output_names_by_key
 
     @cached_property
-    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+    def output_names_by_entity_key(self) -> Mapping[AssetOrCheckKey, str]:
         return {**self.output_names_by_key, **reverse_dict(self.check_keys_by_output_name)}
 
     @cached_property
     def entity_keys_by_op_output_handle(
         self,
-    ) -> Mapping[NodeOutputHandle, EntityKey]:
+    ) -> Mapping[NodeOutputHandle, AssetOrCheckKey]:
         result = {}
         for output_name, key in itertools.chain(
             self.keys_by_output_name.items(), self.check_keys_by_output_name.items()
@@ -164,7 +164,7 @@ class AssetGraphComputation(IHaveNew):
         dep_op_handles_by_entity_key = cast(
             # because self.node_def is a graph, these NodeHandles that reference ops inside it will
             # not be None
-            "Mapping[EntityKey, AbstractSet[NodeHandle]]",
+            "Mapping[AssetOrCheckKey, AbstractSet[NodeHandle]]",
             self.dep_op_handles_by_entity_key,
         )
         op_selection: list[str] = []
@@ -195,7 +195,7 @@ class AssetGraphComputation(IHaveNew):
     @cached_property
     def dep_op_handles_by_entity_key(
         self,
-    ) -> Mapping[EntityKey, AbstractSet[NodeHandle | None]]:
+    ) -> Mapping[AssetOrCheckKey, AbstractSet[NodeHandle | None]]:
         result = defaultdict(set)
         for op_output_handle, keys in self.entity_keys_by_dep_op_output_handle.items():
             for key in keys:
@@ -206,7 +206,7 @@ class AssetGraphComputation(IHaveNew):
     @cached_property
     def entity_keys_by_dep_op_output_handle(
         self,
-    ) -> Mapping[NodeOutputHandle, AbstractSet[EntityKey]]:
+    ) -> Mapping[NodeOutputHandle, AbstractSet[AssetOrCheckKey]]:
         """Returns a mapping between op outputs and the assets and asset checks that, when selected,
         those op outputs need to be produced for.
         For non-graph-backed assets, this is essentially the same as node_keys_by_output_name.
@@ -230,7 +230,7 @@ class AssetGraphComputation(IHaveNew):
             *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),
         ]
 
-        result: dict[NodeOutputHandle, set[EntityKey]] = defaultdict(set)
+        result: dict[NodeOutputHandle, set[AssetOrCheckKey]] = defaultdict(set)
 
         for op_output_handle in reverse_toposorted_op_outputs_handles:
             asset_key_or_check_key = entity_keys_by_op_output_handle.get(op_output_handle)

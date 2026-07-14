@@ -8,7 +8,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey, EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -237,7 +237,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             return None
 
     @property
-    def entity_keys(self) -> Sequence[EntityKey]:
+    def entity_keys(self) -> Sequence[AssetOrCheckKey]:
         return [*(self.asset_selection or []), *(self.asset_check_keys or [])]
 
     def requires_backfill_daemon(self) -> bool:

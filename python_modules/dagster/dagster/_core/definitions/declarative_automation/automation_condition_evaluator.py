@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -41,7 +41,7 @@ class AutomationConditionEvaluator:
     def __init__(
         self,
         *,
-        entity_keys: AbstractSet[EntityKey],
+        entity_keys: AbstractSet[AssetOrCheckKey],
         instance: DagsterInstance,
         asset_graph: BaseAssetGraph,
         cursor: AssetDaemonCursor,
@@ -65,7 +65,7 @@ class AutomationConditionEvaluator:
         self.cursor = cursor
         self.default_condition = default_condition
 
-        self.current_results_by_key: dict[EntityKey, AutomationResult] = {}
+        self.current_results_by_key: dict[AssetOrCheckKey, AutomationResult] = {}
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
 
@@ -81,7 +81,7 @@ class AutomationConditionEvaluator:
         self.legacy_expected_data_time_by_key: dict[AssetKey, datetime.datetime | None] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-        self.request_subsets_by_key: dict[EntityKey, EntitySubset] = {}
+        self.request_subsets_by_key: dict[AssetOrCheckKey, EntitySubset] = {}
         self.evaluation_id = evaluation_id
 
     @property
@@ -119,12 +119,14 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+    def evaluate(
+        self,
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[AssetOrCheckKey]]]:
         return asyncio.run(self.async_evaluate())
 
     async def async_evaluate(
         self,
-    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[AssetOrCheckKey]]]:
         with partition_loading_context(
             effective_dt=self.evaluation_time, dynamic_partitions_store=self.instance_queryer
         ):
@@ -132,12 +134,12 @@ class AutomationConditionEvaluator:
 
     async def _async_evaluate(
         self,
-    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[AssetOrCheckKey]]]:
         self.prefetch()
         num_conditions = len(self.entity_keys)
         num_evaluated = 0
 
-        async def _evaluate_entity_async(entity_key: EntityKey, offset: int):
+        async def _evaluate_entity_async(entity_key: AssetOrCheckKey, offset: int):
             self.logger.debug(
                 f"Evaluating {entity_key.to_user_string()} ({num_evaluated + offset}/{num_conditions})"
             )
@@ -175,7 +177,7 @@ class AutomationConditionEvaluator:
             v for v in self.request_subsets_by_key.values() if not v.is_empty
         ]
 
-    async def evaluate_entity(self, key: EntityKey) -> None:
+    async def evaluate_entity(self, key: AssetOrCheckKey) -> None:
         # evaluate the condition of this asset
         result = await AutomationContext.create(key=key, evaluator=self).evaluate_async()
 

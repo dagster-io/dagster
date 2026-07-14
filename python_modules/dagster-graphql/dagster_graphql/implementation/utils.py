@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, TypeVar, Union, ca
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import (
     RemoteAssetCheckNode,
     RemoteAssetNode,
@@ -181,7 +181,9 @@ def has_permission_for_asset_graph(
         return False
 
     return all(
-        context.has_permission_for_selector(permission, entity_key) for entity_key in all_keys
+        context.has_permission_for_selector(permission, entity_key)
+        for entity_key in all_keys
+        if isinstance(entity_key, (AssetKey, AssetCheckKey))
     )
 
 

@@ -6,7 +6,7 @@ from dagster_shared.record import record
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetKey, AssetOrCheckKey
 from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.graph_definition import GraphDefinition
 
@@ -56,8 +56,8 @@ class AssetLayer:
         return {data.node_handle: data for data in self.data}
 
     @cached_property
-    def _data_by_key(self) -> Mapping[EntityKey, AssetLayerData]:
-        mapping: dict[EntityKey, AssetLayerData] = {}
+    def _data_by_key(self) -> Mapping[AssetOrCheckKey, AssetLayerData]:
+        mapping: dict[AssetOrCheckKey, AssetLayerData] = {}
         for data in self.data:
             for key in [
                 *data.assets_def.keys,
@@ -142,7 +142,7 @@ class AssetLayer:
     def has(self, asset_key: AssetKey) -> bool:
         return self.asset_graph.has(asset_key)
 
-    def _maybe_get_data(self, ptr: NodeHandle | EntityKey) -> AssetLayerData | None:
+    def _maybe_get_data(self, ptr: NodeHandle | AssetOrCheckKey) -> AssetLayerData | None:
         if isinstance(ptr, NodeHandle):
             # we need to ensure that the node handle we use for the lookup is the **outer**
             # node handle when in the context of a graph asset.
@@ -152,10 +152,10 @@ class AssetLayer:
         else:
             return self._data_by_key.get(ptr)
 
-    def _get_data(self, ptr: NodeHandle | EntityKey) -> AssetLayerData:
+    def _get_data(self, ptr: NodeHandle | AssetOrCheckKey) -> AssetLayerData:
         return check.not_none(self._maybe_get_data(ptr), f"Could not find AssetLayerData for {ptr}")
 
-    def get_op_output_handle(self, key: EntityKey) -> NodeOutputHandle:
+    def get_op_output_handle(self, key: AssetOrCheckKey) -> NodeOutputHandle:
         data = self._get_data(key)
         computation = check.not_none(data.assets_def.computation)
         # the outer node handle that we store may refer to a graph definition,
@@ -170,14 +170,16 @@ class AssetLayer:
         data = self._maybe_get_data(node_handle)
         return data.assets_def if data else None
 
-    def get_selected_entity_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[EntityKey]:
+    def get_selected_entity_keys_for_node(
+        self, node_handle: NodeHandle
+    ) -> AbstractSet[AssetOrCheckKey]:
         data = self._maybe_get_data(node_handle)
         return data.assets_def.asset_and_check_keys if data else set()
 
     def get_asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
         return self._get_data(node_handle).assets_def.key
 
-    def get_op_output_name(self, key: EntityKey) -> str:
+    def get_op_output_name(self, key: AssetOrCheckKey) -> str:
         return self.get_op_output_handle(key).output_name
 
     def get_node_input_name(self, node_handle: NodeHandle, key: AssetKey) -> str | None:
@@ -186,7 +188,7 @@ class AssetLayer:
 
     def get_entity_key_for_node_output(
         self, inner_node_handle: NodeHandle, output_name: str
-    ) -> EntityKey | None:
+    ) -> AssetOrCheckKey | None:
         data = self._maybe_get_data(inner_node_handle)
         if data is None:
             return None
@@ -215,7 +217,7 @@ class AssetLayer:
 
     def downstream_dep_assets_and_checks(
         self, node_handle: NodeHandle, output_name: str
-    ) -> set[EntityKey]:
+    ) -> set[AssetOrCheckKey]:
         """Given the node handle of an op within a graph-backed asset and an output name,
         returns the asset keys dependent on that output.
 

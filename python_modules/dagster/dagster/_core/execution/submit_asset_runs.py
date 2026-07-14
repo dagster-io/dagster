@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.events import AssetKey
@@ -42,7 +42,7 @@ def _get_implicit_job_name_for_assets(
 
 def _get_execution_plan_entity_keys(
     execution_plan_snapshot: ExecutionPlanSnapshot,
-) -> AbstractSet[EntityKey]:
+) -> AbstractSet[AssetOrCheckKey]:
     output_entity_keys = set()
     for step in execution_plan_snapshot.steps:
         if step.key in execution_plan_snapshot.step_keys_to_execute:
@@ -252,7 +252,7 @@ async def submit_asset_run(
     submits the existing run. If the run does not exist, creates a new run and submits it, ensuring
     that the created run targets the given asset selection.
     """
-    entity_keys: Sequence[EntityKey] = [
+    entity_keys: Sequence[AssetOrCheckKey] = [
         *(run_request.asset_selection or []),
         *(run_request.asset_check_keys or []),
     ]
