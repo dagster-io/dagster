@@ -31,6 +31,30 @@ def monitor_starting_run(
     run = run_record.dagster_run
     check.invariant(run.status in {DagsterRunStatus.STARTING, DagsterRunStatus.NOT_STARTED})
 
+    # Fail fast if the run worker has already died while starting up, rather than waiting for
+    # run_monitoring_start_timeout_seconds to elapse.
+    if instance.run_launcher.supports_check_run_worker_health:
+        check_health_result = instance.run_launcher.check_run_worker_health(run)
+        if check_health_result.status == WorkerStatus.FAILED:
+            recheck_run = check.not_none(instance.get_run_by_id(run.run_id))
+            if run.status != recheck_run.status:
+                logger.info(
+                    "Detected run status changed during monitoring loop: "
+                    f"{run.status} -> {recheck_run.status}, disregarding for now"
+                )
+                return
+            msg = (
+                f"Detected run worker status {check_health_result} while run was starting up."
+                f" Marking run {run.run_id} as failed."
+            )
+            logger.info(msg)
+            instance.report_run_failed(
+                run,
+                msg,
+                JobFailureData(error=None, failure_reason=RunFailureReason.UNEXPECTED_TERMINATION),
+            )
+            return
+
     if run.status == DagsterRunStatus.STARTING:
         run_stats = instance.get_run_stats(run.run_id)
 
