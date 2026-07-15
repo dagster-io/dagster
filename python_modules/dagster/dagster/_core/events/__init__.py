@@ -410,6 +410,26 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
+def _resource_init_start_message(
+    resource_keys: AbstractSet[str],
+    resource_key_to_op_names: Mapping[str, AbstractSet[str]] | None,
+) -> str:
+    if not resource_key_to_op_names:
+        return "Starting initialization of resources [{}].".format(", ".join(sorted(resource_keys)))
+
+    # Iterate resource_keys (scoped to this step) rather than the job-wide mapping, so a step
+    # only lists its own ops. Keys not in the mapping are required by an io/input manager or
+    # type loader rather than by an op directly.
+    lines = ["Starting initialization of resources:"]
+    for resource_key in sorted(resource_keys):
+        op_names = sorted(resource_key_to_op_names.get(resource_key, set()))
+        if op_names:
+            lines.append(f"{resource_key} - required by op instances [{', '.join(op_names)}]")
+        else:
+            lines.append(f"{resource_key} - required by the I/O layer")
+    return "\n".join(lines)
+
+
 class DagsterEventSerializer(NamedTupleSerializer["DagsterEvent"]):
     def before_unpack(self, context, unpacked_dict: Any) -> dict[str, Any]:
         event_type_value, event_specific_data = _handle_back_compat(
@@ -1337,15 +1357,14 @@ class DagsterEvent(
         execution_plan: "ExecutionPlan",
         log_manager: DagsterLogManager,
         resource_keys: AbstractSet[str],
+        resource_key_to_op_names: Mapping[str, AbstractSet[str]] | None = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_resource(
             DagsterEventType.RESOURCE_INIT_STARTED,
             job_name=job_name,
             execution_plan=execution_plan,
             log_manager=log_manager,
-            message="Starting initialization of resources [{}].".format(
-                ", ".join(sorted(resource_keys))
-            ),
+            message=_resource_init_start_message(resource_keys, resource_key_to_op_names),
             event_specific_data=EngineEventData(metadata={}, marker_start="resources"),
         )
 

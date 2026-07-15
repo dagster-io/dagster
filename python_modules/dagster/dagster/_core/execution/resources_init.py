@@ -1,6 +1,6 @@
 import inspect
 from asyncio import AbstractEventLoop
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
 from typing import AbstractSet, Any, Callable, cast  # noqa: UP035
@@ -8,6 +8,7 @@ from typing import AbstractSet, Any, Callable, cast  # noqa: UP035
 from dagster_shared.utils.timing import format_duration
 
 import dagster._check as check
+from dagster._core.definitions.dependency import OpNode
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
@@ -49,6 +50,7 @@ def resource_initialization_manager(
     instance: DagsterInstance | None,
     emit_persistent_events: bool | None,
     event_loop: AbstractEventLoop | None,
+    job_def: JobDefinition | None = None,
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -60,6 +62,7 @@ def resource_initialization_manager(
         instance=instance,
         emit_persistent_events=emit_persistent_events,
         event_loop=event_loop,
+        job_def=job_def,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -116,6 +119,39 @@ def get_dependencies(
     return reqd_resources
 
 
+def get_resource_origins_mapping(job_def: JobDefinition) -> Mapping[str, AbstractSet[str]]:
+    """Maps each resource key to the op instances that require it, keyed by full node handle so
+    that aliased and nested ops are unambiguous.
+
+    A resource required by another resource (e.g. spark, pulled in by a pyspark resource) is
+    attributed to the ops that required the outer resource. Resources no op requires directly,
+    such as the default io_manager, are absent from the mapping.
+    """
+    origins: dict[str, set[str]] = defaultdict(set)
+
+    for handle in job_def.graph.iterate_node_handles():
+        node = job_def.get_node(handle)
+        if not isinstance(node, OpNode):
+            continue
+
+        op_name = str(handle)
+
+        for resource_key in node.definition.required_resource_keys:
+            origins[resource_key].add(op_name)
+
+        for hook_def in job_def.get_all_hooks_for_handle(handle):
+            for resource_key in hook_def.required_resource_keys:
+                origins[resource_key].add(op_name)
+
+    resource_dependencies = resolve_resource_dependencies(job_def.resource_defs)
+    for resource_key, op_names in list(origins.items()):
+        for dep_key in get_dependencies(resource_key, resource_dependencies):
+            if dep_key != resource_key:
+                origins[dep_key].update(op_names)
+
+    return dict(origins)
+
+
 def _core_resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Mapping[str, ResourceConfig],
@@ -127,6 +163,7 @@ def _core_resource_initialization_event_generator(
     instance: DagsterInstance | None,
     emit_persistent_events: bool | None,
     event_loop,
+    job_def: JobDefinition | None = None,
 ):
     job_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
@@ -147,6 +184,7 @@ def _core_resource_initialization_event_generator(
                 cast("ExecutionPlan", execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
+                get_resource_origins_mapping(job_def) if job_def else None,
             )
 
         resource_dependencies = resolve_resource_dependencies(resource_defs)
@@ -225,6 +263,7 @@ def resource_initialization_event_generator(
     instance: DagsterInstance | None,
     emit_persistent_events: bool | None,
     event_loop: AbstractEventLoop | None,
+    job_def: JobDefinition | None = None,
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(
@@ -233,6 +272,7 @@ def resource_initialization_event_generator(
     check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
     check.opt_inst_param(dagster_run, "dagster_run", DagsterRun)
     check.opt_inst_param(instance, "instance", DagsterInstance)
+    check.opt_inst_param(job_def, "job_def", JobDefinition)
 
     if execution_plan and execution_plan.step_handle_for_single_step_plans():
         step = execution_plan.get_step(
@@ -260,6 +300,7 @@ def resource_initialization_event_generator(
             instance=instance,
             emit_persistent_events=emit_persistent_events,
             event_loop=event_loop,
+            job_def=job_def,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
