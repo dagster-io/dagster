@@ -95,6 +95,7 @@ else:
             PartialSuccess = "partial success"
             Pass = "pass"
             RuntimeErr = "runtime error"
+            NoOp = "no-op"
 
         class TestStatus(StrEnum):
             Pass = NodeStatus.Pass
