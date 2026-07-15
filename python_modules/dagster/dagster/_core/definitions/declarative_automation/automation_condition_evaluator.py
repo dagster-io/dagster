@@ -9,13 +9,7 @@ from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import (
-    AssetCheckKey,
-    AssetJobKey,
-    AssetKey,
-    AssetOrCheckKey,
-    EntityKey,
-)
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -56,15 +50,7 @@ class AutomationConditionEvaluator:
         evaluation_time: datetime.datetime | None = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
-        job_keys = {key for key in entity_keys if isinstance(key, AssetJobKey)}
-        if job_keys:
-            raise NotImplementedError(
-                "Automation conditions on jobs cannot yet be evaluated. Requested job keys: "
-                f"{', '.join(sorted(k.to_user_string() for k in job_keys))}"
-            )
-        self.entity_keys: AbstractSet[AssetOrCheckKey] = {
-            key for key in entity_keys if not isinstance(key, AssetJobKey)
-        }
+        self.entity_keys: AbstractSet[EntityKey] = entity_keys
         self.asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
                 effective_dt=evaluation_time or get_current_datetime(),
@@ -78,7 +64,7 @@ class AutomationConditionEvaluator:
         self.cursor = cursor
         self.default_condition = default_condition
 
-        self.current_results_by_key: dict[AssetOrCheckKey, AutomationResult] = {}
+        self.current_results_by_key: dict[EntityKey, AutomationResult] = {}
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
 
@@ -94,7 +80,7 @@ class AutomationConditionEvaluator:
         self.legacy_expected_data_time_by_key: dict[AssetKey, datetime.datetime | None] = {}
         self.legacy_data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
 
-        self.request_subsets_by_key: dict[AssetOrCheckKey, EntitySubset] = {}
+        self.request_subsets_by_key: dict[EntityKey, EntitySubset] = {}
         self.evaluation_id = evaluation_id
 
     @property
@@ -134,12 +120,12 @@ class AutomationConditionEvaluator:
 
     def evaluate(
         self,
-    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[AssetOrCheckKey]]]:
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         return asyncio.run(self.async_evaluate())
 
     async def async_evaluate(
         self,
-    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[AssetOrCheckKey]]]:
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         with partition_loading_context(
             effective_dt=self.evaluation_time, dynamic_partitions_store=self.instance_queryer
         ):
@@ -147,12 +133,12 @@ class AutomationConditionEvaluator:
 
     async def _async_evaluate(
         self,
-    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[AssetOrCheckKey]]]:
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         self.prefetch()
         num_conditions = len(self.entity_keys)
         num_evaluated = 0
 
-        async def _evaluate_entity_async(entity_key: AssetOrCheckKey, offset: int):
+        async def _evaluate_entity_async(entity_key: EntityKey, offset: int):
             self.logger.debug(
                 f"Evaluating {entity_key.to_user_string()} ({num_evaluated + offset}/{num_conditions})"
             )
@@ -181,11 +167,7 @@ class AutomationConditionEvaluator:
             coroutines = [
                 _evaluate_entity_async(entity_key, offset)
                 for offset, entity_key in enumerate(topo_level)
-                # the isinstance check narrows the topo-level key type; job keys can never be
-                # in self.entity_keys (the constructor raises on them until job-condition
-                # evaluation is wired through)
-                if isinstance(entity_key, (AssetKey, AssetCheckKey))
-                and entity_key in self.entity_keys
+                if entity_key in self.entity_keys
             ]
             await asyncio.gather(*coroutines)
             num_evaluated += len(coroutines)
@@ -194,7 +176,7 @@ class AutomationConditionEvaluator:
             v for v in self.request_subsets_by_key.values() if not v.is_empty
         ]
 
-    async def evaluate_entity(self, key: AssetOrCheckKey) -> None:
+    async def evaluate_entity(self, key: EntityKey) -> None:
         # evaluate the condition of this asset
         result = await AutomationContext.create(key=key, evaluator=self).evaluate_async()
 

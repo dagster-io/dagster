@@ -66,7 +66,7 @@ class AutomationContext(Generic[T_EntityKey]):
     create_time: datetime.datetime
 
     asset_graph_view: AssetGraphView
-    request_subsets_by_key: Mapping[AssetOrCheckKey, EntitySubset]
+    request_subsets_by_key: Mapping[EntityKey, EntitySubset]
 
     parent_context: Optional["AutomationContext"]
 
@@ -77,9 +77,7 @@ class AutomationContext(Generic[T_EntityKey]):
     _root_log: logging.Logger
 
     @staticmethod
-    def create(
-        key: AssetOrCheckKey, evaluator: "AutomationConditionEvaluator"
-    ) -> "AutomationContext":
+    def create(key: EntityKey, evaluator: "AutomationConditionEvaluator") -> "AutomationContext":
         asset_graph_view = evaluator.asset_graph_view
         condition = check.not_none(
             evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition

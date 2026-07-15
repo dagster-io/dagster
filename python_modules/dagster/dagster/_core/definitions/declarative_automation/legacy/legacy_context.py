@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar 
 import dagster._check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
-from dagster._core.definitions.asset_key import AssetOrCheckKey
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
 )
@@ -66,7 +66,7 @@ class LegacyRuleEvaluationContext:
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
 
-    request_subsets_by_key: Mapping[AssetOrCheckKey, EntitySubset]
+    request_subsets_by_key: Mapping[EntityKey, EntitySubset]
     expected_data_time_mapping: Mapping[AssetKey, datetime.datetime | None]
 
     start_timestamp: float

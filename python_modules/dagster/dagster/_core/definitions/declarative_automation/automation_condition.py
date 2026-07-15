@@ -53,6 +53,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
     )
+    from dagster._core.definitions.declarative_automation.operators.job_operators import (
+        JobRootAssetsAutomationCondition,
+    )
     from dagster._core.definitions.declarative_automation.operators.since_operator import (
         SinceCondition,
     )
@@ -410,6 +413,56 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         from dagster._core.definitions.declarative_automation.operators import AllChecksCondition
 
         return AllChecksCondition(operand=condition, blocking_only=blocking_only)
+
+    # hidden (not @public) while job-level declarative automation is under development;
+    # will be made public alongside the UI support
+    @staticmethod
+    def any_job_root_assets_match(
+        condition: "AutomationCondition[AssetKey]",
+    ) -> "JobRootAssetsAutomationCondition":
+        """Returns an AutomationCondition that is true for a job if at least one of its root
+        assets evaluates to True for the given condition.
+
+        Only the job's root assets (those with no in-job parents) are evaluated; downstream
+        assets are inferred via lookahead.
+
+        Args:
+            condition (AutomationCondition): The AutomationCondition that will be evaluated
+                against this job's assets.
+        """
+        from dagster._core.definitions.declarative_automation.operators.job_operators import (
+            AnyJobRootAssetsMatchCondition,
+        )
+
+        label = condition.get_label() or condition.name
+        return AnyJobRootAssetsMatchCondition(operand=condition).with_label(
+            f"any_job_root_assets_match({label})"
+        )
+
+    # hidden (not @public) while job-level declarative automation is under development;
+    # will be made public alongside the UI support
+    @staticmethod
+    def all_job_root_assets_match(
+        condition: "AutomationCondition[AssetKey]",
+    ) -> "JobRootAssetsAutomationCondition":
+        """Returns an AutomationCondition that is true for a job if all of its root assets
+        evaluate to True for the given condition.
+
+        Only the job's root assets (those with no in-job parents) are evaluated; downstream
+        assets are inferred via lookahead.
+
+        Args:
+            condition (AutomationCondition): The AutomationCondition that will be evaluated
+                against this job's assets.
+        """
+        from dagster._core.definitions.declarative_automation.operators.job_operators import (
+            AllJobRootAssetsMatchCondition,
+        )
+
+        label = condition.get_label() or condition.name
+        return AllJobRootAssetsMatchCondition(operand=condition).with_label(
+            f"all_job_root_assets_match({label})"
+        )
 
     @public
     @staticmethod
