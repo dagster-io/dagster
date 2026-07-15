@@ -10,7 +10,12 @@ import dagster._check as check
 from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetOrCheckKey, EntityKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetJobKey,
+    AssetOrCheckKey,
+    EntityKey,
+)
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
@@ -57,13 +62,22 @@ class AutomationTickEvaluationContext:
         emit_backfills: bool,
         default_condition: AutomationCondition | None = None,
         evaluation_time: datetime.datetime | None = None,
+        asset_job_keys: AbstractSet[AssetJobKey] | None = None,
     ):
-        resolved_entity_keys = {
+        resolved_entity_keys: set[EntityKey] = {
             entity_key
             for entity_key in (
                 asset_selection.resolve(asset_graph) | asset_selection.resolve_checks(asset_graph)
             )
             if default_condition or asset_graph.get(entity_key).automation_condition is not None
+        }
+        # asset selections cannot express job keys, so conditioned jobs are added
+        # directly from the graph
+        resolved_entity_keys |= {
+            key
+            for key in (asset_job_keys or set())
+            # default_condition does not extend to jobs
+            if asset_graph.has(key) and asset_graph.get(key).automation_condition is not None
         }
         self._total_keys = len(resolved_entity_keys)
         self._evaluation_id = evaluation_id
@@ -323,6 +337,44 @@ def _build_backfill_request(
     return backfill_request, list(entity_subsets_by_key.values())
 
 
+def _build_job_run_requests(
+    asset_job_subsets: Sequence[EntitySubset[AssetJobKey]],
+    asset_graph: BaseAssetGraph,
+    run_tags: Mapping[str, str] | None,
+) -> Sequence[RunRequest]:
+    """Builds RunRequests for job entities whose automation conditions fired this tick.
+
+    Unlike asset run requests, which list the specific assets and checks to execute, a
+    job run request launches the whole job by name: job_name is set and there is no
+    asset selection.
+
+    An unpartitioned job launches as a single run. A partitioned job launches as one
+    run per requested partition, each tagged with its partition key.
+    """
+    run_requests = []
+    for subset in asset_job_subsets:
+        if subset.is_empty:
+            continue
+        partitions_def = asset_graph.get(subset.key).partitions_def
+        if partitions_def is None:
+            run_requests.append(
+                RunRequest(job_name=subset.key.job_name, tags=dict(run_tags) if run_tags else {})
+            )
+        else:
+            run_requests.extend(
+                RunRequest(
+                    job_name=subset.key.job_name,
+                    partition_key=partition_key,
+                    tags={
+                        **(run_tags or {}),
+                        **partitions_def.get_tags_for_partition_key(partition_key),
+                    },
+                )
+                for partition_key in sorted(subset.expensively_compute_partition_keys())
+            )
+    return sorted(run_requests, key=lambda rr: (rr.job_name or "", rr.partition_key or ""))
+
+
 def build_run_requests(
     entity_subsets: Sequence[EntitySubset],
     asset_graph: BaseAssetGraph,
@@ -332,22 +384,28 @@ def build_run_requests(
     """For a single asset in a given tick, the asset will only be part of a run or a backfill, not both.
     If the asset is targetd by a backfill, there will only be one backfill that targets the asset.
     """
+    # job entity subsets become whole-job run requests; everything downstream of this
+    # split (backfills, partition mapping) deals only in assets and checks
+    asset_job_subsets = [es for es in entity_subsets if isinstance(es.key, AssetJobKey)]
+    asset_and_check_subsets = [es for es in entity_subsets if not isinstance(es.key, AssetJobKey)]
+    job_run_requests = _build_job_run_requests(asset_job_subsets, asset_graph, run_tags)
+
     if emit_backfills:
-        backfill_run_request, entity_subsets = _build_backfill_request(
-            entity_subsets, asset_graph, run_tags
+        backfill_run_request, asset_and_check_subsets = _build_backfill_request(
+            asset_and_check_subsets, asset_graph, run_tags
         )
     else:
         backfill_run_request = None
 
     run_requests = _build_run_requests_from_partitions_def_mapping(
-        _get_mapping_from_entity_subsets(entity_subsets, asset_graph),
+        _get_mapping_from_entity_subsets(asset_and_check_subsets, asset_graph),
         asset_graph,
         run_tags,
     )
     if backfill_run_request:
         run_requests = [backfill_run_request, *run_requests]
 
-    return run_requests
+    return [*job_run_requests, *run_requests]
 
 
 def _any_check_uses_automation_condition(

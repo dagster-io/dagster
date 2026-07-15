@@ -88,7 +88,7 @@ def test_round_trip(partitions_def: dg.PartitionsDefinition | None) -> None:
     assert subset is None
 
 
-def test_unsupported_key_type_returns_none() -> None:
+def test_job_key_absent_from_graph_returns_none() -> None:
     @dg.asset
     def foo() -> None: ...
 
@@ -96,8 +96,35 @@ def test_unsupported_key_type_returns_none() -> None:
     instance = DagsterInstance.ephemeral()
     asset_graph_view = AssetGraphView.for_test(defs, instance)
 
-    # a persisted subset may reference a key type this version cannot evaluate (e.g. a
-    # job-keyed subset written by a newer version before a rollback); it is dropped rather
-    # than raising
-    job_subset = SerializableEntitySubset(key=AssetJobKey("my_job"), value=True)
+    # a persisted subset may reference a key that no longer exists in the graph (e.g. a
+    # job-keyed subset written by a newer version before a rollback, or a since-deleted
+    # job); it is dropped rather than raising
+    job_subset = SerializableEntitySubset(key=AssetJobKey("gone"), value=True)
     assert asset_graph_view.get_subset_from_serializable_subset(job_subset) is None
+
+
+def test_job_key_present_in_graph_round_trips() -> None:
+    @dg.asset
+    def foo() -> None: ...
+
+    job = dg.define_asset_job(
+        "my_job",
+        selection=[foo],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    defs = dg.Definitions(assets=[foo], jobs=[job])
+    instance = DagsterInstance.ephemeral()
+    asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+    job_key = AssetJobKey("my_job")
+    # a job is unpartitioned in v1, so a boolean-valued subset
+    serialized = dg.deserialize_value(
+        dg.serialize_value(SerializableEntitySubset(key=job_key, value=True)),
+        SerializableEntitySubset,
+    )
+    subset = asset_graph_view.get_subset_from_serializable_subset(serialized)
+    assert subset is not None
+    assert subset.key == job_key
+    assert not subset.is_empty

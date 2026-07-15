@@ -4,6 +4,10 @@ from dagster import AutoMaterializePolicy
 from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    AutomationConditionSensorDefinition,
+    asset_job_keys_from_sensor_metadata,
+)
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
@@ -377,3 +381,138 @@ def test_conditioned_jobs_collected_from_both_unresolved_and_resolved() -> None:
         AssetJobKey("unresolved_job"),
         AssetJobKey("resolved_job"),
     }
+
+
+def test_conditioned_job_does_not_empty_default_sensor_selection_on_remote_load() -> None:
+    """The default automation condition sensor's asset selection must survive a
+    RemoteRepository (host-side) load unchanged when the repository also contains a
+    conditioned job.
+    """
+
+    @dg.asset(automation_condition=dg.AutomationCondition.eager())
+    def conditioned_asset() -> None: ...
+
+    @dg.asset
+    def plain_asset() -> None: ...
+
+    job = dg.define_asset_job(
+        "my_job",
+        selection=[plain_asset],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    defs = dg.Definitions(assets=[conditioned_asset, plain_asset], jobs=[job])
+
+    local_repo = defs.get_repository_def()
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(local_repo),
+        repository_handle=RepositoryHandle.for_test(
+            location_name="foo_location", repository_name="bar_repo"
+        ),
+        auto_materialize_use_sensors=True,
+    )
+
+    remote_sensor = remote_repo.get_sensor("default_automation_condition_sensor")
+    assert remote_sensor.asset_selection is not None
+    resolved = remote_sensor.asset_selection.resolve(remote_repo.asset_graph)
+    # not emptied: the conditioned asset is still covered after the remote round-trip
+    assert dg.AssetKey("conditioned_asset") in resolved
+
+
+def test_default_sensor_claims_only_unclaimed_job_keys() -> None:
+    """Each conditioned job is owned by exactly one sensor: keys explicitly claimed by a
+    user sensor (via the hidden asset_job_keys param) are excluded from the default
+    sensor, so no job is evaluated by two sensors.
+    """
+
+    @dg.asset
+    def plain_asset():
+        return 1
+
+    claimed_job = dg.define_asset_job(
+        name="claimed_job",
+        selection=[plain_asset],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    unclaimed_job = dg.define_asset_job(
+        name="unclaimed_job",
+        selection=[plain_asset],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    user_sensor = AutomationConditionSensorDefinition(
+        "user_sensor",
+        target=dg.AssetSelection.assets(plain_asset),
+        asset_job_keys={AssetJobKey("claimed_job")},
+    )
+
+    defs = dg.Definitions(
+        assets=[plain_asset], jobs=[claimed_job, unclaimed_job], sensors=[user_sensor]
+    )
+    repo = defs.get_repository_def()
+
+    default_sensor = repo.get_sensor_def("default_automation_condition_sensor")
+    assert asset_job_keys_from_sensor_metadata(default_sensor.metadata) == {
+        AssetJobKey("unclaimed_job")
+    }
+
+
+def test_no_default_sensor_when_all_job_keys_claimed() -> None:
+    """If a user sensor covers all assets and claims all conditioned jobs, no default
+    sensor is created at all.
+    """
+
+    @dg.asset(automation_condition=dg.AutomationCondition.missing())
+    def conditioned_asset():
+        return 1
+
+    the_job = dg.define_asset_job(
+        name="the_job",
+        selection=[conditioned_asset],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    user_sensor = AutomationConditionSensorDefinition(
+        "user_sensor",
+        target=dg.AssetSelection.all() | dg.AssetSelection.all_asset_checks(),
+        asset_job_keys={AssetJobKey("the_job")},
+    )
+    defs = dg.Definitions(assets=[conditioned_asset], jobs=[the_job], sensors=[user_sensor])
+    repo = defs.get_repository_def()
+    assert not repo.has_sensor_def("default_automation_condition_sensor")
+
+
+def test_default_sensor_created_for_job_keys_alone_when_assets_covered() -> None:
+    """A user sensor covering every asset does not cover job keys it did not claim; the
+    default sensor is still created (with an empty asset selection) to host them.
+    """
+
+    @dg.asset(automation_condition=dg.AutomationCondition.missing())
+    def conditioned_asset():
+        return 1
+
+    the_job = dg.define_asset_job(
+        name="the_job",
+        selection=[conditioned_asset],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    user_sensor = AutomationConditionSensorDefinition(
+        "user_sensor",
+        target=dg.AssetSelection.all() | dg.AssetSelection.all_asset_checks(),
+    )
+    defs = dg.Definitions(assets=[conditioned_asset], jobs=[the_job], sensors=[user_sensor])
+    repo = defs.get_repository_def()
+
+    default_sensor = repo.get_sensor_def("default_automation_condition_sensor")
+    assert asset_job_keys_from_sensor_metadata(default_sensor.metadata) == {AssetJobKey("the_job")}
+    # its asset selection is empty; it exists only to host the job keys
+    selection = default_sensor.asset_selection
+    assert selection is not None
+    assert selection.resolve(repo.asset_graph) == set()

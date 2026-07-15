@@ -331,12 +331,8 @@ class AssetGraphView(LoadingContext):
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]
     ) -> EntitySubset[T_EntityKey] | None:
         key = serializable_subset.key
-        # serialized subsets come from persisted cursors, which may reference key types this
-        # view does not yet support
-        if (
-            isinstance(key, (AssetKey, AssetCheckKey))
-            and self.asset_graph.has(key)
-            and serializable_subset.is_compatible_with_partitions_def(self._get_partitions_def(key))
+        if self.asset_graph.has(key) and serializable_subset.is_compatible_with_partitions_def(
+            self._get_partitions_def(key)
         ):
             return EntitySubset(
                 self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)

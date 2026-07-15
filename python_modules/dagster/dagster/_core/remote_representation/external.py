@@ -35,7 +35,7 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
-from dagster._core.definitions.utils import get_default_automation_condition_sensor_selection
+from dagster._core.definitions.utils import get_default_automation_condition_sensor_target
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadableBy
@@ -203,17 +203,27 @@ class RemoteRepository:
 
         # if necessary, create a default automation condition sensor
         # NOTE: if a user's code location is at a version >= 1.9, then this step should
-        # never be necessary, as this will be added in Definitions construction process
-        default_sensor_selection = get_default_automation_condition_sensor_selection(
+        # never be necessary, as this will be added in Definitions construction process.
+        # Pre-1.9 did not support job keys, so job keys are never passed on this path and
+        # we only consider whether the default sensor is needed based on asset_selection.
+        default_sensor_selection = get_default_automation_condition_sensor_target(
             sensors=[data for data in sensor_datas.values()],
             asset_graph=self.asset_graph,
         )
         if default_sensor_selection is not None:
+            # this hand-rolled SensorSnap (unlike SensorSnap.from_def) carries no metadata and
+            # therefore does not include job keys; fail loudly rather than silently dropping
+            # them if this path ever starts receiving them.
+            check.invariant(
+                not default_sensor_selection.asset_job_keys,
+                "host-side default sensor creation cannot claim asset job keys; job-key "
+                "ownership is decided at Definitions construction time",
+            )
             default_sensor_data = SensorSnap(
                 name=DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
                 job_name=None,
                 op_selection=None,
-                asset_selection=default_sensor_selection,
+                asset_selection=default_sensor_selection.asset_selection,
                 mode=None,
                 min_interval=30,
                 description=None,

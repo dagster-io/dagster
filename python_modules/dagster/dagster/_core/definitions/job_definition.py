@@ -243,6 +243,15 @@ class JobDefinition(IHasInternalInit):
                 "_automation_condition",
                 "AutomationCondition can only be provided for asset jobs.",
             )
+            # every partitioned job synthesizes a PartitionedConfig internally, so only
+            # reject when the user actually supplied config for it to resolve
+            if self._original_config_argument is not None and self.partitioned_config is not None:
+                raise DagsterInvalidDefinitionError(
+                    f"Job '{self.name}' has both an automation_condition and partitioned run"
+                    " config. Declarative automation submits partitioned-job runs without"
+                    " resolving per-partition config, so this combination is not currently"
+                    " supported."
+                )
 
     def dagster_internal_init(
         *,
