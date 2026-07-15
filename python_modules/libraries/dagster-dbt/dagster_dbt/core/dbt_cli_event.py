@@ -33,27 +33,16 @@ from dagster_dbt.asset_utils import (
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import (
+    REFABLE_NODE_TYPES,
+    _SUCCESS_EQUIVALENT_NODE_STATUSES,
+    NodeStatus,
+    NodeType,
+    TestStatus,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
-
-# Node statuses that should be treated as successful materializations for the
-# purposes of yielding Dagster asset events. Any status outside this set is
-# treated as an error / skip / other, and no materialization event is emitted.
-#
-# In particular:
-#   - NodeStatus.NoOp — dbt state-reuse: the node was skipped because state
-#     said it was already up-to-date. Semantically equivalent to a successful
-#     materialization (the model IS current) — we must yield an event so the
-#     downstream asset graph reflects reality.
-#   - NodeStatus.PartialSuccess — incremental microbatch partial completion.
-#     Some batches ran successfully; treat as materialization.
-_SUCCESS_EQUIVALENT_NODE_STATUSES: frozenset[str] = frozenset({
-    NodeStatus.Success,
-    NodeStatus.NoOp,
-    NodeStatus.PartialSuccess,
-})
 
 logger = get_dagster_logger()
 

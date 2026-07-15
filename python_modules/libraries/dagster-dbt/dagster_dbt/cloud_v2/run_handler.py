@@ -20,19 +20,16 @@ from requests.exceptions import RequestException
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudRun
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import (
+    REFABLE_NODE_TYPES,
+    _SUCCESS_EQUIVALENT_NODE_STATUSES,
+    NodeStatus,
+    NodeType,
+    TestStatus,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
-
-# Node statuses that should be treated as successful materializations. See
-# dbt_cli_event._SUCCESS_EQUIVALENT_NODE_STATUSES for the full rationale.
-# Kept in sync with that set — both parsers must agree.
-_SUCCESS_EQUIVALENT_NODE_STATUSES: frozenset[str] = frozenset({
-    NodeStatus.Success,
-    NodeStatus.NoOp,             # dbt state-reuse — model is already up-to-date
-    NodeStatus.PartialSuccess,   # incremental microbatch partial completion
-})
 
 logger = get_dagster_logger()
 
