@@ -3260,21 +3260,23 @@ def _defs_with_config_on_partitioned_job() -> dg.Definitions:
 
 
 def _defs_with_config_on_explicitly_partitioned_job() -> dg.Definitions:
-    # a plain-dict config on a partitioned job also resolves to per-partition config
+    # same as above, but the job's partitions_def is declared explicitly rather than
+    # inferred from its member assets
     partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
 
-    @dg.asset
+    @dg.asset(partitions_def=partitions_def)
     def my_asset() -> None: ...
 
-    job = dg.define_asset_job(
-        "my_job",
-        selection=[my_asset],
-        config={},
-        partitions_def=partitions_def,
-        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
-            dg.AutomationCondition.missing()
-        ),
-    )
+    with pytest.warns(DeprecationWarning, match="partitions_def"):
+        job = dg.define_asset_job(
+            "my_job",
+            selection=[my_asset],
+            config={},
+            partitions_def=partitions_def,
+            automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+                dg.AutomationCondition.missing()
+            ),
+        )
     return dg.Definitions(assets=[my_asset], jobs=[job])
 
 
