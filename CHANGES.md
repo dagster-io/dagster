@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.13.14 (core) / 0.29.14 (libraries)
+
+### Bugfixes
+
+- Fixed a 401 error from the serverless I/O manager when materializing assets in an organization with more than one full deployment.
+- Fixed a 400 error from the serverless I/O manager when materializing assets whose storage keys contain special characters.
+
 ## 1.13.13 (core) / 0.29.13 (libraries)
 
 ### New
