@@ -1,11 +1,5 @@
 # Changelog
 
-## 1.13.15 (core) / 0.29.15 (libraries)
-
-### Bugfixes
-
-- [dagster-aws] Fixed an issue where `EcsRunLauncher` configured with a task definition family (or family ARN without revision) would pin to the revision resolved at daemon startup. It now resolves to the latest active revision at run launch time. (Fixes [#17607](https://github.com/dagster-io/dagster/issues/17607))
-
 ## 1.13.14 (core) / 0.29.14 (libraries)
 
 ### Bugfixes
