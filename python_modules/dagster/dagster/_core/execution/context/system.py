@@ -902,13 +902,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             for output in self.step.step_outputs
         )
 
-    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion | DataVersionsByPartition") -> None:
         return self._data_version_cache.set_data_version(asset_key, data_version)
 
     def has_data_version(self, asset_key: AssetKey) -> bool:
         return self._data_version_cache.has_data_version(asset_key)
 
-    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion | DataVersionsByPartition":
         return self._data_version_cache.get_data_version(asset_key)
 
     @property

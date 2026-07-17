@@ -10,6 +10,7 @@ from dagster._core.definitions.assets.definition.assets_definition import Assets
 from dagster._core.definitions.data_version import (
     DataProvenance,
     DataVersion,
+    DataVersionsByPartition,
     extract_data_provenance_from_entry,
 )
 from dagster._core.definitions.dependency import Node, NodeHandle
@@ -1288,7 +1289,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             None if record is None else extract_data_provenance_from_entry(record.event_log_entry)
         )
 
-    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion | DataVersionsByPartition) -> None:
         """Set the data version for an asset being materialized by the currently executing step.
         This is useful for external execution situations where it is not possible to return
         an `Output`.

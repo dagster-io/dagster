@@ -5,7 +5,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
-from dagster._core.definitions.data_version import DataProvenance, DataVersion
+from dagster._core.definitions.data_version import DataProvenance, DataVersion, DataVersionsByPartition
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey, UserEvent
 from dagster._core.definitions.job_definition import JobDefinition
@@ -573,7 +573,7 @@ class AssetExecutionContext:
         return self.op_execution_context.get_asset_provenance(asset_key=asset_key)
 
     @_copy_docs_from_op_execution_context
-    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion) -> None:
+    def set_data_version(self, asset_key: AssetKey, data_version: DataVersion | DataVersionsByPartition) -> None:
         return self.op_execution_context.set_data_version(
             asset_key=asset_key, data_version=data_version
         )

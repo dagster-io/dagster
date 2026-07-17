@@ -27,6 +27,7 @@ from dagster._core.definitions.data_version import (
     DEFAULT_DATA_VERSION,
     NULL_EVENT_POINTER,
     DataVersion,
+    DataVersionsByPartition,
     compute_logical_data_version,
     get_input_data_version_tag,
     get_input_event_pointer_tag,
@@ -593,7 +594,11 @@ def _get_output_asset_events(
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
-    tags: dict[str, str]
+    tags: dict[str, str] = {}
+    user_provided_data_version = None
+    input_provenance_data = None
+    code_version = None
+
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
@@ -608,30 +613,35 @@ def _get_output_asset_events(
             else None
         )
         user_provided_data_version = output.data_version or cached_data_version
-        data_version = (
-            compute_logical_data_version(
-                code_version,
-                {k: meta["data_version"] for k, meta in input_provenance_data.items()},
+        
+        if isinstance(user_provided_data_version, DataVersionsByPartition):
+            if not step_context.has_data_version(asset_key):
+                step_context.set_data_version(asset_key, user_provided_data_version)
+        else:
+            data_version = (
+                compute_logical_data_version(
+                    code_version,
+                    {k: meta["data_version"] for k, meta in input_provenance_data.items()},
+                )
+                if user_provided_data_version is None
+                else user_provided_data_version
             )
-            if user_provided_data_version is None
-            else user_provided_data_version
-        )
-        tags = _build_data_version_tags(
-            data_version,
-            code_version,
-            input_provenance_data,
-            user_provided_data_version is not None,
-        )
-        if not step_context.has_data_version(asset_key):
-            data_version = DataVersion(tags[DATA_VERSION_TAG])
-            step_context.set_data_version(asset_key, data_version)
+            tags = _build_data_version_tags(
+                data_version,
+                code_version,
+                input_provenance_data,
+                user_provided_data_version is not None,
+            )
+            if not step_context.has_data_version(asset_key):
+                data_version = DataVersion(tags[DATA_VERSION_TAG])
+                step_context.set_data_version(asset_key, data_version)
     elif execution_type == AssetExecutionType.OBSERVATION:
         assert isinstance(output, Output)
-        tags = (
-            _build_data_version_observation_tags(output.data_version) if output.data_version else {}
-        )
-    else:
-        tags = {}
+        user_provided_data_version = output.data_version
+        if not isinstance(user_provided_data_version, DataVersionsByPartition):
+            tags = (
+                _build_data_version_observation_tags(user_provided_data_version) if user_provided_data_version else {}
+            )
 
     all_tags = {**tags, **((output.tags if not isinstance(output, DynamicOutput) else None) or {})}
 
@@ -663,9 +673,34 @@ def _get_output_asset_events(
                     **(partition_scoped_metadata or {}),
                 }
                 # copy the tags dictionary before setting the partition key tags. Otherwise
-                # all asset materialization events will point to the same dictionary with the
                 # partition key tags of the last partition processed.
                 tags_for_event = {**all_tags}
+                
+                if isinstance(user_provided_data_version, DataVersionsByPartition):
+                    partition_dv = user_provided_data_version.data_versions_by_partition.get(partition)
+                    if execution_type == AssetExecutionType.MATERIALIZATION:
+                        if partition_dv is not None:
+                            partition_tags = _build_data_version_tags(
+                                partition_dv,
+                                code_version,
+                                input_provenance_data,  # type: ignore[arg-type]
+                                True,
+                            )
+                        else:
+                            partition_dv = compute_logical_data_version(
+                                code_version,
+                                {k: meta["data_version"] for k, meta in input_provenance_data.items()},  # type: ignore[attr-defined]
+                            )
+                            partition_tags = _build_data_version_tags(
+                                partition_dv,
+                                code_version,
+                                input_provenance_data,  # type: ignore[arg-type]
+                                False,
+                            )
+                        tags_for_event.update(partition_tags)
+                    elif execution_type == AssetExecutionType.OBSERVATION and partition_dv is not None:
+                        tags_for_event.update(_build_data_version_observation_tags(partition_dv))
+                        
                 tags_for_event.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
