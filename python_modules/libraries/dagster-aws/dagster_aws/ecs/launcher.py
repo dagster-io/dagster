@@ -138,10 +138,13 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             "Task definition prefix must be no more than 16 characters",
         )
 
-        self.task_definition = None
+        # Keep the configured family name / ARN as-is. Resolve to a concrete revision ARN
+        # via the task_definition property at access time so family configs pick up the
+        # latest active revision without restarting the daemon.
+        self._task_definition_identifier = None
         self.task_definition_dict = {}
         if isinstance(task_definition, str):
-            self.task_definition = task_definition
+            self._task_definition_identifier = task_definition
         elif task_definition and "env" in task_definition:
             check.invariant(
                 len(task_definition) == 1,
@@ -149,8 +152,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 " key.",
             )
             env_var = task_definition["env"]
-            self.task_definition = os.getenv(env_var)
-            if not self.task_definition:
+            self._task_definition_identifier = os.getenv(env_var)
+            if not self._task_definition_identifier:
                 raise Exception(
                     f"You have attempted to fetch the environment variable {env_var} which is not"
                     " set."
@@ -181,18 +184,19 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.secrets_tags = [secrets_tag] if secrets_tag else []
         self.include_sidecars = include_sidecars
 
-        if self.task_definition:
-            task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
+        if self._task_definition_identifier:
+            described_task_definition = self.ecs.describe_task_definition(
+                taskDefinition=self._task_definition_identifier
+            )
             container_names = [
                 container.get("name")
-                for container in task_definition["taskDefinition"]["containerDefinitions"]
+                for container in described_task_definition["taskDefinition"]["containerDefinitions"]
             ]
             check.invariant(
                 container_name in container_names,
                 f"Cannot override container '{container_name}' in task definition "
-                f"'{self.task_definition}' because the container is not defined.",
+                f"'{self._task_definition_identifier}' because the container is not defined.",
             )
-            self.task_definition = task_definition["taskDefinition"]["taskDefinitionArn"]
 
         self.use_current_ecs_task_config = check.opt_bool_param(
             use_current_ecs_task_config, "use_current_ecs_task_config"
@@ -249,6 +253,20 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     @property
     def inst_data(self):
         return self._inst_data
+
+    @property
+    def task_definition(self) -> str | None:
+        """Resolved task definition ARN for the configured identifier.
+
+        When configured with a family name or family ARN (no revision), this returns the
+        ARN of the latest active revision at access time. When configured with a
+        revision-pinned ARN, that exact revision is returned.
+        """
+        if not self._task_definition_identifier:
+            return None
+        return self.ecs.describe_task_definition(taskDefinition=self._task_definition_identifier)[
+            "taskDefinition"
+        ]["taskDefinitionArn"]
 
     @property
     def task_role_arn(self) -> str | None:
