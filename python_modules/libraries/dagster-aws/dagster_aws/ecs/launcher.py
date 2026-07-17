@@ -185,6 +185,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self.include_sidecars = include_sidecars
 
         if self._task_definition_identifier:
+            # Validate the container name against the current latest revision at startup.
+            # Note: this describe call is intentionally separate from the task_definition
+            # property; the property re-fetches at launch time to pick up newer revisions,
+            # so the ARN resolved here is not stored.
             described_task_definition = self.ecs.describe_task_definition(
                 taskDefinition=self._task_definition_identifier
             )
@@ -261,6 +265,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         When configured with a family name or family ARN (no revision), this returns the
         ARN of the latest active revision at access time. When configured with a
         revision-pinned ARN, that exact revision is returned.
+
+        Container-name fail-fast validation runs once at launcher startup against the
+        then-latest revision. Later revisions that remove or rename that container are
+        not re-checked here; ECS will reject the RunTask call instead.
         """
         if not self._task_definition_identifier:
             return None
