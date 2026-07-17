@@ -615,6 +615,11 @@ def _get_output_asset_events(
         user_provided_data_version = output.data_version or cached_data_version
         
         if isinstance(user_provided_data_version, DataVersionsByPartition):
+            if not asset_partitions:
+                raise DagsterInvariantViolationError(
+                    "Cannot use DataVersionsByPartition for unpartitioned asset "
+                    f"{asset_key.to_string()}."
+                )
             if not step_context.has_data_version(asset_key):
                 step_context.set_data_version(asset_key, user_provided_data_version)
         else:
@@ -638,7 +643,13 @@ def _get_output_asset_events(
     elif execution_type == AssetExecutionType.OBSERVATION:
         assert isinstance(output, Output)
         user_provided_data_version = output.data_version
-        if not isinstance(user_provided_data_version, DataVersionsByPartition):
+        if isinstance(user_provided_data_version, DataVersionsByPartition):
+            if not asset_partitions:
+                raise DagsterInvariantViolationError(
+                    "Cannot use DataVersionsByPartition for unpartitioned asset "
+                    f"{asset_key.to_string()}."
+                )
+        else:
             tags = (
                 _build_data_version_observation_tags(user_provided_data_version) if user_provided_data_version else {}
             )
@@ -650,7 +661,6 @@ def _get_output_asset_events(
         tags[BACKFILL_ID_TAG] = backfill_id
 
     if execution_type == AssetExecutionType.MATERIALIZATION:
-        event_class = AssetMaterialization
         event_class = AssetMaterialization
     elif execution_type == AssetExecutionType.OBSERVATION:
         event_class = AssetObservation
