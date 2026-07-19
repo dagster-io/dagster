@@ -26,17 +26,12 @@ export const useAssetGroupViewportAnchor = ({
   expandedGroups,
   viewportRef,
 }: UseAssetGroupViewportAnchorOptions) => {
-  const layoutRef = React.useRef(layout);
-  const viewportRefRef = React.useRef(viewportRef);
   const anchorElementsRef = React.useRef(new Map<string, SVGForeignObjectElement>());
   const anchorCallbacksRef = React.useRef(
     new Map<string, React.RefCallback<SVGForeignObjectElement>>(),
   );
   const pendingRef = React.useRef<PendingAnchor | undefined>();
   const handledLayoutsRef = React.useRef(new WeakSet<AssetGraphLayout>());
-
-  layoutRef.current = layout;
-  viewportRefRef.current = viewportRef;
 
   const anchorRefForGroup = React.useCallback((groupId: string) => {
     const existing = anchorCallbacksRef.current.get(groupId);
@@ -55,23 +50,25 @@ export const useAssetGroupViewportAnchor = ({
     return callback;
   }, []);
 
-  const captureBeforeToggle = React.useCallback((groupId: string, expectedExpanded: boolean) => {
-    const sourceLayout = layoutRef.current;
-    if (!sourceLayout) {
-      return;
-    }
+  const captureBeforeToggle = React.useCallback(
+    (groupId: string, expectedExpanded: boolean) => {
+      if (!layout) {
+        return;
+      }
 
-    const element = anchorElementsRef.current.get(groupId);
-    const rect = element?.getBoundingClientRect();
-    const viewport = viewportRefRef.current.current;
-    pendingRef.current = {
-      sourceLayout,
-      groupId,
-      expectedExpanded,
-      point: rect ? {left: rect.left, top: rect.top} : undefined,
-      scale: viewport?.getScale(),
-    };
-  }, []);
+      const element = anchorElementsRef.current.get(groupId);
+      const rect = element?.getBoundingClientRect();
+      const viewport = viewportRef.current;
+      pendingRef.current = {
+        sourceLayout: layout,
+        groupId,
+        expectedExpanded,
+        point: rect ? {left: rect.left, top: rect.top} : undefined,
+        scale: viewport?.getScale(),
+      };
+    },
+    [layout, viewportRef],
+  );
 
   const consumeHandledLayout = React.useCallback((handledLayout: AssetGraphLayout | null) => {
     if (!handledLayout || !handledLayoutsRef.current.has(handledLayout)) {
@@ -110,7 +107,7 @@ export const useAssetGroupViewportAnchor = ({
       return;
     }
 
-    const viewport = viewportRefRef.current.current;
+    const viewport = viewportRef.current;
     const element = anchorElementsRef.current.get(pending.groupId);
     const after = element?.getBoundingClientRect();
     if (!viewport || !pending.point || pending.scale === undefined || !after) {
@@ -125,7 +122,7 @@ export const useAssetGroupViewportAnchor = ({
 
     finish();
     viewport.shiftXY(pending.point.left - after.left, pending.point.top - after.top);
-  }, [expandedGroups, layout]);
+  }, [expandedGroups, layout, viewportRef]);
 
   return {
     anchorRefForGroup,

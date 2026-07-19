@@ -1,4 +1,5 @@
-import {act, renderHook} from '@testing-library/react';
+import {act, render, renderHook} from '@testing-library/react';
+import React from 'react';
 
 import {AssetGraphLayout} from '../layout';
 import {useAssetGroupViewportAnchor} from '../useAssetGroupViewportAnchor';
@@ -48,6 +49,88 @@ const viewportAtScale = (scale: number): Viewport => ({
   getScale: jest.fn(() => scale),
   shiftXY: jest.fn(),
 });
+
+const rectAt = (left: number, top: number) => ({
+  x: left,
+  y: top,
+  left,
+  top,
+  right: left + 100,
+  bottom: top + 50,
+  width: 100,
+  height: 50,
+  toJSON: () => ({}),
+});
+
+type AnchorHarnessProps = {
+  currentLayout: AssetGraphLayout;
+  expandedGroups: string[];
+  viewportRef: {current: Viewport};
+  anchorKey: string;
+  anchorPosition: {left: number; top: number};
+  onAnchorElement: (element: SVGForeignObjectElement) => void;
+  onAnchorReady: (anchor: ReturnType<typeof useAssetGroupViewportAnchor>) => void;
+  onAfterLayoutEffect: () => void;
+};
+
+const AnchorNode = ({
+  currentLayout,
+  expandedGroups,
+  viewportRef,
+  anchorKey,
+  anchorPosition,
+  onAnchorElement,
+  onAnchorReady,
+}: Omit<AnchorHarnessProps, 'onAfterLayoutEffect'>) => {
+  const anchor = useAssetGroupViewportAnchor({
+    layout: currentLayout,
+    expandedGroups,
+    viewportRef,
+  });
+  const groupRef = anchor.anchorRefForGroup('parent');
+  const ref = React.useCallback(
+    (element: SVGForeignObjectElement | null) => {
+      groupRef(element);
+      if (element) {
+        jest
+          .spyOn(element, 'getBoundingClientRect')
+          .mockReturnValue(rectAt(anchorPosition.left, anchorPosition.top));
+        onAnchorElement(element);
+      }
+    },
+    [anchorPosition.left, anchorPosition.top, groupRef, onAnchorElement],
+  );
+
+  React.useLayoutEffect(() => {
+    onAnchorReady(anchor);
+  }, [anchor, onAnchorReady]);
+
+  return (
+    <svg>
+      <foreignObject data-testid="group-anchor" key={anchorKey} ref={ref} />
+    </svg>
+  );
+};
+
+const LayoutEffectObserver = ({
+  layout,
+  onObserve,
+}: {
+  layout: AssetGraphLayout;
+  onObserve: () => void;
+}) => {
+  React.useLayoutEffect(() => {
+    onObserve();
+  }, [layout, onObserve]);
+  return null;
+};
+
+const AnchorHarness = ({onAfterLayoutEffect, ...anchorNodeProps}: AnchorHarnessProps) => (
+  <>
+    <AnchorNode {...anchorNodeProps} />
+    <LayoutEffectObserver layout={anchorNodeProps.currentLayout} onObserve={onAfterLayoutEffect} />
+  </>
+);
 
 describe('useAssetGroupViewportAnchor', () => {
   it.each([
@@ -111,6 +194,65 @@ describe('useAssetGroupViewportAnchor', () => {
       expect(result.current.consumeHandledLayout(targetLayout)).toBe(false);
     },
   );
+
+  it('uses the remounted SVG anchor before later layout effects observe the matching layout', () => {
+    const sourceLayout = layout({parent: false});
+    const targetLayout = layout({parent: true});
+    const viewport = viewportAtScale(1);
+    const viewportRef = {current: viewport};
+    const elements: SVGForeignObjectElement[] = [];
+    const layoutEffectShiftCounts: number[] = [];
+    let anchor: ReturnType<typeof useAssetGroupViewportAnchor> | undefined;
+    const onAnchorElement = jest.fn((element: SVGForeignObjectElement) => elements.push(element));
+    const onAnchorReady = jest.fn((nextAnchor: ReturnType<typeof useAssetGroupViewportAnchor>) => {
+      anchor = nextAnchor;
+    });
+    const onAfterLayoutEffect = jest.fn(() => {
+      layoutEffectShiftCounts.push(viewport.shiftXY.mock.calls.length);
+    });
+    const {rerender} = render(
+      <AnchorHarness
+        currentLayout={sourceLayout}
+        expandedGroups={[]}
+        viewportRef={viewportRef}
+        anchorKey="before"
+        anchorPosition={{left: 100, top: 200}}
+        onAnchorElement={onAnchorElement}
+        onAnchorReady={onAnchorReady}
+        onAfterLayoutEffect={onAfterLayoutEffect}
+      />,
+    );
+    const firstAnchorRef = anchor?.anchorRefForGroup('parent');
+
+    act(() => {
+      anchor?.captureBeforeToggle('parent', true);
+    });
+    const detachedElement = elements[0];
+    if (!detachedElement) {
+      throw new Error('Expected the initial anchor element');
+    }
+    jest.spyOn(detachedElement, 'getBoundingClientRect').mockImplementation(() => {
+      throw new Error('A detached anchor must not be measured');
+    });
+    rerender(
+      <AnchorHarness
+        currentLayout={targetLayout}
+        expandedGroups={['parent']}
+        viewportRef={viewportRef}
+        anchorKey="after"
+        anchorPosition={{left: 70, top: 250}}
+        onAnchorElement={onAnchorElement}
+        onAnchorReady={onAnchorReady}
+        onAfterLayoutEffect={onAfterLayoutEffect}
+      />,
+    );
+
+    expect(elements).toHaveLength(2);
+    expect(elements[1]).not.toBe(elements[0]);
+    expect(anchor?.anchorRefForGroup('parent')).toBe(firstAnchorRef);
+    expect(viewport.shiftXY).toHaveBeenCalledWith(30, -50);
+    expect(layoutEffectShiftCounts).toEqual([0, 1]);
+  });
 
   it('marks only the direct nested target as pending', () => {
     const sourceLayout = layout({parent: true, 'parent/child': false});
@@ -256,18 +398,51 @@ describe('useAssetGroupViewportAnchor', () => {
 
     expect(viewport.shiftXY).not.toHaveBeenCalled();
     expect(result.current.isPendingGroup('parent')).toBe(false);
+    expect(result.current.consumeHandledLayout(targetLayout)).toBe(true);
+    expect(result.current.consumeHandledLayout(targetLayout)).toBe(false);
   });
 
-  it('does not handle layouts when no direct toggle transaction is pending', () => {
-    const currentLayout = layout({parent: false});
-    const {result} = renderHook(() =>
-      useAssetGroupViewportAnchor({
-        layout: currentLayout,
-        expandedGroups: [],
-        viewportRef: {current: viewportAtScale(1)},
-      }),
+  it('cancels when the desired expanded state no longer matches the direct toggle', () => {
+    const sourceLayout = layout({parent: false});
+    const cancelledLayout = layout({parent: true});
+    const viewport = viewportAtScale(1);
+    const ref = {current: viewport};
+    const {result, rerender} = renderHook(
+      ({currentLayout, expandedGroups}) =>
+        useAssetGroupViewportAnchor({layout: currentLayout, expandedGroups, viewportRef: ref}),
+      {initialProps: {currentLayout: sourceLayout, expandedGroups: [] as string[]}},
     );
 
-    expect(result.current.consumeHandledLayout(currentLayout)).toBe(false);
+    act(() => {
+      result.current.anchorRefForGroup('parent')(foreignObjectAt(10, 10));
+      result.current.captureBeforeToggle('parent', true);
+    });
+    rerender({currentLayout: cancelledLayout, expandedGroups: []});
+
+    expect(viewport.shiftXY).not.toHaveBeenCalled();
+    expect(result.current.isPendingGroup('parent')).toBe(false);
+    expect(result.current.consumeHandledLayout(cancelledLayout)).toBe(true);
+    expect(result.current.consumeHandledLayout(cancelledLayout)).toBe(false);
+  });
+
+  it('ignores unrelated layouts when no direct toggle transaction is pending', () => {
+    const currentLayout = layout({parent: false});
+    const unrelatedLayout = layout({unrelated: true});
+    const viewport = viewportAtScale(1);
+    const {result, rerender} = renderHook(
+      ({currentLayout}) =>
+        useAssetGroupViewportAnchor({
+          layout: currentLayout,
+          expandedGroups: [],
+          viewportRef: {current: viewport},
+        }),
+      {initialProps: {currentLayout}},
+    );
+
+    rerender({currentLayout: unrelatedLayout});
+
+    expect(viewport.shiftXY).not.toHaveBeenCalled();
+    expect(result.current.isPendingGroup('parent')).toBe(false);
+    expect(result.current.consumeHandledLayout(unrelatedLayout)).toBe(false);
   });
 });
