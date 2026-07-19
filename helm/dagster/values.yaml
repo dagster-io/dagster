@@ -334,7 +334,24 @@ dagster-user-deployments:
   # https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
   imagePullSecrets: []
 
-  # List of unique deployments
+  # List of unique deployments.
+  #
+  # "deployments" may also be provided as a map keyed by deployment name instead of a
+  # list. The map form lets layered values files (e.g. a base file plus a per-environment
+  # override) deep-merge by key rather than replacing the whole list, so an override can
+  # change a single field of a single deployment. When the map form is used, the map key
+  # is the deployment name and the per-entry "name" field is optional. Example:
+  #
+  # deployments:
+  #   k8s-example-user-code-1:
+  #     image:
+  #       repository: "docker.io/dagster/user-code-example"
+  #       tag: ~
+  #       pullPolicy: Always
+  #     dagsterApiGrpcArgs:
+  #       - "--python-file"
+  #       - "/example_project/example_repo/repo.py"
+  #     port: 3030
   deployments:
     - name: "k8s-example-user-code-1"
       image:
