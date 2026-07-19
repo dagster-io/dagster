@@ -7,6 +7,12 @@ type ViewportRef = Readonly<{
   current: Pick<SVGViewportRef, 'getScale' | 'shiftXY'> | undefined;
 }>;
 
+type UseAssetGroupViewportAnchorOptions = {
+  layout: AssetGraphLayout | null;
+  expandedGroups: string[];
+  viewportRef: ViewportRef;
+};
+
 type PendingAnchor = {
   sourceLayout: AssetGraphLayout;
   groupId: string;
@@ -15,11 +21,11 @@ type PendingAnchor = {
   scale: number | undefined;
 };
 
-export const useAssetGroupViewportAnchor = (
-  layout: AssetGraphLayout | null,
-  expandedGroups: string[],
-  viewportRef: ViewportRef,
-) => {
+export const useAssetGroupViewportAnchor = ({
+  layout,
+  expandedGroups,
+  viewportRef,
+}: UseAssetGroupViewportAnchorOptions) => {
   const layoutRef = React.useRef(layout);
   const viewportRefRef = React.useRef(viewportRef);
   const anchorElementsRef = React.useRef(new Map<string, SVGForeignObjectElement>());

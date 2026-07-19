@@ -78,7 +78,7 @@ describe('useAssetGroupViewportAnchor', () => {
       const ref = {current: viewport};
       const {result, rerender} = renderHook(
         ({currentLayout, expandedGroups}) =>
-          useAssetGroupViewportAnchor(currentLayout, expandedGroups, ref),
+          useAssetGroupViewportAnchor({layout: currentLayout, expandedGroups, viewportRef: ref}),
         {initialProps: {currentLayout: sourceLayout, expandedGroups: initiallyExpanded}},
       );
       const anchor = foreignObjectAt(before.left, before.top);
@@ -116,7 +116,11 @@ describe('useAssetGroupViewportAnchor', () => {
     const sourceLayout = layout({parent: true, 'parent/child': false});
     const viewport = viewportAtScale(1);
     const {result} = renderHook(() =>
-      useAssetGroupViewportAnchor(sourceLayout, ['parent'], {current: viewport}),
+      useAssetGroupViewportAnchor({
+        layout: sourceLayout,
+        expandedGroups: ['parent'],
+        viewportRef: {current: viewport},
+      }),
     );
 
     act(() => {
@@ -136,7 +140,7 @@ describe('useAssetGroupViewportAnchor', () => {
     const ref = {current: viewport};
     const {result, rerender} = renderHook(
       ({currentLayout, expandedGroups}) =>
-        useAssetGroupViewportAnchor(currentLayout, expandedGroups, ref),
+        useAssetGroupViewportAnchor({layout: currentLayout, expandedGroups, viewportRef: ref}),
       {initialProps: {currentLayout: sourceLayout, expandedGroups: [] as string[]}},
     );
     const anchor = foreignObjectAt(100, 200);
@@ -175,7 +179,7 @@ describe('useAssetGroupViewportAnchor', () => {
     const ref = {current: viewport};
     const {result, rerender} = renderHook(
       ({currentLayout, expandedGroups}) =>
-        useAssetGroupViewportAnchor(currentLayout, expandedGroups, ref),
+        useAssetGroupViewportAnchor({layout: currentLayout, expandedGroups, viewportRef: ref}),
       {initialProps: {currentLayout: sourceLayout, expandedGroups: [] as string[]}},
     );
     const parent = foreignObjectAt(20, 30);
@@ -216,7 +220,7 @@ describe('useAssetGroupViewportAnchor', () => {
     const ref = {current: viewport};
     const {result, rerender} = renderHook(
       ({currentLayout, expandedGroups}) =>
-        useAssetGroupViewportAnchor(currentLayout, expandedGroups, ref),
+        useAssetGroupViewportAnchor({layout: currentLayout, expandedGroups, viewportRef: ref}),
       {initialProps: {currentLayout: sourceLayout, expandedGroups: [] as string[]}},
     );
 
@@ -239,7 +243,7 @@ describe('useAssetGroupViewportAnchor', () => {
     const ref = {current: viewport};
     const {result, rerender} = renderHook(
       ({currentLayout, expandedGroups}) =>
-        useAssetGroupViewportAnchor(currentLayout, expandedGroups, ref),
+        useAssetGroupViewportAnchor({layout: currentLayout, expandedGroups, viewportRef: ref}),
       {initialProps: {currentLayout: sourceLayout, expandedGroups: [] as string[]}},
     );
 
@@ -257,7 +261,11 @@ describe('useAssetGroupViewportAnchor', () => {
   it('does not handle layouts when no direct toggle transaction is pending', () => {
     const currentLayout = layout({parent: false});
     const {result} = renderHook(() =>
-      useAssetGroupViewportAnchor(currentLayout, [], {current: viewportAtScale(1)}),
+      useAssetGroupViewportAnchor({
+        layout: currentLayout,
+        expandedGroups: [],
+        viewportRef: {current: viewportAtScale(1)},
+      }),
     );
 
     expect(result.current.consumeHandledLayout(currentLayout)).toBe(false);
