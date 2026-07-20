@@ -720,6 +720,19 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     constraints,
   });
 
+  for (const edge of layout.edges) {
+    const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
+    const targetEndpointGroupId = options.endpointGroupById[edge.toId];
+    if (!!sourceEndpointGroupId === !!targetEndpointGroupId) {
+      continue;
+    }
+    const sourceShift = sourceEndpointGroupId ? solution.shiftByGroupId[sourceEndpointGroupId] : 0;
+    const targetShift = targetEndpointGroupId ? solution.shiftByGroupId[targetEndpointGroupId] : 0;
+    if (sourceShift === undefined || targetShift === undefined || sourceShift !== targetShift) {
+      throw new Error('Cannot partially translate an edge outside asset groups');
+    }
+  }
+
   const groups: RoutingLayout['groups'] = {};
   for (const [id, group] of Object.entries(layout.groups)) {
     const shift = solution.shiftByGroupId[id];

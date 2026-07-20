@@ -341,6 +341,93 @@ describe('applyAssetGroupLineageRouting', () => {
     });
   });
 
+  it('falls back atomically when routing would partially translate a grouped-to-ungrouped edge', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(220, 120, 80, 40)},
+        ungroupedNode: {id: 'ungroupedNode', bounds: bounds(400, 120, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(200, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 100, y: 40}, fromId: 'sourceNode', to: {x: 220, y: 140}, toId: 'targetNode'},
+        {
+          from: {x: 300, y: 140},
+          fromId: 'targetNode',
+          to: {x: 400, y: 140},
+          toId: 'ungroupedNode',
+        },
+      ],
+    };
+
+    expect(
+      applyAssetGroupLineageRouting(
+        layout,
+        routingOptions({
+          ownerGroupByNodeId: {
+            sourceNode: 'source',
+            targetNode: 'target',
+            ungroupedNode: null,
+          },
+          endpointGroupById: {
+            sourceNode: 'source',
+            targetNode: 'target',
+            ungroupedNode: null,
+          },
+        }),
+      ),
+    ).toBe(layout);
+  });
+
+  it('allows a grouped-to-ungrouped edge when both endpoint translations are zero', () => {
+    const layout: RoutingLayout = {
+      width: 600,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 120, 80, 40)},
+        ungroupedNode: {id: 'ungroupedNode', bounds: bounds(500, 120, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 100, y: 40}, fromId: 'sourceNode', to: {x: 320, y: 140}, toId: 'targetNode'},
+        {
+          from: {x: 400, y: 140},
+          fromId: 'targetNode',
+          to: {x: 500, y: 140},
+          toId: 'ungroupedNode',
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        ownerGroupByNodeId: {
+          sourceNode: 'source',
+          targetNode: 'target',
+          ungroupedNode: null,
+        },
+        endpointGroupById: {
+          sourceNode: 'source',
+          targetNode: 'target',
+          ungroupedNode: null,
+        },
+      }),
+    );
+
+    expect(result).not.toBe(layout);
+    expect(result.edges[1]).toEqual(layout.edges[1]);
+  });
+
   it('returns the exact input object for invalid options', () => {
     const layout: RoutingLayout = {
       width: 100,
