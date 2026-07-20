@@ -196,8 +196,8 @@ const buildConstraintComponents = (
   constraints: BranchConstraint[],
 ): Record<string, string> => {
   const idSet = new Set(ids);
-  const adjacency = new Map(ids.map((id) => [id, [] as string[]]));
-  const reverse = new Map(ids.map((id) => [id, [] as string[]]));
+  const adjacencySets = new Map(ids.map((id) => [id, new Set<string>()]));
+  const reverseSets = new Map(ids.map((id) => [id, new Set<string>()]));
 
   for (const constraint of constraints) {
     if (!idSet.has(constraint.sourceBranchId)) {
@@ -206,13 +206,11 @@ const buildConstraintComponents = (
     if (!idSet.has(constraint.targetBranchId)) {
       throw new Error(`Unknown asset group constraint endpoint: ${constraint.targetBranchId}`);
     }
-    adjacency.get(constraint.sourceBranchId)!.push(constraint.targetBranchId);
-    reverse.get(constraint.targetBranchId)!.push(constraint.sourceBranchId);
+    adjacencySets.get(constraint.sourceBranchId)!.add(constraint.targetBranchId);
+    reverseSets.get(constraint.targetBranchId)!.add(constraint.sourceBranchId);
   }
-  for (const id of ids) {
-    adjacency.get(id)!.sort();
-    reverse.get(id)!.sort();
-  }
+  const adjacency = new Map(ids.map((id) => [id, [...adjacencySets.get(id)!].sort()] as const));
+  const reverse = new Map(ids.map((id) => [id, [...reverseSets.get(id)!].sort()] as const));
 
   const visited = new Set<string>();
   const finishOrder: string[] = [];
@@ -347,16 +345,19 @@ export const solveAssetGroupConstraints = ({
     nodes.add(endNode(id));
   }
 
-  const edges: WeightedEdge[] = [];
-  const edgeKeys = new Set<string>();
+  const edgeWeightByNodes = new Map<string, Map<string, number>>();
   const addEdge = (from: string, to: string, weight: number) => {
     if (!Number.isFinite(weight)) {
       throw new Error('Non-finite asset group constraint');
     }
-    const key = JSON.stringify([from, to, weight]);
-    if (!edgeKeys.has(key)) {
-      edgeKeys.add(key);
-      edges.push({from, to, weight});
+    let weightByTarget = edgeWeightByNodes.get(from);
+    if (!weightByTarget) {
+      weightByTarget = new Map();
+      edgeWeightByNodes.set(from, weightByTarget);
+    }
+    const previousWeight = weightByTarget.get(to);
+    if (previousWeight === undefined || weight > previousWeight) {
+      weightByTarget.set(to, weight);
     }
   };
 
@@ -373,7 +374,10 @@ export const solveAssetGroupConstraints = ({
       if (!idSet.has(parentId)) {
         throw new Error(`Missing visible asset group parent: ${parentId}`);
       }
-      addEdge(moveNode(componentByGroupId[parentId]!), componentMove, 0);
+      const parentMove = moveNode(componentByGroupId[parentId]!);
+      if (parentMove !== componentMove) {
+        addEdge(parentMove, componentMove, 0);
+      }
       addEdge(endNode(id), endNode(parentId), trailingGroupPadding);
     }
   }
@@ -399,6 +403,9 @@ export const solveAssetGroupConstraints = ({
     }
   }
 
+  const edges = [...edgeWeightByNodes].flatMap(([from, weightByTarget]) =>
+    [...weightByTarget].map(([to, weight]) => ({from, to, weight})),
+  );
   edges.sort(
     (left, right) =>
       compareStrings(left.from, right.from) ||

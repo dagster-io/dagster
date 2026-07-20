@@ -203,4 +203,83 @@ describe('solveAssetGroupConstraints', () => {
     expect(solution.shiftByGroupId.b).toBe(20);
     expect(solution.componentByGroupId.a).toBe(solution.componentByGroupId.b);
   });
+
+  it('moves a parent and child atomically when they share a lineage component', () => {
+    const solution = solveAssetGroupConstraints({
+      direction: 'vertical',
+      ranksep: 20,
+      trailingGroupPadding: 16,
+      groups: {
+        upstream: {bounds: bounds(0, 0, 100, 100), expanded: false},
+        parent: {bounds: bounds(0, 100, 100, 100), expanded: true},
+        child: {bounds: bounds(0, 120, 100, 100), expanded: false},
+      },
+      parentById: {upstream: null, parent: null, child: 'parent'},
+      constraints: [
+        {
+          sourceBranchId: 'parent',
+          targetBranchId: 'child',
+          sourceUsesGroupEnd: true,
+          sourceBaseExit: 200,
+          targetBaseEntry: 120,
+        },
+        {
+          sourceBranchId: 'child',
+          targetBranchId: 'parent',
+          sourceUsesGroupEnd: true,
+          sourceBaseExit: 220,
+          targetBaseEntry: 100,
+        },
+        {
+          sourceBranchId: 'upstream',
+          targetBranchId: 'parent',
+          sourceUsesGroupEnd: true,
+          sourceBaseExit: 100,
+          targetBaseEntry: 100,
+        },
+      ],
+    });
+
+    expect(solution.shiftByGroupId.parent).toBe(20);
+    expect(solution.shiftByGroupId.child).toBe(20);
+    expect(solution.componentByGroupId.parent).toBe(solution.componentByGroupId.child);
+    expect(solution.endByGroupId.parent).toBe(256);
+  });
+
+  it('compacts duplicate parallel constraints using their maximum weight', () => {
+    const input = {
+      direction: 'horizontal' as const,
+      ranksep: 60,
+      trailingGroupPadding: 15,
+      groups: {
+        source: {bounds: bounds(0, 0, 100, 100), expanded: false},
+        target: {bounds: bounds(200, 0, 100, 100), expanded: false},
+      },
+      parentById: {source: null, target: null},
+      constraints: [
+        {
+          sourceBranchId: 'source',
+          targetBranchId: 'target',
+          sourceUsesGroupEnd: false,
+          sourceBaseExit: 100,
+          targetBaseEntry: 200,
+        },
+        {
+          sourceBranchId: 'source',
+          targetBranchId: 'target',
+          sourceUsesGroupEnd: false,
+          sourceBaseExit: 170,
+          targetBaseEntry: 200,
+        },
+      ],
+    };
+    const withoutDuplicates = solveAssetGroupConstraints(input);
+    const withDuplicates = solveAssetGroupConstraints({
+      ...input,
+      constraints: [...input.constraints, input.constraints[0]!, input.constraints[1]!],
+    });
+
+    expect(withDuplicates.shiftByGroupId).toEqual(withoutDuplicates.shiftByGroupId);
+    expect(withDuplicates.shiftByGroupId.target).toBe(30);
+  });
 });
