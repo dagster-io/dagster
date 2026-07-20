@@ -64,8 +64,6 @@ const primaryStart = (bounds: IBounds, direction: RoutingDirection) =>
 const primaryEnd = (bounds: IBounds, direction: RoutingDirection) =>
   primaryStart(bounds, direction) + (direction === 'horizontal' ? bounds.width : bounds.height);
 
-const compareStrings = (left: string, right: string) => (left < right ? -1 : left > right ? 1 : 0);
-
 export type GroupAncestryIndex = {
   lowestCommonAncestor: (a: string, b: string) => string | null;
   branchBelow: (groupId: string, ancestorId: string | null) => string | null;
@@ -73,11 +71,15 @@ export type GroupAncestryIndex = {
 
 export const buildGroupAncestryIndex = (parentById: GroupParentById): GroupAncestryIndex => {
   const ids = Object.keys(parentById).sort();
-  const indexById = new Map(ids.map((id, index) => [id, index]));
+  const indexById = new Map<string, number>();
+  for (let index = 0; index < ids.length; index++) {
+    indexById.set(ids[index]!, index);
+  }
   const groupCount = ids.length;
 
   const parent = new Int32Array(groupCount);
   parent.fill(-1);
+  let hasNestedGroups = false;
   for (let index = 0; index < groupCount; index++) {
     const parentId = parentById[ids[index]!];
     if (parentId === null) {
@@ -91,6 +93,32 @@ export const buildGroupAncestryIndex = (parentById: GroupParentById): GroupAnces
       throw new Error(`Missing visible asset group parent: ${parentId}`);
     }
     parent[index] = parentIndex;
+    hasNestedGroups = true;
+  }
+
+  const requireIndex = (id: string) => {
+    const index = indexById.get(id);
+    if (index === undefined) {
+      throw new Error(`Unknown visible asset group: ${id}`);
+    }
+    return index;
+  };
+
+  if (!hasNestedGroups) {
+    return {
+      lowestCommonAncestor: (a, b) => {
+        requireIndex(a);
+        requireIndex(b);
+        return a === b ? a : null;
+      },
+      branchBelow: (groupId, ancestorId) => {
+        requireIndex(groupId);
+        if (ancestorId !== null) {
+          requireIndex(ancestorId);
+        }
+        return ancestorId === null ? groupId : null;
+      },
+    };
   }
 
   const depth = new Int32Array(groupCount);
@@ -144,14 +172,6 @@ export const buildGroupAncestryIndex = (parentById: GroupParentById): GroupAnces
     }
     ancestors.push(current);
   }
-
-  const requireIndex = (id: string) => {
-    const index = indexById.get(id);
-    if (index === undefined) {
-      throw new Error(`Unknown visible asset group: ${id}`);
-    }
-    return index;
-  };
 
   const lift = (index: number, distance: number) => {
     let current = index;
@@ -222,266 +242,299 @@ export const buildGroupAncestryIndex = (parentById: GroupParentById): GroupAnces
 
 const buildConstraintComponents = (
   ids: string[],
+  indexById: Map<string, number>,
   constraints: BranchConstraint[],
-): Record<string, string> => {
-  const idSet = new Set(ids);
-  const adjacencySets = new Map(ids.map((id) => [id, new Set<string>()]));
-  const reverseSets = new Map(ids.map((id) => [id, new Set<string>()]));
-
-  for (const constraint of constraints) {
-    if (!idSet.has(constraint.sourceBranchId)) {
-      throw new Error(`Unknown asset group constraint endpoint: ${constraint.sourceBranchId}`);
+  columns?: ConstraintColumns,
+) => {
+  const groupCount = ids.length;
+  const edgeCount = columns?.count ?? constraints.length;
+  const sourceByEdge = new Int32Array(edgeCount);
+  const targetByEdge = new Int32Array(edgeCount);
+  const outgoingCount = new Int32Array(groupCount);
+  const incomingCount = new Int32Array(groupCount);
+  for (let edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++) {
+    const sourceBranchId = columns
+      ? columns.sourceBranchIds[edgeIndex]!
+      : constraints[edgeIndex]!.sourceBranchId;
+    const targetBranchId = columns
+      ? columns.targetBranchIds[edgeIndex]!
+      : constraints[edgeIndex]!.targetBranchId;
+    const source = indexById.get(sourceBranchId);
+    const target = indexById.get(targetBranchId);
+    if (source === undefined) {
+      throw new Error(`Unknown asset group constraint endpoint: ${sourceBranchId}`);
     }
-    if (!idSet.has(constraint.targetBranchId)) {
-      throw new Error(`Unknown asset group constraint endpoint: ${constraint.targetBranchId}`);
+    if (target === undefined) {
+      throw new Error(`Unknown asset group constraint endpoint: ${targetBranchId}`);
     }
-    adjacencySets.get(constraint.sourceBranchId)!.add(constraint.targetBranchId);
-    reverseSets.get(constraint.targetBranchId)!.add(constraint.sourceBranchId);
+    sourceByEdge[edgeIndex] = source;
+    targetByEdge[edgeIndex] = target;
+    outgoingCount[source] = outgoingCount[source]! + 1;
+    incomingCount[target] = incomingCount[target]! + 1;
   }
-  const adjacency = new Map(ids.map((id) => [id, [...adjacencySets.get(id)!].sort()] as const));
-  const reverse = new Map(ids.map((id) => [id, [...reverseSets.get(id)!].sort()] as const));
 
-  const visited = new Set<string>();
-  const finishOrder: string[] = [];
-  for (const start of ids) {
-    if (visited.has(start)) {
+  const offsets = (counts: Int32Array) => {
+    const result = new Int32Array(groupCount + 1);
+    for (let index = 0; index < groupCount; index++) {
+      result[index + 1] = result[index]! + counts[index]!;
+    }
+    return result;
+  };
+  const outgoingOffset = offsets(outgoingCount);
+  const incomingOffset = offsets(incomingCount);
+  const outgoingCursor = outgoingOffset.slice(0, groupCount);
+  const incomingCursor = incomingOffset.slice(0, groupCount);
+  const outgoing = new Int32Array(edgeCount);
+  const incoming = new Int32Array(edgeCount);
+  for (let edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++) {
+    const source = sourceByEdge[edgeIndex]!;
+    const target = targetByEdge[edgeIndex]!;
+    const outgoingIndex = outgoingCursor[source]!;
+    const incomingIndex = incomingCursor[target]!;
+    outgoing[outgoingIndex] = target;
+    incoming[incomingIndex] = source;
+    outgoingCursor[source] = outgoingIndex + 1;
+    incomingCursor[target] = incomingIndex + 1;
+  }
+
+  const visited = new Uint8Array(groupCount);
+  const finishOrder = new Int32Array(groupCount);
+  const stackNode = new Int32Array(groupCount);
+  const stackEdge = new Int32Array(groupCount);
+  let finishedCount = 0;
+  for (let start = 0; start < groupCount; start++) {
+    if (visited[start]) {
       continue;
     }
-    visited.add(start);
-    const frames = [{id: start, next: 0}];
-    while (frames.length) {
-      const frame = frames[frames.length - 1]!;
-      const neighbors = adjacency.get(frame.id)!;
-      if (frame.next < neighbors.length) {
-        const neighbor = neighbors[frame.next++]!;
-        if (!visited.has(neighbor)) {
-          visited.add(neighbor);
-          frames.push({id: neighbor, next: 0});
+    let stackSize = 1;
+    stackNode[0] = start;
+    stackEdge[0] = outgoingOffset[start]!;
+    visited[start] = 1;
+    while (stackSize) {
+      const frame = stackSize - 1;
+      const node = stackNode[frame]!;
+      const nextEdge = stackEdge[frame]!;
+      if (nextEdge < outgoingOffset[node + 1]!) {
+        const neighbor = outgoing[nextEdge]!;
+        stackEdge[frame] = nextEdge + 1;
+        if (!visited[neighbor]) {
+          visited[neighbor] = 1;
+          stackNode[stackSize] = neighbor;
+          stackEdge[stackSize] = outgoingOffset[neighbor]!;
+          stackSize++;
         }
       } else {
-        finishOrder.push(frame.id);
-        frames.pop();
+        finishOrder[finishedCount++] = node;
+        stackSize--;
       }
     }
   }
 
-  const assigned = new Set<string>();
-  const components: string[][] = [];
-  for (let index = finishOrder.length - 1; index >= 0; index--) {
-    const start = finishOrder[index]!;
-    if (assigned.has(start)) {
+  const componentByIndex = new Int32Array(groupCount);
+  componentByIndex.fill(-1);
+  const componentIdIndex = new Int32Array(groupCount);
+  let componentCount = 0;
+  for (let orderIndex = finishedCount - 1; orderIndex >= 0; orderIndex--) {
+    const start = finishOrder[orderIndex]!;
+    if (componentByIndex[start] !== -1) {
       continue;
     }
-    assigned.add(start);
-    const component: string[] = [];
-    const stack = [start];
-    while (stack.length) {
-      const id = stack.pop()!;
-      component.push(id);
-      for (const neighbor of reverse.get(id)!) {
-        if (!assigned.has(neighbor)) {
-          assigned.add(neighbor);
-          stack.push(neighbor);
+    let stackSize = 1;
+    stackNode[0] = start;
+    componentByIndex[start] = componentCount;
+    let minimumIndex = start;
+    while (stackSize) {
+      const node = stackNode[--stackSize]!;
+      minimumIndex = Math.min(minimumIndex, node);
+      for (
+        let edgeIndex = incomingOffset[node]!;
+        edgeIndex < incomingOffset[node + 1]!;
+        edgeIndex++
+      ) {
+        const neighbor = incoming[edgeIndex]!;
+        if (componentByIndex[neighbor] === -1) {
+          componentByIndex[neighbor] = componentCount;
+          stackNode[stackSize++] = neighbor;
         }
       }
     }
-    component.sort();
-    components.push(component);
+    componentIdIndex[componentCount++] = minimumIndex;
   }
-  components.sort((left, right) => compareStrings(left[0]!, right[0]!));
-
-  const componentByGroupId: Record<string, string> = {};
-  for (const component of components) {
-    const componentId = component[0]!;
-    for (const id of component) {
-      componentByGroupId[id] = componentId;
-    }
-  }
-  return componentByGroupId;
+  return {componentByIndex, componentIdIndex, componentCount, sourceByEdge, targetByEdge};
 };
 
-class StringMinHeap {
-  private values: string[] = [];
-
-  public push(value: string) {
-    this.values.push(value);
-    let index = this.values.length - 1;
-    while (index > 0) {
-      const parent = Math.floor((index - 1) / 2);
-      if (compareStrings(this.values[parent]!, value) <= 0) {
-        break;
-      }
-      this.values[index] = this.values[parent]!;
-      index = parent;
-    }
-    this.values[index] = value;
-  }
-
-  public pop() {
-    if (this.values.length === 0) {
-      return undefined;
-    }
-    const minimum = this.values[0]!;
-    const last = this.values.pop()!;
-    if (this.values.length === 0) {
-      return minimum;
-    }
-
-    let index = 0;
-    while (true) {
-      const left = index * 2 + 1;
-      if (left >= this.values.length) {
-        break;
-      }
-      const right = left + 1;
-      const child =
-        right < this.values.length && compareStrings(this.values[right]!, this.values[left]!) < 0
-          ? right
-          : left;
-      if (compareStrings(this.values[child]!, last) >= 0) {
-        break;
-      }
-      this.values[index] = this.values[child]!;
-      index = child;
-    }
-    this.values[index] = last;
-    return minimum;
-  }
-}
-
-type WeightedEdge = {from: string; to: string; weight: number};
-
-export const solveAssetGroupConstraints = ({
-  direction,
-  ranksep,
-  trailingGroupPadding,
-  groups,
-  parentById,
-  constraints,
-}: AssetGroupConstraintInput): AssetGroupConstraintSolution => {
+const solveAssetGroupConstraintsNumeric = (
+  {
+    direction,
+    ranksep,
+    trailingGroupPadding,
+    groups,
+    parentById,
+    constraints,
+  }: AssetGroupConstraintInput,
+  columns?: ConstraintColumns,
+) => {
   const ids = Object.keys(groups).sort();
-  const idSet = new Set(ids);
-  const componentByGroupId = buildConstraintComponents(ids, constraints);
-  const componentIds = [...new Set(ids.map((id) => componentByGroupId[id]!))];
-  const zeroNode = '$zero';
-  const moveNode = (componentId: string) => `move:${componentId}`;
-  const endNode = (groupId: string) => `end:${groupId}`;
-  const nodes = new Set<string>([zeroNode]);
-  for (const componentId of componentIds) {
-    nodes.add(moveNode(componentId));
+  const indexById = new Map<string, number>();
+  for (let index = 0; index < ids.length; index++) {
+    indexById.set(ids[index]!, index);
   }
-  for (const id of ids) {
-    nodes.add(endNode(id));
-  }
-
-  const edgeWeightByNodes = new Map<string, Map<string, number>>();
-  const addEdge = (from: string, to: string, weight: number) => {
+  const {componentByIndex, componentIdIndex, componentCount, sourceByEdge, targetByEdge} =
+    buildConstraintComponents(ids, indexById, constraints, columns);
+  const groupCount = ids.length;
+  const constraintCount = columns?.count ?? constraints.length;
+  const zeroNode = 0;
+  const moveNode = (component: number) => 1 + component;
+  const endNode = (groupIndex: number) => 1 + componentCount + groupIndex;
+  const nodeCount = 1 + componentCount + groupCount;
+  const edgeCapacity = groupCount * 4 + constraintCount;
+  const edgeFrom = new Int32Array(edgeCapacity);
+  const edgeTo = new Int32Array(edgeCapacity);
+  const edgeWeight = new Float64Array(edgeCapacity);
+  let edgeCount = 0;
+  const addEdge = (from: number, to: number, weight: number) => {
     if (!Number.isFinite(weight)) {
       throw new Error('Non-finite asset group constraint');
     }
-    let weightByTarget = edgeWeightByNodes.get(from);
-    if (!weightByTarget) {
-      weightByTarget = new Map();
-      edgeWeightByNodes.set(from, weightByTarget);
-    }
-    const previousWeight = weightByTarget.get(to);
-    if (previousWeight === undefined || weight > previousWeight) {
-      weightByTarget.set(to, weight);
-    }
+    edgeFrom[edgeCount] = from;
+    edgeTo[edgeCount] = to;
+    edgeWeight[edgeCount] = weight;
+    edgeCount++;
   };
 
-  for (const id of ids) {
-    const componentMove = moveNode(componentByGroupId[id]!);
+  for (let index = 0; index < groupCount; index++) {
+    const id = ids[index]!;
+    const componentMove = moveNode(componentByIndex[index]!);
     addEdge(zeroNode, componentMove, 0);
-    addEdge(componentMove, endNode(id), primaryEnd(groups[id]!.bounds, direction));
+    addEdge(componentMove, endNode(index), primaryEnd(groups[id]!.bounds, direction));
 
     const parentId = parentById[id];
     if (parentId === undefined) {
       throw new Error(`Missing visible asset group parent: undefined`);
     }
     if (parentId !== null) {
-      if (!idSet.has(parentId)) {
+      const parentIndex = indexById.get(parentId);
+      if (parentIndex === undefined) {
         throw new Error(`Missing visible asset group parent: ${parentId}`);
       }
-      const parentMove = moveNode(componentByGroupId[parentId]!);
+      const parentMove = moveNode(componentByIndex[parentIndex]!);
       if (parentMove !== componentMove) {
         addEdge(parentMove, componentMove, 0);
       }
-      addEdge(endNode(id), endNode(parentId), trailingGroupPadding);
+      addEdge(endNode(index), endNode(parentIndex), trailingGroupPadding);
     }
   }
 
-  for (const constraint of constraints) {
-    const sourceComponent = componentByGroupId[constraint.sourceBranchId]!;
-    const targetComponent = componentByGroupId[constraint.targetBranchId]!;
+  for (let index = 0; index < constraintCount; index++) {
+    const constraint = columns ? undefined : constraints[index]!;
+    const sourceComponent = componentByIndex[sourceByEdge[index]!]!;
+    const targetComponent = componentByIndex[targetByEdge[index]!]!;
     if (sourceComponent === targetComponent) {
       continue;
     }
-    if (constraint.sourceUsesGroupEnd) {
-      addEdge(
-        endNode(constraint.sourceBranchId),
-        moveNode(targetComponent),
-        ranksep - constraint.targetBaseEntry,
-      );
+    const sourceUsesGroupEnd = columns
+      ? columns.sourceUsesGroupEnd[index] === 1
+      : constraint!.sourceUsesGroupEnd;
+    const sourceBaseExit = columns ? columns.sourceBaseExit[index]! : constraint!.sourceBaseExit;
+    const targetBaseEntry = columns ? columns.targetBaseEntry[index]! : constraint!.targetBaseEntry;
+    if (sourceUsesGroupEnd) {
+      addEdge(endNode(sourceByEdge[index]!), moveNode(targetComponent), ranksep - targetBaseEntry);
     } else {
       addEdge(
         moveNode(sourceComponent),
         moveNode(targetComponent),
-        constraint.sourceBaseExit + ranksep - constraint.targetBaseEntry,
+        sourceBaseExit + ranksep - targetBaseEntry,
       );
     }
   }
 
-  const edges = [...edgeWeightByNodes].flatMap(([from, weightByTarget]) =>
-    [...weightByTarget].map(([to, weight]) => ({from, to, weight})),
-  );
-  edges.sort(
-    (left, right) =>
-      compareStrings(left.from, right.from) ||
-      compareStrings(left.to, right.to) ||
-      left.weight - right.weight,
-  );
-  const adjacency = new Map([...nodes].map((node) => [node, [] as WeightedEdge[]]));
-  const indegree = new Map([...nodes].map((node) => [node, 0]));
-  for (const edge of edges) {
-    adjacency.get(edge.from)!.push(edge);
-    indegree.set(edge.to, indegree.get(edge.to)! + 1);
+  const outgoingCount = new Int32Array(nodeCount);
+  const indegree = new Int32Array(nodeCount);
+  for (let index = 0; index < edgeCount; index++) {
+    const from = edgeFrom[index]!;
+    const to = edgeTo[index]!;
+    outgoingCount[from] = outgoingCount[from]! + 1;
+    indegree[to] = indegree[to]! + 1;
+  }
+  const outgoingOffset = new Int32Array(nodeCount + 1);
+  for (let index = 0; index < nodeCount; index++) {
+    outgoingOffset[index + 1] = outgoingOffset[index]! + outgoingCount[index]!;
+  }
+  const cursor = outgoingOffset.slice(0, nodeCount);
+  const targetByAdjacency = new Int32Array(edgeCount);
+  const weightByAdjacency = new Float64Array(edgeCount);
+  for (let index = 0; index < edgeCount; index++) {
+    const from = edgeFrom[index]!;
+    const adjacencyIndex = cursor[from]!;
+    cursor[from] = adjacencyIndex + 1;
+    targetByAdjacency[adjacencyIndex] = edgeTo[index]!;
+    weightByAdjacency[adjacencyIndex] = edgeWeight[index]!;
   }
 
-  const ready = new StringMinHeap();
-  for (const node of nodes) {
-    if (indegree.get(node) === 0) {
-      ready.push(node);
+  const ready = new Int32Array(nodeCount);
+  let readyCount = 0;
+  for (let node = 0; node < nodeCount; node++) {
+    if (indegree[node] === 0) {
+      ready[readyCount++] = node;
     }
   }
-  const distance = new Map([...nodes].map((node) => [node, Number.NEGATIVE_INFINITY]));
-  distance.set(zeroNode, 0);
+  const distance = new Float64Array(nodeCount);
+  distance.fill(Number.NEGATIVE_INFINITY);
+  distance[zeroNode] = 0;
   let visitedCount = 0;
-  for (let node = ready.pop(); node !== undefined; node = ready.pop()) {
+  while (readyCount) {
+    const node = ready[--readyCount]!;
     visitedCount++;
-    const fromDistance = distance.get(node)!;
-    for (const edge of adjacency.get(node)!) {
+    const fromDistance = distance[node]!;
+    for (
+      let edgeIndex = outgoingOffset[node]!;
+      edgeIndex < outgoingOffset[node + 1]!;
+      edgeIndex++
+    ) {
+      const target = targetByAdjacency[edgeIndex]!;
       if (Number.isFinite(fromDistance)) {
-        distance.set(edge.to, Math.max(distance.get(edge.to)!, fromDistance + edge.weight));
+        distance[target] = Math.max(
+          distance[target]!,
+          fromDistance + weightByAdjacency[edgeIndex]!,
+        );
       }
-      const nextIndegree = indegree.get(edge.to)! - 1;
-      indegree.set(edge.to, nextIndegree);
+      const nextIndegree = indegree[target]! - 1;
+      indegree[target] = nextIndegree;
       if (nextIndegree === 0) {
-        ready.push(edge.to);
+        ready[readyCount++] = target;
       }
     }
   }
-  if (visitedCount !== nodes.size) {
+  if (visitedCount !== nodeCount) {
     throw new Error('Cyclic asset group constraint graph after SCC collapse');
   }
 
+  const shiftByIndex = new Float64Array(groupCount);
+  const endByIndex = new Float64Array(groupCount);
+  for (let index = 0; index < groupCount; index++) {
+    const id = ids[index]!;
+    const component = componentByIndex[index]!;
+    const shift = distance[moveNode(component)]!;
+    const end = distance[endNode(index)]!;
+    shiftByIndex[index] = Number.isFinite(shift) ? shift : 0;
+    endByIndex[index] = Number.isFinite(end) ? end : primaryEnd(groups[id]!.bounds, direction);
+  }
+  return {ids, indexById, shiftByIndex, endByIndex, componentByIndex, componentIdIndex};
+};
+
+export const solveAssetGroupConstraints = (
+  input: AssetGroupConstraintInput,
+): AssetGroupConstraintSolution => {
+  const solution = solveAssetGroupConstraintsNumeric(input);
   const shiftByGroupId: Record<string, number> = {};
   const endByGroupId: Record<string, number> = {};
-  for (const id of ids) {
-    const shift = distance.get(moveNode(componentByGroupId[id]!));
-    const end = distance.get(endNode(id));
-    shiftByGroupId[id] = Number.isFinite(shift) ? shift! : 0;
-    endByGroupId[id] = Number.isFinite(end) ? end! : primaryEnd(groups[id]!.bounds, direction);
+  const componentByGroupId: Record<string, string> = {};
+  for (let index = 0; index < solution.ids.length; index++) {
+    const id = solution.ids[index]!;
+    const component = solution.componentByIndex[index]!;
+    shiftByGroupId[id] = solution.shiftByIndex[index]!;
+    endByGroupId[id] = solution.endByIndex[index]!;
+    componentByGroupId[id] = solution.ids[solution.componentIdIndex[component]!]!;
   }
   return {shiftByGroupId, endByGroupId, componentByGroupId};
 };
@@ -494,19 +547,23 @@ const translatePoint = (
   amount: number,
   direction: RoutingDirection,
 ) =>
-  direction === 'horizontal' ? {...point, x: point.x + amount} : {...point, y: point.y + amount};
+  direction === 'horizontal'
+    ? {x: point.x + amount, y: point.y}
+    : {x: point.x, y: point.y + amount};
 
 const translateBounds = (bounds: IBounds, amount: number, direction: RoutingDirection): IBounds =>
   direction === 'horizontal'
-    ? {...bounds, x: bounds.x + amount}
-    : {...bounds, y: bounds.y + amount};
+    ? {x: bounds.x + amount, y: bounds.y, width: bounds.width, height: bounds.height}
+    : {x: bounds.x, y: bounds.y + amount, width: bounds.width, height: bounds.height};
 
-const withForwardEnd = (bounds: IBounds, end: number, direction: RoutingDirection): IBounds =>
-  direction === 'horizontal'
-    ? {...bounds, width: end - bounds.x}
-    : {...bounds, height: end - bounds.y};
-
-type InternalEdgeRouteInfo = EdgeRouteInfo;
+type ConstraintColumns = {
+  count: number;
+  sourceBranchIds: string[];
+  targetBranchIds: string[];
+  sourceUsesGroupEnd: Uint8Array;
+  sourceBaseExit: Float64Array;
+  targetBaseEntry: Float64Array;
+};
 
 const validBounds = (value: IBounds) =>
   Number.isFinite(value.x) &&
@@ -516,19 +573,39 @@ const validBounds = (value: IBounds) =>
   value.width >= 0 &&
   value.height >= 0;
 
-const sameKeys = (left: Record<string, unknown>, right: Record<string, unknown>) => {
-  const leftKeys = Object.keys(left).sort();
-  const rightKeys = Object.keys(right).sort();
-  return (
-    leftKeys.length === rightKeys.length && leftKeys.every((key, index) => key === rightKeys[index])
-  );
-};
-
 const validateInputCorridors = (layout: RoutingLayout, options: ApplyAssetGroupRoutingOptions) => {
+  if (
+    !Number.isFinite(layout.width) ||
+    !Number.isFinite(layout.height) ||
+    layout.width <= 0 ||
+    layout.height <= 0
+  ) {
+    return false;
+  }
+  for (const id in layout.groups) {
+    const group = layout.groups[id];
+    if (!group || !validBounds(group.bounds)) {
+      return false;
+    }
+  }
+  for (const id in layout.nodes) {
+    const node = layout.nodes[id];
+    if (!node || !validBounds(node.bounds)) {
+      return false;
+    }
+  }
   for (const edge of layout.edges) {
     const hasSourceBoundary = edge.sourceBoundary !== undefined;
     const hasTargetBoundary = edge.targetBoundary !== undefined;
     if (hasSourceBoundary !== hasTargetBoundary) {
+      return false;
+    }
+    if (
+      !Number.isFinite(edge.from.x) ||
+      !Number.isFinite(edge.from.y) ||
+      !Number.isFinite(edge.to.x) ||
+      !Number.isFinite(edge.to.y)
+    ) {
       return false;
     }
     if (!hasSourceBoundary) {
@@ -553,104 +630,6 @@ const validateInputCorridors = (layout: RoutingLayout, options: ApplyAssetGroupR
   return true;
 };
 
-const validateRoutingResult = (
-  original: RoutingLayout,
-  result: RoutingLayout,
-  options: ApplyAssetGroupRoutingOptions,
-) => {
-  if (
-    !Number.isFinite(original.width) ||
-    !Number.isFinite(original.height) ||
-    original.width <= 0 ||
-    original.height <= 0 ||
-    !Number.isFinite(result.width) ||
-    !Number.isFinite(result.height) ||
-    result.width <= 0 ||
-    result.height <= 0 ||
-    !sameKeys(original.nodes, result.nodes) ||
-    !sameKeys(original.groups, result.groups) ||
-    original.edges.length !== result.edges.length
-  ) {
-    return false;
-  }
-
-  for (const id of Object.keys(original.groups)) {
-    const before = original.groups[id];
-    const after = result.groups[id];
-    if (!before || !after || !validBounds(before.bounds) || !validBounds(after.bounds)) {
-      return false;
-    }
-    if (
-      (options.direction === 'horizontal' &&
-        (before.bounds.y !== after.bounds.y || before.bounds.height !== after.bounds.height)) ||
-      (options.direction === 'vertical' &&
-        (before.bounds.x !== after.bounds.x || before.bounds.width !== after.bounds.width))
-    ) {
-      return false;
-    }
-  }
-
-  for (const id of Object.keys(original.nodes)) {
-    const before = original.nodes[id];
-    const after = result.nodes[id];
-    if (!before || !after || !validBounds(before.bounds) || !validBounds(after.bounds)) {
-      return false;
-    }
-    if (
-      (options.direction === 'horizontal' &&
-        (before.bounds.y !== after.bounds.y || before.bounds.height !== after.bounds.height)) ||
-      (options.direction === 'vertical' &&
-        (before.bounds.x !== after.bounds.x || before.bounds.width !== after.bounds.width))
-    ) {
-      return false;
-    }
-  }
-
-  for (let index = 0; index < result.edges.length; index++) {
-    const before = original.edges[index];
-    const edge = result.edges[index];
-    if (!before || !edge || before.fromId !== edge.fromId || before.toId !== edge.toId) {
-      return false;
-    }
-    const originalHasSourceBoundary = before.sourceBoundary !== undefined;
-    const originalHasTargetBoundary = before.targetBoundary !== undefined;
-    if (
-      originalHasSourceBoundary !== originalHasTargetBoundary ||
-      (originalHasSourceBoundary &&
-        (!Number.isFinite(before.sourceBoundary) || !Number.isFinite(before.targetBoundary)))
-    ) {
-      return false;
-    }
-    if (
-      !Number.isFinite(edge.from.x) ||
-      !Number.isFinite(edge.from.y) ||
-      !Number.isFinite(edge.to.x) ||
-      !Number.isFinite(edge.to.y)
-    ) {
-      return false;
-    }
-    const hasSourceBoundary = edge.sourceBoundary !== undefined;
-    const hasTargetBoundary = edge.targetBoundary !== undefined;
-    if (hasSourceBoundary !== hasTargetBoundary) {
-      return false;
-    }
-    if (hasSourceBoundary) {
-      const sourceBoundary = edge.sourceBoundary!;
-      const targetBoundary = edge.targetBoundary!;
-      if (
-        !Number.isFinite(sourceBoundary) ||
-        !Number.isFinite(targetBoundary) ||
-        pointPrimary(edge.from, options.direction) > sourceBoundary ||
-        sourceBoundary + options.ranksep > targetBoundary ||
-        targetBoundary > pointPrimary(edge.to, options.direction)
-      ) {
-        return false;
-      }
-    }
-  }
-  return true;
-};
-
 const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
   layout: T,
   options: ApplyAssetGroupRoutingOptions,
@@ -667,13 +646,32 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     throw new Error('Invalid asset group routing options');
   }
 
-  const ancestry = buildGroupAncestryIndex(options.groupParentById);
-  const routeInfoByEdge = new Map<number, InternalEdgeRouteInfo>();
-  const constraints: BranchConstraint[] = [];
+  let hasNestedGroups = false;
+  for (const id in options.groupParentById) {
+    if (options.groupParentById[id] !== null) {
+      hasNestedGroups = true;
+      break;
+    }
+  }
+  const ancestry = hasNestedGroups ? buildGroupAncestryIndex(options.groupParentById) : undefined;
+  const constraintIndexByEdge = new Int32Array(layout.edges.length);
+  constraintIndexByEdge.fill(-1);
+  const constraintColumns: ConstraintColumns = {
+    count: 0,
+    sourceBranchIds: [],
+    targetBranchIds: [],
+    sourceUsesGroupEnd: new Uint8Array(layout.edges.length),
+    sourceBaseExit: new Float64Array(layout.edges.length),
+    targetBaseEntry: new Float64Array(layout.edges.length),
+  };
+  let hasPartiallyGroupedEdge = false;
 
   layout.edges.forEach((edge, index) => {
     const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
     const targetEndpointGroupId = options.endpointGroupById[edge.toId];
+    if (!!sourceEndpointGroupId !== !!targetEndpointGroupId) {
+      hasPartiallyGroupedEdge = true;
+    }
     if (
       !sourceEndpointGroupId ||
       !targetEndpointGroupId ||
@@ -682,9 +680,14 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
       return;
     }
 
-    const lca = ancestry.lowestCommonAncestor(sourceEndpointGroupId, targetEndpointGroupId);
-    const sourceBranchId = ancestry.branchBelow(sourceEndpointGroupId, lca);
-    const targetBranchId = ancestry.branchBelow(targetEndpointGroupId, lca);
+    const lca =
+      ancestry?.lowestCommonAncestor(sourceEndpointGroupId, targetEndpointGroupId) ?? null;
+    const sourceBranchId = ancestry
+      ? ancestry.branchBelow(sourceEndpointGroupId, lca)
+      : sourceEndpointGroupId;
+    const targetBranchId = ancestry
+      ? ancestry.branchBelow(targetEndpointGroupId, lca)
+      : targetEndpointGroupId;
     if (!sourceBranchId || !targetBranchId || sourceBranchId === targetBranchId) {
       return;
     }
@@ -696,104 +699,111 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
 
     const sourceUsesGroupEnd = sourceGroup.expanded || edge.fromId !== sourceBranchId;
     const targetUsesGroupStart = targetGroup.expanded || edge.toId !== targetBranchId;
-    const routeInfo: InternalEdgeRouteInfo = {
-      sourceBranchId,
-      targetBranchId,
-      sourceUsesGroupEnd,
-      sourceBaseExit: sourceUsesGroupEnd
-        ? primaryEnd(sourceGroup.bounds, options.direction)
-        : pointPrimary(edge.from, options.direction),
-      targetBaseEntry: targetUsesGroupStart
-        ? primaryStart(targetGroup.bounds, options.direction)
-        : pointPrimary(edge.to, options.direction),
-    };
-    routeInfoByEdge.set(index, routeInfo);
-    constraints.push(routeInfo);
+    const constraintIndex = constraintColumns.count++;
+    constraintIndexByEdge[index] = constraintIndex;
+    constraintColumns.sourceBranchIds.push(sourceBranchId);
+    constraintColumns.targetBranchIds.push(targetBranchId);
+    constraintColumns.sourceUsesGroupEnd[constraintIndex] = sourceUsesGroupEnd ? 1 : 0;
+    constraintColumns.sourceBaseExit[constraintIndex] = sourceUsesGroupEnd
+      ? primaryEnd(sourceGroup.bounds, options.direction)
+      : pointPrimary(edge.from, options.direction);
+    constraintColumns.targetBaseEntry[constraintIndex] = targetUsesGroupStart
+      ? primaryStart(targetGroup.bounds, options.direction)
+      : pointPrimary(edge.to, options.direction);
   });
 
-  const solution = solveAssetGroupConstraints({
-    direction: options.direction,
-    ranksep: options.ranksep,
-    trailingGroupPadding: options.trailingGroupPadding,
-    groups: layout.groups,
-    parentById: options.groupParentById,
-    constraints,
-  });
-
-  for (const edge of layout.edges) {
-    const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
-    const targetEndpointGroupId = options.endpointGroupById[edge.toId];
-    if (!!sourceEndpointGroupId === !!targetEndpointGroupId) {
-      continue;
+  const solution = solveAssetGroupConstraintsNumeric(
+    {
+      direction: options.direction,
+      ranksep: options.ranksep,
+      trailingGroupPadding: options.trailingGroupPadding,
+      groups: layout.groups,
+      parentById: options.groupParentById,
+      constraints: [],
+    },
+    constraintColumns,
+  );
+  const requireSolutionIndex = (groupId: string) => {
+    const index = solution.indexById.get(groupId);
+    if (index === undefined) {
+      throw new Error('Missing solved asset group geometry');
     }
-    const sourceShift = sourceEndpointGroupId ? solution.shiftByGroupId[sourceEndpointGroupId] : 0;
-    const targetShift = targetEndpointGroupId ? solution.shiftByGroupId[targetEndpointGroupId] : 0;
-    if (sourceShift === undefined || targetShift === undefined || sourceShift !== targetShift) {
-      throw new Error('Cannot partially translate an edge outside asset groups');
+    return index;
+  };
+  const shiftForGroup = (groupId: string) => solution.shiftByIndex[requireSolutionIndex(groupId)]!;
+
+  if (hasPartiallyGroupedEdge) {
+    for (const edge of layout.edges) {
+      const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
+      const targetEndpointGroupId = options.endpointGroupById[edge.toId];
+      if (!!sourceEndpointGroupId === !!targetEndpointGroupId) {
+        continue;
+      }
+      const sourceShift = sourceEndpointGroupId ? shiftForGroup(sourceEndpointGroupId) : 0;
+      const targetShift = targetEndpointGroupId ? shiftForGroup(targetEndpointGroupId) : 0;
+      if (sourceShift !== targetShift) {
+        throw new Error('Cannot partially translate an edge outside asset groups');
+      }
     }
   }
 
   const groups: RoutingLayout['groups'] = {};
-  for (const [id, group] of Object.entries(layout.groups)) {
-    const shift = solution.shiftByGroupId[id];
-    const end = solution.endByGroupId[id];
-    if (shift === undefined || end === undefined) {
-      throw new Error('Missing solved asset group geometry');
-    }
-    groups[id] = {
-      ...group,
-      bounds: withForwardEnd(
-        translateBounds(group.bounds, shift, options.direction),
-        end,
-        options.direction,
-      ),
-    };
+  for (const id in layout.groups) {
+    const group = layout.groups[id]!;
+    const solutionIndex = requireSolutionIndex(id);
+    const shift = solution.shiftByIndex[solutionIndex]!;
+    const end = solution.endByIndex[solutionIndex]!;
+    const bounds = group.bounds;
+    const translatedBounds =
+      options.direction === 'horizontal'
+        ? {x: bounds.x + shift, y: bounds.y, width: end - bounds.x - shift, height: bounds.height}
+        : {x: bounds.x, y: bounds.y + shift, width: bounds.width, height: end - bounds.y - shift};
+    groups[id] = {...group, bounds: translatedBounds};
   }
 
   const nodes: RoutingLayout['nodes'] = {};
-  for (const [id, node] of Object.entries(layout.nodes)) {
+  for (const id in layout.nodes) {
+    const node = layout.nodes[id]!;
     const ownerGroupId = options.ownerGroupByNodeId[id];
     const shift =
-      ownerGroupId === null || ownerGroupId === undefined
-        ? 0
-        : solution.shiftByGroupId[ownerGroupId];
-    if (shift === undefined) {
-      throw new Error('Missing node owner asset group');
-    }
-    nodes[id] = {...node, bounds: translateBounds(node.bounds, shift, options.direction)};
+      ownerGroupId === null || ownerGroupId === undefined ? 0 : shiftForGroup(ownerGroupId);
+    const bounds = translateBounds(node.bounds, shift, options.direction);
+    nodes[id] = {...node, bounds};
   }
 
   const edges = layout.edges.map((edge, index) => {
     const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
     const targetEndpointGroupId = options.endpointGroupById[edge.toId];
-    const sourceShift = sourceEndpointGroupId ? solution.shiftByGroupId[sourceEndpointGroupId] : 0;
-    const targetShift = targetEndpointGroupId ? solution.shiftByGroupId[targetEndpointGroupId] : 0;
-    if (sourceShift === undefined || targetShift === undefined) {
-      throw new Error('Missing edge endpoint asset group');
-    }
-    const {sourceBoundary: _sourceBoundary, targetBoundary: _targetBoundary, ...legacyEdge} = edge;
-    const translated = {
-      ...legacyEdge,
-      from: translatePoint(edge.from, sourceShift, options.direction),
-      to: translatePoint(edge.to, targetShift, options.direction),
-    };
-    const routeInfo = routeInfoByEdge.get(index);
+    const sourceShift = sourceEndpointGroupId ? shiftForGroup(sourceEndpointGroupId) : 0;
+    const targetShift = targetEndpointGroupId ? shiftForGroup(targetEndpointGroupId) : 0;
+    const from = translatePoint(edge.from, sourceShift, options.direction);
+    const to = translatePoint(edge.to, targetShift, options.direction);
+    const translated = {...edge, from, to};
+    delete translated.sourceBoundary;
+    delete translated.targetBoundary;
+    const constraintIndex = constraintIndexByEdge[index]!;
     if (
-      !routeInfo ||
-      solution.componentByGroupId[routeInfo.sourceBranchId] ===
-        solution.componentByGroupId[routeInfo.targetBranchId]
+      constraintIndex === -1 ||
+      solution.componentByIndex[
+        requireSolutionIndex(constraintColumns.sourceBranchIds[constraintIndex]!)
+      ] ===
+        solution.componentByIndex[
+          requireSolutionIndex(constraintColumns.targetBranchIds[constraintIndex]!)
+        ]
     ) {
       return translated;
     }
-    const sourceBranchShift = solution.shiftByGroupId[routeInfo.sourceBranchId]!;
-    const targetBranchShift = solution.shiftByGroupId[routeInfo.targetBranchId]!;
-    return {
-      ...translated,
-      sourceBoundary: routeInfo.sourceUsesGroupEnd
-        ? solution.endByGroupId[routeInfo.sourceBranchId]!
-        : routeInfo.sourceBaseExit + sourceBranchShift,
-      targetBoundary: routeInfo.targetBaseEntry + targetBranchShift,
-    };
+    const sourceBranchIndex = requireSolutionIndex(
+      constraintColumns.sourceBranchIds[constraintIndex]!,
+    );
+    const sourceBranchShift = solution.shiftByIndex[sourceBranchIndex]!;
+    const targetBranchShift = shiftForGroup(constraintColumns.targetBranchIds[constraintIndex]!);
+    translated.sourceBoundary = constraintColumns.sourceUsesGroupEnd[constraintIndex]
+      ? solution.endByIndex[sourceBranchIndex]!
+      : constraintColumns.sourceBaseExit[constraintIndex]! + sourceBranchShift;
+    translated.targetBoundary =
+      constraintColumns.targetBaseEntry[constraintIndex]! + targetBranchShift;
+    return translated;
   });
 
   let maximumForwardEnd: number | undefined;
@@ -837,8 +847,7 @@ export const applyAssetGroupLineageRouting = <T extends RoutingLayout>(
     if (!validateInputCorridors(layout, options)) {
       return layout;
     }
-    const result = applyAssetGroupLineageRoutingImpl(layout, options);
-    return validateRoutingResult(layout, result, options) ? result : layout;
+    return applyAssetGroupLineageRoutingImpl(layout, options);
   } catch {
     return layout;
   }
