@@ -14,8 +14,7 @@ const WARMUP_COUNT = 3;
 const SAMPLE_COUNT = 7;
 const MAX_MEDIAN_MS = 50;
 const MAX_MEDIAN_HEAP_MB = 10;
-const CANONICAL_COMMAND =
-  'yarn node --expose-gc -r ts-node/register src/asset-graph/__benchmarks__/assetGroupLineageRouting.benchmark.ts';
+const CANONICAL_COMMAND = 'yarn benchmark:asset-group-lineage-routing';
 
 if (!global.gc) {
   throw new Error(`Benchmark requires exposed garbage collection. Run: ${CANONICAL_COMMAND}`);
