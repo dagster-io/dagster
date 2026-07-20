@@ -1,13 +1,48 @@
+import type {IBounds} from '../graph/common';
+
 export type GroupParentById = Record<string, string | null>;
+
+export type RoutingDirection = 'horizontal' | 'vertical';
+
+export type RoutingGroup = {bounds: IBounds; expanded: boolean};
+
+export type BranchConstraint = {
+  sourceBranchId: string;
+  targetBranchId: string;
+  sourceUsesGroupEnd: boolean;
+  sourceBaseExit: number;
+  targetBaseEntry: number;
+};
+
+export type AssetGroupConstraintInput = {
+  direction: RoutingDirection;
+  ranksep: number;
+  trailingGroupPadding: number;
+  groups: Record<string, RoutingGroup>;
+  parentById: GroupParentById;
+  constraints: BranchConstraint[];
+};
+
+export type AssetGroupConstraintSolution = {
+  shiftByGroupId: Record<string, number>;
+  endByGroupId: Record<string, number>;
+  componentByGroupId: Record<string, string>;
+};
+
+const primaryStart = (bounds: IBounds, direction: RoutingDirection) =>
+  direction === 'horizontal' ? bounds.x : bounds.y;
+
+const primaryEnd = (bounds: IBounds, direction: RoutingDirection) =>
+  primaryStart(bounds, direction) + (direction === 'horizontal' ? bounds.width : bounds.height);
+
+const compareStrings = (left: string, right: string) => (left < right ? -1 : left > right ? 1 : 0);
 
 export type GroupAncestryIndex = {
   lowestCommonAncestor: (a: string, b: string) => string | null;
   branchBelow: (groupId: string, ancestorId: string | null) => string | null;
 };
 
-export const buildGroupAncestryIndex = (
-  parentById: GroupParentById,
-): GroupAncestryIndex => {
+export const buildGroupAncestryIndex = (parentById: GroupParentById): GroupAncestryIndex => {
   const ids = Object.keys(parentById).sort();
   const indexById = new Map(ids.map((id, index) => [id, index]));
   const groupCount = ids.length;
@@ -154,4 +189,263 @@ export const buildGroupAncestryIndex = (
   };
 
   return {lowestCommonAncestor, branchBelow};
+};
+
+const buildConstraintComponents = (
+  ids: string[],
+  constraints: BranchConstraint[],
+): Record<string, string> => {
+  const idSet = new Set(ids);
+  const adjacency = new Map(ids.map((id) => [id, [] as string[]]));
+  const reverse = new Map(ids.map((id) => [id, [] as string[]]));
+
+  for (const constraint of constraints) {
+    if (!idSet.has(constraint.sourceBranchId)) {
+      throw new Error(`Unknown asset group constraint endpoint: ${constraint.sourceBranchId}`);
+    }
+    if (!idSet.has(constraint.targetBranchId)) {
+      throw new Error(`Unknown asset group constraint endpoint: ${constraint.targetBranchId}`);
+    }
+    adjacency.get(constraint.sourceBranchId)!.push(constraint.targetBranchId);
+    reverse.get(constraint.targetBranchId)!.push(constraint.sourceBranchId);
+  }
+  for (const id of ids) {
+    adjacency.get(id)!.sort();
+    reverse.get(id)!.sort();
+  }
+
+  const visited = new Set<string>();
+  const finishOrder: string[] = [];
+  for (const start of ids) {
+    if (visited.has(start)) {
+      continue;
+    }
+    visited.add(start);
+    const frames = [{id: start, next: 0}];
+    while (frames.length) {
+      const frame = frames[frames.length - 1]!;
+      const neighbors = adjacency.get(frame.id)!;
+      if (frame.next < neighbors.length) {
+        const neighbor = neighbors[frame.next++]!;
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          frames.push({id: neighbor, next: 0});
+        }
+      } else {
+        finishOrder.push(frame.id);
+        frames.pop();
+      }
+    }
+  }
+
+  const assigned = new Set<string>();
+  const components: string[][] = [];
+  for (let index = finishOrder.length - 1; index >= 0; index--) {
+    const start = finishOrder[index]!;
+    if (assigned.has(start)) {
+      continue;
+    }
+    assigned.add(start);
+    const component: string[] = [];
+    const stack = [start];
+    while (stack.length) {
+      const id = stack.pop()!;
+      component.push(id);
+      for (const neighbor of reverse.get(id)!) {
+        if (!assigned.has(neighbor)) {
+          assigned.add(neighbor);
+          stack.push(neighbor);
+        }
+      }
+    }
+    component.sort();
+    components.push(component);
+  }
+  components.sort((left, right) => compareStrings(left[0]!, right[0]!));
+
+  const componentByGroupId: Record<string, string> = {};
+  for (const component of components) {
+    const componentId = component[0]!;
+    for (const id of component) {
+      componentByGroupId[id] = componentId;
+    }
+  }
+  return componentByGroupId;
+};
+
+class StringMinHeap {
+  private values: string[] = [];
+
+  public push(value: string) {
+    this.values.push(value);
+    let index = this.values.length - 1;
+    while (index > 0) {
+      const parent = Math.floor((index - 1) / 2);
+      if (compareStrings(this.values[parent]!, value) <= 0) {
+        break;
+      }
+      this.values[index] = this.values[parent]!;
+      index = parent;
+    }
+    this.values[index] = value;
+  }
+
+  public pop() {
+    if (this.values.length === 0) {
+      return undefined;
+    }
+    const minimum = this.values[0]!;
+    const last = this.values.pop()!;
+    if (this.values.length === 0) {
+      return minimum;
+    }
+
+    let index = 0;
+    while (true) {
+      const left = index * 2 + 1;
+      if (left >= this.values.length) {
+        break;
+      }
+      const right = left + 1;
+      const child =
+        right < this.values.length && compareStrings(this.values[right]!, this.values[left]!) < 0
+          ? right
+          : left;
+      if (compareStrings(this.values[child]!, last) >= 0) {
+        break;
+      }
+      this.values[index] = this.values[child]!;
+      index = child;
+    }
+    this.values[index] = last;
+    return minimum;
+  }
+}
+
+type WeightedEdge = {from: string; to: string; weight: number};
+
+export const solveAssetGroupConstraints = ({
+  direction,
+  ranksep,
+  trailingGroupPadding,
+  groups,
+  parentById,
+  constraints,
+}: AssetGroupConstraintInput): AssetGroupConstraintSolution => {
+  const ids = Object.keys(groups).sort();
+  const idSet = new Set(ids);
+  const componentByGroupId = buildConstraintComponents(ids, constraints);
+  const componentIds = [...new Set(ids.map((id) => componentByGroupId[id]!))];
+  const zeroNode = '$zero';
+  const moveNode = (componentId: string) => `move:${componentId}`;
+  const endNode = (groupId: string) => `end:${groupId}`;
+  const nodes = new Set<string>([zeroNode]);
+  for (const componentId of componentIds) {
+    nodes.add(moveNode(componentId));
+  }
+  for (const id of ids) {
+    nodes.add(endNode(id));
+  }
+
+  const edges: WeightedEdge[] = [];
+  const edgeKeys = new Set<string>();
+  const addEdge = (from: string, to: string, weight: number) => {
+    if (!Number.isFinite(weight)) {
+      throw new Error('Non-finite asset group constraint');
+    }
+    const key = JSON.stringify([from, to, weight]);
+    if (!edgeKeys.has(key)) {
+      edgeKeys.add(key);
+      edges.push({from, to, weight});
+    }
+  };
+
+  for (const id of ids) {
+    const componentMove = moveNode(componentByGroupId[id]!);
+    addEdge(zeroNode, componentMove, 0);
+    addEdge(componentMove, endNode(id), primaryEnd(groups[id]!.bounds, direction));
+
+    const parentId = parentById[id];
+    if (parentId === undefined) {
+      throw new Error(`Missing visible asset group parent: undefined`);
+    }
+    if (parentId !== null) {
+      if (!idSet.has(parentId)) {
+        throw new Error(`Missing visible asset group parent: ${parentId}`);
+      }
+      addEdge(moveNode(componentByGroupId[parentId]!), componentMove, 0);
+      addEdge(endNode(id), endNode(parentId), trailingGroupPadding);
+    }
+  }
+
+  for (const constraint of constraints) {
+    const sourceComponent = componentByGroupId[constraint.sourceBranchId]!;
+    const targetComponent = componentByGroupId[constraint.targetBranchId]!;
+    if (sourceComponent === targetComponent) {
+      continue;
+    }
+    if (constraint.sourceUsesGroupEnd) {
+      addEdge(
+        endNode(constraint.sourceBranchId),
+        moveNode(targetComponent),
+        ranksep - constraint.targetBaseEntry,
+      );
+    } else {
+      addEdge(
+        moveNode(sourceComponent),
+        moveNode(targetComponent),
+        constraint.sourceBaseExit + ranksep - constraint.targetBaseEntry,
+      );
+    }
+  }
+
+  edges.sort(
+    (left, right) =>
+      compareStrings(left.from, right.from) ||
+      compareStrings(left.to, right.to) ||
+      left.weight - right.weight,
+  );
+  const adjacency = new Map([...nodes].map((node) => [node, [] as WeightedEdge[]]));
+  const indegree = new Map([...nodes].map((node) => [node, 0]));
+  for (const edge of edges) {
+    adjacency.get(edge.from)!.push(edge);
+    indegree.set(edge.to, indegree.get(edge.to)! + 1);
+  }
+
+  const ready = new StringMinHeap();
+  for (const node of nodes) {
+    if (indegree.get(node) === 0) {
+      ready.push(node);
+    }
+  }
+  const distance = new Map([...nodes].map((node) => [node, Number.NEGATIVE_INFINITY]));
+  distance.set(zeroNode, 0);
+  let visitedCount = 0;
+  for (let node = ready.pop(); node !== undefined; node = ready.pop()) {
+    visitedCount++;
+    const fromDistance = distance.get(node)!;
+    for (const edge of adjacency.get(node)!) {
+      if (Number.isFinite(fromDistance)) {
+        distance.set(edge.to, Math.max(distance.get(edge.to)!, fromDistance + edge.weight));
+      }
+      const nextIndegree = indegree.get(edge.to)! - 1;
+      indegree.set(edge.to, nextIndegree);
+      if (nextIndegree === 0) {
+        ready.push(edge.to);
+      }
+    }
+  }
+  if (visitedCount !== nodes.size) {
+    throw new Error('Cyclic asset group constraint graph after SCC collapse');
+  }
+
+  const shiftByGroupId: Record<string, number> = {};
+  const endByGroupId: Record<string, number> = {};
+  for (const id of ids) {
+    const shift = distance.get(moveNode(componentByGroupId[id]!));
+    const end = distance.get(endNode(id));
+    shiftByGroupId[id] = Number.isFinite(shift) ? shift! : 0;
+    endByGroupId[id] = Number.isFinite(end) ? end! : primaryEnd(groups[id]!.bounds, direction);
+  }
+  return {shiftByGroupId, endByGroupId, componentByGroupId};
 };
