@@ -79,4 +79,49 @@ describe('layoutAssetGraphImpl', () => {
     expect(edge!.targetBoundary! - edge!.sourceBoundary!).toBeGreaterThanOrEqual(60);
     expect(edge?.from.y).toBe(thirdLayout!.bounds.y + thirdLayout!.bounds.height / 2);
   });
+
+  it.each(['horizontal', 'vertical'] as const)(
+    'routes %s lineage from an ancestor asset through only the child boundary',
+    (direction) => {
+      const ancestorAsset = graphNode('ancestor-asset', 'a');
+      const descendantAsset = graphNode('descendant-asset', 'a/b');
+      const graphData: GraphData = {
+        nodes: {
+          [ancestorAsset.id]: ancestorAsset,
+          [descendantAsset.id]: descendantAsset,
+        },
+        downstream: {
+          [ancestorAsset.id]: {[descendantAsset.id]: true},
+          [descendantAsset.id]: {},
+        },
+        upstream: {
+          [ancestorAsset.id]: {},
+          [descendantAsset.id]: {[ancestorAsset.id]: true},
+        },
+        expandedGroups: [groupIdForNode(descendantAsset)],
+      };
+
+      const layout = layoutAssetGraphImpl(graphData, {
+        direction,
+        facets: [],
+        flagAssetGraphGroupsPerCodeLocation: false,
+      });
+      const edge = layout.edges.find(
+        ({fromId, toId}) => fromId === ancestorAsset.id && toId === descendantAsset.id,
+      );
+      const ancestorGroup = layout.groups[groupIdForNode(ancestorAsset)]!;
+      const childGroup = layout.groups[groupIdForNode(descendantAsset)]!;
+      const sourceEndpoint = direction === 'horizontal' ? edge?.from.x : edge?.from.y;
+      const childStart = direction === 'horizontal' ? childGroup.bounds.x : childGroup.bounds.y;
+      const sharedAncestorEnd =
+        direction === 'horizontal'
+          ? ancestorGroup.bounds.x + ancestorGroup.bounds.width
+          : ancestorGroup.bounds.y + ancestorGroup.bounds.height;
+
+      expect(edge).toBeDefined();
+      expect(edge?.sourceBoundary).toBe(sourceEndpoint);
+      expect(edge?.targetBoundary).toBe(childStart);
+      expect(edge?.sourceBoundary).not.toBe(sharedAncestorEnd);
+    },
+  );
 });

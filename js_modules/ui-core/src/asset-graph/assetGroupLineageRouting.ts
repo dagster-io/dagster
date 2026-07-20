@@ -735,6 +735,14 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
   const ancestry = hasNestedGroups ? buildGroupAncestryIndex(options.groupParentById) : undefined;
   const constraintIndexByEdge = new Int32Array(layout.edges.length);
   constraintIndexByEdge.fill(-1);
+  const hasRouteByEdge = ancestry ? new Uint8Array(layout.edges.length) : undefined;
+  const routeSourceGroupIds: string[] | undefined = ancestry ? [] : undefined;
+  const routeTargetGroupIds: string[] | undefined = ancestry ? [] : undefined;
+  const routeSourceUsesEndpoint = ancestry ? new Uint8Array(layout.edges.length) : undefined;
+  const routeTargetUsesEndpoint = ancestry ? new Uint8Array(layout.edges.length) : undefined;
+  const routeSourceUsesGroupEnd = ancestry ? new Uint8Array(layout.edges.length) : undefined;
+  const routeSourceBaseExit = ancestry ? new Float64Array(layout.edges.length) : undefined;
+  const routeTargetBaseEntry = ancestry ? new Float64Array(layout.edges.length) : undefined;
   const constraintColumns: ConstraintColumns = {
     count: 0,
     sourceBranchIds: [],
@@ -759,36 +767,79 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
       return;
     }
 
-    const lca =
-      ancestry?.lowestCommonAncestor(sourceEndpointGroupId, targetEndpointGroupId) ?? null;
-    const sourceBranchId = ancestry
-      ? ancestry.branchBelow(sourceEndpointGroupId, lca)
-      : sourceEndpointGroupId;
-    const targetBranchId = ancestry
-      ? ancestry.branchBelow(targetEndpointGroupId, lca)
-      : targetEndpointGroupId;
-    if (!sourceBranchId || !targetBranchId || sourceBranchId === targetBranchId) {
+    if (!ancestry) {
+      const sourceGroup = layout.groups[sourceEndpointGroupId];
+      const targetGroup = layout.groups[targetEndpointGroupId];
+      if (!sourceGroup || !targetGroup) {
+        throw new Error('Missing asset group routing branch');
+      }
+      const sourceUsesGroupEnd = sourceGroup.expanded || edge.fromId !== sourceEndpointGroupId;
+      const targetUsesGroupStart = targetGroup.expanded || edge.toId !== targetEndpointGroupId;
+      const constraintIndex = constraintColumns.count++;
+      constraintIndexByEdge[index] = constraintIndex;
+      constraintColumns.sourceBranchIds.push(sourceEndpointGroupId);
+      constraintColumns.targetBranchIds.push(targetEndpointGroupId);
+      constraintColumns.sourceUsesGroupEnd[constraintIndex] = sourceUsesGroupEnd ? 1 : 0;
+      constraintColumns.sourceBaseExit[constraintIndex] = sourceUsesGroupEnd
+        ? primaryEnd(sourceGroup.bounds, options.direction)
+        : pointPrimary(edge.from, options.direction);
+      constraintColumns.targetBaseEntry[constraintIndex] = targetUsesGroupStart
+        ? primaryStart(targetGroup.bounds, options.direction)
+        : pointPrimary(edge.to, options.direction);
       return;
     }
-    const sourceGroup = layout.groups[sourceBranchId];
-    const targetGroup = layout.groups[targetBranchId];
+
+    const lca = ancestry.lowestCommonAncestor(sourceEndpointGroupId, targetEndpointGroupId);
+    const crossedSourceBranchId = ancestry.branchBelow(sourceEndpointGroupId, lca);
+    const crossedTargetBranchId = ancestry.branchBelow(targetEndpointGroupId, lca);
+    if (
+      crossedSourceBranchId !== null &&
+      crossedTargetBranchId !== null &&
+      crossedSourceBranchId === crossedTargetBranchId
+    ) {
+      return;
+    }
+    const sourceRouteGroupId = crossedSourceBranchId ?? sourceEndpointGroupId;
+    const targetRouteGroupId = crossedTargetBranchId ?? targetEndpointGroupId;
+    const sourceGroup = layout.groups[sourceRouteGroupId];
+    const targetGroup = layout.groups[targetRouteGroupId];
     if (!sourceGroup || !targetGroup) {
       throw new Error('Missing asset group routing branch');
     }
 
-    const sourceUsesGroupEnd = sourceGroup.expanded || edge.fromId !== sourceBranchId;
-    const targetUsesGroupStart = targetGroup.expanded || edge.toId !== targetBranchId;
-    const constraintIndex = constraintColumns.count++;
-    constraintIndexByEdge[index] = constraintIndex;
-    constraintColumns.sourceBranchIds.push(sourceBranchId);
-    constraintColumns.targetBranchIds.push(targetBranchId);
-    constraintColumns.sourceUsesGroupEnd[constraintIndex] = sourceUsesGroupEnd ? 1 : 0;
-    constraintColumns.sourceBaseExit[constraintIndex] = sourceUsesGroupEnd
+    const sourceUsesEndpoint = crossedSourceBranchId === null;
+    const targetUsesEndpoint = crossedTargetBranchId === null;
+    const sourceUsesGroupEnd =
+      !sourceUsesEndpoint && (sourceGroup.expanded || edge.fromId !== sourceRouteGroupId);
+    const targetUsesGroupStart =
+      !targetUsesEndpoint && (targetGroup.expanded || edge.toId !== targetRouteGroupId);
+    const sourceBaseExit = sourceUsesGroupEnd
       ? primaryEnd(sourceGroup.bounds, options.direction)
       : pointPrimary(edge.from, options.direction);
-    constraintColumns.targetBaseEntry[constraintIndex] = targetUsesGroupStart
+    const targetBaseEntry = targetUsesGroupStart
       ? primaryStart(targetGroup.bounds, options.direction)
       : pointPrimary(edge.to, options.direction);
+    hasRouteByEdge![index] = 1;
+    routeSourceGroupIds![index] = sourceRouteGroupId;
+    routeTargetGroupIds![index] = targetRouteGroupId;
+    routeSourceUsesEndpoint![index] = sourceUsesEndpoint ? 1 : 0;
+    routeTargetUsesEndpoint![index] = targetUsesEndpoint ? 1 : 0;
+    routeSourceUsesGroupEnd![index] = sourceUsesGroupEnd ? 1 : 0;
+    routeSourceBaseExit![index] = sourceBaseExit;
+    routeTargetBaseEntry![index] = targetBaseEntry;
+
+    // A descendant-to-ancestor constraint would oppose the hierarchy's parent-to-child
+    // movement edge. It cannot improve separation, so validate it only after other shifts.
+    if (targetUsesEndpoint) {
+      return;
+    }
+    const constraintIndex = constraintColumns.count++;
+    constraintIndexByEdge[index] = constraintIndex;
+    constraintColumns.sourceBranchIds.push(sourceRouteGroupId);
+    constraintColumns.targetBranchIds.push(targetRouteGroupId);
+    constraintColumns.sourceUsesGroupEnd[constraintIndex] = sourceUsesGroupEnd ? 1 : 0;
+    constraintColumns.sourceBaseExit[constraintIndex] = sourceBaseExit;
+    constraintColumns.targetBaseEntry[constraintIndex] = targetBaseEntry;
   });
 
   const solution = solveAssetGroupConstraintsNumeric(
@@ -877,20 +928,26 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
 
   const edges = layout.edges.map((edge, index) => {
     const constraintIndex = constraintIndexByEdge[index]!;
-    const sourceBranchIndex =
-      constraintIndex === -1
-        ? -1
-        : requireSolutionIndex(constraintColumns.sourceBranchIds[constraintIndex]!);
-    const targetBranchIndex =
-      constraintIndex === -1
-        ? -1
-        : requireSolutionIndex(constraintColumns.targetBranchIds[constraintIndex]!);
     const flatRoutedEdge = ancestry === undefined && constraintIndex !== -1;
-    const sourceEndpointGroupId = flatRoutedEdge
+    const nestedRoutedEdge = ancestry !== undefined && hasRouteByEdge![index] === 1;
+    const hasRoute = flatRoutedEdge || nestedRoutedEdge;
+    const sourceRouteGroupId = flatRoutedEdge
       ? constraintColumns.sourceBranchIds[constraintIndex]!
+      : nestedRoutedEdge
+        ? routeSourceGroupIds![index]!
+        : undefined;
+    const targetRouteGroupId = flatRoutedEdge
+      ? constraintColumns.targetBranchIds[constraintIndex]!
+      : nestedRoutedEdge
+        ? routeTargetGroupIds![index]!
+        : undefined;
+    const sourceBranchIndex = sourceRouteGroupId ? requireSolutionIndex(sourceRouteGroupId) : -1;
+    const targetBranchIndex = targetRouteGroupId ? requireSolutionIndex(targetRouteGroupId) : -1;
+    const sourceEndpointGroupId = flatRoutedEdge
+      ? sourceRouteGroupId
       : options.endpointGroupById[edge.fromId];
     const targetEndpointGroupId = flatRoutedEdge
-      ? constraintColumns.targetBranchIds[constraintIndex]!
+      ? targetRouteGroupId
       : options.endpointGroupById[edge.toId];
     const sourceShift = sourceEndpointGroupId
       ? solution.shiftByIndex[
@@ -908,16 +965,27 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     delete translated.sourceBoundary;
     delete translated.targetBoundary;
     if (
-      constraintIndex !== -1 &&
+      hasRoute &&
       solution.componentByIndex[sourceBranchIndex] !== solution.componentByIndex[targetBranchIndex]
     ) {
       const sourceBranchShift = solution.shiftByIndex[sourceBranchIndex]!;
       const targetBranchShift = solution.shiftByIndex[targetBranchIndex]!;
-      translated.sourceBoundary = constraintColumns.sourceUsesGroupEnd[constraintIndex]
-        ? solution.endByIndex[sourceBranchIndex]!
-        : constraintColumns.sourceBaseExit[constraintIndex]! + sourceBranchShift;
-      translated.targetBoundary =
-        constraintColumns.targetBaseEntry[constraintIndex]! + targetBranchShift;
+      if (flatRoutedEdge) {
+        translated.sourceBoundary = constraintColumns.sourceUsesGroupEnd[constraintIndex]
+          ? solution.endByIndex[sourceBranchIndex]!
+          : constraintColumns.sourceBaseExit[constraintIndex]! + sourceBranchShift;
+        translated.targetBoundary =
+          constraintColumns.targetBaseEntry[constraintIndex]! + targetBranchShift;
+      } else {
+        translated.sourceBoundary = routeSourceUsesEndpoint![index]
+          ? pointPrimary(from, options.direction)
+          : routeSourceUsesGroupEnd![index]
+            ? solution.endByIndex[sourceBranchIndex]!
+            : routeSourceBaseExit![index]! + sourceBranchShift;
+        translated.targetBoundary = routeTargetUsesEndpoint![index]
+          ? pointPrimary(to, options.direction)
+          : routeTargetBaseEntry![index]! + targetBranchShift;
+      }
       assertValidOutputCorridor(translated, options.direction, options.ranksep);
     }
     return translated;

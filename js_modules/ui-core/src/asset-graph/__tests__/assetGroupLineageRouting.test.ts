@@ -255,7 +255,7 @@ describe('solveAssetGroupConstraints', () => {
     expect(solution.endByGroupId.parent).toBe(256);
   });
 
-  it('compacts duplicate parallel constraints using their maximum weight', () => {
+  it('preserves the least solution when parallel constraints are duplicated', () => {
     const input = {
       direction: 'horizontal' as const,
       ranksep: 60,
@@ -507,6 +507,206 @@ describe('applyAssetGroupLineageRouting', () => {
       sourceBoundary: 180,
       targetBoundary: 200,
     });
+  });
+
+  it('routes LR from an ancestor endpoint into only the crossed child boundary', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        ancestorNode: {id: 'ancestorNode', bounds: bounds(20, 20, 80, 40)},
+        descendantNode: {id: 'descendantNode', bounds: bounds(140, 60, 40, 40)},
+      },
+      groups: {
+        a: {id: 'a', bounds: bounds(0, 0, 300, 200), expanded: true},
+        'a/b': {id: 'a/b', bounds: bounds(120, 40, 100, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'ancestorNode',
+          to: {x: 140, y: 80},
+          toId: 'descendantNode',
+        },
+      ],
+    };
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        groupParentById: {a: null, 'a/b': 'a'},
+        ownerGroupByNodeId: {ancestorNode: 'a', descendantNode: 'a/b'},
+        endpointGroupById: {ancestorNode: 'a', descendantNode: 'a/b'},
+      }),
+    );
+
+    expect(result.groups['a/b']!.bounds).toEqual(bounds(160, 40, 100, 100));
+    expect(result.nodes.descendantNode!.bounds.y).toBe(60);
+    expect(result.edges[0]).toMatchObject({
+      from: {x: 100, y: 40},
+      to: {x: 180, y: 80},
+      sourceBoundary: 100,
+      targetBoundary: 160,
+    });
+    expect(result.edges[0]!.sourceBoundary).not.toBe(300);
+  });
+
+  it('routes TB from an ancestor endpoint into only the crossed child boundary', () => {
+    const layout: RoutingLayout = {
+      width: 300,
+      height: 500,
+      nodes: {
+        ancestorNode: {id: 'ancestorNode', bounds: bounds(20, 20, 40, 80)},
+        descendantNode: {id: 'descendantNode', bounds: bounds(60, 130, 40, 40)},
+      },
+      groups: {
+        a: {id: 'a', bounds: bounds(0, 0, 200, 300), expanded: true},
+        'a/b': {id: 'a/b', bounds: bounds(40, 110, 100, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 40, y: 100},
+          fromId: 'ancestorNode',
+          to: {x: 80, y: 130},
+          toId: 'descendantNode',
+        },
+      ],
+    };
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        direction: 'vertical',
+        ranksep: 20,
+        trailingGroupPadding: 16,
+        groupParentById: {a: null, 'a/b': 'a'},
+        ownerGroupByNodeId: {ancestorNode: 'a', descendantNode: 'a/b'},
+        endpointGroupById: {ancestorNode: 'a', descendantNode: 'a/b'},
+      }),
+    );
+
+    expect(result.groups['a/b']!.bounds).toEqual(bounds(40, 120, 100, 100));
+    expect(result.nodes.descendantNode!.bounds.x).toBe(60);
+    expect(result.edges[0]).toMatchObject({
+      from: {x: 40, y: 100},
+      to: {x: 80, y: 140},
+      sourceBoundary: 100,
+      targetBoundary: 120,
+    });
+    expect(result.edges[0]!.sourceBoundary).not.toBe(300);
+  });
+
+  it('keeps edges within the same exact endpoint group on the legacy path', () => {
+    const layout: RoutingLayout = {
+      width: 300,
+      height: 200,
+      nodes: {
+        first: {id: 'first', bounds: bounds(20, 20, 40, 40)},
+        second: {id: 'second', bounds: bounds(160, 20, 40, 40)},
+      },
+      groups: {a: {id: 'a', bounds: bounds(0, 0, 240, 100), expanded: true}},
+      edges: [{from: {x: 60, y: 40}, fromId: 'first', to: {x: 160, y: 40}, toId: 'second'}],
+    };
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        groupParentById: {a: null},
+        ownerGroupByNodeId: {first: 'a', second: 'a'},
+        endpointGroupById: {first: 'a', second: 'a'},
+      }),
+    );
+
+    expect(result.edges[0]).toEqual(layout.edges[0]);
+    expect(result.edges[0]!.sourceBoundary).toBeUndefined();
+    expect(result.edges[0]!.targetBoundary).toBeUndefined();
+  });
+
+  it('routes descendant exit to an ancestor endpoint only when baseline clearance is sufficient', () => {
+    const sufficient: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        descendantNode: {id: 'descendantNode', bounds: bounds(40, 40, 60, 40)},
+        ancestorNode: {id: 'ancestorNode', bounds: bounds(220, 120, 40, 40)},
+      },
+      groups: {
+        a: {id: 'a', bounds: bounds(0, 0, 300, 200), expanded: true},
+        'a/b': {id: 'a/b', bounds: bounds(20, 20, 100, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 60},
+          fromId: 'descendantNode',
+          to: {x: 220, y: 140},
+          toId: 'ancestorNode',
+        },
+      ],
+    };
+    const options = routingOptions({
+      groupParentById: {a: null, 'a/b': 'a'},
+      ownerGroupByNodeId: {ancestorNode: 'a', descendantNode: 'a/b'},
+      endpointGroupById: {ancestorNode: 'a', descendantNode: 'a/b'},
+    });
+
+    const result = applyAssetGroupLineageRouting(sufficient, options);
+    expect(result.edges[0]).toMatchObject({sourceBoundary: 120, targetBoundary: 220});
+    expect(result.edges[0]!.targetBoundary).not.toBe(0);
+
+    const insufficient: RoutingLayout = {
+      ...sufficient,
+      nodes: {
+        ...sufficient.nodes,
+        ancestorNode: {id: 'ancestorNode', bounds: bounds(150, 120, 40, 40)},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 60},
+          fromId: 'descendantNode',
+          to: {x: 150, y: 140},
+          toId: 'ancestorNode',
+        },
+      ],
+    };
+    expect(applyAssetGroupLineageRouting(insufficient, options)).toBe(insufficient);
+  });
+
+  it('terminates opposite ancestor-descendant routing with atomic fallback', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        ancestorNode: {id: 'ancestorNode', bounds: bounds(20, 20, 80, 40)},
+        descendantNode: {id: 'descendantNode', bounds: bounds(140, 60, 40, 40)},
+      },
+      groups: {
+        a: {id: 'a', bounds: bounds(0, 0, 300, 200), expanded: true},
+        'a/b': {id: 'a/b', bounds: bounds(120, 40, 100, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'ancestorNode',
+          to: {x: 140, y: 80},
+          toId: 'descendantNode',
+        },
+        {
+          from: {x: 180, y: 80},
+          fromId: 'descendantNode',
+          to: {x: 100, y: 40},
+          toId: 'ancestorNode',
+        },
+      ],
+    };
+
+    expect(
+      applyAssetGroupLineageRouting(
+        layout,
+        routingOptions({
+          groupParentById: {a: null, 'a/b': 'a'},
+          ownerGroupByNodeId: {ancestorNode: 'a', descendantNode: 'a/b'},
+          endpointGroupById: {ancestorNode: 'a', descendantNode: 'a/b'},
+        }),
+      ),
+    ).toBe(layout);
+    expect(layout.groups['a/b']!.bounds.x).toBe(120);
   });
 
   it('uses outer divergent branches and leaves unrelated rectangles untouched', () => {
