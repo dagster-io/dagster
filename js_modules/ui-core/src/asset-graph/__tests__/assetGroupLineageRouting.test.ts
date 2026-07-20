@@ -1,6 +1,12 @@
 import type {IBounds} from '../../graph/common';
 
-import {buildGroupAncestryIndex, solveAssetGroupConstraints} from '../assetGroupLineageRouting';
+import {
+  applyAssetGroupLineageRouting,
+  buildGroupAncestryIndex,
+  solveAssetGroupConstraints,
+  type ApplyAssetGroupRoutingOptions,
+  type RoutingLayout,
+} from '../assetGroupLineageRouting';
 
 const bounds = (x: number, y: number, width: number, height: number): IBounds => ({
   x,
@@ -281,5 +287,295 @@ describe('solveAssetGroupConstraints', () => {
 
     expect(withDuplicates.shiftByGroupId).toEqual(withoutDuplicates.shiftByGroupId);
     expect(withDuplicates.shiftByGroupId.target).toBe(30);
+  });
+});
+
+const routingOptions = (
+  overrides: Partial<ApplyAssetGroupRoutingOptions> = {},
+): ApplyAssetGroupRoutingOptions => ({
+  direction: 'horizontal',
+  ranksep: 60,
+  trailingGroupPadding: 15,
+  margin: 100,
+  groupParentById: {source: null, target: null},
+  ownerGroupByNodeId: {sourceNode: 'source', targetNode: 'target'},
+  endpointGroupById: {sourceNode: 'source', targetNode: 'target'},
+  ...overrides,
+});
+
+describe('applyAssetGroupLineageRouting', () => {
+  it('moves an LR target branch and adds scalar boundary corridors', () => {
+    const layout: RoutingLayout = {
+      width: 400,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(220, 120, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(200, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 100, y: 40}, fromId: 'sourceNode', to: {x: 220, y: 140}, toId: 'targetNode'},
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, routingOptions());
+
+    expect(result).not.toBe(layout);
+    expect(result.groups.source!.bounds).toEqual(bounds(0, 0, 180, 100));
+    expect(result.groups.target!.bounds).toEqual(bounds(240, 100, 120, 100));
+    expect(result.nodes.sourceNode!.bounds).toEqual(bounds(20, 20, 80, 40));
+    expect(result.nodes.targetNode!.bounds).toEqual(bounds(260, 120, 80, 40));
+    expect(result.edges[0]).toEqual({
+      from: {x: 100, y: 40},
+      fromId: 'sourceNode',
+      to: {x: 260, y: 140},
+      toId: 'targetNode',
+      sourceBoundary: 180,
+      targetBoundary: 240,
+    });
+  });
+
+  it('returns the exact input object for invalid options', () => {
+    const layout: RoutingLayout = {
+      width: 100,
+      height: 100,
+      nodes: {},
+      groups: {},
+      edges: [],
+    };
+
+    expect(applyAssetGroupLineageRouting(layout, routingOptions({ranksep: Number.NaN}))).toBe(
+      layout,
+    );
+  });
+
+  it('supports TB routing without changing perpendicular node coordinates', () => {
+    const layout: RoutingLayout = {
+      width: 300,
+      height: 500,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 40, 80)},
+        targetNode: {id: 'targetNode', bounds: bounds(120, 220, 40, 80)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 100, 180), expanded: true},
+        target: {id: 'target', bounds: bounds(100, 200, 100, 120), expanded: true},
+      },
+      edges: [
+        {from: {x: 40, y: 100}, fromId: 'sourceNode', to: {x: 140, y: 220}, toId: 'targetNode'},
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({direction: 'vertical', ranksep: 20, trailingGroupPadding: 16}),
+    );
+
+    expect(result.groups.source!.bounds).toEqual(bounds(0, 0, 100, 180));
+    expect(result.groups.target!.bounds).toEqual(bounds(100, 200, 100, 120));
+    expect(result.nodes.sourceNode!.bounds.x).toBe(20);
+    expect(result.nodes.targetNode!.bounds.x).toBe(120);
+    expect(result.edges[0]).toEqual({
+      from: {x: 40, y: 100},
+      fromId: 'sourceNode',
+      to: {x: 140, y: 220},
+      toId: 'targetNode',
+      sourceBoundary: 180,
+      targetBoundary: 200,
+    });
+  });
+
+  it('uses outer divergent branches and leaves unrelated rectangles untouched', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 500,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(30, 30, 60, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(230, 130, 60, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 200), expanded: true},
+        sourceLeaf: {id: 'sourceLeaf', bounds: bounds(20, 20, 120, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(200, 100, 140, 160), expanded: true},
+        targetLeaf: {id: 'targetLeaf', bounds: bounds(220, 120, 100, 100), expanded: true},
+        unrelated: {id: 'unrelated', bounds: bounds(185, 280, 100, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 90, y: 50}, fromId: 'sourceNode', to: {x: 230, y: 150}, toId: 'targetNode'},
+      ],
+    };
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        groupParentById: {
+          source: null,
+          sourceLeaf: 'source',
+          target: null,
+          targetLeaf: 'target',
+          unrelated: null,
+        },
+        ownerGroupByNodeId: {sourceNode: 'sourceLeaf', targetNode: 'targetLeaf'},
+        endpointGroupById: {sourceNode: 'sourceLeaf', targetNode: 'targetLeaf'},
+      }),
+    );
+
+    expect(result.groups.target!.bounds.x).toBe(240);
+    expect(result.groups.unrelated).toEqual(layout.groups.unrelated);
+    expect(result.edges[0]).toEqual({
+      from: {x: 90, y: 50},
+      fromId: 'sourceNode',
+      to: {x: 270, y: 150},
+      toId: 'targetNode',
+      sourceBoundary: 180,
+      targetBoundary: 240,
+    });
+    expect(Object.keys(result.edges[0]!).sort()).toEqual(
+      ['from', 'fromId', 'sourceBoundary', 'targetBoundary', 'to', 'toId'].sort(),
+    );
+  });
+
+  it('keeps pseudo-cycle geometry and omits corridors for SCC-internal edges', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        aNode: {id: 'aNode', bounds: bounds(20, 20, 40, 40)},
+        bNode: {id: 'bNode', bounds: bounds(220, 20, 40, 40)},
+      },
+      groups: {
+        a: {id: 'a', bounds: bounds(0, 0, 100, 100), expanded: true},
+        b: {id: 'b', bounds: bounds(200, 0, 100, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 60, y: 40}, fromId: 'aNode', to: {x: 220, y: 40}, toId: 'bNode'},
+        {from: {x: 260, y: 60}, fromId: 'bNode', to: {x: 20, y: 60}, toId: 'aNode'},
+      ],
+    };
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        groupParentById: {a: null, b: null},
+        ownerGroupByNodeId: {aNode: 'a', bNode: 'b'},
+        endpointGroupById: {aNode: 'a', bNode: 'b'},
+      }),
+    );
+
+    expect(result.groups.b!.bounds.x - result.groups.a!.bounds.x).toBe(200);
+    expect(result.edges).toEqual(layout.edges);
+    expect(result.edges.every((edge) => edge.sourceBoundary === undefined)).toBe(true);
+  });
+
+  it('is stateless across calls and returns worker-serializable output', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 120, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 100, y: 40}, fromId: 'sourceNode', to: {x: 320, y: 140}, toId: 'targetNode'},
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, routingOptions());
+    expect(result.groups.target!.bounds.x).toBe(300);
+    expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+  });
+
+  it('covers every nested boundary with the outer three-level divergent branches', () => {
+    const layout: RoutingLayout = {
+      width: 600,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(40, 40, 40, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(240, 40, 40, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 180), expanded: true},
+        sourceMid: {id: 'sourceMid', bounds: bounds(20, 20, 130, 130), expanded: true},
+        sourceLeaf: {id: 'sourceLeaf', bounds: bounds(30, 30, 80, 80), expanded: true},
+        target: {id: 'target', bounds: bounds(200, 0, 150, 180), expanded: true},
+        targetMid: {id: 'targetMid', bounds: bounds(220, 20, 110, 130), expanded: true},
+        targetLeaf: {id: 'targetLeaf', bounds: bounds(230, 30, 80, 80), expanded: true},
+      },
+      edges: [
+        {from: {x: 80, y: 60}, fromId: 'sourceNode', to: {x: 240, y: 60}, toId: 'targetNode'},
+      ],
+    };
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      routingOptions({
+        groupParentById: {
+          source: null,
+          sourceMid: 'source',
+          sourceLeaf: 'sourceMid',
+          target: null,
+          targetMid: 'target',
+          targetLeaf: 'targetMid',
+        },
+        ownerGroupByNodeId: {sourceNode: 'sourceLeaf', targetNode: 'targetLeaf'},
+        endpointGroupById: {sourceNode: 'sourceLeaf', targetNode: 'targetLeaf'},
+      }),
+    );
+
+    expect(result.edges[0]!.sourceBoundary).toBe(180);
+    expect(result.edges[0]!.targetBoundary).toBe(240);
+    expect(result.groups.target!.bounds.x).toBe(240);
+    expect(result.groups.targetMid!.bounds.x).toBe(260);
+    expect(result.groups.targetLeaf!.bounds.x).toBe(270);
+  });
+
+  it('falls back atomically when the layout is invalid', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, -1, 40)}},
+      groups: {source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true}},
+      edges: [],
+    };
+    expect(
+      applyAssetGroupLineageRouting(
+        layout,
+        routingOptions({
+          groupParentById: {source: null},
+          ownerGroupByNodeId: {sourceNode: 'source'},
+          endpointGroupById: {sourceNode: 'source'},
+        }),
+      ),
+    ).toBe(layout);
+  });
+
+  it('falls back rather than partially repairing one-sided corridor metadata', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 120, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 140},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+        },
+      ],
+    };
+
+    expect(applyAssetGroupLineageRouting(layout, routingOptions())).toBe(layout);
   });
 });

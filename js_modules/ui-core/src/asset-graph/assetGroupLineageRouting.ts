@@ -14,6 +14,35 @@ export type BranchConstraint = {
   targetBaseEntry: number;
 };
 
+export type EdgeRouteInfo = BranchConstraint;
+
+export type RoutingLayoutEdge = {
+  from: {x: number; y: number};
+  fromId: string;
+  to: {x: number; y: number};
+  toId: string;
+  sourceBoundary?: number;
+  targetBoundary?: number;
+};
+
+export type RoutingLayout = {
+  width: number;
+  height: number;
+  nodes: Record<string, {id: string; bounds: IBounds}>;
+  groups: Record<string, {id: string; bounds: IBounds; expanded: boolean}>;
+  edges: RoutingLayoutEdge[];
+};
+
+export type ApplyAssetGroupRoutingOptions = {
+  direction: RoutingDirection;
+  ranksep: number;
+  trailingGroupPadding: number;
+  margin: number;
+  groupParentById: GroupParentById;
+  ownerGroupByNodeId: Record<string, string | null>;
+  endpointGroupById: Record<string, string | null>;
+};
+
 export type AssetGroupConstraintInput = {
   direction: RoutingDirection;
   ranksep: number;
@@ -455,4 +484,305 @@ export const solveAssetGroupConstraints = ({
     endByGroupId[id] = Number.isFinite(end) ? end! : primaryEnd(groups[id]!.bounds, direction);
   }
   return {shiftByGroupId, endByGroupId, componentByGroupId};
+};
+
+const pointPrimary = (point: {x: number; y: number}, direction: RoutingDirection) =>
+  direction === 'horizontal' ? point.x : point.y;
+
+const translatePoint = (
+  point: {x: number; y: number},
+  amount: number,
+  direction: RoutingDirection,
+) =>
+  direction === 'horizontal' ? {...point, x: point.x + amount} : {...point, y: point.y + amount};
+
+const translateBounds = (bounds: IBounds, amount: number, direction: RoutingDirection): IBounds =>
+  direction === 'horizontal'
+    ? {...bounds, x: bounds.x + amount}
+    : {...bounds, y: bounds.y + amount};
+
+const withForwardEnd = (bounds: IBounds, end: number, direction: RoutingDirection): IBounds =>
+  direction === 'horizontal'
+    ? {...bounds, width: end - bounds.x}
+    : {...bounds, height: end - bounds.y};
+
+type InternalEdgeRouteInfo = EdgeRouteInfo;
+
+const validBounds = (value: IBounds) =>
+  Number.isFinite(value.x) &&
+  Number.isFinite(value.y) &&
+  Number.isFinite(value.width) &&
+  Number.isFinite(value.height) &&
+  value.width >= 0 &&
+  value.height >= 0;
+
+const sameKeys = (left: Record<string, unknown>, right: Record<string, unknown>) => {
+  const leftKeys = Object.keys(left).sort();
+  const rightKeys = Object.keys(right).sort();
+  return (
+    leftKeys.length === rightKeys.length && leftKeys.every((key, index) => key === rightKeys[index])
+  );
+};
+
+const validateRoutingResult = (
+  original: RoutingLayout,
+  result: RoutingLayout,
+  options: ApplyAssetGroupRoutingOptions,
+) => {
+  if (
+    !Number.isFinite(original.width) ||
+    !Number.isFinite(original.height) ||
+    original.width <= 0 ||
+    original.height <= 0 ||
+    !Number.isFinite(result.width) ||
+    !Number.isFinite(result.height) ||
+    result.width <= 0 ||
+    result.height <= 0 ||
+    !sameKeys(original.nodes, result.nodes) ||
+    !sameKeys(original.groups, result.groups) ||
+    original.edges.length !== result.edges.length
+  ) {
+    return false;
+  }
+
+  for (const id of Object.keys(original.groups)) {
+    const before = original.groups[id];
+    const after = result.groups[id];
+    if (!before || !after || !validBounds(before.bounds) || !validBounds(after.bounds)) {
+      return false;
+    }
+    if (
+      (options.direction === 'horizontal' &&
+        (before.bounds.y !== after.bounds.y || before.bounds.height !== after.bounds.height)) ||
+      (options.direction === 'vertical' &&
+        (before.bounds.x !== after.bounds.x || before.bounds.width !== after.bounds.width))
+    ) {
+      return false;
+    }
+  }
+
+  for (const id of Object.keys(original.nodes)) {
+    const before = original.nodes[id];
+    const after = result.nodes[id];
+    if (!before || !after || !validBounds(before.bounds) || !validBounds(after.bounds)) {
+      return false;
+    }
+    if (
+      (options.direction === 'horizontal' &&
+        (before.bounds.y !== after.bounds.y || before.bounds.height !== after.bounds.height)) ||
+      (options.direction === 'vertical' &&
+        (before.bounds.x !== after.bounds.x || before.bounds.width !== after.bounds.width))
+    ) {
+      return false;
+    }
+  }
+
+  for (let index = 0; index < result.edges.length; index++) {
+    const before = original.edges[index];
+    const edge = result.edges[index];
+    if (!before || !edge || before.fromId !== edge.fromId || before.toId !== edge.toId) {
+      return false;
+    }
+    const originalHasSourceBoundary = before.sourceBoundary !== undefined;
+    const originalHasTargetBoundary = before.targetBoundary !== undefined;
+    if (
+      originalHasSourceBoundary !== originalHasTargetBoundary ||
+      (originalHasSourceBoundary &&
+        (!Number.isFinite(before.sourceBoundary) || !Number.isFinite(before.targetBoundary)))
+    ) {
+      return false;
+    }
+    if (
+      !Number.isFinite(edge.from.x) ||
+      !Number.isFinite(edge.from.y) ||
+      !Number.isFinite(edge.to.x) ||
+      !Number.isFinite(edge.to.y)
+    ) {
+      return false;
+    }
+    const hasSourceBoundary = edge.sourceBoundary !== undefined;
+    const hasTargetBoundary = edge.targetBoundary !== undefined;
+    if (hasSourceBoundary !== hasTargetBoundary) {
+      return false;
+    }
+    if (hasSourceBoundary) {
+      const sourceBoundary = edge.sourceBoundary!;
+      const targetBoundary = edge.targetBoundary!;
+      if (
+        !Number.isFinite(sourceBoundary) ||
+        !Number.isFinite(targetBoundary) ||
+        pointPrimary(edge.from, options.direction) > sourceBoundary ||
+        sourceBoundary + options.ranksep > targetBoundary ||
+        targetBoundary > pointPrimary(edge.to, options.direction)
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
+const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
+  layout: T,
+  options: ApplyAssetGroupRoutingOptions,
+): T => {
+  if (
+    (options.direction !== 'horizontal' && options.direction !== 'vertical') ||
+    !Number.isFinite(options.ranksep) ||
+    options.ranksep < 0 ||
+    !Number.isFinite(options.trailingGroupPadding) ||
+    !Number.isFinite(options.margin) ||
+    options.margin < 0
+  ) {
+    throw new Error('Invalid asset group routing options');
+  }
+
+  const ancestry = buildGroupAncestryIndex(options.groupParentById);
+  const routeInfoByEdge = new Map<number, InternalEdgeRouteInfo>();
+  const constraints: BranchConstraint[] = [];
+
+  layout.edges.forEach((edge, index) => {
+    const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
+    const targetEndpointGroupId = options.endpointGroupById[edge.toId];
+    if (
+      !sourceEndpointGroupId ||
+      !targetEndpointGroupId ||
+      sourceEndpointGroupId === targetEndpointGroupId
+    ) {
+      return;
+    }
+
+    const lca = ancestry.lowestCommonAncestor(sourceEndpointGroupId, targetEndpointGroupId);
+    const sourceBranchId = ancestry.branchBelow(sourceEndpointGroupId, lca);
+    const targetBranchId = ancestry.branchBelow(targetEndpointGroupId, lca);
+    if (!sourceBranchId || !targetBranchId || sourceBranchId === targetBranchId) {
+      return;
+    }
+    const sourceGroup = layout.groups[sourceBranchId];
+    const targetGroup = layout.groups[targetBranchId];
+    if (!sourceGroup || !targetGroup) {
+      throw new Error('Missing asset group routing branch');
+    }
+
+    const sourceUsesGroupEnd = sourceGroup.expanded || edge.fromId !== sourceBranchId;
+    const targetUsesGroupStart = targetGroup.expanded || edge.toId !== targetBranchId;
+    const routeInfo: InternalEdgeRouteInfo = {
+      sourceBranchId,
+      targetBranchId,
+      sourceUsesGroupEnd,
+      sourceBaseExit: sourceUsesGroupEnd
+        ? primaryEnd(sourceGroup.bounds, options.direction)
+        : pointPrimary(edge.from, options.direction),
+      targetBaseEntry: targetUsesGroupStart
+        ? primaryStart(targetGroup.bounds, options.direction)
+        : pointPrimary(edge.to, options.direction),
+    };
+    routeInfoByEdge.set(index, routeInfo);
+    constraints.push(routeInfo);
+  });
+
+  const solution = solveAssetGroupConstraints({
+    direction: options.direction,
+    ranksep: options.ranksep,
+    trailingGroupPadding: options.trailingGroupPadding,
+    groups: layout.groups,
+    parentById: options.groupParentById,
+    constraints,
+  });
+
+  const groups: RoutingLayout['groups'] = {};
+  for (const [id, group] of Object.entries(layout.groups)) {
+    const shift = solution.shiftByGroupId[id];
+    const end = solution.endByGroupId[id];
+    if (shift === undefined || end === undefined) {
+      throw new Error('Missing solved asset group geometry');
+    }
+    groups[id] = {
+      ...group,
+      bounds: withForwardEnd(
+        translateBounds(group.bounds, shift, options.direction),
+        end,
+        options.direction,
+      ),
+    };
+  }
+
+  const nodes: RoutingLayout['nodes'] = {};
+  for (const [id, node] of Object.entries(layout.nodes)) {
+    const ownerGroupId = options.ownerGroupByNodeId[id];
+    const shift =
+      ownerGroupId === null || ownerGroupId === undefined
+        ? 0
+        : solution.shiftByGroupId[ownerGroupId];
+    if (shift === undefined) {
+      throw new Error('Missing node owner asset group');
+    }
+    nodes[id] = {...node, bounds: translateBounds(node.bounds, shift, options.direction)};
+  }
+
+  const edges = layout.edges.map((edge, index) => {
+    const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
+    const targetEndpointGroupId = options.endpointGroupById[edge.toId];
+    const sourceShift = sourceEndpointGroupId ? solution.shiftByGroupId[sourceEndpointGroupId] : 0;
+    const targetShift = targetEndpointGroupId ? solution.shiftByGroupId[targetEndpointGroupId] : 0;
+    if (sourceShift === undefined || targetShift === undefined) {
+      throw new Error('Missing edge endpoint asset group');
+    }
+    const {sourceBoundary: _sourceBoundary, targetBoundary: _targetBoundary, ...legacyEdge} = edge;
+    const translated = {
+      ...legacyEdge,
+      from: translatePoint(edge.from, sourceShift, options.direction),
+      to: translatePoint(edge.to, targetShift, options.direction),
+    };
+    const routeInfo = routeInfoByEdge.get(index);
+    if (
+      !routeInfo ||
+      solution.componentByGroupId[routeInfo.sourceBranchId] ===
+        solution.componentByGroupId[routeInfo.targetBranchId]
+    ) {
+      return translated;
+    }
+    const sourceBranchShift = solution.shiftByGroupId[routeInfo.sourceBranchId]!;
+    const targetBranchShift = solution.shiftByGroupId[routeInfo.targetBranchId]!;
+    return {
+      ...translated,
+      sourceBoundary: routeInfo.sourceUsesGroupEnd
+        ? solution.endByGroupId[routeInfo.sourceBranchId]!
+        : routeInfo.sourceBaseExit + sourceBranchShift,
+      targetBoundary: routeInfo.targetBaseEntry + targetBranchShift,
+    };
+  });
+
+  const forwardEnds = [
+    ...Object.values(groups).map((group) => primaryEnd(group.bounds, options.direction)),
+    ...Object.values(nodes).map((node) => primaryEnd(node.bounds, options.direction)),
+  ];
+  const maximumForwardEnd = forwardEnds.length ? Math.max(...forwardEnds) : 0;
+  const result = {
+    ...layout,
+    width:
+      options.direction === 'horizontal'
+        ? Math.max(layout.width, maximumForwardEnd + options.margin)
+        : layout.width,
+    height:
+      options.direction === 'vertical'
+        ? Math.max(layout.height, maximumForwardEnd + options.margin)
+        : layout.height,
+    nodes,
+    groups,
+    edges,
+  } as T;
+  return result;
+};
+
+export const applyAssetGroupLineageRouting = <T extends RoutingLayout>(
+  layout: T,
+  options: ApplyAssetGroupRoutingOptions,
+): T => {
+  try {
+    const result = applyAssetGroupLineageRoutingImpl(layout, options);
+    return validateRoutingResult(layout, result, options) ? result : layout;
+  } catch {
+    return layout;
+  }
 };
