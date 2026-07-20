@@ -2,7 +2,11 @@ import {Colors} from '@dagster-io/ui-components';
 import {useWorker} from '@koale/useworker';
 import {Fragment, memo, useEffect, useRef, useState} from 'react';
 
-import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
+import {
+  buildSVGPathHorizontal,
+  buildSVGPathVertical,
+  buildSVGPathWithBoundaryCorridors,
+} from './Utils';
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
@@ -225,9 +229,19 @@ const AssetEdgeSet = memo(({edges, color, strokeWidth, direction}: AssetEdgeSetP
       <path
         key={idx}
         d={
-          (direction === 'horizontal'
-            ? buildSVGPathHorizontal({source: edge.from, target: edge.to})
-            : buildSVGPathVertical({source: edge.from, target: edge.to})) ?? undefined
+          (edge.sourceBoundary !== undefined && edge.targetBoundary !== undefined
+            ? buildSVGPathWithBoundaryCorridors(
+                {
+                  from: edge.from,
+                  to: edge.to,
+                  sourceBoundary: edge.sourceBoundary,
+                  targetBoundary: edge.targetBoundary,
+                },
+                direction,
+              )
+            : direction === 'horizontal'
+              ? buildSVGPathHorizontal({source: edge.from, target: edge.to})
+              : buildSVGPathVertical({source: edge.from, target: edge.to})) ?? undefined
         }
         stroke={color}
         strokeWidth={strokeWidth}
