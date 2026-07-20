@@ -493,10 +493,11 @@ const solveAssetGroupConstraintsNumeric = (
     ) {
       const target = targetByAdjacency[edgeIndex]!;
       if (Number.isFinite(fromDistance)) {
-        distance[target] = Math.max(
-          distance[target]!,
-          fromDistance + weightByAdjacency[edgeIndex]!,
-        );
+        const candidate = fromDistance + weightByAdjacency[edgeIndex]!;
+        if (!Number.isFinite(candidate)) {
+          throw new Error('Non-finite asset group constraint solution');
+        }
+        distance[target] = Math.max(distance[target]!, candidate);
       }
       const nextIndegree = indegree[target]! - 1;
       indegree[target] = nextIndegree;
@@ -516,8 +517,11 @@ const solveAssetGroupConstraintsNumeric = (
     const component = componentByIndex[index]!;
     const shift = distance[moveNode(component)]!;
     const end = distance[endNode(index)]!;
-    shiftByIndex[index] = Number.isFinite(shift) ? shift : 0;
-    endByIndex[index] = Number.isFinite(end) ? end : primaryEnd(groups[id]!.bounds, direction);
+    if (!Number.isFinite(shift) || !Number.isFinite(end)) {
+      throw new Error('Non-finite asset group constraint solution');
+    }
+    shiftByIndex[index] = shift;
+    endByIndex[index] = end;
   }
   return {ids, indexById, shiftByIndex, endByIndex, componentByIndex, componentIdIndex};
 };
@@ -546,15 +550,25 @@ const translatePoint = (
   point: {x: number; y: number},
   amount: number,
   direction: RoutingDirection,
-) =>
-  direction === 'horizontal'
-    ? {x: point.x + amount, y: point.y}
-    : {x: point.x, y: point.y + amount};
+) => {
+  const translatedPrimary = pointPrimary(point, direction) + amount;
+  if (!Number.isFinite(translatedPrimary)) {
+    throw new Error('Non-finite asset group routed edge endpoint');
+  }
+  return direction === 'horizontal'
+    ? {x: translatedPrimary, y: point.y}
+    : {x: point.x, y: translatedPrimary};
+};
 
-const translateBounds = (bounds: IBounds, amount: number, direction: RoutingDirection): IBounds =>
-  direction === 'horizontal'
-    ? {x: bounds.x + amount, y: bounds.y, width: bounds.width, height: bounds.height}
-    : {x: bounds.x, y: bounds.y + amount, width: bounds.width, height: bounds.height};
+const translateBounds = (bounds: IBounds, amount: number, direction: RoutingDirection): IBounds => {
+  const translatedPrimary = primaryStart(bounds, direction) + amount;
+  if (!Number.isFinite(translatedPrimary)) {
+    throw new Error('Non-finite routed asset bounds');
+  }
+  return direction === 'horizontal'
+    ? {x: translatedPrimary, y: bounds.y, width: bounds.width, height: bounds.height}
+    : {x: bounds.x, y: translatedPrimary, width: bounds.width, height: bounds.height};
+};
 
 type ConstraintColumns = {
   count: number;
@@ -573,6 +587,24 @@ const validBounds = (value: IBounds) =>
   value.width >= 0 &&
   value.height >= 0;
 
+const assertValidOutputCorridor = (
+  edge: RoutingLayoutEdge,
+  direction: RoutingDirection,
+  ranksep: number,
+) => {
+  const sourceBoundary = edge.sourceBoundary!;
+  const targetBoundary = edge.targetBoundary!;
+  if (
+    !Number.isFinite(sourceBoundary) ||
+    !Number.isFinite(targetBoundary) ||
+    pointPrimary(edge.from, direction) > sourceBoundary ||
+    sourceBoundary + ranksep > targetBoundary ||
+    targetBoundary > pointPrimary(edge.to, direction)
+  ) {
+    throw new Error('Invalid asset group routed edge corridor');
+  }
+};
+
 const validateInputCorridors = (layout: RoutingLayout, options: ApplyAssetGroupRoutingOptions) => {
   if (
     !Number.isFinite(layout.width) ||
@@ -583,12 +615,18 @@ const validateInputCorridors = (layout: RoutingLayout, options: ApplyAssetGroupR
     return false;
   }
   for (const id in layout.groups) {
+    if (!Object.prototype.hasOwnProperty.call(layout.groups, id)) {
+      continue;
+    }
     const group = layout.groups[id];
     if (!group || !validBounds(group.bounds)) {
       return false;
     }
   }
   for (const id in layout.nodes) {
+    if (!Object.prototype.hasOwnProperty.call(layout.nodes, id)) {
+      continue;
+    }
     const node = layout.nodes[id];
     if (!node || !validBounds(node.bounds)) {
       return false;
@@ -749,20 +787,35 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
 
   const groups: RoutingLayout['groups'] = {};
   for (const id in layout.groups) {
+    if (!Object.prototype.hasOwnProperty.call(layout.groups, id)) {
+      continue;
+    }
     const group = layout.groups[id]!;
     const solutionIndex = requireSolutionIndex(id);
     const shift = solution.shiftByIndex[solutionIndex]!;
     const end = solution.endByIndex[solutionIndex]!;
     const bounds = group.bounds;
+    const translatedStart = primaryStart(bounds, options.direction) + shift;
+    const translatedSize = end - translatedStart;
+    if (
+      !Number.isFinite(translatedStart) ||
+      !Number.isFinite(translatedSize) ||
+      translatedSize < 0
+    ) {
+      throw new Error('Invalid routed asset group bounds');
+    }
     const translatedBounds =
       options.direction === 'horizontal'
-        ? {x: bounds.x + shift, y: bounds.y, width: end - bounds.x - shift, height: bounds.height}
-        : {x: bounds.x, y: bounds.y + shift, width: bounds.width, height: end - bounds.y - shift};
+        ? {x: translatedStart, y: bounds.y, width: translatedSize, height: bounds.height}
+        : {x: bounds.x, y: translatedStart, width: bounds.width, height: translatedSize};
     groups[id] = {...group, bounds: translatedBounds};
   }
 
   const nodes: RoutingLayout['nodes'] = {};
   for (const id in layout.nodes) {
+    if (!Object.prototype.hasOwnProperty.call(layout.nodes, id)) {
+      continue;
+    }
     const node = layout.nodes[id]!;
     const ownerGroupId = options.ownerGroupByNodeId[id];
     const shift =
@@ -783,26 +836,26 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     delete translated.targetBoundary;
     const constraintIndex = constraintIndexByEdge[index]!;
     if (
-      constraintIndex === -1 ||
+      constraintIndex !== -1 &&
       solution.componentByIndex[
         requireSolutionIndex(constraintColumns.sourceBranchIds[constraintIndex]!)
-      ] ===
+      ] !==
         solution.componentByIndex[
           requireSolutionIndex(constraintColumns.targetBranchIds[constraintIndex]!)
         ]
     ) {
-      return translated;
+      const sourceBranchIndex = requireSolutionIndex(
+        constraintColumns.sourceBranchIds[constraintIndex]!,
+      );
+      const sourceBranchShift = solution.shiftByIndex[sourceBranchIndex]!;
+      const targetBranchShift = shiftForGroup(constraintColumns.targetBranchIds[constraintIndex]!);
+      translated.sourceBoundary = constraintColumns.sourceUsesGroupEnd[constraintIndex]
+        ? solution.endByIndex[sourceBranchIndex]!
+        : constraintColumns.sourceBaseExit[constraintIndex]! + sourceBranchShift;
+      translated.targetBoundary =
+        constraintColumns.targetBaseEntry[constraintIndex]! + targetBranchShift;
+      assertValidOutputCorridor(translated, options.direction, options.ranksep);
     }
-    const sourceBranchIndex = requireSolutionIndex(
-      constraintColumns.sourceBranchIds[constraintIndex]!,
-    );
-    const sourceBranchShift = solution.shiftByIndex[sourceBranchIndex]!;
-    const targetBranchShift = shiftForGroup(constraintColumns.targetBranchIds[constraintIndex]!);
-    translated.sourceBoundary = constraintColumns.sourceUsesGroupEnd[constraintIndex]
-      ? solution.endByIndex[sourceBranchIndex]!
-      : constraintColumns.sourceBaseExit[constraintIndex]! + sourceBranchShift;
-    translated.targetBoundary =
-      constraintColumns.targetBaseEntry[constraintIndex]! + targetBranchShift;
     return translated;
   });
 
@@ -836,6 +889,14 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     groups,
     edges,
   } as T;
+  if (
+    !Number.isFinite(result.width) ||
+    !Number.isFinite(result.height) ||
+    result.width <= 0 ||
+    result.height <= 0
+  ) {
+    throw new Error('Invalid routed asset graph canvas');
+  }
   return result;
 };
 

@@ -445,6 +445,34 @@ describe('applyAssetGroupLineageRouting', () => {
     );
   });
 
+  it('returns the exact input object when routed canvas arithmetic overflows', () => {
+    const layout: RoutingLayout = {
+      width: 100,
+      height: 100,
+      nodes: {},
+      groups: {
+        source: {
+          id: 'source',
+          bounds: bounds(Number.MAX_VALUE, 0, 0, 10),
+          expanded: true,
+        },
+      },
+      edges: [],
+    };
+
+    expect(
+      applyAssetGroupLineageRouting(
+        layout,
+        routingOptions({
+          margin: Number.MAX_VALUE,
+          groupParentById: {source: null},
+          ownerGroupByNodeId: {},
+          endpointGroupById: {},
+        }),
+      ),
+    ).toBe(layout);
+  });
+
   it('supports TB routing without changing perpendicular node coordinates', () => {
     const layout: RoutingLayout = {
       width: 300,
