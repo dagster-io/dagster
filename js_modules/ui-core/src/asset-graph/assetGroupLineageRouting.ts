@@ -19,6 +19,9 @@ export const buildGroupAncestryIndex = (
     if (parentId === null) {
       continue;
     }
+    if (parentId === undefined) {
+      throw new Error('Missing visible asset group parent: undefined');
+    }
     const parentIndex = indexById.get(parentId);
     if (parentIndex === undefined) {
       throw new Error(`Missing visible asset group parent: ${parentId}`);
