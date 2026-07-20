@@ -350,6 +350,9 @@ describe('applyAssetGroupLineageRouting', () => {
     expect(applyAssetGroupLineageRouting(layout, routingOptions({ranksep: Number.NaN}))).toBe(
       layout,
     );
+    expect(applyAssetGroupLineageRouting(layout, routingOptions({trailingGroupPadding: -1}))).toBe(
+      layout,
+    );
   });
 
   it('supports TB routing without changing perpendicular node coordinates', () => {
@@ -572,6 +575,33 @@ describe('applyAssetGroupLineageRouting', () => {
           to: {x: 320, y: 140},
           toId: 'targetNode',
           sourceBoundary: 180,
+        },
+      ],
+    };
+
+    expect(applyAssetGroupLineageRouting(layout, routingOptions())).toBe(layout);
+  });
+
+  it('falls back for paired input corridors that violate primary-axis separation', () => {
+    const layout: RoutingLayout = {
+      width: 500,
+      height: 300,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 120, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 140},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+          targetBoundary: 230,
         },
       ],
     };

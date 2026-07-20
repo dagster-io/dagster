@@ -524,6 +524,35 @@ const sameKeys = (left: Record<string, unknown>, right: Record<string, unknown>)
   );
 };
 
+const validateInputCorridors = (layout: RoutingLayout, options: ApplyAssetGroupRoutingOptions) => {
+  for (const edge of layout.edges) {
+    const hasSourceBoundary = edge.sourceBoundary !== undefined;
+    const hasTargetBoundary = edge.targetBoundary !== undefined;
+    if (hasSourceBoundary !== hasTargetBoundary) {
+      return false;
+    }
+    if (!hasSourceBoundary) {
+      continue;
+    }
+    const sourceBoundary = edge.sourceBoundary!;
+    const targetBoundary = edge.targetBoundary!;
+    const sourceEndpoint = pointPrimary(edge.from, options.direction);
+    const targetEndpoint = pointPrimary(edge.to, options.direction);
+    if (
+      !Number.isFinite(sourceEndpoint) ||
+      !Number.isFinite(targetEndpoint) ||
+      !Number.isFinite(sourceBoundary) ||
+      !Number.isFinite(targetBoundary) ||
+      sourceEndpoint > sourceBoundary ||
+      sourceBoundary + options.ranksep > targetBoundary ||
+      targetBoundary > targetEndpoint
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const validateRoutingResult = (
   original: RoutingLayout,
   result: RoutingLayout,
@@ -631,6 +660,7 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     !Number.isFinite(options.ranksep) ||
     options.ranksep < 0 ||
     !Number.isFinite(options.trailingGroupPadding) ||
+    options.trailingGroupPadding < 0 ||
     !Number.isFinite(options.margin) ||
     options.margin < 0
   ) {
@@ -780,6 +810,9 @@ export const applyAssetGroupLineageRouting = <T extends RoutingLayout>(
   options: ApplyAssetGroupRoutingOptions,
 ): T => {
   try {
+    if (!validateInputCorridors(layout, options)) {
+      return layout;
+    }
     const result = applyAssetGroupLineageRoutingImpl(layout, options);
     return validateRoutingResult(layout, result, options) ? result : layout;
   } catch {
