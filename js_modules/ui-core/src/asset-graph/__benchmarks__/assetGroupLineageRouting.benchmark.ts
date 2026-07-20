@@ -14,6 +14,13 @@ const WARMUP_COUNT = 3;
 const SAMPLE_COUNT = 7;
 const MAX_MEDIAN_MS = 50;
 const MAX_MEDIAN_HEAP_MB = 10;
+const CANONICAL_COMMAND =
+  'yarn node --expose-gc -r ts-node/register src/asset-graph/__benchmarks__/assetGroupLineageRouting.benchmark.ts';
+
+if (!global.gc) {
+  throw new Error(`Benchmark requires exposed garbage collection. Run: ${CANONICAL_COMMAND}`);
+}
+const forceGc = global.gc;
 
 const groupId = (index: number) => `group-${index.toString().padStart(4, '0')}`;
 const nodeId = (index: number) => `node-${index.toString().padStart(4, '0')}`;
@@ -126,7 +133,14 @@ const createDeepFixture = (): {
   };
 };
 
-const median = (values: number[]) => [...values].sort((a, b) => a - b)[3]!;
+const median = (values: number[]) => {
+  assert.ok(
+    values.length > 0 && values.length % 2 === 1,
+    'Median requires a positive odd sample count',
+  );
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)]!;
+};
 
 const normal = createNormalFixture();
 for (let index = 0; index < WARMUP_COUNT; index++) {
@@ -140,14 +154,14 @@ const retainedHeapSamples: number[] = [];
 const retainedResults: RoutingLayout[] = [];
 for (let index = 0; index < SAMPLE_COUNT; index++) {
   retainedResults.length = 0;
-  global.gc?.();
+  forceGc();
   const heapBefore = process.memoryUsage().heapUsed;
   const startedAt = performance.now();
   const result = applyAssetGroupLineageRouting(normal.layout, normal.options);
   const elapsed = performance.now() - startedAt;
   const rawHeapDelta = process.memoryUsage().heapUsed - heapBefore;
   retainedResults.push(result);
-  global.gc?.();
+  forceGc();
   const retainedHeapDelta = process.memoryUsage().heapUsed - heapBefore;
   const retainedResult = retainedResults[0];
   assert.equal(retainedResult, result);
@@ -158,6 +172,32 @@ for (let index = 0; index < SAMPLE_COUNT; index++) {
   elapsedSamples.push(elapsed);
   rawHeapSamples.push(rawHeapDelta / (1024 * 1024));
   retainedHeapSamples.push(retainedHeapDelta / (1024 * 1024));
+}
+
+const measuredResult = retainedResults[0]!;
+const firstEdge = measuredResult.edges[0]!;
+assert.deepEqual(firstEdge, {
+  fromId: nodeId(0),
+  toId: nodeId(1),
+  from: {x: 4, y: 5},
+  to: {x: 66, y: 5},
+  sourceBoundary: 5,
+  targetBoundary: 65,
+});
+const lastEdge = measuredResult.edges[EDGE_COUNT - 1]!;
+assert.deepEqual(lastEdge, {
+  fromId: nodeId(8000),
+  toId: nodeId(8002),
+  from: {x: 520_004, y: 5},
+  to: {x: 520_131, y: 5},
+  sourceBoundary: 520_005,
+  targetBoundary: 520_130,
+});
+for (const edge of [firstEdge, lastEdge]) {
+  assert.ok(edge.sourceBoundary !== undefined && edge.targetBoundary !== undefined);
+  assert.ok(edge.from.x <= edge.sourceBoundary);
+  assert.ok(edge.sourceBoundary + 60 <= edge.targetBoundary);
+  assert.ok(edge.targetBoundary <= edge.to.x);
 }
 
 const deep = createDeepFixture();

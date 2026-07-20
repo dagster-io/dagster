@@ -297,6 +297,47 @@ const buildConstraintComponents = (
     incomingCursor[target] = incomingIndex + 1;
   }
 
+  const remainingIncoming = incomingCount.slice();
+  const acyclicReady = new Int32Array(groupCount);
+  let acyclicReadyCount = 0;
+  for (let index = 0; index < groupCount; index++) {
+    if (remainingIncoming[index] === 0) {
+      acyclicReady[acyclicReadyCount++] = index;
+    }
+  }
+  let acyclicVisitedCount = 0;
+  while (acyclicReadyCount) {
+    const node = acyclicReady[--acyclicReadyCount]!;
+    acyclicVisitedCount++;
+    for (
+      let edgeIndex = outgoingOffset[node]!;
+      edgeIndex < outgoingOffset[node + 1]!;
+      edgeIndex++
+    ) {
+      const target = outgoing[edgeIndex]!;
+      const nextIncoming = remainingIncoming[target]! - 1;
+      remainingIncoming[target] = nextIncoming;
+      if (nextIncoming === 0) {
+        acyclicReady[acyclicReadyCount++] = target;
+      }
+    }
+  }
+  if (acyclicVisitedCount === groupCount) {
+    const componentByIndex = new Int32Array(groupCount);
+    const componentIdIndex = new Int32Array(groupCount);
+    for (let index = 0; index < groupCount; index++) {
+      componentByIndex[index] = index;
+      componentIdIndex[index] = index;
+    }
+    return {
+      componentByIndex,
+      componentIdIndex,
+      componentCount: groupCount,
+      sourceByEdge,
+      targetByEdge,
+    };
+  }
+
   const visited = new Uint8Array(groupCount);
   const finishOrder = new Int32Array(groupCount);
   const stackNode = new Int32Array(groupCount);
@@ -785,13 +826,17 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     }
   }
 
+  let maximumForwardEnd: number | undefined;
   const groups: RoutingLayout['groups'] = {};
+  let groupIterationIndex = 0;
   for (const id in layout.groups) {
     if (!Object.prototype.hasOwnProperty.call(layout.groups, id)) {
       continue;
     }
     const group = layout.groups[id]!;
-    const solutionIndex = requireSolutionIndex(id);
+    const solutionIndex =
+      solution.ids[groupIterationIndex] === id ? groupIterationIndex : requireSolutionIndex(id);
+    groupIterationIndex++;
     const shift = solution.shiftByIndex[solutionIndex]!;
     const end = solution.endByIndex[solutionIndex]!;
     const bounds = group.bounds;
@@ -809,6 +854,9 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
         ? {x: translatedStart, y: bounds.y, width: translatedSize, height: bounds.height}
         : {x: bounds.x, y: translatedStart, width: bounds.width, height: translatedSize};
     groups[id] = {...group, bounds: translatedBounds};
+    const forwardEnd = primaryEnd(translatedBounds, options.direction);
+    maximumForwardEnd =
+      maximumForwardEnd === undefined ? forwardEnd : Math.max(maximumForwardEnd, forwardEnd);
   }
 
   const nodes: RoutingLayout['nodes'] = {};
@@ -822,33 +870,49 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
       ownerGroupId === null || ownerGroupId === undefined ? 0 : shiftForGroup(ownerGroupId);
     const bounds = translateBounds(node.bounds, shift, options.direction);
     nodes[id] = {...node, bounds};
+    const forwardEnd = primaryEnd(bounds, options.direction);
+    maximumForwardEnd =
+      maximumForwardEnd === undefined ? forwardEnd : Math.max(maximumForwardEnd, forwardEnd);
   }
 
   const edges = layout.edges.map((edge, index) => {
-    const sourceEndpointGroupId = options.endpointGroupById[edge.fromId];
-    const targetEndpointGroupId = options.endpointGroupById[edge.toId];
-    const sourceShift = sourceEndpointGroupId ? shiftForGroup(sourceEndpointGroupId) : 0;
-    const targetShift = targetEndpointGroupId ? shiftForGroup(targetEndpointGroupId) : 0;
+    const constraintIndex = constraintIndexByEdge[index]!;
+    const sourceBranchIndex =
+      constraintIndex === -1
+        ? -1
+        : requireSolutionIndex(constraintColumns.sourceBranchIds[constraintIndex]!);
+    const targetBranchIndex =
+      constraintIndex === -1
+        ? -1
+        : requireSolutionIndex(constraintColumns.targetBranchIds[constraintIndex]!);
+    const flatRoutedEdge = ancestry === undefined && constraintIndex !== -1;
+    const sourceEndpointGroupId = flatRoutedEdge
+      ? constraintColumns.sourceBranchIds[constraintIndex]!
+      : options.endpointGroupById[edge.fromId];
+    const targetEndpointGroupId = flatRoutedEdge
+      ? constraintColumns.targetBranchIds[constraintIndex]!
+      : options.endpointGroupById[edge.toId];
+    const sourceShift = sourceEndpointGroupId
+      ? solution.shiftByIndex[
+          flatRoutedEdge ? sourceBranchIndex : requireSolutionIndex(sourceEndpointGroupId)
+        ]!
+      : 0;
+    const targetShift = targetEndpointGroupId
+      ? solution.shiftByIndex[
+          flatRoutedEdge ? targetBranchIndex : requireSolutionIndex(targetEndpointGroupId)
+        ]!
+      : 0;
     const from = translatePoint(edge.from, sourceShift, options.direction);
     const to = translatePoint(edge.to, targetShift, options.direction);
     const translated = {...edge, from, to};
     delete translated.sourceBoundary;
     delete translated.targetBoundary;
-    const constraintIndex = constraintIndexByEdge[index]!;
     if (
       constraintIndex !== -1 &&
-      solution.componentByIndex[
-        requireSolutionIndex(constraintColumns.sourceBranchIds[constraintIndex]!)
-      ] !==
-        solution.componentByIndex[
-          requireSolutionIndex(constraintColumns.targetBranchIds[constraintIndex]!)
-        ]
+      solution.componentByIndex[sourceBranchIndex] !== solution.componentByIndex[targetBranchIndex]
     ) {
-      const sourceBranchIndex = requireSolutionIndex(
-        constraintColumns.sourceBranchIds[constraintIndex]!,
-      );
       const sourceBranchShift = solution.shiftByIndex[sourceBranchIndex]!;
-      const targetBranchShift = shiftForGroup(constraintColumns.targetBranchIds[constraintIndex]!);
+      const targetBranchShift = solution.shiftByIndex[targetBranchIndex]!;
       translated.sourceBoundary = constraintColumns.sourceUsesGroupEnd[constraintIndex]
         ? solution.endByIndex[sourceBranchIndex]!
         : constraintColumns.sourceBaseExit[constraintIndex]! + sourceBranchShift;
@@ -859,21 +923,6 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     return translated;
   });
 
-  let maximumForwardEnd: number | undefined;
-  for (const id in groups) {
-    const group = groups[id];
-    if (group) {
-      const end = primaryEnd(group.bounds, options.direction);
-      maximumForwardEnd = maximumForwardEnd === undefined ? end : Math.max(maximumForwardEnd, end);
-    }
-  }
-  for (const id in nodes) {
-    const node = nodes[id];
-    if (node) {
-      const end = primaryEnd(node.bounds, options.direction);
-      maximumForwardEnd = maximumForwardEnd === undefined ? end : Math.max(maximumForwardEnd, end);
-    }
-  }
   const forwardEnd = maximumForwardEnd ?? 0;
   const result = {
     ...layout,
