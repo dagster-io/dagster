@@ -10,7 +10,7 @@ import {
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
-const MAX_EDGES = 200;
+export const MAX_EDGES = 200;
 
 interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
@@ -21,7 +21,7 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-function getEdgesToShow({
+export function getEdgesToShow({
   viewportRect,
   highlighted,
   selected,
