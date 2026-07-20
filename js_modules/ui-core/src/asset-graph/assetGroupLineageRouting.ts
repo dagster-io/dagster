@@ -783,20 +783,31 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
     };
   });
 
-  const forwardEnds = [
-    ...Object.values(groups).map((group) => primaryEnd(group.bounds, options.direction)),
-    ...Object.values(nodes).map((node) => primaryEnd(node.bounds, options.direction)),
-  ];
-  const maximumForwardEnd = forwardEnds.length ? Math.max(...forwardEnds) : 0;
+  let maximumForwardEnd: number | undefined;
+  for (const id in groups) {
+    const group = groups[id];
+    if (group) {
+      const end = primaryEnd(group.bounds, options.direction);
+      maximumForwardEnd = maximumForwardEnd === undefined ? end : Math.max(maximumForwardEnd, end);
+    }
+  }
+  for (const id in nodes) {
+    const node = nodes[id];
+    if (node) {
+      const end = primaryEnd(node.bounds, options.direction);
+      maximumForwardEnd = maximumForwardEnd === undefined ? end : Math.max(maximumForwardEnd, end);
+    }
+  }
+  const forwardEnd = maximumForwardEnd ?? 0;
   const result = {
     ...layout,
     width:
       options.direction === 'horizontal'
-        ? Math.max(layout.width, maximumForwardEnd + options.margin)
+        ? Math.max(layout.width, forwardEnd + options.margin)
         : layout.width,
     height:
       options.direction === 'vertical'
-        ? Math.max(layout.height, maximumForwardEnd + options.margin)
+        ? Math.max(layout.height, forwardEnd + options.margin)
         : layout.height,
     nodes,
     groups,

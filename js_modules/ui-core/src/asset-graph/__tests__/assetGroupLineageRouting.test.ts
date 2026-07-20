@@ -140,7 +140,7 @@ describe('solveAssetGroupConstraints', () => {
       ranksep: 60,
       trailingGroupPadding: 15,
       groups: {
-        source: {bounds: bounds(0, 0, 100, 100), expanded: false},
+        source: {bounds: bounds(0, 0, 180, 100), expanded: false},
         parent: {bounds: bounds(150, 0, 200, 200), expanded: true},
         child: {bounds: bounds(160, 40, 100, 100), expanded: false},
         downstream: {bounds: bounds(400, 0, 100, 100), expanded: false},
@@ -151,7 +151,7 @@ describe('solveAssetGroupConstraints', () => {
           sourceBranchId: 'source',
           targetBranchId: 'child',
           sourceUsesGroupEnd: true,
-          sourceBaseExit: 100,
+          sourceBaseExit: 180,
           targetBaseEntry: 160,
         },
         {
@@ -164,9 +164,12 @@ describe('solveAssetGroupConstraints', () => {
       ],
     });
 
-    expect(solution.shiftByGroupId.child).toBe(0);
-    expect(solution.endByGroupId.parent).toBe(350);
-    expect(solution.shiftByGroupId.downstream).toBe(10);
+    // 180 + 60 - 160 moves only the child by 80. Its new end (340) plus 15 padding
+    // extends the parent end to 355, which then pushes downstream by 355 + 60 - 400 = 15.
+    expect(solution.shiftByGroupId.parent).toBe(0);
+    expect(solution.shiftByGroupId.child).toBe(80);
+    expect(solution.endByGroupId.parent).toBe(355);
+    expect(solution.shiftByGroupId.downstream).toBe(15);
   });
 
   it('collapses a pseudo-cycle and ignores its internal cyclic clearance', () => {
@@ -487,11 +490,46 @@ describe('applyAssetGroupLineageRouting', () => {
         {from: {x: 100, y: 40}, fromId: 'sourceNode', to: {x: 320, y: 140}, toId: 'targetNode'},
       ],
     };
+    const originalSnapshot = JSON.parse(JSON.stringify(layout));
 
     const result = applyAssetGroupLineageRouting(layout, routingOptions());
+    const repeated = applyAssetGroupLineageRouting(result, routingOptions());
+
     expect(result.groups.target!.bounds.x).toBe(300);
+    expect(repeated.groups.target!.bounds).toEqual(result.groups.target!.bounds);
+    expect(repeated.nodes.targetNode!.bounds).toEqual(result.nodes.targetNode!.bounds);
+    expect(repeated.edges).toEqual(result.edges);
+    expect(layout).toEqual(originalSnapshot);
     expect(JSON.parse(JSON.stringify(result))).toEqual(result);
   });
+
+  it('routes layouts larger than the engine argument limit without atomic fallback', () => {
+    const nodes: RoutingLayout['nodes'] = {
+      sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+      targetNode: {id: 'targetNode', bounds: bounds(220, 120, 80, 40)},
+    };
+    for (let index = 0; index < 150_000; index++) {
+      const id = `filler-${index}`;
+      nodes[id] = {id, bounds: bounds(0, 250, 1, 1)};
+    }
+    const layout: RoutingLayout = {
+      width: 400,
+      height: 300,
+      nodes,
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(200, 100, 120, 100), expanded: true},
+      },
+      edges: [
+        {from: {x: 100, y: 40}, fromId: 'sourceNode', to: {x: 220, y: 140}, toId: 'targetNode'},
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, routingOptions());
+
+    expect(result.groups.target!.bounds.x).toBe(240);
+    expect(result.edges[0]!.targetBoundary).toBe(240);
+  }, 30_000);
 
   it('covers every nested boundary with the outer three-level divergent branches', () => {
     const layout: RoutingLayout = {
