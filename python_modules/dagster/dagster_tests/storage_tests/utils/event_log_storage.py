@@ -5940,6 +5940,41 @@ class TestEventLogStorage:
 
         assert storage.get_concurrency_info("foo").slot_count == 0
 
+    def test_default_concurrency_idempotent(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        """Calling initialize_concurrency_limit_to_default twice with the same key must not
+        crash (regression test for PostgreSQL UniqueViolation / InFailedSqlTransaction)."""
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_set_concurrency_defaults():
+            pytest.skip("storage does not support setting global op concurrency defaults")
+
+        self.set_default_op_concurrency(instance, storage, 5)
+
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 5
+
+        # Second call with same default — must be idempotent, not crash
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 5
+
+        # Change the default and re-initialize — limit must propagate
+        self.set_default_op_concurrency(instance, storage, 3)
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 3
+
+        # Explicitly set via set_concurrency_slots (user-managed), then
+        # re-initialize from default — default must reclaim the row
+        storage.set_concurrency_slots("bar", 10)
+        assert storage.get_concurrency_info("bar").slot_count == 10
+
+        self.set_default_op_concurrency(instance, storage, 4)
+        assert storage.initialize_concurrency_limit_to_default("bar")
+        assert storage.get_concurrency_info("bar").slot_count == 4
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,
