@@ -12,6 +12,7 @@ import {Link} from 'react-router-dom';
 import {useQuery} from '../apollo-client';
 import {CODE_LOCATION_COMPONENT_TYPES_QUERY} from './CodeLocationComponentTypesQuery';
 import {CodeLocationDocsPackageTree} from './CodeLocationDocsPackageTree';
+import {useFeatureFlags} from '../app/useFeatureFlags';
 import styles from './css/CodeLocationDocsRoot.module.css';
 import {
   CodeLocationComponentTypesQuery,
@@ -45,8 +46,13 @@ const renderComponentBadge: RenderComponentBadge = (component, options) => {
   );
 };
 
+// When the instance UI is gated off, components can't be created from the UI,
+// so the "Creatable in UI" badge would be misleading — render nothing.
+const renderNoBadge: RenderComponentBadge = () => null;
+
 export const CodeLocationComponentsCatalogSubtab = memo(
   ({repoAddress, packageName, componentName}: Props) => {
+    const {flagComponentInstanceUI} = useFeatureFlags();
     const {data, loading} = useQuery<
       CodeLocationComponentTypesQuery,
       CodeLocationComponentTypesQueryVariables
@@ -135,7 +141,9 @@ export const CodeLocationComponentsCatalogSubtab = memo(
     }
 
     return (
-      <ComponentBadgeProvider value={renderComponentBadge}>
+      <ComponentBadgeProvider
+        value={flagComponentInstanceUI ? renderComponentBadge : renderNoBadge}
+      >
         <div className={styles.contentContainer}>
           <div className={styles.sidebar}>
             <CodeLocationDocsPackageTree
