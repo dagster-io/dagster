@@ -264,9 +264,7 @@ class AirbyteClient(DagsterModel):
                 num_retries += 1
                 time.sleep(self.request_retry_delay)
 
-            raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
-
-        return {}
+        raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def _paginated_request(
         self,
