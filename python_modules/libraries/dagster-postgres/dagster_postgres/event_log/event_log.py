@@ -360,8 +360,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     yield conn
 
     def has_table(self, table_name: str) -> bool:
-        with self._engine.connect() as connection:
-            return bool(self._engine.dialect.has_table(connection, table_name))
+        with self._connect() as conn:
+            return bool(self._engine.dialect.has_table(conn, table_name))
 
     def has_secondary_index(self, name: str) -> bool:
         if name not in self._secondary_index_cache:
