@@ -259,7 +259,7 @@ class AirbyteClient(DagsterModel):
                 self._log.error(
                     f"Request to Airbyte API failed for url {url} with method {method} : {e}"
                 )
-                if num_retries == self.request_max_retries:
+                if num_retries >= self.request_max_retries:
                     break
                 num_retries += 1
                 time.sleep(self.request_retry_delay)
