@@ -140,6 +140,79 @@ def test_refresh_access_token(
         assert_api_call(base_url=rest_api_url, call=api_calls[0], endpoint="test")
 
 
+def test_single_request_retries_on_transient_failure(
+    base_api_mocks: responses.RequestsMock,
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
+    rest_api_url: str,
+) -> None:
+    """Tests that `_single_request` retries transient `RequestException`s up to
+    `request_max_retries` times before giving up, and returns the payload once
+    the request succeeds.
+    """
+    client = resource.get_client()
+
+    # base_api_mocks already registered one 201 token response; drop it and script
+    # a fail-fail-success sequence so we can pin the retry cadence.
+    base_api_mocks.reset()
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{client.rest_api_base_url}/applications/token",
+        status=502,
+    )
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{client.rest_api_base_url}/applications/token",
+        status=502,
+    )
+    base_api_mocks.add(
+        method=responses.POST,
+        url=f"{client.rest_api_base_url}/applications/token",
+        json=SAMPLE_ACCESS_TOKEN,
+        status=201,
+    )
+
+    client._refresh_access_token()  # noqa
+
+    # All three responses should have been consumed: two 502s then the 201.
+    assert len(base_api_mocks.calls) == 3
+    for call in base_api_mocks.calls:
+        assert call.request.url == f"{rest_api_url}/applications/token"
+    # And the token endpoint eventually succeeded, so the client holds the token.
+    assert client._access_token_value == TEST_ACCESS_TOKEN  # noqa
+
+
+def test_single_request_raises_after_exhausting_retries(
+    base_api_mocks: responses.RequestsMock,
+    resource: AirbyteCloudWorkspace | AirbyteWorkspace,
+    rest_api_url: str,
+) -> None:
+    """Tests that `_single_request` raises `Failure` after exhausting
+    `request_max_retries` retries against a persistently failing endpoint,
+    and that it makes exactly `request_max_retries + 1` attempts.
+    """
+    client = resource.get_client()
+
+    base_api_mocks.reset()
+    # request_max_retries=3 by default -> 4 total attempts (1 initial + 3 retries).
+    for _ in range(client.request_max_retries + 1):
+        base_api_mocks.add(
+            method=responses.POST,
+            url=f"{client.rest_api_base_url}/applications/token",
+            status=502,
+        )
+
+    with pytest.raises(
+        Failure,
+        match=re.escape(
+            f"Max retries ({client.request_max_retries}) exceeded with url: "
+            f"{client.rest_api_base_url}/applications/token."
+        ),
+    ):
+        client._refresh_access_token()  # noqa
+
+    assert len(base_api_mocks.calls) == client.request_max_retries + 1
+
+
 def test_basic_resource_request(
     all_api_mocks: responses.RequestsMock,
     resource: AirbyteCloudWorkspace | AirbyteWorkspace,
