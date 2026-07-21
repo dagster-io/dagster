@@ -1,5 +1,5 @@
 :::info
 
-Freshness policies are under active development. You may encounter feature gaps and the APIs may change.
+Freshness policies are generally available. The `FreshnessDaemon` evaluates them by default — no `dagster.yaml` switch is required.
 
 :::
