@@ -427,6 +427,20 @@ class DagsterGrpcClient:
     def reload_code(self, timeout: int) -> dagster_api_pb2.ReloadCodeReply:
         return self._query("ReloadCode", dagster_api_pb2.ReloadCodeRequest, timeout=timeout)
 
+    def refresh_component_state(
+        self,
+        defs_state_keys: Sequence[str],
+        timeout: int = 300,
+    ) -> dagster_api_pb2.RefreshComponentStateReply:
+        # Refresh can hit external APIs (e.g. dbt manifests, Airbyte) so the
+        # default timeout is much higher than the standard request timeout.
+        return self._query(
+            "RefreshComponentState",
+            dagster_api_pb2.RefreshComponentStateRequest,
+            defs_state_keys=list(defs_state_keys),
+            timeout=timeout,
+        )
+
     def external_repository(
         self,
         remote_repository_origin: RemoteRepositoryOrigin,

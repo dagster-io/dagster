@@ -425,14 +425,12 @@ class ComponentTree(IHaveNew):
         self.state_tracker.mark_component_defs_state_key(loc, defs_state_key)
 
     @overload
-    def load_component(self, defs_path: Path | ComponentPath | str) -> Component: ...
+    def load_component(self, defs_path: ResolvableToComponentLoc) -> Component: ...
     @overload
-    def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: type[T]
-    ) -> T: ...
+    def load_component(self, defs_path: ResolvableToComponentLoc, expected_type: type[T]) -> T: ...
 
     def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: type[T] | None = None
+        self, defs_path: ResolvableToComponentLoc, expected_type: type[T] | None = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -532,12 +530,13 @@ class ComponentTree(IHaveNew):
         of_type: type[TComponent],
     ) -> list[TComponent]:
         """Get all components from this context that are instance of the specified type.
-        Avoids loading components that are not of the specified type.
+        Avoids loading components that are not of the specified type. Includes both
+        file-based (``ComponentPath``) and UI-defined (``UIDefinitionsLoc``) instances.
         """
         return [
-            check.inst(self.load_component(check.inst(loc, ComponentPath)), of_type)
+            check.inst(self.load_component(loc), of_type)
             for loc, decl in self._component_decl_tree().items()
-            if isinstance(loc, ComponentPath) and safe_is_subclass(decl.component_type, of_type)
+            if safe_is_subclass(decl.component_type, of_type)
         ]
 
     def _has_loaded_component_at_loc(self, loc: ResolvableToComponentLoc) -> bool:

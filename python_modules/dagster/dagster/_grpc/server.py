@@ -36,6 +36,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
+    DagsterInvariantViolationError,
     DagsterUserCodeLoadError,
     DagsterUserCodeUnreachableError,
     user_code_error_boundary,
@@ -418,6 +419,14 @@ class DagsterApiServer(DagsterApiServicer):
         self._termination_times: dict[str, float] = {}
         self._execution_lock = threading.Lock()
 
+        # Serializes concurrent RefreshComponentState calls for the same
+        # defs_state_key, since refresh_state writes a new version to
+        # defs_state_storage and two interleaved writes could race. Different
+        # keys can refresh in parallel. _refresh_locks_meta guards the dict
+        # itself when lazily creating new per-key locks.
+        self._refresh_locks_meta = threading.Lock()
+        self._refresh_locks: dict[str, threading.Lock] = {}
+
         self._serializable_load_error = None
 
         self._entry_point = (
@@ -622,6 +631,100 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
         return dagster_api_pb2.ReloadCodeReply()
+
+    def _get_refresh_lock(self, key: str) -> threading.Lock:
+        with self._refresh_locks_meta:
+            lock = self._refresh_locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._refresh_locks[key] = lock
+            return lock
+
+    def RefreshComponentState(  # ty: ignore[invalid-method-override]  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        request: dagster_api_pb2.RefreshComponentStateRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.RefreshComponentStateReply:
+        import asyncio
+
+        from dagster._core.storage.defs_state.base import set_defs_state_storage
+        from dagster.components.component.state_backed_component import StateBackedComponent
+
+        try:
+            requested_keys = set(request.defs_state_keys)
+            loaded_repos = check.not_none(
+                self._loaded_repositories,
+                "Cannot refresh component state when the code server is in an error state.",
+            )
+
+            components_to_refresh: list[tuple[StateBackedComponent, str]] = []
+            found_keys: set[str] = set()
+            project_root = None
+            for repo_def in loaded_repos.definitions_by_name.values():
+                component_tree = repo_def.get_component_tree()
+                if component_tree is None:
+                    continue
+                project_root = component_tree.project_root
+                for comp in component_tree.get_all_components(of_type=StateBackedComponent):
+                    key = comp.defs_state_config.key
+                    if key in requested_keys:
+                        components_to_refresh.append((comp, key))
+                        found_keys.add(key)
+
+            missing_keys = requested_keys - found_keys
+            if missing_keys:
+                raise DagsterInvariantViolationError(
+                    "No matching state-backed components found for keys: "
+                    + ", ".join(sorted(missing_keys))
+                )
+
+            resolved_project_root = check.not_none(project_root, "No project root found")
+
+            # Acquire per-key locks in sorted order so concurrent requests
+            # with overlapping (but different) key sets can't deadlock.
+            sorted_keys = sorted({key for _, key in components_to_refresh})
+            locks = [self._get_refresh_lock(key) for key in sorted_keys]
+
+            # gRPC servicer methods run in a threadpool where the
+            # DefsStateStorage context var is not propagated, so we re-enter it.
+            state_storage = self._instance.defs_state_storage if self._instance else None
+            with ExitStack() as stack:
+                for lock in locks:
+                    stack.enter_context(lock)
+                stack.enter_context(set_defs_state_storage(state_storage))
+
+                async def _refresh_all() -> dict[str, str]:
+                    coros = [
+                        comp.refresh_state(resolved_project_root)
+                        for comp, _ in components_to_refresh
+                    ]
+                    versions = await asyncio.gather(*coros)
+                    return {
+                        key: version for (_, key), version in zip(components_to_refresh, versions)
+                    }
+
+                refreshed_versions = asyncio.run(_refresh_all())
+
+            result_info: DefsStateInfo | None = None
+            for key, version in refreshed_versions.items():
+                result_info = DefsStateInfo.add_version(result_info, key, version)
+
+            self._logger.info(
+                "Refreshed state for %d components: %s",
+                len(refreshed_versions),
+                list(refreshed_versions.keys()),
+            )
+
+            return dagster_api_pb2.RefreshComponentStateReply(
+                serialized_defs_state_info=serialize_value(result_info or DefsStateInfo.empty()),
+            )
+        except Exception:
+            _maybe_log_exception(self._logger, "RefreshComponentState")
+            return dagster_api_pb2.RefreshComponentStateReply(
+                serialized_error=serialize_value(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
 
     @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> dagster_api_pb2.PingReply:

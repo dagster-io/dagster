@@ -152,6 +152,11 @@ class DagsterApiStub(object):
             request_serializer=dagster__api__pb2.ReloadCodeRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.ReloadCodeReply.FromString,
         )
+        self.RefreshComponentState = channel.unary_unary(
+            "/api.DagsterApi/RefreshComponentState",
+            request_serializer=dagster__api__pb2.RefreshComponentStateRequest.SerializeToString,
+            response_deserializer=dagster__api__pb2.RefreshComponentStateReply.FromString,
+        )
 
 
 class DagsterApiServicer(object):
@@ -313,6 +318,12 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def RefreshComponentState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -445,6 +456,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ReloadCode,
             request_deserializer=dagster__api__pb2.ReloadCodeRequest.FromString,
             response_serializer=dagster__api__pb2.ReloadCodeReply.SerializeToString,
+        ),
+        "RefreshComponentState": grpc.unary_unary_rpc_method_handler(
+            servicer.RefreshComponentState,
+            request_deserializer=dagster__api__pb2.RefreshComponentStateRequest.FromString,
+            response_serializer=dagster__api__pb2.RefreshComponentStateReply.SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler("api.DagsterApi", rpc_method_handlers)
@@ -1199,6 +1215,35 @@ class DagsterApi(object):
             "/api.DagsterApi/ReloadCode",
             dagster__api__pb2.ReloadCodeRequest.SerializeToString,
             dagster__api__pb2.ReloadCodeReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def RefreshComponentState(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/RefreshComponentState",
+            dagster__api__pb2.RefreshComponentStateRequest.SerializeToString,
+            dagster__api__pb2.RefreshComponentStateReply.FromString,
             options,
             channel_credentials,
             insecure,

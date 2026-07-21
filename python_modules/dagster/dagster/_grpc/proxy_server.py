@@ -182,6 +182,17 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         return dagster_api_pb2.ReloadCodeReply()
 
+    def RefreshComponentState(self, request, context):
+        if self._load_error:
+            return dagster_api_pb2.RefreshComponentStateReply(
+                serialized_error=serialize_value(self._load_error)
+            )
+        if not self._client:
+            raise Exception("No available client to code server")
+        return self._client.refresh_component_state(
+            defs_state_keys=list(request.defs_state_keys),
+        )
+
     def cleanup(self):
         # In case ShutdownServer was not called
         self._shutdown_once_executions_finish_event.set()
