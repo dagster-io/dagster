@@ -34,6 +34,7 @@ attributeExpr:
 	| KIND COLON value						# KindAttributeExpr
 	| IS COLON value						# IsAttributeExpr
 	| STATUS COLON value					# StatusAttributeExpr
+	| NOT_MATERIALIZED_IN_HOURS COLON DIGITS	# NotMaterializedInHoursExpr
 	| COLUMN COLON value					# ColumnAttributeExpr
 	| TABLE_NAME COLON value				# TableNameAttributeExpr
 	| COLUMN_TAG COLON value (EQUAL value)?	# ColumnTagAttributeExpr
@@ -81,6 +82,7 @@ KIND: 'kind';
 IS: 'is';
 CODE_LOCATION: 'code_location';
 STATUS: 'status';
+NOT_MATERIALIZED_IN_HOURS: 'not_materialized_in_hours';
 COLUMN: 'column';
 TABLE_NAME: 'table_name';
 COLUMN_TAG: 'column_tag';

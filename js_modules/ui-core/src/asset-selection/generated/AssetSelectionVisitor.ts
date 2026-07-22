@@ -1,4 +1,4 @@
-// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/robert.espinoza/Projects/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {AbstractParseTreeVisitor} from 'antlr4ng';
 
@@ -24,6 +24,7 @@ import {GroupAttributeExprContext} from './AssetSelectionParser.js';
 import {KindAttributeExprContext} from './AssetSelectionParser.js';
 import {IsAttributeExprContext} from './AssetSelectionParser.js';
 import {StatusAttributeExprContext} from './AssetSelectionParser.js';
+import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ColumnAttributeExprContext} from './AssetSelectionParser.js';
 import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnTagAttributeExprContext} from './AssetSelectionParser.js';
@@ -195,6 +196,13 @@ export class AssetSelectionVisitor<Result> extends AbstractParseTreeVisitor<Resu
    * @return the visitor result
    */
   visitStatusAttributeExpr?: (ctx: StatusAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => Result;
   /**
    * Visit a parse tree produced by the `ColumnAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.
