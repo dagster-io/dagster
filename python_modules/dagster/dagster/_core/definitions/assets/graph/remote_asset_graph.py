@@ -807,12 +807,16 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return self._remote_asset_check_nodes_by_key
 
     @property
+    def remote_asset_job_nodes_by_key(self) -> Mapping[AssetJobKey, RemoteAssetJobNode]:
+        return self._remote_asset_job_nodes_by_key
+
+    @property
     def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:
         return self.remote_asset_nodes_by_key
 
     @property
     def _asset_job_nodes_by_key(self) -> Mapping[AssetJobKey, RemoteAssetJobNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
-        return self._remote_asset_job_nodes_by_key
+        return self.remote_asset_job_nodes_by_key
 
     @property
     def asset_node_snaps_by_key(self) -> Mapping[AssetKey, "AssetNodeSnap"]:
@@ -832,7 +836,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
                 for k, node in self._asset_nodes_by_key.items()
             },
             **{k: v.handle for k, v in self.remote_asset_check_nodes_by_key.items()},
-            **{k: v.handle for k, v in self._remote_asset_job_nodes_by_key.items()},
+            **{k: v.handle for k, v in self.remote_asset_job_nodes_by_key.items()},
         }
 
     def get_repository_handle(self, key: EntityKey) -> RepositoryHandle:
@@ -841,7 +845,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         elif isinstance(key, AssetCheckKey):
             return self.get_remote_asset_check_node(key).handle
         elif isinstance(key, AssetJobKey):
-            return self._remote_asset_job_nodes_by_key[key].handle
+            return self.remote_asset_job_nodes_by_key[key].handle
         else:
             check.assert_never(key)
 
