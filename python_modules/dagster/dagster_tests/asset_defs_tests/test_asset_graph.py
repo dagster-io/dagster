@@ -152,6 +152,7 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
         )
 
 
+
 def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
     @dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2022-01-01"))
     def parent(): ...
@@ -161,8 +162,7 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
 
     asset_graph = asset_graph_from_assets([parent, child])
     with (
-        dg.instance_for_test() as instance,
-        partition_loading_context(dynamic_partitions_store=instance),
+        
     ):
         expected_asset_partitions = {
             AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -173,6 +173,38 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
             asset_graph.get_children_partitions(parent.key, "2022-01-03")
             == expected_asset_partitions
         )
+
+
+def test_external_asset_stub_preserves_metadata_minimal():
+    import dagster as dg
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+
+    ext_spec = dg.AssetSpec(
+        key=["external_asset"],
+        description="External asset description",
+        kinds={"external", "db"},
+    )
+
+    @dg.asset(deps=[ext_spec])
+    def downstream_asset():
+        pass
+
+    asset_graph = AssetGraph.from_assets([downstream_asset])
+    ext_node = asset_graph.get(dg.AssetKey(["external_asset"]))
+    assert ext_node is not None
+    assert getattr(ext_node, "description", None) == "External asset description"
+    assert getattr(ext_node, "kinds", None) == set(["external", "db"])
+
+    @dg.asset(deps=["plain_external"])
+    def downstream2():
+        pass
+
+    asset_graph2 = AssetGraph.from_assets([downstream2])
+    plain_node = asset_graph2.get(dg.AssetKey(["plain_external"]))
+    assert plain_node is not None
+    assert getattr(plain_node, "description", None) is None
+    kinds = getattr(plain_node, "kinds", None)
+    assert kinds is None or kinds == set()
 
 
 def test_get_parent_partitions_fan_in(
@@ -1165,6 +1197,11 @@ def test_cross_code_location_partition_mapping() -> None:
         asset_graph.get_partition_mapping(key=b.key, parent_asset_key=a.key),
         dg.TimeWindowPartitionMapping,
     )
+import pytest
+
+# Clear the global registry before each test to avoid state leakage
+from dagster._core.definitions.assets.definition import asset_dep
+
 
 
 def test_serdes() -> None:
