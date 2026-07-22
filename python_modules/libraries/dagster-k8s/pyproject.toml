@@ -52,7 +52,8 @@ conflicts = [
 ]
 
 [tool.uv.constraint-dependencies]
-# Exclude specific google-auth releases that have compatibility issues
+# exclude a google-auth release that added an overly restrictive urllib3 pin
+# that confuses dependency resolvers
 google-auth = ["!=2.23.1"]
 
 [tool.uv.sources]
