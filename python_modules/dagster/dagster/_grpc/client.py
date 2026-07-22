@@ -441,6 +441,18 @@ class DagsterGrpcClient:
             timeout=timeout,
         )
 
+    def reload_code_with_state(
+        self,
+        serialized_defs_state_info: str,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ) -> dagster_api_pb2.ReloadCodeWithStateReply:
+        return self._query(
+            "ReloadCodeWithState",
+            dagster_api_pb2.ReloadCodeWithStateRequest,
+            serialized_defs_state_info=serialized_defs_state_info,
+            timeout=timeout,
+        )
+
     def external_repository(
         self,
         remote_repository_origin: RemoteRepositoryOrigin,

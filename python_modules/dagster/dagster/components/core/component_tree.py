@@ -1,6 +1,6 @@
 import importlib
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
@@ -380,6 +380,13 @@ class ComponentTree(IHaveNew):
             return self.build_defs_at_path(ComponentRootLoc())
         else:
             return self.build_defs_at_path(loc)
+
+    def reload_with_state(self, changed_state_keys: Iterable[str]) -> Definitions:
+        """Invalidates the cached data for a set of state keys, then rebuilds the Definitions object."""
+        for key in changed_state_keys:
+            self.state_tracker.invalidate_by_defs_state_key(key)
+        self.state_tracker.invalidate_loc(ComponentRootLoc())
+        return self.build_defs()
 
     def find_decl_at_path(self, defs_path: ResolvableToComponentPath) -> ComponentDecl:
         """Loads a component declaration from the given path.

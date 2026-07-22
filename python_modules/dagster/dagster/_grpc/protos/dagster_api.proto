@@ -32,6 +32,7 @@ service DagsterApi {
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
   rpc ReloadCode (ReloadCodeRequest) returns (ReloadCodeReply) {}
   rpc RefreshComponentState (RefreshComponentStateRequest) returns (RefreshComponentStateReply) {}
+  rpc ReloadCodeWithState (ReloadCodeWithStateRequest) returns (ReloadCodeWithStateReply) {}
 }
 
 message Empty {}
@@ -213,4 +214,13 @@ message RefreshComponentStateRequest {
 message RefreshComponentStateReply {
   string serialized_error = 1;
   string serialized_defs_state_info = 2;
+}
+
+message ReloadCodeWithStateRequest {
+  string serialized_defs_state_info = 1;
+}
+
+message ReloadCodeWithStateReply {
+  string serialized_error = 1;
+  string serialized_server_id = 2;
 }

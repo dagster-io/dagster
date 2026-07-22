@@ -334,6 +334,29 @@ class LoadedRepositories:
     def reconstructables_by_name(self) -> Mapping[str, ReconstructableRepository]:
         return self._recon_repos_by_name
 
+    def update_repo_defs(
+        self, new_repo_defs_by_name: Mapping[str, RepositoryDefinition]
+    ) -> "LoadedRepositories":
+        self._repo_defs_by_name = dict(new_repo_defs_by_name)
+        return self
+
+
+def _get_changed_defs_state_keys(old: DefsStateInfo | None, new: DefsStateInfo | None) -> set[str]:
+    """Diff old vs new ``DefsStateInfo`` and return the set of keys whose version changed,
+    plus keys that were added or removed.
+    """
+    old_versions = (
+        {k: (v.version if v else None) for k, v in old.info_mapping.items()} if old else {}
+    )
+    new_versions = (
+        {k: (v.version if v else None) for k, v in new.info_mapping.items()} if new else {}
+    )
+    changed: set[str] = set()
+    for key in old_versions.keys() | new_versions.keys():
+        if old_versions.get(key) != new_versions.get(key):
+            changed.add(key)
+    return changed
+
 
 def _get_code_pointer(
     loadable_target_origin: LoadableTargetOrigin,
@@ -426,6 +449,11 @@ class DagsterApiServer(DagsterApiServicer):
         # itself when lazily creating new per-key locks.
         self._refresh_locks_meta = threading.Lock()
         self._refresh_locks: dict[str, threading.Lock] = {}
+
+        # Serializes ReloadCodeWithState calls. Reads of self._loaded_repositories
+        # see either the pre- or post-reload value (we pointer-swap the whole
+        # LoadedRepositories under this lock) but do not block.
+        self._reload_lock = threading.Lock()
 
         self._serializable_load_error = None
 
@@ -725,6 +753,80 @@ class DagsterApiServer(DagsterApiServicer):
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
+
+    def ReloadCodeWithState(  # ty: ignore[invalid-method-override]  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        request: dagster_api_pb2.ReloadCodeWithStateRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ReloadCodeWithStateReply:
+        from dagster._core.storage.defs_state.base import set_defs_state_storage
+
+        with self._reload_lock:
+            try:
+                new_defs_state_info: DefsStateInfo | None = (
+                    deserialize_value(request.serialized_defs_state_info, DefsStateInfo)
+                    if request.serialized_defs_state_info
+                    else None
+                )
+
+                # Idempotent: skip the rebuild if the incoming pin matches what
+                # we already have applied. Lets callers (especially the agent
+                # reconciler) safely retry or fan out to multiple replicas
+                # without forcing redundant work.
+                if new_defs_state_info == self._defs_state_info:
+                    return dagster_api_pb2.ReloadCodeWithStateReply(
+                        serialized_server_id=self._server_id,
+                    )
+
+                loaded_repos = check.not_none(
+                    self._loaded_repositories,
+                    "Cannot reload code with state when the code server is in an error state.",
+                )
+
+                # Re-set the defs state storage contextvar — gRPC's threadpool worker
+                # threads do not inherit the contextvar set on the main thread.
+                with set_defs_state_storage(
+                    self._instance.defs_state_storage if self._instance else None
+                ):
+                    DefinitionsLoadContext.set(
+                        DefinitionsLoadContext(
+                            DefinitionsLoadType.INITIALIZATION,
+                            repository_load_data=RepositoryLoadData(
+                                defs_state_info=new_defs_state_info,
+                            ),
+                        )
+                    )
+
+                    changed_state_keys = _get_changed_defs_state_keys(
+                        self._defs_state_info, new_defs_state_info
+                    )
+
+                    new_repo_defs_by_name: dict[str, RepositoryDefinition] = {}
+                    for repo_name, repo_def in loaded_repos.definitions_by_name.items():
+                        component_tree = repo_def.get_component_tree()
+                        if component_tree is None:
+                            new_repo_defs_by_name[repo_name] = repo_def
+                            continue
+                        new_defs = component_tree.reload_with_state(changed_state_keys)
+                        new_repo_def = new_defs.get_repository_def()
+                        new_repo_def.load_all_definitions()
+                        new_repo_defs_by_name[repo_name] = new_repo_def
+
+                # Atomic pointer swap — readers on other threads see either the
+                # pre- or post-reload value, never a partially-populated dict.
+                self._loaded_repositories = loaded_repos.update_repo_defs(new_repo_defs_by_name)
+                self._defs_state_info = new_defs_state_info
+                self._server_id = str(uuid.uuid4())
+                return dagster_api_pb2.ReloadCodeWithStateReply(
+                    serialized_server_id=self._server_id,
+                )
+            except Exception:
+                _maybe_log_exception(self._logger, "ReloadCodeWithState")
+                return dagster_api_pb2.ReloadCodeWithStateReply(
+                    serialized_error=serialize_value(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    )
+                )
 
     @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> dagster_api_pb2.PingReply:

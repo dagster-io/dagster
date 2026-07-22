@@ -864,3 +864,44 @@ class RefreshComponentStateReply(google.protobuf.message.Message):
     ) -> None: ...
 
 global___RefreshComponentStateReply = RefreshComponentStateReply
+
+@typing.final
+class ReloadCodeWithStateRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_DEFS_STATE_INFO_FIELD_NUMBER: builtins.int
+    serialized_defs_state_info: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_defs_state_info: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal["serialized_defs_state_info", b"serialized_defs_state_info"],
+    ) -> None: ...
+
+global___ReloadCodeWithStateRequest = ReloadCodeWithStateRequest
+
+@typing.final
+class ReloadCodeWithStateReply(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_ERROR_FIELD_NUMBER: builtins.int
+    SERIALIZED_SERVER_ID_FIELD_NUMBER: builtins.int
+    serialized_error: builtins.str
+    serialized_server_id: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_error: builtins.str = ...,
+        serialized_server_id: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self,
+        field_name: typing.Literal[
+            "serialized_error", b"serialized_error", "serialized_server_id", b"serialized_server_id"
+        ],
+    ) -> None: ...
+
+global___ReloadCodeWithStateReply = ReloadCodeWithStateReply

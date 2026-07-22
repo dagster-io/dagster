@@ -193,6 +193,20 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             defs_state_keys=list(request.defs_state_keys),
         )
 
+    def ReloadCodeWithState(self, request, context):
+        # Forward into the long-lived inner code server so the in-process
+        # incremental reload happens there. Unlike ReloadCode, this does not
+        # restart the subprocess.
+        if self._load_error:
+            return dagster_api_pb2.ReloadCodeWithStateReply(
+                serialized_error=serialize_value(self._load_error)
+            )
+        if not self._client:
+            raise Exception("No available client to code server")
+        return self._client.reload_code_with_state(
+            serialized_defs_state_info=request.serialized_defs_state_info,
+        )
+
     def cleanup(self):
         # In case ShutdownServer was not called
         self._shutdown_once_executions_finish_event.set()
