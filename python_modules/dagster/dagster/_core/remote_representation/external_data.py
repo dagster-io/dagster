@@ -1532,6 +1532,7 @@ class ComponentTreeSnap:
             # if decl has child decls, it is not a leaf node
             if next(decl.iterate_child_component_decls(), None) is not None:
                 continue
+
             # the ComponentTree will be fully loaded at this point, so the
             # component instance will be freely available in the cache
             comp_inst = tree.load_component(loc)

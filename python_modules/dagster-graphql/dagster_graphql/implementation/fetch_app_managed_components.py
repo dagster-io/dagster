@@ -130,7 +130,7 @@ def _component_snap_to_graphene(
     return GrapheneComponent(
         componentId=snap.key,
         componentType=snap.full_type_name,
-        isAppManaged=bool(snap.is_ui_defined),
+        isAppManaged=bool(snap.app_managed),
         attributes=attributes,
         defsStateKey=snap.defs_state_key,
         defsStateManagementType=snap.defs_state_management_type,
@@ -190,7 +190,7 @@ def get_components_for_location(
         if component_tree is None:
             continue
         for snap in component_tree.leaf_instances:
-            attributes = app_managed_attrs_by_id.get(snap.key) if snap.is_ui_defined else None
+            attributes = app_managed_attrs_by_id.get(snap.key) if snap.app_managed else None
             components.append(
                 _component_snap_to_graphene(
                     snap,

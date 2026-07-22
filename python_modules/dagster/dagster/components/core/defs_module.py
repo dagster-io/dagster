@@ -458,7 +458,9 @@ EXPLICITLY_IGNORED_GLOB_PATTERNS = [
 ]
 
 
-def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path, Component]:
+def find_components_from_context(
+    context: ComponentLoadContext,
+) -> Mapping[Path, Component]:
     found = {}
     for subpath in sorted(context.path.iterdir()):
         relative_subpath = subpath.relative_to(context.path)
@@ -491,7 +493,8 @@ class PythonFileComponent(Component):
             list(find_objects_in_module_of_types(module, Definitions)), Definitions
         )
         lazy_def_objects = check.is_list(
-            list(find_objects_in_module_of_types(module, LazyDefinitions)), LazyDefinitions
+            list(find_objects_in_module_of_types(module, LazyDefinitions)),
+            LazyDefinitions,
         )
 
         if lazy_def_objects and def_objects:
