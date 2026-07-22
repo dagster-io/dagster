@@ -14,7 +14,11 @@ from dagster_shared.cli import python_pointer_options
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
-from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
+from dagster._cli.utils import (
+    assert_no_remaining_opts,
+    get_instance_for_cli,
+    resolve_serialized_defs_state_info,
+)
 from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -816,6 +820,8 @@ def grpc_command(
 
     logger.info("Starting %s", server_desc)
 
+    resolved_defs_state_info = resolve_serialized_defs_state_info(defs_state_info, logger)
+
     server_termination_event = threading.Event()
     threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
     api_servicer = DagsterApiServer(
@@ -840,8 +846,8 @@ def grpc_command(
         location_name=location_name,
         enable_metrics=enable_metrics,
         server_threadpool_executor=threadpool_executor,
-        defs_state_info=deserialize_value(defs_state_info, DefsStateInfo)
-        if defs_state_info
+        defs_state_info=deserialize_value(resolved_defs_state_info, DefsStateInfo)
+        if resolved_defs_state_info
         else None,
     )
 
