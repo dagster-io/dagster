@@ -17,7 +17,7 @@ from typing import (  # noqa: UP035
     cast,
     get_type_hints as typing_get_type_hints,
 )
-from weakref import WeakKeyDictionary
+from weakref import finalize
 
 from typing_extensions import ParamSpec
 
@@ -66,37 +66,39 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
 
 # ``inspect.signature`` and ``typing.get_type_hints`` are pure functions of a callable, but each is
 # individually expensive and is invoked many times on the same function while a single
-# @op/@asset/@asset_check definition is built. Memoize per callable so that work happens once.
-# Keyed weakly, so entries drop when the function is garbage-collected. Callables that can't be weak-referenced
-# or hashed fall back to the uncached path.
-_signature_cache: "WeakKeyDictionary[Callable[..., Any], inspect.Signature]" = WeakKeyDictionary()
-_type_hints_cache: "WeakKeyDictionary[Callable[..., Any], Mapping[str, Any]]" = WeakKeyDictionary()
+# @op/@asset/@asset_check definition is built.
+#
+# Memoize the result per callable. Entries are keyed by object identity. Callables that cannot be
+# weak-referenced are not cached.
+#
+# This assumes a callable's signature and annotations are not mutated between asset builds.
+_signature_cache: dict[int, "inspect.Signature"] = {}
+_type_hints_cache: dict[int, Mapping[str, Any]] = {}
 
 
-def _cached_signature(fn: Callable[..., Any]) -> inspect.Signature:
+def _cached_by_identity(
+    cache: dict[int, T],
+    fn: Callable[..., Any],
+    compute: Callable[[Callable[..., Any]], T],
+) -> T:
+    key = id(fn)
+    if key in cache:
+        return cache[key]
+    value = compute(fn)
     try:
-        cached = _signature_cache.get(fn)
-    except TypeError:  # not weak-referenceable or unhashable
-        return signature(fn)
-    if cached is None:
-        cached = signature(fn)
-        _signature_cache[fn] = cached
-    return cached
+        finalize(fn, cache.pop, key, None)
+    except TypeError:  # fn is not weak-referenceable, do not cache
+        return value
+    cache[key] = value
+    return value
 
 
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
-    return list(_cached_signature(fn).parameters.values())
+    return list(_cached_by_identity(_signature_cache, fn, signature).parameters.values())
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
-    try:
-        cached = _type_hints_cache.get(fn)
-    except TypeError:  # not weak-referenceable or unhashable
-        return _compute_type_hints(fn)
-    if cached is None:
-        cached = _compute_type_hints(fn)
-        _type_hints_cache[fn] = cached
-    return cached
+    return _cached_by_identity(_type_hints_cache, fn, _compute_type_hints)
 
 
 def _compute_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
