@@ -242,9 +242,7 @@ class AppManagedDefinitionsLoc(ComponentLoc):
         return AppManagedDefinitionsLoc()
 
     def get_display_key(self, root_path: Path) -> str:
-        if self.instance_key is not None:
-            return f"<ui>/{self.instance_key}"
-        return "<ui>"
+        return self.instance_key or "APP_ROOT"
 
 
 class AppManagedDefinitionsComponent(Component):
