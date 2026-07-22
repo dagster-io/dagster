@@ -73,7 +73,9 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.EDIT_DYNAMIC_PARTITIONS: True,
     Permissions.TOGGLE_AUTO_MATERIALIZE: True,
     Permissions.EDIT_CONCURRENCY_LIMIT: True,
-    Permissions.EDIT_APP_MANAGED_COMPONENTS: True,
+    # App-managed (UI-backed) components are a Dagster+-only feature, so editing
+    # them from the UI is not permitted in open source.
+    Permissions.EDIT_APP_MANAGED_COMPONENTS: False,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {

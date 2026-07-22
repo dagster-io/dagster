@@ -6,13 +6,13 @@ import ComponentPageContents from '@dagster-io/dg-docs-components/ComponentPageC
 import PackagePageDetails from '@dagster-io/dg-docs-components/PackagePageDetails';
 import {Contents} from '@dagster-io/dg-docs-components/types';
 import {Tag} from '@dagster-io/ui-components';
+import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
 import {HTMLProps, memo, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {useQuery} from '../apollo-client';
 import {CODE_LOCATION_COMPONENT_TYPES_QUERY} from './CodeLocationComponentTypesQuery';
 import {CodeLocationDocsPackageTree} from './CodeLocationDocsPackageTree';
-import {useFeatureFlags} from '../app/useFeatureFlags';
 import styles from './css/CodeLocationDocsRoot.module.css';
 import {
   CodeLocationComponentTypesQuery,
@@ -52,7 +52,7 @@ const renderNoBadge: RenderComponentBadge = () => null;
 
 export const CodeLocationComponentsCatalogSubtab = memo(
   ({repoAddress, packageName, componentName}: Props) => {
-    const {flagComponentInstanceUI} = useFeatureFlags();
+    const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
     const {data, loading} = useQuery<
       CodeLocationComponentTypesQuery,
       CodeLocationComponentTypesQueryVariables
@@ -142,7 +142,7 @@ export const CodeLocationComponentsCatalogSubtab = memo(
 
     return (
       <ComponentBadgeProvider
-        value={flagComponentInstanceUI ? renderComponentBadge : renderNoBadge}
+        value={componentInstanceUIEnabled ? renderComponentBadge : renderNoBadge}
       >
         <div className={styles.contentContainer}>
           <div className={styles.sidebar}>
