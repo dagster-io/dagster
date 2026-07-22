@@ -72,7 +72,7 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
 # weak-referenced are not cached.
 #
 # This assumes a callable's signature and annotations are not mutated between asset builds.
-_signature_cache: dict[int, "inspect.Signature"] = {}
+_function_params_cache: dict[int, tuple[Parameter, ...]] = {}
 _type_hints_cache: dict[int, Mapping[str, Any]] = {}
 
 
@@ -93,8 +93,12 @@ def _cached_by_identity(
     return value
 
 
+def _compute_function_params(fn: Callable[..., Any]) -> tuple[Parameter, ...]:
+    return tuple(signature(fn).parameters.values())
+
+
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
-    return list(_cached_by_identity(_signature_cache, fn, signature).parameters.values())
+    return _cached_by_identity(_function_params_cache, fn, _compute_function_params)
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
