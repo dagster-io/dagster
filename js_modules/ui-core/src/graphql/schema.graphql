@@ -3702,6 +3702,45 @@ union DeleteAppManagedComponentResult =
   | UnauthorizedError
   | PythonError
 
+type Component {
+  componentId: String!
+  componentType: String!
+  isAppManaged: Boolean!
+  attributes: String
+  defsStateKey: String
+  defsStateManagementType: DefsStateManagementType
+  defsStateInfo: DefsKeyStateInfo
+}
+
+type Components {
+  locationName: String!
+  components: [Component!]!
+}
+
+union ComponentsOrError = Components | PythonError
+
+type RefreshComponentStateSuccess {
+  component: Component!
+}
+
+type RefreshComponentStateAccepted {
+  locationName: String!
+  defsStateKey: String!
+}
+
+type RefreshComponentStateError {
+  locationName: String!
+  defsStateKey: String!
+  message: String!
+}
+
+union RefreshComponentStateResult =
+  | RefreshComponentStateSuccess
+  | RefreshComponentStateAccepted
+  | RefreshComponentStateError
+  | UnauthorizedError
+  | PythonError
+
 scalar JsonSchema
 
 type ComponentFormSchema {
@@ -3876,6 +3915,7 @@ type Query {
   ): [AssetCheckExecution!]!
   latestDefsStateInfo: DefsStateInfo
   appManagedComponentsForLocationOrError(locationName: String!): AppManagedComponentsOrError!
+  componentsForLocationOrError(locationName: String!): ComponentsOrError!
   componentTypesForLocationOrError(locationName: String!): ComponentTypesOrError!
 }
 
@@ -4258,6 +4298,7 @@ type Mutation {
     componentId: String!
     locationName: String!
   ): DeleteAppManagedComponentResult!
+  refreshComponentState(defsStateKey: String!, locationName: String!): RefreshComponentStateResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!

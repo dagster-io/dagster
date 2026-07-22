@@ -19,6 +19,7 @@ from typing import (  # noqa: UP035
     Union,
 )
 
+from dagster_shared.serdes import deserialize_value
 from typing_extensions import Self
 
 import dagster._check as check
@@ -1235,7 +1236,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
     def refresh_component_state(self, name: str, defs_state_keys: Sequence[str]) -> "DefsStateInfo":
         from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
-        from dagster._serdes import deserialize_value
         from dagster._utils.error import SerializableErrorInfo
 
         entry = self._current_workspace.code_location_entries[name]

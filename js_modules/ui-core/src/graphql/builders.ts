@@ -1025,6 +1025,17 @@ type CodeReferencesMetadataEntry = MetadataEntry & {
   label: Scalars['String']['output'];
 };
 
+type Component = {
+  __typename: 'Component';
+  attributes: Maybe<Scalars['String']['output']>;
+  componentId: Scalars['String']['output'];
+  componentType: Scalars['String']['output'];
+  defsStateInfo: Maybe<DefsKeyStateInfo>;
+  defsStateKey: Maybe<Scalars['String']['output']>;
+  defsStateManagementType: Maybe<DefsStateManagementType>;
+  isAppManaged: Scalars['Boolean']['output'];
+};
+
 type ComponentFormSchema = {
   __typename: 'ComponentFormSchema';
   dataSchema: Scalars['JsonSchema']['output'];
@@ -1051,6 +1062,14 @@ type ComponentTypes = {
 };
 
 type ComponentTypesOrError = ComponentTypes | PythonError | RepositoryLocationNotFound;
+
+type Components = {
+  __typename: 'Components';
+  components: Array<Component>;
+  locationName: Scalars['String']['output'];
+};
+
+type ComponentsOrError = Components | PythonError;
 
 type CompositeConfigType = ConfigType & {
   __typename: 'CompositeConfigType';
@@ -2979,6 +2998,7 @@ type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   logTelemetry: LogTelemetryMutationResult;
   reexecutePartitionBackfill: LaunchBackfillResult;
+  refreshComponentState: RefreshComponentStateResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportAssetCheckEvaluations: ReportAssetCheckEvaluationResult;
@@ -3081,6 +3101,11 @@ type MutationLogTelemetryArgs = {
 
 type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
+};
+
+type MutationRefreshComponentStateArgs = {
+  defsStateKey: Scalars['String']['input'];
+  locationName: Scalars['String']['input'];
 };
 
 type MutationReloadRepositoryLocationArgs = {
@@ -4139,6 +4164,7 @@ type Query = {
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
   componentTypesForLocationOrError: ComponentTypesOrError;
+  componentsForLocationOrError: ComponentsOrError;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4292,6 +4318,10 @@ type QueryCapturedLogsMetadataArgs = {
 };
 
 type QueryComponentTypesForLocationOrErrorArgs = {
+  locationName: Scalars['String']['input'];
+};
+
+type QueryComponentsForLocationOrErrorArgs = {
   locationName: Scalars['String']['input'];
 };
 
@@ -4465,6 +4495,31 @@ type ReexecutionParams = {
 };
 
 export {ReexecutionStrategy};
+
+type RefreshComponentStateAccepted = {
+  __typename: 'RefreshComponentStateAccepted';
+  defsStateKey: Scalars['String']['output'];
+  locationName: Scalars['String']['output'];
+};
+
+type RefreshComponentStateError = {
+  __typename: 'RefreshComponentStateError';
+  defsStateKey: Scalars['String']['output'];
+  locationName: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+};
+
+type RefreshComponentStateResult =
+  | PythonError
+  | RefreshComponentStateAccepted
+  | RefreshComponentStateError
+  | RefreshComponentStateSuccess
+  | UnauthorizedError;
+
+type RefreshComponentStateSuccess = {
+  __typename: 'RefreshComponentStateSuccess';
+  component: Component;
+};
 
 type RegularConfigType = ConfigType & {
   __typename: 'RegularConfigType';
@@ -8230,6 +8285,38 @@ export const buildCodeReferencesMetadataEntry = (
   };
 };
 
+export const buildComponent = (
+  overrides?: Partial<Component>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Component'} & Component => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Component');
+  return {
+    __typename: 'Component',
+    attributes: overrides && overrides.hasOwnProperty('attributes') ? overrides.attributes! : 'ago',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'attollo',
+    componentType:
+      overrides && overrides.hasOwnProperty('componentType')
+        ? overrides.componentType!
+        : 'reprehenderit',
+    defsStateInfo:
+      overrides && overrides.hasOwnProperty('defsStateInfo')
+        ? overrides.defsStateInfo!
+        : relationshipsToOmit.has('DefsKeyStateInfo')
+          ? ({} as DefsKeyStateInfo)
+          : buildDefsKeyStateInfo({}, relationshipsToOmit),
+    defsStateKey:
+      overrides && overrides.hasOwnProperty('defsStateKey') ? overrides.defsStateKey! : 'defleo',
+    defsStateManagementType:
+      overrides && overrides.hasOwnProperty('defsStateManagementType')
+        ? overrides.defsStateManagementType!
+        : DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS,
+    isAppManaged:
+      overrides && overrides.hasOwnProperty('isAppManaged') ? overrides.isAppManaged! : true,
+  };
+};
+
 export const buildComponentFormSchema = (
   overrides?: Partial<ComponentFormSchema>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8287,6 +8374,20 @@ export const buildComponentTypes = (
       overrides && overrides.hasOwnProperty('componentTypes') ? overrides.componentTypes! : [],
     locationName:
       overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'cursim',
+  };
+};
+
+export const buildComponents = (
+  overrides?: Partial<Components>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Components'} & Components => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Components');
+  return {
+    __typename: 'Components',
+    components: overrides && overrides.hasOwnProperty('components') ? overrides.components! : [],
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'viriliter',
   };
 };
 
@@ -11656,6 +11757,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('ConflictingExecutionParamsError')
           ? ({} as ConflictingExecutionParamsError)
           : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    refreshComponentState:
+      overrides && overrides.hasOwnProperty('refreshComponentState')
+        ? overrides.refreshComponentState!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
     reloadRepositoryLocation:
       overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
         ? overrides.reloadRepositoryLocation!
@@ -13616,6 +13723,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('ComponentTypes')
           ? ({} as ComponentTypes)
           : buildComponentTypes({}, relationshipsToOmit),
+    componentsForLocationOrError:
+      overrides && overrides.hasOwnProperty('componentsForLocationOrError')
+        ? overrides.componentsForLocationOrError!
+        : relationshipsToOmit.has('Components')
+          ? ({} as Components)
+          : buildComponents({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!
@@ -13879,6 +13992,54 @@ export const buildReexecutionParams = (
       overrides && overrides.hasOwnProperty('useParentRunTags')
         ? overrides.useParentRunTags!
         : false,
+  };
+};
+
+export const buildRefreshComponentStateAccepted = (
+  overrides?: Partial<RefreshComponentStateAccepted>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RefreshComponentStateAccepted'} & RefreshComponentStateAccepted => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RefreshComponentStateAccepted');
+  return {
+    __typename: 'RefreshComponentStateAccepted',
+    defsStateKey:
+      overrides && overrides.hasOwnProperty('defsStateKey') ? overrides.defsStateKey! : 'adicio',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'cultellus',
+  };
+};
+
+export const buildRefreshComponentStateError = (
+  overrides?: Partial<RefreshComponentStateError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RefreshComponentStateError'} & RefreshComponentStateError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RefreshComponentStateError');
+  return {
+    __typename: 'RefreshComponentStateError',
+    defsStateKey:
+      overrides && overrides.hasOwnProperty('defsStateKey') ? overrides.defsStateKey! : 'sufficio',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'delibero',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'vicinus',
+  };
+};
+
+export const buildRefreshComponentStateSuccess = (
+  overrides?: Partial<RefreshComponentStateSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RefreshComponentStateSuccess'} & RefreshComponentStateSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RefreshComponentStateSuccess');
+  return {
+    __typename: 'RefreshComponentStateSuccess',
+    component:
+      overrides && overrides.hasOwnProperty('component')
+        ? overrides.component!
+        : relationshipsToOmit.has('Component')
+          ? ({} as Component)
+          : buildComponent({}, relationshipsToOmit),
   };
 };
 

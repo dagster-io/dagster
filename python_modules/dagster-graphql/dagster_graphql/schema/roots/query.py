@@ -33,6 +33,7 @@ from dagster_graphql.implementation.external import (
 )
 from dagster_graphql.implementation.fetch_app_managed_components import (
     get_app_managed_components_for_location,
+    get_components_for_location,
 )
 from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_check_executions
 from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
@@ -101,7 +102,10 @@ from dagster_graphql.implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
-from dagster_graphql.schema.app_managed_components import GrapheneAppManagedComponentsOrError
+from dagster_graphql.schema.app_managed_components import (
+    GrapheneAppManagedComponentsOrError,
+    GrapheneComponentsOrError,
+)
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
@@ -677,6 +681,15 @@ class GrapheneQuery(graphene.ObjectType):
             "Retrieve all app-managed components stored for a given code location. The"
             " returned list is sourced from the instance's defs state storage and is"
             " independent of whether the location is currently loaded."
+        ),
+    )
+
+    componentsForLocationOrError = graphene.Field(
+        graphene.NonNull(GrapheneComponentsOrError),
+        locationName=graphene.NonNull(graphene.String),
+        description=(
+            "Retrieve every component instance in a code location's component tree —"
+            " both file-based and UI-defined. The location must be loaded."
         ),
     )
 
@@ -1439,6 +1452,10 @@ class GrapheneQuery(graphene.ObjectType):
         self, graphene_info: ResolveInfo, locationName: str
     ):
         return get_app_managed_components_for_location(graphene_info, locationName)
+
+    @capture_error
+    def resolve_componentsForLocationOrError(self, graphene_info: ResolveInfo, locationName: str):
+        return get_components_for_location(graphene_info, locationName)
 
     @capture_error
     def resolve_componentTypesForLocationOrError(

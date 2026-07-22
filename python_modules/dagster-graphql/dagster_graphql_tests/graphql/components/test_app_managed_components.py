@@ -12,14 +12,18 @@ suite, where a Dagster+ context can grant the permission.
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
+from unittest.mock import Mock
 
 from dagster import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.errors import DagsterError, DagsterUserCodeUnreachableTimeoutError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.implementation.fetch_app_managed_components import _live_defs_state_info
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_shared.serdes.objects.models.defs_state_info import DefsKeyStateInfo, DefsStateInfo
 
 LOCATION_NAME = "test_location"
 
@@ -84,6 +88,26 @@ mutation DeleteAppManagedComponent($locationName: String!, $componentId: String!
     }
     ... on UnauthorizedError {
       message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+GET_COMPONENTS_QUERY = """
+query GetComponents($locationName: String!) {
+  componentsForLocationOrError(locationName: $locationName) {
+    __typename
+    ... on Components {
+      locationName
+      components {
+        componentId
+        componentType
+        isAppManaged
+        defsStateKey
+      }
     }
     ... on PythonError {
       message
@@ -186,6 +210,22 @@ def test_query_empty():
         assert payload["components"] == []
 
 
+def test_components_for_location_empty():
+    """Empty defs → ``componentsForLocationOrError`` returns an empty list.
+    Exercises the new query without requiring a populated component tree.
+    """
+    with graphql_context_with_storage() as context:
+        result = execute_dagster_graphql(
+            context,
+            GET_COMPONENTS_QUERY,
+            variables={"locationName": LOCATION_NAME},
+        )
+        payload = result.data["componentsForLocationOrError"]
+        assert payload["__typename"] == "Components", payload
+        assert payload["locationName"] == LOCATION_NAME
+        assert payload["components"] == []
+
+
 def test_set_then_query():
     """SetAppManagedComponent is denied in OSS, so nothing is persisted to query back."""
     yaml_attributes = "name: alice\nsettings:\n  enabled: true\n"
@@ -260,3 +300,71 @@ def test_mutations_blocked_when_read_only():
             list_result.data["appManagedComponentsForLocationOrError"]["__typename"]
             == "AppManagedComponents"
         )
+
+
+def test_live_defs_state_info_storage_wins_on_overlap():
+    """Polling invariant: storage's version overrides the code-location's
+    cached snapshot, so the components query reflects a refresh as soon as it
+    lands in storage.
+    """
+    cached = DefsStateInfo(info_mapping={"a": DefsKeyStateInfo(version="v1", create_timestamp=0.0)})
+    live = DefsStateInfo(info_mapping={"a": DefsKeyStateInfo(version="v2", create_timestamp=0.0)})
+
+    code_location = Mock()
+    code_location.get_defs_state_info.return_value = cached
+    storage = Mock()
+    storage.get_latest_defs_state_info.return_value = live
+
+    result = _live_defs_state_info(code_location, storage)
+    assert result is not None
+    assert result.get_version("a") == "v2"
+
+
+REFRESH_COMPONENT_STATE_MUTATION = """
+mutation RefreshComponentState($locationName: String!, $defsStateKey: String!) {
+  refreshComponentState(locationName: $locationName, defsStateKey: $defsStateKey) {
+    __typename
+    ... on RefreshComponentStateAccepted {
+      defsStateKey
+    }
+    ... on RefreshComponentStateError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+
+def test_refresh_component_state_branches_on_exception_type(monkeypatch):
+    """Resolver maps the timeout subclass to ``Accepted`` and any other
+    ``DagsterError`` to ``Error``, preserving the rich message in the latter
+    case. This pins the two non-success branches introduced for the
+    fast-failure-vs-still-running UX.
+    """
+
+    def raise_timeout(_self, _name, _keys):
+        raise DagsterUserCodeUnreachableTimeoutError("Timed out waiting for call to user code")
+
+    def raise_dagster_error(_self, _name, _keys):
+        raise DagsterError("dbt manifest unavailable")
+
+    with graphql_context_with_storage() as context:
+        monkeypatch.setattr(type(context), "refresh_component_state", raise_timeout)
+        timeout_payload = execute_dagster_graphql(
+            context,
+            REFRESH_COMPONENT_STATE_MUTATION,
+            variables={"locationName": LOCATION_NAME, "defsStateKey": "some_key"},
+        ).data["refreshComponentState"]
+        assert timeout_payload["__typename"] == "RefreshComponentStateAccepted", timeout_payload
+
+        monkeypatch.setattr(type(context), "refresh_component_state", raise_dagster_error)
+        error_payload = execute_dagster_graphql(
+            context,
+            REFRESH_COMPONENT_STATE_MUTATION,
+            variables={"locationName": LOCATION_NAME, "defsStateKey": "some_key"},
+        ).data["refreshComponentState"]
+        assert error_payload["__typename"] == "RefreshComponentStateError", error_payload
+        assert "dbt manifest unavailable" in error_payload["message"]
