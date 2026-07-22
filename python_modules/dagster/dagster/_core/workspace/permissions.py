@@ -25,6 +25,7 @@ class Permissions(str, Enum):
     TOGGLE_AUTO_MATERIALIZE = "toggle_auto_materialize"
     EDIT_CONCURRENCY_LIMIT = "edit_concurrency_limit"
     EDIT_APP_MANAGED_COMPONENTS = "edit_app_managed_components"
+    REFRESH_COMPONENT_STATE = "refresh_component_state"
 
     def __str__(self) -> str:
         return str.__str__(self)
@@ -51,6 +52,7 @@ VIEWER_PERMISSIONS: dict[str, bool] = {
     Permissions.TOGGLE_AUTO_MATERIALIZE: False,
     Permissions.EDIT_CONCURRENCY_LIMIT: False,
     Permissions.EDIT_APP_MANAGED_COMPONENTS: False,
+    Permissions.REFRESH_COMPONENT_STATE: False,
 }
 
 EDITOR_PERMISSIONS: dict[str, bool] = {
@@ -76,6 +78,7 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     # App-managed (UI-backed) components are a Dagster+-only feature, so editing
     # them from the UI is not permitted in open source.
     Permissions.EDIT_APP_MANAGED_COMPONENTS: False,
+    Permissions.REFRESH_COMPONENT_STATE: True,
 }
 
 LOCATION_SCOPED_PERMISSIONS = {
@@ -96,6 +99,7 @@ LOCATION_SCOPED_PERMISSIONS = {
     Permissions.REPORT_RUNLESS_ASSET_EVENTS,
     Permissions.WIPE_ASSETS,
     Permissions.EDIT_APP_MANAGED_COMPONENTS,
+    Permissions.REFRESH_COMPONENT_STATE,
 }
 
 
