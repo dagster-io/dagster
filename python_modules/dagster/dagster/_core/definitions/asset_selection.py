@@ -1264,6 +1264,29 @@ class StatusAssetSelection(AssetSelection):
 
 @whitelist_for_serdes
 @record
+class NotMaterializedInHoursAssetSelection(AssetSelection):
+    """Selects assets that have not been successfully materialized within the last ``hours`` hours.
+
+    This includes assets that have never been materialized, as well as assets whose most recent
+    successful materialization is older than the cutoff. Like other runtime-state selections (e.g.
+    ``status:``), this cannot be resolved against an asset graph alone -- it must be pre-resolved
+    against materialization history before being sent to the backend.
+    """
+
+    hours: int
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f"not_materialized_in_hours:{self.hours}"
+
+
+@whitelist_for_serdes
+@record
 class AutomationTypeAssetSelection(AssetSelection):
     """Used to represent a UI asset selection by automation type. This should not be resolved against
     an in-process asset graph.

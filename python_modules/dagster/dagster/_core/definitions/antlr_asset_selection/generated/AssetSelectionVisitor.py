@@ -103,6 +103,12 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#NotMaterializedInHoursExpr.
+    def visitNotMaterializedInHoursExpr(
+        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
+    ):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
     def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         return self.visitChildren(ctx)

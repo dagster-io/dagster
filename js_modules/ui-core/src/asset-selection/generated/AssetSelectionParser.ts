@@ -1,4 +1,4 @@
-// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/robert.espinoza/Projects/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import * as antlr from 'antlr4ng';
 import {Token} from 'antlr4ng';
@@ -30,22 +30,23 @@ export class AssetSelectionParser extends antlr.Parser {
   public static readonly IS = 17;
   public static readonly CODE_LOCATION = 18;
   public static readonly STATUS = 19;
-  public static readonly COLUMN = 20;
-  public static readonly TABLE_NAME = 21;
-  public static readonly COLUMN_TAG = 22;
-  public static readonly CHANGED_IN_BRANCH = 23;
-  public static readonly PARTITIONS = 24;
-  public static readonly AUTOMATION_TYPE = 25;
-  public static readonly SENSOR = 26;
-  public static readonly SCHEDULE = 27;
-  public static readonly JOB = 28;
-  public static readonly SINKS = 29;
-  public static readonly ROOTS = 30;
-  public static readonly QUOTED_STRING = 31;
-  public static readonly UNQUOTED_STRING = 32;
-  public static readonly UNQUOTED_WILDCARD_STRING = 33;
-  public static readonly NULL_STRING = 34;
-  public static readonly WS = 35;
+  public static readonly NOT_MATERIALIZED_IN_HOURS = 20;
+  public static readonly COLUMN = 21;
+  public static readonly TABLE_NAME = 22;
+  public static readonly COLUMN_TAG = 23;
+  public static readonly CHANGED_IN_BRANCH = 24;
+  public static readonly PARTITIONS = 25;
+  public static readonly AUTOMATION_TYPE = 26;
+  public static readonly SENSOR = 27;
+  public static readonly SCHEDULE = 28;
+  public static readonly JOB = 29;
+  public static readonly SINKS = 30;
+  public static readonly ROOTS = 31;
+  public static readonly QUOTED_STRING = 32;
+  public static readonly UNQUOTED_STRING = 33;
+  public static readonly UNQUOTED_WILDCARD_STRING = 34;
+  public static readonly NULL_STRING = 35;
+  public static readonly WS = 36;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
   public static readonly RULE_traversalAllowedExpr = 2;
@@ -77,6 +78,7 @@ export class AssetSelectionParser extends antlr.Parser {
     "'is'",
     "'code_location'",
     "'status'",
+    "'not_materialized_in_hours'",
     "'column'",
     "'table_name'",
     "'column_tag'",
@@ -115,6 +117,7 @@ export class AssetSelectionParser extends antlr.Parser {
     'IS',
     'CODE_LOCATION',
     'STATUS',
+    'NOT_MATERIALIZED_IN_HOURS',
     'COLUMN',
     'TABLE_NAME',
     'COLUMN_TAG',
@@ -375,6 +378,7 @@ export class AssetSelectionParser extends antlr.Parser {
         case AssetSelectionParser.IS:
         case AssetSelectionParser.CODE_LOCATION:
         case AssetSelectionParser.STATUS:
+        case AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS:
         case AssetSelectionParser.COLUMN:
         case AssetSelectionParser.TABLE_NAME:
         case AssetSelectionParser.COLUMN_TAG:
@@ -505,7 +509,7 @@ export class AssetSelectionParser extends antlr.Parser {
       {
         this.state = 70;
         _la = this.tokenStream.LA(1);
-        if (!(_la === 29 || _la === 30)) {
+        if (!(_la === 30 || _la === 31)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -528,7 +532,7 @@ export class AssetSelectionParser extends antlr.Parser {
     let localContext = new AttributeExprContext(this.context, this.state);
     this.enterRule(localContext, 12, AssetSelectionParser.RULE_attributeExpr);
     try {
-      this.state = 131;
+      this.state = 134;
       this.errorHandler.sync(this);
       switch (this.tokenStream.LA(1)) {
         case AssetSelectionParser.KEY:
@@ -627,48 +631,60 @@ export class AssetSelectionParser extends antlr.Parser {
             this.value();
           }
           break;
-        case AssetSelectionParser.COLUMN:
-          localContext = new ColumnAttributeExprContext(localContext);
+        case AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS:
+          localContext = new NotMaterializedInHoursExprContext(localContext);
           this.enterOuterAlt(localContext, 8);
           {
             this.state = 97;
-            this.match(AssetSelectionParser.COLUMN);
+            this.match(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS);
             this.state = 98;
             this.match(AssetSelectionParser.COLON);
             this.state = 99;
-            this.value();
+            this.match(AssetSelectionParser.DIGITS);
           }
           break;
-        case AssetSelectionParser.TABLE_NAME:
-          localContext = new TableNameAttributeExprContext(localContext);
+        case AssetSelectionParser.COLUMN:
+          localContext = new ColumnAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 9);
           {
             this.state = 100;
-            this.match(AssetSelectionParser.TABLE_NAME);
+            this.match(AssetSelectionParser.COLUMN);
             this.state = 101;
             this.match(AssetSelectionParser.COLON);
             this.state = 102;
             this.value();
           }
           break;
-        case AssetSelectionParser.COLUMN_TAG:
-          localContext = new ColumnTagAttributeExprContext(localContext);
+        case AssetSelectionParser.TABLE_NAME:
+          localContext = new TableNameAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 10);
           {
             this.state = 103;
-            this.match(AssetSelectionParser.COLUMN_TAG);
+            this.match(AssetSelectionParser.TABLE_NAME);
             this.state = 104;
             this.match(AssetSelectionParser.COLON);
             this.state = 105;
             this.value();
+          }
+          break;
+        case AssetSelectionParser.COLUMN_TAG:
+          localContext = new ColumnTagAttributeExprContext(localContext);
+          this.enterOuterAlt(localContext, 11);
+          {
+            this.state = 106;
+            this.match(AssetSelectionParser.COLUMN_TAG);
+            this.state = 107;
+            this.match(AssetSelectionParser.COLON);
             this.state = 108;
+            this.value();
+            this.state = 111;
             this.errorHandler.sync(this);
             switch (this.interpreter.adaptivePredict(this.tokenStream, 7, this.context)) {
               case 1:
                 {
-                  this.state = 106;
+                  this.state = 109;
                   this.match(AssetSelectionParser.EQUAL);
-                  this.state = 107;
+                  this.state = 110;
                   this.value();
                 }
                 break;
@@ -677,85 +693,85 @@ export class AssetSelectionParser extends antlr.Parser {
           break;
         case AssetSelectionParser.CODE_LOCATION:
           localContext = new CodeLocationAttributeExprContext(localContext);
-          this.enterOuterAlt(localContext, 11);
-          {
-            this.state = 110;
-            this.match(AssetSelectionParser.CODE_LOCATION);
-            this.state = 111;
-            this.match(AssetSelectionParser.COLON);
-            this.state = 112;
-            this.value();
-          }
-          break;
-        case AssetSelectionParser.CHANGED_IN_BRANCH:
-          localContext = new ChangedInBranchAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 12);
           {
             this.state = 113;
-            this.match(AssetSelectionParser.CHANGED_IN_BRANCH);
+            this.match(AssetSelectionParser.CODE_LOCATION);
             this.state = 114;
             this.match(AssetSelectionParser.COLON);
             this.state = 115;
             this.value();
           }
           break;
-        case AssetSelectionParser.PARTITIONS:
-          localContext = new PartitionsAttributeExprContext(localContext);
+        case AssetSelectionParser.CHANGED_IN_BRANCH:
+          localContext = new ChangedInBranchAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 13);
           {
             this.state = 116;
-            this.match(AssetSelectionParser.PARTITIONS);
+            this.match(AssetSelectionParser.CHANGED_IN_BRANCH);
             this.state = 117;
             this.match(AssetSelectionParser.COLON);
             this.state = 118;
             this.value();
           }
           break;
-        case AssetSelectionParser.AUTOMATION_TYPE:
-          localContext = new AutomationTypeAttributeExprContext(localContext);
+        case AssetSelectionParser.PARTITIONS:
+          localContext = new PartitionsAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 14);
           {
             this.state = 119;
-            this.match(AssetSelectionParser.AUTOMATION_TYPE);
+            this.match(AssetSelectionParser.PARTITIONS);
             this.state = 120;
             this.match(AssetSelectionParser.COLON);
             this.state = 121;
             this.value();
           }
           break;
-        case AssetSelectionParser.SENSOR:
-          localContext = new SensorAttributeExprContext(localContext);
+        case AssetSelectionParser.AUTOMATION_TYPE:
+          localContext = new AutomationTypeAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 15);
           {
             this.state = 122;
-            this.match(AssetSelectionParser.SENSOR);
+            this.match(AssetSelectionParser.AUTOMATION_TYPE);
             this.state = 123;
             this.match(AssetSelectionParser.COLON);
             this.state = 124;
             this.value();
           }
           break;
-        case AssetSelectionParser.SCHEDULE:
-          localContext = new ScheduleAttributeExprContext(localContext);
+        case AssetSelectionParser.SENSOR:
+          localContext = new SensorAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 16);
           {
             this.state = 125;
-            this.match(AssetSelectionParser.SCHEDULE);
+            this.match(AssetSelectionParser.SENSOR);
             this.state = 126;
             this.match(AssetSelectionParser.COLON);
             this.state = 127;
             this.value();
           }
           break;
-        case AssetSelectionParser.JOB:
-          localContext = new JobAttributeExprContext(localContext);
+        case AssetSelectionParser.SCHEDULE:
+          localContext = new ScheduleAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 17);
           {
             this.state = 128;
-            this.match(AssetSelectionParser.JOB);
+            this.match(AssetSelectionParser.SCHEDULE);
             this.state = 129;
             this.match(AssetSelectionParser.COLON);
             this.state = 130;
+            this.value();
+          }
+          break;
+        case AssetSelectionParser.JOB:
+          localContext = new JobAttributeExprContext(localContext);
+          this.enterOuterAlt(localContext, 18);
+          {
+            this.state = 131;
+            this.match(AssetSelectionParser.JOB);
+            this.state = 132;
+            this.match(AssetSelectionParser.COLON);
+            this.state = 133;
             this.value();
           }
           break;
@@ -781,9 +797,9 @@ export class AssetSelectionParser extends antlr.Parser {
     try {
       this.enterOuterAlt(localContext, 1);
       {
-        this.state = 133;
+        this.state = 136;
         _la = this.tokenStream.LA(1);
-        if (!(((_la - 26) & ~0x1f) === 0 && ((1 << (_la - 26)) & 359) !== 0)) {
+        if (!(((_la - 27) & ~0x1f) === 0 && ((1 << (_la - 27)) & 359) !== 0)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -809,9 +825,9 @@ export class AssetSelectionParser extends antlr.Parser {
     try {
       this.enterOuterAlt(localContext, 1);
       {
-        this.state = 135;
+        this.state = 138;
         _la = this.tokenStream.LA(1);
-        if (!(((_la - 31) & ~0x1f) === 0 && ((1 << (_la - 31)) & 7) !== 0)) {
+        if (!(((_la - 32) & ~0x1f) === 0 && ((1 << (_la - 32)) & 7) !== 0)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -853,52 +869,53 @@ export class AssetSelectionParser extends antlr.Parser {
   }
 
   public static readonly _serializedATN: number[] = [
-    4, 1, 35, 138, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7,
+    4, 1, 36, 141, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 2, 6, 7,
     6, 2, 7, 7, 7, 2, 8, 7, 8, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 37, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1,
     45, 8, 1, 10, 1, 12, 1, 48, 9, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3,
     2, 60, 8, 2, 1, 3, 3, 3, 63, 8, 3, 1, 3, 1, 3, 1, 4, 1, 4, 3, 4, 69, 8, 4, 1, 5, 1, 5, 1, 6, 1,
     6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 81, 8, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
     1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
-    1, 6, 1, 6, 1, 6, 3, 6, 109, 8, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
-    1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 132, 8, 6, 1, 7, 1, 7,
-    1, 8, 1, 8, 1, 8, 0, 1, 2, 9, 0, 2, 4, 6, 8, 10, 12, 14, 16, 0, 3, 1, 0, 29, 30, 3, 0, 26, 28,
-    31, 32, 34, 34, 1, 0, 31, 33, 157, 0, 18, 1, 0, 0, 0, 2, 36, 1, 0, 0, 0, 4, 59, 1, 0, 0, 0, 6,
-    62, 1, 0, 0, 0, 8, 66, 1, 0, 0, 0, 10, 70, 1, 0, 0, 0, 12, 131, 1, 0, 0, 0, 14, 133, 1, 0, 0, 0,
-    16, 135, 1, 0, 0, 0, 18, 19, 3, 2, 1, 0, 19, 20, 5, 0, 0, 1, 20, 1, 1, 0, 0, 0, 21, 22, 6, 1,
-    -1, 0, 22, 37, 3, 4, 2, 0, 23, 24, 3, 6, 3, 0, 24, 25, 3, 4, 2, 0, 25, 26, 3, 8, 4, 0, 26, 37,
-    1, 0, 0, 0, 27, 28, 3, 6, 3, 0, 28, 29, 3, 4, 2, 0, 29, 37, 1, 0, 0, 0, 30, 31, 3, 4, 2, 0, 31,
-    32, 3, 8, 4, 0, 32, 37, 1, 0, 0, 0, 33, 34, 5, 4, 0, 0, 34, 37, 3, 2, 1, 4, 35, 37, 5, 5, 0, 0,
-    36, 21, 1, 0, 0, 0, 36, 23, 1, 0, 0, 0, 36, 27, 1, 0, 0, 0, 36, 30, 1, 0, 0, 0, 36, 33, 1, 0, 0,
-    0, 36, 35, 1, 0, 0, 0, 37, 46, 1, 0, 0, 0, 38, 39, 10, 3, 0, 0, 39, 40, 5, 2, 0, 0, 40, 45, 3,
-    2, 1, 4, 41, 42, 10, 2, 0, 0, 42, 43, 5, 3, 0, 0, 43, 45, 3, 2, 1, 3, 44, 38, 1, 0, 0, 0, 44,
-    41, 1, 0, 0, 0, 45, 48, 1, 0, 0, 0, 46, 44, 1, 0, 0, 0, 46, 47, 1, 0, 0, 0, 47, 3, 1, 0, 0, 0,
-    48, 46, 1, 0, 0, 0, 49, 60, 3, 12, 6, 0, 50, 51, 3, 10, 5, 0, 51, 52, 5, 9, 0, 0, 52, 53, 3, 2,
-    1, 0, 53, 54, 5, 10, 0, 0, 54, 60, 1, 0, 0, 0, 55, 56, 5, 9, 0, 0, 56, 57, 3, 2, 1, 0, 57, 58,
-    5, 10, 0, 0, 58, 60, 1, 0, 0, 0, 59, 49, 1, 0, 0, 0, 59, 50, 1, 0, 0, 0, 59, 55, 1, 0, 0, 0, 60,
-    5, 1, 0, 0, 0, 61, 63, 5, 7, 0, 0, 62, 61, 1, 0, 0, 0, 62, 63, 1, 0, 0, 0, 63, 64, 1, 0, 0, 0,
-    64, 65, 5, 6, 0, 0, 65, 7, 1, 0, 0, 0, 66, 68, 5, 6, 0, 0, 67, 69, 5, 7, 0, 0, 68, 67, 1, 0, 0,
-    0, 68, 69, 1, 0, 0, 0, 69, 9, 1, 0, 0, 0, 70, 71, 7, 0, 0, 0, 71, 11, 1, 0, 0, 0, 72, 73, 5, 12,
-    0, 0, 73, 74, 5, 8, 0, 0, 74, 132, 3, 16, 8, 0, 75, 76, 5, 15, 0, 0, 76, 77, 5, 8, 0, 0, 77, 80,
-    3, 14, 7, 0, 78, 79, 5, 1, 0, 0, 79, 81, 3, 14, 7, 0, 80, 78, 1, 0, 0, 0, 80, 81, 1, 0, 0, 0,
-    81, 132, 1, 0, 0, 0, 82, 83, 5, 13, 0, 0, 83, 84, 5, 8, 0, 0, 84, 132, 3, 14, 7, 0, 85, 86, 5,
-    14, 0, 0, 86, 87, 5, 8, 0, 0, 87, 132, 3, 14, 7, 0, 88, 89, 5, 16, 0, 0, 89, 90, 5, 8, 0, 0, 90,
-    132, 3, 14, 7, 0, 91, 92, 5, 17, 0, 0, 92, 93, 5, 8, 0, 0, 93, 132, 3, 14, 7, 0, 94, 95, 5, 19,
-    0, 0, 95, 96, 5, 8, 0, 0, 96, 132, 3, 14, 7, 0, 97, 98, 5, 20, 0, 0, 98, 99, 5, 8, 0, 0, 99,
-    132, 3, 14, 7, 0, 100, 101, 5, 21, 0, 0, 101, 102, 5, 8, 0, 0, 102, 132, 3, 14, 7, 0, 103, 104,
-    5, 22, 0, 0, 104, 105, 5, 8, 0, 0, 105, 108, 3, 14, 7, 0, 106, 107, 5, 1, 0, 0, 107, 109, 3, 14,
-    7, 0, 108, 106, 1, 0, 0, 0, 108, 109, 1, 0, 0, 0, 109, 132, 1, 0, 0, 0, 110, 111, 5, 18, 0, 0,
-    111, 112, 5, 8, 0, 0, 112, 132, 3, 14, 7, 0, 113, 114, 5, 23, 0, 0, 114, 115, 5, 8, 0, 0, 115,
-    132, 3, 14, 7, 0, 116, 117, 5, 24, 0, 0, 117, 118, 5, 8, 0, 0, 118, 132, 3, 14, 7, 0, 119, 120,
-    5, 25, 0, 0, 120, 121, 5, 8, 0, 0, 121, 132, 3, 14, 7, 0, 122, 123, 5, 26, 0, 0, 123, 124, 5, 8,
-    0, 0, 124, 132, 3, 14, 7, 0, 125, 126, 5, 27, 0, 0, 126, 127, 5, 8, 0, 0, 127, 132, 3, 14, 7, 0,
-    128, 129, 5, 28, 0, 0, 129, 130, 5, 8, 0, 0, 130, 132, 3, 14, 7, 0, 131, 72, 1, 0, 0, 0, 131,
-    75, 1, 0, 0, 0, 131, 82, 1, 0, 0, 0, 131, 85, 1, 0, 0, 0, 131, 88, 1, 0, 0, 0, 131, 91, 1, 0, 0,
-    0, 131, 94, 1, 0, 0, 0, 131, 97, 1, 0, 0, 0, 131, 100, 1, 0, 0, 0, 131, 103, 1, 0, 0, 0, 131,
-    110, 1, 0, 0, 0, 131, 113, 1, 0, 0, 0, 131, 116, 1, 0, 0, 0, 131, 119, 1, 0, 0, 0, 131, 122, 1,
-    0, 0, 0, 131, 125, 1, 0, 0, 0, 131, 128, 1, 0, 0, 0, 132, 13, 1, 0, 0, 0, 133, 134, 7, 1, 0, 0,
-    134, 15, 1, 0, 0, 0, 135, 136, 7, 2, 0, 0, 136, 17, 1, 0, 0, 0, 9, 36, 44, 46, 59, 62, 68, 80,
-    108, 131,
+    1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 112, 8, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
+    1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 135,
+    8, 6, 1, 7, 1, 7, 1, 8, 1, 8, 1, 8, 0, 1, 2, 9, 0, 2, 4, 6, 8, 10, 12, 14, 16, 0, 3, 1, 0, 30,
+    31, 3, 0, 27, 29, 32, 33, 35, 35, 1, 0, 32, 34, 161, 0, 18, 1, 0, 0, 0, 2, 36, 1, 0, 0, 0, 4,
+    59, 1, 0, 0, 0, 6, 62, 1, 0, 0, 0, 8, 66, 1, 0, 0, 0, 10, 70, 1, 0, 0, 0, 12, 134, 1, 0, 0, 0,
+    14, 136, 1, 0, 0, 0, 16, 138, 1, 0, 0, 0, 18, 19, 3, 2, 1, 0, 19, 20, 5, 0, 0, 1, 20, 1, 1, 0,
+    0, 0, 21, 22, 6, 1, -1, 0, 22, 37, 3, 4, 2, 0, 23, 24, 3, 6, 3, 0, 24, 25, 3, 4, 2, 0, 25, 26,
+    3, 8, 4, 0, 26, 37, 1, 0, 0, 0, 27, 28, 3, 6, 3, 0, 28, 29, 3, 4, 2, 0, 29, 37, 1, 0, 0, 0, 30,
+    31, 3, 4, 2, 0, 31, 32, 3, 8, 4, 0, 32, 37, 1, 0, 0, 0, 33, 34, 5, 4, 0, 0, 34, 37, 3, 2, 1, 4,
+    35, 37, 5, 5, 0, 0, 36, 21, 1, 0, 0, 0, 36, 23, 1, 0, 0, 0, 36, 27, 1, 0, 0, 0, 36, 30, 1, 0, 0,
+    0, 36, 33, 1, 0, 0, 0, 36, 35, 1, 0, 0, 0, 37, 46, 1, 0, 0, 0, 38, 39, 10, 3, 0, 0, 39, 40, 5,
+    2, 0, 0, 40, 45, 3, 2, 1, 4, 41, 42, 10, 2, 0, 0, 42, 43, 5, 3, 0, 0, 43, 45, 3, 2, 1, 3, 44,
+    38, 1, 0, 0, 0, 44, 41, 1, 0, 0, 0, 45, 48, 1, 0, 0, 0, 46, 44, 1, 0, 0, 0, 46, 47, 1, 0, 0, 0,
+    47, 3, 1, 0, 0, 0, 48, 46, 1, 0, 0, 0, 49, 60, 3, 12, 6, 0, 50, 51, 3, 10, 5, 0, 51, 52, 5, 9,
+    0, 0, 52, 53, 3, 2, 1, 0, 53, 54, 5, 10, 0, 0, 54, 60, 1, 0, 0, 0, 55, 56, 5, 9, 0, 0, 56, 57,
+    3, 2, 1, 0, 57, 58, 5, 10, 0, 0, 58, 60, 1, 0, 0, 0, 59, 49, 1, 0, 0, 0, 59, 50, 1, 0, 0, 0, 59,
+    55, 1, 0, 0, 0, 60, 5, 1, 0, 0, 0, 61, 63, 5, 7, 0, 0, 62, 61, 1, 0, 0, 0, 62, 63, 1, 0, 0, 0,
+    63, 64, 1, 0, 0, 0, 64, 65, 5, 6, 0, 0, 65, 7, 1, 0, 0, 0, 66, 68, 5, 6, 0, 0, 67, 69, 5, 7, 0,
+    0, 68, 67, 1, 0, 0, 0, 68, 69, 1, 0, 0, 0, 69, 9, 1, 0, 0, 0, 70, 71, 7, 0, 0, 0, 71, 11, 1, 0,
+    0, 0, 72, 73, 5, 12, 0, 0, 73, 74, 5, 8, 0, 0, 74, 135, 3, 16, 8, 0, 75, 76, 5, 15, 0, 0, 76,
+    77, 5, 8, 0, 0, 77, 80, 3, 14, 7, 0, 78, 79, 5, 1, 0, 0, 79, 81, 3, 14, 7, 0, 80, 78, 1, 0, 0,
+    0, 80, 81, 1, 0, 0, 0, 81, 135, 1, 0, 0, 0, 82, 83, 5, 13, 0, 0, 83, 84, 5, 8, 0, 0, 84, 135, 3,
+    14, 7, 0, 85, 86, 5, 14, 0, 0, 86, 87, 5, 8, 0, 0, 87, 135, 3, 14, 7, 0, 88, 89, 5, 16, 0, 0,
+    89, 90, 5, 8, 0, 0, 90, 135, 3, 14, 7, 0, 91, 92, 5, 17, 0, 0, 92, 93, 5, 8, 0, 0, 93, 135, 3,
+    14, 7, 0, 94, 95, 5, 19, 0, 0, 95, 96, 5, 8, 0, 0, 96, 135, 3, 14, 7, 0, 97, 98, 5, 20, 0, 0,
+    98, 99, 5, 8, 0, 0, 99, 135, 5, 7, 0, 0, 100, 101, 5, 21, 0, 0, 101, 102, 5, 8, 0, 0, 102, 135,
+    3, 14, 7, 0, 103, 104, 5, 22, 0, 0, 104, 105, 5, 8, 0, 0, 105, 135, 3, 14, 7, 0, 106, 107, 5,
+    23, 0, 0, 107, 108, 5, 8, 0, 0, 108, 111, 3, 14, 7, 0, 109, 110, 5, 1, 0, 0, 110, 112, 3, 14, 7,
+    0, 111, 109, 1, 0, 0, 0, 111, 112, 1, 0, 0, 0, 112, 135, 1, 0, 0, 0, 113, 114, 5, 18, 0, 0, 114,
+    115, 5, 8, 0, 0, 115, 135, 3, 14, 7, 0, 116, 117, 5, 24, 0, 0, 117, 118, 5, 8, 0, 0, 118, 135,
+    3, 14, 7, 0, 119, 120, 5, 25, 0, 0, 120, 121, 5, 8, 0, 0, 121, 135, 3, 14, 7, 0, 122, 123, 5,
+    26, 0, 0, 123, 124, 5, 8, 0, 0, 124, 135, 3, 14, 7, 0, 125, 126, 5, 27, 0, 0, 126, 127, 5, 8, 0,
+    0, 127, 135, 3, 14, 7, 0, 128, 129, 5, 28, 0, 0, 129, 130, 5, 8, 0, 0, 130, 135, 3, 14, 7, 0,
+    131, 132, 5, 29, 0, 0, 132, 133, 5, 8, 0, 0, 133, 135, 3, 14, 7, 0, 134, 72, 1, 0, 0, 0, 134,
+    75, 1, 0, 0, 0, 134, 82, 1, 0, 0, 0, 134, 85, 1, 0, 0, 0, 134, 88, 1, 0, 0, 0, 134, 91, 1, 0, 0,
+    0, 134, 94, 1, 0, 0, 0, 134, 97, 1, 0, 0, 0, 134, 100, 1, 0, 0, 0, 134, 103, 1, 0, 0, 0, 134,
+    106, 1, 0, 0, 0, 134, 113, 1, 0, 0, 0, 134, 116, 1, 0, 0, 0, 134, 119, 1, 0, 0, 0, 134, 122, 1,
+    0, 0, 0, 134, 125, 1, 0, 0, 0, 134, 128, 1, 0, 0, 0, 134, 131, 1, 0, 0, 0, 135, 13, 1, 0, 0, 0,
+    136, 137, 7, 1, 0, 0, 137, 15, 1, 0, 0, 0, 138, 139, 7, 2, 0, 0, 139, 17, 1, 0, 0, 0, 9, 36, 44,
+    46, 59, 62, 68, 80, 111, 134,
   ];
 
   private static __ATN: antlr.ATN;
@@ -1789,6 +1806,38 @@ export class IsAttributeExprContext extends AttributeExprContext {
   public override accept<Result>(visitor: AssetSelectionVisitor<Result>): Result | null {
     if (visitor.visitIsAttributeExpr) {
       return visitor.visitIsAttributeExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class NotMaterializedInHoursExprContext extends AttributeExprContext {
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public NOT_MATERIALIZED_IN_HOURS(): antlr.TerminalNode {
+    return this.getToken(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(AssetSelectionParser.COLON, 0)!;
+  }
+  public DIGITS(): antlr.TerminalNode {
+    return this.getToken(AssetSelectionParser.DIGITS, 0)!;
+  }
+  public override enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterNotMaterializedInHoursExpr) {
+      listener.enterNotMaterializedInHoursExpr(this);
+    }
+  }
+  public override exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitNotMaterializedInHoursExpr) {
+      listener.exitNotMaterializedInHoursExpr(this);
+    }
+  }
+  public override accept<Result>(visitor: AssetSelectionVisitor<Result>): Result | null {
+    if (visitor.visitNotMaterializedInHoursExpr) {
+      return visitor.visitNotMaterializedInHoursExpr(this);
     } else {
       return visitor.visitChildren(this);
     }

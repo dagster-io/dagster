@@ -4,6 +4,7 @@ import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {
   AssetSelectionParser,
   AutomationTypeAttributeExprContext,
+  NotMaterializedInHoursExprContext,
   ScheduleAttributeExprContext,
   SensorAttributeExprContext,
   StatusAttributeExprContext,
@@ -16,7 +17,8 @@ export type Filter =
   | {field: 'status'; value: string}
   | {field: 'automation_type'; value: string}
   | {field: 'sensor'; value: string}
-  | {field: 'schedule'; value: string};
+  | {field: 'schedule'; value: string}
+  | {field: 'not_materialized_in_hours'; value: string};
 
 export class AssetSelectionSupplementaryDataVisitor
   extends AbstractParseTreeVisitor<void>
@@ -48,6 +50,11 @@ export class AssetSelectionSupplementaryDataVisitor
   visitScheduleAttributeExpr(ctx: ScheduleAttributeExprContext) {
     const value: string = getValue(ctx.value());
     this.filters.push({field: 'schedule', value});
+  }
+
+  visitNotMaterializedInHoursExpr(ctx: NotMaterializedInHoursExprContext) {
+    const value: string = ctx.DIGITS().getText();
+    this.filters.push({field: 'not_materialized_in_hours', value});
   }
 }
 

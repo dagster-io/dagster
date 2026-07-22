@@ -17,6 +17,7 @@ from dagster._core.definitions.asset_selection import (
     GroupWildCardAssetSelection,
     IsAttributeAssetSelection,
     JobAssetSelection,
+    NotMaterializedInHoursAssetSelection,
     PartitionsAssetSelection,
     ScheduleNameAssetSelection,
     SensorNameAssetSelection,
@@ -231,6 +232,10 @@ def test_antlr_tree_invalid(selection_str):
             CodeLocationAssetSelection(selected_code_location="my_location"),
         ),
         ("status:healthy", StatusAssetSelection(selected_status="healthy")),
+        (
+            "not_materialized_in_hours:24",
+            NotMaterializedInHoursAssetSelection(hours=24),
+        ),
         ("column:my_column", ColumnAssetSelection(selected_column="my_column")),
         ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
         ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),
