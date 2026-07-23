@@ -7,7 +7,12 @@ from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetOrCheckKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetKey,
+    AssetOrCheckKey,
+    T_EntityKey,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationResult,
     BuiltinAutomationCondition,
@@ -277,7 +282,7 @@ class DataVersionChangedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
-class CronTickPassedCondition(TimedSubsetAutomationCondition[AssetOrCheckKey]):
+class CronTickPassedCondition(TimedSubsetAutomationCondition[T_EntityKey]):
     cron_schedule: str
     cron_timezone: str
 

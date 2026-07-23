@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar, Union, cast, overload
 
 from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
@@ -21,6 +21,7 @@ from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
 from dagster._core.definitions.asset_key import (
     AssetCheckKey,
     AssetKey,
+    AssetOrCheckKey,
     CoercibleToAssetKey,
     EntityKey,
     T_EntityKey,
@@ -246,9 +247,37 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     ) -> "AutomationResult[T_EntityKey]":
         raise NotImplementedError()
 
+    # A condition that can evaluate asset-or-check keys can evaluate anything a condition
+    # scoped to asset keys (or to check keys) can, so mixing the two scopes in a boolean
+    # expression is fine, and the result takes the narrower scope. The type parameter is
+    # invariant, so type checkers cannot derive this; the mixed-scope cases are spelled
+    # out as overloads instead.
+    @overload
+    def __and__(
+        self: "AutomationCondition[AssetOrCheckKey]", other: "AutomationCondition[AssetKey]"
+    ) -> "AndAutomationCondition[AssetKey]": ...
+
+    @overload
+    def __and__(
+        self: "AutomationCondition[AssetKey]", other: "AutomationCondition[AssetOrCheckKey]"
+    ) -> "AndAutomationCondition[AssetKey]": ...
+
+    @overload
+    def __and__(
+        self: "AutomationCondition[AssetOrCheckKey]", other: "AutomationCondition[AssetCheckKey]"
+    ) -> "AndAutomationCondition[AssetCheckKey]": ...
+
+    @overload
+    def __and__(
+        self: "AutomationCondition[AssetCheckKey]", other: "AutomationCondition[AssetOrCheckKey]"
+    ) -> "AndAutomationCondition[AssetCheckKey]": ...
+
+    @overload
     def __and__(
         self, other: "AutomationCondition[T_EntityKey]"
-    ) -> "AndAutomationCondition[T_EntityKey]":
+    ) -> "AndAutomationCondition[T_EntityKey]": ...
+
+    def __and__(self, other):
         from dagster._core.definitions.declarative_automation.operators import (
             AndAutomationCondition,
         )
@@ -269,9 +298,28 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             ]
         )
 
+    # see the note on __and__ for why the mixed-scope overloads exist
+    @overload
+    def __or__(
+        self: "AutomationCondition[AssetOrCheckKey]", other: "AutomationCondition[AssetKey]"
+    ) -> "BuiltinAutomationCondition[AssetKey]": ...
+    @overload
+    def __or__(
+        self: "AutomationCondition[AssetKey]", other: "AutomationCondition[AssetOrCheckKey]"
+    ) -> "BuiltinAutomationCondition[AssetKey]": ...
+    @overload
+    def __or__(
+        self: "AutomationCondition[AssetOrCheckKey]", other: "AutomationCondition[AssetCheckKey]"
+    ) -> "BuiltinAutomationCondition[AssetCheckKey]": ...
+    @overload
+    def __or__(
+        self: "AutomationCondition[AssetCheckKey]", other: "AutomationCondition[AssetOrCheckKey]"
+    ) -> "BuiltinAutomationCondition[AssetCheckKey]": ...
+    @overload
     def __or__(
         self, other: "AutomationCondition[T_EntityKey]"
-    ) -> "BuiltinAutomationCondition[T_EntityKey]":
+    ) -> "BuiltinAutomationCondition[T_EntityKey]": ...
+    def __or__(self, other):
         from dagster._core.definitions.declarative_automation.operators import OrAutomationCondition
 
         # Consolidate any unlabeled `OrAutomationCondition`s together.
@@ -297,9 +345,32 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return NotAutomationCondition(operand=self)
 
+    # see the note on __and__ for why the mixed-scope overloads exist
+    @overload
+    def since(
+        self: "AutomationCondition[AssetOrCheckKey]",
+        reset_condition: "AutomationCondition[AssetKey]",
+    ) -> "SinceCondition[AssetKey]": ...
+    @overload
+    def since(
+        self: "AutomationCondition[AssetKey]",
+        reset_condition: "AutomationCondition[AssetOrCheckKey]",
+    ) -> "SinceCondition[AssetKey]": ...
+    @overload
+    def since(
+        self: "AutomationCondition[AssetOrCheckKey]",
+        reset_condition: "AutomationCondition[AssetCheckKey]",
+    ) -> "SinceCondition[AssetCheckKey]": ...
+    @overload
+    def since(
+        self: "AutomationCondition[AssetCheckKey]",
+        reset_condition: "AutomationCondition[AssetOrCheckKey]",
+    ) -> "SinceCondition[AssetCheckKey]": ...
+    @overload
     def since(
         self, reset_condition: "AutomationCondition[T_EntityKey]"
-    ) -> "SinceCondition[T_EntityKey]":
+    ) -> "SinceCondition[T_EntityKey]": ...
+    def since(self, reset_condition):
         """Returns an AutomationCondition that is true if this condition has ever been
         true since the last time the reset condition became true.
         """
@@ -315,7 +386,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return NewlyTrueCondition(operand=self)
 
-    def since_last_handled(self: "AutomationCondition") -> "BuiltinAutomationCondition":
+    def since_last_handled(
+        self: "AutomationCondition[AssetOrCheckKey]",
+    ) -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if this condition has become true since the
         target was last requested or updated, and since the last time this target's condition was modified.
         """
@@ -346,19 +419,22 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @staticmethod
     def asset_matches(
-        key: "CoercibleToAssetKey", condition: "AutomationCondition[AssetKey]"
-    ) -> "BuiltinAutomationCondition":
+        key: "CoercibleToAssetKey",
+        condition: "AssetScopedAutomationCondition",
+    ) -> "BuiltinAutomationCondition[T_EntityKey]":
         """Returns an AutomationCondition that is true if this condition is true for the given key."""
         from dagster._core.definitions.declarative_automation.operators import (
             EntityMatchesCondition,
         )
 
         asset_key = AssetKey.from_coercible(key)
-        return EntityMatchesCondition(key=asset_key, operand=condition)
+        return EntityMatchesCondition(key=asset_key, operand=_narrow_to_asset_scope(condition))
 
     @public
     @staticmethod
-    def any_deps_match(condition: "AutomationCondition") -> "DepsAutomationCondition":
+    def any_deps_match(
+        condition: "AutomationCondition",
+    ) -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true for a if at least one partition
         of the any of the target's dependencies evaluate to True for the given condition.
 
@@ -372,7 +448,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def all_deps_match(condition: "AutomationCondition") -> "DepsAutomationCondition":
+    def all_deps_match(
+        condition: "AutomationCondition",
+    ) -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true for a if at least one partition
         of the all of the target's dependencies evaluate to True for the given condition.
 
@@ -387,7 +465,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @staticmethod
     def any_checks_match(
-        condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
+        condition: "CheckScopedAutomationCondition",
+        blocking_only: bool = False,
     ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for if at least one of the target's
         checks evaluate to True for the given condition.
@@ -400,12 +479,15 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """
         from dagster._core.definitions.declarative_automation.operators import AnyChecksCondition
 
-        return AnyChecksCondition(operand=condition, blocking_only=blocking_only)
+        return AnyChecksCondition(
+            operand=_narrow_to_check_scope(condition), blocking_only=blocking_only
+        )
 
     @public
     @staticmethod
     def all_checks_match(
-        condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
+        condition: "CheckScopedAutomationCondition",
+        blocking_only: bool = False,
     ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for an asset partition if all of its checks
         evaluate to True for the given condition.
@@ -418,13 +500,15 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """
         from dagster._core.definitions.declarative_automation.operators import AllChecksCondition
 
-        return AllChecksCondition(operand=condition, blocking_only=blocking_only)
+        return AllChecksCondition(
+            operand=_narrow_to_check_scope(condition), blocking_only=blocking_only
+        )
 
     @public
     @preview
     @staticmethod
     def any_job_root_assets_match(
-        condition: "AutomationCondition[AssetKey]",
+        condition: "AssetScopedAutomationCondition",
     ) -> "JobRootAssetsAutomationCondition":
         """Returns an AutomationCondition that is true for a job if at least one of its root
         assets evaluates to True for the given condition.
@@ -441,7 +525,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         label = condition.get_label() or condition.name
-        return AnyJobRootAssetsMatchCondition(operand=condition).with_label(
+        return AnyJobRootAssetsMatchCondition(operand=_narrow_to_asset_scope(condition)).with_label(
             f"any_job_root_assets_match({label})"
         )
 
@@ -449,7 +533,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @preview
     @staticmethod
     def all_job_root_assets_match(
-        condition: "AutomationCondition[AssetKey]",
+        condition: "AssetScopedAutomationCondition",
     ) -> "JobRootAssetsAutomationCondition":
         """Returns an AutomationCondition that is true for a job if all of its root assets
         evaluate to True for the given condition.
@@ -466,13 +550,13 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         label = condition.get_label() or condition.name
-        return AllJobRootAssetsMatchCondition(operand=condition).with_label(
+        return AllJobRootAssetsMatchCondition(operand=_narrow_to_asset_scope(condition)).with_label(
             f"all_job_root_assets_match({label})"
         )
 
     @public
     @staticmethod
-    def missing() -> "BuiltinAutomationCondition":
+    def missing() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target has not been executed."""
         from dagster._core.definitions.declarative_automation.operands import (
             MissingAutomationCondition,
@@ -482,7 +566,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def run_in_progress() -> "BuiltinAutomationCondition":
+    def run_in_progress() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target is part of an in-progress run
         that has not yet executed it.
         """
@@ -494,7 +578,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def backfill_in_progress() -> "BuiltinAutomationCondition":
+    def backfill_in_progress() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target is part of an in-progress backfill
         that has not yet executed it.
         """
@@ -506,7 +590,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def execution_failed() -> "BuiltinAutomationCondition":
+    def execution_failed() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the latest execution of the target failed."""
         from dagster._core.definitions.declarative_automation.operands import (
             ExecutionFailedAutomationCondition,
@@ -516,7 +600,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def in_progress() -> "BuiltinAutomationCondition":
+    def in_progress() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true for an asset partition if it is part of an
         in-progress run or backfill that has not yet executed it.
         """
@@ -546,7 +630,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def initial_evaluation() -> "BuiltinAutomationCondition":
+    def initial_evaluation() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true on the first evaluation of the expression."""
         from dagster._core.definitions.declarative_automation.operands import (
             InitialEvaluationCondition,
@@ -558,7 +642,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def in_latest_time_window(
         lookback_delta: datetime.timedelta | None = None,
-    ) -> "BuiltinAutomationCondition":
+    ) -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true when the target it is within the latest
         time window.
 
@@ -576,7 +660,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def will_be_requested() -> "BuiltinAutomationCondition":
+    def will_be_requested() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target will be requested this tick."""
         from dagster._core.definitions.declarative_automation.operands import (
             WillBeRequestedCondition,
@@ -586,14 +670,14 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def newly_updated() -> "BuiltinAutomationCondition":
+    def newly_updated() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target has been updated since the previous tick."""
         from dagster._core.definitions.declarative_automation.operands import NewlyUpdatedCondition
 
         return NewlyUpdatedCondition()
 
     @staticmethod
-    def executed_with_root_target() -> "BuiltinAutomationCondition":
+    def executed_with_root_target() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the latest run that updated the target also executed
         with the root key that the global condition is applied to.
         """
@@ -608,7 +692,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         *,
         tag_keys: Set[str] | None = None,
         tag_values: Mapping[str, str] | None = None,
-    ) -> "BuiltinAutomationCondition":
+    ) -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the latest run that updated the target was
         launched from the declarative automation system.
 
@@ -630,7 +714,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         *,
         tag_keys: Set[str] | None = None,
         tag_values: Mapping[str, str] | None = None,
-    ) -> "BuiltinAutomationCondition":
+    ) -> "BuiltinAutomationCondition[AssetKey]":
         """Returns an AutomationCondition that is true if all new materializations since the
         previous tick were executed in runs with the provided tags. Can be used to prevent
         certain run tags from triggering downstream declarative automation conditions - for
@@ -656,7 +740,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         *,
         tag_keys: Set[str] | None = None,
         tag_values: Mapping[str, str] | None = None,
-    ) -> "BuiltinAutomationCondition":
+    ) -> "BuiltinAutomationCondition[AssetKey]":
         """Returns an AutomationCondition that is true if any new materializations since the
         previous tick were executed in runs with the provided tags. Can be used to only allow
         certain run tags to trigger downstream declarative automation conditions - for example,
@@ -679,7 +763,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def newly_requested() -> "BuiltinAutomationCondition":
+    def newly_requested() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target was requested on the previous tick."""
         from dagster._core.definitions.declarative_automation.operands import (
             NewlyRequestedCondition,
@@ -715,7 +799,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def cron_tick_passed(
         cron_schedule: str, cron_timezone: str = "UTC"
-    ) -> "BuiltinAutomationCondition":
+    ) -> "BuiltinAutomationCondition[T_EntityKey]":
         """Returns an AutomationCondition that is whenever a cron tick of the provided schedule is passed."""
         from dagster._core.definitions.declarative_automation.operands import (
             CronTickPassedCondition,
@@ -760,13 +844,13 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def newly_missing() -> "BuiltinAutomationCondition":
+    def newly_missing() -> "BuiltinAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true on the tick that the target becomes missing."""
         return AutomationCondition.missing().newly_true().with_label("newly_missing")
 
     @public
     @staticmethod
-    def any_deps_updated() -> "DepsAutomationCondition":
+    def any_deps_updated() -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target has at least one dependency
         that has updated since the previous tick, or will be requested on this tick.
 
@@ -786,7 +870,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def any_deps_missing() -> "DepsAutomationCondition":
+    def any_deps_missing() -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target has at least one dependency
         that is missing, and will not be requested on this tick.
         """
@@ -796,7 +880,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def any_deps_in_progress() -> "DepsAutomationCondition":
+    def any_deps_in_progress() -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true if the target has at least one dependency
         that is in progress.
         """
@@ -806,7 +890,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def all_deps_blocking_checks_passed() -> "DepsAutomationCondition":
+    def all_deps_blocking_checks_passed() -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition that is true for any partition where all upstream
         blocking checks have passed, or will be requested on this tick.
 
@@ -826,7 +910,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def all_deps_updated_since_cron(
         cron_schedule: str, cron_timezone: str = "UTC"
-    ) -> "DepsAutomationCondition":
+    ) -> "DepsAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomatonCondition that is true if all of the target's dependencies have
         updated since the latest tick of the provided cron schedule.
         """
@@ -839,7 +923,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def eager() -> "AndAutomationCondition":
+    def eager() -> "AndAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition which will cause a target to be executed if any of
         its dependencies update, and will execute missing partitions if they become missing
         after this condition is applied to the target.
@@ -861,7 +945,9 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AndAutomationCondition":
+    def on_cron(
+        cron_schedule: str, cron_timezone: str = "UTC"
+    ) -> "AndAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition which will cause a target to be executed on a given
         cron schedule, after all of its dependencies have been updated since the latest
         tick of that cron schedule.
@@ -878,7 +964,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
-    def on_missing() -> "AndAutomationCondition":
+    def on_missing() -> "AndAutomationCondition[AssetOrCheckKey]":
         """Returns an AutomationCondition which will execute partitions of the target that
         are added after this condition is applied to the asset.
 
@@ -900,13 +986,44 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @public
     @beta
     @staticmethod
-    def any_downstream_conditions() -> "BuiltinAutomationCondition":
+    def any_downstream_conditions() -> "BuiltinAutomationCondition[AssetKey]":
         """Returns an AutomationCondition which represents the union of all distinct downstream conditions."""
         from dagster._core.definitions.declarative_automation.operators import (
             AnyDownstreamConditionsCondition,
         )
 
         return AnyDownstreamConditionsCondition()
+
+
+# The type parameter of an AutomationCondition records which entity keys it can evaluate.
+# These aliases name the sets of labels accepted where an asset-scoped (or check-scoped)
+# condition is required. `AutomationCondition[AssetOrCheckKey]` can evaluate a strict
+# superset of the keys that `AutomationCondition[AssetKey]` can, but the type parameter is
+# invariant (it appears in both argument and return positions), so type checkers treat the
+# two as unrelated and both must be listed explicitly.
+AssetScopedAutomationCondition: TypeAlias = (
+    AutomationCondition[AssetKey] | AutomationCondition[AssetOrCheckKey]
+)
+CheckScopedAutomationCondition: TypeAlias = (
+    AutomationCondition[AssetCheckKey] | AutomationCondition[AssetOrCheckKey]
+)
+
+
+def _narrow_to_asset_scope(
+    condition: AssetScopedAutomationCondition,
+) -> AutomationCondition[AssetKey]:
+    """A condition that can evaluate any asset-or-check key can evaluate any asset key, so
+    narrowing its key domain is always safe. Type checkers cannot derive this on their own
+    (see the note on AssetScopedAutomationCondition), so it is asserted once, here.
+    """
+    return cast("AutomationCondition[AssetKey]", condition)
+
+
+def _narrow_to_check_scope(
+    condition: CheckScopedAutomationCondition,
+) -> AutomationCondition[AssetCheckKey]:
+    """See _narrow_to_asset_scope; this is the asset-check analogue."""
+    return cast("AutomationCondition[AssetCheckKey]", condition)
 
 
 @record

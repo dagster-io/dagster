@@ -327,7 +327,13 @@ def _resolved_conditioned_job(asset, automation_condition):
 )
 @pytest.mark.parametrize(
     "automation_condition,expect_default_sensor",
-    [(dg.AutomationCondition.eager(), True), (None, False)],
+    [
+        (
+            dg.AutomationCondition.all_job_root_assets_match(dg.AutomationCondition.eager()),
+            True,
+        ),
+        (None, False),
+    ],
     ids=["conditioned_job", "unconditioned_job"],
 )
 def test_default_sensor_for_automation_conditioned_job(
@@ -367,12 +373,16 @@ def test_conditioned_jobs_collected_from_both_unresolved_and_resolved() -> None:
     unresolved_job = dg.define_asset_job(
         name="unresolved_job",
         selection=[asset_a],
-        automation_condition=dg.AutomationCondition.eager(),
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
     )
     resolved_job = dg.define_asset_job(
         name="resolved_job",
         selection=[asset_b],
-        automation_condition=dg.AutomationCondition.eager(),
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
     ).resolve(asset_graph=AssetGraph.from_assets([asset_b]))
 
     defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[unresolved_job, resolved_job])

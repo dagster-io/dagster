@@ -30,18 +30,24 @@ def daily_partitioned_asset():
 conditioned_job = dg.define_asset_job(
     name="conditioned_job",
     selection=[asset_a],
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+        dg.AutomationCondition.eager()
+    ),
 )
 unconditioned_job = dg.define_asset_job(name="unconditioned_job", selection=[asset_a])
 partitioned_job = dg.define_asset_job(
     name="partitioned_job",
     selection=[partitioned_asset],
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+        dg.AutomationCondition.eager()
+    ),
 )
 daily_partitioned_job = dg.define_asset_job(
     name="daily_partitioned_job",
     selection=[daily_partitioned_asset],
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+        dg.AutomationCondition.eager()
+    ),
 )
 
 defs = dg.Definitions(
@@ -117,7 +123,9 @@ def _conditioned_defs(asset_name: str, job_name: str) -> dg.Definitions:
     job = dg.define_asset_job(
         name=job_name,
         selection=[_asset],
-        automation_condition=dg.AutomationCondition.eager(),
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
     )
     return dg.Definitions(assets=[_asset], jobs=[job])
 

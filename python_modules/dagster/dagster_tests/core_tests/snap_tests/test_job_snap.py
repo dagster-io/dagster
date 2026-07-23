@@ -620,7 +620,7 @@ JOB_SNAP_CLASSES = [JobSnap, JobRefSnap]
 
 @pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
 def test_snap_carries_automation_condition(snap_cls):
-    condition = AutomationCondition.eager()
+    condition = AutomationCondition.all_job_root_assets_match(AutomationCondition.eager())
     snap = snap_cls.from_job_def(_make_asset_job_def(condition))
     assert snap.automation_condition == condition
 
@@ -646,6 +646,10 @@ def test_snap_unconditioned_serialization_unchanged(snap_cls):
 
 @pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
 def test_snap_non_serializable_condition_omitted(snap_cls):
-    snap = snap_cls.from_job_def(_make_asset_job_def(_NonSerializableCondition()))
+    snap = snap_cls.from_job_def(
+        _make_asset_job_def(
+            AutomationCondition.all_job_root_assets_match(_NonSerializableCondition())
+        )
+    )
     assert snap.automation_condition is None
     assert "automation_condition" not in serialize_value(snap)

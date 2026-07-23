@@ -3182,12 +3182,13 @@ def test_asset_subset_preserves_run_tags() -> None:
 
 
 @ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
 def test_automation_condition_stored_and_preserved() -> None:
     @dg.asset
     def asset_a():
         return 1
 
-    condition = dg.AutomationCondition.eager()
+    condition = dg.AutomationCondition.all_job_root_assets_match(dg.AutomationCondition.eager())
     job = dg.define_asset_job(
         name="my_job",
         selection=[asset_a],
@@ -3383,6 +3384,51 @@ def test_automation_condition_allowed_on_partitioned_job_with_unpartitioned_asse
             automation_condition=condition,
         )
 
+    job_def = dg.Definitions(assets=[my_asset], jobs=[job]).resolve_job_def("my_job")
+    assert job_def.automation_condition == condition
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@pytest.mark.parametrize(
+    "condition",
+    [
+        pytest.param(dg.AutomationCondition.eager(), id="eager"),
+        pytest.param(dg.AutomationCondition.missing(), id="missing"),
+        pytest.param(dg.AutomationCondition.on_cron("@daily"), id="on_cron"),
+        # scope-agnostic, so it type-checks at job scope (see test_type_errors.py); this
+        # runtime rejection is the only guard against using it unanchored on a job
+        pytest.param(dg.AutomationCondition.cron_tick_passed("@daily"), id="cron_tick_passed"),
+    ],
+)
+def test_automation_condition_without_job_scope_rejected(
+    condition: dg.AutomationCondition,
+) -> None:
+    # an asset-level condition must be wrapped with any/all_job_root_assets_match to be
+    # used on a job; unwrapped conditions are rejected when the job resolves
+    @dg.asset
+    def my_asset() -> None: ...
+
+    job = dg.define_asset_job("my_job", selection=[my_asset], automation_condition=condition)
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
+        dg.Definitions(assets=[my_asset], jobs=[job]).resolve_job_def("my_job")
+    assert "does not evaluate against the job's root assets" in (
+        str(exc_info.value) + str(exc_info.value.__cause__)
+    )
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_composed_with_job_scope_allowed() -> None:
+    # compositions are fine as long as the tree contains a job-root-assets condition
+    @dg.asset
+    def my_asset() -> None: ...
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(
+        dg.AutomationCondition.eager()
+    ) & dg.AutomationCondition.cron_tick_passed("@daily")
+
+    job = dg.define_asset_job("my_job", selection=[my_asset], automation_condition=condition)
     job_def = dg.Definitions(assets=[my_asset], jobs=[job]).resolve_job_def("my_job")
     assert job_def.automation_condition == condition
 
