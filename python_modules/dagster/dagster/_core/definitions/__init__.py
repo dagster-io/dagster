@@ -99,6 +99,7 @@ from dagster._core.definitions.partitions.definition import (
 from dagster._core.definitions.partitions.mapping import (
     AllPartitionMapping as AllPartitionMapping,
     DimensionPartitionMapping as DimensionPartitionMapping,
+    DynamicPartitionMapping as DynamicPartitionMapping,
     IdentityPartitionMapping as IdentityPartitionMapping,
     LastPartitionMapping as LastPartitionMapping,
     MultiPartitionMapping as MultiPartitionMapping,
