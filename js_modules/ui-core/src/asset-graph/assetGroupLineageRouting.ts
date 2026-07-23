@@ -41,6 +41,7 @@ export type ApplyAssetGroupRoutingOptions = {
   groupParentById: GroupParentById;
   ownerGroupByNodeId: Record<string, string | null>;
   endpointGroupById: Record<string, string | null>;
+  alignGroupsOnSecondaryAxis?: boolean;
 };
 
 export type AssetGroupConstraintInput = {
@@ -709,6 +710,293 @@ const validateInputCorridors = (layout: RoutingLayout, options: ApplyAssetGroupR
   return true;
 };
 
+const secondaryStart = (bounds: IBounds, direction: RoutingDirection) =>
+  direction === 'horizontal' ? bounds.y : bounds.x;
+
+const secondarySize = (bounds: IBounds, direction: RoutingDirection) =>
+  direction === 'horizontal' ? bounds.height : bounds.width;
+
+const pointSecondary = (point: {x: number; y: number}, direction: RoutingDirection) =>
+  direction === 'horizontal' ? point.y : point.x;
+
+const translateSecondaryBounds = (
+  bounds: IBounds,
+  amount: number,
+  direction: RoutingDirection,
+): IBounds =>
+  direction === 'horizontal'
+    ? {x: bounds.x, y: bounds.y + amount, width: bounds.width, height: bounds.height}
+    : {x: bounds.x + amount, y: bounds.y, width: bounds.width, height: bounds.height};
+
+const translateSecondaryPoint = (
+  point: {x: number; y: number},
+  amount: number,
+  direction: RoutingDirection,
+) =>
+  direction === 'horizontal'
+    ? {x: point.x, y: point.y + amount}
+    : {x: point.x + amount, y: point.y};
+
+const median = (values: number[]) => {
+  if (values.length === 0) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = sorted.length >> 1;
+  return sorted.length % 2 === 1 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
+};
+
+const alignGroupsOnSecondaryAxis = <T extends RoutingLayout>(
+  layout: T,
+  options: ApplyAssetGroupRoutingOptions,
+): T => {
+  const groupIds = Object.keys(layout.groups);
+  if (groupIds.length === 0) {
+    return layout;
+  }
+
+  // Moving a group would drag its edges away from ungrouped endpoints, which cannot follow.
+  for (const id in layout.nodes) {
+    if (!Object.prototype.hasOwnProperty.call(layout.nodes, id)) {
+      continue;
+    }
+    const ownerGroupId = options.ownerGroupByNodeId[id];
+    if (!ownerGroupId || !layout.groups[ownerGroupId]) {
+      return layout;
+    }
+  }
+  for (const edge of layout.edges) {
+    const sourceGroupId = options.endpointGroupById[edge.fromId];
+    const targetGroupId = options.endpointGroupById[edge.toId];
+    if (!sourceGroupId || !targetGroupId) {
+      return layout;
+    }
+    if (!layout.groups[sourceGroupId] || !layout.groups[targetGroupId]) {
+      return layout;
+    }
+  }
+
+  const rootByGroupId = new Map<string, string>();
+  const resolveRoot = (groupId: string) => {
+    const cached = rootByGroupId.get(groupId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const chain: string[] = [];
+    let current = groupId;
+    for (let steps = 0; steps <= groupIds.length; steps++) {
+      const memoized = rootByGroupId.get(current);
+      if (memoized !== undefined) {
+        current = memoized;
+        break;
+      }
+      chain.push(current);
+      const parent = options.groupParentById[current];
+      if (!parent || !layout.groups[parent]) {
+        break;
+      }
+      current = parent;
+    }
+    for (const id of chain) {
+      rootByGroupId.set(id, current);
+    }
+    return current;
+  };
+
+  const rootIds = groupIds.filter((id) => resolveRoot(id) === id);
+  if (rootIds.length < 2) {
+    return layout;
+  }
+
+  const rootBounds = new Map<string, IBounds>();
+  for (const id of rootIds) {
+    rootBounds.set(id, layout.groups[id]!.bounds);
+  }
+
+  const primaryOrder = [...rootIds].sort((a, b) => {
+    const delta =
+      primaryStart(rootBounds.get(a)!, options.direction) -
+      primaryStart(rootBounds.get(b)!, options.direction);
+    return delta !== 0 ? delta : a < b ? -1 : a > b ? 1 : 0;
+  });
+  const primaryRankByRoot = new Map<string, number>();
+  primaryOrder.forEach((id, index) => primaryRankByRoot.set(id, index));
+
+  type Connection = {upstreamRoot: string; upstreamSecondary: number; ownSecondary: number};
+  const connectionsByRoot = new Map<string, Connection[]>();
+  for (const edge of layout.edges) {
+    const sourceRoot = resolveRoot(options.endpointGroupById[edge.fromId]!);
+    const targetRoot = resolveRoot(options.endpointGroupById[edge.toId]!);
+    if (sourceRoot === targetRoot) {
+      continue;
+    }
+    const sourceRank = primaryRankByRoot.get(sourceRoot)!;
+    const targetRank = primaryRankByRoot.get(targetRoot)!;
+    const sourceIsUpstream = sourceRank < targetRank;
+    const ownRoot = sourceIsUpstream ? targetRoot : sourceRoot;
+    const connection: Connection = {
+      upstreamRoot: sourceIsUpstream ? sourceRoot : targetRoot,
+      upstreamSecondary: pointSecondary(sourceIsUpstream ? edge.from : edge.to, options.direction),
+      ownSecondary: pointSecondary(sourceIsUpstream ? edge.to : edge.from, options.direction),
+    };
+    const existing = connectionsByRoot.get(ownRoot);
+    if (existing) {
+      existing.push(connection);
+    } else {
+      connectionsByRoot.set(ownRoot, [connection]);
+    }
+  }
+
+  const shiftByRoot = new Map<string, number>();
+  for (const id of primaryOrder) {
+    const connections = connectionsByRoot.get(id);
+    if (!connections || connections.length === 0) {
+      shiftByRoot.set(id, 0);
+      continue;
+    }
+    const deltas: number[] = [];
+    for (const connection of connections) {
+      const upstreamShift = shiftByRoot.get(connection.upstreamRoot);
+      if (upstreamShift === undefined) {
+        continue;
+      }
+      deltas.push(connection.upstreamSecondary + upstreamShift - connection.ownSecondary);
+    }
+    shiftByRoot.set(id, median(deltas));
+  }
+
+  const componentByRoot = new Map<string, number>();
+  let componentCount = 0;
+  let componentEnd = -Infinity;
+  for (const id of primaryOrder) {
+    const bounds = rootBounds.get(id)!;
+    const start = primaryStart(bounds, options.direction);
+    if (start >= componentEnd) {
+      componentCount++;
+      componentEnd = -Infinity;
+    }
+    componentByRoot.set(id, componentCount - 1);
+    componentEnd = Math.max(componentEnd, primaryEnd(bounds, options.direction));
+  }
+
+  const rootsByComponent: string[][] = Array.from({length: componentCount}, () => []);
+  for (const id of rootIds) {
+    rootsByComponent[componentByRoot.get(id)!]!.push(id);
+  }
+
+  for (const component of rootsByComponent) {
+    component.sort((a, b) => {
+      const delta =
+        secondaryStart(rootBounds.get(a)!, options.direction) -
+        secondaryStart(rootBounds.get(b)!, options.direction);
+      return delta !== 0 ? delta : a < b ? -1 : a > b ? 1 : 0;
+    });
+    let previousEnd: number | undefined;
+    let previousOriginalEnd: number | undefined;
+    for (const id of component) {
+      const bounds = rootBounds.get(id)!;
+      const originalStart = secondaryStart(bounds, options.direction);
+      const size = secondarySize(bounds, options.direction);
+      const desiredStart = originalStart + shiftByRoot.get(id)!;
+      const minimumStart =
+        previousEnd === undefined
+          ? desiredStart
+          : previousEnd + Math.max(0, originalStart - previousOriginalEnd!);
+      const nextStart = Math.max(desiredStart, minimumStart);
+      shiftByRoot.set(id, nextStart - originalStart);
+      previousEnd = nextStart + size;
+      previousOriginalEnd = originalStart + size;
+    }
+  }
+
+  let originalMinimumStart = Infinity;
+  let alignedMinimumStart = Infinity;
+  for (const id of rootIds) {
+    const originalStart = secondaryStart(rootBounds.get(id)!, options.direction);
+    originalMinimumStart = Math.min(originalMinimumStart, originalStart);
+    alignedMinimumStart = Math.min(alignedMinimumStart, originalStart + shiftByRoot.get(id)!);
+  }
+  if (alignedMinimumStart < originalMinimumStart) {
+    const correction = originalMinimumStart - alignedMinimumStart;
+    for (const id of rootIds) {
+      shiftByRoot.set(id, shiftByRoot.get(id)! + correction);
+    }
+  }
+
+  const shiftForGroup = (groupId: string) => {
+    const shift = shiftByRoot.get(resolveRoot(groupId));
+    if (shift === undefined || !Number.isFinite(shift)) {
+      throw new Error('Invalid asset group secondary-axis shift');
+    }
+    return shift;
+  };
+
+  let maximumSecondaryEnd = 0;
+  const groups: RoutingLayout['groups'] = {};
+  for (const id in layout.groups) {
+    if (!Object.prototype.hasOwnProperty.call(layout.groups, id)) {
+      continue;
+    }
+    const group = layout.groups[id]!;
+    const bounds = translateSecondaryBounds(group.bounds, shiftForGroup(id), options.direction);
+    if (!validBounds(bounds)) {
+      throw new Error('Invalid secondary-aligned asset group bounds');
+    }
+    groups[id] = {...group, bounds};
+    maximumSecondaryEnd = Math.max(
+      maximumSecondaryEnd,
+      secondaryStart(bounds, options.direction) + secondarySize(bounds, options.direction),
+    );
+  }
+
+  const nodes: RoutingLayout['nodes'] = {};
+  for (const id in layout.nodes) {
+    if (!Object.prototype.hasOwnProperty.call(layout.nodes, id)) {
+      continue;
+    }
+    const node = layout.nodes[id]!;
+    const bounds = translateSecondaryBounds(
+      node.bounds,
+      shiftForGroup(options.ownerGroupByNodeId[id]!),
+      options.direction,
+    );
+    if (!validBounds(bounds)) {
+      throw new Error('Invalid secondary-aligned asset bounds');
+    }
+    nodes[id] = {...node, bounds};
+    maximumSecondaryEnd = Math.max(
+      maximumSecondaryEnd,
+      secondaryStart(bounds, options.direction) + secondarySize(bounds, options.direction),
+    );
+  }
+
+  const edges = layout.edges.map((edge) => ({
+    ...edge,
+    from: translateSecondaryPoint(
+      edge.from,
+      shiftForGroup(options.endpointGroupById[edge.fromId]!),
+      options.direction,
+    ),
+    to: translateSecondaryPoint(
+      edge.to,
+      shiftForGroup(options.endpointGroupById[edge.toId]!),
+      options.direction,
+    ),
+  }));
+
+  const secondaryExtent = maximumSecondaryEnd + options.margin;
+  return {
+    ...layout,
+    width:
+      options.direction === 'vertical' ? Math.max(layout.width, secondaryExtent) : layout.width,
+    height:
+      options.direction === 'horizontal' ? Math.max(layout.height, secondaryExtent) : layout.height,
+    nodes,
+    groups,
+    edges,
+  } as T;
+};
+
 const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
   layout: T,
   options: ApplyAssetGroupRoutingOptions,
@@ -1014,7 +1302,7 @@ const applyAssetGroupLineageRoutingImpl = <T extends RoutingLayout>(
   ) {
     throw new Error('Invalid routed asset graph canvas');
   }
-  return result;
+  return options.alignGroupsOnSecondaryAxis ? alignGroupsOnSecondaryAxis(result, options) : result;
 };
 
 export const applyAssetGroupLineageRouting = <T extends RoutingLayout>(

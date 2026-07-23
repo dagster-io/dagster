@@ -461,6 +461,7 @@ export const layoutAssetGraphImpl = (
     groupParentById,
     ownerGroupByNodeId,
     endpointGroupById,
+    alignGroupsOnSecondaryAxis: groupsPresent,
   });
 };
 

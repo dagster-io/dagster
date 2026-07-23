@@ -1,11 +1,10 @@
 import type {IBounds} from '../../graph/common';
-
 import {
+  type ApplyAssetGroupRoutingOptions,
+  type RoutingLayout,
   applyAssetGroupLineageRouting,
   buildGroupAncestryIndex,
   solveAssetGroupConstraints,
-  type ApplyAssetGroupRoutingOptions,
-  type RoutingLayout,
 } from '../assetGroupLineageRouting';
 
 const bounds = (x: number, y: number, width: number, height: number): IBounds => ({
@@ -960,5 +959,287 @@ describe('applyAssetGroupLineageRouting', () => {
     };
 
     expect(applyAssetGroupLineageRouting(layout, routingOptions())).toBe(layout);
+  });
+});
+
+describe('applyAssetGroupLineageRouting secondary-axis alignment', () => {
+  const alignedOptions = (
+    overrides: Partial<ApplyAssetGroupRoutingOptions> = {},
+  ): ApplyAssetGroupRoutingOptions =>
+    routingOptions({alignGroupsOnSecondaryAxis: true, ...overrides});
+
+  it('leaves the secondary axis untouched when alignment is not requested', () => {
+    const layout: RoutingLayout = {
+      width: 600,
+      height: 700,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 420, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 400, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 440},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, routingOptions());
+
+    expect(result.groups.target!.bounds).toEqual(bounds(300, 400, 180, 100));
+    expect(result.nodes.targetNode!.bounds).toEqual(bounds(320, 420, 80, 40));
+    expect(result.edges[0]!.to).toEqual({x: 320, y: 440});
+  });
+
+  it('slides a downstream group onto the secondary axis position of its upstream endpoint', () => {
+    const layout: RoutingLayout = {
+      width: 600,
+      height: 700,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 420, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 400, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 440},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, alignedOptions());
+
+    expect(result.groups.source!.bounds).toEqual(bounds(0, 0, 180, 100));
+    expect(result.groups.target!.bounds).toEqual(bounds(300, 0, 180, 100));
+    expect(result.nodes.targetNode!.bounds).toEqual(bounds(320, 20, 80, 40));
+    expect(result.edges[0]!.from).toEqual({x: 100, y: 40});
+    expect(result.edges[0]!.to).toEqual({x: 320, y: 40});
+  });
+
+  it('preserves the primary-axis corridor while aligning the secondary axis', () => {
+    const layout: RoutingLayout = {
+      width: 600,
+      height: 700,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 420, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 400, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 440},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, alignedOptions());
+    const edge = result.edges[0]!;
+
+    expect(edge.sourceBoundary).toBe(180);
+    expect(edge.targetBoundary).toBe(300);
+    expect(edge.from.x).toBeLessThanOrEqual(edge.sourceBoundary!);
+    expect(edge.sourceBoundary! + 60).toBeLessThanOrEqual(edge.targetBoundary!);
+    expect(edge.targetBoundary!).toBeLessThanOrEqual(edge.to.x);
+  });
+
+  it('cascades same-column groups apart instead of overlapping them', () => {
+    const layout: RoutingLayout = {
+      width: 700,
+      height: 900,
+      nodes: {
+        a: {id: 'a', bounds: bounds(20, 20, 80, 40)},
+        b: {id: 'b', bounds: bounds(20, 80, 80, 40)},
+        t1n: {id: 't1n', bounds: bounds(320, 420, 80, 40)},
+        t2n: {id: 't2n', bounds: bounds(320, 620, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 300), expanded: true},
+        t1: {id: 't1', bounds: bounds(300, 400, 180, 100), expanded: true},
+        t2: {id: 't2', bounds: bounds(300, 600, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'a',
+          to: {x: 320, y: 440},
+          toId: 't1n',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+        {
+          from: {x: 100, y: 100},
+          fromId: 'b',
+          to: {x: 320, y: 640},
+          toId: 't2n',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      alignedOptions({
+        groupParentById: {source: null, t1: null, t2: null},
+        ownerGroupByNodeId: {a: 'source', b: 'source', t1n: 't1', t2n: 't2'},
+        endpointGroupById: {a: 'source', b: 'source', t1n: 't1', t2n: 't2'},
+      }),
+    );
+
+    // t2 wants y 60, which overlaps t1, so it cascades below t1's original 100px gap.
+    expect(result.groups.t1!.bounds).toEqual(bounds(300, 0, 180, 100));
+    expect(result.groups.t2!.bounds).toEqual(bounds(300, 200, 180, 100));
+    expect(result.nodes.t2n!.bounds).toEqual(bounds(320, 220, 80, 40));
+    expect(result.edges[1]!.to).toEqual({x: 320, y: 240});
+  });
+
+  it('preserves the upstream group order when cascading', () => {
+    const layout: RoutingLayout = {
+      width: 700,
+      height: 900,
+      nodes: {
+        a: {id: 'a', bounds: bounds(20, 20, 80, 40)},
+        b: {id: 'b', bounds: bounds(20, 80, 80, 40)},
+        t1n: {id: 't1n', bounds: bounds(320, 420, 80, 40)},
+        t2n: {id: 't2n', bounds: bounds(320, 620, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 300), expanded: true},
+        t1: {id: 't1', bounds: bounds(300, 400, 180, 100), expanded: true},
+        t2: {id: 't2', bounds: bounds(300, 600, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 100},
+          fromId: 'b',
+          to: {x: 320, y: 440},
+          toId: 't1n',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+        {
+          from: {x: 100, y: 40},
+          fromId: 'a',
+          to: {x: 320, y: 640},
+          toId: 't2n',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      alignedOptions({
+        groupParentById: {source: null, t1: null, t2: null},
+        ownerGroupByNodeId: {a: 'source', b: 'source', t1n: 't1', t2n: 't2'},
+        endpointGroupById: {a: 'source', b: 'source', t1n: 't1', t2n: 't2'},
+      }),
+    );
+
+    expect(result.groups.t1!.bounds.y).toBeLessThan(result.groups.t2!.bounds.y);
+    expect(result.groups.t1!.bounds.y + result.groups.t1!.bounds.height).toBeLessThanOrEqual(
+      result.groups.t2!.bounds.y,
+    );
+  });
+
+  it('skips alignment when an edge endpoint has no owning group', () => {
+    const layout: RoutingLayout = {
+      width: 700,
+      height: 900,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 20, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 420, 80, 40)},
+        ungroupedNode: {id: 'ungroupedNode', bounds: bounds(560, 420, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 0, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 400, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 40},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 440},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+        {from: {x: 480, y: 440}, fromId: 'targetNode', to: {x: 560, y: 440}, toId: 'ungroupedNode'},
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(
+      layout,
+      alignedOptions({
+        ownerGroupByNodeId: {
+          sourceNode: 'source',
+          targetNode: 'target',
+          ungroupedNode: null,
+        },
+        endpointGroupById: {
+          sourceNode: 'source',
+          targetNode: 'target',
+          ungroupedNode: null,
+        },
+      }),
+    );
+
+    expect(result.groups.target!.bounds).toEqual(bounds(300, 400, 180, 100));
+    expect(result.nodes.targetNode!.bounds).toEqual(bounds(320, 420, 80, 40));
+  });
+
+  it('grows the canvas when alignment pushes a group past the original extent', () => {
+    const layout: RoutingLayout = {
+      width: 600,
+      height: 260,
+      nodes: {
+        sourceNode: {id: 'sourceNode', bounds: bounds(20, 120, 80, 40)},
+        targetNode: {id: 'targetNode', bounds: bounds(320, 20, 80, 40)},
+      },
+      groups: {
+        source: {id: 'source', bounds: bounds(0, 100, 180, 100), expanded: true},
+        target: {id: 'target', bounds: bounds(300, 0, 180, 100), expanded: true},
+      },
+      edges: [
+        {
+          from: {x: 100, y: 140},
+          fromId: 'sourceNode',
+          to: {x: 320, y: 40},
+          toId: 'targetNode',
+          sourceBoundary: 180,
+          targetBoundary: 300,
+        },
+      ],
+    };
+
+    const result = applyAssetGroupLineageRouting(layout, alignedOptions());
+
+    expect(result.groups.target!.bounds).toEqual(bounds(300, 100, 180, 100));
+    expect(result.height).toBeGreaterThanOrEqual(300);
   });
 });
