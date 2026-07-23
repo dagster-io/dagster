@@ -3181,6 +3181,7 @@ def test_asset_subset_preserves_run_tags() -> None:
     assert subset_job.run_tags == {"dagster/max_retries": "1", "my_tag": "my_value"}
 
 
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
 def test_automation_condition_stored_and_preserved() -> None:
     @dg.asset
     def asset_a():
@@ -3319,6 +3320,8 @@ def _defs_with_partitions_def_and_partitioned_config() -> dg.Definitions:
         ),
     ],
 )
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
 def test_automation_condition_rejected_with_partitioned_run_config(
     build_defs: Callable[[], dg.Definitions],
 ) -> None:
@@ -3333,6 +3336,8 @@ def test_automation_condition_rejected_with_partitioned_run_config(
 
 
 @pytest.mark.parametrize("explicit_partitions_def", [False, True], ids=["implicit", "explicit"])
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
 def test_automation_condition_allowed_on_partitioned_job(
     explicit_partitions_def: bool,
 ) -> None:
@@ -3359,6 +3364,8 @@ def test_automation_condition_allowed_on_partitioned_job(
     assert job_def.automation_condition == condition
 
 
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
 def test_automation_condition_allowed_on_partitioned_job_with_unpartitioned_assets() -> None:
     # without user-supplied config, a partitioned job with a condition is supported
     partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
@@ -3381,6 +3388,8 @@ def test_automation_condition_allowed_on_partitioned_job_with_unpartitioned_asse
 
 
 @pytest.mark.parametrize("explicit_partitions_def", [False, True], ids=["implicit", "explicit"])
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
 def test_automation_condition_job_with_mismatched_asset_partitions_rejected(
     explicit_partitions_def: bool,
 ) -> None:

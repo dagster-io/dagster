@@ -8,7 +8,13 @@ from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import beta, hidden_param, only_allow_hidden_params_in_kwargs, public
+from dagster._annotations import (
+    beta,
+    hidden_param,
+    only_allow_hidden_params_in_kwargs,
+    preview,
+    public,
+)
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.asset_graph_view.timing_metadata import TimingMetadata
@@ -414,8 +420,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
         return AllChecksCondition(operand=condition, blocking_only=blocking_only)
 
-    # hidden (not @public) while job-level declarative automation is under development;
-    # will be made public alongside the UI support
+    @public
+    @preview
     @staticmethod
     def any_job_root_assets_match(
         condition: "AutomationCondition[AssetKey]",
@@ -439,8 +445,8 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             f"any_job_root_assets_match({label})"
         )
 
-    # hidden (not @public) while job-level declarative automation is under development;
-    # will be made public alongside the UI support
+    @public
+    @preview
     @staticmethod
     def all_job_root_assets_match(
         condition: "AutomationCondition[AssetKey]",

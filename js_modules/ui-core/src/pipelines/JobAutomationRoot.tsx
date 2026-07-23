@@ -5,6 +5,7 @@ import {useParams} from 'react-router-dom';
 import {explorerPathFromString} from './PipelinePathUtils';
 import {gql} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
 import {EvaluationList} from '../assets/AutoMaterializePolicyPage/EvaluationList';
 import {ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT} from '../assets/AutoMaterializePolicyPage/GetEvaluationsQuery';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export const JobAutomationRoot = ({repoAddress}: Props) => {
+  useTrackPageView();
+
   const params = useParams<{pipelinePath: string}>();
   const {pipelinePath} = params;
   const explorerPath = explorerPathFromString(pipelinePath);

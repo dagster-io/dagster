@@ -1,7 +1,8 @@
-import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {Box, Tab, Tabs, Tag, Tooltip} from '@dagster-io/ui-components';
+import {ReactNode, useMemo} from 'react';
 
 import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
+import styles from './css/JobTabs.module.css';
 import {
   DEFAULT_DISABLED_REASON,
   PermissionResult,
@@ -79,7 +80,7 @@ export type JobTabConfigInput = {
 
 export interface JobTabConfig {
   id: string;
-  title: string;
+  title: ReactNode;
   pathComponent: string;
   getPermissionsResult?: (permissionsState: PermissionsState) => PermissionResult;
   isHidden?: boolean;
@@ -125,7 +126,14 @@ export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabC
     },
     automation: {
       id: 'automation',
-      title: 'Automation',
+      title: (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <span>Automation</span>
+          <Tag>
+            <span className={styles.previewTagText}>Preview</span>
+          </Tag>
+        </Box>
+      ),
       pathComponent: 'automation',
       isHidden: !hasAutomationCondition,
     },
