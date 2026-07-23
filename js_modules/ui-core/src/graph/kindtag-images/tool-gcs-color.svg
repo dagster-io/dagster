@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24"><defs><style>.cls-1{fill:#aecbfa;}.cls-2{fill:#669df6;}.cls-3{fill:#4285f4;}.cls-4{fill:#fff;}</style></defs><title>Icon_24px_CloudStorage_Color</title><g data-name="Product Icons"><rect class="cls-1" x="2" y="4" width="20" height="7"/><rect class="cls-2" x="20" y="4" width="2" height="7"/><polygon class="cls-3" points="22 4 20 4 20 11 22 4"/><rect class="cls-2" x="2" y="4" width="2" height="7"/><rect class="cls-4" x="6" y="7" width="6" height="1"/><rect class="cls-4" x="15" y="6" width="3" height="3" rx="1.5"/><rect class="cls-1" x="2" y="13" width="20" height="7"/><rect class="cls-2" x="20" y="13" width="2" height="7"/><polygon class="cls-3" points="22 13 20 13 20 20 22 13"/><rect class="cls-2" x="2" y="13" width="2" height="7"/><rect class="cls-4" x="6" y="16" width="6" height="1"/><rect class="cls-4" x="15" y="15" width="3" height="3" rx="1.5"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24">
+<path d="M442 277.9H70c-8.8 0-16 7.2-16 16V442c0 8.8 7.2 16 16 16h107.2c1.5.5 3.1.7 4.8.7s3.3-.3 4.8-.7H442c8.8 0 16-7.2 16-16V293.9c0-8.8-7.2-16-16-16zm-356 32h80V426H86V309.9zm340 116H198V309.8h228v116.1z" fill="#34a853"/>
+<path d="M442 54H70c-8.8 0-16 7.2-16 16v148.8c0 8.8 7.2 16 16 16h372c8.8 0 16-7.2 16-16V70c0-8.8-7.2-16-16-16zM86 86h80v116.8H86V86zm340 116.8H198V86h228v116.8z" fill="#fbbc04"/>
+<path d="M442 234.8h-16V86H54V70c0-8.8 7.2-16 16-16h372c8.8 0 16 7.2 16 16v148.8c0 8.8-7.2 16-16 16z" fill="#ea4335"/>
+<path d="M442 457.9h-16V309.8H54v-16c0-8.8 7.2-16 16-16h372c8.8 0 16 7.2 16 16v148.1c0 8.8-7.2 16-16 16z" fill="#4285f4"/>
+<circle cx="349" cy="144.4" r="37" fill="#ea4335"/>
+<circle cx="349" cy="367.9" r="37" fill="#4285f4"/>
+</svg>
