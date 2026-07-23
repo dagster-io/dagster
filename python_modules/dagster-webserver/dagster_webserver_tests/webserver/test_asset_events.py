@@ -130,6 +130,70 @@ def test_report_asset_materialization_endpoint(instance: DagsterInstance, test_c
         in response.json()["error"]
     )
 
+    # user-provided tags (json body) — e.g. data-version provenance tags set by
+    # external writers reporting materializations over REST
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        json={
+            "data_version": "v2",
+            "tags": {
+                "dagster/input_data_version/upstream/key": "12345",
+                "my_tag": "my_value",
+            },
+        },
+    )
+    assert response.status_code == 200, response.json()
+    evt = instance.get_latest_materialization_event(AssetKey(my_asset_key))
+    assert evt and evt.asset_materialization
+    tags = evt.asset_materialization.tags
+    assert tags
+    assert tags["dagster/input_data_version/upstream/key"] == "12345"
+    assert tags["my_tag"] == "my_value"
+    assert tags[DATA_VERSION_TAG] == "v2"
+
+    # tags via query params (json encoded)
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        params={"tags": json.dumps({"my_tag": "param_value"})},
+    )
+    assert response.status_code == 200, response.json()
+    evt = instance.get_latest_materialization_event(AssetKey(my_asset_key))
+    assert evt and evt.asset_materialization
+    tags = evt.asset_materialization.tags
+    assert tags
+    assert tags["my_tag"] == "param_value"
+
+    # the dedicated data_version param takes precedence over a conflicting tag
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        json={
+            "data_version": "param_wins",
+            "tags": {DATA_VERSION_TAG: "tag_loses"},
+        },
+    )
+    assert response.status_code == 200, response.json()
+    evt = instance.get_latest_materialization_event(AssetKey(my_asset_key))
+    assert evt and evt.asset_materialization
+    tags = evt.asset_materialization.tags
+    assert tags
+    assert tags[DATA_VERSION_TAG] == "param_wins"
+
+    # bad tags: query param not json encoded
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        params={"tags": "not json {"},
+    )
+    assert response.status_code == 400
+    assert "Error parsing tags json" in response.json()["error"]
+
+    # bad tags: not an object
+    response = test_client.post(
+        f"/report_asset_materialization/{my_asset_key}",
+        json={"tags": "im_just_a_string"},
+    )
+    assert response.status_code == 400
+    assert "Expected tags to be a json object" in response.json()["error"]
+
 
 def test_report_asset_materialization_apis_consistent(
     instance: DagsterInstance, test_client: TestClient
@@ -141,6 +205,7 @@ def test_report_asset_materialization_apis_consistent(
         "data_version": "so_new",
         "partition": "2023-09-23",
         "description": "boo",
+        "tags": {"dagster/input_data_version/up/stream": "42", "my_tag": "my_value"},
     }
 
     # sample has entry for all supported params (banking on usage of enum)
@@ -171,6 +236,12 @@ def test_report_asset_materialization_apis_consistent(
             assert mat.partition == v
         elif k == "description":
             assert mat.description == v
+        elif k == "tags":
+            assert isinstance(v, dict)
+            tags = mat.tags
+            assert tags
+            for tag_key, tag_value in v.items():
+                assert tags[tag_key] == tag_value
         else:
             assert False, (
                 "need to add validation that sample payload content was written successfully"
@@ -181,7 +252,7 @@ def test_report_asset_materialization_apis_consistent(
     skip_set = {"self"}
     params = [p for p in sig.parameters if p not in skip_set]
 
-    KNOWN_DIFF = {"partition", "description"}
+    KNOWN_DIFF = {"partition", "description", "tags"}
 
     assert set(sample_payload.keys()).difference(set(params)) == KNOWN_DIFF
 
@@ -322,6 +393,45 @@ def test_report_asset_obs_endpoint(instance: DagsterInstance, test_client: TestC
     obs = _assert_stored_obs(instance, my_asset_key)
     assert obs.data_version == "fresh"
 
+    # user-provided tags (json body); dedicated data_version param wins over a conflicting tag
+    response = test_client.post(
+        f"/report_asset_observation/{my_asset_key}",
+        json={
+            "data_version": "param_wins",
+            "tags": {
+                "dagster/input_data_version/upstream/key": "12345",
+                "my_tag": "my_value",
+                DATA_VERSION_TAG: "tag_loses",
+            },
+        },
+    )
+    assert response.status_code == 200, response.json()
+    obs = _assert_stored_obs(instance, my_asset_key)
+    tags = obs.tags
+    assert tags
+    assert tags["dagster/input_data_version/upstream/key"] == "12345"
+    assert tags["my_tag"] == "my_value"
+    assert tags[DATA_VERSION_TAG] == "param_wins"
+
+    # tags via query params (json encoded)
+    response = test_client.post(
+        f"/report_asset_observation/{my_asset_key}",
+        params={"tags": json.dumps({"my_tag": "param_value"})},
+    )
+    assert response.status_code == 200, response.json()
+    obs = _assert_stored_obs(instance, my_asset_key)
+    tags = obs.tags
+    assert tags
+    assert tags["my_tag"] == "param_value"
+
+    # bad tags: not an object
+    response = test_client.post(
+        f"/report_asset_observation/{my_asset_key}",
+        json={"tags": "im_just_a_string"},
+    )
+    assert response.status_code == 400
+    assert "Expected tags to be a json object" in response.json()["error"]
+
 
 def test_report_asset_observation_apis_consistent(
     instance: DagsterInstance, test_client: TestClient
@@ -332,6 +442,7 @@ def test_report_asset_observation_apis_consistent(
         "data_version": "so_new",
         "partition": "2023-09-23",
         "description": "boo",
+        "tags": {"dagster/input_data_version/up/stream": "42", "my_tag": "my_value"},
     }
 
     # sample has entry for all supported params (banking on usage of enum)
@@ -359,6 +470,12 @@ def test_report_asset_observation_apis_consistent(
             assert obs.partition == v
         elif k == "description":
             assert obs.description == v
+        elif k == "tags":
+            assert isinstance(v, dict)
+            tags = obs.tags
+            assert tags
+            for tag_key, tag_value in v.items():
+                assert tags[tag_key] == tag_value
         else:
             assert False, (
                 "need to add validation that sample payload content was written successfully"

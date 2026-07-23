@@ -90,6 +90,32 @@ async def handle_report_asset_materialization_request(
         return unauthorized
 
     tags = context.get_reporting_user_tags()
+
+    user_tags = None
+    if ReportAssetMatParam.tags in json_body:
+        user_tags = json_body[ReportAssetMatParam.tags]
+    elif ReportAssetMatParam.tags in request.query_params:
+        try:
+            user_tags = json.loads(request.query_params[ReportAssetMatParam.tags])
+        except Exception as exc:
+            return JSONResponse(
+                {
+                    "error": f"Error parsing tags json: {exc}",
+                },
+                status_code=400,
+            )
+    if user_tags is not None:
+        if not isinstance(user_tags, dict):
+            return JSONResponse(
+                {
+                    "error": "Expected tags to be a json object.",
+                },
+                status_code=400,
+            )
+        # merged before the dedicated data_version param so that the explicit
+        # param takes precedence over a conflicting tag
+        tags.update(user_tags)
+
     data_version = _value_from_body_or_params(ReportAssetMatParam.data_version, request, json_body)
     if data_version is not None:
         tags[DATA_VERSION_TAG] = data_version
@@ -297,6 +323,32 @@ async def handle_report_asset_observation_request(
     description = _value_from_body_or_params(ReportAssetObsParam.description, request, json_body)
 
     tags = context.get_reporting_user_tags()
+
+    user_tags = None
+    if ReportAssetObsParam.tags in json_body:
+        user_tags = json_body[ReportAssetObsParam.tags]
+    elif ReportAssetObsParam.tags in request.query_params:
+        try:
+            user_tags = json.loads(request.query_params[ReportAssetObsParam.tags])
+        except Exception as exc:
+            return JSONResponse(
+                {
+                    "error": f"Error parsing tags json: {exc}",
+                },
+                status_code=400,
+            )
+    if user_tags is not None:
+        if not isinstance(user_tags, dict):
+            return JSONResponse(
+                {
+                    "error": "Expected tags to be a json object.",
+                },
+                status_code=400,
+            )
+        # merged before the dedicated data_version param so that the explicit
+        # param takes precedence over a conflicting tag
+        tags.update(user_tags)
+
     data_version = _value_from_body_or_params(ReportAssetObsParam.data_version, request, json_body)
     if data_version is not None:
         tags[DATA_VERSION_TAG] = data_version
@@ -313,7 +365,7 @@ async def handle_report_asset_observation_request(
     except Exception as exc:
         return JSONResponse(
             {
-                "error": f"Error constructing AssetMaterialization: {exc}",
+                "error": f"Error constructing AssetObservation: {exc}",
             },
             status_code=400,
         )
@@ -334,6 +386,7 @@ class ReportAssetMatParam:
     metadata = "metadata"
     description = "description"
     partition = "partition"
+    tags = "tags"
 
 
 class ReportAssetCheckEvalParam:
@@ -359,3 +412,4 @@ class ReportAssetObsParam:
     metadata = "metadata"
     description = "description"
     partition = "partition"
+    tags = "tags"
