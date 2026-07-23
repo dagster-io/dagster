@@ -195,18 +195,6 @@ class AssetSelectionListener(ParseTreeListener):
     def exitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#NotMaterializedInHoursExpr.
-    def enterNotMaterializedInHoursExpr(
-        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
-    ):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#NotMaterializedInHoursExpr.
-    def exitNotMaterializedInHoursExpr(
-        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
-    ):
-        pass
-
     # Enter a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
     def enterColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         pass
@@ -299,6 +287,18 @@ class AssetSelectionListener(ParseTreeListener):
 
     # Exit a parse tree produced by AssetSelectionParser#JobAttributeExpr.
     def exitJobAttributeExpr(self, ctx: AssetSelectionParser.JobAttributeExprContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#NotMaterializedInHoursExpr.
+    def enterNotMaterializedInHoursExpr(
+        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#NotMaterializedInHoursExpr.
+    def exitNotMaterializedInHoursExpr(
+        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
+    ):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#value.

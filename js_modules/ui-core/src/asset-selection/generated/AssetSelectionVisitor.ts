@@ -24,7 +24,6 @@ import {GroupAttributeExprContext} from './AssetSelectionParser.js';
 import {KindAttributeExprContext} from './AssetSelectionParser.js';
 import {IsAttributeExprContext} from './AssetSelectionParser.js';
 import {StatusAttributeExprContext} from './AssetSelectionParser.js';
-import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ColumnAttributeExprContext} from './AssetSelectionParser.js';
 import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnTagAttributeExprContext} from './AssetSelectionParser.js';
@@ -35,6 +34,7 @@ import {AutomationTypeAttributeExprContext} from './AssetSelectionParser.js';
 import {SensorAttributeExprContext} from './AssetSelectionParser.js';
 import {ScheduleAttributeExprContext} from './AssetSelectionParser.js';
 import {JobAttributeExprContext} from './AssetSelectionParser.js';
+import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -197,13 +197,6 @@ export class AssetSelectionVisitor<Result> extends AbstractParseTreeVisitor<Resu
    */
   visitStatusAttributeExpr?: (ctx: StatusAttributeExprContext) => Result;
   /**
-   * Visit a parse tree produced by the `NotMaterializedInHoursExpr`
-   * labeled alternative in `AssetSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => Result;
-  /**
    * Visit a parse tree produced by the `ColumnAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.
    * @param ctx the parse tree
@@ -273,6 +266,13 @@ export class AssetSelectionVisitor<Result> extends AbstractParseTreeVisitor<Resu
    * @return the visitor result
    */
   visitJobAttributeExpr?: (ctx: JobAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => Result;
   /**
    * Visit a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree

@@ -16,7 +16,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {useCopyToClipboard} from '../app/browser';
-import styles from './css/CodeLocationRowSet.module.css';
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
@@ -29,6 +28,7 @@ import {
   LocationStatusEntryFragment,
   WorkspaceDisplayMetadataFragment,
 } from './WorkspaceContext/types/WorkspaceQueries.types';
+import styles from './css/CodeLocationRowSet.module.css';
 
 export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();

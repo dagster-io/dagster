@@ -6,10 +6,10 @@ import {
 } from '@dagster-io/ui-components';
 import {useEffect, useRef} from 'react';
 
+import {EvaluationList} from './EvaluationList';
 import {useEvaluationsQueryResult} from './useEvaluationsQueryResult';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {AssetKey} from '../types';
-import {EvaluationList} from './EvaluationList';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 interface Props {

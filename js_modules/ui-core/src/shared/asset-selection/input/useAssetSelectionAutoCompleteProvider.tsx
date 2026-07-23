@@ -25,6 +25,9 @@ export function useAssetSelectionAutoCompleteProvider(
         attributesMap,
         primaryAttributeKey: 'key',
         attributeToIcon,
+        // `not_materialized_in_hours` is numeric: the grammar expects bare digits
+        // (`not_materialized_in_hours:1`), so its suggested values must not be quoted.
+        unquotedAttributes: ['not_materialized_in_hours'],
       }),
     [attributesMap],
   );

@@ -24,7 +24,6 @@ import {GroupAttributeExprContext} from './AssetSelectionParser.js';
 import {KindAttributeExprContext} from './AssetSelectionParser.js';
 import {IsAttributeExprContext} from './AssetSelectionParser.js';
 import {StatusAttributeExprContext} from './AssetSelectionParser.js';
-import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ColumnAttributeExprContext} from './AssetSelectionParser.js';
 import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnTagAttributeExprContext} from './AssetSelectionParser.js';
@@ -35,6 +34,7 @@ import {AutomationTypeAttributeExprContext} from './AssetSelectionParser.js';
 import {SensorAttributeExprContext} from './AssetSelectionParser.js';
 import {ScheduleAttributeExprContext} from './AssetSelectionParser.js';
 import {JobAttributeExprContext} from './AssetSelectionParser.js';
+import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -300,18 +300,6 @@ export class AssetSelectionListener implements ParseTreeListener {
    */
   exitStatusAttributeExpr?: (ctx: StatusAttributeExprContext) => void;
   /**
-   * Enter a parse tree produced by the `NotMaterializedInHoursExpr`
-   * labeled alternative in `AssetSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  enterNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => void;
-  /**
-   * Exit a parse tree produced by the `NotMaterializedInHoursExpr`
-   * labeled alternative in `AssetSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  exitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => void;
-  /**
    * Enter a parse tree produced by the `ColumnAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.
    * @param ctx the parse tree
@@ -431,6 +419,18 @@ export class AssetSelectionListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitJobAttributeExpr?: (ctx: JobAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => void;
   /**
    * Enter a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree
