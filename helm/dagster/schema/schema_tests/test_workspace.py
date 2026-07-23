@@ -86,6 +86,38 @@ def test_workspace_renders_from_helm_user_deployments(template: HelmTemplate):
         assert grpc_server["grpc_server"]["location_name"] == deployment.name
 
 
+def test_workspace_renders_from_helm_user_deployments_map(template: HelmTemplate):
+    # deployments provided as a name-keyed map instead of a list; the map key is the name.
+    deployments = {
+        "deployment-one": create_simple_user_deployment("deployment-one"),
+        "deployment-two": create_simple_user_deployment("deployment-two"),
+    }
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=deployments,
+        )
+    )
+
+    workspace_templates = template.render(helm_values)
+
+    assert len(workspace_templates) == 1
+
+    workspace_template = workspace_templates[0]
+
+    workspace = yaml.full_load(workspace_template.data["workspace.yaml"])
+    grpc_servers = workspace["load_from"]
+
+    assert len(grpc_servers) == len(deployments)
+
+    # Helm ranges maps in sorted-key order.
+    for grpc_server, name in zip(grpc_servers, sorted(deployments)):
+        assert grpc_server["grpc_server"]["host"] == name
+        assert grpc_server["grpc_server"]["port"] == deployments[name].port
+        assert grpc_server["grpc_server"]["location_name"] == name
+
+
 def test_workspace_renders_from_helm_webserver(template: HelmTemplate):
     servers = [
         Server(host="another-deployment-one", port=4000, name="deployment one"),
