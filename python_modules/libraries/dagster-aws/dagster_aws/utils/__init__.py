@@ -23,7 +23,10 @@ def construct_boto_client_retry_config(max_attempts, botocore_config=None):
         retry_config["mode"] = "standard"
 
     config_kwargs = {**botocore_config}
-    config_kwargs["retries"] = {**retry_config, **config_kwargs.get("retries", {})}
+    retries_override = check.opt_dict_param(
+        config_kwargs.get("retries"), "botocore_config['retries']"
+    )
+    config_kwargs["retries"] = {**retry_config, **retries_override}
     return Config(**config_kwargs)  # ty: ignore[invalid-argument-type]
 
 

@@ -216,6 +216,16 @@ def test_construct_boto_client_retry_config_retries_override():
     assert config.retries["mode"] == "adaptive"
 
 
+def test_construct_boto_client_retry_config_invalid_retries():
+    from dagster._check import CheckError
+
+    from dagster_aws.utils import construct_boto_client_retry_config
+
+    # A non-dict "retries" value should raise a clear param error, not an opaque TypeError.
+    with pytest.raises(CheckError):
+        construct_boto_client_retry_config(5, botocore_config={"retries": 5})
+
+
 @mock.patch("boto3.session.Session.resource")
 def test_s3_resource_botocore_config_passthrough(mock_boto3_resource):
     from dagster_aws.s3 import S3Resource
