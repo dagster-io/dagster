@@ -198,6 +198,102 @@ def test_incremental_log_model_result_to_asset():
     )
 
 
+def test_noop_status_yields_materialization():
+    """dbt state-reuse produces `node_status: "no-op"` for models that were
+    skipped because state said they were already up-to-date. The models ARE
+    materialized in the warehouse — we must yield asset materialization events
+    for them so the Dagster asset graph reflects reality.
+
+    Without the success-equivalent-set check, a `no-op` status would be treated
+    as "not a materialization event", which then causes the enclosing
+    @dbt_assets op to raise on missing required outputs.
+    """
+    noop_log_model_result = {
+        "data": {
+            "description": "sql model public.orders",
+            "execution_time": 0.001,   # near-zero — reused, not re-executed
+            "index": 1,
+            "node_info": {
+                "materialized": "table",
+                "node_finished_at": "2025-03-10T12:53:36.900000",
+                "node_name": "public__orders",
+                "node_path": "mart/public__orders.sql",
+                "node_relation": {
+                    "alias": "orders",
+                    "database": "dev",
+                    "relation_name": "dev.public.orders",
+                    "schema": "public",
+                },
+                "node_started_at": "2025-03-10T12:53:36.820592",
+                "node_status": "no-op",
+                "resource_type": "model",
+                "unique_id": "model.pytest_dwh.public__orders",
+            },
+            "status": "no-op",
+            "total": 1,
+        },
+        "info": {
+            "category": "",
+            "code": "Q012",
+            "extra": {},
+            "invocation_id": "6b0b2ff3-e708-4a86-a81d-eb348f7d2faa",
+            "level": "info",
+            "msg": "1 of 1 REUSED public.orders (state reuse) .......... [[33mNO-OP[0m in 0.00s]",
+            "name": "LogModelResult",
+            "pid": 14251,
+            "thread": "Thread-1 (worker)",
+            "ts": "2025-03-10T12:53:48.825332Z",
+        },
+    }
+
+    event_message = DbtCoreCliEventMessage(
+        raw_event=noop_log_model_result,
+        event_history_metadata={
+            "metadata": {
+                "invocation_id": "6b0b2ff3-e708-4a86-a81d-eb348f7d2faa",
+                "generated_at": "2025-03-10T12:54:41.369662Z",
+                "env": {},
+            },
+            "logs": [],
+        },
+    )
+    manifest = {
+        "metadata": {
+            "invocation_id": "6b0b2ff3-e708-4a86-a81d-eb348f7d2faa",
+            "generated_at": "2025-03-10T12:54:41.369662Z",
+        },
+        "nodes": {
+            "model.pytest_dwh.public__orders": {
+                "unique_id": "model.pytest_dwh.public__orders",
+                "name": "public__orders",
+                "resource_type": "model",
+                "materialized": "table",
+                "database": "dev",
+                "schema": "public",
+                "alias": "orders",
+                "path": "mart/public__orders.sql",
+                "config": {"schema": "public", "materialized": "table"},
+                "description": "",
+            }
+        },
+    }
+
+    events = list(
+        event_message.to_default_asset_events(
+            manifest=manifest, dagster_dbt_translator=DagsterDbtTranslator()
+        )
+    )
+
+    # no-op is success-equivalent — we should see one materialization event.
+    from dagster import AssetMaterialization, Output
+
+    mat_events = [e for e in events if isinstance(e, (AssetMaterialization, Output))]
+    assert len(mat_events) == 1, (
+        f"Expected 1 materialization event for `no-op` (state-reuse) status; "
+        f"got {len(mat_events)}. Full events: {events!r}"
+    )
+
+
 def test_log_test_result_without_node_info():
     """Regression test: LogTestResult without node_info should not crash to_default_asset_events."""
     raw_event = {

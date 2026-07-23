@@ -95,6 +95,7 @@ else:
             PartialSuccess = "partial success"
             Pass = "pass"
             RuntimeErr = "runtime error"
+            NoOp = "no-op"
 
         class TestStatus(StrEnum):
             Pass = NodeStatus.Pass
@@ -105,3 +106,26 @@ else:
 
 
 logging.getLogger().handlers = existing_root_logger_handlers
+
+
+# Node statuses that should be treated as successful materializations for the
+# purposes of yielding Dagster asset events. Any status outside this set is
+# treated as an error / skip / other, and no materialization event is emitted.
+#
+# In particular:
+#   - "no-op" (NodeStatus.NoOp on dbt-core >= 1.10) — dbt state-reuse: the node
+#     was skipped because state said it was already up-to-date. Semantically
+#     equivalent to a successful materialization; must yield an event.
+#   - "partial success" (NodeStatus.PartialSuccess on dbt-core >= 1.9) —
+#     incremental microbatch partial completion. Some batches succeeded; treat
+#     as materialization.
+#
+# String literals are used deliberately rather than NodeStatus.<Member> to keep
+# import-time safe across the supported dbt-core version range (1.7-1.11) — the
+# NoOp and PartialSuccess enum members are only present in newer dbt-core
+# versions, but dagster-dbt still needs to import cleanly on older ones.
+_SUCCESS_EQUIVALENT_NODE_STATUSES: frozenset[str] = frozenset({
+    "success",
+    "no-op",
+    "partial success",
+})
