@@ -2,6 +2,7 @@ import {
   Box,
   Checkbox,
   MiddleTruncate,
+  RowCell,
   Text,
   Tooltip,
   useDelayedState,
@@ -25,7 +26,6 @@ import {
   ScheduleAssetSelectionQueryVariables,
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {RowCell} from '../ui/VirtualizedTable';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 import {RepoAddress} from '../workspace/types';

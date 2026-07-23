@@ -30,6 +30,7 @@ export const EXPECTED_PERMISSIONS = {
   toggle_auto_materialize: true,
   edit_concurrency_limit: true,
   edit_app_managed_components: true,
+  refresh_component_state: true,
   edit_workspace: true,
 };
 
@@ -58,6 +59,7 @@ export type PermissionsFromJSON = {
   toggle_auto_materialize?: PermissionResult;
   edit_concurrency_limit?: PermissionResult;
   edit_app_managed_components?: PermissionResult;
+  refresh_component_state?: PermissionResult;
   edit_workspace?: PermissionResult;
 };
 

@@ -484,6 +484,14 @@
     "UnauthorizedError",
     "PythonError"
   ],
+  "ComponentsOrError": ["Components", "PythonError"],
+  "RefreshComponentStateResult": [
+    "RefreshComponentStateSuccess",
+    "RefreshComponentStateAccepted",
+    "RefreshComponentStateError",
+    "UnauthorizedError",
+    "PythonError"
+  ],
   "ComponentTypesOrError": ["ComponentTypes", "RepositoryLocationNotFound", "PythonError"],
   "WorkspaceOrError": ["Workspace", "PythonError"],
   "WorkspaceLocationStatusEntriesOrError": ["WorkspaceLocationStatusEntries", "PythonError"],
@@ -516,7 +524,7 @@
     "PartitionedAssetConditionEvaluationNode",
     "SpecificPartitionAssetConditionEvaluationNode"
   ],
-  "EntityKey": ["AssetKey", "AssetCheckhandle"],
+  "EntityKey": ["AssetKey", "AssetCheckhandle", "AssetJobKey"],
   "AssetConditionEvaluationRecordsOrError": [
     "AssetConditionEvaluationRecords",
     "AutoMaterializeAssetEvaluationNeedsMigrationError"

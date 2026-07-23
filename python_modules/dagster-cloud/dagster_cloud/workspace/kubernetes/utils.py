@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import hashlib
 import re
 import time
 from collections.abc import Mapping
@@ -19,6 +20,42 @@ from dagster_cloud.workspace.user_code_launcher.utils import (
 )
 
 MANAGED_RESOURCES_LABEL = {"managed_by": "K8sUserCodeLauncher"}
+
+# defs_state_info override ConfigMap — see in-place pin reload design.
+DEFS_STATE_CONFIG_MAP_NAME_PREFIX = "dagster-defs-state-"
+DEFS_STATE_OVERRIDE_FILENAME = "defs_state_info"
+DEFS_STATE_MOUNT_PATH = "/var/run/dagster/defs-state"
+DEFS_STATE_OVERRIDE_ENV = "DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH"
+# Verbose to minimize collision with user-supplied volumes.
+DEFS_STATE_VOLUME_NAME = "dagster-cloud-defs-state-override"
+
+# Server spec version: bump when a new launcher mechanism (e.g. ConfigMap mount +
+# DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH env var) makes a platform-induced pod
+# restart safe under in-place defs_state_info reload. The capability gate keys
+# off the running Deployment's label so legacy Deployments stay on
+# destroy-and-recreate.
+SERVER_SPEC_VERSION_LABEL_KEY = "dagster.io/server-spec-version"
+SERVER_SPEC_VERSION_V2 = "v2"
+
+
+def defs_state_config_map_name(k8s_deployment_name: str) -> str:
+    """Per-incarnation ConfigMap name, keyed on the k8s Deployment resource name.
+
+    Keyed per *incarnation* (the uuid-suffixed k8s Deployment name), NOT per
+    location: during an update, old and new Deployments for the same location
+    coexist, and removing the old server must never delete the ConfigMap the
+    live replacement mounts. Each incarnation owns exactly one CM, created
+    alongside it and deleted with it (``_remove_server_handle`` derives this
+    name from ``handle.name``; strays are covered by the orphan GC sweep).
+
+    Deterministic from the Deployment name so spinup, in-place reload, and
+    cleanup all agree without listing. Hashed because prefix(19) + Deployment
+    name(up to 63) would exceed the 63-char K8s resource-name limit:
+    prefix(19) + sha1 hex(40) = 59 chars.
+    """
+    m = hashlib.sha1()
+    m.update(k8s_deployment_name.encode())
+    return f"{DEFS_STATE_CONFIG_MAP_NAME_PREFIX}{m.hexdigest()}"
 
 
 def _get_dagster_k8s_labels(
@@ -76,6 +113,39 @@ def get_k8s_human_readable_label(name):
     )
 
 
+def construct_defs_state_config_map(
+    deployment_name: str,
+    location_name: str,
+    k8s_deployment_name: str,
+    instance: DagsterCloudAgentInstance,
+    server_timestamp: float,
+    serialized_defs_state_info: str,
+) -> client.V1ConfigMap:
+    """ConfigMap holding the current serialized DefsStateInfo for a code-server.
+
+    Mounted into the pod and read at boot via DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH.
+    An empty string means "explicitly no pin" — the OSS-side reader treats a
+    present-but-empty file as authoritative and does NOT fall back to the
+    --defs-state-info arg, which may carry a stale pin from Deployment-creation
+    time. Only a missing/unreadable file falls back to the arg. Labels mirror
+    Deployment/Service so cleanup can use the same selectors.
+    """
+    return k8s_model_from_dict(
+        client.V1ConfigMap,
+        {
+            "api_version": "v1",
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": defs_state_config_map_name(k8s_deployment_name),
+                "labels": _get_dagster_k8s_labels(
+                    deployment_name, location_name, instance, server_timestamp
+                ),
+            },
+            "data": {DEFS_STATE_OVERRIDE_FILENAME: serialized_defs_state_info},
+        },
+    )
+
+
 def construct_code_location_service(
     deployment_name,
     location_name,
@@ -126,6 +196,7 @@ def construct_code_location_deployment(
     args,
     server_timestamp: float,
     server_replica_count: int | None = None,
+    mount_defs_state_config_map: bool = False,
 ):
     env = get_grpc_server_env(
         metadata,
@@ -154,6 +225,34 @@ def construct_code_location_deployment(
         ),
     }
 
+    if mount_defs_state_config_map:
+        # INVARIANT: must NOT use subPath. ConfigMap live-updates only propagate
+        # to non-subPath mounts; the request path doesn't depend on the file
+        # (gRPC handles in-flight updates) but the new-pod-restart path does.
+        existing_mounts = container_config.setdefault("volume_mounts", [])
+        for mount in existing_mounts:
+            if mount.get("name") == DEFS_STATE_VOLUME_NAME:
+                raise Exception(
+                    f"User-supplied volume_mount '{DEFS_STATE_VOLUME_NAME}' collides with "
+                    f"the reserved defs-state override mount. Rename your volume."
+                )
+        existing_mounts.append(
+            {
+                "name": DEFS_STATE_VOLUME_NAME,
+                "mount_path": DEFS_STATE_MOUNT_PATH,
+                "read_only": True,
+            }
+        )
+        # Env var, NOT CLI arg. Old `dagster` versions silently ignore an unknown
+        # env var; an unknown CLI flag would crash the pod on boot. This keeps
+        # the rollout safe even if a customer's user-code image lags the agent.
+        container_config["env"].append(
+            {
+                "name": DEFS_STATE_OVERRIDE_ENV,
+                "value": f"{DEFS_STATE_MOUNT_PATH}/{DEFS_STATE_OVERRIDE_FILENAME}",
+            }
+        )
+
     # With multiple replicas the Service must only route traffic to pods whose gRPC
     # port is open. The Dagster gRPC server only binds its port after user code has
     # been imported (DagsterGrpcServer.serve -> server.start), so a tcpSocket probe
@@ -177,8 +276,36 @@ def construct_code_location_deployment(
         "containers": [container_config] + user_defined_containers,
     }
 
+    if mount_defs_state_config_map:
+        # optional=True so a manually-deleted ConfigMap doesn't block pod startup
+        # with CreateContainerConfigError; the pod falls through to args.
+        existing_volumes = pod_spec_config.setdefault("volumes", [])
+        for volume in existing_volumes:
+            if volume.get("name") == DEFS_STATE_VOLUME_NAME:
+                raise Exception(
+                    f"User-supplied volume '{DEFS_STATE_VOLUME_NAME}' collides with the "
+                    f"reserved defs-state override volume. Rename your volume."
+                )
+        existing_volumes.append(
+            {
+                "name": DEFS_STATE_VOLUME_NAME,
+                "config_map": {
+                    "name": defs_state_config_map_name(k8s_deployment_name),
+                    "optional": True,
+                },
+            }
+        )
+
     pod_template_spec_metadata = copy.deepcopy(user_defined_config.pod_template_spec_metadata)
     user_defined_pod_template_labels = pod_template_spec_metadata.pop("labels", {})
+
+    dagster_labels = dict(
+        _get_dagster_k8s_labels(deployment_name, location_name, instance, server_timestamp)
+    )
+    if mount_defs_state_config_map:
+        # Capability gate keys off this label on the running Deployment so a
+        # pre-mount Deployment never gets fast-path reload.
+        dagster_labels[SERVER_SPEC_VERSION_LABEL_KEY] = SERVER_SPEC_VERSION_V2
 
     deployment_dict = {
         "metadata": {
@@ -186,9 +313,7 @@ def construct_code_location_deployment(
             "name": k8s_deployment_name,
             "labels": {
                 **user_defined_deployment_labels,
-                **_get_dagster_k8s_labels(
-                    deployment_name, location_name, instance, server_timestamp
-                ),
+                **dagster_labels,
             },
         },
         "spec": {  # DeploymentSpec
@@ -199,9 +324,7 @@ def construct_code_location_deployment(
                     **pod_template_spec_metadata,
                     "labels": {
                         **user_defined_pod_template_labels,
-                        **_get_dagster_k8s_labels(
-                            deployment_name, location_name, instance, server_timestamp
-                        ),
+                        **dagster_labels,
                         "user-deployment": k8s_deployment_name,
                     },
                 },

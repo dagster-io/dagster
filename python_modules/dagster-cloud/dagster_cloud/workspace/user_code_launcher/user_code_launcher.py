@@ -97,7 +97,7 @@ from dagster_cloud.util import diff_serializable_namedtuple_map
 DEFAULT_SERVER_PROCESS_STARTUP_TIMEOUT = 180
 DEFAULT_MAX_TTL_SERVERS = 25
 ACTIVE_AGENT_HEARTBEAT_INTERVAL = int(
-    os.getenv("DAGSTER_CLOUD_ACTIVE_AGENT_HEARTBEAT_INVERAL", "600")
+    os.getenv("DAGSTER_CLOUD_ACTIVE_AGENT_HEARTBEAT_INTERVAL", "600")
 )
 
 
@@ -345,6 +345,23 @@ def _file_for_format(obj_bytes: bytes, fmt: str):
         return BytesIO(zlib.compress(obj_bytes))
     else:
         check.failed(f"Unexpected file format {fmt}")
+
+
+def _only_defs_state_info_changed(
+    desired: CodeLocationDeployData,
+    actual: CodeLocationDeployData,
+) -> bool:
+    """Return True when the only field differing between desired and actual is
+    ``defs_state_info``. Lets the reconciler take the in-place ReloadCodeWithState
+    fast path instead of a full destroy-and-recreate.
+    """
+    from dagster_shared.record import copy
+
+    if desired == actual:
+        return False
+    if desired.defs_state_info == actual.defs_state_info:
+        return False
+    return copy(desired, defs_state_info=actual.defs_state_info) == actual
 
 
 class DagsterCloudUserCodeLauncher(
@@ -1874,7 +1891,35 @@ class DagsterCloudUserCodeLauncher(
             f" remove: {to_remove_str}. To upload: {to_upload_str}."
         )
 
-        to_update_keys = diff.to_add.union(diff.to_update)
+        # Fast path: for to_update entries where the only diff in
+        # code_location_deploy_data is defs_state_info AND this launcher has
+        # opted in (``supports_in_place_pin_reload``), ask the running gRPC
+        # server to swap its pin in-place via ReloadCodeWithState rather than
+        # spinning up a new server. Launchers that haven't opted in fall
+        # through to the standard destroy-and-recreate path below. Falls back
+        # on any RPC error.
+        to_update_pin_only: set[DeploymentAndLocation] = set()
+        for to_update_key in diff.to_update:
+            actual_entry = self._actual_entries.get(to_update_key)
+            if actual_entry is None:
+                continue
+            if not _only_defs_state_info_changed(
+                desired_entries[to_update_key].code_location_deploy_data,
+                actual_entry.code_location_deploy_data,
+            ):
+                continue
+            if not self.supports_in_place_pin_reload(to_update_key, desired_entries[to_update_key]):
+                continue
+            try:
+                self._reload_pin_in_place(to_update_key, desired_entries[to_update_key])
+                to_update_pin_only.add(to_update_key)
+            except Exception:
+                self._logger.exception(
+                    f"In-place defs_state_info reload failed for {to_update_key};"
+                    " falling back to full server recreate."
+                )
+
+        to_update_keys = (diff.to_add | diff.to_update) - to_update_pin_only
 
         # Handles for all running standalone Dagster GRPC servers
         existing_standalone_dagster_server_handles: dict[
@@ -2264,6 +2309,73 @@ class DagsterCloudUserCodeLauncher(
                 instance_ref=self._instance.ref_for_deployment(deployment_name),
             )
         )
+
+    def supports_in_place_pin_reload(
+        self,
+        key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> bool:
+        """Whether this launcher can apply a new ``defs_state_info`` to the
+        running gRPC server in place (via ``ReloadCodeWithState``) instead of
+        spinning up a fresh one.
+
+        Default is False: the safe fallback is a full destroy-and-recreate.
+        Subclasses override to True only when their restart semantics
+        guarantee that a platform-induced restart cannot silently revert the
+        in-memory pin to a stale value from the persisted spec — e.g.
+        launcher-managed restart (``ProcessUserCodeLauncher``) or a code
+        path that keeps the spec in sync with the in-memory state.
+        """
+        return False
+
+    def _reload_pin_in_place(
+        self,
+        key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> None:
+        """Apply a new ``defs_state_info`` to the already-running gRPC server
+        for ``key`` without restarting it.
+
+        Pushes the new pin via ``ReloadCodeWithState`` and, on success,
+        updates the launcher's cached ``_grpc_servers`` and ``_actual_entries``
+        so subsequent reconciler ticks see no diff. Raises on RPC error so
+        the caller can decide whether to fall back to a full recreate.
+
+        Single-endpoint scope today — when a code-server service has multiple
+        replicas behind a load balancer, only the replica the gRPC call lands
+        on is updated. Multi-replica fan-out (enumerate pods/tasks + patch
+        the K8s/ECS spec so new pods read the new pin) is a follow-up that
+        belongs in the launcher subclass.
+        """
+        deployment_name, location_name = key
+        with self._grpc_servers_lock:
+            server = self._grpc_servers.get(key)
+        if not isinstance(server, DagsterCloudGrpcServer):
+            raise DagsterUserCodeUnreachableError(
+                f"No running server for {deployment_name}:{location_name}; cannot reload in place."
+            )
+
+        client = server.server_endpoint.create_client()
+        new_defs_state_info = desired_entry.code_location_deploy_data.defs_state_info
+        serialized = serialize_value(new_defs_state_info) if new_defs_state_info else ""
+        reply = client.reload_code_with_state(serialized_defs_state_info=serialized)
+        if reply.serialized_error:
+            error = deserialize_value(reply.serialized_error, SerializableErrorInfo)
+            raise Exception(
+                f"In-place reload failed for {deployment_name}:{location_name}: {error.message}"
+            )
+
+        # Refresh cached deploy data so other consumers (multipex matching,
+        # heartbeats, etc.) see the new pin. The existing _try_update_location_data
+        # step in _reconcile will re-upload the workspace snapshot for any
+        # location still in upload_locations, picking up the new defs.
+        with self._grpc_servers_lock:
+            self._grpc_servers[key] = DagsterCloudGrpcServer(
+                server.server_handle,
+                server.server_endpoint,
+                desired_entry.code_location_deploy_data,
+            )
+        self._actual_entries[key] = desired_entry
 
     def _start_new_dagster_server(
         self, deployment_name: str, location_name: str, desired_entry: UserCodeLauncherEntry

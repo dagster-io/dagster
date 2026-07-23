@@ -14,10 +14,12 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
+import {Link} from 'react-router-dom';
 
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
 import {TickMaterializationsTable} from './TickMaterializationsTable';
+import {getTickResultType} from './util';
 import {gql, useQuery} from '../apollo-client';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {SelectedTickQuery, SelectedTickQueryVariables} from './types/TickDetailsDialog.types';
@@ -34,6 +36,8 @@ import {
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickResultType} from '../ticks/TickStatusTag';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 type DynamicPartitionsRequestResult = {
   partitionKeys: string[] | null;
   partitionsDefName: string;
@@ -46,24 +50,14 @@ interface DialogProps extends InnerProps {
   isOpen: boolean;
 }
 
-export const TickDetailsDialog = ({
-  tickId,
-  tickResultType,
-  isOpen,
-  instigationSelector,
-  onClose,
-}: DialogProps) => {
+export const TickDetailsDialog = ({tickId, isOpen, instigationSelector, onClose}: DialogProps) => {
   return (
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
       style={{width: '80vw', maxWidth: '1200px', minWidth: '600px'}}
     >
-      <TickDetailsDialogImpl
-        tickId={tickId}
-        tickResultType={tickResultType}
-        instigationSelector={instigationSelector}
-      />
+      <TickDetailsDialogImpl tickId={tickId} instigationSelector={instigationSelector} />
       <DialogFooter topBorder>
         <Button onClick={onClose}>Close</Button>
       </DialogFooter>
@@ -73,11 +67,10 @@ export const TickDetailsDialog = ({
 
 interface InnerProps {
   tickId: string | undefined;
-  tickResultType: TickResultType;
   instigationSelector: InstigationSelector;
 }
 
-const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: InnerProps) => {
+const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
   const {data, loading} = useQuery<SelectedTickQuery, SelectedTickQueryVariables>(
     JOB_SELECTED_TICK_QUERY,
     {
@@ -131,6 +124,8 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
     );
   }
 
+  const resultType = getTickResultType(tick);
+
   return (
     <>
       <DialogHeader
@@ -145,10 +140,16 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
         }
       />
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
-        <TickDetailSummary tick={tick} tickResultType={tickResultType} />
+        <TickDetailSummary tick={tick} tickResultType={resultType} />
       </Box>
-      {tickResultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
-      {tickResultType === 'runs' ? (
+      {resultType === 'materializations' && tick.requestedRunsForJobs.length > 0 ? (
+        <TickRequestedJobRunsTable
+          requestedRunsForJobs={tick.requestedRunsForJobs}
+          instigationSelector={instigationSelector}
+        />
+      ) : null}
+      {resultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
+      {resultType === 'runs' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
           {tick.runIds.length ? (
             <>
@@ -198,6 +199,48 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
   );
 };
 
+export const TickRequestedJobRunsTable = ({
+  requestedRunsForJobs,
+  instigationSelector,
+}: {
+  requestedRunsForJobs: {jobName: string; partitionKeys: string[]}[];
+  instigationSelector: InstigationSelector;
+}) => {
+  const repoAddress = buildRepoAddress(
+    instigationSelector.repositoryName,
+    instigationSelector.repositoryLocationName,
+  );
+  return (
+    <>
+      <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+        <Heading size={14} weight={600}>
+          Requested job runs
+        </Heading>
+      </Box>
+      <Table>
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Partitions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requestedRunsForJobs.map(({jobName, partitionKeys}) => (
+            <tr key={jobName}>
+              <td>
+                <Link to={workspacePathFromAddress(repoAddress, `/jobs/${jobName}`)}>
+                  {jobName}
+                </Link>
+              </td>
+              <td>{partitionKeys.length ? partitionKeys.join(', ') : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </>
+  );
+};
+
 export function TickDetailSummary({
   tick,
   tickResultType,
@@ -231,7 +274,7 @@ export function TickDetailSummary({
               ) : (
                 <>
                   {(tickResultType === 'materializations' || !('runIds' in tick)
-                    ? tick.requestedAssetMaterializationCount
+                    ? tick.requestedAssetMaterializationCount + tick.requestedJobRunCount
                     : tick.runIds.length) ?? 0}{' '}
                   requested
                 </>
@@ -324,6 +367,10 @@ const JOB_SELECTED_TICK_QUERY = gql`
             assetKey {
               path
             }
+            partitionKeys
+          }
+          requestedRunsForJobs {
+            jobName
             partitionKeys
           }
         }

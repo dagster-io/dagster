@@ -1,16 +1,29 @@
-"""End-to-end GraphQL tests for the app-managed components endpoints."""
+"""GraphQL tests for the app-managed components endpoints.
+
+App-managed (UI-backed) components are a Dagster+-only feature. In open source the
+``setAppManagedComponent`` / ``deleteAppManagedComponent`` mutations are denied for
+every role (the ``EDIT_APP_MANAGED_COMPONENTS`` permission is not granted), so these
+tests exercise the same operations as before but assert that the mutations are
+unauthorized and never persist anything. The happy-path coverage for the mutation
+logic (upsert / sorting / delete / location isolation) lives in the Cloud test
+suite, where a Dagster+ context can grant the permission.
+"""
 
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
+from unittest.mock import Mock
 
 from dagster import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
+from dagster._core.errors import DagsterError, DagsterUserCodeUnreachableTimeoutError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.implementation.fetch_app_managed_components import _live_defs_state_info
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_shared.serdes.objects.models.defs_state_info import DefsKeyStateInfo, DefsStateInfo
 
 LOCATION_NAME = "test_location"
 
@@ -83,6 +96,26 @@ mutation DeleteAppManagedComponent($locationName: String!, $componentId: String!
 }
 """
 
+GET_COMPONENTS_QUERY = """
+query GetComponents($locationName: String!) {
+  componentsForLocationOrError(locationName: $locationName) {
+    __typename
+    ... on Components {
+      locationName
+      components {
+        componentId
+        componentType
+        isAppManaged
+        defsStateKey
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
 
 def get_empty_repo() -> RepositoryDefinition:
     return Definitions().get_repository_def()
@@ -147,7 +180,28 @@ def _delete_component(
     )
 
 
+def _assert_set_unauthorized(context: WorkspaceRequestContext, *args, **kwargs) -> None:
+    result = _set_component(context, *args, **kwargs)
+    assert result.data["setAppManagedComponent"]["__typename"] == "UnauthorizedError"
+
+
+def _assert_delete_unauthorized(context: WorkspaceRequestContext, *args, **kwargs) -> None:
+    result = _delete_component(context, *args, **kwargs)
+    assert result.data["deleteAppManagedComponent"]["__typename"] == "UnauthorizedError"
+
+
+def _assert_no_components(
+    context: WorkspaceRequestContext, location_name: str = LOCATION_NAME
+) -> None:
+    payload = _list_components(context, location_name).data[
+        "appManagedComponentsForLocationOrError"
+    ]
+    assert payload["__typename"] == "AppManagedComponents"
+    assert payload["components"] == []
+
+
 def test_query_empty():
+    """The read path is not permission-gated and returns an empty list in OSS."""
     with graphql_context_with_storage() as context:
         result = _list_components(context)
         payload = result.data["appManagedComponentsForLocationOrError"]
@@ -156,154 +210,161 @@ def test_query_empty():
         assert payload["components"] == []
 
 
+def test_components_for_location_empty():
+    """Empty defs → ``componentsForLocationOrError`` returns an empty list.
+    Exercises the new query without requiring a populated component tree.
+    """
+    with graphql_context_with_storage() as context:
+        result = execute_dagster_graphql(
+            context,
+            GET_COMPONENTS_QUERY,
+            variables={"locationName": LOCATION_NAME},
+        )
+        payload = result.data["componentsForLocationOrError"]
+        assert payload["__typename"] == "Components", payload
+        assert payload["locationName"] == LOCATION_NAME
+        assert payload["components"] == []
+
+
 def test_set_then_query():
+    """SetAppManagedComponent is denied in OSS, so nothing is persisted to query back."""
     yaml_attributes = "name: alice\nsettings:\n  enabled: true\n"
     with graphql_context_with_storage() as context:
-        set_result = _set_component(
+        _assert_set_unauthorized(
             context,
             component_id="comp1",
             component_type="dagster.SomeComponent",
             attributes=yaml_attributes,
         )
-        success = set_result.data["setAppManagedComponent"]
-        assert success["__typename"] == "SetAppManagedComponentSuccess"
-        assert success["component"]["componentId"] == "comp1"
-        assert success["component"]["componentType"] == "dagster.SomeComponent"
-        assert success["component"]["attributes"] == yaml_attributes
-
-        list_result = _list_components(context)
-        payload = list_result.data["appManagedComponentsForLocationOrError"]
-        assert payload["__typename"] == "AppManagedComponents"
-        assert payload["components"] == [
-            {
-                "componentId": "comp1",
-                "componentType": "dagster.SomeComponent",
-                "attributes": yaml_attributes,
-            }
-        ]
+        _assert_no_components(context)
 
 
 def test_set_overwrites_existing_lww():
-    """SetAppManagedComponent on an existing id is an upsert (last writer wins)."""
+    """The set upsert (last-writer-wins) is denied in OSS; its behavior is covered by
+    the Cloud suite. Here we assert repeated sets are unauthorized and persist nothing.
+    """
     with graphql_context_with_storage() as context:
-        _set_component(context, "comp1", attributes="version: 1\n")
-        _set_component(
+        _assert_set_unauthorized(context, "comp1", attributes="version: 1\n")
+        _assert_set_unauthorized(
             context, "comp1", component_type="dagster.OtherComponent", attributes="version: 2\n"
         )
-        list_result = _list_components(context)
-        components = list_result.data["appManagedComponentsForLocationOrError"]["components"]
-        assert components == [
-            {
-                "componentId": "comp1",
-                "componentType": "dagster.OtherComponent",
-                "attributes": "version: 2\n",
-            }
-        ]
+        _assert_no_components(context)
 
 
 def test_set_multiple_components_returned_sorted():
+    """Sorted listing is covered by the Cloud suite; in OSS every set is unauthorized."""
     with graphql_context_with_storage() as context:
-        _set_component(context, "zebra")
-        _set_component(context, "alpha")
-        _set_component(context, "mango")
-        list_result = _list_components(context)
-        ids = [
-            c["componentId"]
-            for c in list_result.data["appManagedComponentsForLocationOrError"]["components"]
-        ]
-        assert ids == ["alpha", "mango", "zebra"]
+        _assert_set_unauthorized(context, "zebra")
+        _assert_set_unauthorized(context, "alpha")
+        _assert_set_unauthorized(context, "mango")
+        _assert_no_components(context)
 
 
 def test_delete_removes_component():
+    """Both set and delete are denied in OSS, so no component is ever created or removed."""
     with graphql_context_with_storage() as context:
-        _set_component(context, "comp1")
-        _set_component(context, "comp2")
-
-        delete_result = _delete_component(context, "comp1")
-        success = delete_result.data["deleteAppManagedComponent"]
-        assert success["__typename"] == "DeleteAppManagedComponentSuccess"
-        assert success["componentId"] == "comp1"
-        assert success["locationName"] == LOCATION_NAME
-
-        list_result = _list_components(context)
-        ids = [
-            c["componentId"]
-            for c in list_result.data["appManagedComponentsForLocationOrError"]["components"]
-        ]
-        assert ids == ["comp2"]
+        _assert_set_unauthorized(context, "comp1")
+        _assert_set_unauthorized(context, "comp2")
+        _assert_delete_unauthorized(context, "comp1")
+        _assert_no_components(context)
 
 
 def test_delete_is_idempotent():
-    """Deleting a non-existent component succeeds quietly."""
+    """Delete is denied in OSS; the idempotent no-op behavior is covered by the Cloud suite."""
     with graphql_context_with_storage() as context:
-        delete_result = _delete_component(context, "never-existed")
-        assert (
-            delete_result.data["deleteAppManagedComponent"]["__typename"]
-            == "DeleteAppManagedComponentSuccess"
-        )
-
-        _set_component(context, "comp1")
-        _delete_component(context, "comp1")
-        # Second delete is also a no-op success.
-        delete_result = _delete_component(context, "comp1")
-        assert (
-            delete_result.data["deleteAppManagedComponent"]["__typename"]
-            == "DeleteAppManagedComponentSuccess"
-        )
-
-        list_result = _list_components(context)
-        assert list_result.data["appManagedComponentsForLocationOrError"]["components"] == []
+        _assert_delete_unauthorized(context, "never-existed")
+        _assert_delete_unauthorized(context, "comp1")
+        _assert_no_components(context)
 
 
 def test_locations_are_isolated():
-    """Same component id under different locations does not collide."""
+    """Location-scoping is covered by the Cloud suite; in OSS every set is unauthorized
+    regardless of location, and nothing is persisted under any location.
+    """
     with graphql_context_with_storage() as context:
-        _set_component(context, "shared", attributes="loc: A\n", location_name="locA")
-        _set_component(context, "shared", attributes="loc: B\n", location_name="locB")
-        _set_component(context, "only_in_a", attributes="loc: A\n", location_name="locA")
-
-        loc_a = _list_components(context, location_name="locA").data[
-            "appManagedComponentsForLocationOrError"
-        ]
-        loc_b = _list_components(context, location_name="locB").data[
-            "appManagedComponentsForLocationOrError"
-        ]
-
-        assert sorted(c["componentId"] for c in loc_a["components"]) == [
-            "only_in_a",
-            "shared",
-        ]
-        assert [c["componentId"] for c in loc_b["components"]] == ["shared"]
-        # Confirm location-scoping of attributes payload too.
-        loc_a_shared = next(c for c in loc_a["components"] if c["componentId"] == "shared")
-        loc_b_shared = next(c for c in loc_b["components"] if c["componentId"] == "shared")
-        assert loc_a_shared["attributes"] == "loc: A\n"
-        assert loc_b_shared["attributes"] == "loc: B\n"
-
-        # Delete in locA must not affect locB.
-        _delete_component(context, "shared", location_name="locA")
-        loc_a_after = _list_components(context, location_name="locA").data[
-            "appManagedComponentsForLocationOrError"
-        ]
-        loc_b_after = _list_components(context, location_name="locB").data[
-            "appManagedComponentsForLocationOrError"
-        ]
-        assert [c["componentId"] for c in loc_a_after["components"]] == ["only_in_a"]
-        assert [c["componentId"] for c in loc_b_after["components"]] == ["shared"]
+        _assert_set_unauthorized(context, "shared", attributes="loc: A\n", location_name="locA")
+        _assert_set_unauthorized(context, "shared", attributes="loc: B\n", location_name="locB")
+        _assert_set_unauthorized(context, "only_in_a", attributes="loc: A\n", location_name="locA")
+        _assert_no_components(context, location_name="locA")
+        _assert_no_components(context, location_name="locB")
 
 
 def test_mutations_blocked_when_read_only():
-    """Read-only viewers cannot mutate UI components."""
+    """Read-only viewers cannot mutate either (they could not before this change)."""
     with graphql_context_with_storage(read_only=True) as context:
-        set_result = _set_component(context, "comp1")
-        assert set_result.data["setAppManagedComponent"]["__typename"] == "UnauthorizedError"
-
-        delete_result = _delete_component(context, "comp1")
-        assert delete_result.data["deleteAppManagedComponent"]["__typename"] == "UnauthorizedError"
-
+        _assert_set_unauthorized(context, "comp1")
+        _assert_delete_unauthorized(context, "comp1")
         # Listing must still work for read-only viewers.
         list_result = _list_components(context)
         assert (
             list_result.data["appManagedComponentsForLocationOrError"]["__typename"]
             == "AppManagedComponents"
         )
+
+
+def test_live_defs_state_info_storage_wins_on_overlap():
+    """Polling invariant: storage's version overrides the code-location's
+    cached snapshot, so the components query reflects a refresh as soon as it
+    lands in storage.
+    """
+    cached = DefsStateInfo(info_mapping={"a": DefsKeyStateInfo(version="v1", create_timestamp=0.0)})
+    live = DefsStateInfo(info_mapping={"a": DefsKeyStateInfo(version="v2", create_timestamp=0.0)})
+
+    code_location = Mock()
+    code_location.get_defs_state_info.return_value = cached
+    storage = Mock()
+    storage.get_latest_defs_state_info.return_value = live
+
+    result = _live_defs_state_info(code_location, storage)
+    assert result is not None
+    assert result.get_version("a") == "v2"
+
+
+REFRESH_COMPONENT_STATE_MUTATION = """
+mutation RefreshComponentState($locationName: String!, $defsStateKey: String!) {
+  refreshComponentState(locationName: $locationName, defsStateKey: $defsStateKey) {
+    __typename
+    ... on RefreshComponentStateAccepted {
+      defsStateKey
+    }
+    ... on RefreshComponentStateError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+
+def test_refresh_component_state_branches_on_exception_type(monkeypatch):
+    """Resolver maps the timeout subclass to ``Accepted`` and any other
+    ``DagsterError`` to ``Error``, preserving the rich message in the latter
+    case. This pins the two non-success branches introduced for the
+    fast-failure-vs-still-running UX.
+    """
+
+    def raise_timeout(_self, _name, _keys):
+        raise DagsterUserCodeUnreachableTimeoutError("Timed out waiting for call to user code")
+
+    def raise_dagster_error(_self, _name, _keys):
+        raise DagsterError("dbt manifest unavailable")
+
+    with graphql_context_with_storage() as context:
+        monkeypatch.setattr(type(context), "refresh_component_state", raise_timeout)
+        timeout_payload = execute_dagster_graphql(
+            context,
+            REFRESH_COMPONENT_STATE_MUTATION,
+            variables={"locationName": LOCATION_NAME, "defsStateKey": "some_key"},
+        ).data["refreshComponentState"]
+        assert timeout_payload["__typename"] == "RefreshComponentStateAccepted", timeout_payload
+
+        monkeypatch.setattr(type(context), "refresh_component_state", raise_dagster_error)
+        error_payload = execute_dagster_graphql(
+            context,
+            REFRESH_COMPONENT_STATE_MUTATION,
+            variables={"locationName": LOCATION_NAME, "defsStateKey": "some_key"},
+        ).data["refreshComponentState"]
+        assert error_payload["__typename"] == "RefreshComponentStateError", error_payload
+        assert "dbt manifest unavailable" in error_payload["message"]

@@ -24,6 +24,16 @@ check_prettier:
         ':!:README.md' ':!:GEMINI.md') \
         --check
 
+prettier:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    prettier $(git ls-files \
+        'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
+        '*.md' '.claude/*.md' \
+        ':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+        ':!:README.md' ':!:GEMINI.md') \
+        --write
+
 ty:
     #!/usr/bin/env bash
     set -euo pipefail

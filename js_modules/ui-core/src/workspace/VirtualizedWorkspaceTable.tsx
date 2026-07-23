@@ -1,4 +1,4 @@
-import {Colors, Text} from '@dagster-io/ui-components';
+import {Colors, Row, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {forwardRef} from 'react';
 
@@ -6,7 +6,6 @@ import styles from './css/VirtualizedWorkspaceTable.module.css';
 import {RepoAddress} from './types';
 import {QueryResult} from '../apollo-client';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
-import {Row} from '../ui/VirtualizedTable';
 
 interface RepoRowProps {
   repoAddress: RepoAddress;
@@ -33,7 +32,7 @@ export const RepoRow = ({
   rightElement,
 }: StaticRepoRowProps) => {
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <RepoSectionHeader
         repoName={repoAddress.name}
         repoLocation={repoAddress.location}

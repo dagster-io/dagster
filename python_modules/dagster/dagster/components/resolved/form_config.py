@@ -61,6 +61,9 @@ class ComponentFormConfig:
         placeholder: Field level only. Placeholder text for the form input.
         multiline: Field level only. If True, render a textarea instead of a
             single-line input.
+        advanced: Field level only. If True, the field is tucked into a
+            collapsed "Advanced" section at the bottom of the form. Use for
+            tuning knobs most users should not need to touch.
         id_source: Field level only. If True, the form uses this field's value
             as the suffix in the auto-generated component id (e.g.
             ``MyComponent[<field value>]``). Only one field per component may
@@ -72,6 +75,7 @@ class ComponentFormConfig:
     hidden: bool | None = None
     placeholder: str | None = None
     multiline: bool | None = None
+    advanced: bool | None = None
     id_source: bool | None = None
 
     def to_component_json_schema_extra(self) -> dict[str, Any]:
@@ -100,6 +104,8 @@ class ComponentFormConfig:
             out["ui:widget"] = "textarea"
         if self.placeholder is not None:
             out["ui:placeholder"] = self.placeholder
+        if self.advanced:
+            out["ui:advanced"] = True
         if self.id_source:
             out[APP_ID_SOURCE] = True
         return out

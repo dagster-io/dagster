@@ -20,7 +20,6 @@ You don't need to migrate everything at once. A common approach:
 ## Migration guides
 
 - [Airflow to Dagster](/migration/airflow-to-dagster) — Rewrite Airflow DAGs as native Dagster assets
-- [Prefect to Dagster](/migration/prefect-to-dagster) — Convert Prefect flows and tasks to Dagster assets
 - [Python to Dagster](/migration/python-to-dagster) — Wrap cron-scheduled scripts as Dagster assets
 
 ## Concept mapping reference

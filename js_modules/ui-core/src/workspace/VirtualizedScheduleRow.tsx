@@ -3,10 +3,14 @@ import {
   Button,
   Checkbox,
   Colors,
+  HeaderCell,
+  HeaderRow,
   Icon,
   Menu,
   MiddleTruncate,
   Popover,
+  Row,
+  RowCell,
   Text,
   Tooltip,
   useDelayedState,
@@ -43,7 +47,6 @@ import {
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.2fr 1fr 1fr 76px 148px 210px 92px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
@@ -148,7 +151,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
       : null;
 
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <Box
         border="bottom"
         className={styles.rowGrid}

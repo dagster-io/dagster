@@ -1,4 +1,15 @@
-import {Box, Checkbox, Colors, Icon, Skeleton, Text} from '@dagster-io/ui-components';
+import {
+  Box,
+  Checkbox,
+  Colors,
+  HeaderCell,
+  HeaderRow,
+  Icon,
+  Row,
+  RowCell,
+  Skeleton,
+  Text,
+} from '@dagster-io/ui-components';
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -26,7 +37,6 @@ import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
@@ -87,7 +97,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   const kinds = definition?.kinds;
 
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <Box
         border="bottom"
         className={styles.rowGrid}
@@ -246,7 +256,7 @@ export const VirtualizedAssetCatalogHeader = ({
 };
 
 export const ShimmerRow = (props: {$height: number; $start: number; $showRepoColumn: boolean}) => (
-  <Row {...props}>
+  <Row height={props.$height} start={props.$start}>
     <Box
       border="bottom"
       className={styles.rowGrid}

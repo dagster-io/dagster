@@ -293,6 +293,9 @@ class DagsterPexProxyApiServer(DagsterApiServicer):
             else:
                 raise
 
+    def ReloadCodeWithState(self, request, context):
+        return self._query("ReloadCodeWithState", request, context)
+
     def ShutdownServer(self, request, context):
         return self._query("ShutdownServer", request, context)
 

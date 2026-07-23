@@ -1,4 +1,4 @@
-import {Box, NonIdealState, Row, Spinner} from '@dagster-io/ui-components';
+import {Box, Container, Inner, NonIdealState, Row, Spinner} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 
@@ -8,7 +8,6 @@ import {
   VirtualizedCodeLocationRepositoryRow,
   VirtualizedCodeLocationRow,
 } from './VirtualizedCodeLocationRow';
-import {Container, Inner} from '../ui/VirtualizedTable';
 
 interface Props {
   loading: boolean;
@@ -87,7 +86,7 @@ export const RepositoryLocationsList = ({
   return (
     <Container ref={parentRef}>
       <VirtualizedCodeLocationHeader />
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row: CodeLocationRowType = codeLocations[index]!;

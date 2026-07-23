@@ -16,6 +16,9 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.declarative_automation.operators.job_operators import (
+    contains_job_root_assets_condition,
+)
 from dagster._core.definitions.dependency import (
     DependencyMapping,
     DependencyStructure,
@@ -80,7 +83,11 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.definitions.asset_key import AssetJobKey
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.run_config_schema import RunConfigSchema
     from dagster._core.definitions.run_request import RunRequest
@@ -114,6 +121,7 @@ class JobDefinition(IHasInternalInit):
     _subset_selection_data: OpSelectionData | AssetSelectionData | None
     input_values: Mapping[str, object]
     _owners: Sequence[str] | None
+    _automation_condition: "AutomationCondition | None"
 
     def __init__(
         self,
@@ -137,7 +145,11 @@ class JobDefinition(IHasInternalInit):
         input_values: Mapping[str, object] | None = None,
         _was_explicitly_provided_resources: bool | None = None,
         owners: Sequence[str] | None = None,
+        _automation_condition: "AutomationCondition[AssetJobKey] | None" = None,
     ):
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationCondition,
+        )
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
         self._graph_def = graph_def
@@ -225,6 +237,33 @@ class JobDefinition(IHasInternalInit):
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
 
+        self._automation_condition = check.opt_inst_param(
+            _automation_condition, "_automation_condition", AutomationCondition
+        )
+        if self._automation_condition is not None:
+            check.param_invariant(
+                self.is_asset_job,
+                "_automation_condition",
+                "AutomationCondition can only be provided for asset jobs.",
+            )
+            # every partitioned job synthesizes a PartitionedConfig internally, so only
+            # reject when the user actually supplied config for it to resolve
+            if self._original_config_argument is not None and self.partitioned_config is not None:
+                raise DagsterInvalidDefinitionError(
+                    f"Job '{self.name}' has both an automation_condition and partitioned run"
+                    " config. Declarative automation submits partitioned-job runs without"
+                    " resolving per-partition config, so this combination is not currently"
+                    " supported."
+                )
+            if not contains_job_root_assets_condition(self._automation_condition):
+                raise DagsterInvalidDefinitionError(
+                    f"Job '{self.name}' has an automation_condition that does not evaluate"
+                    " against the job's root assets. Asset-level conditions such as"
+                    " `AutomationCondition.eager()` cannot be applied to a job directly;"
+                    " wrap them with `AutomationCondition.any_job_root_assets_match(...)` or"
+                    " `AutomationCondition.all_job_root_assets_match(...)`."
+                )
+
     def dagster_internal_init(
         *,
         graph_def: GraphDefinition,
@@ -245,6 +284,7 @@ class JobDefinition(IHasInternalInit):
         input_values: Mapping[str, object] | None,
         _was_explicitly_provided_resources: bool | None,
         owners: Sequence[str] | None,
+        _automation_condition: "AutomationCondition[AssetJobKey] | None",
     ) -> "JobDefinition":
         return JobDefinition(
             graph_def=graph_def,
@@ -265,6 +305,7 @@ class JobDefinition(IHasInternalInit):
             input_values=input_values,
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
             owners=owners,
+            _automation_condition=_automation_condition,
         )
 
     @staticmethod
@@ -341,6 +382,10 @@ class JobDefinition(IHasInternalInit):
     @property
     def owners(self) -> Sequence[str] | None:
         return self._owners
+
+    @property
+    def automation_condition(self) -> "AutomationCondition | None":
+        return self._automation_condition
 
     @property
     def graph(self) -> GraphDefinition:
@@ -820,6 +865,7 @@ class JobDefinition(IHasInternalInit):
             _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
             owners=self._owners,
+            _automation_condition=self._automation_condition,
         ).get_subset(
             op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
@@ -966,6 +1012,7 @@ class JobDefinition(IHasInternalInit):
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
             allow_different_partitions_defs=True,
+            automation_condition=self.automation_condition,
         )
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
@@ -1142,6 +1189,7 @@ class JobDefinition(IHasInternalInit):
                 "resource_defs" in kwargs or self._was_provided_resources
             ),
             owners=self._owners,
+            _automation_condition=self._automation_condition,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
         job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)  # ty: ignore[invalid-argument-type]

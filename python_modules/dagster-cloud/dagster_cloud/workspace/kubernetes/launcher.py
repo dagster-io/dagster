@@ -1,4 +1,5 @@
 import logging
+import time
 from collections import defaultdict
 from collections.abc import Collection, Mapping
 from contextlib import contextmanager
@@ -17,7 +18,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass, serialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
 from dagster_cloud_cli.core.workspace import CodeLocationDeployData
@@ -34,8 +35,13 @@ from dagster_cloud.constants import RESERVED_ENV_VAR_NAMES
 from dagster_cloud.execution.cloud_run_launcher.k8s import CloudK8sRunLauncher
 from dagster_cloud.execution.monitoring import CloudContainerResourceLimits
 from dagster_cloud.workspace.kubernetes.utils import (
+    DEFS_STATE_CONFIG_MAP_NAME_PREFIX,
+    SERVER_SPEC_VERSION_LABEL_KEY,
+    SERVER_SPEC_VERSION_V2,
     construct_code_location_deployment,
     construct_code_location_service,
+    construct_defs_state_config_map,
+    defs_state_config_map_name,
     get_deployment_failure_debug_info,
     unique_k8s_resource_name,
     wait_for_deployment_complete,
@@ -48,6 +54,7 @@ from dagster_cloud.workspace.user_code_launcher import (
     ServerEndpoint,
     UserCodeLauncherEntry,
 )
+from dagster_cloud.workspace.user_code_launcher.user_code_launcher import DeploymentAndLocation
 from dagster_cloud.workspace.user_code_launcher.utils import (
     deterministic_label_for_location,
     get_code_server_port,
@@ -55,6 +62,12 @@ from dagster_cloud.workspace.user_code_launcher.utils import (
 
 DEFAULT_DEPLOYMENT_STARTUP_TIMEOUT = 300
 DEFAULT_IMAGE_PULL_GRACE_PERIOD = 30
+
+# Orphan defs-state ConfigMaps younger than this are skipped by the GC sweep:
+# spinup deliberately creates the CM before its Deployment, so a concurrent
+# sweep could otherwise delete a CM whose Deployment is about to appear. Must
+# comfortably exceed the CM-create → Deployment-create window (one API call).
+ORPHAN_DEFS_STATE_CONFIG_MAP_GRACE_PERIOD_SECONDS = 300
 
 from dagster_cloud.workspace.config_schema.kubernetes import SHARED_K8S_CONFIG
 
@@ -452,6 +465,57 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
             }
         }
 
+    def _supports_defs_state_config_map(
+        self, container_context: K8sContainerContext, metadata: CodeLocationDeployData
+    ) -> bool:
+        """N=1, non-pex gate for the per-location defs_state override ConfigMap.
+
+        Multi-replica configurations stay on full destroy-and-recreate (no
+        coordinated multi-replica fan-out yet). Multipex pods get pins via
+        CreatePexServerArgs at spawn time, not from a CM-mounted file.
+        """
+        if metadata.pex_metadata is not None:
+            return False
+        rc = container_context.server_replica_count
+        return rc is None or rc == 1
+
+    def _create_or_replace_defs_state_config_map(
+        self,
+        deployment_name: str,
+        location_name: str,
+        k8s_deployment_name: str,
+        namespace: str,
+        *,
+        serialized_defs_state_info: str,
+        server_timestamp: float,
+    ) -> None:
+        """Idempotent upsert of the per-incarnation defs-state ConfigMap.
+
+        The name is deterministic from ``k8s_deployment_name``, so a repeat
+        write for the same incarnation (e.g. an in-place pin reload) hits 409
+        and we ``replace``. Always-write semantics: the CM tracks the pin we
+        last asked the server to hold, so a racing pod respawn boots correctly.
+        """
+        body = construct_defs_state_config_map(
+            deployment_name,
+            location_name,
+            k8s_deployment_name,
+            self._instance,
+            server_timestamp,
+            serialized_defs_state_info,
+        )
+        core = self._get_core_api_client()
+        try:
+            core.create_namespaced_config_map(namespace, body)
+        except ApiException as e:
+            if e.status != 409:
+                raise
+            core.replace_namespaced_config_map(
+                defs_state_config_map_name(k8s_deployment_name),
+                namespace,
+                body,
+            )
+
     def _start_new_server_spinup(
         self,
         deployment_name: str,
@@ -467,6 +531,23 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
         resource_name = unique_k8s_resource_name(deployment_name, location_name)
 
         container_context = self._resolve_container_context(metadata)
+
+        mount_defs_state = self._supports_defs_state_config_map(container_context, metadata)
+
+        if mount_defs_state:
+            # Create the CM BEFORE the Deployment so a racing new pod sees the
+            # current pin at mount time. Allowed to be ahead of the running
+            # server's in-memory state — that's the safety property.
+            self._create_or_replace_defs_state_config_map(
+                deployment_name,
+                location_name,
+                resource_name,
+                check.not_none(container_context.namespace),
+                serialized_defs_state_info=(
+                    serialize_value(metadata.defs_state_info) if metadata.defs_state_info else ""
+                ),
+                server_timestamp=desired_entry.update_timestamp,
+            )
 
         deployment_reponse = None
 
@@ -484,6 +565,7 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                         args=args,
                         server_timestamp=desired_entry.update_timestamp,
                         server_replica_count=container_context.server_replica_count,
+                        mount_defs_state_config_map=mount_defs_state,
                     ),
                 )
             self._logger.info(
@@ -627,13 +709,17 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
 
         return handles
 
-    def _list_server_handles(self) -> list[K8sHandle]:
+    def _known_namespaces(self) -> set[str]:
         namespaces: set[str] = set()
         if self._namespace:
             namespaces.add(self._namespace)
         for namespace_items in self._used_namespaces.values():
             for namespace in namespace_items:
                 namespaces.add(namespace)
+        return namespaces
+
+    def _list_server_handles(self) -> list[K8sHandle]:
+        namespaces = self._known_namespaces()
         handles: list[K8sHandle] = []
         with self._get_apps_api_instance() as api_instance:
             for namespace in namespaces:
@@ -655,11 +741,156 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
         self._logger.info(f"Listing server handles: {handles}")
         return handles
 
+    def _cleanup_orphan_defs_state_config_maps(self) -> None:
+        """Delete defs-state ConfigMaps whose owning Deployment incarnation is gone.
+
+        CMs are named per incarnation (``defs_state_config_map_name(handle.name)``),
+        so a CM is an orphan iff no live managed Deployment's derived CM name
+        matches it. Sources of orphans:
+        - Agent crashed between CM-create and Deployment-create (the CM is
+          deliberately written first).
+        - Operator manually `kubectl delete`'d a Deployment without deleting
+          its CM (the normal launcher path deletes the CM alongside the
+          Deployment via ``_remove_server_handle``).
+
+        Filtered by ``managed_by=K8sUserCodeLauncher`` AND the
+        ``DEFS_STATE_CONFIG_MAP_NAME_PREFIX`` prefix as belt-and-suspenders
+        so we never touch a user-owned ConfigMap. CMs younger than the grace
+        period are skipped: spinup creates the CM *before* its Deployment, so
+        a concurrent sweep would otherwise see a just-created CM as orphaned.
+        """
+        # Build the set of CM names owned by still-live managed Deployments.
+        # Use the same listing the per-server cleanup uses so we agree with it
+        # on what "live" means.
+        try:
+            live_handles = self._list_server_handles()
+        except Exception:
+            self._logger.exception("Failed to list server handles during orphan ConfigMap cleanup.")
+            return
+        live_cm_names = {defs_state_config_map_name(h.name) for h in live_handles}
+
+        core = self._get_core_api_client()
+        now = time.time()
+        for namespace in self._known_namespaces():
+            try:
+                cms = core.list_namespaced_config_map(
+                    namespace, label_selector="managed_by=K8sUserCodeLauncher"
+                ).items
+            except ApiException:
+                self._logger.exception(
+                    f"Failed to list defs-state ConfigMaps in namespace {namespace} during cleanup."
+                )
+                continue
+            for cm in cms:
+                name = cm.metadata.name
+                if not name.startswith(DEFS_STATE_CONFIG_MAP_NAME_PREFIX):
+                    # Not one of ours; defensive — selector should already exclude these.
+                    continue
+                if name in live_cm_names:
+                    continue
+                creation_timestamp = cm.metadata.creation_timestamp
+                if (
+                    creation_timestamp is not None
+                    and now - creation_timestamp.timestamp()
+                    < ORPHAN_DEFS_STATE_CONFIG_MAP_GRACE_PERIOD_SECONDS
+                ):
+                    # Too young to judge: its Deployment may not exist YET.
+                    continue
+                try:
+                    core.delete_namespaced_config_map(name, namespace)
+                    self._logger.info(
+                        f"Cleaned up orphan defs-state ConfigMap {name} in namespace {namespace}."
+                    )
+                except ApiException as e:
+                    if e.status != 404:
+                        self._logger.exception(
+                            f"Failed to delete orphan defs-state ConfigMap {name} in namespace {namespace}."
+                        )
+
+    def _graceful_cleanup_servers(self, include_own_servers: bool) -> None:
+        super()._graceful_cleanup_servers(include_own_servers=include_own_servers)
+        try:
+            self._cleanup_orphan_defs_state_config_maps()
+        except Exception:
+            self._logger.exception("Failed to clean up orphan defs-state ConfigMaps.")
+
     def get_agent_id_for_server(self, handle: K8sHandle) -> str | None:
         return handle.labels.get("agent_id")
 
     def get_server_create_timestamp(self, handle: K8sHandle) -> float | None:
         return handle.creation_timestamp
+
+    def supports_in_place_pin_reload(
+        self,
+        key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> bool:
+        """Fast-path the defs_state_info-only reload via gRPC ReloadCodeWithState.
+
+        Only safe when the running Deployment was created with v2 spec
+        (ConfigMap mount + DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH env var) so
+        that a platform-induced pod restart re-reads the current pin from
+        etcd, not from stale spec args. Legacy (pre-v2) Deployments stay on
+        destroy-and-recreate forever, or until the customer's next code push
+        naturally rolls them to v2.
+        """
+        metadata = desired_entry.code_location_deploy_data
+        container_context = self._resolve_container_context(metadata)
+        if not self._supports_defs_state_config_map(container_context, metadata):
+            return False
+        with self._grpc_servers_lock:
+            server = self._grpc_servers.get(key)
+        if not isinstance(server, DagsterCloudGrpcServer):
+            return False
+        labels = getattr(server.server_handle, "labels", None) or {}
+        return labels.get(SERVER_SPEC_VERSION_LABEL_KEY) == SERVER_SPEC_VERSION_V2
+
+    def _reload_pin_in_place(
+        self,
+        key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> None:
+        """Write the ConfigMap first, then delegate to the base RPC path.
+
+        Order matters: if a pod restart races with the in-place reload, the
+        new pod mounts the *latest* ConfigMap contents and boots correct.
+        The base class advances ``_actual_entries`` only on RPC success
+        (user_code_launcher.py: ``_actual_entries[key] = desired_entry``
+        runs AFTER the gRPC reply); if the RPC fails, the cache does not
+        advance and the next reconcile tick retries. The ConfigMap being
+        ahead of in-memory state is the safety property — that's the whole
+        point.
+
+        The CM is written for the *running* incarnation (named from the
+        cached server handle), so the update targets exactly the Deployment
+        whose pod mounts it.
+
+        Known residual window: a brand-new pod mounts the CM fresh from etcd,
+        but a container restart *within* an existing pod may read the
+        pre-update projection for up to the kubelet sync period (~1 min)
+        after this write, booting with the previous pin while actual ==
+        desired. Closing it requires the server to report its live pin (e.g.
+        on heartbeat) so the reconciler can compare; tracked as a follow-up.
+        """
+        deployment_name, location_name = key
+        with self._grpc_servers_lock:
+            server = self._grpc_servers.get(key)
+        if not isinstance(server, DagsterCloudGrpcServer):
+            raise Exception(
+                f"No running server for {deployment_name}:{location_name}; cannot reload in place."
+            )
+        handle = server.server_handle
+        metadata = desired_entry.code_location_deploy_data
+        serialized = serialize_value(metadata.defs_state_info) if metadata.defs_state_info else ""
+        self._create_or_replace_defs_state_config_map(
+            deployment_name,
+            location_name,
+            handle.name,
+            handle.namespace,
+            serialized_defs_state_info=serialized,
+            server_timestamp=desired_entry.update_timestamp,
+        )
+        super()._reload_pin_in_place(key, desired_entry)
 
     def _remove_server_handle(self, server_handle: K8sHandle) -> None:
         # Since we track which servers to delete by listing the k8s deployments,
@@ -688,6 +919,23 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                     )
                 else:
                     raise
+
+        # Each incarnation owns exactly one defs-state ConfigMap, named
+        # deterministically from its own k8s Deployment name — so this delete
+        # can never touch the CM of a live replacement server for the same
+        # location. Pre-v2 Deployments lack the CM entirely → the 404 path is
+        # the no-op.
+        cm_name = defs_state_config_map_name(server_handle.name)
+        try:
+            self._get_core_api_client().delete_namespaced_config_map(
+                cm_name, server_handle.namespace
+            )
+        except ApiException as e:
+            if e.status != 404:
+                self._logger.exception(
+                    f"Failed to delete defs-state ConfigMap {cm_name} in namespace "
+                    f"{server_handle.namespace} during server removal."
+                )
 
         self._logger.info(
             f"Removed deployment and service {server_handle.name} in namespace {server_handle.namespace}"

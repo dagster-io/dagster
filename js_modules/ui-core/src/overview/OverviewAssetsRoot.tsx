@@ -2,8 +2,14 @@ import {
   Alert,
   Box,
   Colors,
+  Container,
+  HeaderCell,
+  HeaderRow,
   Icon,
+  Inner,
   MenuItem,
+  Row,
+  RowCell,
   Select,
   Spinner,
   Tag,
@@ -31,7 +37,6 @@ import {AssetCatalogTableQuery} from '../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 type Props = {
@@ -125,7 +130,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
       <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <VirtualHeaderRow />
-          <Inner $totalHeight={totalHeight}>
+          <Inner totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const group = groupedAssets[index]!;
@@ -244,7 +249,7 @@ function VirtualRow({height, start, group}: RowProps) {
   const zeroOrBlank = isBatchStillLoading ? '' : '0';
 
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <Box className={styles.rowGrid} border="bottom">
         <Cell>
           <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>

@@ -1,4 +1,15 @@
-import {Box, ButtonLink, Checkbox, Colors, Icon, Tag, Text} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  Checkbox,
+  Colors,
+  HeaderCell,
+  HeaderRow,
+  Icon,
+  RowCell,
+  Tag,
+  Text,
+} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -19,7 +30,6 @@ import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.typ
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const RunsFeedRow = ({

@@ -58,11 +58,13 @@ def test_factory_returns_presigned_when_env_var_set():
     init_context.instance.dagster_cloud_url = "https://myorg.agent.dagster.cloud"
     init_context.instance.dagster_cloud_agent_token = "test-token"
     init_context.instance.dagster_cloud_api_timeout = 30
+    init_context.instance.deployment_name = "prod"
 
     with environ({"SERVERLESS_IO_MANAGER_USE_PRESIGNED_URL": "True"}):
         manager = _build_serverless_io_manager(init_context)
 
     assert isinstance(manager, ServerlessPresignedURLIOManager)
+    assert manager._deployment_name == "prod"
 
 
 def test_factory_returns_s3_when_env_var_not_set():
@@ -93,12 +95,15 @@ def test_factory_returns_s3_when_env_var_not_set():
 
 API_URL = "https://myorg.agent.dagster.cloud"
 API_TOKEN = "test-token"
+DEPLOYMENT_NAME = "prod"
 PRESIGNED_PUT_URL = "https://s3.amazonaws.com/bucket/key?X-Amz-Signature=put123"
 PRESIGNED_GET_URL = "https://s3.amazonaws.com/bucket/key?X-Amz-Signature=get123"
 
 
 def _make_manager() -> ServerlessPresignedURLIOManager:
-    return ServerlessPresignedURLIOManager(api_url=API_URL, api_token=API_TOKEN, timeout=30)
+    return ServerlessPresignedURLIOManager(
+        api_url=API_URL, api_token=API_TOKEN, timeout=30, deployment_name=DEPLOYMENT_NAME
+    )
 
 
 def _presigned_url_response(url: str):
@@ -145,12 +150,34 @@ def test_dump_to_path_calls_put():
             "key": "storage/run-123/my_step/result",
             "method": "PUT",
         }
+        assert call_kwargs.kwargs["headers"]["Dagster-Cloud-Deployment"] == DEPLOYMENT_NAME
 
         mock_put.assert_called_once()
         (put_url,) = mock_put.call_args.args
         assert put_url == PRESIGNED_PUT_URL
         put_data = mock_put.call_args.kwargs["data"]
         assert pickle.loads(put_data) == obj
+
+
+def test_key_is_percent_encoded():
+    # Asset/partition identifiers contain characters that are unsafe in an S3 key / URL
+    # (here, the ":" of an hourly partition). They must be percent-encoded on the wire,
+    # while "/" stays a separator.
+    manager = _make_manager()
+    path = UPath("storage/my_asset/2023-06-01-14:00")
+
+    with (
+        mock.patch.object(manager._session, "get") as mock_get_url,
+        mock.patch.object(manager._session, "put") as mock_put,
+    ):
+        mock_get_url.return_value = _presigned_url_response(PRESIGNED_PUT_URL)
+        mock_put.return_value = _s3_success_response()
+
+        manager.dump_to_path(mock.MagicMock(), {"v": 1}, path)
+
+        sent_key = mock_get_url.call_args.kwargs["params"]["key"]
+        assert sent_key == "storage/my_asset/2023-06-01-14%3A00"
+        assert ":" not in sent_key
 
 
 def test_load_from_path_calls_get():
@@ -331,7 +358,7 @@ def test_module_imports_without_boto3_installed():
             assert reloaded.ServerlessPresignedURLIOManager is not None
             # Instantiating the presigned-URL manager must not touch boto3.
             manager = reloaded.ServerlessPresignedURLIOManager(
-                api_url=API_URL, api_token=API_TOKEN, timeout=30
+                api_url=API_URL, api_token=API_TOKEN, timeout=30, deployment_name=DEPLOYMENT_NAME
             )
             assert manager is not None
     finally:

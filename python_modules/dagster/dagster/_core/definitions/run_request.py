@@ -8,7 +8,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey, EntityKey
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -165,6 +165,14 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         """
         return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
+    @property
+    def is_job_entity_request(self) -> bool:
+        """Whether this run request launches a whole job by name -- the shape produced
+        when a job-level automation condition fires -- rather than targeting a selection
+        of assets or checks: job_name is set and there is no asset or check selection.
+        """
+        return bool(self.job_name) and not self.asset_selection and not self.asset_check_keys
+
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
         fields = dict(self._asdict())
         for k in fields.keys():
@@ -237,7 +245,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             return None
 
     @property
-    def entity_keys(self) -> Sequence[EntityKey]:
+    def entity_keys(self) -> Sequence[AssetOrCheckKey]:
         return [*(self.asset_selection or []), *(self.asset_check_keys or [])]
 
     def requires_backfill_daemon(self) -> bool:

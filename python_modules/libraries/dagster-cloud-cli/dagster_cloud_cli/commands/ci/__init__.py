@@ -832,7 +832,7 @@ def _build_docker(
 ) -> state.DockerBuildOutput:
     name = location_state.location_name
     docker_utils.verify_docker()
-    registry_info = utils.get_registry_info(url)
+    registry_info = utils.get_registry_info(url, location_state.deployment_name)
     repo_location = name if registry_info.get("is_harbor") else None
 
     docker_image_tag = docker_utils.default_image_tag(

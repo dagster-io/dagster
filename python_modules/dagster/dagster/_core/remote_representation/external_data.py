@@ -11,7 +11,10 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from typing import Any, Final, NamedTuple, TypeAlias, cast
 
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
+from dagster_shared.serdes.objects.models.defs_state_info import (
+    DefsStateInfo,
+    DefsStateManagementType,
+)
 from dagster_shared.serdes.serdes import (
     FieldSerializer,
     get_prefix_for_a_serialized,
@@ -106,11 +109,6 @@ from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.component_tree import ComponentTree
-from dagster.components.core.defs_module import (
-    CompositeYamlComponent,
-    DefsFolderComponent,
-    PythonFileComponent,
-)
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
@@ -215,7 +213,11 @@ class NestedResource(NamedTuple):
     name: str
 
 
-@whitelist_for_serdes(storage_name="ExternalJobRef", old_fields={"is_legacy_pipeline": False})
+@whitelist_for_serdes(
+    storage_name="ExternalJobRef",
+    old_fields={"is_legacy_pipeline": False},
+    skip_when_none_fields={"automation_condition"},
+)
 @record
 class JobRefSnap:
     name: str
@@ -224,10 +226,13 @@ class JobRefSnap:
     parent_snapshot_id: str | None
     preview_tags: Mapping[str, str] | None = None
     owners: Sequence[str] | None = None
+    automation_condition: AutomationCondition | None = None
 
     @classmethod
     def from_job_def(cls, job_def: JobDefinition) -> Self:
         check.inst_param(job_def, "job_def", JobDefinition)
+
+        automation_condition, _ = resolve_automation_condition_args(job_def.automation_condition)
 
         return cls(
             name=job_def.name,
@@ -236,6 +241,7 @@ class JobRefSnap:
             active_presets=active_presets_from_job_def(job_def),
             preview_tags=get_preview_tags(job_def),
             owners=job_def.owners,
+            automation_condition=automation_condition,
         )
 
     def get_preview_tags(self) -> Mapping[str, str]:
@@ -1491,6 +1497,9 @@ def extract_serialized_job_snap_from_serialized_job_data_snap(serialized_job_dat
 class ComponentInstanceSnap:
     key: str
     full_type_name: str
+    defs_state_key: str | None = None
+    defs_state_management_type: DefsStateManagementType | None = None
+    app_managed: bool = False
 
 
 @whitelist_for_serdes
@@ -1501,26 +1510,48 @@ class ComponentTreeSnap:
 
     @staticmethod
     def from_tree(tree: ComponentTree) -> "ComponentTreeSnap":
-        leaves = []
+        from dagster.components.component.state_backed_component import StateBackedComponent
+        from dagster.components.core.decl import AppManagedComponentDecl
+        from dagster.components.core.package_entry import discover_entry_point_package_objects
 
-        for comp_path, comp_inst in check.inst(
-            tree.load_structural_component_at_loc(tree.defs_module_path), DefsFolderComponent
-        ).iterate_path_component_pairs():
-            if not isinstance(
-                comp_inst,
-                (
-                    DefsFolderComponent,
-                    CompositeYamlComponent,
-                    PythonFileComponent,
-                ),
-            ):
-                cls = comp_inst.__class__
-                leaves.append(
-                    ComponentInstanceSnap(
-                        key=comp_path.get_relative_key(tree.defs_module_path),
-                        full_type_name=f"{cls.__module__}.{cls.__qualname__}",
-                    )
+        class_to_typename: dict[type, str] = {}
+        for key, obj in discover_entry_point_package_objects().items():
+            if not isinstance(obj, type):
+                continue
+            typename = key.to_typename()
+            # if class is registered under multiple typenames, prefer the shortest one
+            existing = class_to_typename.get(obj)
+            if existing is None or len(typename) < len(existing):
+                class_to_typename[obj] = typename
+
+        def _full_type_name(cls: type) -> str:
+            return class_to_typename.get(cls) or f"{cls.__module__}.{cls.__qualname__}"
+
+        leaves: list[ComponentInstanceSnap] = []
+        for loc, decl in tree._component_decl_tree().items():  # noqa: SLF001
+            # if decl has child decls, it is not a leaf node
+            if next(decl.iterate_child_component_decls(), None) is not None:
+                continue
+
+            # the ComponentTree will be fully loaded at this point, so the
+            # component instance will be freely available in the cache
+            comp_inst = tree.load_component(loc)
+
+            if isinstance(comp_inst, StateBackedComponent):
+                defs_state_key = comp_inst.defs_state_config.key
+                defs_state_management_type = comp_inst.defs_state_config.management_type
+            else:
+                defs_state_key, defs_state_management_type = None, None
+
+            leaves.append(
+                ComponentInstanceSnap(
+                    key=loc.get_display_key(tree.defs_module_path),
+                    full_type_name=_full_type_name(comp_inst.__class__),
+                    defs_state_key=defs_state_key,
+                    defs_state_management_type=defs_state_management_type,
+                    app_managed=isinstance(decl, AppManagedComponentDecl),
                 )
+            )
 
         return ComponentTreeSnap(leaf_instances=leaves)
 

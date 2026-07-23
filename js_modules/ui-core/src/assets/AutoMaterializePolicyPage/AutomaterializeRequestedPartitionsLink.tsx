@@ -2,9 +2,12 @@ import {
   Box,
   Button,
   ButtonLink,
+  Container,
   Dialog,
   DialogFooter,
+  Inner,
   NonIdealState,
+  Row,
   Spinner,
   Tag,
   Text,
@@ -26,7 +29,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 import {DagsterTag} from '../../runs/RunTag';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props {
   runIds?: string[];
@@ -240,14 +242,14 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
 
   return (
     <Container ref={container} style={{padding: '8px 24px'}}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const partitionKey = partitionKeys[index]!;
           const runForPartition = runsByPartitionKey ? runsByPartitionKey[partitionKey] : null;
 
           return (
-            <Row $height={size} $start={start} key={key}>
+            <Row height={size} start={start} key={key}>
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}

@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.13.15 (core) / 0.29.15 (libraries)
+
+### New
+
+- [dagster-snowflake] Added the `SnowflakeDbtProjectComponent` (Preview) for natively orchestrating dbt projects on Snowflake.
+
+### Documentation
+
+- Added documentation for the Dagster MCP server.
+
+## 1.13.14 (core) / 0.29.14 (libraries)
+
+### Bugfixes
+
+- Fixed a 401 error from the serverless I/O manager when materializing assets in an organization with more than one full deployment.
+- Fixed a 400 error from the serverless I/O manager when materializing assets whose storage keys contain special characters.
+
+## 1.13.13 (core) / 0.29.13 (libraries)
+
+### New
+
+- [ui] The asset launch dialog now automatically expands the warnings section when alerts are present.
+
+### Bugfixes
+
+- Fixed an issue where a fresh installation of `dagster` could resolve an incompatible version of `grpcio-health-checking`, breaking code server imports due to a `protobuf` version conflict.
+- [ui] Fixed an error that occurred when viewing tick details for declarative automation runs.
+
+## 1.13.12 (core) / 0.29.12 (libraries)
+
+### New
+
+- [ui] Improved the performance of the runs feed for runs that target large numbers of assets and asset checks. The feed now fetches a bounded preview of the selection and loads the full lists on demand.
+- [dagster-aws] Added a `dashboard_refresh_interval` parameter to `PipesEMRServerlessClient` and increased its default so that Spark UI URLs are no longer invalidated prematurely during a run. (Thanks, [@noy-solvin](https://github.com/noy-solvin)!)
+
+### Bugfixes
+
+- Fixed a bug where a partitioned asset check with its own automation condition could raise a `CheckError` and halt the entire automation tick when it was requested on a tick that did not materialize the asset it targets.
+- Fixed a bug where a code location could be left stuck in an error state after a transient gRPC failure during refresh (common during Kubernetes rolling deployments). The gRPC server watcher now periodically retries refresh for locations whose load error is a `DagsterUserCodeUnreachableError`. (Thanks, [@jmoldow](https://github.com/jmoldow)!)
+- [ui] Fixed an issue where long pool names could overflow their container; they are now truncated, and the run pools dialog wraps and scrolls when there are many pools.
+- [dagster-dbt] Fixed a `KeyError` on `failures` when converting dbt run results to Dagster events for runs that omit that key (such as dbt Fusion).
+
 ## 1.13.11 (core) / 0.29.11 (libraries)
 
 ### New

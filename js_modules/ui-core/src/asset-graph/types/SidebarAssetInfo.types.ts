@@ -1,6 +1,30 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type AssetCheckCanExecuteIndividually =
+  | 'CAN_EXECUTE'
+  | 'NEEDS_USER_CODE_UPGRADE'
+  | 'REQUIRES_MATERIALIZATION';
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
 
 export type SidebarAssetFragment = {
   __typename: 'AssetNode';
@@ -16204,7 +16228,7 @@ export type SidebarAssetFragment = {
     | null;
 };
 
-export type SidebarAssetQueryVariables = Types.Exact<{
+export type SidebarAssetQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
 
