@@ -208,6 +208,26 @@ class InputContext:
 
     @public
     @property
+    def asset_group_name(self) -> str:
+        """The group name of the asset being loaded."""
+        if self._upstream_output is not None:
+            return self._upstream_output.asset_group_name
+
+        if self._asset_key is not None and self._step_context is not None:
+            return self._step_context.job_def.asset_layer.get(self._asset_key).group_name
+
+        if self._asset_key is not None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_group_name, but it was not provided when constructing"
+                " the InputContext"
+            )
+
+        raise DagsterInvariantViolationError(
+            "Attempting to access asset_group_name, but input does not correspond to an asset"
+        )
+
+    @public
+    @property
     def dagster_type(self) -> "DagsterType":
         """The type of this input.
         Dagster types do not propagate from an upstream output to downstream inputs,
