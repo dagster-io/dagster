@@ -629,6 +629,9 @@ class RunsFilter(IHaveNew):
         updated_after (Optional[DateTime]): Filter by runs that were last updated before this datetime.
         created_before (Optional[DateTime]): Filter by runs that were created before this datetime.
         exclude_subruns (Optional[bool]): If true, runs that were launched to backfill historical data will be excluded from results.
+        backfill_id (Optional[str]): Filter by the id of the backfill that launched the run. Prefer this
+            to filtering by the ``dagster/backfill`` tag — when the storage migration has been built it
+            uses the indexed ``runs.backfill_id`` column instead of joining ``run_tags``.
     """
 
     run_ids: Sequence[str] | None
@@ -641,6 +644,7 @@ class RunsFilter(IHaveNew):
     created_after: datetime | None
     created_before: datetime | None
     exclude_subruns: bool | None
+    backfill_id: str | None
 
     def __new__(
         cls,
@@ -654,6 +658,7 @@ class RunsFilter(IHaveNew):
         created_after: datetime | None = None,
         created_before: datetime | None = None,
         exclude_subruns: bool | None = None,
+        backfill_id: str | None = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
 
@@ -669,6 +674,7 @@ class RunsFilter(IHaveNew):
             created_after=created_after,
             created_before=created_before,
             exclude_subruns=exclude_subruns,
+            backfill_id=backfill_id,
         )
 
     @staticmethod
@@ -682,10 +688,6 @@ class RunsFilter(IHaveNew):
         sensor: Union["RemoteSensor", "InstigatorState", "SensorDefinition"],
     ) -> "RunsFilter":
         return RunsFilter(tags=DagsterRun.tags_for_sensor(sensor))
-
-    @staticmethod
-    def for_backfill(backfill_id: str) -> "RunsFilter":
-        return RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_id))
 
 
 class JobBucket(NamedTuple):
