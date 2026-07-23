@@ -1,17 +1,21 @@
 import {
   Box,
   Colors,
+  Container,
+  HeaderCell,
+  HeaderRow,
   Icon,
   IconName,
+  Inner,
   MiddleTruncate,
   NonIdealState,
+  Row,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {ChangeEvent, ReactNode, useCallback, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
-import {Container, HeaderCell, HeaderRow, Inner, Row} from '../ui/VirtualizedTable';
 import styles from './css/CodeLocationSearchableList.module.css';
 
 const ROW_HEIGHT = 44;
@@ -62,12 +66,12 @@ export const CodeLocationSearchableList = <T,>(props: Props<T>) => {
             <HeaderCell>Name</HeaderCell>
           </HeaderRow>
           {virtualItems.length > 0 ? (
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {virtualItems.map(({index, key, size, start}) => {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const item = filteredItems[index]!;
                 return (
-                  <Row key={key} $height={size} $start={start}>
+                  <Row key={key} height={size} start={start}>
                     {renderRow(item)}
                   </Row>
                 );

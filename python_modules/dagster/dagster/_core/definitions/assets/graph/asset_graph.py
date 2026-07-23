@@ -4,13 +4,15 @@ from functools import cached_property
 from typing import AbstractSet  # noqa: UP035
 
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
+    AssetJobKey,
+    AssetJobNode,
     BaseAssetGraph,
     BaseAssetNode,
-    EntityKey,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -156,7 +158,7 @@ class AssetNode(BaseAssetNode):
         )
 
     @property
-    def execution_set_entity_keys(self) -> AbstractSet[EntityKey]:
+    def execution_set_entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
         if self.assets_def.can_subset:
             return {self.key}
         else:
@@ -183,8 +185,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         self,
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
+        asset_job_nodes_by_key: Mapping[AssetJobKey, AssetJobNode] | None = None,
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
+        self._asset_job_nodes_by_key = asset_job_nodes_by_key or {}
         self._asset_check_nodes_by_key = {
             k: AssetCheckNode(
                 k,
@@ -272,16 +276,34 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
-    def get_execution_set_asset_and_check_keys(  # ty: ignore[invalid-method-override]
-        self, entity_key: EntityKey
-    ) -> AbstractSet[EntityKey]:
-        if isinstance(entity_key, AssetKey):
-            return self.get(entity_key).execution_set_entity_keys
-        else:  # AssetCheckKey
-            assets_def = self._assets_defs_by_check_key[entity_key]
-            return {entity_key} if assets_def.can_subset else assets_def.asset_and_check_keys
+    def with_job_nodes(self, job_nodes: Iterable[AssetJobNode]) -> "AssetGraph":
+        """Returns a copy of this graph with the given asset-job entity nodes attached."""
+        return AssetGraph(
+            asset_nodes_by_key=self._asset_nodes_by_key,
+            assets_defs_by_check_key=self._assets_defs_by_check_key,
+            asset_job_nodes_by_key={node.key: node for node in job_nodes},
+        )
 
-    def get_execution_set_identifier(self, entity_key: EntityKey) -> str | None:
+    def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
+        # only jobs with an automation condition have a node; the asset keys were
+        # resolved when the node was built (see _asset_job_node_from_resolved_job)
+        node = self._asset_job_nodes_by_key.get(AssetJobKey(job_name))
+        return node.asset_keys if isinstance(node, AssetJobNode) else set()
+
+    def get_execution_set_asset_and_check_keys(
+        self, asset_key_or_check_key: AssetOrCheckKey
+    ) -> AbstractSet[AssetOrCheckKey]:
+        if isinstance(asset_key_or_check_key, AssetKey):
+            return self.get(asset_key_or_check_key).execution_set_entity_keys
+        else:
+            assets_def = self._assets_defs_by_check_key[asset_key_or_check_key]
+            return (
+                {asset_key_or_check_key}
+                if assets_def.can_subset
+                else assets_def.asset_and_check_keys
+            )
+
+    def get_execution_set_identifier(self, entity_key: AssetOrCheckKey) -> str | None:
         """All assets and asset checks with the same execution_set_identifier must be executed
         together - i.e. you can't execute just a subset of them.
 
@@ -301,7 +323,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 else None
             )
 
-        else:  # AssetCheckKey
+        else:
             assets_def = self._assets_defs_by_check_key[entity_key]
             # Executing individual checks isn't supported in graph assets
             if isinstance(assets_def.node_def, GraphDefinition):
@@ -318,10 +340,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             }
         )
 
-    def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
+    def assets_defs_for_keys(self, keys: Iterable[AssetOrCheckKey]) -> Sequence[AssetsDefinition]:
         return list({self.assets_def_for_key(key) for key in keys})
 
-    def assets_def_for_key(self, key: EntityKey) -> AssetsDefinition:
+    def assets_def_for_key(self, key: AssetOrCheckKey) -> AssetsDefinition:
         if isinstance(key, AssetKey):
             return self.get(key).assets_def
         else:
@@ -347,7 +369,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
 
 def executable_in_same_run(
-    asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
+    asset_graph: BaseAssetGraph, child_key: AssetOrCheckKey, parent_key: AssetOrCheckKey
 ):
     """Returns whether a child asset can be materialized in the same run as a parent asset."""
     from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph

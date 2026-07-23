@@ -1,20 +1,53 @@
 import {
   Box,
+  Button,
   Checkbox,
+  CollapsibleSection,
   Colors,
   FontFamily,
   Heading,
+  Icon,
   Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import type {
+  ArrayFieldTemplateProps,
   FieldTemplateProps,
   ObjectFieldTemplateProps,
   RegistryWidgetsType,
   WidgetProps,
+  WrapIfAdditionalTemplateProps,
+} from '@rjsf/utils';
+import {
+  ADDITIONAL_PROPERTY_FLAG,
+  canExpand,
+  enumOptionsIndexForValue,
+  enumOptionsValueForIndex,
 } from '@rjsf/utils';
 import type {CSSProperties, ChangeEvent} from 'react';
 import {useState} from 'react';
+
+/**
+ * Shared via RJSF's ``formContext``. Validation errors are only *displayed*
+ * for fields the user has visited (blur marks a field touched) — a pristine
+ * form full of red "required" errors helps no one. Submit-enablement is
+ * decided independently in ``validate.ts``, so hiding errors here never lets
+ * an invalid form through.
+ */
+export interface ComponentFormContext {
+  isTouched: (id: string) => boolean;
+  markTouched: (id: string) => void;
+}
+
+function getFormContext(props: WidgetProps | FieldTemplateProps): ComponentFormContext | undefined {
+  return props.registry?.formContext as ComponentFormContext | undefined;
+}
+
+function showErrors(props: WidgetProps | FieldTemplateProps): boolean {
+  const ctx = getFormContext(props);
+  const hasError = ((props.rawErrors as string[] | undefined)?.length ?? 0) > 0;
+  return hasError && (ctx?.isTouched(props.id) ?? true);
+}
 
 function chevronSvg(stroke: string): string {
   const encoded = encodeURIComponent(stroke);
@@ -41,14 +74,30 @@ function nativeSelectStyle({hasError = false}: {hasError?: boolean} = {}): CSSPr
 }
 
 function TextWidget(props: WidgetProps) {
-  const {id, value, onChange, onBlur, placeholder, rawErrors} = props;
-  const hasError = (rawErrors?.length ?? 0) > 0;
+  const {id, value, onChange, onBlur, placeholder, schema} = props;
+  const ctx = getFormContext(props);
+  const hasError = showErrors(props);
+  const isNumeric = schema.type === 'number' || schema.type === 'integer';
+  const parse = (raw: string): string | number | undefined => {
+    if (raw === '') {
+      return undefined;
+    }
+    if (!isNumeric) {
+      return raw;
+    }
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : raw;
+  };
   return (
     <TextInput
       id={id}
+      type={isNumeric ? 'number' : 'text'}
       value={value ?? ''}
-      onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value || undefined)}
-      onBlur={(e) => onBlur(id, e.target.value)}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(parse(e.target.value))}
+      onBlur={(e) => {
+        ctx?.markTouched(id);
+        onBlur(id, parse(e.target.value));
+      }}
       placeholder={placeholder}
       strokeColor={hasError ? Colors.accentRed() : undefined}
       fill
@@ -57,9 +106,10 @@ function TextWidget(props: WidgetProps) {
 }
 
 function TextareaWidget(props: WidgetProps) {
-  const {id, value, onChange, onBlur, placeholder, rawErrors} = props;
+  const {id, value, onChange, onBlur, placeholder} = props;
+  const ctx = getFormContext(props);
   const [focused, setFocused] = useState(false);
-  const hasError = (rawErrors?.length ?? 0) > 0;
+  const hasError = showErrors(props);
   let borderColor = Colors.borderDefault();
   if (hasError) {
     borderColor = Colors.accentRed();
@@ -74,6 +124,7 @@ function TextareaWidget(props: WidgetProps) {
       onFocus={() => setFocused(true)}
       onBlur={(e) => {
         setFocused(false);
+        ctx?.markTouched(id);
         onBlur(id, e.target.value);
       }}
       placeholder={placeholder}
@@ -112,20 +163,29 @@ function CheckboxWidget(props: WidgetProps) {
 }
 
 function SelectWidget(props: WidgetProps) {
-  const {id, value, options, onChange, onBlur, rawErrors, placeholder} = props;
+  const {id, value, options, onChange, onBlur, placeholder} = props;
+  const ctx = getFormContext(props);
   const enumOptions = options.enumOptions ?? [];
-  const hasError = (rawErrors?.length ?? 0) > 0;
+  const {emptyValue} = options;
+  const hasError = showErrors(props);
+  // Options are keyed by index (not stringified value) so non-string enum
+  // values — numeric/boolean ``Literal``/``Enum`` — round-trip with their
+  // original type instead of being coerced to strings on submit.
+  const selectedIndex = enumOptionsIndexForValue(value, enumOptions, false);
   return (
     <select
       id={id}
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value || undefined)}
-      onBlur={(e) => onBlur(id, e.target.value)}
+      value={typeof selectedIndex === 'string' ? selectedIndex : ''}
+      onChange={(e) => onChange(enumOptionsValueForIndex(e.target.value, enumOptions, emptyValue))}
+      onBlur={(e) => {
+        ctx?.markTouched(id);
+        onBlur(id, enumOptionsValueForIndex(e.target.value, enumOptions, emptyValue));
+      }}
       style={nativeSelectStyle({hasError})}
     >
       <option value="">{placeholder ?? 'Select…'}</option>
-      {enumOptions.map((opt) => (
-        <option key={String(opt.value)} value={String(opt.value)}>
+      {enumOptions.map((opt, index) => (
+        <option key={index} value={String(index)}>
           {opt.label}
         </option>
       ))}
@@ -142,19 +202,165 @@ export const widgets: RegistryWidgetsType = {
 
 /**
  * Custom ObjectFieldTemplate that drops RJSF's default ``<fieldset><legend>``
- * wrapping. Object groups render as plain stacked rows — labels live on the
- * parent FieldTemplate (e.g. "Target"), and the selected variant of an
- * ``anyOf``/``oneOf`` is already named by the dropdown, so a repeated group
- * title would just be noise.
+ * wrapping and renders object properties as plain stacked rows. Fields whose
+ * uiSchema carries ``ui:advanced`` (from ``ComponentFormConfig(advanced=True)``)
+ * are tucked into a collapsed "Advanced" section at the bottom.
  */
 export function ObjectFieldTemplate(props: ObjectFieldTemplateProps) {
-  const {properties} = props;
+  const {properties, uiSchema, schema, formData, onAddClick, disabled, readonly} = props;
   const visibleProps = properties.filter((p) => !p.hidden);
+  const isAdvanced = (name: string) =>
+    (uiSchema as Record<string, any> | undefined)?.[name]?.['ui:advanced'] === true;
+  const mainProps = visibleProps.filter((p) => !isAdvanced(p.name));
+  const advancedProps = visibleProps.filter((p) => isAdvanced(p.name));
   return (
     <Box flex={{direction: 'column', gap: 12}}>
-      {visibleProps.map((p) => (
+      {mainProps.map((p) => (
         <div key={p.name}>{p.content}</div>
       ))}
+      {canExpand(schema, uiSchema, formData) ? (
+        <Box flex={{direction: 'row'}}>
+          <Button
+            type="button"
+            icon={<Icon name="add_circle" />}
+            onClick={onAddClick(schema)}
+            disabled={disabled || readonly}
+          >
+            Add entry
+          </Button>
+        </Box>
+      ) : null}
+      {advancedProps.length > 0 ? (
+        <Box border="top" padding={{top: 8}} margin={{top: 4}}>
+          <CollapsibleSection
+            isInitiallyCollapsed
+            header={
+              <Text size={12} color="textLight">
+                Advanced ({advancedProps.length})
+              </Text>
+            }
+            headerWrapperProps={{style: {cursor: 'pointer'}}}
+          >
+            <Box flex={{direction: 'column', gap: 12}} padding={{top: 12, left: 20}}>
+              {advancedProps.map((p) => (
+                <div key={p.name}>{p.content}</div>
+              ))}
+            </Box>
+          </CollapsibleSection>
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
+/**
+ * Custom ArrayFieldTemplate replacing RJSF's default fieldset/legend markup:
+ * each item renders in a bordered card with an index header and a remove
+ * button, followed by a themed "Add item" button.
+ */
+export function ArrayFieldTemplate(props: ArrayFieldTemplateProps) {
+  const {items, canAdd, onAddClick, disabled, readonly} = props;
+  return (
+    <Box flex={{direction: 'column', gap: 8}}>
+      {items.map((item) => (
+        <Box
+          key={item.key}
+          border="all"
+          padding={{vertical: 8, horizontal: 12}}
+          style={{borderRadius: 8}}
+          flex={{direction: 'column', gap: 8}}
+        >
+          <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+            <Text size={12} color="textLighter">
+              {item.index + 1}
+            </Text>
+            {item.hasRemove ? (
+              <Button
+                type="button"
+                icon={<Icon name="delete" />}
+                onClick={item.onDropIndexClick(item.index)}
+                disabled={disabled || readonly}
+              />
+            ) : null}
+          </Box>
+          {item.children}
+        </Box>
+      ))}
+      {canAdd ? (
+        <Box flex={{direction: 'row'}}>
+          <Button
+            type="button"
+            icon={<Icon name="add_circle" />}
+            onClick={onAddClick}
+            disabled={disabled || readonly}
+          >
+            Add item
+          </Button>
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
+// Ajv's messages are developer-speak ("must have required property 'Name'");
+// translate the common cases into something a form user expects.
+function friendlyError(message: string): string {
+  if (/required property/.test(message)) {
+    return 'This field is required.';
+  }
+  return message;
+}
+
+/**
+ * Renders dict-style entries (``additionalProperties``) as a key input / value
+ * input / remove-button row. Non-additional fields pass through untouched.
+ * The key commits on blur so editing it doesn't re-key (and remount) the
+ * form-data entry on every keystroke.
+ */
+export function WrapIfAdditionalTemplate(props: WrapIfAdditionalTemplateProps) {
+  const {
+    id,
+    classNames,
+    style,
+    disabled,
+    label,
+    onKeyChange,
+    onDropPropertyClick,
+    readonly,
+    schema,
+    children,
+  } = props;
+  const isAdditional = ADDITIONAL_PROPERTY_FLAG in schema;
+  if (!isAdditional) {
+    return (
+      <div className={classNames} style={style}>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <Box
+      flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+      className={classNames}
+      style={style}
+    >
+      <div style={{flex: 1}}>
+        <TextInput
+          id={`${id}-key`}
+          defaultValue={label}
+          onBlur={(e) => onKeyChange(e.target.value)}
+          placeholder="Key"
+          disabled={disabled || readonly}
+          fill
+        />
+      </div>
+      <div style={{flex: 1}}>{children}</div>
+      <Button
+        type="button"
+        icon={<Icon name="delete" />}
+        onClick={onDropPropertyClick(label)}
+        disabled={disabled || readonly}
+      />
     </Box>
   );
 }
@@ -166,7 +372,6 @@ export function FieldTemplate(props: FieldTemplateProps) {
     style,
     label,
     children,
-    errors,
     rawErrors,
     hidden,
     required,
@@ -188,37 +393,59 @@ export function FieldTemplate(props: FieldTemplateProps) {
     return <div style={{display: 'none'}}>{children}</div>;
   }
 
-  // RJSF passes displayLabel=false for top-level "root" wrappers, booleans,
-  // and a few other cases — let those render unwrapped so we don't get nested
-  // labels or duplicate spacing.
-  if (!displayLabel || !label || schema.type === 'object' || schema.type === 'array') {
+  // Decide whether this field carries its own heading. RJSF passes
+  // ``displayLabel: false`` (and often no ``label``) for objects, arrays, and
+  // booleans; booleans render their label inside the checkbox and structured
+  // objects label their own children, but arrays and dict-style objects
+  // (additionalProperties) would otherwise render with no visible name at all.
+  const headingText = label || (typeof schema.title === 'string' ? schema.title : '');
+  const isRoot = id === 'cf';
+  const isAdditional = ADDITIONAL_PROPERTY_FLAG in schema;
+  // RJSF materializes (possibly empty) ``properties`` for additionalProperties
+  // objects, so key off ``additionalProperties`` itself.
+  const isDictLike = schema.type === 'object' && Boolean(schema.additionalProperties);
+  const isArray = schema.type === 'array';
+  const isBoolean = schema.type === 'boolean';
+  const showHeading =
+    !isRoot &&
+    !isBoolean &&
+    !isAdditional &&
+    !!headingText &&
+    (displayLabel || isArray || isDictLike);
+
+  const {WrapIfAdditionalTemplate: WrapTemplate} = props.registry.templates;
+
+  if (!showHeading) {
     return (
-      <div className={classNames} style={style} id={id}>
-        {children}
-        {errors}
-      </div>
+      <WrapTemplate {...props}>
+        <div className={classNames} style={style} id={id}>
+          {children}
+        </div>
+      </WrapTemplate>
     );
   }
 
-  const hasError = (rawErrors?.length ?? 0) > 0;
+  const hasError = showErrors(props);
 
   return (
-    <Box flex={{direction: 'column', gap: 4}} className={classNames} style={style}>
-      <Heading size={14} weight={600}>
-        {label}
-        {required ? <span style={{color: Colors.accentRed(), marginLeft: 2}}>*</span> : null}
-      </Heading>
-      {children}
-      {schema.description ? (
-        <Text size={12} color="textLighter">
-          {schema.description}
-        </Text>
-      ) : null}
-      {hasError && rawErrors ? (
-        <Text size={12} color="accentRed">
-          {rawErrors.join(', ')}
-        </Text>
-      ) : null}
-    </Box>
+    <WrapTemplate {...props}>
+      <Box flex={{direction: 'column', gap: 4}} className={classNames} style={style}>
+        <Heading size={14} weight={600}>
+          {headingText}
+          {required ? <span style={{color: Colors.accentRed(), marginLeft: 2}}>*</span> : null}
+        </Heading>
+        {children}
+        {schema.description ? (
+          <Text size={12} color="textLighter">
+            {schema.description}
+          </Text>
+        ) : null}
+        {hasError && rawErrors ? (
+          <Text size={12} color="accentRed">
+            {[...new Set(rawErrors.map(friendlyError))].join(' ')}
+          </Text>
+        ) : null}
+      </Box>
+    </WrapTemplate>
   );
 }

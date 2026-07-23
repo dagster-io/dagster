@@ -1,6 +1,39 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type DefinitionsSource = 'CODE_SERVER' | 'CONNECTION';
+
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type RepositoryLocationLoadStatus = 'LOADED' | 'LOADING';
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
 
 export type WorkspaceDisplayMetadataFragment = {
   __typename: 'RepositoryMetadata';
@@ -16,6 +49,7 @@ export type WorkspacePipelineFragment = {
   isAssetJob: boolean;
   externalJobSource: string | null;
   pipelineSnapshotId: string;
+  automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
 };
 
 export type WorkspaceScheduleFragment = {
@@ -77,6 +111,7 @@ export type PartialWorkspaceRepositoryFragment = {
     isAssetJob: boolean;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
+    automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -161,6 +196,7 @@ export type PartialWorkspaceLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -267,6 +303,7 @@ export type PartialWorkspaceLocationNodeFragment = {
             isAssetJob: boolean;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
+            automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -547,6 +584,7 @@ export type WorkspaceLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -751,8 +789,8 @@ export type WorkspaceLocationAssetsEntryFragment = {
     | null;
 };
 
-export type LocationWorkspaceQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceQuery = {
@@ -812,6 +850,10 @@ export type LocationWorkspaceQuery = {
                   isAssetJob: boolean;
                   externalJobSource: string | null;
                   pipelineSnapshotId: string;
+                  automationCondition: {
+                    __typename: 'AutomationCondition';
+                    label: string | null;
+                  } | null;
                 }>;
                 schedules: Array<{
                   __typename: 'Schedule';
@@ -882,7 +924,7 @@ export type LocationWorkspaceQuery = {
     | null;
 };
 
-export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
+export type CodeLocationStatusQueryVariables = Exact<{[key: string]: never}>;
 
 export type CodeLocationStatusQuery = {
   __typename: 'Query';
@@ -901,8 +943,8 @@ export type CodeLocationStatusQuery = {
       };
 };
 
-export type LocationWorkspaceAssetsQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceAssetsQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceAssetsQuery = {
@@ -1033,15 +1075,15 @@ export type WorkspaceLocationAssetsManifestEntryFragment = {
           __typename: 'Repository';
           id: string;
           name: string;
-          assetManifest: any | null;
+          assetManifest: any;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
         }>;
       }
     | null;
 };
 
-export type LocationWorkspaceAssetsManifestQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceAssetsManifestQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceAssetsManifestQuery = {
@@ -1083,7 +1125,7 @@ export type LocationWorkspaceAssetsManifestQuery = {
                 __typename: 'Repository';
                 id: string;
                 name: string;
-                assetManifest: any | null;
+                assetManifest: any;
                 assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
               }>;
             }
@@ -1131,6 +1173,7 @@ export type WorkspaceLocationNodeFragment = {
             isAssetJob: boolean;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
+            automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -1274,6 +1317,7 @@ export type WorkspaceRepositoryLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -1408,6 +1452,7 @@ export type WorkspaceRepositoryFragment = {
     isAssetJob: boolean;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
+    automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -1524,7 +1569,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '13d0e674c559c7506419e36c9f30ecc793abeac06e93e1597c2bd5e5b78f7537';
+export const LocationWorkspaceQueryVersion = '8e4dff45086e9f3bdb86af2001e711d1c881d59d80266df3fc410ed599d16050';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 

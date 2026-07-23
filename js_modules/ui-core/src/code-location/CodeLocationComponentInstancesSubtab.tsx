@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -10,7 +11,10 @@ import {
   NonIdealState,
   Popover,
   SpinnerWithText,
+  Table,
+  Tag,
   Text,
+  Tooltip,
   showToast,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -28,8 +32,11 @@ import {
   DELETE_APP_MANAGED_COMPONENT_MUTATION,
   SET_APP_MANAGED_COMPONENT_MUTATION,
 } from './CodeLocationAppManagedComponentsQuery';
+import {CODE_LOCATION_COMPONENTS_QUERY} from './CodeLocationComponentsQuery';
+import {ComponentStateRefreshButton} from './ComponentStateRefreshButton';
 import {AppManagedComponentMutationContext} from './appManagedComponentMutationContext';
 import styles from './css/CodeLocationComponentInstancesSubtab.module.css';
+import {DefsStateManagementType} from '../graphql/types';
 import {
   CodeLocationAppManagedComponentsQuery,
   CodeLocationAppManagedComponentsQueryVariables,
@@ -39,9 +46,14 @@ import {
   SetAppManagedComponentMutationVariables,
 } from './types/CodeLocationAppManagedComponentsQuery.types';
 import {
+  CodeLocationComponentsQuery,
+  CodeLocationComponentsQueryVariables,
+} from './types/CodeLocationComponentsQuery.types';
+import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
+import {TimeFromNow} from '../ui/TimeFromNow';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
@@ -51,10 +63,19 @@ interface Props {
   setIsAddOpen: (open: boolean) => void;
 }
 
-interface AppManagedRow {
+type RowSource = 'app_managed' | 'code';
+
+interface ComponentRow {
   componentId: string;
   componentType: string;
+  source: RowSource;
+  // ``attributes`` is populated for app-managed rows and empty for code-backed
+  // ones (server-side limitation; see fetch_app_managed_components.py).
   attributes: string;
+  defsStateKey: string | null;
+  defsStateVersion: string | null;
+  defsStateCreateTimestamp: number | null;
+  defsStateManagementType: DefsStateManagementType | null;
 }
 
 interface FailedMutation {
@@ -67,13 +88,25 @@ export const CodeLocationComponentInstancesSubtab = ({
   isAddOpen,
   setIsAddOpen,
 }: Props) => {
-  const componentsQ = useQuery<
+  // App-managed (editable) components: served directly from defs state storage,
+  // so this works even when the location fails to load.
+  const appManagedComponentsQ = useQuery<
     CodeLocationAppManagedComponentsQuery,
     CodeLocationAppManagedComponentsQueryVariables
   >(CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY, {
     variables: {locationName: repoAddress.location},
   });
-  const {refetch: refetchComponents} = componentsQ;
+  const {refetch: refetchComponents} = appManagedComponentsQ;
+
+  // Code-backed (view-only) components: pulled from the location's repository
+  // snapshot. Only available once the location is loaded.
+  const componentsQ = useQuery<CodeLocationComponentsQuery, CodeLocationComponentsQueryVariables>(
+    CODE_LOCATION_COMPONENTS_QUERY,
+    {
+      variables: {locationName: repoAddress.location},
+      fetchPolicy: 'cache-and-network',
+    },
+  );
 
   const reloadFn = useMemo(
     () => buildReloadFnForLocation(repoAddress.location),
@@ -90,8 +123,8 @@ export const CodeLocationComponentInstancesSubtab = ({
 
   const [editTarget, setEditTarget] = useState<AppManagedComponentEditTarget | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [viewConfigTarget, setViewConfigTarget] = useState<AppManagedRow | null>(null);
-  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<AppManagedRow | null>(null);
+  const [viewConfigTarget, setViewConfigTarget] = useState<ComponentRow | null>(null);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<ComponentRow | null>(null);
 
   // Last mutation that returned a PythonError. The failure dialog renders
   // while this is set; dismissing or successfully reverting clears it.
@@ -124,19 +157,73 @@ export const CodeLocationComponentInstancesSubtab = ({
     wasReloadingRef.current = reloading;
   }, [reloading, reloadError]);
 
-  const uiBackedRows: AppManagedRow[] = useMemo(() => {
-    const payload = componentsQ.data?.appManagedComponentsForLocationOrError;
-    if (payload?.__typename !== 'AppManagedComponents') {
-      return [];
+  // Per-componentId state info pulled from the unified components query.
+  const stateInfoById = useMemo(() => {
+    const payload = componentsQ.data?.componentsForLocationOrError;
+    const map = new Map<
+      string,
+      {
+        defsStateKey: string | null;
+        defsStateVersion: string | null;
+        defsStateCreateTimestamp: number | null;
+        defsStateManagementType: DefsStateManagementType | null;
+      }
+    >();
+    if (payload?.__typename !== 'Components') {
+      return map;
     }
-    return payload.components.map(
-      (c): AppManagedRow => ({
-        componentId: c.componentId,
-        componentType: c.componentType,
-        attributes: c.attributes,
-      }),
-    );
+    for (const c of payload.components) {
+      map.set(c.componentId, {
+        defsStateKey: c.defsStateKey ?? null,
+        defsStateVersion: c.defsStateInfo?.version ?? null,
+        defsStateCreateTimestamp: c.defsStateInfo?.createTimestamp ?? null,
+        defsStateManagementType: c.defsStateManagementType ?? null,
+      });
+    }
+    return map;
   }, [componentsQ.data]);
+
+  const rows: ComponentRow[] = useMemo(() => {
+    const appManagedPayload = appManagedComponentsQ.data?.appManagedComponentsForLocationOrError;
+    const codePayload = componentsQ.data?.componentsForLocationOrError;
+    const out: ComponentRow[] = [];
+
+    if (appManagedPayload?.__typename === 'AppManagedComponents') {
+      for (const c of appManagedPayload.components) {
+        const s = stateInfoById.get(c.componentId);
+        out.push({
+          componentId: c.componentId,
+          componentType: c.componentType,
+          source: 'app_managed',
+          attributes: c.attributes,
+          defsStateKey: s?.defsStateKey ?? null,
+          defsStateVersion: s?.defsStateVersion ?? null,
+          defsStateCreateTimestamp: s?.defsStateCreateTimestamp ?? null,
+          defsStateManagementType: s?.defsStateManagementType ?? null,
+        });
+      }
+    }
+
+    if (codePayload?.__typename === 'Components') {
+      for (const c of codePayload.components) {
+        if (c.isAppManaged) {
+          continue;
+        }
+        out.push({
+          componentId: c.componentId,
+          componentType: c.componentType,
+          source: 'code',
+          attributes: c.attributes ?? '',
+          defsStateKey: c.defsStateKey ?? null,
+          defsStateVersion: c.defsStateInfo?.version ?? null,
+          defsStateCreateTimestamp: c.defsStateInfo?.createTimestamp ?? null,
+          defsStateManagementType: c.defsStateManagementType ?? null,
+        });
+      }
+    }
+
+    return out;
+  }, [appManagedComponentsQ.data, componentsQ.data, stateInfoById]);
 
   const [deleteAppManagedComponent, {loading: deleting}] = useMutation<
     DeleteAppManagedComponentMutation,
@@ -310,7 +397,7 @@ export const CodeLocationComponentInstancesSubtab = ({
 
   // ---------- Loading / error / empty ----------
 
-  if (componentsQ.loading && !componentsQ.data) {
+  if (appManagedComponentsQ.loading && !appManagedComponentsQ.data) {
     return (
       <Box padding={64} flex={{direction: 'row', justifyContent: 'center'}}>
         <SpinnerWithText label="Loading components…" />
@@ -318,8 +405,8 @@ export const CodeLocationComponentInstancesSubtab = ({
     );
   }
 
-  const payload = componentsQ.data?.appManagedComponentsForLocationOrError;
-  if (componentsQ.error || !payload || payload.__typename === 'PythonError') {
+  const payload = appManagedComponentsQ.data?.appManagedComponentsForLocationOrError;
+  if (appManagedComponentsQ.error || !payload || payload.__typename === 'PythonError') {
     return (
       <Box padding={32}>
         <NonIdealState
@@ -328,7 +415,7 @@ export const CodeLocationComponentInstancesSubtab = ({
           description={
             payload && payload.__typename !== 'AppManagedComponents'
               ? payload.message
-              : (componentsQ.error?.message ?? 'Unknown error')
+              : (appManagedComponentsQ.error?.message ?? 'Unknown error')
           }
         />
       </Box>
@@ -398,7 +485,7 @@ export const CodeLocationComponentInstancesSubtab = ({
     </>
   );
 
-  if (uiBackedRows.length === 0) {
+  if (rows.length === 0) {
     return (
       <Box padding={32}>
         <NonIdealState
@@ -436,18 +523,31 @@ export const CodeLocationComponentInstancesSubtab = ({
   return (
     <div className={styles.container}>
       <div className={styles.scrollArea}>
-        {uiBackedRows.map((row) => (
-          <AppManagedRowView
-            key={row.componentId}
-            row={row}
-            onEdit={() => {
-              setEditTarget(row);
-              setIsEditOpen(true);
-            }}
-            onViewConfig={() => setViewConfigTarget(row)}
-            onDelete={() => setConfirmDeleteTarget(row)}
-          />
-        ))}
+        <Table style={{width: '100%'}}>
+          <thead>
+            <tr>
+              <th>Component</th>
+              <th style={{width: 160}}>Source</th>
+              <th style={{width: 280}}>State</th>
+              <th style={{width: 48}} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <ComponentRowView
+                key={`${row.source}:${row.componentId}`}
+                row={row}
+                locationName={repoAddress.location}
+                onEdit={() => {
+                  setEditTarget(row);
+                  setIsEditOpen(true);
+                }}
+                onViewConfig={() => setViewConfigTarget(row)}
+                onDelete={() => setConfirmDeleteTarget(row)}
+              />
+            ))}
+          </tbody>
+        </Table>
       </div>
       {reloading ? (
         <div className={styles.reloadOverlay}>
@@ -461,43 +561,117 @@ export const CodeLocationComponentInstancesSubtab = ({
   );
 };
 
-interface AppManagedRowViewProps {
-  row: AppManagedRow;
+interface ComponentRowViewProps {
+  row: ComponentRow;
+  locationName: string;
   onEdit: () => void;
   onViewConfig: () => void;
   onDelete: () => void;
 }
 
-const AppManagedRowView = ({row, onEdit, onViewConfig, onDelete}: AppManagedRowViewProps) => (
-  <div className={styles.row}>
-    <span className={styles.rowId}>{row.componentId}</span>
-    <span className={styles.rowType}>{row.componentType}</span>
-    <span />
-    <div className={styles.rowRight}>
-      <Popover
-        position="bottom-right"
-        content={
-          <Menu>
-            <MenuItem icon="edit" text="Edit" onClick={onEdit} />
-            <MenuItem icon="info" text="View config" onClick={onViewConfig} />
-            <MenuItem icon="delete" intent="danger" text="Delete" onClick={onDelete} />
-          </Menu>
-        }
-      >
-        <Button icon={<Icon name="more_horiz" />} />
-      </Popover>
-    </div>
-  </div>
+const ComponentRowView = ({
+  row,
+  locationName,
+  onEdit,
+  onViewConfig,
+  onDelete,
+}: ComponentRowViewProps) => (
+  <tr>
+    <td>
+      <Box flex={{direction: 'column', gap: 2}}>
+        <span className={styles.rowId}>{row.componentId}</span>
+        <span className={styles.rowType}>{row.componentType}</span>
+      </Box>
+    </td>
+    <td>
+      <SourceTag source={row.source} />
+    </td>
+    <td>
+      <StateCell row={row} locationName={locationName} />
+    </td>
+    <td>
+      {row.source === 'app_managed' ? (
+        <Popover
+          position="bottom-right"
+          content={
+            <Menu>
+              <MenuItem icon="edit" text="Edit" onClick={onEdit} />
+              <MenuItem icon="info" text="View config" onClick={onViewConfig} />
+              <MenuItem icon="delete" intent="danger" text="Delete" onClick={onDelete} />
+            </Menu>
+          }
+        >
+          <Button icon={<Icon name="more_horiz" />} />
+        </Popover>
+      ) : null}
+    </td>
+  </tr>
 );
+
+const SourceTag = ({source}: {source: RowSource}) =>
+  source === 'app_managed' ? (
+    <Tag intent="primary" icon="edit">
+      App-managed
+    </Tag>
+  ) : (
+    <Tag icon="source">Code-backed</Tag>
+  );
+
+interface StateCellProps {
+  row: ComponentRow;
+  locationName: string;
+}
+
+const StateCell = ({row, locationName}: StateCellProps) => {
+  if (!row.defsStateManagementType) {
+    return <span style={{color: Colors.textLight()}}>—</span>;
+  }
+  if (row.defsStateManagementType === DefsStateManagementType.LOCAL_FILESYSTEM) {
+    return (
+      <Tooltip
+        content="State is stored on the local filesystem or in the deployed image"
+        placement="top"
+      >
+        <Tag>local filesystem</Tag>
+      </Tooltip>
+    );
+  }
+  if (row.defsStateManagementType === DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS) {
+    return (
+      <Tooltip content="State is stored in-memory on the code server" placement="top">
+        <Tag>code server</Tag>
+      </Tooltip>
+    );
+  }
+  // VERSIONED_STATE_STORAGE: single green bubble with TimeFromNow (built-in
+  // hover tooltip shows the full timestamp).
+  if (!row.defsStateCreateTimestamp) {
+    return <span style={{color: Colors.textLight()}}>—</span>;
+  }
+  return (
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      <Tag intent="success" icon="check_circle">
+        <TimeFromNow unixTimestamp={row.defsStateCreateTimestamp} />
+      </Tag>
+      {row.defsStateKey ? (
+        <ComponentStateRefreshButton
+          locationName={locationName}
+          defsStateKey={row.defsStateKey}
+          previousVersion={row.defsStateVersion}
+        />
+      ) : null}
+    </Box>
+  );
+};
 
 const ViewConfigDialog = ({
   target,
   onClose,
 }: {
-  target: AppManagedRow | null;
+  target: ComponentRow | null;
   onClose: () => void;
 }) => {
-  const [content, setContent] = useState<AppManagedRow | null>(target);
+  const [content, setContent] = useState<ComponentRow | null>(target);
   useEffect(() => {
     if (target) {
       setContent(target);

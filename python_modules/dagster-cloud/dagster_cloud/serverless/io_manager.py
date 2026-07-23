@@ -3,6 +3,7 @@ import io
 import os
 import pickle
 from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
 import dagster._check as check
 import requests
@@ -108,9 +109,10 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
     obtained from the Dagster+ API on each operation.
     """
 
-    def __init__(self, api_url: str, api_token: str, timeout: int):
+    def __init__(self, api_url: str, api_token: str, timeout: int, deployment_name: str | None):
         self._api_url = api_url
         self._api_token = api_token
+        self._deployment_name = deployment_name
         self._timeout = timeout
         self._session = requests.Session()
         put_retry_adapter = HTTPAdapter(
@@ -131,8 +133,9 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
             headers=get_dagster_cloud_api_headers(
                 self._api_token,
                 DagsterCloudInstanceScope.DEPLOYMENT,
+                deployment_name=self._deployment_name,
             ),
-            params={"key": key, "method": method},
+            params={"key": quote(key, safe="/"), "method": method},
             timeout=self._timeout,
         )
         resp.raise_for_status()
@@ -182,6 +185,7 @@ def _build_serverless_io_manager(init_context):
             api_url=init_context.instance.dagster_cloud_url,
             api_token=init_context.instance.dagster_cloud_agent_token,
             timeout=init_context.instance.dagster_cloud_api_timeout,
+            deployment_name=init_context.instance.deployment_name,
         )
 
     bucket = os.getenv("DAGSTER_CLOUD_SERVERLESS_STORAGE_S3_BUCKET")

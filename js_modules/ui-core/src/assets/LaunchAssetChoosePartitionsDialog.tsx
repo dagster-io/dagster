@@ -831,7 +831,7 @@ const Warnings = ({
   return (
     <ToggleableSection
       background={Colors.backgroundYellow()}
-      isInitiallyOpen={false}
+      isInitiallyOpen={alerts.length > 0}
       title={
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}

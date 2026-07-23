@@ -1,4 +1,5 @@
 import {Box, Button, ButtonGroup, Icon} from '@dagster-io/ui-components';
+import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useContext, useState} from 'react';
@@ -6,7 +7,6 @@ import {Redirect, useHistory, useLocation, useParams} from 'react-router-dom';
 
 import {CodeLocationComponentInstancesSubtab} from './CodeLocationComponentInstancesSubtab';
 import {CodeLocationComponentsCatalogSubtab} from './CodeLocationComponentsCatalogSubtab';
-import {useFeatureFlags} from '../app/useFeatureFlags';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -21,7 +21,7 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
   const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
 
-  const {flagComponentInstanceUI} = useFeatureFlags();
+  const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
 
   const params = useParams<{
     packageName?: string;
@@ -49,7 +49,7 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
 
   // When the Instances surface is gated off, send the user to Library so the
   // page still has something to render.
-  if (subTab === 'instances' && !flagComponentInstanceUI) {
+  if (subTab === 'instances' && !componentInstanceUIEnabled) {
     return <Redirect to={workspacePathFromAddress(repoAddress, '/components/library')} />;
   }
 
@@ -91,7 +91,7 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
           locationEntry={locationEntry}
         />
       </Box>
-      {flagComponentInstanceUI ? (
+      {componentInstanceUIEnabled ? (
         <Box
           padding={{horizontal: 24, vertical: 12}}
           border="bottom"

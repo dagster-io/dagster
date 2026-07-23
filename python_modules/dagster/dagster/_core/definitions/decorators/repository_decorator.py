@@ -101,6 +101,7 @@ class _Repository:
         repository_definitions = fn()
         context = DefinitionsLoadContext.get()
         defs_state_info = context.accessed_defs_state_info
+        code_location_name = context.code_location_name
 
         if context.load_type == DefinitionsLoadType.INITIALIZATION:
             reconstruction_metadata = context.get_pending_reconstruction_metadata()
@@ -158,8 +159,12 @@ class _Repository:
                     cacheable_asset_data=cacheable_asset_data,
                     reconstruction_metadata=reconstruction_metadata,
                     defs_state_info=defs_state_info,
+                    code_location_name=code_location_name,
                 )
-                if cacheable_asset_data or reconstruction_metadata or defs_state_info
+                if cacheable_asset_data
+                or reconstruction_metadata
+                or defs_state_info
+                or code_location_name
                 else None
             )
 

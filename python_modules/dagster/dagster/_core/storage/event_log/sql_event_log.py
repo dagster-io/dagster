@@ -229,15 +229,26 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_asset_key_col(self, column_name: str) -> bool:
         with self.index_connection() as conn:
-            column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
-            return column_name in column_names
+            return self._has_asset_key_col_on_connection(conn, column_name)
+
+    def _has_asset_key_col_on_connection(self, conn: Connection, column_name: str) -> bool:
+        column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
+        return column_name in column_names
 
     def has_asset_key_index_cols(self) -> bool:
         return self.has_asset_key_col("last_materialization_timestamp")
 
+    def _has_asset_key_index_cols_on_connection(self, conn: Connection) -> bool:
+        return self._has_asset_key_col_on_connection(conn, "last_materialization_timestamp")
+
     def store_asset_event(self, event: EventLogEntry, event_id: int):
         check.inst_param(event, "event", EventLogEntry)
+        check.int_param(event_id, "event_id")
 
+        with self.index_transaction() as conn:
+            self._store_asset_event(conn, event, event_id)
+
+    def _store_asset_event(self, conn: Connection, event: EventLogEntry, event_id: int) -> None:
         if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
@@ -253,7 +264,9 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
 
-        values = self._get_asset_entry_values(event, event_id, self.has_asset_key_index_cols())
+        values = self._get_asset_entry_values(
+            event, event_id, self._has_asset_key_index_cols_on_connection(conn)
+        )
         if not values:
             return
         insert_statement = AssetKeyTable.insert().values(
@@ -267,11 +280,10 @@ class SqlEventLogStorage(EventLogStorage):
             )
         )
 
-        with self.index_connection() as conn:
-            try:
-                conn.execute(insert_statement)
-            except db_exc.IntegrityError:
-                conn.execute(update_statement)
+        try:
+            conn.execute(insert_statement)
+        except db_exc.IntegrityError:
+            conn.execute(update_statement)
 
     def _get_asset_entry_values(
         self, event: EventLogEntry, event_id: int, has_asset_key_index_cols: bool
@@ -337,6 +349,12 @@ class SqlEventLogStorage(EventLogStorage):
         check.sequence_param(events, "events", EventLogEntry)
         check.sequence_param(event_ids, "event_ids", int)
 
+        with self.index_transaction() as conn:
+            self._store_asset_event_tags(conn, events, event_ids)
+
+    def _store_asset_event_tags(
+        self, conn: Connection, events: Sequence[EventLogEntry], event_ids: Sequence[int]
+    ) -> None:
         all_values = [
             dict(
                 event_id=event_id,
@@ -353,8 +371,7 @@ class SqlEventLogStorage(EventLogStorage):
         # migration to create the table. On read, we will throw an error if the table does not
         # exist.
         if len(all_values) > 0 and self.has_table(AssetEventTagsTable.name):
-            with self.index_connection() as conn:
-                conn.execute(AssetEventTagsTable.insert(), all_values)
+            conn.execute(AssetEventTagsTable.insert(), all_values)
 
     def _tags_for_asset_event(self, event: EventLogEntry) -> Mapping[str, str]:
         tags = {}
@@ -388,14 +405,14 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key  # type: ignore
         ):
-            self.store_asset_event(event, event_id)
-
             if event_id is None:
                 raise DagsterInvariantViolationError(
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags([event], [event_id])
+            with self.index_transaction() as conn:
+                self._store_asset_event_tags(conn, [event], [event_id])
+                self._store_asset_event(conn, event, event_id)
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)

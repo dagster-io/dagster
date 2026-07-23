@@ -11,7 +11,7 @@ import EarlyAccess from '@site/docs/partials/\_EarlyAccess.md';
 
 <EarlyAccess />
 
-Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. Issues are designed for an AI-first dev cycle, together with [Dagster+ AI](/guides/labs/dagster-ai) and [Dagster skills](/getting-started/ai-tools#about-dagster-skills).
+Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. Issues are designed for an AI-first dev cycle, together with [Dagster+ AI](/guides/labs/dagster-ai), [Dagster skills](/getting-started/ai-tools#about-dagster-skills), and the [Dagster+ MCP server](/guides/labs/dagster-mcp).
 
 ## Creating Issues
 

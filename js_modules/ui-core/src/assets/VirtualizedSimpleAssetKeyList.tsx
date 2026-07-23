@@ -1,10 +1,9 @@
-import {Text} from '@dagster-io/ui-components';
+import {Inner, Row, Text} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {CSSProperties, useRef} from 'react';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
-import {Inner, Row} from '../ui/VirtualizedTable';
 
 export const VirtualizedSimpleAssetKeyList = ({
   assetKeys,
@@ -26,12 +25,12 @@ export const VirtualizedSimpleAssetKeyList = ({
 
   return (
     <div style={{...style, overflowY: 'auto'}} ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const assetKey = assetKeys[index]!;
           return (
-            <Row key={key} $height={size} $start={start}>
+            <Row key={key} height={size} start={start}>
               <Text size={12} family="mono">
                 {displayNameForAssetKey(assetKey)}
               </Text>

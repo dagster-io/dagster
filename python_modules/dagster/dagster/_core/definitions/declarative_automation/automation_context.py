@@ -6,14 +6,17 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import (
-    AssetGraphView,
-    TemporalContext,
-    U_EntityKey,
-)
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetKey, EntityKey, T_EntityKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetJobKey,
+    AssetKey,
+    AssetOrCheckKey,
+    EntityKey,
+    T_EntityKey,
+)
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
     AutomationResult,
@@ -39,6 +42,10 @@ if TYPE_CHECKING:
     )
 
 T_StructuredCursor = TypeVar("T_StructuredCursor", bound=StructuredCursor)
+
+U_EntityKey = TypeVar(
+    "U_EntityKey", AssetKey, AssetCheckKey, AssetJobKey, AssetOrCheckKey, EntityKey
+)
 
 
 def _has_legacy_condition(condition: AutomationCondition):

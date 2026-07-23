@@ -3,11 +3,14 @@ import {
   Button,
   Checkbox,
   Colors,
+  Container,
   Dialog,
   DialogBody,
   DialogFooter,
   Icon,
+  Inner,
   MiddleTruncate,
+  Row,
   Spinner,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -26,7 +29,6 @@ import {
 } from './types/CalculateUnsyncedDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 export const CalculateUnsyncedDialog = React.memo(
   ({
@@ -117,14 +119,14 @@ export const CalculateUnsyncedDialog = React.memo(
               </label>
             </Box>
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const item = unsynced[index]!;
                   return (
                     <Row
-                      $height={size}
-                      $start={start}
+                      height={size}
+                      start={start}
                       data-key={key}
                       key={key}
                       ref={virtualizer.measureElement}

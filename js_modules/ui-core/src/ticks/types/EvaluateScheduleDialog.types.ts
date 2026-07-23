@@ -1,12 +1,24 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type GetScheduleQueryVariables = Types.Exact<{
+export type ScheduleSelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+  scheduleName: string;
+};
+
+export type GetScheduleQueryVariables = Exact<{
   scheduleSelector: Types.ScheduleSelector;
-  startTimestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
-  ticksAfter?: Types.InputMaybe<Types.Scalars['Int']['input']>;
-  ticksBefore?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  startTimestamp?: number | null | undefined;
+  ticksAfter?: number | null | undefined;
+  ticksBefore?: number | null | undefined;
 }>;
 
 export type GetScheduleQuery = {
@@ -17,9 +29,9 @@ export type GetScheduleQuery = {
     | {__typename: 'ScheduleNotFoundError'};
 };
 
-export type ScheduleDryRunMutationVariables = Types.Exact<{
+export type ScheduleDryRunMutationVariables = Exact<{
   selectorData: Types.ScheduleSelector;
-  timestamp?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  timestamp?: number | null | undefined;
 }>;
 
 export type ScheduleDryRunMutation = {

@@ -1,12 +1,36 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
 
-export type PipelineExplorerRootQueryVariables = Types.Exact<{
-  snapshotPipelineSelector?: Types.InputMaybe<Types.PipelineSelector>;
-  snapshotId?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  rootHandleID: Types.Scalars['String']['input'];
-  requestScopeHandleID?: Types.InputMaybe<Types.Scalars['String']['input']>;
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: string;
+};
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type PipelineSelector = {
+  assetCheckSelection?: Array<AssetCheckHandleInput> | null | undefined;
+  assetSelection?: Array<AssetKeyInput> | null | undefined;
+  pipelineName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+  solidSelection?: Array<string> | null | undefined;
+};
+
+export type PipelineExplorerRootQueryVariables = Exact<{
+  snapshotPipelineSelector?: Types.PipelineSelector | null | undefined;
+  snapshotId?: string | null | undefined;
+  rootHandleID: string;
+  requestScopeHandleID?: string | null | undefined;
 }>;
 
 export type PipelineExplorerRootQuery = {

@@ -32,7 +32,7 @@ export const AssetCatalogAssetGraph = React.memo(
           path = globalAssetGraphPathForGroup(node.groupName, node.assetKey);
         } else {
           // It is not defined in another repo, just go to stub definition page
-          path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+          path = assetDetailsPathForKey(node.assetKey, {view: 'overview'});
         }
         if (e.metaKey) {
           openInNewTab(path);

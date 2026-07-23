@@ -1,8 +1,27 @@
 import itertools
 
 import pytest
-from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, job, op
+from dagster import (
+    AutomationCondition,
+    Definitions,
+    Field,
+    In,
+    Map,
+    Nothing,
+    Out,
+    Permissive,
+    Selector,
+    Shape,
+    asset,
+    define_asset_job,
+    job,
+    op,
+)
 from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    BuiltinAutomationCondition,
+)
+from dagster._core.remote_representation.external_data import JobRefSnap
 from dagster._core.snap import (
     DependencyStructureIndex,
     JobSnap,
@@ -575,3 +594,62 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
     )
+
+
+def _make_asset_job_def(automation_condition):
+    @asset
+    def asset_a():
+        return 1
+
+    asset_job = define_asset_job(
+        name="my_job", selection=[asset_a], automation_condition=automation_condition
+    )
+    return Definitions(assets=[asset_a], jobs=[asset_job]).resolve_job_def("my_job")
+
+
+class _NonSerializableCondition(BuiltinAutomationCondition):
+    """Not whitelisted for serdes, so is_serializable is False."""
+
+    def evaluate(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        raise NotImplementedError()
+
+
+# the two serialized job representations, both of which carry the automation condition
+JOB_SNAP_CLASSES = [JobSnap, JobRefSnap]
+
+
+@pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
+def test_snap_carries_automation_condition(snap_cls):
+    condition = AutomationCondition.all_job_root_assets_match(AutomationCondition.eager())
+    snap = snap_cls.from_job_def(_make_asset_job_def(condition))
+    assert snap.automation_condition == condition
+
+    # survives a serde round trip
+    assert deserialize_value(serialize_value(snap), snap_cls).automation_condition == condition
+
+
+@pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
+def test_snap_unconditioned_serialization_unchanged(snap_cls):
+    """Jobs without a condition must serialize byte-identically to before the field existed:
+    JobSnap serialization drives snapshot_id hashes, so a representation change would churn
+    the snapshot id of every existing job.
+    """
+    snap = snap_cls.from_job_def(_make_asset_job_def(None))
+    assert snap.automation_condition is None
+
+    serialized = serialize_value(snap)
+    assert "automation_condition" not in serialized
+
+    # pre-field payloads (which also lack the key) deserialize to None
+    assert deserialize_value(serialized, snap_cls).automation_condition is None
+
+
+@pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
+def test_snap_non_serializable_condition_omitted(snap_cls):
+    snap = snap_cls.from_job_def(
+        _make_asset_job_def(
+            AutomationCondition.all_job_root_assets_match(_NonSerializableCondition())
+        )
+    )
+    assert snap.automation_condition is None
+    assert "automation_condition" not in serialize_value(snap)

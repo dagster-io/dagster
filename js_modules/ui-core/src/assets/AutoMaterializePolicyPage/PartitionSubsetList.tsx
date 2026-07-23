@@ -1,9 +1,12 @@
 import {
   Box,
   Colors,
+  Container,
+  Inner,
   Menu,
   MenuItem,
   MiddleTruncate,
+  Row,
   SpinnerWithText,
   TextInput,
 } from '@dagster-io/ui-components';
@@ -19,12 +22,12 @@ import {
   PartitionSubsetListQueryVariables,
 } from './types/PartitionSubsetListQuery.types';
 import {useQuery} from '../../apollo-client';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props {
   description: string;
   status?: AssetConditionEvaluationStatus;
-  assetKeyPath: string[];
+  assetKeyPath: string[] | null;
+  jobName?: string;
   evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
@@ -37,6 +40,7 @@ export const PartitionSubsetList = ({
   description,
   status,
   assetKeyPath,
+  jobName,
   evaluationId,
   nodeUniqueId,
   selectPartition,
@@ -53,7 +57,8 @@ export const PartitionSubsetList = ({
     PARTITION_SUBSET_LIST_QUERY,
     {
       variables: {
-        assetKey: {path: assetKeyPath},
+        assetKey: !jobName && assetKeyPath ? {path: assetKeyPath} : null,
+        assetJobKey: jobName ? {jobName} : null,
         evaluationId,
         nodeUniqueId,
       },
@@ -111,12 +116,12 @@ export const PartitionSubsetList = ({
         >
           <Container ref={container}>
             <Menu>
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {virtualItems.map(({index, key, size, start}) => {
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const partitionKey = filteredKeys[index]!;
                   return (
-                    <Row $height={size} $start={start} key={key}>
+                    <Row height={size} start={start} key={key}>
                       <MenuItem
                         onClick={() => {
                           if (selectPartition) {

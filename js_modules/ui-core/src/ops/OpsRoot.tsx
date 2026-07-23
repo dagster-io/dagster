@@ -1,7 +1,10 @@
 import {
   Box,
+  Container,
+  Inner,
   MiddleTruncate,
   NonIdealState,
+  Row,
   SplitPanelContainer,
   SuggestionProvider,
   TokenizingField,
@@ -26,7 +29,6 @@ import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -278,12 +280,12 @@ const OpList = (props: OpListProps) => {
 
   return (
     <Container ref={containerRef}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {virtualItems.map(({index, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const solid = items[index]!;
           return (
-            <Row key={solid.definition.name} $height={size} $start={start}>
+            <Row key={solid.definition.name} height={size} start={start}>
               <div
                 className={clsx(
                   styles.opListItem,

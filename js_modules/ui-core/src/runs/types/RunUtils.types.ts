@@ -1,8 +1,83 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type LaunchPipelineExecutionMutationVariables = Types.Exact<{
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: string;
+};
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type EvaluationErrorReason =
+  | 'FIELDS_NOT_DEFINED'
+  | 'FIELD_NOT_DEFINED'
+  | 'MISSING_REQUIRED_FIELD'
+  | 'MISSING_REQUIRED_FIELDS'
+  | 'RUNTIME_TYPE_MISMATCH'
+  | 'SELECTOR_FIELD_ERROR';
+
+export type ExecutionMetadata = {
+  parentRunId?: string | null | undefined;
+  rootRunId?: string | null | undefined;
+  tags?: Array<ExecutionTag> | null | undefined;
+};
+
+export type ExecutionParams = {
+  executionMetadata?: ExecutionMetadata | null | undefined;
+  mode?: string | null | undefined;
+  preset?: string | null | undefined;
+  runConfigData?: any;
+  selector: JobOrPipelineSelector;
+  stepKeys?: Array<string> | null | undefined;
+};
+
+export type ExecutionTag = {
+  key: string;
+  value: string;
+};
+
+export type JobOrPipelineSelector = {
+  assetCheckSelection?: Array<AssetCheckHandleInput> | null | undefined;
+  assetSelection?: Array<AssetKeyInput> | null | undefined;
+  jobName?: string | null | undefined;
+  pipelineName?: string | null | undefined;
+  repositoryLocationName: string;
+  repositoryName: string;
+  solidSelection?: Array<string> | null | undefined;
+};
+
+export type ReexecutionParams = {
+  extraTags?: Array<ExecutionTag> | null | undefined;
+  parentRunId: string;
+  strategy: ReexecutionStrategy;
+  useParentRunTags?: boolean | null | undefined;
+};
+
+export type ReexecutionStrategy = 'ALL_STEPS' | 'FROM_ASSET_FAILURE' | 'FROM_FAILURE';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
+
+export type TerminateRunPolicy = 'MARK_AS_CANCELED_IMMEDIATELY' | 'SAFE_TERMINATE';
+
+export type LaunchPipelineExecutionMutationVariables = Exact<{
   executionParams: Types.ExecutionParams;
 }>;
 
@@ -42,7 +117,7 @@ export type LaunchPipelineExecutionMutation = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export type LaunchMultipleRunsMutationVariables = Types.Exact<{
+export type LaunchMultipleRunsMutationVariables = Exact<{
   executionParamsList: Array<Types.ExecutionParams> | Types.ExecutionParams;
 }>;
 
@@ -142,8 +217,8 @@ export type LaunchMultipleRunsMutation = {
       };
 };
 
-export type DeleteMutationVariables = Types.Exact<{
-  runId: Types.Scalars['String']['input'];
+export type DeleteMutationVariables = Exact<{
+  runId: string;
 }>;
 
 export type DeleteMutation = {
@@ -164,9 +239,9 @@ export type DeleteMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type TerminateMutationVariables = Types.Exact<{
-  runIds: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
-  terminatePolicy?: Types.InputMaybe<Types.TerminateRunPolicy>;
+export type TerminateMutationVariables = Exact<{
+  runIds: Array<string> | string;
+  terminatePolicy?: Types.TerminateRunPolicy | null | undefined;
 }>;
 
 export type TerminateMutation = {
@@ -206,9 +281,9 @@ export type TerminateMutation = {
       };
 };
 
-export type LaunchPipelineReexecutionMutationVariables = Types.Exact<{
-  executionParams?: Types.InputMaybe<Types.ExecutionParams>;
-  reexecutionParams?: Types.InputMaybe<Types.ReexecutionParams>;
+export type LaunchPipelineReexecutionMutationVariables = Exact<{
+  executionParams?: Types.ExecutionParams | null | undefined;
+  reexecutionParams?: Types.ReexecutionParams | null | undefined;
 }>;
 
 export type LaunchPipelineReexecutionMutation = {

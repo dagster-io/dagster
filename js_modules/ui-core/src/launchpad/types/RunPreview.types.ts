@@ -1,6 +1,18 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type EvaluationErrorReason =
+  | 'FIELDS_NOT_DEFINED'
+  | 'FIELD_NOT_DEFINED'
+  | 'MISSING_REQUIRED_FIELD'
+  | 'MISSING_REQUIRED_FIELDS'
+  | 'RUNTIME_TYPE_MISMATCH'
+  | 'SELECTOR_FIELD_ERROR';
 
 export type RunPreviewValidationFragment_InvalidSubsetError = {
   __typename: 'InvalidSubsetError';

@@ -209,14 +209,14 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             and event.dagster_event_type in ASSET_EVENTS
             and event.dagster_event.asset_key  # type: ignore
         ):
-            self.store_asset_event(event, event_id)
-
             if event_id is None:
                 raise DagsterInvariantViolationError(
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags([event], [event_id])
+            with self.index_transaction() as conn:
+                self._store_asset_event_tags(conn, [event], [event_id])
+                self._store_asset_event(conn, event, event_id)
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
@@ -250,20 +250,26 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
                 event_ids = [cast("int", row[0]) for row in result.fetchall()]
 
-            # We only update the asset table with the last event
-            self.store_asset_event(events[-1], event_ids[-1])
-
             if any(event_id is None for event_id in event_ids):
                 raise DagsterInvariantViolationError(
                     "Cannot store asset event tags for null event id."
                 )
 
-            self.store_asset_event_tags(events, event_ids)
+            with self.index_transaction() as conn:
+                self._store_asset_event_tags(conn, events, event_ids)
+                # We only update the asset table with the last event.
+                self._store_asset_event(conn, events[-1], event_ids[-1])
         else:
             return super().store_event_batch(events)
 
     def store_asset_event(self, event: EventLogEntry, event_id: int) -> None:
         check.inst_param(event, "event", EventLogEntry)
+        check.int_param(event_id, "event_id")
+
+        with self.index_transaction() as conn:
+            self._store_asset_event(conn, event, event_id)
+
+    def _store_asset_event(self, conn: Connection, event: EventLogEntry, event_id: int) -> None:
         if not (event.dagster_event and event.dagster_event.asset_key):
             return
 
@@ -300,19 +306,18 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         values = self._get_asset_entry_values(
             event, event_id, self.has_secondary_index(ASSET_KEY_INDEX_COLS)
         )
-        with self.index_connection() as conn:
-            query = db_dialects.postgresql.insert(AssetKeyTable).values(
-                asset_key=event.dagster_event.asset_key.to_string(),
-                **values,
+        query = db_dialects.postgresql.insert(AssetKeyTable).values(
+            asset_key=event.dagster_event.asset_key.to_string(),
+            **values,
+        )
+        if values:
+            query = query.on_conflict_do_update(
+                index_elements=[AssetKeyTable.c.asset_key],
+                set_=dict(**values),
             )
-            if values:
-                query = query.on_conflict_do_update(
-                    index_elements=[AssetKeyTable.c.asset_key],
-                    set_=dict(**values),
-                )
-            else:
-                query = query.on_conflict_do_nothing()
-            conn.execute(query)
+        else:
+            query = query.on_conflict_do_nothing()
+        conn.execute(query)
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]

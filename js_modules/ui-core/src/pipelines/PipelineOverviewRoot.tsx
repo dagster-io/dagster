@@ -58,7 +58,7 @@ export const PipelineOverviewRoot = (props: Props) => {
         // This op has no definition in any loaded repository (source asset).
         // The best we can do is show the asset page. This will still be mostly empty,
         // but there can be a description.
-        const path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+        const path = assetDetailsPathForKey(node.assetKey, {view: 'overview'});
         if (e.metaKey) {
           openInNewTab(path);
         } else {

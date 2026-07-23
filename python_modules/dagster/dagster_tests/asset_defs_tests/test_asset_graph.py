@@ -6,10 +6,12 @@ from typing import TYPE_CHECKING, cast
 import dagster as dg
 import pytest
 from dagster import AssetsDefinition, AutomationCondition
+from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import (
     AssetCheckNode,
+    AssetJobNode,
     BaseAssetGraph,
     BaseAssetNode,
 )
@@ -793,9 +795,190 @@ def test_toposort(
     assert asset_graph.toposorted_asset_keys == [A.key, B.key]
     assert asset_graph.toposorted_entity_keys_by_level == [
         [A.key],
-        [Ac.check_key, B.key],
+        [B.key, Ac.check_key],
         [Bc.check_key],
     ]
+
+
+def test_with_job_nodes() -> None:
+    @dg.asset
+    def A(): ...
+
+    @dg.asset(deps=[A])
+    def B(): ...
+
+    @dg.asset_check(asset=A)
+    def Ac(): ...
+
+    condition = AutomationCondition.all_job_root_assets_match(AutomationCondition.eager())
+    daily = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    job_node = AssetJobNode(
+        key=AssetJobKey("my_job"),
+        asset_keys={A.key, B.key},
+        partitions_def=daily,
+        automation_condition=condition,
+    )
+    asset_graph = AssetGraph.from_assets([A, B, Ac]).with_job_nodes([job_node])
+
+    assert asset_graph.has(AssetJobKey("my_job"))
+    assert not asset_graph.has(AssetJobKey("other_job"))
+
+    node = asset_graph.get(AssetJobKey("my_job"))
+    assert node is job_node
+    assert node.asset_keys == {A.key, B.key}
+    assert node.partitions_def == daily
+    assert node.automation_condition == condition
+
+    assert list(asset_graph.asset_job_nodes) == [job_node]
+    assert job_node in list(asset_graph.nodes)
+
+    # asset and check addressing is unaffected
+    assert asset_graph.has(A.key)
+    assert asset_graph.has(Ac.check_key)
+
+
+def test_toposort_with_job_nodes() -> None:
+    @dg.asset
+    def A(): ...
+
+    @dg.asset(deps=[A])
+    def B(): ...
+
+    @dg.asset_check(asset=A)
+    def Ac(): ...
+
+    def job_node(name: str) -> AssetJobNode:
+        return AssetJobNode(
+            key=AssetJobKey(name),
+            asset_keys={A.key},
+            partitions_def=None,
+            automation_condition=AutomationCondition.all_job_root_assets_match(
+                AutomationCondition.eager()
+            ),
+        )
+
+    asset_graph = AssetGraph.from_assets([A, B, Ac]).with_job_nodes(
+        [job_node("zebra_job"), job_node("alpha_job")]
+    )
+
+    # job nodes have no dep-graph edges, so they land at the root level; within a level
+    # keys sort by their db string (assets, then checks/jobs), deterministically
+    assert asset_graph.toposorted_entity_keys_by_level == [
+        [A.key, AssetJobKey("alpha_job"), AssetJobKey("zebra_job")],
+        [B.key, Ac.check_key],
+    ]
+
+
+def _local_repo_graph(defs: dg.Definitions) -> BaseAssetGraph:
+    return defs.get_repository_def().asset_graph
+
+
+def _remote_repo_graph(defs: dg.Definitions) -> BaseAssetGraph:
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(defs.get_repository_def()),
+        repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
+        auto_materialize_use_sensors=True,
+    )
+    return remote_repo.asset_graph
+
+
+# the same project seen from the user-code process (local) and reconstructed from its
+# snapshot on the host side (remote); conditioned jobs must surface identically in both
+@pytest.mark.parametrize(
+    "graph_from_defs", [_local_repo_graph, _remote_repo_graph], ids=["local", "remote"]
+)
+def test_conditioned_jobs_become_graph_nodes(
+    graph_from_defs: Callable[[dg.Definitions], BaseAssetGraph],
+) -> None:
+    @dg.asset
+    def A(): ...
+
+    conditioned_job = dg.define_asset_job(
+        name="conditioned_job",
+        selection=[A],
+        automation_condition=AutomationCondition.all_job_root_assets_match(
+            AutomationCondition.eager()
+        ),
+    )
+    unconditioned_job = dg.define_asset_job(name="unconditioned_job", selection=[A])
+    defs = dg.Definitions(assets=[A], jobs=[conditioned_job, unconditioned_job])
+
+    asset_graph = graph_from_defs(defs)
+
+    assert asset_graph.has(AssetJobKey("conditioned_job"))
+    assert not asset_graph.has(AssetJobKey("unconditioned_job"))
+    assert asset_graph.get(AssetJobKey("conditioned_job")).automation_condition is not None
+    assert asset_graph.automatable_asset_job_keys == {AssetJobKey("conditioned_job")}
+
+
+def test_asset_job_node_properties() -> None:
+    # direct construction of the local node: verify its stored fields and the constant stubs
+    key = AssetJobKey("my_job")
+    asset_keys = frozenset({dg.AssetKey("a"), dg.AssetKey("b")})
+    condition = AutomationCondition.all_job_root_assets_match(AutomationCondition.eager())
+    node = AssetJobNode(
+        key=key,
+        asset_keys=asset_keys,
+        partitions_def=None,
+        automation_condition=condition,
+    )
+
+    assert node.key == key
+    assert node.asset_keys == asset_keys
+    assert node.automation_condition is condition
+    assert node.description is None
+    assert node.partitions_def is None
+    assert node.partition_mappings == {}
+    # job nodes have no dep-graph edges
+    assert node.parent_entity_keys == frozenset()
+    assert node.child_entity_keys == frozenset()
+
+
+def test_asset_job_node_without_automation_condition() -> None:
+    # a node can be constructed without a condition (though the graph only builds nodes for
+    # conditioned jobs); the field and the description stub are both None
+    node = AssetJobNode(
+        key=AssetJobKey("j"),
+        asset_keys=frozenset(),
+        partitions_def=None,
+        automation_condition=None,
+    )
+    assert node.automation_condition is None
+    assert node.description is None
+
+
+# the local builder must derive the node's asset_keys and partitions_def from the resolved
+# job. partitions_def covers the unpartitioned, time-window, and static cases; asset_keys is
+# a local-only field (the remote node does not carry it).
+@pytest.mark.parametrize(
+    "partitions_def",
+    [
+        None,
+        dg.DailyPartitionsDefinition(start_date="2024-01-01"),
+        dg.StaticPartitionsDefinition(["p", "q"]),
+    ],
+    ids=["unpartitioned", "daily", "static"],
+)
+def test_local_conditioned_job_node_fields(partitions_def) -> None:
+    @dg.asset(partitions_def=partitions_def)
+    def asset_a(): ...
+
+    @dg.asset(partitions_def=partitions_def)
+    def asset_b(): ...
+
+    job = dg.define_asset_job(
+        name="the_job",
+        selection=[asset_a, asset_b],
+        automation_condition=AutomationCondition.all_job_root_assets_match(
+            AutomationCondition.eager()
+        ),
+    )
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[job])
+
+    node = defs.get_repository_def().asset_graph.get(AssetJobKey("the_job"))
+    assert isinstance(node, AssetJobNode)
+    assert node.asset_keys == {asset_a.key, asset_b.key}
+    assert node.partitions_def == partitions_def
 
 
 def test_required_assets_and_checks_by_key_asset_decorator(

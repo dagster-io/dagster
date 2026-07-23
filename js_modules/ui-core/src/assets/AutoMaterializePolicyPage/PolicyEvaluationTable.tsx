@@ -24,10 +24,13 @@ import styles from './css/PolicyEvaluationTable.module.css';
 import {
   Evaluation,
   FlattenedConditionEvaluation,
+  assetCheckNameForEntityKey,
+  assetKeyForEntityKey,
   defaultExpanded,
   displayNameForEntityKey,
   entityKeyMatches,
   flattenEvaluations,
+  jobNameForEntityKey,
   statusForEvaluation,
   tokenForEntityKey,
 } from './flattenEvaluations';
@@ -52,6 +55,7 @@ import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.
 interface Props {
   assetKeyPath: string[] | null;
   assetCheckName?: string;
+  jobName?: string;
   evaluationNodes: Evaluation[];
   evaluationId: string;
   rootUniqueId: string;
@@ -65,6 +69,7 @@ export const PolicyEvaluationTable = (props: Props) => {
   const {
     assetKeyPath,
     assetCheckName,
+    jobName,
     evaluationNodes,
     evaluationId,
     rootUniqueId,
@@ -108,6 +113,7 @@ export const PolicyEvaluationTable = (props: Props) => {
       <NewPolicyEvaluationTable
         assetKeyPath={assetKeyPath}
         assetCheckName={assetCheckName}
+        jobName={jobName}
         evaluationId={evaluationId}
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
@@ -150,6 +156,7 @@ export const PolicyEvaluationTable = (props: Props) => {
 const NewPolicyEvaluationTable = ({
   assetKeyPath: rootAssetKeyPath,
   assetCheckName: rootAssetCheckName,
+  jobName: rootJobName,
   evaluationId,
   flattenedRecords,
   expandedRecords,
@@ -159,6 +166,7 @@ const NewPolicyEvaluationTable = ({
 }: {
   assetKeyPath: string[] | null;
   assetCheckName?: string;
+  jobName?: string;
   evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
@@ -169,6 +177,13 @@ const NewPolicyEvaluationTable = ({
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   const isPartitioned = !!flattenedRecords[0]?.evaluation.isPartitioned;
   const rootEntityKey = useMemo(() => {
+    if (rootJobName) {
+      const entityKey: EntityKey = {
+        __typename: 'AssetJobKey',
+        jobName: rootJobName,
+      };
+      return entityKey;
+    }
     if (!rootAssetKeyPath) {
       return null;
     }
@@ -184,7 +199,7 @@ const NewPolicyEvaluationTable = ({
         }
       : rootAssetKey;
     return entityKey;
-  }, [rootAssetKeyPath, rootAssetCheckName]);
+  }, [rootAssetKeyPath, rootAssetCheckName, rootJobName]);
 
   return (
     <Table className={styles.veryCompactTable}>
@@ -206,12 +221,8 @@ const NewPolicyEvaluationTable = ({
             startTimestamp = evaluation.startTimestamp;
           }
 
-          const assetKey =
-            entityKey && entityKey.__typename === 'AssetCheckhandle'
-              ? entityKey.assetKey
-              : entityKey;
-          const checkName =
-            entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+          const assetKey = entityKey ? assetKeyForEntityKey(entityKey) : null;
+          const checkName = entityKey ? assetCheckNameForEntityKey(entityKey) : undefined;
           const entityDisplayName = entityKey ? displayNameForEntityKey(entityKey) : '';
           const lastEvaluationForEntityKey =
             entityKey &&
@@ -235,9 +246,9 @@ const NewPolicyEvaluationTable = ({
                 onClick={(e) => {
                   e?.stopPropagation();
                   pushHistory({
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    assetKeyPath: assetKey!.path,
+                    assetKeyPath: assetKey?.path,
                     assetCheckName: checkName,
+                    jobName: entityKey ? jobNameForEntityKey(entityKey) : undefined,
                     evaluationID: lastEvaluationForEntityKey.evaluationId,
                   });
                 }}
@@ -293,7 +304,7 @@ const NewPolicyEvaluationTable = ({
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
-              {isPartitioned && rootAssetKeyPath ? (
+              {isPartitioned && (rootAssetKeyPath || rootJobName) ? (
                 <td style={{width: 0}}>
                   <Box
                     flex={{direction: 'row', alignItems: 'center', gap: 2}}
@@ -307,6 +318,7 @@ const NewPolicyEvaluationTable = ({
                           : `${numberFormatter.format(numTrue ?? 0)} partitions`)
                       }
                       assetKeyPath={rootAssetKeyPath}
+                      jobName={rootJobName}
                       evaluationId={evaluationId}
                       nodeUniqueId={evaluation.uniqueId}
                       numTrue={numTrue ?? 0}

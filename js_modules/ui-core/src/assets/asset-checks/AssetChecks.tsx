@@ -1,9 +1,12 @@
 import {
   Box,
+  Container,
   Heading,
   Icon,
+  Inner,
   MiddleTruncate,
   NonIdealState,
+  Row,
   Text,
   TextInput,
   useViewport,
@@ -40,7 +43,6 @@ import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
@@ -207,15 +209,15 @@ export const AssetChecks = ({
             />
             <FixedScrollContainer>
               <Container ref={containerRef}>
-                <Inner $totalHeight={totalHeight}>
+                <Inner totalHeight={totalHeight}>
                   {items.map(({index, size, start}) => {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     const check = filteredChecks[index]!;
                     return (
                       <Row
                         key={check.name}
-                        $height={size}
-                        $start={start}
+                        height={size}
+                        start={start}
                         className={clsx(
                           styles.checkRow,
                           selectedCheck === check && styles.checkRowSelected,

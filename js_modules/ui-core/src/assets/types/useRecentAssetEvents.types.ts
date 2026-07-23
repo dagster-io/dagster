@@ -1,6 +1,34 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type AssetEventHistoryEventTypeSelector =
+  | 'FAILED_TO_MATERIALIZE'
+  | 'MATERIALIZATION'
+  | 'OBSERVATION';
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type AssetMaterializationFailureType = 'FAILED' | 'SKIPPED';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
 
 export type AssetFailedToMaterializeFragment = {
   __typename: 'FailedToMaterializeEvent';
@@ -537,18 +565,16 @@ export type AssetObservationFragment = {
   >;
 };
 
-export type RecentAssetEventsQueryVariables = Types.Exact<{
+export type RecentAssetEventsQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
   eventTypeSelectors:
     | Array<Types.AssetEventHistoryEventTypeSelector>
     | Types.AssetEventHistoryEventTypeSelector;
-  limit: Types.Scalars['Int']['input'];
-  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  after?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  partitions?: Types.InputMaybe<
-    Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input']
-  >;
+  limit: number;
+  before?: string | null | undefined;
+  after?: string | null | undefined;
+  cursor?: string | null | undefined;
+  partitions?: Array<string> | string | null | undefined;
 }>;
 
 export type RecentAssetEventsQuery = {
@@ -1198,18 +1224,16 @@ export type RecentAssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export type RecentAssetEventsForCatalogViewQueryVariables = Types.Exact<{
+export type RecentAssetEventsForCatalogViewQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
   eventTypeSelectors:
     | Array<Types.AssetEventHistoryEventTypeSelector>
     | Types.AssetEventHistoryEventTypeSelector;
-  limit: Types.Scalars['Int']['input'];
-  before?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  after?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  partitions?: Types.InputMaybe<
-    Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input']
-  >;
+  limit: number;
+  before?: string | null | undefined;
+  after?: string | null | undefined;
+  cursor?: string | null | undefined;
+  partitions?: Array<string> | string | null | undefined;
 }>;
 
 export type RecentAssetEventsForCatalogViewQuery = {
@@ -1244,9 +1268,9 @@ export type RecentAssetEventsForCatalogViewQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export type AssetPartitionEventsQueryVariables = Types.Exact<{
+export type AssetPartitionEventsQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
-  partitions: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
+  partitions: Array<string> | string;
 }>;
 
 export type AssetPartitionEventsQuery = {
@@ -1464,9 +1488,9 @@ export type AssetPartitionEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export type LatestAssetPartitionsQueryVariables = Types.Exact<{
+export type LatestAssetPartitionsQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
-  limit: Types.Scalars['Int']['input'];
+  limit: number;
 }>;
 
 export type LatestAssetPartitionsQuery = {

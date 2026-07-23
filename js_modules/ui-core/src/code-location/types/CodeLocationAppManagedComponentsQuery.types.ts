@@ -1,3 +1,9 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
@@ -9,8 +15,8 @@ export type AppManagedComponentFragment = {
   attributes: string;
 };
 
-export type CodeLocationAppManagedComponentsQueryVariables = Types.Exact<{
-  locationName: Types.Scalars['String']['input'];
+export type CodeLocationAppManagedComponentsQueryVariables = Exact<{
+  locationName: string;
 }>;
 
 export type CodeLocationAppManagedComponentsQuery = {
@@ -38,11 +44,11 @@ export type CodeLocationAppManagedComponentsQuery = {
       };
 };
 
-export type SetAppManagedComponentMutationVariables = Types.Exact<{
-  locationName: Types.Scalars['String']['input'];
-  componentId: Types.Scalars['String']['input'];
-  componentType: Types.Scalars['String']['input'];
-  attributes: Types.Scalars['String']['input'];
+export type SetAppManagedComponentMutationVariables = Exact<{
+  locationName: string;
+  componentId: string;
+  componentType: string;
+  attributes: string;
 }>;
 
 export type SetAppManagedComponentMutation = {
@@ -70,9 +76,9 @@ export type SetAppManagedComponentMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type DeleteAppManagedComponentMutationVariables = Types.Exact<{
-  locationName: Types.Scalars['String']['input'];
-  componentId: Types.Scalars['String']['input'];
+export type DeleteAppManagedComponentMutationVariables = Exact<{
+  locationName: string;
+  componentId: string;
 }>;
 
 export type DeleteAppManagedComponentMutation = {

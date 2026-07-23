@@ -1,8 +1,8 @@
+import {Container, Inner, TABLE_HEADER_HEIGHT} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
-import {Container, Inner, TABLE_HEADER_HEIGHT} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {VirtualizedObserveJobRow} from '../workspace/VirtualizedObserveJobRow';
@@ -70,7 +70,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
   return (
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           <div
             style={{
               position: 'absolute',
