@@ -59,6 +59,7 @@ export type TickHistoryQuery = {
           instigationType: Types.InstigationType;
           skipReason: string | null;
           requestedAssetMaterializationCount: number;
+          requestedJobRunCount: number;
           runIds: Array<string>;
           originRunIds: Array<string>;
           logKey: Array<string> | null;
@@ -96,4 +97,4 @@ export type TickHistoryQuery = {
       };
 };
 
-export const TickHistoryQueryVersion = 'c7a49ebf0ce969829effc3c7234a7aada77643e14674507b4f75dd4b9aaaf538';
+export const TickHistoryQueryVersion = 'ed93ec15eb533d05b50d44616bc0f4bba3255d6bbd2c36539c6fa783dc7f0298';

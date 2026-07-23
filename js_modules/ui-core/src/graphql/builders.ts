@@ -556,6 +556,15 @@ type AssetHealthMaterializationMeta =
 
 export {AssetHealthStatus};
 
+type AssetJobKey = {
+  __typename: 'AssetJobKey';
+  jobName: Scalars['String']['output'];
+};
+
+type AssetJobKeyInput = {
+  jobName: Scalars['String']['input'];
+};
+
 type AssetKey = {
   __typename: 'AssetKey';
   path: Array<Scalars['String']['output']>;
@@ -1534,7 +1543,7 @@ type EngineEvent = DisplayableEvent &
     timestamp: Scalars['String']['output'];
   };
 
-type EntityKey = AssetCheckhandle | AssetKey;
+type EntityKey = AssetCheckhandle | AssetJobKey | AssetKey;
 
 type EnumConfigType = ConfigType & {
   __typename: 'EnumConfigType';
@@ -2362,7 +2371,9 @@ type InstigationTick = {
   originRunIds: Array<Scalars['String']['output']>;
   requestedAssetKeys: Array<AssetKey>;
   requestedAssetMaterializationCount: Scalars['Int']['output'];
+  requestedJobRunCount: Scalars['Int']['output'];
   requestedMaterializationsForAssets: Array<RequestedMaterializationsForAsset>;
+  requestedRunsForJobs: Array<RequestedRunsForJob>;
   runIds: Array<Scalars['String']['output']>;
   runKeys: Array<Scalars['String']['output']>;
   runs: Array<Run>;
@@ -2415,6 +2426,7 @@ type InvalidSubsetError = Error & {
 type Job = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'Job';
+    automationCondition: Maybe<AutomationCondition>;
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
@@ -3771,6 +3783,7 @@ type Permission = {
 type Pipeline = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'Pipeline';
+    automationCondition: Maybe<AutomationCondition>;
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
@@ -4238,6 +4251,7 @@ type QueryAssetConditionEvaluationForPartitionArgs = {
 
 type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
   assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
+  assetJobKey?: InputMaybe<AssetJobKeyInput>;
   assetKey?: InputMaybe<AssetKeyInput>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
@@ -4474,6 +4488,7 @@ type QueryTopLevelResourceDetailsOrErrorArgs = {
 };
 
 type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
+  assetJobKey?: InputMaybe<AssetJobKeyInput>;
   assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
@@ -4746,6 +4761,12 @@ type RepositorySelector = {
 type RequestedMaterializationsForAsset = {
   __typename: 'RequestedMaterializationsForAsset';
   assetKey: AssetKey;
+  partitionKeys: Array<Scalars['String']['output']>;
+};
+
+type RequestedRunsForJob = {
+  __typename: 'RequestedRunsForJob';
+  jobName: Scalars['String']['output'];
   partitionKeys: Array<Scalars['String']['output']>;
 };
 
@@ -7328,6 +7349,29 @@ export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
       overrides && overrides.hasOwnProperty('totalNumPartitions')
         ? overrides.totalNumPartitions!
         : 4019,
+  };
+};
+
+export const buildAssetJobKey = (
+  overrides?: Partial<AssetJobKey>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetJobKey'} & AssetJobKey => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetJobKey');
+  return {
+    __typename: 'AssetJobKey',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'saepe',
+  };
+};
+
+export const buildAssetJobKeyInput = (
+  overrides?: Partial<AssetJobKeyInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetJobKeyInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetJobKeyInput');
+  return {
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'harum',
   };
 };
 
@@ -10533,9 +10577,17 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('requestedAssetMaterializationCount')
         ? overrides.requestedAssetMaterializationCount!
         : 412,
+    requestedJobRunCount:
+      overrides && overrides.hasOwnProperty('requestedJobRunCount')
+        ? overrides.requestedJobRunCount!
+        : 1259,
     requestedMaterializationsForAssets:
       overrides && overrides.hasOwnProperty('requestedMaterializationsForAssets')
         ? overrides.requestedMaterializationsForAssets!
+        : [],
+    requestedRunsForJobs:
+      overrides && overrides.hasOwnProperty('requestedRunsForJobs')
+        ? overrides.requestedRunsForJobs!
         : [],
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : [],
@@ -10639,6 +10691,12 @@ export const buildJob = (
   relationshipsToOmit.add('Job');
   return {
     __typename: 'Job',
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+          ? ({} as AutomationCondition)
+          : buildAutomationCondition({}, relationshipsToOmit),
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
@@ -12978,6 +13036,12 @@ export const buildPipeline = (
   relationshipsToOmit.add('Pipeline');
   return {
     __typename: 'Pipeline',
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+          ? ({} as AutomationCondition)
+          : buildAutomationCondition({}, relationshipsToOmit),
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
@@ -14477,6 +14541,20 @@ export const buildRequestedMaterializationsForAsset = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildRequestedRunsForJob = (
+  overrides?: Partial<RequestedRunsForJob>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RequestedRunsForJob'} & RequestedRunsForJob => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RequestedRunsForJob');
+  return {
+    __typename: 'RequestedRunsForJob',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'atqui',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };

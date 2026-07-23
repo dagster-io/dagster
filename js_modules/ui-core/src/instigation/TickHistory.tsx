@@ -24,7 +24,12 @@ import * as React from 'react';
 import {useState} from 'react';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
+import {
+  HISTORY_TICK_FRAGMENT,
+  RUN_STATUS_FRAGMENT,
+  RunStatusLink,
+  labelForRequestedMaterializationsAndJobRuns,
+} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
@@ -522,9 +527,10 @@ function TickRow({
           ) : (
             <Box flex={{alignItems: 'center', gap: 8}}>
               <ButtonLink onClick={() => onShowDetails(tick)}>
-                {tick.requestedAssetMaterializationCount === 1
-                  ? '1 materialization requested'
-                  : `${tick.requestedAssetMaterializationCount} materializations requested`}
+                {labelForRequestedMaterializationsAndJobRuns(
+                  tick.requestedAssetMaterializationCount,
+                  tick.requestedJobRunCount,
+                )}
               </ButtonLink>
             </Box>
           )}

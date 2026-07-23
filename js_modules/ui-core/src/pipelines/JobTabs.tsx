@@ -12,7 +12,7 @@ import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-export const DEFAULT_JOB_TAB_ORDER = ['overview', 'playground', 'runs', 'partitions'];
+export const DEFAULT_JOB_TAB_ORDER = ['overview', 'playground', 'runs', 'partitions', 'automation'];
 
 interface Props {
   repoAddress: RepoAddress;
@@ -74,6 +74,7 @@ export type JobTabConfigInput = {
   hasLaunchpad: boolean;
   hasPartitionSet: boolean;
   hasLaunchExecutionPermission?: boolean;
+  hasAutomationCondition?: boolean;
 };
 
 export interface JobTabConfig {
@@ -88,7 +89,8 @@ export interface JobTabConfig {
  * Define the default set of job tabs.
  */
 export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabConfig> => {
-  const {hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission} = input;
+  const {hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission, hasAutomationCondition} =
+    input;
   return {
     overview: {
       id: 'overview',
@@ -120,6 +122,12 @@ export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabC
       title: 'Partitions',
       pathComponent: 'partitions',
       isHidden: !hasPartitionSet,
+    },
+    automation: {
+      id: 'automation',
+      title: 'Automation',
+      pathComponent: 'automation',
+      isHidden: !hasAutomationCondition,
     },
   };
 };

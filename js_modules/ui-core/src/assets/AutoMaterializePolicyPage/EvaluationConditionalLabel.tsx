@@ -11,6 +11,11 @@ import {
 import clsx from 'clsx';
 
 import styles from './css/EvaluationConditionalLabel.module.css';
+import {
+  assetCheckNameForEntityKey,
+  assetKeyForEntityKey,
+  jobNameForEntityKey,
+} from './flattenEvaluations';
 import {EvaluationHistoryStackItem} from './types';
 import {
   EntityKeyFragment as EntityKey,
@@ -50,10 +55,9 @@ export const EvaluationSinceLabel = ({
       })
     : null;
 
-  const assetKey =
-    entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.assetKey : entityKey;
-  const checkName =
-    entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+  const assetKey = assetKeyForEntityKey(entityKey) ?? undefined;
+  const checkName = assetCheckNameForEntityKey(entityKey);
+  const jobName = jobNameForEntityKey(entityKey);
 
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
@@ -63,6 +67,7 @@ export const EvaluationSinceLabel = ({
       <EvaluationSinceMetadata
         assetKey={assetKey}
         checkName={checkName}
+        jobName={jobName}
         detailLabel={
           triggerTime
             ? `${triggerLabel} was last True at ${triggerTime}`
@@ -79,6 +84,7 @@ export const EvaluationSinceLabel = ({
       <EvaluationSinceMetadata
         assetKey={assetKey}
         checkName={checkName}
+        jobName={jobName}
         detailLabel={
           resetTime
             ? `${resetLabel} last occurred ${resetTime}`
@@ -95,13 +101,15 @@ export const EvaluationSinceLabel = ({
 export const EvaluationSinceMetadata = ({
   assetKey,
   checkName,
+  jobName,
   detailLabel,
   evaluationId,
   timestamp,
   pushHistory,
 }: {
-  assetKey: {path: string[]};
+  assetKey?: {path: string[]};
   checkName?: string;
+  jobName?: string;
   detailLabel: string;
   evaluationId: string | null;
   timestamp: number | null;
@@ -119,8 +127,9 @@ export const EvaluationSinceMetadata = ({
       <ButtonLink
         onClick={() => {
           pushHistory({
-            assetKeyPath: assetKey.path,
+            assetKeyPath: assetKey?.path,
             assetCheckName: checkName,
+            jobName,
             evaluationID: evaluationId,
           });
         }}

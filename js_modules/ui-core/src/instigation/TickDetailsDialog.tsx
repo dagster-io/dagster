@@ -14,6 +14,7 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
+import {Link} from 'react-router-dom';
 
 import {RunList, TargetedRunList} from './InstigationTick';
 import {HISTORY_TICK_FRAGMENT} from './InstigationUtils';
@@ -35,6 +36,8 @@ import {
 } from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickResultType} from '../ticks/TickStatusTag';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 type DynamicPartitionsRequestResult = {
   partitionKeys: string[] | null;
   partitionsDefName: string;
@@ -139,6 +142,12 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
       <Box padding={{vertical: 12, horizontal: 24}} border="bottom">
         <TickDetailSummary tick={tick} tickResultType={resultType} />
       </Box>
+      {resultType === 'materializations' && tick.requestedRunsForJobs.length > 0 ? (
+        <TickRequestedJobRunsTable
+          requestedRunsForJobs={tick.requestedRunsForJobs}
+          instigationSelector={instigationSelector}
+        />
+      ) : null}
       {resultType === 'materializations' ? <TickMaterializationsTable tick={tick} /> : null}
       {resultType === 'runs' ? (
         <div style={{height: '500px', overflowY: 'auto'}}>
@@ -190,6 +199,48 @@ const TickDetailsDialogImpl = ({tickId, instigationSelector}: InnerProps) => {
   );
 };
 
+export const TickRequestedJobRunsTable = ({
+  requestedRunsForJobs,
+  instigationSelector,
+}: {
+  requestedRunsForJobs: {jobName: string; partitionKeys: string[]}[];
+  instigationSelector: InstigationSelector;
+}) => {
+  const repoAddress = buildRepoAddress(
+    instigationSelector.repositoryName,
+    instigationSelector.repositoryLocationName,
+  );
+  return (
+    <>
+      <Box padding={{vertical: 16, horizontal: 24}} border="bottom">
+        <Heading size={14} weight={600}>
+          Requested job runs
+        </Heading>
+      </Box>
+      <Table>
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>Partitions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {requestedRunsForJobs.map(({jobName, partitionKeys}) => (
+            <tr key={jobName}>
+              <td>
+                <Link to={workspacePathFromAddress(repoAddress, `/jobs/${jobName}`)}>
+                  {jobName}
+                </Link>
+              </td>
+              <td>{partitionKeys.length ? partitionKeys.join(', ') : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    </>
+  );
+};
+
 export function TickDetailSummary({
   tick,
   tickResultType,
@@ -223,7 +274,7 @@ export function TickDetailSummary({
               ) : (
                 <>
                   {(tickResultType === 'materializations' || !('runIds' in tick)
-                    ? tick.requestedAssetMaterializationCount
+                    ? tick.requestedAssetMaterializationCount + tick.requestedJobRunCount
                     : tick.runIds.length) ?? 0}{' '}
                   requested
                 </>
@@ -316,6 +367,10 @@ const JOB_SELECTED_TICK_QUERY = gql`
             assetKey {
               path
             }
+            partitionKeys
+          }
+          requestedRunsForJobs {
+            jobName
             partitionKeys
           }
         }

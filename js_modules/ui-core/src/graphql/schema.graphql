@@ -1400,6 +1400,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   hasLaunchExecutionPermission: Boolean!
   hasLaunchReexecutionPermission: Boolean!
   nodeNames: [String!]!
+  automationCondition: AutomationCondition
 }
 
 type PartitionTagsAndConfig {
@@ -2537,6 +2538,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   hasLaunchExecutionPermission: Boolean!
   hasLaunchReexecutionPermission: Boolean!
   nodeNames: [String!]!
+  automationCondition: AutomationCondition
 }
 
 enum SensorType {
@@ -3017,6 +3019,8 @@ type InstigationTick {
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
+  requestedJobRunCount: Int!
+  requestedRunsForJobs: [RequestedRunsForJob!]!
   autoMaterializeAssetEvaluationId: ID
   instigationType: InstigationType!
 }
@@ -3042,6 +3046,11 @@ type DynamicPartitionsRequestResult {
 
 type RequestedMaterializationsForAsset {
   assetKey: AssetKey!
+  partitionKeys: [String!]!
+}
+
+type RequestedRunsForJob {
+  jobName: String!
   partitionKeys: [String!]!
 }
 
@@ -3877,6 +3886,7 @@ type Query {
   ): AutoMaterializeAssetEvaluationRecordsOrError
   truePartitionsForAutomationConditionEvaluationNode(
     assetKey: AssetKeyInput
+    assetJobKey: AssetJobKeyInput
     evaluationId: ID!
     nodeUniqueId: String
   ): [String!]!
@@ -3891,6 +3901,7 @@ type Query {
   assetConditionEvaluationRecordsOrError(
     assetKey: AssetKeyInput
     assetCheckKey: AssetCheckHandleInput
+    assetJobKey: AssetJobKeyInput
     limit: Int!
     cursor: String
   ): AssetConditionEvaluationRecordsOrError
@@ -4120,6 +4131,10 @@ type AutoMaterializeAssetEvaluationNeedsMigrationError implements Error {
   message: String!
 }
 
+input AssetJobKeyInput {
+  jobName: String!
+}
+
 type AssetConditionEvaluation {
   rootUniqueId: String!
   evaluationNodes: [AssetConditionEvaluationNode!]!
@@ -4141,7 +4156,11 @@ type UnpartitionedAssetConditionEvaluationNode {
   childUniqueIds: [String!]!
 }
 
-union EntityKey = AssetKey | AssetCheckhandle
+union EntityKey = AssetKey | AssetCheckhandle | AssetJobKey
+
+type AssetJobKey {
+  jobName: String!
+}
 
 enum AssetConditionEvaluationStatus {
   TRUE

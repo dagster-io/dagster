@@ -201,6 +201,13 @@ class RemoteRepository:
         if not self._auto_materialize_use_sensors:
             return sensor_datas
 
+        # A snapshot from a >= 1.9 code location already contains the default automation
+        # condition sensor (added at Definitions construction). Leave it untouched:
+        # re-deriving it here would replace it with the metadata-less hand-rolled snap
+        # below, silently dropping any asset job keys it claims.
+        if DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME in sensor_datas:
+            return sensor_datas
+
         # if necessary, create a default automation condition sensor
         # NOTE: if a user's code location is at a version >= 1.9, then this step should
         # never be necessary, as this will be added in Definitions construction process.

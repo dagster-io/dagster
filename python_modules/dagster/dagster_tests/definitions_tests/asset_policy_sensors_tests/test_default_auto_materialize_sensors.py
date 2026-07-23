@@ -5,6 +5,7 @@ from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.automation_condition_sensor_definition import (
+    EMIT_BACKFILLS_METADATA_KEY,
     AutomationConditionSensorDefinition,
     asset_job_keys_from_sensor_metadata,
 )
@@ -516,3 +517,53 @@ def test_default_sensor_created_for_job_keys_alone_when_assets_covered() -> None
     selection = default_sensor.asset_selection
     assert selection is not None
     assert selection.resolve(repo.asset_graph) == set()
+
+
+def test_job_key_metadata_survives_remote_load_with_conditioned_asset() -> None:
+    """Regression test: when a conditioned ASSET coexists with a conditioned job, the
+    host-side default-sensor re-derivation (RemoteRepository._sensors) used to replace
+    the snapshot's default sensor with a metadata-less hand-rolled snap, silently
+    dropping ALL of its metadata: the claimed asset job keys (so the daemon never
+    evaluated the job) and the emit_backfills flag (so multi-partition asset requests
+    would launch as individual runs instead of a backfill). Job-only repositories were
+    unaffected (the re-derivation returned None there), which is why this only bit
+    repositories with at least one conditioned asset.
+    """
+
+    @dg.asset(automation_condition=dg.AutomationCondition.eager())
+    def conditioned_asset() -> None: ...
+
+    @dg.asset
+    def plain_asset() -> None: ...
+
+    job = dg.define_asset_job(
+        "my_job",
+        selection=[plain_asset],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    defs = dg.Definitions(assets=[conditioned_asset, plain_asset], jobs=[job])
+
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(defs.get_repository_def()),
+        repository_handle=RepositoryHandle.for_test(
+            location_name="foo_location", repository_name="bar_repo"
+        ),
+        auto_materialize_use_sensors=True,
+    )
+
+    remote_sensor = remote_repo.get_sensor("default_automation_condition_sensor")
+    # the job key claim survives the remote round-trip
+    assert asset_job_keys_from_sensor_metadata(remote_sensor.metadata) == {AssetJobKey("my_job")}
+    # the emit_backfills flag survives too (the daemon reads it off sensor metadata to
+    # decide whether multi-partition requests become a single backfill)
+    assert remote_sensor.metadata is not None
+    standard_metadata = remote_sensor.metadata.standard_metadata
+    assert standard_metadata is not None
+    assert EMIT_BACKFILLS_METADATA_KEY in standard_metadata
+    # and the asset selection still covers the conditioned asset
+    assert remote_sensor.asset_selection is not None
+    assert dg.AssetKey("conditioned_asset") in remote_sensor.asset_selection.resolve(
+        remote_repo.asset_graph
+    )

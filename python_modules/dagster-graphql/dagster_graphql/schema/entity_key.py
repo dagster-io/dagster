@@ -1,6 +1,6 @@
 import graphene
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_key import AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetJobKey, AssetKey, EntityKey
 
 from dagster_graphql.schema.util import non_null_list
 
@@ -27,15 +27,27 @@ class GrapheneAssetCheckHandle(graphene.ObjectType):
         super().__init__(name=handle.name, assetKey=GrapheneAssetKey(path=handle.asset_key.path))
 
 
+class GrapheneAssetJobKey(graphene.ObjectType):
+    jobName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetJobKey"
+
+    def __init__(self, key: AssetJobKey):
+        super().__init__(jobName=key.job_name)
+
+
 class GrapheneEntityKey(graphene.Union):
     class Meta:
         name = "EntityKey"
-        types = (GrapheneAssetKey, GrapheneAssetCheckHandle)
+        types = (GrapheneAssetKey, GrapheneAssetCheckHandle, GrapheneAssetJobKey)
 
     @staticmethod
     def from_entity_key(key: EntityKey) -> "GrapheneEntityKey":
         if isinstance(key, AssetKey):
             return GrapheneAssetKey(path=key.path)  # ty: ignore[invalid-return-type]
+        elif isinstance(key, AssetJobKey):
+            return GrapheneAssetJobKey(key=key)  # ty: ignore[invalid-return-type]
         elif isinstance(key, AssetCheckKey):
             return GrapheneAssetCheckHandle(handle=key)  # ty: ignore[invalid-return-type]
         else:

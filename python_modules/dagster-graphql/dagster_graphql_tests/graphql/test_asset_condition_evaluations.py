@@ -7,6 +7,7 @@ import dagster._check as check
 from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.declarative_automation.operators.since_operator import (
     SinceConditionData,
 )
@@ -40,7 +41,7 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector, infer_repository
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -66,6 +67,11 @@ query AssetDameonTicksQuery($dayRange: Int, $dayOffset: Int, $statuses: [Instiga
             partitionKeys
         }
         requestedAssetMaterializationCount
+        requestedJobRunCount
+        requestedRunsForJobs {
+            jobName
+            partitionKeys
+        }
         autoMaterializeAssetEvaluationId
     }
 }
@@ -111,6 +117,10 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
                 RunRequest(asset_selection=[AssetKey("foo"), AssetKey("bar")], partition_key="abc"),
                 RunRequest(asset_selection=[AssetKey("bar")], partition_key="def"),
                 RunRequest(asset_selection=[AssetKey("baz")], partition_key=None),
+                # whole-job run requests for conditioned jobs: job_name and no asset selection
+                RunRequest(job_name="conditioned_job", partition_key="p1"),
+                RunRequest(job_name="conditioned_job", partition_key="p2"),
+                RunRequest(job_name="unpartitioned_conditioned_job"),
             ],
         )
 
@@ -163,6 +173,13 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         }
 
         assert tick["requestedAssetMaterializationCount"] == 4
+
+        # whole-job run requests are counted separately from materializations
+        assert tick["requestedJobRunCount"] == 3
+        assert tick["requestedRunsForJobs"] == [
+            {"jobName": "conditioned_job", "partitionKeys": ["p1", "p2"]},
+            {"jobName": "unpartitioned_conditioned_job", "partitionKeys": []},
+        ]
 
         result = execute_dagster_graphql(
             graphql_context,
@@ -225,6 +242,9 @@ fragment entityKeyFragment on EntityKey {
         assetKey {
             path
         }
+    }
+    ... on AssetJobKey {
+        jobName
     }
 }
 """
@@ -885,3 +905,379 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert since_metadata_result["triggerTimestamp"] == 1234567890.0
         assert since_metadata_result["resetEvaluationId"] == "3"
         assert since_metadata_result["resetTimestamp"] == 1234567880.0
+
+
+JOB_EVALUATIONS_QUERY = """
+query GetJobEvaluationsQuery($assetJobKey: AssetJobKeyInput!, $limit: Int!, $cursor: String) {
+    assetConditionEvaluationRecordsOrError(assetJobKey: $assetJobKey, limit: $limit, cursor: $cursor) {
+        ... on AssetConditionEvaluationRecords {
+            records {
+                evaluationId
+                isLegacy
+                numRequested
+                assetKey {
+                    path
+                }
+                entityKey {
+                    __typename
+                    ... on AssetJobKey {
+                        jobName
+                    }
+                }
+                rootUniqueId
+                evaluationNodes {
+                    numTrue
+                    uniqueId
+                    childUniqueIds
+                    entityKey {
+                        __typename
+                        ... on AssetKey {
+                            path
+                        }
+                        ... on AssetJobKey {
+                            jobName
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
+JOB_TRUE_PARTITIONS_QUERY = """
+query GetJobTruePartitions($assetJobKey: AssetJobKeyInput!, $evaluationId: ID!, $nodeUniqueId: String!) {
+    truePartitionsForAutomationConditionEvaluationNode(assetJobKey: $assetJobKey, evaluationId: $evaluationId, nodeUniqueId: $nodeUniqueId)
+}
+"""
+
+JOB_AUTOMATION_CONDITION_QUERY = """
+query JobAutomationConditionQuery($selector: PipelineSelector!) {
+    pipelineOrError(params: $selector) {
+        __typename
+        ... on Pipeline {
+            name
+            automationCondition {
+                label
+                expandedLabel
+            }
+        }
+    }
+}
+"""
+
+
+class TestJobEntityConditionEvaluations(ExecutingGraphQLContextTestMatrix):
+    def _get_job_condition_evaluation(
+        self,
+        key: "EntityKey",
+        description: str,
+        true_value: Any,
+        child_evaluations: Sequence[AutomationConditionEvaluation] | None = None,
+    ) -> AutomationConditionEvaluation:
+        return AutomationConditionEvaluation(
+            condition_snapshot=AutomationConditionNodeSnapshot(
+                class_name="...",
+                description=description,
+                unique_id=str(random.randint(0, 100000000)),
+            ),
+            true_subset=SerializableEntitySubset(key=key, value=true_value),
+            candidate_subset=HistoricalAllPartitionsSubsetSentinel(),
+            start_timestamp=123,
+            end_timestamp=456,
+            child_evaluations=child_evaluations or [],
+            subsets_with_metadata=[],
+        )
+
+    def test_get_evaluations_for_unpartitioned_job(
+        self, graphql_context: WorkspaceRequestContext
+    ) -> None:
+        job_key = AssetJobKey("my_conditioned_job")
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_EVALUATIONS_QUERY,
+            variables={
+                "assetJobKey": {"jobName": "my_conditioned_job"},
+                "limit": 10,
+                "cursor": None,
+            },
+        )
+        assert results.data["assetConditionEvaluationRecordsOrError"] == {"records": []}
+
+        evaluation = self._get_job_condition_evaluation(
+            job_key,
+            "all job root assets match",
+            True,
+            child_evaluations=[
+                self._get_job_condition_evaluation(AssetKey("member_asset"), "missing", True)
+            ],
+        )
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(
+                    evaluation=evaluation, run_ids=frozenset({"runid1"})
+                )
+            ],
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_EVALUATIONS_QUERY,
+            variables={
+                "assetJobKey": {"jobName": "my_conditioned_job"},
+                "limit": 10,
+                "cursor": None,
+            },
+        )
+        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
+        assert len(records) == 1
+
+        record = records[0]
+        assert record["evaluationId"] == "10"
+        assert record["isLegacy"] is False
+        assert record["numRequested"] == 1
+        # job-keyed records have no assetKey; the entity key carries the job name
+        assert record["assetKey"] is None
+        assert record["entityKey"] == {
+            "__typename": "AssetJobKey",
+            "jobName": "my_conditioned_job",
+        }
+
+        root_node = next(
+            node for node in record["evaluationNodes"] if node["uniqueId"] == record["rootUniqueId"]
+        )
+        assert root_node["entityKey"] == {
+            "__typename": "AssetJobKey",
+            "jobName": "my_conditioned_job",
+        }
+        child_node = next(
+            node
+            for node in record["evaluationNodes"]
+            if node["uniqueId"] == root_node["childUniqueIds"][0]
+        )
+        assert child_node["entityKey"] == {"__typename": "AssetKey", "path": ["member_asset"]}
+
+    def test_get_evaluations_for_partitioned_job(
+        self, graphql_context: WorkspaceRequestContext
+    ) -> None:
+        job_key = AssetJobKey("my_partitioned_job")
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+        evaluation = self._get_job_condition_evaluation(
+            job_key,
+            "all job root assets match",
+            partitions_def.subset_with_partition_keys(["a", "b"]),
+            child_evaluations=[
+                self._get_job_condition_evaluation(
+                    AssetKey("member_asset"),
+                    "missing",
+                    partitions_def.subset_with_partition_keys(["a"]),
+                )
+            ],
+        )
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=11,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(
+                    evaluation=evaluation, run_ids=frozenset({"runid1", "runid2"})
+                )
+            ],
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_EVALUATIONS_QUERY,
+            variables={
+                "assetJobKey": {"jobName": "my_partitioned_job"},
+                "limit": 10,
+                "cursor": None,
+            },
+        )
+        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
+        assert len(records) == 1
+
+        record = records[0]
+        assert record["numRequested"] == 2
+        assert record["assetKey"] is None
+        assert record["entityKey"] == {
+            "__typename": "AssetJobKey",
+            "jobName": "my_partitioned_job",
+        }
+
+        root_node = next(
+            node for node in record["evaluationNodes"] if node["uniqueId"] == record["rootUniqueId"]
+        )
+        assert root_node["numTrue"] == 2
+        child_node = next(
+            node
+            for node in record["evaluationNodes"]
+            if node["uniqueId"] == root_node["childUniqueIds"][0]
+        )
+        assert child_node["numTrue"] == 1
+
+        # true partitions are fetched with the job entity key for every node in the
+        # tree, including asset-keyed child nodes
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetJobKey": {"jobName": "my_partitioned_job"},
+                "evaluationId": record["evaluationId"],
+                "nodeUniqueId": root_node["uniqueId"],
+            },
+        )
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == {
+            "a",
+            "b",
+        }
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_TRUE_PARTITIONS_QUERY,
+            variables={
+                "assetJobKey": {"jobName": "my_partitioned_job"},
+                "evaluationId": record["evaluationId"],
+                "nodeUniqueId": child_node["uniqueId"],
+            },
+        )
+        assert set(results.data["truePartitionsForAutomationConditionEvaluationNode"]) == {"a"}
+
+    def test_pipeline_automation_condition(self, graphql_context: WorkspaceRequestContext) -> None:
+        selector = infer_job_selector(graphql_context, "job_with_automation_condition")
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_AUTOMATION_CONDITION_QUERY,
+            variables={"selector": selector},
+        )
+        assert results.data["pipelineOrError"]["__typename"] == "Pipeline"
+        condition = results.data["pipelineOrError"]["automationCondition"]
+        assert condition is not None
+        assert condition["expandedLabel"]
+
+        selector = infer_job_selector(graphql_context, "two_assets_job")
+        results = execute_dagster_graphql(
+            graphql_context,
+            JOB_AUTOMATION_CONDITION_QUERY,
+            variables={"selector": selector},
+        )
+        assert results.data["pipelineOrError"]["__typename"] == "Pipeline"
+        assert results.data["pipelineOrError"]["automationCondition"] is None
+
+    def test_get_evaluations_for_evaluation_id_mixed_entities(
+        self, graphql_context: WorkspaceRequestContext
+    ) -> None:
+        """The tick drill-down path (assetConditionEvaluationsForEvaluationId) returns
+        every record for the evaluation id; a tick that evaluated both assets and jobs
+        yields a mixed result set, and both entity key flavors must serialize.
+        """
+        asset_evaluation = self._get_job_condition_evaluation(AssetKey("some_asset"), "eager", True)
+        job_evaluation = self._get_job_condition_evaluation(
+            AssetJobKey("some_job"), "all job root assets match", True
+        )
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=12,
+            asset_evaluations=[
+                AutomationConditionEvaluationWithRunIds(
+                    evaluation=asset_evaluation, run_ids=frozenset({"runid1"})
+                ),
+                AutomationConditionEvaluationWithRunIds(
+                    evaluation=job_evaluation, run_ids=frozenset({"runid2"})
+                ),
+            ],
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            MIXED_EVALUATIONS_FOR_EVALUATION_ID_QUERY,
+            variables={"evaluationId": "12"},
+        )
+        records = results.data["assetConditionEvaluationsForEvaluationId"]["records"]
+        entity_keys = sorted(
+            (record["entityKey"]["__typename"], record["numRequested"]) for record in records
+        )
+        assert entity_keys == [("AssetJobKey", 1), ("AssetKey", 1)]
+        by_typename = {record["entityKey"]["__typename"]: record for record in records}
+        assert by_typename["AssetKey"]["entityKey"]["path"] == ["some_asset"]
+        assert by_typename["AssetKey"]["assetKey"] == {"path": ["some_asset"]}
+        assert by_typename["AssetJobKey"]["entityKey"]["jobName"] == "some_job"
+        # job-keyed records have no assetKey
+        assert by_typename["AssetJobKey"]["assetKey"] is None
+
+
+MIXED_EVALUATIONS_FOR_EVALUATION_ID_QUERY = """
+query GetEvaluationsForEvaluationIdQuery($evaluationId: ID!) {
+    assetConditionEvaluationsForEvaluationId(evaluationId: $evaluationId) {
+        ... on AssetConditionEvaluationRecords {
+            records {
+                evaluationId
+                numRequested
+                assetKey {
+                    path
+                }
+                entityKey {
+                    __typename
+                    ... on AssetKey {
+                        path
+                    }
+                    ... on AssetJobKey {
+                        jobName
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
+
+def test_pipeline_automation_condition_full_data_snapshot() -> None:
+    """The graphql context test matrix always loads repositories with deferred
+    snapshots, so TestJobEntityConditionEvaluations.test_pipeline_automation_condition
+    only exercises the JobRefSnap branch of resolve_automationCondition. This covers
+    the JobDataSnap (full-data) branch directly.
+    """
+    import dagster as dg
+    from dagster._core.remote_representation.external import RemoteRepository
+    from dagster._core.remote_representation.external_data import JobDataSnap, RepositorySnap
+    from dagster._core.remote_representation.handle import RepositoryHandle
+    from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+    from dagster_graphql.schema.pipelines.pipeline import GraphenePipeline
+
+    @dg.asset
+    def member() -> None: ...
+
+    conditioned_job = dg.define_asset_job(
+        "conditioned_job",
+        selection=[member],
+        automation_condition=AutomationCondition.all_job_root_assets_match(
+            AutomationCondition.missing()
+        ),
+    )
+    plain_job = dg.define_asset_job("plain_job", selection=[member])
+    defs = dg.Definitions(assets=[member], jobs=[conditioned_job, plain_job])
+
+    remote_repo = RemoteRepository(
+        RepositorySnap.from_def(defs.get_repository_def()),
+        repository_handle=RepositoryHandle.for_test(
+            location_name="foo_location", repository_name="bar_repo"
+        ),
+        auto_materialize_use_sensors=True,
+    )
+    # full-data mode: job entries are JobDataSnaps, not refs
+    assert isinstance(remote_repo.get_job_map_entry("conditioned_job"), JobDataSnap)
+
+    with dg.instance_for_test() as instance:
+        batch_loader = RepositoryScopedBatchLoader(instance, remote_repo)
+        for job_name, expects_condition in [("conditioned_job", True), ("plain_job", False)]:
+            graphene_pipeline = GraphenePipeline(remote_repo.get_full_job(job_name), batch_loader)
+            # graphene_info is unused on the batch-loader path
+            condition = graphene_pipeline.resolve_automationCondition(None)  # ty: ignore[invalid-argument-type]
+            assert (condition is not None) == expects_condition

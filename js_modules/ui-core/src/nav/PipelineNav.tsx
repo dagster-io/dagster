@@ -56,7 +56,13 @@ export const PipelineNav = (props: Props) => {
 
   const {hasLaunchExecutionPermission} = useJobPermissions(pipelineSelector, repoAddress.location);
 
-  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission});
+  const hasAutomationCondition = !!repoJobEntry?.automationCondition;
+  const tabs = buildJobTabs({
+    hasLaunchpad,
+    hasPartitionSet,
+    hasLaunchExecutionPermission,
+    hasAutomationCondition,
+  });
 
   return (
     <>

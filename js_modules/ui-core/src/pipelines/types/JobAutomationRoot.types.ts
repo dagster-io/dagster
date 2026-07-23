@@ -6,26 +6,21 @@ export type Incremental<T> =
   | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
-import * as Types from '../../../graphql/types';
-
-export type AssetCheckHandleInput = {
-  assetKey: AssetKeyInput;
-  name: string;
-};
+import * as Types from '../../graphql/types';
 
 export type AssetConditionEvaluationStatus = 'FALSE' | 'SKIPPED' | 'TRUE';
 
-export type AssetKeyInput = {
-  path: Array<string>;
+export type AssetJobKeyInput = {
+  jobName: string;
 };
 
-export type AssetCheckAutomationListQueryVariables = Exact<{
-  assetCheckKey: Types.AssetCheckHandleInput;
+export type JobAutomationListQueryVariables = Exact<{
+  assetJobKey: Types.AssetJobKeyInput;
   limit: number;
   cursor?: string | null | undefined;
 }>;
 
-export type AssetCheckAutomationListQuery = {
+export type JobAutomationListQuery = {
   __typename: 'Query';
   assetConditionEvaluationRecordsOrError:
     | {
@@ -497,4 +492,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = 'e428f03ced62f0e54656511f5b56d5b6b20193ae15bc78a7999b7c1c6a5c7ffa';
+export const JobAutomationListQueryVersion = 'd00fd2a25141467ab719193dd5afb40f922d348ec971d137e80a1c5c9705a5a7';

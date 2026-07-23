@@ -1221,6 +1221,49 @@ def test_eager_asset_and_job() -> None:
             assert runs[0].job_name == "my_job"
 
 
+def test_eager_sibling_asset_and_job() -> None:
+    """An asset with its own eager() condition and a conditioned job that are SIBLINGS
+    under the same manual root: a single tick must request BOTH the asset
+    materialization and the whole-job run. (In the chained topology of
+    test_eager_asset_and_job the two fire across consecutive ticks, so this is the
+    test that pins mixed asset+job requests on one tick.).
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["eager_sibling_asset_and_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: initial evaluation — nothing to do
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        # tick 2: materialize external → the SAME tick requests asset "a" and my_job
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("external"))
+            )
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+
+            assert len(runs) == 2
+            asset_runs = [r for r in runs if r.asset_selection]
+            job_runs = [r for r in runs if r.job_name == "my_job" and not r.asset_selection]
+            assert len(asset_runs) == 1
+            assert asset_runs[0].asset_selection == {dg.AssetKey("a")}
+            assert len(job_runs) == 1
+
+        # tick 3: nothing further is requested (eager only fires on newly-updated
+        # parents, and the job run's materializations of b/c have no downstream)
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+
 def test_job_evaluated_by_exactly_one_sensor() -> None:
     """With an explicit automation condition sensor in the code location, the conditioned
     job's key is claimed by the default sensor (recorded in its metadata) and must be

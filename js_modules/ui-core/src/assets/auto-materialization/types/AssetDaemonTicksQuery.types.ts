@@ -20,6 +20,7 @@ export type AssetDaemonTickFragment = {
   status: Types.InstigationTickStatus;
   instigationType: Types.InstigationType;
   requestedAssetMaterializationCount: number;
+  requestedJobRunCount: number;
   autoMaterializeAssetEvaluationId: string | null;
   error: {
     __typename: 'PythonError';
@@ -59,6 +60,7 @@ export type AssetDaemonTicksQuery = {
     status: Types.InstigationTickStatus;
     instigationType: Types.InstigationType;
     requestedAssetMaterializationCount: number;
+    requestedJobRunCount: number;
     autoMaterializeAssetEvaluationId: string | null;
     error: {
       __typename: 'PythonError';
@@ -79,4 +81,4 @@ export type AssetDaemonTicksQuery = {
   }>;
 };
 
-export const AssetDaemonTicksQueryVersion = '399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788';
+export const AssetDaemonTicksQueryVersion = '731d5882e1f9e2dab71c2ed4e4103ce8c92b3f651f14354b15bb07b67aa71f3d';

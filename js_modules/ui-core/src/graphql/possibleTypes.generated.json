@@ -524,7 +524,7 @@
     "PartitionedAssetConditionEvaluationNode",
     "SpecificPartitionAssetConditionEvaluationNode"
   ],
-  "EntityKey": ["AssetKey", "AssetCheckhandle"],
+  "EntityKey": ["AssetKey", "AssetCheckhandle", "AssetJobKey"],
   "AssetConditionEvaluationRecordsOrError": [
     "AssetConditionEvaluationRecords",
     "AutoMaterializeAssetEvaluationNeedsMigrationError"
