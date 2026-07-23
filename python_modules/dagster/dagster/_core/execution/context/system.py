@@ -67,7 +67,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import DagsterType
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.data_version import DataVersion
+    from dagster._core.definitions.data_version import DataVersion, DataVersionsByPartition
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.partitions.utils.multi import MultiPartitionKey
     from dagster._core.definitions.resource_definition import Resources
@@ -902,13 +902,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             for output in self.step.step_outputs
         )
 
-    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion | DataVersionsByPartition") -> None:
         return self._data_version_cache.set_data_version(asset_key, data_version)
 
     def has_data_version(self, asset_key: AssetKey) -> bool:
         return self._data_version_cache.has_data_version(asset_key)
 
-    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion | DataVersionsByPartition":
         return self._data_version_cache.get_data_version(asset_key)
 
     @property
