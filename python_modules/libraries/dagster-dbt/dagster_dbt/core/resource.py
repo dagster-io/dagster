@@ -387,7 +387,16 @@ class DbtCliResource(ConfigurableResource):
         set_from_args(Namespace(profiles_dir=profiles_dir), None)
         flags = get_flags()
 
-        profile = load_profile(self.project_dir, cli_vars, self.profile, self.target)
+        # Mirror dbt's CLI flag/env-var resolution. dbt only reads DBT_PROFILE /
+        # DBT_TARGET at its Click CLI layer (dbt/cli/params.py), so the `dbt`
+        # subprocess this resource spawns honors them, but the in-process adapter
+        # used for metadata calls (e.g. column metadata) does not. Fall back to the
+        # env vars when the resource does not set profile/target explicitly so both
+        # paths resolve the same profile. Explicit resource config still wins.
+        # Fixes https://github.com/dagster-io/dagster/issues/33818
+        profile_override = self.profile or os.getenv("DBT_PROFILE")
+        target_override = self.target or os.getenv("DBT_TARGET")
+        profile = load_profile(self.project_dir, cli_vars, profile_override, target_override)
         project = load_project(self.project_dir, False, profile, cli_vars)
         config = RuntimeConfig.from_parts(project, profile, flags)
 
