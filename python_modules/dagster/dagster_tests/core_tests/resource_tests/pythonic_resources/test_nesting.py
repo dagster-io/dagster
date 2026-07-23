@@ -1151,3 +1151,51 @@ def test_nested_resources_with_default_set_in_configure_at_launch() -> None:
         }
     ).success
     assert completed["yes"]
+
+
+def test_resource_dependency_with_default_direct_access() -> None:
+    """Regression test for GitHub issue #33650.
+
+    ResourceDependency with a default value caused RecursionError when accessed directly.
+    """
+
+    class Inner(dg.ConfigurableResource):
+        val: str = "hello"
+
+    class Outer(dg.ConfigurableResource):
+        inner: dg.ResourceDependency[Inner] = Inner()
+
+        def greet(self) -> str:
+            return self.inner.val
+
+    outer = Outer()
+    # This should not raise RecursionError
+    assert outer.inner.val == "hello"  # type: ignore[union-attr]
+
+
+def test_resource_dependency_with_default_in_sensor() -> None:
+    """Regression test for GitHub issue #33650.
+
+    ResourceDependency with a default value caused RecursionError in sensor context.
+    """
+
+    class Inner(dg.ConfigurableResource):
+        val: str = "hello"
+
+    class Outer(dg.ConfigurableResource):
+        inner: dg.ResourceDependency[Inner] = Inner()
+
+        def greet(self) -> str:
+            return self.inner.val  # type: ignore[union-attr]
+
+    @dg.sensor(job_name="__ASSET_JOB")
+    def my_sensor(context: dg.SensorEvaluationContext, outer: Outer):
+        result = outer.greet()
+        yield dg.SkipReason(f"got: {result}")
+
+    with dg.build_sensor_context(resources={"outer": Outer()}) as ctx:
+        # This should not raise RecursionError
+        result = list(my_sensor(ctx))
+    assert len(result) == 1
+    assert isinstance(result[0], dg.SkipReason)
+    assert result[0].skip_message == "got: hello"
