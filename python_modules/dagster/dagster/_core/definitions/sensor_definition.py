@@ -1436,6 +1436,13 @@ def _run_requests_with_base_asset_jobs(
 ) -> Sequence[RunRequest]:
     """For sensors that target asset selections instead of jobs, finds the corresponding base asset
     for a selected set of assets.
+
+    NOTE: this rewrite is incompatible with job-entity run requests
+    (RunRequest.is_job_entity_request) -- it would retarget them onto the base asset
+    job as a whole-selection run. AutomationConditionSensorDefinition guards off the
+    only combination that could produce one here (user-code sensors with
+    asset_job_keys); if that support is added, such requests must pass through
+    untouched and the sensor daemon must learn to submit them.
     """
     asset_graph = context.repository_def.asset_graph  # type: ignore  # (possible none)
     result = []

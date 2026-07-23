@@ -31,6 +31,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import PARTITION_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     SingleThreadPoolExecutor,
@@ -1262,6 +1263,62 @@ def test_job_evaluated_by_exactly_one_sensor() -> None:
             assert _get_runs_for_latest_ticks(context) == []
 
 
+def test_user_code_sensor_alongside_conditioned_job() -> None:
+    """A use_user_code_server=True sensor targeting an eager asset coexists with a
+    conditioned job that lands on the DEFAULT daemon-evaluated sensor;
+    one upstream materialization makes both fire on the same tick -- the user-code
+    sensor requesting the asset run, the default sensor requesting the whole-job run.
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["user_code_sensor_with_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        request_context = context.create_request_context()
+        sensors = {s.name: s for s in _get_automation_sensors(request_context)}
+        assert set(sensors) == {"user_code_sensor", DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME}
+        assert sensors["user_code_sensor"].sensor_type == SensorType.AUTOMATION
+
+        # the job key is claimed by the default sensor, never the user-code sensor
+        assert asset_job_keys_from_sensor_metadata(
+            sensors[DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME].metadata
+        ) == {dg.AssetJobKey(job_name="my_job")}
+        assert not asset_job_keys_from_sensor_metadata(sensors["user_code_sensor"].metadata)
+
+        # tick 1: nothing has materialized; eager() has nothing to react to
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert len(_get_runs_for_latest_ticks(context)) == 0
+
+        # tick 2: materialize external -> asset "a" (user-code sensor) and a whole-job
+        # run of my_job (default sensor) are requested on the same tick
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("external"))
+            )
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+
+            asset_runs = [r for r in runs if r.asset_selection]
+            job_runs = [r for r in runs if not r.asset_selection]
+
+            assert len(asset_runs) == 1
+            assert asset_runs[0].asset_selection == {dg.AssetKey("a")}
+            assert asset_runs[0].tags[SENSOR_NAME_TAG] == "user_code_sensor"
+
+            assert len(job_runs) == 1
+            assert job_runs[0].job_name == "my_job"
+            assert job_runs[0].tags[SENSOR_NAME_TAG] == DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME
+
+        # tick 3: everything materialized via the runs; nothing further fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+
 def test_job_run_requested_in_pre_sensor_mode() -> None:
     """A conditioned job is evaluated in the sensorless daemon mode (instance setting
     `auto_materialize: use_sensors: false`). In that mode there is no sensor metadata to
@@ -1600,3 +1657,71 @@ def test_partitioned_and_unpartitioned_jobs() -> None:
         with freeze_time(time):
             _execute_ticks(context, executor)
             assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_any_vs_all_partitioned_jobs() -> None:
+    """ANY/ALL job operators evaluate per partition: a single eager root fires any_job
+    for its partition only; cross-partition upstream updates within one tick fire
+    any_job for both partitions and all_job for neither; both upstreams updated for the
+    SAME partition within one tick fire both jobs for it.
+    """
+
+    def _materialize(context, key: str, partition: str) -> None:
+        context.instance.report_runless_asset_event(
+            dg.AssetMaterialization(asset_key=dg.AssetKey(key), partition=partition)
+        )
+
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["any_vs_all_partitioned_jobs"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: initial evaluation -- nothing to do
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+        # materialize upstream_b[p1] -> only any_job fires, pinned to p1
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _materialize(context, "upstream_b", "p1")
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert [(r.job_name, r.tags[PARTITION_NAME_TAG]) for r in runs] == [("any_job", "p1")]
+
+        # quiet tick: eager does not accumulate across ticks
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+        # upstream_b[p1] + upstream_c[p2] in one tick -> any_job fires for BOTH
+        # partitions, all_job for neither (no single partition has all roots eager)
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _materialize(context, "upstream_b", "p1")
+            _materialize(context, "upstream_c", "p2")
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert sorted((r.job_name, r.tags[PARTITION_NAME_TAG]) for r in runs) == [
+                ("any_job", "p1"),
+                ("any_job", "p2"),
+            ]
+
+        # quiet tick
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+        # BOTH upstreams for the SAME partition in one tick -> both jobs fire for p1
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _materialize(context, "upstream_b", "p1")
+            _materialize(context, "upstream_c", "p1")
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert sorted((r.job_name, r.tags[PARTITION_NAME_TAG]) for r in runs) == [
+                ("all_job", "p1"),
+                ("any_job", "p1"),
+            ]

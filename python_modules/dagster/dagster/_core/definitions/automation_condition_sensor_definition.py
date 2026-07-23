@@ -234,6 +234,15 @@ class AutomationConditionSensorDefinition(SensorDefinition, IHasInternalInit):
         # asset-job keys are carried in metadata so they cross the snapshot boundary to
         # the daemon (the same channel emit_backfills uses)
         asset_job_keys = kwargs.get("asset_job_keys")
+        # user-code sensors do not yet support job automation conditions
+        check.param_invariant(
+            not (asset_job_keys and self._use_user_code_server),
+            "asset_job_keys",
+            "Setting `asset_job_keys` on a user-code AutomationConditionSensorDefinition is not"
+            " supported: job automation conditions can currently only be evaluated by"
+            " non-user-code sensors. Set `use_user_code_server=False` or move the job keys to a"
+            " sensor that does not use the user code server.",
+        )
         if asset_job_keys:
             metadata = {
                 **(metadata or {}),
