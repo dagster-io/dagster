@@ -262,6 +262,22 @@ def test_k8s_run_launcher_job_image(template: HelmTemplate):
     assert run_launcher_config["config"]["job_image"] == "test_repo:test_tag"
 
 
+def test_k8s_run_launcher_omits_postgres_password_secret_with_wif_auth(
+    template: HelmTemplate,
+):
+    configmaps = template.render(
+        values_dict={
+            "global": {"postgresqlAuthWifEnabled": True},
+            "postgresql": {"authProvider": {"type": "azure_wif"}},
+            "runLauncher": {"type": "K8sRunLauncher"},
+        }
+    )
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert "postgres_password_secret" not in run_launcher_config["config"]
+
+
 def _check_valid_run_launcher_yaml(dagster_config, instance_class=K8sRunLauncher):
     with environ(
         {
@@ -527,6 +543,22 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     run_launcher_config = instance["run_launcher"]
     assert run_launcher_config["config"]["fail_pod_on_run_failure"]
+
+
+def test_celery_k8s_run_launcher_omits_postgres_password_secret_with_wif_auth(
+    template: HelmTemplate,
+):
+    configmaps = template.render(
+        values_dict={
+            "global": {"postgresqlAuthWifEnabled": True},
+            "postgresql": {"authProvider": {"type": "azure_wif"}},
+            "runLauncher": {"type": "CeleryK8sRunLauncher"},
+        }
+    )
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert "postgres_password_secret" not in run_launcher_config["config"]
 
 
 def test_celery_k8s_run_launcher_default_namespace(template: HelmTemplate):
