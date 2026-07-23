@@ -1702,3 +1702,198 @@ def test_reload_pin_in_place_cm_written_even_when_rpc_fails(kubeconfig_file):
         # we asserted via the mock that the base wasn't allowed to run to that
         # advancement step. Reconciler will see actual!=desired and retry.
         assert ("acme", "sandbox") not in launcher._actual_entries  # noqa: SLF001
+
+
+# ---------------------------------------------------------------------------
+# Orphan defs-state ConfigMap GC
+# ---------------------------------------------------------------------------
+
+
+def _mock_cm(name, labels, age_seconds=3600):
+    """Mock V1ConfigMap. Defaults to an hour old — past the GC grace period —
+    so tests exercise the orphan-matching logic rather than the age gate.
+    """
+    cm = mock.MagicMock()
+    cm.metadata.name = name
+    cm.metadata.labels = labels
+    if age_seconds is None:
+        cm.metadata.creation_timestamp = None
+    else:
+        ts = mock.MagicMock()
+        ts.timestamp.return_value = time.time() - age_seconds
+        cm.metadata.creation_timestamp = ts
+    return cm
+
+
+def _mock_deployment(name, labels):
+    d = mock.MagicMock()
+    d.metadata.name = name
+    d.metadata.labels = labels
+    d.metadata.creation_timestamp = None
+    return d
+
+
+@contextmanager
+def _orphan_cm_launcher(kubeconfig_file, *, deployments, config_maps):
+    """Spin up a K8sUserCodeLauncher with apps/core API clients faked to return
+    the given deployments and ConfigMaps from list calls.
+    """
+    mock_apps = mock.MagicMock()
+    mock_core = mock.MagicMock()
+
+    mock_apps.list_namespaced_deployment.return_value = mock.MagicMock(items=deployments)
+    mock_core.list_namespaced_config_map.return_value = mock.MagicMock(items=config_maps)
+
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+            k8s_apps_api_client=mock_apps,
+            k8s_core_api_client=mock_core,
+        )
+        launcher.register_instance(instance)
+        yield launcher, mock_apps, mock_core
+
+
+def test_orphan_cm_cleanup_skips_cm_with_live_deployment(kubeconfig_file):
+    live_deploy = _mock_deployment("sandbox-acme-abc123", {"managed_by": "K8sUserCodeLauncher"})
+    # The CM whose name derives from the live Deployment's name is NOT an orphan.
+    matching_cm = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-abc123"),
+        {"managed_by": "K8sUserCodeLauncher"},
+    )
+    with _orphan_cm_launcher(
+        kubeconfig_file, deployments=[live_deploy], config_maps=[matching_cm]
+    ) as (launcher, _apps, core):
+        launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+    deletes = [c for c in core.method_calls if c[0] == "delete_namespaced_config_map"]
+    assert deletes == []
+
+
+def test_orphan_cm_cleanup_deletes_cm_without_matching_deployment(kubeconfig_file):
+    # A prior incarnation's CM: its Deployment is gone, a NEW incarnation of the
+    # same location is live. Only the dead incarnation's CM may be deleted.
+    orphan_cm = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-old111"),
+        {"managed_by": "K8sUserCodeLauncher"},
+    )
+    live_deploy = _mock_deployment("sandbox-acme-new222", {"managed_by": "K8sUserCodeLauncher"})
+    live_cm = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-new222"),
+        {"managed_by": "K8sUserCodeLauncher"},
+    )
+    with _orphan_cm_launcher(
+        kubeconfig_file, deployments=[live_deploy], config_maps=[orphan_cm, live_cm]
+    ) as (
+        launcher,
+        _apps,
+        core,
+    ):
+        launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+    deletes = [c for c in core.method_calls if c[0] == "delete_namespaced_config_map"]
+    assert len(deletes) == 1
+    _, args, _ = deletes[0]
+    assert args[0] == orphan_cm.metadata.name
+
+
+def test_orphan_cm_cleanup_skips_young_cm(kubeconfig_file):
+    """Grace period: spinup creates the CM BEFORE its Deployment, so a sweep
+    racing a spinup must not delete a just-created CM whose Deployment hasn't
+    appeared yet.
+    """
+    young_orphan = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-brand-new"),
+        {"managed_by": "K8sUserCodeLauncher"},
+        age_seconds=5,
+    )
+    with _orphan_cm_launcher(kubeconfig_file, deployments=[], config_maps=[young_orphan]) as (
+        launcher,
+        _apps,
+        core,
+    ):
+        launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+    deletes = [c for c in core.method_calls if c[0] == "delete_namespaced_config_map"]
+    assert deletes == []
+
+
+def test_orphan_cm_cleanup_deletes_orphan_with_unknown_age(kubeconfig_file):
+    """No creation_timestamp (shouldn't happen from a real API) ⇒ treated as old."""
+    orphan = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-old111"),
+        {"managed_by": "K8sUserCodeLauncher"},
+        age_seconds=None,
+    )
+    with _orphan_cm_launcher(kubeconfig_file, deployments=[], config_maps=[orphan]) as (
+        launcher,
+        _apps,
+        core,
+    ):
+        launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+    deletes = [c for c in core.method_calls if c[0] == "delete_namespaced_config_map"]
+    assert len(deletes) == 1
+
+
+def test_orphan_cm_cleanup_skips_cms_without_prefix(kubeconfig_file):
+    """Defensive: only act on CMs we know are ours (prefix match)."""
+    not_ours = _mock_cm(
+        "some-user-config-map",
+        # Even with our managed_by label (label selector matched), prefix saves us.
+        {"managed_by": "K8sUserCodeLauncher"},
+    )
+    with _orphan_cm_launcher(kubeconfig_file, deployments=[], config_maps=[not_ours]) as (
+        launcher,
+        _apps,
+        core,
+    ):
+        launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+    deletes = [c for c in core.method_calls if c[0] == "delete_namespaced_config_map"]
+    assert deletes == []
+
+
+def test_orphan_cm_cleanup_swallows_404(kubeconfig_file):
+    """Race: CM deleted between list and delete — must not crash the sweep."""
+    orphan_cm = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-old111"),
+        {"managed_by": "K8sUserCodeLauncher"},
+    )
+    with _orphan_cm_launcher(kubeconfig_file, deployments=[], config_maps=[orphan_cm]) as (
+        launcher,
+        _apps,
+        core,
+    ):
+        core.delete_namespaced_config_map.side_effect = ApiException(status=404, reason="missing")
+        # Should not raise.
+        launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+
+
+def test_graceful_cleanup_servers_invokes_orphan_cm_sweep_after_super(kubeconfig_file):
+    """The throttled periodic cleanup path must drive the orphan CM sweep AFTER super.
+
+    Mock out the base-class cleanup to avoid hitting agent-id GraphQL infra in
+    a unit test; we just want to verify ordering and that the orphan sweep is
+    invoked from the periodic path.
+    """
+    orphan_cm = _mock_cm(
+        defs_state_config_map_name("sandbox-acme-old111"),
+        {"managed_by": "K8sUserCodeLauncher"},
+    )
+    with _orphan_cm_launcher(kubeconfig_file, deployments=[], config_maps=[orphan_cm]) as (
+        launcher,
+        _apps,
+        _core,
+    ):
+        call_order: list[str] = []
+        with mock.patch(
+            "dagster_cloud.workspace.user_code_launcher.user_code_launcher.DagsterCloudUserCodeLauncher._graceful_cleanup_servers"
+        ) as super_mock:
+            super_mock.side_effect = lambda *a, **kw: call_order.append("super")
+            with mock.patch.object(
+                launcher,
+                "_cleanup_orphan_defs_state_config_maps",
+                side_effect=lambda: call_order.append("orphan-sweep"),
+            ):
+                launcher._graceful_cleanup_servers(include_own_servers=False)  # noqa: SLF001
+        assert call_order == ["super", "orphan-sweep"]

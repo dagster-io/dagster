@@ -1,4 +1,5 @@
 import logging
+import time
 from collections import defaultdict
 from collections.abc import Collection, Mapping
 from contextlib import contextmanager
@@ -34,6 +35,7 @@ from dagster_cloud.constants import RESERVED_ENV_VAR_NAMES
 from dagster_cloud.execution.cloud_run_launcher.k8s import CloudK8sRunLauncher
 from dagster_cloud.execution.monitoring import CloudContainerResourceLimits
 from dagster_cloud.workspace.kubernetes.utils import (
+    DEFS_STATE_CONFIG_MAP_NAME_PREFIX,
     SERVER_SPEC_VERSION_LABEL_KEY,
     SERVER_SPEC_VERSION_V2,
     construct_code_location_deployment,
@@ -60,6 +62,12 @@ from dagster_cloud.workspace.user_code_launcher.utils import (
 
 DEFAULT_DEPLOYMENT_STARTUP_TIMEOUT = 300
 DEFAULT_IMAGE_PULL_GRACE_PERIOD = 30
+
+# Orphan defs-state ConfigMaps younger than this are skipped by the GC sweep:
+# spinup deliberately creates the CM before its Deployment, so a concurrent
+# sweep could otherwise delete a CM whose Deployment is about to appear. Must
+# comfortably exceed the CM-create → Deployment-create window (one API call).
+ORPHAN_DEFS_STATE_CONFIG_MAP_GRACE_PERIOD_SECONDS = 300
 
 from dagster_cloud.workspace.config_schema.kubernetes import SHARED_K8S_CONFIG
 
@@ -701,13 +709,17 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
 
         return handles
 
-    def _list_server_handles(self) -> list[K8sHandle]:
+    def _known_namespaces(self) -> set[str]:
         namespaces: set[str] = set()
         if self._namespace:
             namespaces.add(self._namespace)
         for namespace_items in self._used_namespaces.values():
             for namespace in namespace_items:
                 namespaces.add(namespace)
+        return namespaces
+
+    def _list_server_handles(self) -> list[K8sHandle]:
+        namespaces = self._known_namespaces()
         handles: list[K8sHandle] = []
         with self._get_apps_api_instance() as api_instance:
             for namespace in namespaces:
@@ -728,6 +740,79 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                 )
         self._logger.info(f"Listing server handles: {handles}")
         return handles
+
+    def _cleanup_orphan_defs_state_config_maps(self) -> None:
+        """Delete defs-state ConfigMaps whose owning Deployment incarnation is gone.
+
+        CMs are named per incarnation (``defs_state_config_map_name(handle.name)``),
+        so a CM is an orphan iff no live managed Deployment's derived CM name
+        matches it. Sources of orphans:
+        - Agent crashed between CM-create and Deployment-create (the CM is
+          deliberately written first).
+        - Operator manually `kubectl delete`'d a Deployment without deleting
+          its CM (the normal launcher path deletes the CM alongside the
+          Deployment via ``_remove_server_handle``).
+
+        Filtered by ``managed_by=K8sUserCodeLauncher`` AND the
+        ``DEFS_STATE_CONFIG_MAP_NAME_PREFIX`` prefix as belt-and-suspenders
+        so we never touch a user-owned ConfigMap. CMs younger than the grace
+        period are skipped: spinup creates the CM *before* its Deployment, so
+        a concurrent sweep would otherwise see a just-created CM as orphaned.
+        """
+        # Build the set of CM names owned by still-live managed Deployments.
+        # Use the same listing the per-server cleanup uses so we agree with it
+        # on what "live" means.
+        try:
+            live_handles = self._list_server_handles()
+        except Exception:
+            self._logger.exception("Failed to list server handles during orphan ConfigMap cleanup.")
+            return
+        live_cm_names = {defs_state_config_map_name(h.name) for h in live_handles}
+
+        core = self._get_core_api_client()
+        now = time.time()
+        for namespace in self._known_namespaces():
+            try:
+                cms = core.list_namespaced_config_map(
+                    namespace, label_selector="managed_by=K8sUserCodeLauncher"
+                ).items
+            except ApiException:
+                self._logger.exception(
+                    f"Failed to list defs-state ConfigMaps in namespace {namespace} during cleanup."
+                )
+                continue
+            for cm in cms:
+                name = cm.metadata.name
+                if not name.startswith(DEFS_STATE_CONFIG_MAP_NAME_PREFIX):
+                    # Not one of ours; defensive — selector should already exclude these.
+                    continue
+                if name in live_cm_names:
+                    continue
+                creation_timestamp = cm.metadata.creation_timestamp
+                if (
+                    creation_timestamp is not None
+                    and now - creation_timestamp.timestamp()
+                    < ORPHAN_DEFS_STATE_CONFIG_MAP_GRACE_PERIOD_SECONDS
+                ):
+                    # Too young to judge: its Deployment may not exist YET.
+                    continue
+                try:
+                    core.delete_namespaced_config_map(name, namespace)
+                    self._logger.info(
+                        f"Cleaned up orphan defs-state ConfigMap {name} in namespace {namespace}."
+                    )
+                except ApiException as e:
+                    if e.status != 404:
+                        self._logger.exception(
+                            f"Failed to delete orphan defs-state ConfigMap {name} in namespace {namespace}."
+                        )
+
+    def _graceful_cleanup_servers(self, include_own_servers: bool) -> None:
+        super()._graceful_cleanup_servers(include_own_servers=include_own_servers)
+        try:
+            self._cleanup_orphan_defs_state_config_maps()
+        except Exception:
+            self._logger.exception("Failed to clean up orphan defs-state ConfigMaps.")
 
     def get_agent_id_for_server(self, handle: K8sHandle) -> str | None:
         return handle.labels.get("agent_id")
