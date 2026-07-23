@@ -21,12 +21,18 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
-export function getEdgesToShow({
-  viewportRect,
-  highlighted,
-  selected,
-  edges,
-}: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
+export function getEdgesToShow(
+  {
+    viewportRect,
+    highlighted,
+    selected,
+    edges,
+  }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>,
+  // Required, not defaulted: this runs as a serialized worker with no module closure, so the cap
+  // must arrive as an argument. A required parameter makes a missing cap a compile error rather
+  // than a silent runtime failure, and keeps MAX_EDGES the single source of truth at the caller.
+  maxEdges: number,
+) {
   try {
     const viewportDistance =
       Math.pow(viewportRect.right - viewportRect.left, 2) +
@@ -86,7 +92,7 @@ export function getEdgesToShow({
           doesViewportContainPoint(edge.from, viewportRect) ||
           doesViewportContainPoint(edge.to, viewportRect),
       );
-      if (visibleToFromEdges.length < MAX_EDGES) {
+      if (visibleToFromEdges.length < maxEdges) {
         return visibleToFromEdges;
       }
       const center = {
@@ -106,7 +112,7 @@ export function getEdgesToShow({
         };
       });
       edgesWithDistance.sort((a, b) => a.distance - b.distance);
-      return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
+      return edgesWithDistance.slice(0, maxEdges).map((item) => item.edge);
     })();
 
     const selectedSet = new Set(selected ?? []);
@@ -134,7 +140,7 @@ export function getEdgesToShow({
         };
       });
       edgesWithDistance.sort((a, b) => a.distance - b.distance);
-      return edgesWithDistance.slice(0, MAX_EDGES).map((item) => item.edge);
+      return edgesWithDistance.slice(0, maxEdges).map((item) => item.edge);
     })();
     return {edgesToShow, selectedOrHighlightedEdges};
   } catch (e) {
@@ -170,7 +176,9 @@ export const AssetEdges = ({
         while (needsUpdate.current) {
           needsUpdate.current = false;
           try {
-            const edgesToShow = await getEdgesToShowWorker(currentStateRef.current);
+            // The worker runs a serialized copy of getEdgesToShow with no module closure, so the
+            // edge cap must be passed as an argument rather than read from module scope.
+            const edgesToShow = await getEdgesToShowWorker(currentStateRef.current, MAX_EDGES);
             setEdges(edgesToShow);
           } catch {
             // Worker was aborted (component unmounted or deps changed) — expected, stop the loop
