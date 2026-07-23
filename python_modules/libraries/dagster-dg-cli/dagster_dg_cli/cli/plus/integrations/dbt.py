@@ -115,7 +115,7 @@ def manage_manifest_command(
             continue
 
         download_path = project.state_path.joinpath("manifest.json")
-        key = f"{key_prefix}{os.fspath(download_path)}"
+        key = f"{key_prefix}{os.fspath(download_path.resolve())}"
 
         if is_branch:
             click.echo(f"Downloading {source_deployment} manifest for branch deployment.")
@@ -205,7 +205,7 @@ def download_manifest_command(
     for project in projects_with_state:
         assert project.state_path is not None
         download_path = project.state_path.joinpath("manifest.json")
-        key = f"{key_prefix}{os.fspath(download_path)}"
+        key = f"{key_prefix}{os.fspath(download_path.resolve())}"
         dest = output_path if output_path else download_path
 
         dest.parent.mkdir(parents=True, exist_ok=True)
