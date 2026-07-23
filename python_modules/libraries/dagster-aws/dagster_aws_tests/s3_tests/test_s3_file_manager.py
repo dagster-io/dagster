@@ -188,6 +188,63 @@ def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
     assert did_it_run["it_ran"]
 
 
+def test_construct_boto_client_retry_config_botocore_config_passthrough():
+    from dagster_aws.utils import construct_boto_client_retry_config
+
+    config = construct_boto_client_retry_config(
+        5,
+        botocore_config={
+            "connect_timeout": 10,
+            "read_timeout": 60,
+            "max_pool_connections": 20,
+        },
+    )
+    assert config.retries["max_attempts"] == 5
+    assert config.connect_timeout == 10
+    assert config.read_timeout == 60
+    assert config.max_pool_connections == 20
+
+
+def test_construct_boto_client_retry_config_retries_override():
+    from dagster_aws.utils import construct_boto_client_retry_config
+
+    # A user-supplied "retries" dict merges on top of the max_attempts defaults.
+    config = construct_boto_client_retry_config(
+        5, botocore_config={"retries": {"mode": "adaptive"}}
+    )
+    assert config.retries["max_attempts"] == 5
+    assert config.retries["mode"] == "adaptive"
+
+
+@mock.patch("boto3.session.Session.resource")
+def test_s3_resource_botocore_config_passthrough(mock_boto3_resource):
+    from dagster_aws.s3 import S3Resource
+
+    S3Resource(
+        botocore_config={"connect_timeout": 10, "read_timeout": 60, "max_pool_connections": 20}
+    ).get_client()
+
+    _, call_kwargs = mock_boto3_resource.call_args
+
+    mock_boto3_resource.assert_called_once_with(
+        "s3",
+        region_name=None,
+        endpoint_url=None,
+        use_ssl=True,
+        config=call_kwargs["config"],
+        aws_access_key_id=None,
+        aws_secret_access_key=None,
+        aws_session_token=None,
+        verify=None,
+    )
+
+    config = call_kwargs["config"]
+    assert config.connect_timeout == 10
+    assert config.read_timeout == 60
+    assert config.max_pool_connections == 20
+    assert config.retries["max_attempts"] == 5
+
+
 def test_s3_file_manager_resource_with_profile():
     resource_config = {
         "use_unsigned_session": True,
