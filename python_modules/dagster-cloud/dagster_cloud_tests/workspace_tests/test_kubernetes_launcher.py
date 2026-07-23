@@ -16,6 +16,7 @@ from dagster_cloud.workspace.kubernetes.launcher import (
 from dagster_cloud.workspace.kubernetes.utils import (
     DEFS_STATE_CONFIG_MAP_NAME_PREFIX,
     DEFS_STATE_MOUNT_PATH,
+    DEFS_STATE_OVERRIDE_ENV,
     DEFS_STATE_OVERRIDE_FILENAME,
     DEFS_STATE_VOLUME_NAME,
     SERVER_SPEC_VERSION_LABEL_KEY,
@@ -30,6 +31,7 @@ from dagster_cloud.workspace.kubernetes.utils import (
 )
 from dagster_cloud.workspace.user_code_launcher import (
     DEFAULT_SERVER_PROCESS_STARTUP_TIMEOUT,
+    DagsterCloudGrpcServer,
     UserCodeLauncherEntry,
 )
 from dagster_cloud_cli.core.workspace import CodeLocationDeployData
@@ -1176,10 +1178,7 @@ def test_construct_code_location_deployment_no_mount_by_default():
     assert SERVER_SPEC_VERSION_LABEL_KEY not in pod_spec.get("metadata", {}).get("labels", {})
 
 
-def test_construct_code_location_deployment_with_mount_injects_volume_mount_label_only():
-    """Dormant-stage invariant: volume + mount + v2 label, but NOT the env var
-    (activated in the next PR in the stack).
-    """
+def test_construct_code_location_deployment_with_mount_injects_volume_mount_and_label():
     resource_name = unique_k8s_resource_name("acme", "sandbox")
     with k8s_instance() as instance:
         obj = construct_code_location_deployment(
@@ -1213,10 +1212,6 @@ def test_construct_code_location_deployment_with_mount_injects_volume_mount_labe
     assert obj["metadata"]["labels"][SERVER_SPEC_VERSION_LABEL_KEY] == SERVER_SPEC_VERSION_V2
     pod_labels = obj["spec"]["template"]["metadata"]["labels"]
     assert pod_labels[SERVER_SPEC_VERSION_LABEL_KEY] == SERVER_SPEC_VERSION_V2
-
-    # This PR stays dormant: env var is NOT yet injected.
-    env_names = {e["name"] for e in (container.get("env") or [])}
-    assert "DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH" not in env_names
 
 
 def test_construct_code_location_deployment_rejects_user_volume_name_collision():
@@ -1461,3 +1456,249 @@ def test_remove_server_handle_cm_404_is_swallowed():
         )
         # Should not raise.
         launcher._remove_server_handle(handle)  # noqa: SLF001
+
+
+# ---------------------------------------------------------------------------
+# defs_state_info override env var + supports_in_place_pin_reload (PR 3)
+# ---------------------------------------------------------------------------
+
+
+def test_construct_code_location_deployment_injects_env_var_when_mounted():
+    """PR 3 activates the env var on v2 Deployments."""
+    resource_name = unique_k8s_resource_name("acme", "sandbox")
+    with k8s_instance() as instance:
+        obj = construct_code_location_deployment(
+            instance,
+            deployment_name="acme",
+            location_name="sandbox",
+            k8s_deployment_name=resource_name,
+            metadata=CodeLocationDeployData("img", package_name="pkg"),
+            container_context=K8sContainerContext(),
+            args=["ls"],
+            server_timestamp=time.time(),
+            mount_defs_state_config_map=True,
+        ).to_dict()
+    container = obj["spec"]["template"]["spec"]["containers"][0]
+    envs = {e["name"]: e["value"] for e in container["env"]}
+    assert (
+        envs[DEFS_STATE_OVERRIDE_ENV] == f"{DEFS_STATE_MOUNT_PATH}/{DEFS_STATE_OVERRIDE_FILENAME}"
+    )
+
+
+def test_construct_code_location_deployment_no_env_var_when_not_mounted():
+    resource_name = unique_k8s_resource_name("acme", "sandbox")
+    with k8s_instance() as instance:
+        obj = construct_code_location_deployment(
+            instance,
+            deployment_name="acme",
+            location_name="sandbox",
+            k8s_deployment_name=resource_name,
+            metadata=CodeLocationDeployData("img", package_name="pkg"),
+            container_context=K8sContainerContext(),
+            args=["ls"],
+            server_timestamp=time.time(),
+        ).to_dict()
+    container = obj["spec"]["template"]["spec"]["containers"][0]
+    env_names = {e["name"] for e in (container.get("env") or [])}
+    assert DEFS_STATE_OVERRIDE_ENV not in env_names
+
+
+def _make_grpc_server_with_labels(labels: dict) -> DagsterCloudGrpcServer:
+    """Stand-in for a DagsterCloudGrpcServer with a labeled server_handle."""
+    from dagster_cloud.workspace.kubernetes.launcher import K8sHandle
+    from dagster_cloud.workspace.user_code_launcher import ServerEndpoint
+
+    return DagsterCloudGrpcServer(
+        server_handle=K8sHandle(
+            namespace="default",
+            name="some-server",
+            labels=labels,
+            creation_timestamp=None,
+        ),
+        server_endpoint=ServerEndpoint(host="x", port=4000, socket=None),
+        code_location_deploy_data=CodeLocationDeployData("img", package_name="pkg"),
+    )
+
+
+def test_supports_in_place_pin_reload_true_when_v2_label_present(kubeconfig_file):
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+        )
+        launcher.register_instance(instance)
+        launcher._grpc_servers[("acme", "sandbox")] = _make_grpc_server_with_labels(  # noqa: SLF001
+            {SERVER_SPEC_VERSION_LABEL_KEY: SERVER_SPEC_VERSION_V2}
+        )
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("img", package_name="pkg"), time.time()
+        )
+        assert launcher.supports_in_place_pin_reload(("acme", "sandbox"), entry) is True
+
+
+def test_supports_in_place_pin_reload_false_for_legacy_deployment(kubeconfig_file):
+    """Pre-v2 Deployments don't carry the label ⇒ fast path stays off."""
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+        )
+        launcher.register_instance(instance)
+        launcher._grpc_servers[("acme", "sandbox")] = _make_grpc_server_with_labels(  # noqa: SLF001
+            {"managed_by": "K8sUserCodeLauncher"}  # no spec-version label
+        )
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("img", package_name="pkg"), time.time()
+        )
+        assert launcher.supports_in_place_pin_reload(("acme", "sandbox"), entry) is False
+
+
+def test_supports_in_place_pin_reload_false_when_multi_replica(kubeconfig_file):
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+        )
+        launcher.register_instance(instance)
+        launcher._grpc_servers[("acme", "sandbox")] = _make_grpc_server_with_labels(  # noqa: SLF001
+            {SERVER_SPEC_VERSION_LABEL_KEY: SERVER_SPEC_VERSION_V2}
+        )
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData(
+                "img",
+                package_name="pkg",
+                container_context={"k8s": {"server_replica_count": 3}},
+            ),
+            time.time(),
+        )
+        assert launcher.supports_in_place_pin_reload(("acme", "sandbox"), entry) is False
+
+
+def test_supports_in_place_pin_reload_false_for_pex(kubeconfig_file):
+    from dagster_cloud_cli.core.workspace import PexMetadata
+
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+        )
+        launcher.register_instance(instance)
+        launcher._grpc_servers[("acme", "sandbox")] = _make_grpc_server_with_labels(  # noqa: SLF001
+            {SERVER_SPEC_VERSION_LABEL_KEY: SERVER_SPEC_VERSION_V2}
+        )
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData(
+                "img",
+                package_name="pkg",
+                pex_metadata=PexMetadata(pex_tag="files=deps-hash.pex:source-hash.pex"),
+            ),
+            time.time(),
+        )
+        assert launcher.supports_in_place_pin_reload(("acme", "sandbox"), entry) is False
+
+
+def test_supports_in_place_pin_reload_false_when_no_server_cached(kubeconfig_file):
+    """Transient state: server not yet in _grpc_servers ⇒ fast path off."""
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+        )
+        launcher.register_instance(instance)
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("img", package_name="pkg"), time.time()
+        )
+        assert launcher.supports_in_place_pin_reload(("acme", "sandbox"), entry) is False
+
+
+def test_reload_pin_in_place_writes_config_map_then_calls_super(kubeconfig_file):
+    """ConfigMap writes must happen BEFORE the RPC so a racing new pod sees the pin."""
+    mock_core = mock.MagicMock()
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+            k8s_core_api_client=mock_core,
+        )
+        launcher.register_instance(instance)
+        # Seed a running v2 server so the base class's RPC path has something
+        # to send to (we'll mock the client below).
+        launcher._grpc_servers[("acme", "sandbox")] = _make_grpc_server_with_labels(  # noqa: SLF001
+            {SERVER_SPEC_VERSION_LABEL_KEY: SERVER_SPEC_VERSION_V2}
+        )
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("img", package_name="pkg"), time.time()
+        )
+
+        call_order: list[str] = []
+        mock_core.create_namespaced_config_map.side_effect = lambda *a, **kw: call_order.append(
+            "cm"
+        )
+
+        with mock.patch(
+            "dagster_cloud.workspace.user_code_launcher.user_code_launcher.DagsterCloudUserCodeLauncher._reload_pin_in_place"
+        ) as mocked_super:
+            mocked_super.side_effect = lambda *a, **kw: call_order.append("rpc")
+            launcher._reload_pin_in_place(("acme", "sandbox"), entry)  # noqa: SLF001
+
+        assert call_order == ["cm", "rpc"]
+
+
+def test_reload_pin_in_place_cm_written_even_when_rpc_fails(kubeconfig_file):
+    """If the gRPC RPC fails, the ConfigMap update has already landed — the
+    safety property is that the CM is ALLOWED to be ahead of in-memory state.
+    The base class doesn't advance _actual_entries on failure ⇒ reconciler retries.
+    """
+    mock_core = mock.MagicMock()
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+            k8s_core_api_client=mock_core,
+        )
+        launcher.register_instance(instance)
+        launcher._grpc_servers[("acme", "sandbox")] = _make_grpc_server_with_labels(  # noqa: SLF001
+            {SERVER_SPEC_VERSION_LABEL_KEY: SERVER_SPEC_VERSION_V2}
+        )
+        entry = UserCodeLauncherEntry(
+            CodeLocationDeployData("img", package_name="pkg"), time.time()
+        )
+
+        with mock.patch(
+            "dagster_cloud.workspace.user_code_launcher.user_code_launcher.DagsterCloudUserCodeLauncher._reload_pin_in_place",
+            side_effect=Exception("simulated RPC failure"),
+        ):
+            with pytest.raises(Exception, match="simulated RPC failure"):
+                launcher._reload_pin_in_place(("acme", "sandbox"), entry)  # noqa: SLF001
+
+        cm_writes = [
+            c
+            for c in mock_core.method_calls
+            if c[0] in ("create_namespaced_config_map", "replace_namespaced_config_map")
+        ]
+        assert len(cm_writes) == 1
+        # _actual_entries advancement is the base class's responsibility; here
+        # we asserted via the mock that the base wasn't allowed to run to that
+        # advancement step. Reconciler will see actual!=desired and retry.
+        assert ("acme", "sandbox") not in launcher._actual_entries  # noqa: SLF001

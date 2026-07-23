@@ -243,6 +243,15 @@ def construct_code_location_deployment(
                 "read_only": True,
             }
         )
+        # Env var, NOT CLI arg. Old `dagster` versions silently ignore an unknown
+        # env var; an unknown CLI flag would crash the pod on boot. This keeps
+        # the rollout safe even if a customer's user-code image lags the agent.
+        container_config["env"].append(
+            {
+                "name": DEFS_STATE_OVERRIDE_ENV,
+                "value": f"{DEFS_STATE_MOUNT_PATH}/{DEFS_STATE_OVERRIDE_FILENAME}",
+            }
+        )
 
     # With multiple replicas the Service must only route traffic to pods whose gRPC
     # port is open. The Dagster gRPC server only binds its port after user code has

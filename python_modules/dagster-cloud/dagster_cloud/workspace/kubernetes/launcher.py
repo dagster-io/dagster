@@ -34,6 +34,8 @@ from dagster_cloud.constants import RESERVED_ENV_VAR_NAMES
 from dagster_cloud.execution.cloud_run_launcher.k8s import CloudK8sRunLauncher
 from dagster_cloud.execution.monitoring import CloudContainerResourceLimits
 from dagster_cloud.workspace.kubernetes.utils import (
+    SERVER_SPEC_VERSION_LABEL_KEY,
+    SERVER_SPEC_VERSION_V2,
     construct_code_location_deployment,
     construct_code_location_service,
     construct_defs_state_config_map,
@@ -50,6 +52,7 @@ from dagster_cloud.workspace.user_code_launcher import (
     ServerEndpoint,
     UserCodeLauncherEntry,
 )
+from dagster_cloud.workspace.user_code_launcher.user_code_launcher import DeploymentAndLocation
 from dagster_cloud.workspace.user_code_launcher.utils import (
     deterministic_label_for_location,
     get_code_server_port,
@@ -731,6 +734,78 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
 
     def get_server_create_timestamp(self, handle: K8sHandle) -> float | None:
         return handle.creation_timestamp
+
+    def supports_in_place_pin_reload(
+        self,
+        key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> bool:
+        """Fast-path the defs_state_info-only reload via gRPC ReloadCodeWithState.
+
+        Only safe when the running Deployment was created with v2 spec
+        (ConfigMap mount + DAGSTER_DEFS_STATE_INFO_OVERRIDE_PATH env var) so
+        that a platform-induced pod restart re-reads the current pin from
+        etcd, not from stale spec args. Legacy (pre-v2) Deployments stay on
+        destroy-and-recreate forever, or until the customer's next code push
+        naturally rolls them to v2.
+        """
+        metadata = desired_entry.code_location_deploy_data
+        container_context = self._resolve_container_context(metadata)
+        if not self._supports_defs_state_config_map(container_context, metadata):
+            return False
+        with self._grpc_servers_lock:
+            server = self._grpc_servers.get(key)
+        if not isinstance(server, DagsterCloudGrpcServer):
+            return False
+        labels = getattr(server.server_handle, "labels", None) or {}
+        return labels.get(SERVER_SPEC_VERSION_LABEL_KEY) == SERVER_SPEC_VERSION_V2
+
+    def _reload_pin_in_place(
+        self,
+        key: DeploymentAndLocation,
+        desired_entry: UserCodeLauncherEntry,
+    ) -> None:
+        """Write the ConfigMap first, then delegate to the base RPC path.
+
+        Order matters: if a pod restart races with the in-place reload, the
+        new pod mounts the *latest* ConfigMap contents and boots correct.
+        The base class advances ``_actual_entries`` only on RPC success
+        (user_code_launcher.py: ``_actual_entries[key] = desired_entry``
+        runs AFTER the gRPC reply); if the RPC fails, the cache does not
+        advance and the next reconcile tick retries. The ConfigMap being
+        ahead of in-memory state is the safety property — that's the whole
+        point.
+
+        The CM is written for the *running* incarnation (named from the
+        cached server handle), so the update targets exactly the Deployment
+        whose pod mounts it.
+
+        Known residual window: a brand-new pod mounts the CM fresh from etcd,
+        but a container restart *within* an existing pod may read the
+        pre-update projection for up to the kubelet sync period (~1 min)
+        after this write, booting with the previous pin while actual ==
+        desired. Closing it requires the server to report its live pin (e.g.
+        on heartbeat) so the reconciler can compare; tracked as a follow-up.
+        """
+        deployment_name, location_name = key
+        with self._grpc_servers_lock:
+            server = self._grpc_servers.get(key)
+        if not isinstance(server, DagsterCloudGrpcServer):
+            raise Exception(
+                f"No running server for {deployment_name}:{location_name}; cannot reload in place."
+            )
+        handle = server.server_handle
+        metadata = desired_entry.code_location_deploy_data
+        serialized = serialize_value(metadata.defs_state_info) if metadata.defs_state_info else ""
+        self._create_or_replace_defs_state_config_map(
+            deployment_name,
+            location_name,
+            handle.name,
+            handle.namespace,
+            serialized_defs_state_info=serialized,
+            server_timestamp=desired_entry.update_timestamp,
+        )
+        super()._reload_pin_in_place(key, desired_entry)
 
     def _remove_server_handle(self, server_handle: K8sHandle) -> None:
         # Since we track which servers to delete by listing the k8s deployments,
