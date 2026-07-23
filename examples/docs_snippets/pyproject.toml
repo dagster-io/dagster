@@ -42,7 +42,7 @@ full = [
     "syrupy",
     "xgboost",
     "apache-airflow<3.0.0; python_version < '3.12'",
-    "apache-airflow>=3.2; python_version >= '3.12'",
+    "apache-airflow>=3.3.0; python_version >= '3.12'",
     "pytest-httpserver",
 ]
 

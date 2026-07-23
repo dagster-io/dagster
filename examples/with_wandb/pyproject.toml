@@ -13,7 +13,7 @@ dependencies = [
     "skl2onnx",
     # 1.21.0 is the first release that ships cp314 manylinux wheels; the 1.17.0
     # sdist won't compile against gcc 14 / abseil headers on Python 3.14.
-    "onnx>=1.21.0",
+    "onnx>=1.22.0",
     "joblib",
     "torch",
     "torchvision",
