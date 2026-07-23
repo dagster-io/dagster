@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.13.15 (core) / 0.29.15 (libraries)
+
+### New
+
+- [dagster-snowflake] Added the `SnowflakeDbtProjectComponent` (Preview) for natively orchestrating dbt projects on Snowflake.
+
+### Documentation
+
+- Added documentation for the Dagster MCP server.
+
 ## 1.13.14 (core) / 0.29.14 (libraries)
 
 ### Bugfixes
