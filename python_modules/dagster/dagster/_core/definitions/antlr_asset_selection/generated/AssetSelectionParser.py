@@ -237,16 +237,16 @@ def serializedATN():
         6,
         1,
         6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
         3,
         6,
-        112,
+        109,
         8,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
         6,
         1,
         6,
@@ -322,12 +322,12 @@ def serializedATN():
         3,
         1,
         0,
+        29,
         30,
-        31,
         3,
         0,
-        27,
-        29,
+        26,
+        28,
         32,
         33,
         35,
@@ -951,9 +951,9 @@ def serializedATN():
         0,
         99,
         135,
-        5,
+        3,
+        14,
         7,
-        0,
         0,
         100,
         101,
@@ -986,7 +986,7 @@ def serializedATN():
         0,
         0,
         105,
-        135,
+        108,
         3,
         14,
         7,
@@ -994,55 +994,55 @@ def serializedATN():
         106,
         107,
         5,
-        23,
+        1,
         0,
         0,
         107,
-        108,
-        5,
-        8,
-        0,
-        0,
-        108,
-        111,
+        109,
         3,
         14,
         7,
         0,
-        109,
-        110,
-        5,
+        108,
+        106,
         1,
         0,
         0,
-        110,
-        112,
-        3,
-        14,
-        7,
         0,
-        111,
+        108,
         109,
         1,
         0,
         0,
         0,
-        111,
-        112,
-        1,
-        0,
-        0,
-        0,
-        112,
+        109,
         135,
         1,
         0,
         0,
         0,
+        110,
+        111,
+        5,
+        18,
+        0,
+        0,
+        111,
+        112,
+        5,
+        8,
+        0,
+        0,
+        112,
+        135,
+        3,
+        14,
+        7,
+        0,
         113,
         114,
         5,
-        18,
+        23,
         0,
         0,
         114,
@@ -1150,7 +1150,7 @@ def serializedATN():
         131,
         132,
         5,
-        29,
+        31,
         0,
         0,
         132,
@@ -1161,9 +1161,9 @@ def serializedATN():
         0,
         133,
         135,
-        3,
-        14,
+        5,
         7,
+        0,
         0,
         134,
         72,
@@ -1226,7 +1226,7 @@ def serializedATN():
         0,
         0,
         134,
-        106,
+        110,
         1,
         0,
         0,
@@ -1311,7 +1311,7 @@ def serializedATN():
         62,
         68,
         80,
-        111,
+        108,
         134,
     ]
 
@@ -1346,7 +1346,6 @@ class AssetSelectionParser(Parser):
         "'is'",
         "'code_location'",
         "'status'",
-        "'not_materialized_in_hours'",
         "'column'",
         "'table_name'",
         "'column_tag'",
@@ -1358,6 +1357,7 @@ class AssetSelectionParser(Parser):
         "'job'",
         "'sinks'",
         "'roots'",
+        "'not_materialized_in_hours'",
         "<INVALID>",
         "<INVALID>",
         "<INVALID>",
@@ -1385,7 +1385,6 @@ class AssetSelectionParser(Parser):
         "IS",
         "CODE_LOCATION",
         "STATUS",
-        "NOT_MATERIALIZED_IN_HOURS",
         "COLUMN",
         "TABLE_NAME",
         "COLUMN_TAG",
@@ -1397,6 +1396,7 @@ class AssetSelectionParser(Parser):
         "JOB",
         "SINKS",
         "ROOTS",
+        "NOT_MATERIALIZED_IN_HOURS",
         "QUOTED_STRING",
         "UNQUOTED_STRING",
         "UNQUOTED_WILDCARD_STRING",
@@ -1446,18 +1446,18 @@ class AssetSelectionParser(Parser):
     IS = 17
     CODE_LOCATION = 18
     STATUS = 19
-    NOT_MATERIALIZED_IN_HOURS = 20
-    COLUMN = 21
-    TABLE_NAME = 22
-    COLUMN_TAG = 23
-    CHANGED_IN_BRANCH = 24
-    PARTITIONS = 25
-    AUTOMATION_TYPE = 26
-    SENSOR = 27
-    SCHEDULE = 28
-    JOB = 29
-    SINKS = 30
-    ROOTS = 31
+    COLUMN = 20
+    TABLE_NAME = 21
+    COLUMN_TAG = 22
+    CHANGED_IN_BRANCH = 23
+    PARTITIONS = 24
+    AUTOMATION_TYPE = 25
+    SENSOR = 26
+    SCHEDULE = 27
+    JOB = 28
+    SINKS = 29
+    ROOTS = 30
+    NOT_MATERIALIZED_IN_HOURS = 31
     QUOTED_STRING = 32
     UNQUOTED_STRING = 33
     UNQUOTED_WILDCARD_STRING = 34
@@ -1987,13 +1987,13 @@ class AssetSelectionParser(Parser):
             self.state = 59
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]:
+            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]:
                 localctx = AssetSelectionParser.AttributeExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 49
                 self.attributeExpr()
                 pass
-            elif token in [30, 31]:
+            elif token in [29, 30]:
                 localctx = AssetSelectionParser.FunctionCallExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 50
@@ -2172,7 +2172,7 @@ class AssetSelectionParser(Parser):
             self.enterOuterAlt(localctx, 1)
             self.state = 70
             _la = self._input.LA(1)
-            if not (_la == 30 or _la == 31):
+            if not (_la == 29 or _la == 30):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -2838,123 +2838,123 @@ class AssetSelectionParser(Parser):
                 self.value()
                 pass
             elif token in [20]:
-                localctx = AssetSelectionParser.NotMaterializedInHoursExprContext(self, localctx)
+                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 8)
                 self.state = 97
-                self.match(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS)
+                self.match(AssetSelectionParser.COLUMN)
                 self.state = 98
                 self.match(AssetSelectionParser.COLON)
                 self.state = 99
-                self.match(AssetSelectionParser.DIGITS)
+                self.value()
                 pass
             elif token in [21]:
-                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 9)
                 self.state = 100
-                self.match(AssetSelectionParser.COLUMN)
+                self.match(AssetSelectionParser.TABLE_NAME)
                 self.state = 101
                 self.match(AssetSelectionParser.COLON)
                 self.state = 102
                 self.value()
                 pass
             elif token in [22]:
-                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 10)
                 self.state = 103
-                self.match(AssetSelectionParser.TABLE_NAME)
+                self.match(AssetSelectionParser.COLUMN_TAG)
                 self.state = 104
                 self.match(AssetSelectionParser.COLON)
                 self.state = 105
                 self.value()
-                pass
-            elif token in [23]:
-                localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 11)
-                self.state = 106
-                self.match(AssetSelectionParser.COLUMN_TAG)
-                self.state = 107
-                self.match(AssetSelectionParser.COLON)
                 self.state = 108
-                self.value()
-                self.state = 111
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input, 7, self._ctx)
                 if la_ == 1:
-                    self.state = 109
+                    self.state = 106
                     self.match(AssetSelectionParser.EQUAL)
-                    self.state = 110
+                    self.state = 107
                     self.value()
 
                 pass
             elif token in [18]:
                 localctx = AssetSelectionParser.CodeLocationAttributeExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 11)
+                self.state = 110
+                self.match(AssetSelectionParser.CODE_LOCATION)
+                self.state = 111
+                self.match(AssetSelectionParser.COLON)
+                self.state = 112
+                self.value()
+                pass
+            elif token in [23]:
+                localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 12)
                 self.state = 113
-                self.match(AssetSelectionParser.CODE_LOCATION)
+                self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
                 self.state = 114
                 self.match(AssetSelectionParser.COLON)
                 self.state = 115
                 self.value()
                 pass
             elif token in [24]:
-                localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.PartitionsAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 13)
                 self.state = 116
-                self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
+                self.match(AssetSelectionParser.PARTITIONS)
                 self.state = 117
                 self.match(AssetSelectionParser.COLON)
                 self.state = 118
                 self.value()
                 pass
             elif token in [25]:
-                localctx = AssetSelectionParser.PartitionsAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.AutomationTypeAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 14)
                 self.state = 119
-                self.match(AssetSelectionParser.PARTITIONS)
+                self.match(AssetSelectionParser.AUTOMATION_TYPE)
                 self.state = 120
                 self.match(AssetSelectionParser.COLON)
                 self.state = 121
                 self.value()
                 pass
             elif token in [26]:
-                localctx = AssetSelectionParser.AutomationTypeAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.SensorAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 15)
                 self.state = 122
-                self.match(AssetSelectionParser.AUTOMATION_TYPE)
+                self.match(AssetSelectionParser.SENSOR)
                 self.state = 123
                 self.match(AssetSelectionParser.COLON)
                 self.state = 124
                 self.value()
                 pass
             elif token in [27]:
-                localctx = AssetSelectionParser.SensorAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.ScheduleAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 16)
                 self.state = 125
-                self.match(AssetSelectionParser.SENSOR)
+                self.match(AssetSelectionParser.SCHEDULE)
                 self.state = 126
                 self.match(AssetSelectionParser.COLON)
                 self.state = 127
                 self.value()
                 pass
             elif token in [28]:
-                localctx = AssetSelectionParser.ScheduleAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.JobAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 17)
                 self.state = 128
-                self.match(AssetSelectionParser.SCHEDULE)
+                self.match(AssetSelectionParser.JOB)
                 self.state = 129
                 self.match(AssetSelectionParser.COLON)
                 self.state = 130
                 self.value()
                 pass
-            elif token in [29]:
-                localctx = AssetSelectionParser.JobAttributeExprContext(self, localctx)
+            elif token in [31]:
+                localctx = AssetSelectionParser.NotMaterializedInHoursExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 18)
                 self.state = 131
-                self.match(AssetSelectionParser.JOB)
+                self.match(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS)
                 self.state = 132
                 self.match(AssetSelectionParser.COLON)
                 self.state = 133
-                self.value()
+                self.match(AssetSelectionParser.DIGITS)
                 pass
             else:
                 raise NoViableAltException(self)
@@ -3018,7 +3018,7 @@ class AssetSelectionParser(Parser):
             self.enterOuterAlt(localctx, 1)
             self.state = 136
             _la = self._input.LA(1)
-            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 48184164352) != 0):
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 47714402304) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)

@@ -1,10 +1,10 @@
 import {gql, useQuery} from '../../apollo-client';
-import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
-import {AssetKey} from '../types';
 import {
   AssetCheckPartitionDetailQuery,
   AssetCheckPartitionDetailQueryVariables,
 } from './types/useAssetCheckPartitionDetail.types';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
+import {AssetKey} from '../types';
 
 export function useAssetCheckPartitionDetail(
   assetKey: AssetKey | null,

@@ -30,18 +30,18 @@ export class AssetSelectionParser extends antlr.Parser {
   public static readonly IS = 17;
   public static readonly CODE_LOCATION = 18;
   public static readonly STATUS = 19;
-  public static readonly NOT_MATERIALIZED_IN_HOURS = 20;
-  public static readonly COLUMN = 21;
-  public static readonly TABLE_NAME = 22;
-  public static readonly COLUMN_TAG = 23;
-  public static readonly CHANGED_IN_BRANCH = 24;
-  public static readonly PARTITIONS = 25;
-  public static readonly AUTOMATION_TYPE = 26;
-  public static readonly SENSOR = 27;
-  public static readonly SCHEDULE = 28;
-  public static readonly JOB = 29;
-  public static readonly SINKS = 30;
-  public static readonly ROOTS = 31;
+  public static readonly COLUMN = 20;
+  public static readonly TABLE_NAME = 21;
+  public static readonly COLUMN_TAG = 22;
+  public static readonly CHANGED_IN_BRANCH = 23;
+  public static readonly PARTITIONS = 24;
+  public static readonly AUTOMATION_TYPE = 25;
+  public static readonly SENSOR = 26;
+  public static readonly SCHEDULE = 27;
+  public static readonly JOB = 28;
+  public static readonly SINKS = 29;
+  public static readonly ROOTS = 30;
+  public static readonly NOT_MATERIALIZED_IN_HOURS = 31;
   public static readonly QUOTED_STRING = 32;
   public static readonly UNQUOTED_STRING = 33;
   public static readonly UNQUOTED_WILDCARD_STRING = 34;
@@ -78,7 +78,6 @@ export class AssetSelectionParser extends antlr.Parser {
     "'is'",
     "'code_location'",
     "'status'",
-    "'not_materialized_in_hours'",
     "'column'",
     "'table_name'",
     "'column_tag'",
@@ -90,6 +89,7 @@ export class AssetSelectionParser extends antlr.Parser {
     "'job'",
     "'sinks'",
     "'roots'",
+    "'not_materialized_in_hours'",
     null,
     null,
     null,
@@ -117,7 +117,6 @@ export class AssetSelectionParser extends antlr.Parser {
     'IS',
     'CODE_LOCATION',
     'STATUS',
-    'NOT_MATERIALIZED_IN_HOURS',
     'COLUMN',
     'TABLE_NAME',
     'COLUMN_TAG',
@@ -129,6 +128,7 @@ export class AssetSelectionParser extends antlr.Parser {
     'JOB',
     'SINKS',
     'ROOTS',
+    'NOT_MATERIALIZED_IN_HOURS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
     'UNQUOTED_WILDCARD_STRING',
@@ -378,7 +378,6 @@ export class AssetSelectionParser extends antlr.Parser {
         case AssetSelectionParser.IS:
         case AssetSelectionParser.CODE_LOCATION:
         case AssetSelectionParser.STATUS:
-        case AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS:
         case AssetSelectionParser.COLUMN:
         case AssetSelectionParser.TABLE_NAME:
         case AssetSelectionParser.COLUMN_TAG:
@@ -388,6 +387,7 @@ export class AssetSelectionParser extends antlr.Parser {
         case AssetSelectionParser.SENSOR:
         case AssetSelectionParser.SCHEDULE:
         case AssetSelectionParser.JOB:
+        case AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS:
           localContext = new AttributeExpressionContext(localContext);
           this.enterOuterAlt(localContext, 1);
           {
@@ -509,7 +509,7 @@ export class AssetSelectionParser extends antlr.Parser {
       {
         this.state = 70;
         _la = this.tokenStream.LA(1);
-        if (!(_la === 30 || _la === 31)) {
+        if (!(_la === 29 || _la === 30)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -631,60 +631,48 @@ export class AssetSelectionParser extends antlr.Parser {
             this.value();
           }
           break;
-        case AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS:
-          localContext = new NotMaterializedInHoursExprContext(localContext);
+        case AssetSelectionParser.COLUMN:
+          localContext = new ColumnAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 8);
           {
             this.state = 97;
-            this.match(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS);
+            this.match(AssetSelectionParser.COLUMN);
             this.state = 98;
             this.match(AssetSelectionParser.COLON);
             this.state = 99;
-            this.match(AssetSelectionParser.DIGITS);
+            this.value();
           }
           break;
-        case AssetSelectionParser.COLUMN:
-          localContext = new ColumnAttributeExprContext(localContext);
+        case AssetSelectionParser.TABLE_NAME:
+          localContext = new TableNameAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 9);
           {
             this.state = 100;
-            this.match(AssetSelectionParser.COLUMN);
+            this.match(AssetSelectionParser.TABLE_NAME);
             this.state = 101;
             this.match(AssetSelectionParser.COLON);
             this.state = 102;
             this.value();
           }
           break;
-        case AssetSelectionParser.TABLE_NAME:
-          localContext = new TableNameAttributeExprContext(localContext);
+        case AssetSelectionParser.COLUMN_TAG:
+          localContext = new ColumnTagAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 10);
           {
             this.state = 103;
-            this.match(AssetSelectionParser.TABLE_NAME);
+            this.match(AssetSelectionParser.COLUMN_TAG);
             this.state = 104;
             this.match(AssetSelectionParser.COLON);
             this.state = 105;
             this.value();
-          }
-          break;
-        case AssetSelectionParser.COLUMN_TAG:
-          localContext = new ColumnTagAttributeExprContext(localContext);
-          this.enterOuterAlt(localContext, 11);
-          {
-            this.state = 106;
-            this.match(AssetSelectionParser.COLUMN_TAG);
-            this.state = 107;
-            this.match(AssetSelectionParser.COLON);
             this.state = 108;
-            this.value();
-            this.state = 111;
             this.errorHandler.sync(this);
             switch (this.interpreter.adaptivePredict(this.tokenStream, 7, this.context)) {
               case 1:
                 {
-                  this.state = 109;
+                  this.state = 106;
                   this.match(AssetSelectionParser.EQUAL);
-                  this.state = 110;
+                  this.state = 107;
                   this.value();
                 }
                 break;
@@ -693,86 +681,98 @@ export class AssetSelectionParser extends antlr.Parser {
           break;
         case AssetSelectionParser.CODE_LOCATION:
           localContext = new CodeLocationAttributeExprContext(localContext);
+          this.enterOuterAlt(localContext, 11);
+          {
+            this.state = 110;
+            this.match(AssetSelectionParser.CODE_LOCATION);
+            this.state = 111;
+            this.match(AssetSelectionParser.COLON);
+            this.state = 112;
+            this.value();
+          }
+          break;
+        case AssetSelectionParser.CHANGED_IN_BRANCH:
+          localContext = new ChangedInBranchAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 12);
           {
             this.state = 113;
-            this.match(AssetSelectionParser.CODE_LOCATION);
+            this.match(AssetSelectionParser.CHANGED_IN_BRANCH);
             this.state = 114;
             this.match(AssetSelectionParser.COLON);
             this.state = 115;
             this.value();
           }
           break;
-        case AssetSelectionParser.CHANGED_IN_BRANCH:
-          localContext = new ChangedInBranchAttributeExprContext(localContext);
+        case AssetSelectionParser.PARTITIONS:
+          localContext = new PartitionsAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 13);
           {
             this.state = 116;
-            this.match(AssetSelectionParser.CHANGED_IN_BRANCH);
+            this.match(AssetSelectionParser.PARTITIONS);
             this.state = 117;
             this.match(AssetSelectionParser.COLON);
             this.state = 118;
             this.value();
           }
           break;
-        case AssetSelectionParser.PARTITIONS:
-          localContext = new PartitionsAttributeExprContext(localContext);
+        case AssetSelectionParser.AUTOMATION_TYPE:
+          localContext = new AutomationTypeAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 14);
           {
             this.state = 119;
-            this.match(AssetSelectionParser.PARTITIONS);
+            this.match(AssetSelectionParser.AUTOMATION_TYPE);
             this.state = 120;
             this.match(AssetSelectionParser.COLON);
             this.state = 121;
             this.value();
           }
           break;
-        case AssetSelectionParser.AUTOMATION_TYPE:
-          localContext = new AutomationTypeAttributeExprContext(localContext);
+        case AssetSelectionParser.SENSOR:
+          localContext = new SensorAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 15);
           {
             this.state = 122;
-            this.match(AssetSelectionParser.AUTOMATION_TYPE);
+            this.match(AssetSelectionParser.SENSOR);
             this.state = 123;
             this.match(AssetSelectionParser.COLON);
             this.state = 124;
             this.value();
           }
           break;
-        case AssetSelectionParser.SENSOR:
-          localContext = new SensorAttributeExprContext(localContext);
+        case AssetSelectionParser.SCHEDULE:
+          localContext = new ScheduleAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 16);
           {
             this.state = 125;
-            this.match(AssetSelectionParser.SENSOR);
+            this.match(AssetSelectionParser.SCHEDULE);
             this.state = 126;
             this.match(AssetSelectionParser.COLON);
             this.state = 127;
             this.value();
           }
           break;
-        case AssetSelectionParser.SCHEDULE:
-          localContext = new ScheduleAttributeExprContext(localContext);
+        case AssetSelectionParser.JOB:
+          localContext = new JobAttributeExprContext(localContext);
           this.enterOuterAlt(localContext, 17);
           {
             this.state = 128;
-            this.match(AssetSelectionParser.SCHEDULE);
+            this.match(AssetSelectionParser.JOB);
             this.state = 129;
             this.match(AssetSelectionParser.COLON);
             this.state = 130;
             this.value();
           }
           break;
-        case AssetSelectionParser.JOB:
-          localContext = new JobAttributeExprContext(localContext);
+        case AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS:
+          localContext = new NotMaterializedInHoursExprContext(localContext);
           this.enterOuterAlt(localContext, 18);
           {
             this.state = 131;
-            this.match(AssetSelectionParser.JOB);
+            this.match(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS);
             this.state = 132;
             this.match(AssetSelectionParser.COLON);
             this.state = 133;
-            this.value();
+            this.match(AssetSelectionParser.DIGITS);
           }
           break;
         default:
@@ -799,7 +799,7 @@ export class AssetSelectionParser extends antlr.Parser {
       {
         this.state = 136;
         _la = this.tokenStream.LA(1);
-        if (!(((_la - 27) & ~0x1f) === 0 && ((1 << (_la - 27)) & 359) !== 0)) {
+        if (!(((_la - 26) & ~0x1f) === 0 && ((1 << (_la - 26)) & 711) !== 0)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -876,10 +876,10 @@ export class AssetSelectionParser extends antlr.Parser {
     2, 60, 8, 2, 1, 3, 3, 3, 63, 8, 3, 1, 3, 1, 3, 1, 4, 1, 4, 3, 4, 69, 8, 4, 1, 5, 1, 5, 1, 6, 1,
     6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 81, 8, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
     1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
-    1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 112, 8, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
+    1, 6, 1, 6, 1, 6, 3, 6, 109, 8, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6,
     1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 3, 6, 135,
-    8, 6, 1, 7, 1, 7, 1, 8, 1, 8, 1, 8, 0, 1, 2, 9, 0, 2, 4, 6, 8, 10, 12, 14, 16, 0, 3, 1, 0, 30,
-    31, 3, 0, 27, 29, 32, 33, 35, 35, 1, 0, 32, 34, 161, 0, 18, 1, 0, 0, 0, 2, 36, 1, 0, 0, 0, 4,
+    8, 6, 1, 7, 1, 7, 1, 8, 1, 8, 1, 8, 0, 1, 2, 9, 0, 2, 4, 6, 8, 10, 12, 14, 16, 0, 3, 1, 0, 29,
+    30, 3, 0, 26, 28, 32, 33, 35, 35, 1, 0, 32, 34, 161, 0, 18, 1, 0, 0, 0, 2, 36, 1, 0, 0, 0, 4,
     59, 1, 0, 0, 0, 6, 62, 1, 0, 0, 0, 8, 66, 1, 0, 0, 0, 10, 70, 1, 0, 0, 0, 12, 134, 1, 0, 0, 0,
     14, 136, 1, 0, 0, 0, 16, 138, 1, 0, 0, 0, 18, 19, 3, 2, 1, 0, 19, 20, 5, 0, 0, 1, 20, 1, 1, 0,
     0, 0, 21, 22, 6, 1, -1, 0, 22, 37, 3, 4, 2, 0, 23, 24, 3, 6, 3, 0, 24, 25, 3, 4, 2, 0, 25, 26,
@@ -901,21 +901,21 @@ export class AssetSelectionParser extends antlr.Parser {
     14, 7, 0, 85, 86, 5, 14, 0, 0, 86, 87, 5, 8, 0, 0, 87, 135, 3, 14, 7, 0, 88, 89, 5, 16, 0, 0,
     89, 90, 5, 8, 0, 0, 90, 135, 3, 14, 7, 0, 91, 92, 5, 17, 0, 0, 92, 93, 5, 8, 0, 0, 93, 135, 3,
     14, 7, 0, 94, 95, 5, 19, 0, 0, 95, 96, 5, 8, 0, 0, 96, 135, 3, 14, 7, 0, 97, 98, 5, 20, 0, 0,
-    98, 99, 5, 8, 0, 0, 99, 135, 5, 7, 0, 0, 100, 101, 5, 21, 0, 0, 101, 102, 5, 8, 0, 0, 102, 135,
-    3, 14, 7, 0, 103, 104, 5, 22, 0, 0, 104, 105, 5, 8, 0, 0, 105, 135, 3, 14, 7, 0, 106, 107, 5,
-    23, 0, 0, 107, 108, 5, 8, 0, 0, 108, 111, 3, 14, 7, 0, 109, 110, 5, 1, 0, 0, 110, 112, 3, 14, 7,
-    0, 111, 109, 1, 0, 0, 0, 111, 112, 1, 0, 0, 0, 112, 135, 1, 0, 0, 0, 113, 114, 5, 18, 0, 0, 114,
+    98, 99, 5, 8, 0, 0, 99, 135, 3, 14, 7, 0, 100, 101, 5, 21, 0, 0, 101, 102, 5, 8, 0, 0, 102, 135,
+    3, 14, 7, 0, 103, 104, 5, 22, 0, 0, 104, 105, 5, 8, 0, 0, 105, 108, 3, 14, 7, 0, 106, 107, 5, 1,
+    0, 0, 107, 109, 3, 14, 7, 0, 108, 106, 1, 0, 0, 0, 108, 109, 1, 0, 0, 0, 109, 135, 1, 0, 0, 0,
+    110, 111, 5, 18, 0, 0, 111, 112, 5, 8, 0, 0, 112, 135, 3, 14, 7, 0, 113, 114, 5, 23, 0, 0, 114,
     115, 5, 8, 0, 0, 115, 135, 3, 14, 7, 0, 116, 117, 5, 24, 0, 0, 117, 118, 5, 8, 0, 0, 118, 135,
     3, 14, 7, 0, 119, 120, 5, 25, 0, 0, 120, 121, 5, 8, 0, 0, 121, 135, 3, 14, 7, 0, 122, 123, 5,
     26, 0, 0, 123, 124, 5, 8, 0, 0, 124, 135, 3, 14, 7, 0, 125, 126, 5, 27, 0, 0, 126, 127, 5, 8, 0,
     0, 127, 135, 3, 14, 7, 0, 128, 129, 5, 28, 0, 0, 129, 130, 5, 8, 0, 0, 130, 135, 3, 14, 7, 0,
-    131, 132, 5, 29, 0, 0, 132, 133, 5, 8, 0, 0, 133, 135, 3, 14, 7, 0, 134, 72, 1, 0, 0, 0, 134,
-    75, 1, 0, 0, 0, 134, 82, 1, 0, 0, 0, 134, 85, 1, 0, 0, 0, 134, 88, 1, 0, 0, 0, 134, 91, 1, 0, 0,
-    0, 134, 94, 1, 0, 0, 0, 134, 97, 1, 0, 0, 0, 134, 100, 1, 0, 0, 0, 134, 103, 1, 0, 0, 0, 134,
-    106, 1, 0, 0, 0, 134, 113, 1, 0, 0, 0, 134, 116, 1, 0, 0, 0, 134, 119, 1, 0, 0, 0, 134, 122, 1,
-    0, 0, 0, 134, 125, 1, 0, 0, 0, 134, 128, 1, 0, 0, 0, 134, 131, 1, 0, 0, 0, 135, 13, 1, 0, 0, 0,
-    136, 137, 7, 1, 0, 0, 137, 15, 1, 0, 0, 0, 138, 139, 7, 2, 0, 0, 139, 17, 1, 0, 0, 0, 9, 36, 44,
-    46, 59, 62, 68, 80, 111, 134,
+    131, 132, 5, 31, 0, 0, 132, 133, 5, 8, 0, 0, 133, 135, 5, 7, 0, 0, 134, 72, 1, 0, 0, 0, 134, 75,
+    1, 0, 0, 0, 134, 82, 1, 0, 0, 0, 134, 85, 1, 0, 0, 0, 134, 88, 1, 0, 0, 0, 134, 91, 1, 0, 0, 0,
+    134, 94, 1, 0, 0, 0, 134, 97, 1, 0, 0, 0, 134, 100, 1, 0, 0, 0, 134, 103, 1, 0, 0, 0, 134, 110,
+    1, 0, 0, 0, 134, 113, 1, 0, 0, 0, 134, 116, 1, 0, 0, 0, 134, 119, 1, 0, 0, 0, 134, 122, 1, 0, 0,
+    0, 134, 125, 1, 0, 0, 0, 134, 128, 1, 0, 0, 0, 134, 131, 1, 0, 0, 0, 135, 13, 1, 0, 0, 0, 136,
+    137, 7, 1, 0, 0, 137, 15, 1, 0, 0, 0, 138, 139, 7, 2, 0, 0, 139, 17, 1, 0, 0, 0, 9, 36, 44, 46,
+    59, 62, 68, 80, 108, 134,
   ];
 
   private static __ATN: antlr.ATN;

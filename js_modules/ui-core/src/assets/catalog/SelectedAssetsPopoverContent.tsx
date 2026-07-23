@@ -3,9 +3,9 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
 import {Grouped} from './AssetCatalogV2VirtualizedTable';
+import styles from './SelectedAssetsPopoverContext.module.css';
 import {tokenForAssetKey, tokenToAssetKey} from '../../asset-graph/Utils';
 import {AssetHealthSummary} from '../AssetHealthSummary';
-import styles from './SelectedAssetsPopoverContext.module.css';
 
 type Props<T extends string> = {
   checkedDisplayKeys: Set<string>;

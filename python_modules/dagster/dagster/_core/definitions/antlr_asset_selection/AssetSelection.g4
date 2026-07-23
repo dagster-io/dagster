@@ -34,7 +34,6 @@ attributeExpr:
 	| KIND COLON value						# KindAttributeExpr
 	| IS COLON value						# IsAttributeExpr
 	| STATUS COLON value					# StatusAttributeExpr
-	| NOT_MATERIALIZED_IN_HOURS COLON DIGITS	# NotMaterializedInHoursExpr
 	| COLUMN COLON value					# ColumnAttributeExpr
 	| TABLE_NAME COLON value				# TableNameAttributeExpr
 	| COLUMN_TAG COLON value (EQUAL value)?	# ColumnTagAttributeExpr
@@ -44,7 +43,8 @@ attributeExpr:
 	| AUTOMATION_TYPE COLON value			# AutomationTypeAttributeExpr
 	| SENSOR COLON value					# SensorAttributeExpr
 	| SCHEDULE COLON value					# ScheduleAttributeExpr
-	| JOB COLON value						# JobAttributeExpr;
+	| JOB COLON value						# JobAttributeExpr
+	| NOT_MATERIALIZED_IN_HOURS COLON DIGITS	# NotMaterializedInHoursExpr;
 
 // Define EQUAL token for tag:value=value syntax
 EQUAL: '=';
@@ -82,7 +82,6 @@ KIND: 'kind';
 IS: 'is';
 CODE_LOCATION: 'code_location';
 STATUS: 'status';
-NOT_MATERIALIZED_IN_HOURS: 'not_materialized_in_hours';
 COLUMN: 'column';
 TABLE_NAME: 'table_name';
 COLUMN_TAG: 'column_tag';
@@ -95,6 +94,10 @@ JOB: 'job';
 // Function names
 SINKS: 'sinks';
 ROOTS: 'roots';
+
+// Declared last among keyword tokens to avoid renumbering existing tokens, but it must
+// still precede UNQUOTED_STRING/UNQUOTED_WILDCARD_STRING so it wins the lexer match.
+NOT_MATERIALIZED_IN_HOURS: 'not_materialized_in_hours';
 
 // String tokens
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
