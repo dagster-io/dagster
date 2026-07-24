@@ -1,4 +1,4 @@
-// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/robert.espinoza/Projects/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode} from 'antlr4ng';
 
@@ -34,6 +34,7 @@ import {AutomationTypeAttributeExprContext} from './AssetSelectionParser.js';
 import {SensorAttributeExprContext} from './AssetSelectionParser.js';
 import {ScheduleAttributeExprContext} from './AssetSelectionParser.js';
 import {JobAttributeExprContext} from './AssetSelectionParser.js';
+import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -418,6 +419,18 @@ export class AssetSelectionListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitJobAttributeExpr?: (ctx: JobAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => void;
   /**
    * Enter a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree

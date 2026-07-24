@@ -1,9 +1,9 @@
 import {useMemo} from 'react';
 
 import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
+import {AssetKey} from '../types';
 import {GetEvaluationsQuery, GetEvaluationsQueryVariables} from './types/GetEvaluationsQuery.types';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {AssetKey} from '../types';
 
 export const PAGE_SIZE = 30;
 

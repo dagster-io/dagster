@@ -203,12 +203,22 @@ export const createProvider = <
   primaryAttributeKey,
   attributesMap,
   functions = ['sinks', 'roots'],
+  unquotedAttributes,
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
   primaryAttributeKey: TPrimaryAttributeKey;
   attributesMap: TAttributeMap;
   functions?: Functions;
+  // Attributes whose values must be inserted without surrounding double quotes, e.g.
+  // numeric attributes like `not_materialized_in_hours` whose grammar rule expects bare
+  // digits (`not_materialized_in_hours:1`, not `not_materialized_in_hours:"1"`).
+  unquotedAttributes?: Array<keyof TAttributeMap>;
 }): Omit<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
+  const unquotedAttributeSet = new Set<string>(
+    (unquotedAttributes ?? []).map((attr) => attr as string),
+  );
+  const shouldQuoteAttribute = (attribute: keyof TAttributeMap | string) =>
+    !unquotedAttributeSet.has(attribute as string);
   function doesValueIncludeQuery({
     value,
     query,
@@ -262,9 +272,11 @@ export const createProvider = <
   function createAttributeValueSuggestion({
     value,
     textCallback,
+    quote = true,
   }: {
     value: TAttributeMap[keyof TAttributeMap][0];
     textCallback?: (text: string) => string;
+    quote?: boolean;
   }) {
     if (typeof value !== 'string') {
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
@@ -280,8 +292,9 @@ export const createProvider = <
     if (value === '') {
       return nullSuggestion({textCallback});
     }
+    const valueText = quote ? `"${value}"` : value;
     return {
-      text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
+      text: textCallback ? textCallback(valueText) : valueText,
       jsx: <SuggestionJSXBase label={<MiddleTruncate text={value} />} />,
       trailingSpace: true,
     };
@@ -360,7 +373,9 @@ export const createProvider = <
         valueText = value.key;
       }
     } else {
-      text = `${attribute as string}:"${value}"`;
+      text = shouldQuoteAttribute(attribute)
+        ? `${attribute as string}:"${value}"`
+        : `${attribute as string}:${value}`;
       valueText = value;
     }
     return {
@@ -403,6 +418,7 @@ export const createProvider = <
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
+      const quote = shouldQuoteAttribute(attribute);
 
       const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
       const results = values
@@ -417,7 +433,7 @@ export const createProvider = <
               }
               return doesValueIncludeQuery({value, query});
             },
-            (value) => createAttributeValueSuggestion({value, textCallback}),
+            (value) => createAttributeValueSuggestion({value, textCallback, quote}),
             MAX_RESULTS_PER_ATTRIBUTE,
           )
         : [];

@@ -24,6 +24,7 @@ from dagster._core.definitions.asset_selection import (
     KeyPrefixesAssetSelection,
     KeysAssetSelection,
     KeyWildCardAssetSelection,
+    NotMaterializedInHoursAssetSelection,
     OrAssetSelection,
     ParentSourcesAssetSelection,
     RequiredNeighborsAssetSelection,
@@ -1179,6 +1180,21 @@ def test_status() -> None:
     selection = StatusAssetSelection(selected_status="healthy")
 
     # But not resolved.
+    with pytest.raises(NotImplementedError):
+        selection.resolve([my_asset])
+
+
+def test_not_materialized_in_hours() -> None:
+    @dg.asset
+    def my_asset(): ...
+
+    # Selection can be instantiated.
+    selection = NotMaterializedInHoursAssetSelection(hours=24)
+
+    # It round-trips through its string form.
+    assert selection.to_selection_str() == "not_materialized_in_hours:24"
+
+    # But it cannot be resolved against an asset graph alone.
     with pytest.raises(NotImplementedError):
         selection.resolve([my_asset])
 

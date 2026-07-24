@@ -5,7 +5,7 @@ import {
   AssetInstigatorsQuery,
   AssetInstigatorsQueryVariables,
 } from './types/useAssetGraphSupplementaryData.types';
-import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
+import {useAssetsHealthDataWithoutGateCheck} from '../../asset-data/AssetHealthDataProvider';
 import {AssetHealthFragment} from '../../asset-data/types/AssetHealthDataProvider.types';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {parseExpression} from '../../asset-selection/AssetSelectionSupplementaryDataVisitor';
@@ -30,7 +30,20 @@ export const useAssetGraphSupplementaryData = (
   }, [selection]);
 
   const needsAssetHealthData = useMemo(
-    () => parsedFilters.some((filter) => filter.field === 'status'),
+    () =>
+      parsedFilters.some(
+        (filter) => filter.field === 'status' || filter.field === 'not_materialized_in_hours',
+      ),
+    [parsedFilters],
+  );
+
+  // The set of `not_materialized_in_hours:N` windows present in the selection. Each
+  // distinct N produces its own supplementary-data bucket.
+  const notMaterializedHoursValues = useMemo(
+    () =>
+      parsedFilters
+        .filter((filter) => filter.field === 'not_materialized_in_hours')
+        .map((filter) => filter.value),
     [parsedFilters],
   );
 
@@ -47,7 +60,7 @@ export const useAssetGraphSupplementaryData = (
 
   const assetKeys = useMemo(() => nodes.map((node) => node.assetKey), [nodes]);
 
-  const {liveDataByNode} = useAssetsHealthData({
+  const {liveDataByNode} = useAssetsHealthDataWithoutGateCheck({
     assetKeys,
     thread: 'AssetGraphSupplementaryData',
     blockTrace: false,
@@ -116,12 +129,46 @@ export const useAssetGraphSupplementaryData = (
     return buildAutomationTypeSupplementaryData(instigatorsData, nodes);
   }, [instigatorsData, nodes, automationLoading, needsAutomationData]);
 
+  const assetsByNotMaterializedInHours = useMemo(() => {
+    if (healthLoading || notMaterializedHoursValues.length === 0) {
+      return emptyObject;
+    }
+    // `latestMaterializationTimestamp` is the time of the last *successful*
+    // materialization in epoch milliseconds (the backend multiplies by 1000 because
+    // the FE prefers milliseconds); a materialization event is only emitted on success.
+    // An asset is "not materialized in N hours" if it has never materialized (null) or
+    // its last success predates the cutoff.
+    const nowMs = Date.now();
+    const liveDataValues = Object.values(liveDataByNode);
+    return notMaterializedHoursValues.reduce(
+      (acc, hoursStr) => {
+        const hours = parseInt(hoursStr, 10);
+        if (Number.isNaN(hours)) {
+          return acc;
+        }
+        const cutoffMs = nowMs - hours * 60 * 60 * 1000;
+        const supplementaryDataKey = getSupplementaryDataKey({
+          field: 'not_materialized_in_hours',
+          value: hoursStr,
+        });
+        acc[supplementaryDataKey] = liveDataValues
+          .filter((liveData) => {
+            const ts = liveData.latestMaterializationTimestamp;
+            return ts === null || ts === undefined || ts < cutoffMs;
+          })
+          .map((liveData) => liveData.key);
+        return acc;
+      },
+      {} as Record<string, AssetKey[]>,
+    );
+  }, [liveDataByNode, healthLoading, notMaterializedHoursValues]);
+
   const mergedData = useMemo(() => {
     if (loading) {
       return emptyObject;
     }
-    return {...assetsByStatus, ...assetsByAutomationType};
-  }, [loading, assetsByStatus, assetsByAutomationType]);
+    return {...assetsByStatus, ...assetsByAutomationType, ...assetsByNotMaterializedInHours};
+  }, [loading, assetsByStatus, assetsByAutomationType, assetsByNotMaterializedInHours]);
 
   const data = useStableReferenceByHash(mergedData);
 

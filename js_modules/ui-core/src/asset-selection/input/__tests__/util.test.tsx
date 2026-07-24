@@ -84,6 +84,7 @@ describe('getAttributesMap', () => {
       sensor: [],
       schedule: [],
       job: ['my_job'],
+      not_materialized_in_hours: ['1', '6', '12', '24', '48', '72', '168'],
     });
   });
 
@@ -125,6 +126,7 @@ describe('getAttributesMap', () => {
       sensor: [],
       schedule: [],
       job: [],
+      not_materialized_in_hours: ['1', '6', '12', '24', '48', '72', '168'],
       status: [
         AssetHealthStatus.HEALTHY,
         AssetHealthStatus.DEGRADED,

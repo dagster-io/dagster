@@ -108,6 +108,9 @@ export const getAttributesMap = (
     sensor: (opts?.sensorNames ?? []).sort(),
     schedule: (opts?.scheduleNames ?? []).sort(),
     job: jobNames,
+    // Numeric (hours) attribute -- these are suggested example windows, not an
+    // enumeration of valid values; any positive integer is accepted.
+    not_materialized_in_hours: ['1', '6', '12', '24', '48', '72', '168'],
   };
   if (assetHealthEnabled()) {
     const statuses = [
@@ -147,6 +150,7 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   schedule: 'schedule',
   job: 'job',
   is: 'flag',
+  not_materialized_in_hours: 'history',
 };
 
 export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(
