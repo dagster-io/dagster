@@ -11,6 +11,7 @@ from dagster_dbt.core.resource import DbtCliInvocation
 from dagster_dbt_tests.dbt_projects import (
     test_asset_checks_path,
     test_asset_key_exceptions_path,
+    test_asset_key_prefix_path,
     test_dagster_dbt_mixed_freshness_path,
     test_dbt_alias_path,
     test_dbt_functions_path,
@@ -113,6 +114,11 @@ def test_asset_checks_manifest_fixture() -> dict[str, Any]:
 @pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
 def test_asset_key_exceptions_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_asset_key_exceptions_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_asset_key_prefix_manifest", scope="session")
+def test_asset_key_prefix_manifest_fixture() -> dict[str, Any]:
+    return _create_dbt_invocation(test_asset_key_prefix_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_alias_manifest", scope="session")
