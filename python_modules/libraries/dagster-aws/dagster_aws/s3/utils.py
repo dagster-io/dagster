@@ -33,8 +33,10 @@ def construct_s3_client(
     aws_access_key_id: str | None = None,
     aws_secret_access_key: str | None = None,
     aws_session_token: str | None = None,
+    botocore_config: dict | None = None,
 ):
     check.int_param(max_attempts, "max_attempts")
+    check.opt_dict_param(botocore_config, "botocore_config", key_type=str)
     check.opt_str_param(region_name, "region_name")
     check.opt_str_param(endpoint_url, "endpoint_url")
     check.bool_param(use_unsigned_session, "use_unsigned_session")
@@ -54,7 +56,7 @@ def construct_s3_client(
         aws_access_key_id=aws_access_key_id,
         aws_secret_access_key=aws_secret_access_key,
         aws_session_token=aws_session_token,
-        config=construct_boto_client_retry_config(max_attempts),
+        config=construct_boto_client_retry_config(max_attempts, botocore_config),
     ).meta.client
 
     if use_unsigned_session:
