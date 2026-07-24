@@ -776,16 +776,11 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
-                    tail_lines = int(
-                        os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
-                    )
-                    raw_logs = self.retrieve_pod_logs(
-                        pod_name, namespace, container_name=container_name, tail_lines=tail_lines
-                    )
-                    message = state.terminated.message
                     msg = (
-                        f'Container "{container_name}" failed with message: "{message}". '
-                        f'Last {tail_lines} log lines: "{raw_logs}"'
+                        f'Container "{container_name}" failed with '
+                        f'message: "{state.terminated.message}". '
+                        f'exit_code={state.terminated.exit_code}, '
+                        f'reason="{state.terminated.reason}".'
                     )
 
                     self.logger(msg)
@@ -802,9 +797,19 @@ class DagsterKubernetesClient:
                     continue
 
                 if error_logs:
+                    tail_lines = int(
+                        os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
+                    )
+                    debug_info = self.get_pod_debug_info(
+                        pod_name,
+                        namespace,
+                        pod=pod,
+                        log_tail_lines=tail_lines,
+                    )
                     logs = "\n\n".join(error_logs)
                     raise DagsterK8sError(
                         f"Pod {pod_name} terminated but some containers exited with errors:\n{logs}"
+                        f"{debug_info}"
                     )
                 else:
                     self.logger(f"Pod {pod_name} exited successfully")
@@ -951,6 +956,7 @@ class DagsterKubernetesClient:
         namespace,
         pod: Optional[kubernetes.client.V1Pod] = None,  # the already fetched pod  # noqa: UP045
         include_container_logs: bool | None = True,
+        log_tail_lines: int = 25,
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(
@@ -987,7 +993,7 @@ class DagsterKubernetesClient:
                             pod_name,
                             namespace,
                             container_name,
-                            tail_lines=25,
+                            tail_lines=log_tail_lines,
                             timestamps=True,
                         )
                         # Remove trailing newline if present
@@ -1000,13 +1006,18 @@ class DagsterKubernetesClient:
                                 " docker image with the `--platform linux/amd64` flag set."
                             )
                         log_str = (
-                            f"Last 25 log lines for container '{container_name}':\n{pod_logs}"
+                            f"Last {log_tail_lines} log lines for container '{container_name}':\n{pod_logs}"
                             if pod_logs
                             else f"No logs for container '{container_name}'."
                         )
 
                     except kubernetes.client.rest.ApiException as e:
-                        log_str = f"Failure fetching pod logs for container '{container_name}': {e}"
+                        if e.status == 400:
+                            log_str = f"No logs available for container '{container_name}'."
+                        else:
+                            log_str = (
+                                f"Failure fetching pod logs for container '{container_name}': {e}"
+                            )
 
                 log_strs.append(log_str)
 
