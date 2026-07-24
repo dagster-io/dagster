@@ -25,6 +25,7 @@ import alteryx from './kindtag-images/tool-alteryx-color.svg';
 import arrow from './kindtag-images/tool-arrow-color.svg';
 import atlan from './kindtag-images/tool-atlan-color.svg';
 import aws from './kindtag-images/tool-aws-color.svg';
+import awslambda from './kindtag-images/tool-awslambda-color.svg';
 import ax from './kindtag-images/tool-ax-color.svg';
 import axioma from './kindtag-images/tool-axioma-color.svg';
 import azure from './kindtag-images/tool-azure-color.svg';
@@ -255,6 +256,7 @@ export type KnownTagType =
   | 'athena'
   | 'atlan'
   | 'aws'
+  | 'awslambda'
   | 'awsstepfunction'
   | 'awsstepfunctions'
   | 'ax'
@@ -355,7 +357,8 @@ export type KnownTagType =
   | 'kafka'
   | 'kedro'
   | 'kubernetes'
-  | 'lakefs'
+  | 'lakefs' 
+  | 'lambda'
   | 'langfuse'
   | 'lightgbm'
   | 'linear'
@@ -750,6 +753,14 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   aws: {
     icon: aws,
     content: 'AWS',
+  },
+  awslambda: {
+    icon: awslambda,
+    content: 'AWS Lambda',
+  },
+  lambda: {
+    icon: awslambda,
+    content: 'Lambda',
   },
   stitch: {
     icon: stitch,
