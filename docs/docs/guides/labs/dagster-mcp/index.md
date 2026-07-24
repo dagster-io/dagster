@@ -1,6 +1,5 @@
 ---
-title: Dagster+ MCP
-sidebar_label: Dagster+ MCP
+title: Dagster+ MCP server
 description: Connect the Dagster+ MCP server to your AI agent of choice to access information and take actions in your Dagster+ deployment
 canonicalUrl: '/guides/labs/dagster-mcp'
 slug: '/guides/labs/dagster-mcp'
@@ -26,7 +25,7 @@ Connect to the Dagster+ MCP server by specifying a URL and a few headers.
 For information on accessing your user token, see [Managing user tokens in Dagster+](/deployment/dagster-plus/management/tokens/user-tokens).
 If you would like to create a new token with a different set of permissions, we recommend creating a [service user](/deployment/dagster-plus/authentication-and-access-control/rbac/users#service-users).
 
-### Example: Adding the Dagster+ MCP server to Claude Code
+### Adding the Dagster+ MCP server to Claude Code
 
 Within your terminal, run the following command:
 
