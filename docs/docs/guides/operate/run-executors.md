@@ -14,7 +14,6 @@ Executors can range from single-process serial executors to managing per-step co
 | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="internals" module="dagster" object="executor" decorator /> | The decorator used to define executors. Defines an <PyObject section="internals" module="dagster" object="ExecutorDefinition" />. |
 | <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> | An executor definition.                                                                                                           |
-
 ## Specifying executors
 
 - [Directly on jobs](#directly-on-jobs)
@@ -36,6 +35,17 @@ An executor can be specified directly on a job by supplying an <PyObject section
 ### For a code location
 
 To specify a default executor for all jobs and assets provided to a code location, create a file in your `/defs` folder that contains an `@definitions`-decorated function that returns a `Definitions` object with the executor specified.
+
+Here is a minimal example of a 'definitions.py' file using '@definitions' and 'load_from_defs_folder':
+
+```python
+from pathlib import Path
+from dagster import definitions, load_from_defs_folder
+
+@definitions
+def defs():
+    return load_from_defs_folder(project_root=Path(__file__).parent.parent.parent)
+```
 
 If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
 
