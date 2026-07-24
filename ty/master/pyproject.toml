@@ -50,6 +50,7 @@ dependencies = [
   "dagster-clickhouse-pandas",
   "dagster-clickhouse-polars",
   "dagster-cloud-cli",
+  "dagster-cron",
   "dagster-dask[yarn,pbs,kube]",
   "dagster-databricks",
   "dagster-datadog",
@@ -236,6 +237,7 @@ dagster-clickhouse          = { path = "../../python_modules/libraries/dagster-c
 dagster-clickhouse-pandas   = { path = "../../python_modules/libraries/dagster-clickhouse-pandas",   editable = true }
 dagster-clickhouse-polars   = { path = "../../python_modules/libraries/dagster-clickhouse-polars",   editable = true }
 dagster-cloud-cli           = { path = "../../python_modules/libraries/dagster-cloud-cli",           editable = true }
+dagster-cron         = { path = "../../python_modules/libraries/dagster-cron",         editable = true }
 dagster-dask                = { path = "../../python_modules/libraries/dagster-dask",                editable = true }
 dagster-databricks          = { path = "../../python_modules/libraries/dagster-databricks",          editable = true }
 dagster-datadog             = { path = "../../python_modules/libraries/dagster-datadog",             editable = true }
@@ -417,7 +419,7 @@ exclude = [
   #   https://github.com/astral-sh/ty/issues/3445#issuecomment-4426769715
   # "python_modules/dagster-graphql/dagster_graphql/implementation",
 
-  # Vendored third-party code (croniter, dateutil).
+  # Vendored third-party code (dateutil).
   "python_modules/dagster/dagster/_vendored",
 
   # ty runner itself — uses 3.11+ stdlib (tomllib, typing.NotRequired) so
