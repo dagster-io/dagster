@@ -24,12 +24,9 @@ You can set an [asset freshness alert](/guides/observe/alerts/creating-alerts) t
 
 ### Enabling freshness policies
 
-Freshness policies are not enabled by default while in preview. To use them in open source and local development, add the following to your `dagster.yaml`:
+Since Dagster 1.12, freshness policies are generally available and evaluated by the `FreshnessDaemon` **by default**. You do not need a `dagster.yaml` switch to turn them on.
 
-```
-freshness:
-  enabled: True
-```
+If you previously set `freshness.enabled` during the preview period, that configuration is no longer required and can be removed.
 
 ### Relationship to existing `FreshnessPolicy`
 
