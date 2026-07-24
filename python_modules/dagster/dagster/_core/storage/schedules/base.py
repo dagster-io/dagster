@@ -205,7 +205,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Call this method to run any optional data migrations for optimized reads."""
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int, pool_size: int = 1
     ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
