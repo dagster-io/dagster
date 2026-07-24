@@ -34,6 +34,18 @@ import {TimeRangeState, useTimeRangeFilter} from '../ui/BaseFilters/useTimeRange
 import {TruncatedTextWithFullTextOnHover} from '../ui/TruncatedTextWithFullTextOnHover';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext/util';
 
+/**
+ * Split a tag string on the first `=` only, so tag values containing `=` are preserved.
+ * Returns [key, value] where value defaults to '' if no `=` is present.
+ */
+export function splitTagString(tagStr: string): [string, string] {
+  const eqIndex = tagStr.indexOf('=');
+  if (eqIndex === -1) {
+    return [tagStr, ''];
+  }
+  return [tagStr.slice(0, eqIndex), tagStr.slice(eqIndex + 1)];
+}
+
 export interface RunsFilterInputProps {
   loading?: boolean;
   tokens: RunFilterToken[];
@@ -157,13 +169,11 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
-      const [key, value = ''] = item.value.split('=');
+      const [key, value] = splitTagString(item.value);
       if (obj.tags) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        obj.tags.push({key: key!, value});
+        obj.tags.push({key, value});
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        obj.tags = [{key: key!, value}];
+        obj.tags = [{key, value}];
       }
     }
   }
@@ -642,9 +652,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           return !tagsToExclude.includes(value.split('=')[0] as DagsterTag);
         })
         .map((token) => {
-          const [key, value] = token.value.split('=');
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return tagSuggestionValueObject(key!, value!).value;
+          const [key, value] = splitTagString(token.value);
+          return tagSuggestionValueObject(key, value).value;
         });
     }, [tokens]),
 
@@ -777,12 +786,14 @@ function tagToFilterValue(key: string, value: string) {
 }
 
 // Memoize this object because the static set filter component checks for object equality (set.has)
-export const tagValueToFilterObject = memoize((value: string) => ({
-  key: value,
-  type: value.split('=')[0] as DagsterTag,
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  value: value.split('=')[1]!,
-}));
+export const tagValueToFilterObject = memoize((value: string) => {
+  const [type, tagValue] = splitTagString(value);
+  return {
+    key: value,
+    type: type as DagsterTag,
+    value: tagValue,
+  };
+});
 
 export const tagSuggestionValueObject = memoize(
   (key: string, value: string) => ({
