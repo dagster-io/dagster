@@ -658,31 +658,139 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
     single_pod_terminated_unsuccessful = _pod_list_for_container_status(
         _create_status(
             state=V1ContainerState(
-                terminated=V1ContainerStateTerminated(exit_code=1, message="error_message")
+                terminated=V1ContainerStateTerminated(
+                    exit_code=1,
+                    reason="Error",
+                    message="error_message",
+                )
             ),
             ready=False,
         )
     )
+    failed_pod = single_pod_terminated_unsuccessful.items[0]
 
     mock_client.core_api.list_namespaced_pod.side_effect = [
         single_not_ready_running_pod,
         single_pod_terminated_unsuccessful,
     ]
 
-    retrieve_pod_logs_mock = mock.MagicMock()
-    retrieve_pod_logs_mock.side_effect = ["raw_logs_ret_val"]
-    mock_client.retrieve_pod_logs = retrieve_pod_logs_mock
+    mock_client.get_pod_debug_info = mock.MagicMock(return_value="pod debug info")
 
     pod_name = "a_pod"
     container_name = "a_name"
 
-    with pytest.raises(DagsterK8sError) as exc_info:
-        mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
+    with (
+        mock.patch.dict(
+            os.environ,
+            {"DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT": "42"},
+        ),
+        pytest.raises(DagsterK8sError) as exc_info,
+    ):
+        mock_client.wait_for_pod(
+            pod_name=pod_name,
+            namespace="namespace",
+        )
 
     assert (
         str(exc_info.value)
-        == f'Pod {pod_name} terminated but some containers exited with errors:\nContainer "{container_name}" failed with message: "error_message".'
-        ' Last 100 log lines: "raw_logs_ret_val"'
+        == (
+            f'Pod {pod_name} terminated but some containers exited with errors:\n'
+            f'Container "{container_name}" failed with message: "error_message". '
+            'exit_code=1, reason="Error".'
+            'pod debug info'
+        )
+    )
+
+    mock_client.get_pod_debug_info.assert_called_once_with(
+        pod_name,
+        "namespace",
+        pod=failed_pod,
+        log_tail_lines=42,
+    )
+
+    # failed-container logs should not be fetched before collecting logs for the entire pod
+    mock_client.core_api.read_namespaced_pod_log.assert_not_called()
+
+def test_get_pod_debug_info_preserves_containers_logs():
+    mock_client = create_mocked_client()
+
+    healthy_status = _create_status(
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(
+                exit_code=0,
+                reason="Completed",
+            )
+        ),
+        ready=False,
+        name="healthy",
+    )
+    broken_status = _create_status(
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(
+                exit_code=1,
+                reason="DeadlineExceeded",
+                message="The container could not be located when the pod was terminated",
+            )
+        ),
+        ready=False,
+        name="broken-config",
+    )
+
+    pod = V1Pod(
+        spec=kubernetes.client.V1PodSpec(
+            containers=[
+                kubernetes.client.V1Container(name="healthy"),
+                kubernetes.client.V1Container(name="broken-config"),
+            ]
+        ),
+        status=V1PodStatus(
+            phase="Failed",
+            container_statuses=[healthy_status, broken_status],
+        ),
+    )
+
+    mock_client.retrieve_pod_logs = mock.MagicMock(
+        side_effect=[
+            "message from a healthy container",
+            kubernetes.client.rest.ApiException(
+                status=400,
+                reason="Bad Request",
+            ),
+        ]
+    )
+    mock_client.retrieve_pod_events = mock.MagicMock(return_value=[])
+
+    debug_info = mock_client.get_pod_debug_info(
+        pod_name="a_pod",
+        namespace="namespace",
+        pod=pod,
+        log_tail_lines=25,
+    )
+
+    assert "Last 25 log lines for container 'healthy':" in debug_info
+    assert "message from a healthy container" in debug_info
+    assert "No logs available for container 'broken-config'." in debug_info
+
+    # hide generic k8s API failure as the primary diagnostic
+    assert "Bad Request" not in debug_info
+
+    mock_client.retrieve_pod_logs.assert_has_calls(
+        [
+            mock.call(
+                "a_pod",
+                "namespace",
+                "healthy",
+                tail_lines=25,
+                timestamps=True,
+            ),
+            mock.call(
+                "a_pod",
+                "namespace",
+                "broken-config",
+                tail_lines=25,
+                timestamps=True,
+            ),
+        ]
     )
 
 
