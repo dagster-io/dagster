@@ -396,6 +396,8 @@ def execute_execute_command(
         if partition:
             job_def.validate_partition_key(partition, selected_asset_keys=None, context=context)
             partition_tags = job_def.get_tags_for_partition_key(partition, selected_asset_keys=None)
+            if not run_config:
+                run_config = job_def.get_run_config_for_partition_key(partition)
         elif partition_range:
             if len(partition_range.split("...")) != 2:
                 check.failed("Invalid partition range format. Expected <start>...<end>.")

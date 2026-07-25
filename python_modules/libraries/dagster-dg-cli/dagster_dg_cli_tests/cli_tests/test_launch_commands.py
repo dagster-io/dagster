@@ -1,6 +1,7 @@
 import inspect
 import json
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -66,6 +67,42 @@ def _sample_job():
     @job()
     def my_configured_job():
         my_configured_op()
+
+
+def _sample_partitioned_asset_job():
+    from dagster import (
+        AssetExecutionContext,
+        Config,
+        DailyPartitionsDefinition,
+        Definitions,
+        PartitionedConfig,
+        RunConfig,
+        asset,
+        define_asset_job,
+    )
+
+    class MyAssetConfig(Config):
+        message: str = "ASSET_DEFAULT"
+
+    daily_partitions = DailyPartitionsDefinition(start_date="2024-01-01")
+
+    @asset(partitions_def=daily_partitions)
+    def my_partitioned_asset(context: AssetExecutionContext, config: MyAssetConfig):
+        context.log.info(f"CONFIG: {config.message}")
+
+    def run_config_for_partition(partition_key: str) -> RunConfig:
+        return RunConfig(ops={"my_partitioned_asset": MyAssetConfig(message="JOB_DEFAULT")})
+
+    my_partitioned_asset_job = define_asset_job(
+        "my_partitioned_asset_job",
+        selection=[my_partitioned_asset],
+        config=PartitionedConfig(
+            partitions_def=daily_partitions,
+            run_config_for_partition_key_fn=run_config_for_partition,
+        ),
+    )
+
+    defs = Definitions(assets=[my_partitioned_asset], jobs=[my_partitioned_asset_job])  # noqa: F841
 
 
 def _sample_single_job():
@@ -281,6 +318,34 @@ def test_launch_job_partitioned() -> None:
             assert "Started execution of run for" in result.stderr.decode("utf-8")
             assert "RUN_SUCCESS" in result.stderr.decode("utf-8")
             assert "PARTITION: 2024-01-01...2024-01-05" in result.stderr.decode("utf-8")
+
+
+def test_launch_partitioned_asset_job_uses_partitioned_config(tmp_path: Path) -> None:
+    definitions_path = tmp_path / "definitions.py"
+    defs_source = textwrap.dedent(
+        inspect.getsource(_sample_partitioned_asset_job).split("\n", 1)[1]
+    )
+    definitions_path.write_text(defs_source, encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            str(Path(sys.executable).parent / "dg"),
+            "launch",
+            "--python-file",
+            str(definitions_path),
+            "--job",
+            "my_partitioned_asset_job",
+            "--partition",
+            "2024-01-01",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "CONFIG: JOB_DEFAULT" in result.stderr
 
 
 def test_launch_job_configured() -> None:
