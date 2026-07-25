@@ -89,30 +89,35 @@ def test_concurrent_processes(project_dir):
         assert my_project.manifest_path.exists()
 
 
-def test_prepare_guards_deps_and_parse_with_the_same_lock(project_dir, monkeypatch) -> None:
+def test_prepare_guards_deps_and_parse_with_the_same_lock(monkeypatch) -> None:
     """Ensure deps cannot mutate dbt_packages while another process is parsing."""
-    (Path(project_dir) / "packages.yml").write_text("packages: []\n", encoding="utf-8")
-    my_project = DbtProject(project_dir)
-    preparer = DagsterDbtProjectPreparer()
-    guarded_paths = []
-    prepared_steps = []
+    # Keep the dependency marker out of the session-scoped project fixture so this
+    # test cannot cause later tests to invoke a real `dbt deps` command.
+    with copy_directory(test_jaffle_shop_path) as project_dir:
+        (Path(project_dir) / "packages.yml").write_text("packages: []\n", encoding="utf-8")
+        my_project = DbtProject(project_dir)
+        preparer = DagsterDbtProjectPreparer()
+        guarded_paths = []
+        prepared_steps = []
 
-    def record_guard(target_file_path, update_fn, **kwargs) -> None:
-        guarded_paths.append(target_file_path)
-        update_fn(**kwargs)
+        def record_guard(target_file_path, update_fn, **kwargs) -> None:
+            guarded_paths.append(target_file_path)
+            update_fn(**kwargs)
 
-    monkeypatch.setattr("dagster_dbt.dbt_project.run_with_concurrent_update_guard", record_guard)
-    monkeypatch.setattr(
-        preparer, "_prepare_packages", lambda project: prepared_steps.append("deps")
-    )
-    monkeypatch.setattr(
-        preparer, "_prepare_manifest", lambda project: prepared_steps.append("parse")
-    )
+        monkeypatch.setattr(
+            "dagster_dbt.dbt_project.run_with_concurrent_update_guard", record_guard
+        )
+        monkeypatch.setattr(
+            preparer, "_prepare_packages", lambda project: prepared_steps.append("deps")
+        )
+        monkeypatch.setattr(
+            preparer, "_prepare_manifest", lambda project: prepared_steps.append("parse")
+        )
 
-    preparer.prepare(my_project)
+        preparer.prepare(my_project)
 
-    assert guarded_paths == [my_project.manifest_path]
-    assert prepared_steps == ["deps", "parse"]
+        assert guarded_paths == [my_project.manifest_path]
+        assert prepared_steps == ["deps", "parse"]
 
 
 def test_invalidate_seeds_in_partial_parse(project_dir) -> None:
