@@ -376,6 +376,7 @@ def execute_execute_command(
     check.inst_param(instance, "instance", DagsterInstance)
 
     run_config = get_run_config_from_cli_opts(config, config_json)
+    has_explicit_run_config = bool(config) or config_json is not None
     normalized_tags = _normalize_cli_tags(tags)
     normalized_op_selection = _normalize_cli_op_selection(op_selection)
 
@@ -396,7 +397,7 @@ def execute_execute_command(
         if partition:
             job_def.validate_partition_key(partition, selected_asset_keys=None, context=context)
             partition_tags = job_def.get_tags_for_partition_key(partition, selected_asset_keys=None)
-            if not run_config:
+            if not has_explicit_run_config:
                 run_config = job_def.get_run_config_for_partition_key(partition)
         elif partition_range:
             if len(partition_range.split("...")) != 2:

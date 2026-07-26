@@ -348,6 +348,36 @@ def test_launch_partitioned_asset_job_uses_partitioned_config(tmp_path: Path) ->
     assert "CONFIG: JOB_DEFAULT" in result.stderr
 
 
+def test_launch_partitioned_asset_job_keeps_explicit_empty_config(tmp_path: Path) -> None:
+    definitions_path = tmp_path / "definitions.py"
+    defs_source = textwrap.dedent(
+        inspect.getsource(_sample_partitioned_asset_job).split("\n", 1)[1]
+    )
+    definitions_path.write_text(defs_source, encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            str(Path(sys.executable).parent / "dg"),
+            "launch",
+            "--python-file",
+            str(definitions_path),
+            "--job",
+            "my_partitioned_asset_job",
+            "--partition",
+            "2024-01-01",
+            "--config-json",
+            "{}",
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "CONFIG: ASSET_DEFAULT" in result.stderr
+
+
 def test_launch_job_configured() -> None:
     with (
         ProxyRunner.test() as runner,
