@@ -146,12 +146,12 @@ The `isolatedAgents` setting controls how run termination is handled in Kubernet
 | `false` (default) | The agent triggers termination requests through the Kubernetes API. Recommended for simpler deployments. |
 | `true`            | Runs check for termination themselves using a background thread in each worker pod.                      |
 
-To enable isolated agents, set `isolatedAgents: true` in your Helm `values.yaml`:
+To enable isolated agents, set `isolatedAgents.enabled: true` in your Helm `values.yaml`:
 
 ```yaml
 # values.yaml
-dagsterCloudAgent:
-  isolatedAgents: true
+isolatedAgents:
+  enabled: true
 ```
 
 When isolated agents are enabled, you must also set up separate resource allocations for each agent and configure routing for multiple agents if needed.
