@@ -61,6 +61,7 @@ export type PermissionsFromJSON = {
   edit_app_managed_components?: PermissionResult;
   refresh_component_state?: PermissionResult;
   edit_workspace?: PermissionResult;
+  edit_dynamic_partitions?: PermissionResult;
 };
 
 export const DEFAULT_DISABLED_REASON = 'Insufficient permissions';
@@ -115,6 +116,7 @@ export const extractPermissions = (
     canEditConcurrencyLimit: permissionOrFallback('edit_concurrency_limit'),
     canEditWorkspace: permissionOrFallback('edit_workspace'),
     canUpdateSensorCursor: permissionOrFallback('update_sensor_cursor'),
+    canEditDynamicPartitions: permissionOrFallback('edit_dynamic_partitions'),
   };
 };
 

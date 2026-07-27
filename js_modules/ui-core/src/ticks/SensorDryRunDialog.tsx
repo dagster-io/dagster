@@ -29,6 +29,7 @@ import {
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
@@ -89,6 +90,11 @@ export const SensorDryRunDialog = (props: Props) => {
 
 const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
   const trackEvent = useTrackEvent();
+
+  const {
+    permissions: {canEditDynamicPartitions},
+    disabledReasons: {canEditDynamicPartitions: canEditDynamicPartitionsDisabledReason},
+  } = usePermissionsForLocation(repoAddress.location);
 
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
@@ -223,6 +229,21 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       return;
     }
 
+    // Preflight: partition mutations fire in parallel, so a mid-flight failure
+    // would leave successful siblings committed. For the common Launcher-role
+    // case (missing EDIT_DYNAMIC_PARTITIONS applies uniformly to all requests
+    // for this location), bail before any mutation dispatches to keep the
+    // apply atomic — no partitions created or deleted, no runs launched.
+    if (dynamicPartitionRequests?.length && !canEditDynamicPartitions) {
+      showCustomAlert({
+        title: 'Insufficient permissions',
+        body:
+          canEditDynamicPartitionsDisabledReason ||
+          'You do not have permission to create or delete dynamic partitions for this code location.',
+      });
+      return;
+    }
+
     trackEvent('launch-all-sensor');
     setLaunching(true);
 
@@ -323,6 +344,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     onClose();
   }, [
     canApply,
+    canEditDynamicPartitions,
+    canEditDynamicPartitionsDisabledReason,
     createPartition,
     deletePartition,
     dynamicPartitionRequests,

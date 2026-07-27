@@ -6,6 +6,7 @@ import {MemoryRouter, useHistory} from 'react-router-dom';
 import {Resolvers} from '../../apollo-client';
 import * as CustomAlertProvider from '../../app/CustomAlertProvider';
 import {useTrackEvent} from '../../app/analytics';
+import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
 import * as Mocks from '../__fixtures__/SensorDryRunDialog.fixtures';
 
@@ -34,21 +35,42 @@ jest.mock('../../app/CustomAlertProvider', () => ({
 
 const onCloseMock = jest.fn();
 
-function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolvers}) {
+function Test({
+  mocks,
+  resolvers,
+  canEditDynamicPartitions = true,
+}: {
+  mocks?: MockedResponse[];
+  resolvers?: Resolvers;
+  canEditDynamicPartitions?: boolean;
+}) {
   return (
     <MemoryRouter>
       <MockedProvider mocks={mocks} resolvers={resolvers}>
-        <SensorDryRunDialog
-          name="test"
-          onClose={onCloseMock}
-          isOpen={true}
-          repoAddress={{
-            name: 'testName',
-            location: 'testLocation',
+        <TestPermissionsProvider
+          locationOverrides={{
+            testLocation: {
+              canEditDynamicPartitions: {
+                enabled: canEditDynamicPartitions,
+                disabledReason: canEditDynamicPartitions
+                  ? ''
+                  : 'You do not have permission to create dynamic partitions.',
+              },
+            },
           }}
-          jobName="testJobName"
-          currentCursor="testCursor"
-        />
+        >
+          <SensorDryRunDialog
+            name="test"
+            onClose={onCloseMock}
+            isOpen={true}
+            repoAddress={{
+              name: 'testName',
+              location: 'testLocation',
+            }}
+            jobName="testJobName"
+            currentCursor="testCursor"
+          />
+        </TestPermissionsProvider>
       </MockedProvider>
     </MemoryRouter>
   );
@@ -165,10 +187,11 @@ describe('SensorDryRunTest', () => {
     expect(screen.queryByTestId('commit-tick-result')).toBe(null);
   });
 
-  it('does not launch runs when a dynamic partition request fails with UnauthorizedError', async () => {
-    // Regression test: a Launcher-role user (lacks EDIT_DYNAMIC_PARTITIONS) previously
-    // saw the partition mutation silently fail while the runs launched anyway,
-    // producing a DagsterInvalidInvocationError against a nonexistent partition.
+  it('preflights EDIT_DYNAMIC_PARTITIONS and fires no mutations when the user lacks it', async () => {
+    // Regression test for Pylon 21598: a Launcher-role user previously saw the
+    // partition mutation silently fail while the runs launched anyway, producing
+    // a DagsterInvalidInvocationError against a nonexistent partition. The
+    // preflight makes the apply atomic — no partition ops fire and no runs launch.
     const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
     showCustomAlertSpy.mockClear();
     onCloseMock.mockClear();
@@ -179,11 +202,12 @@ describe('SensorDryRunTest', () => {
     const user = userEvent.setup();
     render(
       <Test
+        canEditDynamicPartitions={false}
         mocks={[
           Mocks.SensorDryRunMutationWithDynamicPartitionRequest,
-          Mocks.AddDynamicPartitionUnauthorizedMock,
-          // Intentionally no SensorLaunchAllMutation mock — if the fix is wrong
-          // the test will fail loudly on the unmatched launch mutation.
+          // No createPartition or launchMultipleRuns mock — if either fires,
+          // MockedProvider will fail the test on the unmatched request. This is
+          // the whole point of the preflight: no side effects at all.
         ]}
       />,
     );
@@ -205,8 +229,49 @@ describe('SensorDryRunTest', () => {
       });
     });
 
-    // The dialog must remain open so the user can see the failure — Apply is
-    // effectively a no-op when partition creation is unauthorized.
+    expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
+  it('does not launch runs when a mid-flight partition mutation returns UnauthorizedError', async () => {
+    // Defense-in-depth: even if the preflight passes (permission racy or
+    // stale), the backend's UnauthorizedError return still aborts the flow
+    // before launchMultipleRuns fires and before the tick is committed.
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    (useHistory as jest.Mock).mockReturnValue({push: jest.fn(), createHref: jest.fn()});
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        canEditDynamicPartitions={true}
+        mocks={[
+          Mocks.SensorDryRunMutationWithDynamicPartitionRequest,
+          Mocks.AddDynamicPartitionUnauthorizedMock,
+          // No SensorLaunchAllMutation mock — an unmatched request fails the test.
+        ]}
+      />,
+    );
+
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Insufficient permissions',
+        body: 'You do not have permission to create dynamic partitions.',
+      });
+    });
+
     expect(onCloseMock).not.toHaveBeenCalled();
   });
 
