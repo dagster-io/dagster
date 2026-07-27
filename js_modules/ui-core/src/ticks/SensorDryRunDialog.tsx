@@ -16,7 +16,7 @@ import {
   Tooltip,
   showToast,
 } from '@dagster-io/ui-components';
-import {useCallback, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
@@ -228,12 +228,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
     try {
       if (dynamicPartitionRequests?.length) {
+        const partitionErrors: Array<{title: string; body: ReactNode}> = [];
+
         await Promise.all(
           dynamicPartitionRequests.map(async (request) => {
             if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
               await Promise.all(
                 (request.partitionKeys || []).map(async (partitionKey) => {
-                  await createPartition({
+                  const result = await createPartition({
                     variables: {
                       repositorySelector: {
                         repositoryName: repoAddress.name,
@@ -243,10 +245,32 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                       partitionKey,
                     },
                   });
+                  const data = result.data?.addDynamicPartition;
+                  switch (data?.__typename) {
+                    case 'AddDynamicPartitionSuccess':
+                    // Daemon silently skips partitions that already exist; do the same
+                    // in the UI so re-applying the same tick is not treated as a failure.
+                    case 'DuplicateDynamicPartitionError':
+                      return;
+                    case 'UnauthorizedError':
+                      partitionErrors.push({
+                        title: 'Insufficient permissions',
+                        body:
+                          data.message ??
+                          'You do not have permission to create dynamic partitions.',
+                      });
+                      return;
+                    case 'PythonError':
+                      partitionErrors.push({
+                        title: 'Could not add partition',
+                        body: <PythonErrorInfo error={data} />,
+                      });
+                      return;
+                  }
                 }),
               );
             } else if (request.partitionKeys && request.partitionKeys.length) {
-              await deletePartition({
+              const result = await deletePartition({
                 variables: {
                   repositorySelector: {
                     repositoryName: repoAddress.name,
@@ -256,9 +280,36 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                   partitionKeys: request.partitionKeys,
                 },
               });
+              const data = result.data?.deleteDynamicPartitions;
+              switch (data?.__typename) {
+                case 'DeleteDynamicPartitionsSuccess':
+                  return;
+                case 'UnauthorizedError':
+                  partitionErrors.push({
+                    title: 'Insufficient permissions',
+                    body:
+                      data.message ?? 'You do not have permission to delete dynamic partitions.',
+                  });
+                  return;
+                case 'PythonError':
+                  partitionErrors.push({
+                    title: 'Could not delete partitions',
+                    body: <PythonErrorInfo error={data} />,
+                  });
+                  return;
+              }
             }
           }),
         );
+
+        const firstPartitionError = partitionErrors[0];
+        if (firstPartitionError) {
+          // A dynamic partition request failed — do not launch runs against
+          // partitions that don't exist, and do not commit the tick.
+          showCustomAlert({title: firstPartitionError.title, body: firstPartitionError.body});
+          setLaunching(false);
+          return;
+        }
       }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
