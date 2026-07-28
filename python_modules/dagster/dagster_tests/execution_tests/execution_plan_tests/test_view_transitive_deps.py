@@ -222,3 +222,41 @@ def test_subsettable_multi_asset_no_self_dependency():
         assert step_key not in deps[step_key], (
             f"Step {step_key} has a self-dependency, which would cause a deadlock"
         )
+
+
+def test_subsettable_multi_asset_sandwich_with_virtual_intermediary() -> None:
+    """A split can_subset=True multi-asset should not cycle when an external asset is interleaved.
+
+    Shape:
+        multi (early -> view_mid[virtual]) -> external -> multi (late)
+    """
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("early"),
+            dg.AssetSpec("view_mid", deps=["early"], is_virtual=True),
+            dg.AssetSpec("late", deps=["external_bridge"]),
+        ],
+        can_subset=True,
+    )
+    def my_multi_asset(context):
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
+
+    @dg.asset(key="external_bridge", deps=["view_mid"])
+    def external_bridge() -> None: ...
+
+    job = _resolve_job(
+        [my_multi_asset, external_bridge],
+        dg.define_asset_job("test_job", selection=dg.AssetSelection.all()),
+    )
+
+    plan = create_execution_plan(job)
+    step_keys = [step.key for step in plan.get_steps_to_execute_in_topo_order()]
+
+    # We expect two invocations of the same multi-asset op with the external
+    # step in between, and no CircularDependencyError during plan creation.
+    assert len(step_keys) == 3
+    assert step_keys[1] == "external_bridge"
+    assert step_keys[0].startswith("my_multi_asset")
+    assert step_keys[2].startswith("my_multi_asset")

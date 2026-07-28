@@ -419,6 +419,16 @@ def _get_ordering_step_keys_for_view(
         asset_graph = asset_graph.source_asset_graph
     if not asset_graph.has(input_asset_key) or not asset_graph.get(input_asset_key).is_virtual:
         return set()
+
+    current_assets_def = asset_layer.get_assets_def_for_node(
+        NodeHandle.from_string(current_step_key)
+    )
+    current_node_def_name = (
+        current_assets_def.computation.node_def.name
+        if current_assets_def and current_assets_def.computation
+        else None
+    )
+
     ancestor_keys = asset_graph.get_non_virtual_ancestor_keys(input_asset_key)
     selected_keys = asset_layer.selected_asset_keys
     step_keys: set[str] = set()
@@ -426,6 +436,22 @@ def _get_ordering_step_keys_for_view(
         if ancestor_key in selected_keys:
             node_output_handle = asset_layer.get_op_output_handle(ancestor_key)
             step_key = str(node_output_handle.node_handle)
+
+            if step_key == current_step_key:
+                continue
+
+            ancestor_assets_def = asset_layer.get_assets_def_for_node(node_output_handle.node_handle)
+            ancestor_node_def_name = (
+                ancestor_assets_def.computation.node_def.name
+                if ancestor_assets_def and ancestor_assets_def.computation
+                else None
+            )
+            if (
+                current_node_def_name is not None
+                and current_node_def_name == ancestor_node_def_name
+            ):
+                continue
+
             # Filter out self-references to prevent deadlock. This happens when
             # a subsettable multi-asset has virtual intermediaries between its
             # own non-virtual outputs — the ancestor resolves to the same step.
