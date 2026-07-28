@@ -92,16 +92,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const trackEvent = useTrackEvent();
 
   const {
-    permissions: {canEditDynamicPartitions: _canEditDynamicPartitions},
-    disabledReasons: {canEditDynamicPartitions: _canEditDynamicPartitionsDisabledReason},
+    permissions: {canEditDynamicPartitions},
+    disabledReasons: {canEditDynamicPartitions: canEditDynamicPartitionsDisabledReason},
   } = usePermissionsForLocation(repoAddress.location);
-  // TEMP: manual repro for ASSIST-163. OSS webserver grants all perms, so the
-  // preflight is inert without this. Revert this commit before merging.
-  const canEditDynamicPartitions = false;
-  const canEditDynamicPartitionsDisabledReason =
-    'TEMP: simulated Launcher role (missing EDIT_DYNAMIC_PARTITIONS)';
-  void _canEditDynamicPartitions;
-  void _canEditDynamicPartitionsDisabledReason;
 
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
