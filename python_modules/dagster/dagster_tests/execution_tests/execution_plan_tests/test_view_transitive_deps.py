@@ -7,6 +7,7 @@ C should still wait for A via ordering dependencies on the FromLoadableAsset inp
 import dagster as dg
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.plan.plan import _is_same_computation_family
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
 
@@ -130,6 +131,57 @@ def test_multiple_non_view_ancestors():
     assert "d" in deps
     assert "a" in deps["d"]
     assert "c" in deps["d"]
+
+
+def test_view_transitive_dep_keeps_ordering_for_distinct_nodes_with_same_name():
+    """A view transitive dependency should still create ordering deps when distinct
+    selected assets share a node definition name.
+    """
+
+    @dg.asset(key="ancestor")
+    def ancestor() -> None: ...
+
+    @dg.asset(deps=["ancestor"], is_virtual=True, key="view_asset")
+    def view_asset() -> None: ...
+
+    @dg.asset(key="downstream", deps=["view_asset"])
+    def downstream() -> None: ...
+
+    job = _resolve_job(
+        [ancestor, view_asset, downstream],
+        dg.define_asset_job(
+            "test_job", selection=dg.AssetSelection.assets("ancestor", "downstream")
+        ),
+    )
+
+    plan = create_execution_plan(job)
+    deps = plan.get_executable_step_deps()
+
+    assert "ancestor" in deps["downstream"]
+
+
+def test_same_computation_family_uses_computation_identity() -> None:
+    class _DummyComputation:
+        pass
+
+    class _DummyNodeDef:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+    class _DummyAssetsDef:
+        def __init__(self, computation: object, name: str) -> None:
+            self.computation = computation
+            self.node_def = _DummyNodeDef(name)
+
+    current_computation = _DummyComputation()
+    ancestor_computation = _DummyComputation()
+
+    current_assets_def = _DummyAssetsDef(current_computation, "shared_name")
+    ancestor_assets_def = _DummyAssetsDef(ancestor_computation, "shared_name")
+    same_family_assets_def = _DummyAssetsDef(current_computation, "shared_name")
+
+    assert not _is_same_computation_family(current_assets_def, ancestor_assets_def)
+    assert _is_same_computation_family(current_assets_def, same_family_assets_def)
 
 
 def test_view_selected_no_ordering_deps():

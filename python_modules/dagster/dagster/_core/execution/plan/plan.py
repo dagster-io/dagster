@@ -397,6 +397,18 @@ class _PlanBuilder:
         )
 
 
+def _is_same_computation_family(current_assets_def: object, ancestor_assets_def: object) -> bool:
+    if current_assets_def is None or ancestor_assets_def is None:
+        return False
+
+    current_computation = getattr(current_assets_def, "computation", None)
+    ancestor_computation = getattr(ancestor_assets_def, "computation", None)
+    if current_computation is None or ancestor_computation is None:
+        return False
+
+    return current_computation is ancestor_computation
+
+
 def _get_ordering_step_keys_for_view(
     input_asset_key: "AssetKey | None",
     asset_layer: AssetLayer,
@@ -423,11 +435,6 @@ def _get_ordering_step_keys_for_view(
     current_assets_def = asset_layer.get_assets_def_for_node(
         NodeHandle.from_string(current_step_key)
     )
-    current_node_def_name = (
-        current_assets_def.computation.node_def.name
-        if current_assets_def and current_assets_def.computation
-        else None
-    )
 
     ancestor_keys = asset_graph.get_non_virtual_ancestor_keys(input_asset_key)
     selected_keys = asset_layer.selected_asset_keys
@@ -441,15 +448,7 @@ def _get_ordering_step_keys_for_view(
                 continue
 
             ancestor_assets_def = asset_layer.get_assets_def_for_node(node_output_handle.node_handle)
-            ancestor_node_def_name = (
-                ancestor_assets_def.computation.node_def.name
-                if ancestor_assets_def and ancestor_assets_def.computation
-                else None
-            )
-            if (
-                current_node_def_name is not None
-                and current_node_def_name == ancestor_node_def_name
-            ):
+            if _is_same_computation_family(current_assets_def, ancestor_assets_def):
                 continue
 
             # Filter out self-references to prevent deadlock. This happens when
