@@ -11,7 +11,7 @@ authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
     "Jinja2",
-    "tomlkit<0.13.3",  # bug in this version
+    "tomlkit!=0.13.3,<0.16",  # bug in 0.13.3
     "click>=8,<9",
     "click-aliases",
     "typing_extensions>=4.4.0,<5",
