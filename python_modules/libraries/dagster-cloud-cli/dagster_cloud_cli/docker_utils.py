@@ -63,6 +63,8 @@ def build_image(
     use_editable_dagster: bool,
     dockerfile_path: str | None = None,
     location_name: str | None = None,
+    *,
+    build_args: list[str],
 ) -> int:
     full_ref = full_image_ref(registry_info["registry_url"], location_name, image)
 
@@ -85,6 +87,8 @@ def build_image(
             "--platform",
             "linux/amd64",
         ]
+        for build_arg in build_args:
+            cmd += ["--build-arg", build_arg]
         if use_editable_dagster:
             cmd += [
                 "--build-context",
