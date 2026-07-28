@@ -50,6 +50,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
         prepare_project_cli_args: Sequence[str] | None = None,
+        guard_timeout_seconds: float = 120,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
@@ -59,8 +60,13 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             prepare_project_cli_args (Sequence[str]):
                 The arguments to pass to the dbt cli to generate a manifest.json.
                 Default: ["parse", "--quiet"]
+            guard_timeout_seconds (float):
+                The maximum time to wait for another process to finish preparing the project.
+                The default preserves the former 60-second wait budget for each of the
+                dependency-installation and manifest-generation stages.
         """
         self._prepare_project_cli_args = prepare_project_cli_args or ["parse", "--quiet"]
+        self._guard_timeout_seconds = guard_timeout_seconds
 
     @public
     def prepare_if_dev(self, project: "DbtProject"):
@@ -99,6 +105,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         run_with_concurrent_update_guard(
             project.manifest_path,
             self._prepare,
+            guard_timeout_seconds=self._guard_timeout_seconds,
             project=project,
         )
 
