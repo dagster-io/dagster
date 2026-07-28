@@ -9,7 +9,7 @@
 {{- if not (or $hasMinAvailable $hasMaxUnavailable) }}
 {{- fail (printf "deployment %q: podDisruptionBudget.enabled is true, but neither minAvailable nor maxUnavailable is set." $deployment.name) }}
 {{- end }}
-apiVersion: policy/v1
+apiVersion: {{ if or ($.Capabilities.APIVersions.Has "policy/v1/PodDisruptionBudget") (semverCompare ">=1.21-0" $.Capabilities.KubeVersion.Version) }}policy/v1{{ else }}policy/v1beta1{{ end }}
 kind: PodDisruptionBudget
 metadata:
   name: {{ include "dagster.fullname" $ -}}-{{- $deployment.name }}
@@ -24,7 +24,7 @@ spec:
   {{- if $hasMaxUnavailable }}
   maxUnavailable: {{ $pdb.maxUnavailable }}
   {{- end }}
-  {{- if $pdb.unhealthyPodEvictionPolicy }}
+  {{- if and $pdb.unhealthyPodEvictionPolicy (semverCompare ">=1.27-0" $.Capabilities.KubeVersion.Version) }}
   unhealthyPodEvictionPolicy: {{ $pdb.unhealthyPodEvictionPolicy }}
   {{- end }}
   selector:
