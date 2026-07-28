@@ -29,6 +29,29 @@ def get_dockerfile_path(
         return project_context.root_path / "Dockerfile"
 
 
+def _agent_platform_from_agents(agents: list) -> DgPlusAgentPlatform:
+    agent_platform = DgPlusAgentPlatform.UNKNOWN
+    for agent in agents:
+        if agent["status"] == "RUNNING":
+            for metadata in agent["metadata"]:
+                if metadata["key"] == "type":
+                    agent_class = metadata["value"].lower()
+                    if "K8sUserCodeLauncher".lower() in agent_class:
+                        agent_platform = DgPlusAgentPlatform.K8S
+                        break
+                    elif "EcsUserCodeLauncher".lower() in agent_class:
+                        agent_platform = DgPlusAgentPlatform.ECS
+                        break
+                    elif "DockerUserCodeLauncher".lower() in agent_class:
+                        agent_platform = DgPlusAgentPlatform.DOCKER
+                        break
+                    elif "ProcessUserCodeLauncher".lower() in agent_class:
+                        agent_platform = DgPlusAgentPlatform.LOCAL
+                        break
+
+    return agent_platform
+
+
 def get_agent_type_and_platform_from_graphql(
     gql_client: "IGraphQLClient",
 ) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
@@ -36,30 +59,18 @@ def get_agent_type_and_platform_from_graphql(
 
     agent_type = DgPlusAgentType(result["currentDeployment"]["agentType"])
 
-    agent_platform = DgPlusAgentPlatform.UNKNOWN
-    if agent_type == DgPlusAgentType.HYBRID:
-        for agent in result["agents"]:
-            if agent["status"] == "RUNNING":
-                for metadata in agent["metadata"]:
-                    if metadata["key"] == "type":
-                        agent_class = metadata["value"].lower()
-                        if "K8sUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.K8S
-                            break
-                        elif "EcsUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.ECS
-                            break
-                        elif "DockerUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.DOCKER
-                            break
-                        elif "ProcessUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.LOCAL
-                            break
+    agent_platform = (
+        _agent_platform_from_agents(result["agents"])
+        if agent_type == DgPlusAgentType.HYBRID
+        else DgPlusAgentPlatform.UNKNOWN
+    )
 
     return agent_type, agent_platform
 
 
-def get_agent_type(cli_config: DagsterPlusCliConfig | None = None) -> DgPlusAgentType:
+def get_agent_type_and_platform(
+    cli_config: DagsterPlusCliConfig | None = None,
+) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
     if cli_config:
         from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 
@@ -69,17 +80,21 @@ def get_agent_type(cli_config: DagsterPlusCliConfig | None = None) -> DgPlusAgen
             organization=cli_config.organization,
             deployment=cli_config.default_deployment,
         )
-        return get_agent_type_and_platform_from_graphql(gql_client)[0]
+        return get_agent_type_and_platform_from_graphql(gql_client)
 
-    else:
-        return DgPlusAgentType(
-            click.prompt(
-                "Deployment agent type: ",
-                type=click.Choice(
-                    [agent_type.lower() for agent_type in DgPlusAgentType.__members__.keys()]
-                ),
-            ).upper()
-        )
+    prompted = DgPlusAgentType(
+        click.prompt(
+            "Deployment agent type: ",
+            type=click.Choice(
+                [agent_type.lower() for agent_type in DgPlusAgentType.__members__.keys()]
+            ),
+        ).upper()
+    )
+    return prompted, DgPlusAgentPlatform.UNKNOWN
+
+
+def get_agent_type(cli_config: DagsterPlusCliConfig | None = None) -> DgPlusAgentType:
+    return get_agent_type_and_platform(cli_config)[0]
 
 
 def create_deploy_dockerfile(
