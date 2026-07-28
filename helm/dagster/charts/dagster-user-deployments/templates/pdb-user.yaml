@@ -1,0 +1,37 @@
+{{ range $deployment := .Values.deployments }}
+{{- $pdb := $deployment.podDisruptionBudget | default dict }}
+{{- if $pdb.enabled }}
+{{- $hasMinAvailable := and (hasKey $pdb "minAvailable") (not (kindIs "invalid" $pdb.minAvailable)) }}
+{{- $hasMaxUnavailable := and (hasKey $pdb "maxUnavailable") (not (kindIs "invalid" $pdb.maxUnavailable)) }}
+{{- if and $hasMinAvailable $hasMaxUnavailable }}
+{{- fail (printf "deployment %q: podDisruptionBudget.minAvailable and podDisruptionBudget.maxUnavailable are mutually exclusive - set only one." $deployment.name) }}
+{{- end }}
+{{- if not (or $hasMinAvailable $hasMaxUnavailable) }}
+{{- fail (printf "deployment %q: podDisruptionBudget.enabled is true, but neither minAvailable nor maxUnavailable is set." $deployment.name) }}
+{{- end }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dagster.fullname" $ -}}-{{- $deployment.name }}
+  labels:
+    {{- include "dagster.labels" $ | nindent 4 }}
+    component: user-deployments
+    deployment: {{ $deployment.name }}
+spec:
+  {{- if $hasMinAvailable }}
+  minAvailable: {{ $pdb.minAvailable }}
+  {{- end }}
+  {{- if $hasMaxUnavailable }}
+  maxUnavailable: {{ $pdb.maxUnavailable }}
+  {{- end }}
+  {{- if $pdb.unhealthyPodEvictionPolicy }}
+  unhealthyPodEvictionPolicy: {{ $pdb.unhealthyPodEvictionPolicy }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "dagster.selectorLabels" $ | nindent 6 }}
+      component: user-deployments
+      deployment: {{ $deployment.name }}
+---
+{{ end }}
+{{- end }}
