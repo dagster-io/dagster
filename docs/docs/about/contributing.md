@@ -99,9 +99,10 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
 Some notes on developing in Dagster:
 
-- **Ruff/Pyright**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
+- **Ruff/ty**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [ty](https://github.com/astral-sh/ty) for static type-checking. We test these in our CI/CD pipeline.
   - Run `make ruff` from the repo root to format, sort imports, and autofix some lint errors. It will also print out errors that need to be manually fixed.
-  - Run `make pyright` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
+  - Run `make ty` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
+  - Run `make quick_ty` to type-check only the files you have changed relative to `master`.
 - **Line Width**: We use a line width of 100.
 - **IDE**: We recommend setting up your IDE to format and check with ruff on save, but you can always run `make ruff` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
