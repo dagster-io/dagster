@@ -1014,7 +1014,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=5.1" },
     { name = "rich" },
     { name = "setuptools" },
-    { name = "tomlkit", specifier = "<0.13.3" },
+    { name = "tomlkit", specifier = "!=0.13.3,<0.16" },
     { name = "typer", specifier = ">=0.15.1,<1.0" },
     { name = "typing-extensions", specifier = ">=4.4.0,<5" },
     { name = "watchdog" },
