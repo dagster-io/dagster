@@ -13,6 +13,7 @@ from dagster._core.storage.db_io_manager import (
     escape_sql_string_literal,
 )
 from deltalake import CommitProperties, DeltaTable, WriterProperties, write_deltalake
+from deltalake.exceptions import TableNotFoundError
 from deltalake.schema import (
     Field as DeltaField,
     PrimitiveType,
@@ -93,9 +94,13 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                         context.log.debug(
                             "Table exists and is partitioned, using append mode to preserve other partitions"
                         )
-            except Exception:
-                # Table doesn't exist, keep the original mode
+            except TableNotFoundError as e:
+                context.log.info("Table not found, keep the original mode")
                 pass
+            except Exception as e:
+                context.log.warning("Unhandled exception in handle_output: abort")
+                context.log.exception(e)
+                raise e
 
         context.log.debug("Writing with mode: %s", main_save_mode)
 
