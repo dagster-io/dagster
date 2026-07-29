@@ -98,7 +98,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             except Exception as e:
                 context.log.warning("Unhandled exception in handle_output: abort")
                 context.log.exception(e)
-                raise e
+                raise
 
         context.log.debug("Writing with mode: %s", main_save_mode)
 
