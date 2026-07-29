@@ -1,0 +1,42 @@
+# These are the services and networks that are referenced when running SQL Server tests.
+# They should be referenced in both the standard conftest.py as well as the MSSQL section
+# in the buildkite steps/packages.py file.
+services:
+  # The standard SQL Server test instance. Developer edition is free for non-production
+  # use and is functionally equivalent to Enterprise.
+  test-mssql-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: test-mssql-db
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dagster!Passw0rd"
+      MSSQL_PID: "Developer"
+      # Left on the default collation on purpose. Dagster's text columns are NVARCHAR on
+      # SQL Server so that storage does not depend on the database codepage; running the
+      # suite under the default collation is what proves that.
+    networks:
+      - mssql
+
+  # A pinned older instance. SQL Server 2017 predates UTF-8 collations entirely, so it is
+  # the version that would surface any reliance on them.
+  test-mssql-db-pinned:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: test-mssql-db-pinned
+    ports:
+      - "1434:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dagster!Passw0rd"
+      MSSQL_PID: "Developer"
+    networks:
+      - mssql_pinned
+
+networks:
+  mssql:
+    driver: bridge
+    name: mssql
+  mssql_pinned:
+    driver: bridge
+    name: mssql_pinned

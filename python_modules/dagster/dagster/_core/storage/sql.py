@@ -228,6 +228,80 @@ def compile_longtext_mysql(_element, _compiler, **_kw) -> str:
     return "LONGTEXT"
 
 
+# 2: make SQL Server dates, text and identifiers equivalent to PG or MySQL
+
+MSSQL_DATE_PRECISION: int = 6
+
+# SQL Server's nonclustered index key is limited to 1700 bytes, and NVARCHAR costs two
+# bytes per character, so every text column that participates in an index key has to be
+# given an explicit bound.  See `mssql_text` below.
+MSSQL_INDEX_KEY_LENGTH: int = 256
+
+
+@compiles(db.types.TIMESTAMP, "mssql")
+def compile_timestamp_mssql(_element, _compiler, **_kw) -> str:
+    """A bare TIMESTAMP column on SQL Server is a synonym for ROWVERSION -- an
+    auto-generated binary counter, not a point in time -- and a table may only have one of
+    them.  DATETIME2 is the actual timestamp type.
+    """
+    return f"DATETIME2({MSSQL_DATE_PRECISION})"
+
+
+@compiles(db.DateTime, "mssql")
+def compile_datetime_and_add_precision_mssql(_element, _compiler, **_kw) -> str:
+    """DATETIME on SQL Server only resolves to ~3.33ms, which is too coarse for the
+    timestamp comparisons dagster does when paginating ticks and runs.
+    """
+    return f"DATETIME2({MSSQL_DATE_PRECISION})"
+
+
+@compiles(get_sql_current_timestamp, "mssql")
+def compiles_get_sql_current_timestamp_mssql(_element, _compiler, **_kw) -> str:
+    # CURRENT_TIMESTAMP on SQL Server is server-local and only DATETIME precision
+    return "SYSUTCDATETIME()"
+
+
+def mssql_text(index_key_length: int | None = None) -> db.Text:
+    """A Text column that is also valid, and lossless, on SQL Server.
+
+    Two things differ from Postgres and MySQL:
+
+    * ``db.Text`` renders as ``VARCHAR(max)``, which SQL Server refuses to use as an index
+      key column.  Columns that appear in an index must be given a bounded length --
+      ``index_key_length`` -- which is the SQL Server analogue of the prefix lengths
+      dagster-mysql indexes these same columns with via ``mysql_length``.  Unlike a MySQL
+      prefix index the bound applies to storage as well, but SQL Server raises rather than
+      truncating, so an over-long value fails loudly instead of corrupting.
+    * ``VARCHAR`` stores text in the database's codepage, so under any non-UTF-8 collation
+      every character outside it is silently replaced with ``?``.  Asset keys, partition
+      keys and run tags are written as raw strings, so that is real data loss.  Binding
+      them as ``NVARCHAR`` makes storage independent of the server's collation, which
+      matters because UTF-8 collations only exist on SQL Server 2019 and later.
+
+    ``db.UnicodeText`` deliberately is not used here: it renders as ``NTEXT``, which is
+    deprecated and, like ``VARCHAR(max)``, cannot be indexed.
+
+    ``with_variant`` leaves the DDL *and* the bind-parameter handling of every other
+    dialect completely untouched.
+    """
+    return db.Text().with_variant(db.NVARCHAR(index_key_length), "mssql")
+
+
+def mssql_string(length: int) -> db.String:
+    """A String column that stores Unicode independently of the server collation.
+
+    Same codepage reasoning as :py:func:`mssql_text`; ``db.String`` renders as ``VARCHAR``
+    on SQL Server, so a bounded string holding user data needs the same treatment.
+    """
+    return db.String(length).with_variant(db.NVARCHAR(length), "mssql")
+
+
 class MySQLCompatabilityTypes:
-    UniqueText = db.String(512)
-    LongText = LongText
+    # Bounded rather than TEXT because MySQL cannot put a unique constraint on a TEXT
+    # column, and NVARCHAR on SQL Server for the collation reasons described above.
+    UniqueText = mssql_string(512)
+    # An instance rather than the class, so that the SQL Server variant carries through to
+    # bind-parameter handling and not just the emitted DDL.  A compiler directive alone
+    # would declare the column NVARCHAR while still binding values as VARCHAR, which is
+    # exactly the silent-corruption case `mssql_text` describes.
+    LongText = LongText().with_variant(db.NVARCHAR(None), "mssql")

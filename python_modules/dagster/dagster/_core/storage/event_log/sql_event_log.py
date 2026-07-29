@@ -1624,7 +1624,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         if prefix:
             prefix_str = seven.dumps(prefix)[:-1]
-            query = query.where(AssetKeyTable.c.asset_key.startswith(prefix_str))
+            query = query.where(self._asset_key_startswith(prefix_str))
 
         if cursor:
             query = query.where(AssetKeyTable.c.asset_key > cursor)
@@ -1632,6 +1632,16 @@ class SqlEventLogStorage(EventLogStorage):
         if limit:
             query = query.limit(limit)
         return query
+
+    def _asset_key_startswith(self, prefix_str: str):
+        """Predicate matching asset keys that begin with `prefix_str`.
+
+        Overridable because the set of characters that are special inside a LIKE pattern
+        is not the same on every database. A serialized asset key always begins with '[',
+        which T-SQL -- unlike the SQL standard -- treats as the start of a character
+        class.
+        """
+        return AssetKeyTable.c.asset_key.startswith(prefix_str)
 
     def _get_assets_details(self, asset_keys: Sequence[AssetKey]) -> Sequence[AssetDetails | None]:
         check.sequence_param(asset_keys, "asset_key", AssetKey)
