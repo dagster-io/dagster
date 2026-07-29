@@ -1,11 +1,12 @@
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar, cast
+from typing import Any, Generic, TypeAlias, TypeVar, cast
 
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
+from dagster._core.definitions.partitions.utils import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbTypeHandler,
     TablePartitionDimension,
@@ -27,9 +28,6 @@ except ImportError:
     from pyarrow.parquet import _filters_to_expression as filters_to_expression
 
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.partitions.utils import TimeWindow
 
 T = TypeVar("T")
 ArrowTypes: TypeAlias = pa.Table | pa.RecordBatchReader
@@ -94,7 +92,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
                         context.log.debug(
                             "Table exists and is partitioned, using append mode to preserve other partitions"
                         )
-            except TableNotFoundError as e:
+            except TableNotFoundError:
                 context.log.info("Table not found, keep the original mode")
                 pass
             except Exception as e:
@@ -221,6 +219,14 @@ def partition_dimensions_to_dnf(
                 )
                 parts.append(filter_)
             elif field.type.type == "string":
+                if isinstance(partition_dimension.partitions, TimeWindow):
+                    raise ValueError(
+                        f"Partition column '{partition_dimension.partition_expr}' is "
+                        f"time-partitioned ({partition_dimension.partitions!r}), but the Delta "
+                        "table column is typed 'string' rather than 'timestamp'/'date'. Check "
+                        "that the actual column type matches the asset's time-based "
+                        "partitions_def."
+                    )
                 parts.append(_value_dnf(partition_dimension, field.type.type, str_values=True))
             else:
                 raise ValueError(f"Unsupported partition type {field.type.type}")
