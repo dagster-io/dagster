@@ -334,6 +334,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 
+    def clear_cached_schema_capabilities(self) -> None:
+        """Clear storage capability values that may change after a schema migration."""
+
     @abstractmethod
     def get_event_records(
         self,

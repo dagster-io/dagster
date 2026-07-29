@@ -455,6 +455,35 @@ class TestEventLogStorage:
         else:
             assert storage.is_persistent
 
+    def test_schema_capabilities_are_cached(self, storage):
+        if not isinstance(storage, SqlEventLogStorage):
+            pytest.skip("schema capability caching is only available for SQL storage")
+
+        can_read = storage.can_read_asset_status_cache()
+        storage.clear_cached_schema_capabilities()
+        with mock.patch.object(
+            storage,
+            "_has_asset_key_col_on_connection",
+            return_value=can_read,
+        ) as column_probe:
+            assert storage.can_read_asset_status_cache() is can_read
+            assert storage.can_write_asset_status_cache() is can_read
+            assert column_probe.call_count == 1
+
+            storage.clear_cached_schema_capabilities()
+            assert storage.can_read_asset_status_cache() is can_read
+            assert column_probe.call_count == 2
+
+        storage.clear_cached_schema_capabilities()
+        with mock.patch.object(storage, "has_table", wraps=storage.has_table) as table_probe:
+            supports_asset_checks = storage.supports_asset_checks
+            assert storage.supports_asset_checks is supports_asset_checks
+            assert table_probe.call_count == 1
+
+            storage.clear_cached_schema_capabilities()
+            assert storage.supports_asset_checks is supports_asset_checks
+            assert table_probe.call_count == 2
+
     def test_log_storage_run_not_found(self, storage):
         assert storage.get_logs_for_run(make_new_run_id()) == []
 

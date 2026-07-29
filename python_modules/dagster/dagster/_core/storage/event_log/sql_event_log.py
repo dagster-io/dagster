@@ -228,8 +228,19 @@ class SqlEventLogStorage(EventLogStorage):
         }
 
     def has_asset_key_col(self, column_name: str) -> bool:
-        with self.index_connection() as conn:
-            return self._has_asset_key_col_on_connection(conn, column_name)
+        # SQLAlchemy schema introspection opens a database connection. These capabilities are
+        # stable between migrations, so avoid repeating that round trip for every asset resolver.
+        cache = getattr(self, "_asset_key_column_cache", None)
+        if cache is None:
+            cache = self._asset_key_column_cache = {}
+        if column_name not in cache:
+            with self.index_connection() as conn:
+                cache[column_name] = self._has_asset_key_col_on_connection(conn, column_name)
+        return cache[column_name]
+
+    def clear_cached_schema_capabilities(self) -> None:
+        self._asset_key_column_cache: dict[str, bool] = {}
+        self._supports_asset_checks_cache: bool | None = None
 
     def _has_asset_key_col_on_connection(self, conn: Connection, column_name: str) -> bool:
         column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
@@ -3425,7 +3436,12 @@ class SqlEventLogStorage(EventLogStorage):
 
     @property
     def supports_asset_checks(self):
-        return self.has_table(AssetCheckExecutionsTable.name)
+        cached_value = getattr(self, "_supports_asset_checks_cache", None)
+        if cached_value is None:
+            cached_value = self._supports_asset_checks_cache = self.has_table(
+                AssetCheckExecutionsTable.name
+            )
+        return cached_value
 
     def get_latest_planned_materialization_info(
         self,

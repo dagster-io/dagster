@@ -867,6 +867,7 @@ class DagsterInstance(
             if print_fn:
                 print_fn("Updating event storage...")
             self._event_storage.upgrade()
+            self._event_storage.clear_cached_schema_capabilities()
             self._event_storage.reindex_assets(print_fn=print_fn)
 
             if print_fn:
