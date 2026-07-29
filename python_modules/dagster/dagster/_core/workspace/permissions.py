@@ -1,6 +1,13 @@
+import os
 from collections.abc import Mapping
 from enum import Enum, unique
 from typing import NamedTuple
+
+# Local-development escape hatch for the Dagster+-only app-managed (UI-backed)
+# component feature. This is NOT a supported way to enable the feature in open
+# source -- it exists so the component authoring form can be exercised against a
+# local `dagster dev` / `dg dev`, and it is read at import time.
+_DEV_ENABLE_APP_MANAGED_COMPONENTS = os.getenv("DAGSTER_DEV_ENABLE_APP_MANAGED_COMPONENTS") == "1"
 
 
 @unique
@@ -76,8 +83,9 @@ EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.TOGGLE_AUTO_MATERIALIZE: True,
     Permissions.EDIT_CONCURRENCY_LIMIT: True,
     # App-managed (UI-backed) components are a Dagster+-only feature, so editing
-    # them from the UI is not permitted in open source.
-    Permissions.EDIT_APP_MANAGED_COMPONENTS: False,
+    # them from the UI is not permitted in open source. The local-dev override
+    # above is for exercising the authoring form against `dagster dev`.
+    Permissions.EDIT_APP_MANAGED_COMPONENTS: _DEV_ENABLE_APP_MANAGED_COMPONENTS,
     Permissions.REFRESH_COMPONENT_STATE: True,
 }
 
