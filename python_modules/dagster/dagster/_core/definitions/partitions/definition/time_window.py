@@ -1195,6 +1195,34 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     def has_partition_key(self, partition_key: str) -> bool:
         """Returns a boolean representing if the given partition key is valid."""
+        return self._has_partition_key(
+            partition_key,
+            self.get_first_partition_window(),
+            self.get_last_partition_window(),
+        )
+
+    def filter_valid_partition_keys(self, partition_keys: Iterable[str]) -> set[str]:
+        first_partition_window = self.get_first_partition_window()
+        last_partition_window = self.get_last_partition_window()
+        if first_partition_window is None or last_partition_window is None:
+            return set()
+
+        return {
+            partition_key
+            for partition_key in partition_keys
+            if self._has_partition_key(
+                partition_key,
+                first_partition_window,
+                last_partition_window,
+            )
+        }
+
+    def _has_partition_key(
+        self,
+        partition_key: str,
+        first_partition_window: TimeWindow | None,
+        last_partition_window: TimeWindow | None,
+    ) -> bool:
         try:
             partition_start_time = self.start_time_for_partition_key(partition_key)
             partition_start_timestamp = partition_start_time.timestamp()
@@ -1205,8 +1233,6 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         if self.is_window_start_excluded(partition_start_time):
             return False
 
-        first_partition_window = self.get_first_partition_window()
-        last_partition_window = self.get_last_partition_window()
         return not (
             # no partitions at all
             first_partition_window is None

@@ -2036,55 +2036,31 @@ class SqlEventLogStorage(EventLogStorage):
             after_cursor=after_storage_id,
         )
 
-        latest_events_subquery = db_subquery(
-            db_select(
-                [
-                    SqlEventLogStorageTable.c.dagster_event_type,
-                    SqlEventLogStorageTable.c.partition,
-                    SqlEventLogStorageTable.c.run_id,
-                    SqlEventLogStorageTable.c.id,
-                ]
-            ).select_from(
-                latest_event_ids_subquery.join(
-                    SqlEventLogStorageTable,
-                    SqlEventLogStorageTable.c.id == latest_event_ids_subquery.c.id,
-                ),
-            ),
-            "latest_events_subquery",
-        )
-
-        materialization_planned_events = db_select(
+        latest_events = db_select(
             [
-                latest_events_subquery.c.dagster_event_type,
-                latest_events_subquery.c.partition,
-                latest_events_subquery.c.run_id,
-                latest_events_subquery.c.id,
+                SqlEventLogStorageTable.c.dagster_event_type,
+                SqlEventLogStorageTable.c.partition,
+                SqlEventLogStorageTable.c.run_id,
+                SqlEventLogStorageTable.c.id,
             ]
-        ).where(
-            latest_events_subquery.c.dagster_event_type
-            == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
-        )
-
-        materialization_events = db_select(
-            [
-                latest_events_subquery.c.dagster_event_type,
-                latest_events_subquery.c.partition,
-                latest_events_subquery.c.run_id,
-                latest_events_subquery.c.id,
-            ]
-        ).where(
-            latest_events_subquery.c.dagster_event_type
-            == DagsterEventType.ASSET_MATERIALIZATION.value
+        ).select_from(
+            latest_event_ids_subquery.join(
+                SqlEventLogStorageTable,
+                SqlEventLogStorageTable.c.id == latest_event_ids_subquery.c.id,
+            )
         )
 
         with self.index_connection() as conn:
-            materialization_planned_rows = db_fetch_mappings(conn, materialization_planned_events)
-            materialization_rows = db_fetch_mappings(conn, materialization_events)
+            latest_event_rows = db_fetch_mappings(conn, latest_events)
 
         materialization_planned_rows_by_partition = {
-            row["partition"]: (row["run_id"], row["id"]) for row in materialization_planned_rows
+            row["partition"]: (row["run_id"], row["id"])
+            for row in latest_event_rows
+            if row["dagster_event_type"] == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value
         }
-        for mat_row in materialization_rows:
+        for mat_row in latest_event_rows:
+            if mat_row["dagster_event_type"] != DagsterEventType.ASSET_MATERIALIZATION.value:
+                continue
             mat_partition = mat_row["partition"]
             mat_event_id = mat_row["id"]
             if mat_partition not in materialization_planned_rows_by_partition:

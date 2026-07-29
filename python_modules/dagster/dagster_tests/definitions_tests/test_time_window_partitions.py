@@ -1802,6 +1802,47 @@ def test_has_partition_key():
     assert partitions_def.has_partition_key("2020-03-15")
 
 
+def test_filter_valid_partition_keys():
+    partition_defs_and_keys = [
+        (
+            dg.DailyPartitionsDefinition(
+                start_date="2020-01-01",
+                end_date="2020-01-06",
+                exclusions=[datetime(2020, 1, 3)],
+            ),
+            {
+                "fdsjkl",
+                "2019-12-31",
+                "2020-01-01",
+                "2020-01-03",
+                "2020-01-05",
+                "2020-01-06",
+            },
+        ),
+        (
+            dg.HourlyPartitionsDefinition(
+                start_date="2020-11-01-00:00",
+                end_date="2020-11-01-04:00",
+                timezone="US/Pacific",
+            ),
+            {
+                "2020-11-01-00:00",
+                "2020-11-01-01:00",
+                "2020-11-01-01:00-0800",
+                "2020-11-01-01:00-0700",
+                "2020-11-01-04:00",
+            },
+        ),
+    ]
+
+    for partitions_def, partition_keys in partition_defs_and_keys:
+        assert partitions_def.filter_valid_partition_keys(partition_keys) == {
+            partition_key
+            for partition_key in partition_keys
+            if partitions_def.has_partition_key(partition_key)
+        }
+
+
 @pytest.mark.parametrize(
     "partitions_def,first_partition_window,last_partition_window,number_of_partitions,fmt",
     [
