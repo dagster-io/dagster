@@ -49,6 +49,7 @@ import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetGraphQueryItem} from './types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
+import {useAssetGroupViewportAnchor} from './useAssetGroupViewportAnchor';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
 import {useFeatureFlags} from '../app/useFeatureFlags';
@@ -202,8 +203,6 @@ const AssetGraphExplorerWithData = ({
     isEmptyState: (val) => val.length === 0,
   });
 
-  const focusGroupIdAfterLayoutRef = React.useRef('');
-
   const {
     layout,
     loading: layoutLoading,
@@ -225,6 +224,8 @@ const AssetGraphExplorerWithData = ({
   );
 
   const viewportEl = React.useRef<SVGViewportRef>();
+  const {anchorRefForGroup, captureBeforeToggle, consumeHandledLayout, isPendingGroup} =
+    useAssetGroupViewportAnchor({layout, expandedGroups, viewportRef: viewportEl});
 
   const selectedTokens =
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -347,17 +348,16 @@ const AssetGraphExplorerWithData = ({
       return;
     }
 
+    const directToggleHandled = consumeHandledLayout(layout);
+
     // After renders that result in a meaningfully new layout, autocenter or
     // focus on the selected node. (If selection was specified in the URL).
     // Don't animate this change.
-    if (layoutChangeShouldAdjustViewport(lastRenderedLayout.current, layout)) {
-      if (
-        focusGroupIdAfterLayoutRef.current &&
-        layout.groups[focusGroupIdAfterLayoutRef.current]?.expanded
-      ) {
-        zoomToGroup(focusGroupIdAfterLayoutRef.current, false, false);
-        focusGroupIdAfterLayoutRef.current = '';
-      } else if (lastSelectedNode) {
+    if (
+      layoutChangeShouldAdjustViewport(lastRenderedLayout.current, layout) &&
+      !directToggleHandled
+    ) {
+      if (lastSelectedNode) {
         const layoutNode = layout.nodes[lastSelectedNode.id];
         if (layoutNode) {
           viewportEl.current.zoomToSVGBox(layoutNode.bounds, false);
@@ -368,7 +368,7 @@ const AssetGraphExplorerWithData = ({
       }
     }
     lastRenderedLayout.current = layout;
-  }, [lastSelectedNode, layout, viewportEl, zoomToGroup]);
+  }, [consumeHandledLayout, lastSelectedNode, layout, viewportEl]);
 
   const onClickBackground = () =>
     onChangeExplorerPath(
@@ -511,7 +511,9 @@ const AssetGraphExplorerWithData = ({
       {({scale}, viewportRect) => (
         <svg className={styles.svgContainer} width={layout.width} height={layout.height}>
           {Object.values(layout.groups)
-            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .filter(
+              (group) => isPendingGroup(group.id) || !isNodeOffscreen(group.bounds, viewportRect),
+            )
             .filter((group) => group.expanded)
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) => (
@@ -537,13 +539,16 @@ const AssetGraphExplorerWithData = ({
           />
 
           {Object.values(layout.groups)
-            .filter((node) => !isNodeOffscreen(node.bounds, viewportRect))
+            .filter(
+              (group) => isPendingGroup(group.id) || !isNodeOffscreen(group.bounds, viewportRect),
+            )
             .sort((a, b) => a.id.length - b.id.length)
             .map((group) =>
               group.expanded ? (
                 <foreignObject
                   key={group.id}
                   {...group.bounds}
+                  ref={anchorRefForGroup(group.id)}
                   className="group"
                   onDoubleClick={(e) => {
                     zoomToGroup(group.id);
@@ -566,7 +571,7 @@ const AssetGraphExplorerWithData = ({
                       if (next.length === expandedGroups.length) {
                         return;
                       }
-                      focusGroupIdAfterLayoutRef.current = group.id;
+                      captureBeforeToggle(group.id, false);
                       setExpandedGroups(next);
                     }}
                     toggleSelectAllNodes={(e: React.MouseEvent) => {
@@ -578,6 +583,7 @@ const AssetGraphExplorerWithData = ({
                 <foreignObject
                   key={group.id}
                   {...group.bounds}
+                  ref={anchorRefForGroup(group.id)}
                   className="group"
                   onMouseEnter={() => setHighlighted([group.id])}
                   onMouseLeave={() => setHighlighted(null)}
@@ -603,7 +609,7 @@ const AssetGraphExplorerWithData = ({
                       assets: groupedAssets[group.id] || [],
                     }}
                     onExpand={() => {
-                      focusGroupIdAfterLayoutRef.current = group.id;
+                      captureBeforeToggle(group.id, true);
                       setExpandedGroups([...expandedGroups, group.id]);
                     }}
                     toggleSelectAllNodes={(e: React.MouseEvent) => {
