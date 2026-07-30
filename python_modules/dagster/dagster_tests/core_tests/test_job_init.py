@@ -250,6 +250,26 @@ def test_resource_init_message_falls_back_without_job_def():
     assert message == "Starting initialization of resources [io_manager, resource_a, resource_b]."
 
 
+def test_resource_init_message_with_no_op_declared_resources():
+    """When job_def is available but no op declares a resource, only the framework-supplied
+    io_manager initializes. The enriched format should still be used, not the flat fallback.
+    """
+
+    @dg.op
+    def no_resources_op(_):
+        pass
+
+    @dg.job
+    def bare_job():
+        no_resources_op()
+
+    message = _resource_init_started_message(bare_job, pass_job_def=True)
+
+    assert (
+        message == "Starting initialization of resources:\nio_manager - required by the I/O layer"
+    )
+
+
 def test_job_def_reaches_innermost_resource_generator(monkeypatch):
     """job_def must be forwarded from resource_initialization_manager down to the innermost
     generator. A param that is accepted but not forwarded still typechecks, so assert it arrives.

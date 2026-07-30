@@ -414,7 +414,7 @@ def _resource_init_start_message(
     resource_keys: AbstractSet[str],
     resource_key_to_op_names: Mapping[str, AbstractSet[str]] | None,
 ) -> str:
-    if not resource_key_to_op_names:
+    if resource_key_to_op_names is None:
         return "Starting initialization of resources [{}].".format(", ".join(sorted(resource_keys)))
 
     # Iterate resource_keys (scoped to this step) rather than the job-wide mapping, so a step
