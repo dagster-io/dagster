@@ -9,7 +9,7 @@ dependencies = [
     "numpy>=2.0.2",
     "scikit-learn>=1.6.1",
     "seaborn>=0.13.2",
-    "torch>=2.8.0",
+    "torch>=2.13.0",
     "torchvision",
 ]
 
