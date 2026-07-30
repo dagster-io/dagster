@@ -253,6 +253,42 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.START_TIMEOUT.value
 
 
+@pytest.mark.parametrize(
+    "worker_status,should_fail",
+    [
+        # Worker already dead while starting up -> fail fast, don't wait for the start timeout.
+        (WorkerStatus.FAILED, True),
+        # Pod not yet visible to the API / still being scheduled -> leave to the timeout backstop.
+        (WorkerStatus.UNKNOWN, False),
+        (WorkerStatus.NOT_FOUND, False),
+        (WorkerStatus.RUNNING, False),
+    ],
+)
+def test_monitor_starting_worker_health(
+    instance: DagsterInstance, logger: Logger, worker_status: WorkerStatus, should_fail: bool
+):
+    run = create_run_for_test(instance, job_name="foo")
+    # Not timed out, so only the worker-health check can fail it.
+    report_starting_event(instance, run, timestamp=time.time())
+
+    instance.run_launcher.check_run_worker_health = lambda _run: CheckRunHealthResult(  # type: ignore
+        worker_status, "worker gone"
+    )
+
+    monitor_starting_run(
+        instance,
+        check.not_none(instance.get_run_record_by_id(run.run_id)),
+        logger,
+    )
+
+    run = check.not_none(instance.get_run_by_id(run.run_id))
+    if should_fail:
+        assert run.status == DagsterRunStatus.FAILURE
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.UNEXPECTED_TERMINATION.value
+    else:
+        assert run.status == DagsterRunStatus.STARTING
+
+
 def test_monitor_canceling(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
