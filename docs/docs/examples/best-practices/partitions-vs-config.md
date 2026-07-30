@@ -13,7 +13,7 @@ In this example, we'll explore two different approaches to parameterizing Dagste
 
 Imagine you need to process data for multiple customers, where each customer's data should be processed independently. You want to be able to run the pipeline for specific customers and potentially reprocess historical data when needed.
 
-The key question is: Should you use partitions to create a segment for each customer, or should you use config to pass the customer ID as a parameter?
+Should you use partitions to create a segment for each customer, or config to pass the customer ID as a parameter?
 
 **Use partitions when:**
 

@@ -59,8 +59,6 @@ attributes:
   group_name: streaming
 ```
 
-### Pattern 3: Observation sensor
-
 ## Pattern 3: Observation sensor
 
 Create a [sensor](/guides/automate/sensors) that monitors the external stream and emits observations. Observations create a time-series record of stream health without materializing the asset.
@@ -73,9 +71,9 @@ Create a [sensor](/guides/automate/sensors) that monitors the external stream an
 
 The sensor:
 
-- **Checks stream health**: Query Kafka for consumer lag, throughput, and partition status
-- **Emits AssetObservation**: Records metrics without triggering materialization
-- **Runs periodically**: Default interval prevents overwhelming the Kafka admin API
+- **Checks stream health**: Query Kafka for consumer lag, throughput, and partition status.
+- **Emits AssetObservation**: Records metrics without triggering materialization.
+- **Runs periodically**: Default interval prevents overwhelming the Kafka admin API.
 
 In production, you would query actual Kafka metrics using a library like `confluent-kafka`:
 

@@ -1,6 +1,6 @@
 ---
 title: Feature engineering
-description: Feature Engineering Book Categories
+description: Feature engineering book categories
 last_update:
   author: Dennis Hume
 sidebar_position: 30

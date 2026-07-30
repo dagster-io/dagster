@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.13.16 (core) / 0.29.16 (libraries)
+
+### New
+
+- Declarative Automation can now automate jobs, available as a preview feature. Pass an `automation_condition` to `define_asset_job` — wrapping an asset-level condition with `AutomationCondition.any_job_root_assets_match` or `AutomationCondition.all_job_root_assets_match` — to launch a single run of the job when the condition becomes true. Evaluation history is viewable in the new Automation tab on job pages.
+- [ui] The Components tab for a code location now lists all component instances in the location, not just app-managed ones.
+
+### Bugfixes
+
+- [dagster-airbyte] Fixed a bug where Airbyte API requests were not retried on transient failures, causing syncs to fail after a single transient error despite the `request_max_retries` setting. (Thanks, [@MercureTony](https://github.com/MercureTony)!)
+
+### Documentation
+
+- Clarified the distinction between definition-time and runtime metadata, and documented how to access asset definition metadata from a custom I/O manager.
+- Documented the available configuration options for the Soda integration.
+
 ## 1.13.15 (core) / 0.29.15 (libraries)
 
 ### New
