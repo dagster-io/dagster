@@ -116,6 +116,9 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
     ):
         self._inst_data = inst_data
         self._logger = logging.getLogger("K8sUserCodeLauncher")
+        # Namespaces for which we've already warned that the agent's RBAC lacks
+        # ConfigMap permissions, so the periodic GC sweep doesn't spam the logs.
+        self._defs_state_cm_forbidden_namespaces: set[str] = set()
         self._dagster_home = check.str_param(dagster_home, "dagster_home")
         self._instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self._namespace = namespace
@@ -538,16 +541,37 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
             # Create the CM BEFORE the Deployment so a racing new pod sees the
             # current pin at mount time. Allowed to be ahead of the running
             # server's in-memory state — that's the safety property.
-            self._create_or_replace_defs_state_config_map(
-                deployment_name,
-                location_name,
-                resource_name,
-                check.not_none(container_context.namespace),
-                serialized_defs_state_info=(
-                    serialize_value(metadata.defs_state_info) if metadata.defs_state_info else ""
-                ),
-                server_timestamp=desired_entry.update_timestamp,
-            )
+            try:
+                self._create_or_replace_defs_state_config_map(
+                    deployment_name,
+                    location_name,
+                    resource_name,
+                    check.not_none(container_context.namespace),
+                    serialized_defs_state_info=(
+                        serialize_value(metadata.defs_state_info)
+                        if metadata.defs_state_info
+                        else ""
+                    ),
+                    server_timestamp=desired_entry.update_timestamp,
+                )
+            except ApiException as e:
+                if e.status != 403:
+                    raise
+                # Graceful degradation: the agent's Role predates the fast-reload
+                # feature and lacks ConfigMap permissions. Fall back to the legacy
+                # (pre-v2) server spec — no CM mount, no override env var, no v2
+                # label — so the location still deploys; it just stays on
+                # destroy-and-recreate reloads instead of fast in-place reloads.
+                self._logger.warning(
+                    "The agent's Kubernetes service account is not permitted to create "
+                    f"ConfigMaps in namespace {container_context.namespace} (403 Forbidden). "
+                    f"Launching code server {resource_name} for "
+                    f"{deployment_name}:{location_name} without the defs-state ConfigMap; "
+                    "fast in-place reload will be unavailable for this server. To enable "
+                    "it, grant the agent's Role permissions on the 'configmaps' resource "
+                    "(included in the latest agent Helm chart)."
+                )
+                mount_defs_state = False
 
         deployment_reponse = None
 
@@ -776,10 +800,26 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                 cms = core.list_namespaced_config_map(
                     namespace, label_selector="managed_by=K8sUserCodeLauncher"
                 ).items
-            except ApiException:
-                self._logger.exception(
-                    f"Failed to list defs-state ConfigMaps in namespace {namespace} during cleanup."
-                )
+            except ApiException as e:
+                if e.status == 403:
+                    # Missing ConfigMap RBAC — expected with a pre-fast-reload Role.
+                    # Nothing to GC in that case (the same permission gap means we
+                    # never created any CMs); warn once per namespace instead of
+                    # logging a full traceback on every sweep.
+                    if namespace not in self._defs_state_cm_forbidden_namespaces:
+                        self._defs_state_cm_forbidden_namespaces.add(namespace)
+                        self._logger.warning(
+                            "The agent's Kubernetes service account is not permitted to "
+                            f"list ConfigMaps in namespace {namespace} (403 Forbidden); "
+                            "skipping defs-state ConfigMap cleanup. To remove this "
+                            "warning, grant the agent's Role permissions on the "
+                            "'configmaps' resource (included in the latest agent Helm "
+                            "chart)."
+                        )
+                else:
+                    self._logger.exception(
+                        f"Failed to list defs-state ConfigMaps in namespace {namespace} during cleanup."
+                    )
                 continue
             for cm in cms:
                 name = cm.metadata.name

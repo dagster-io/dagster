@@ -1395,6 +1395,54 @@ def test_start_new_server_spinup_config_map_idempotent_on_409(kubeconfig_file):
     assert len(replace_calls) == 1
 
 
+def test_start_new_server_spinup_degrades_gracefully_on_403(kubeconfig_file):
+    """Missing ConfigMap RBAC (e.g. a Role created from a pre-fast-reload Helm
+    chart) must NOT fail the code-location deploy. The launcher falls back to
+    the legacy (pre-v2) server spec: Deployment still created, but without the
+    v2 spec-version label, the defs-state volume, or a CM replace attempt.
+    """
+    mock_apps = mock.MagicMock()
+    mock_core = mock.MagicMock()
+    mock_core.create_namespaced_config_map.side_effect = ApiException(
+        status=403, reason="Forbidden"
+    )
+
+    with k8s_instance() as instance:
+        launcher = K8sUserCodeLauncher(
+            dagster_home="/opt/dagster/dagster_home",
+            instance_config_map="dagster-instance",
+            service_account_name="MY_SERVICE_ACCOUNT_NAME",
+            namespace="default",
+            kubeconfig_file=kubeconfig_file,
+            k8s_apps_api_client=mock_apps,
+            k8s_core_api_client=mock_core,
+        )
+        launcher.register_instance(instance)
+        # Must not raise.
+        launcher._start_new_server_spinup(  # noqa: SLF001
+            deployment_name="acme",
+            location_name="sandbox",
+            desired_entry=UserCodeLauncherEntry(
+                CodeLocationDeployData("bizbuz", package_name="blim"), time.time()
+            ),
+        )
+
+    # 403 is NOT the 409 idempotency path — no replace attempt.
+    replace_calls = [c for c in mock_core.method_calls if c[0] == "replace_namespaced_config_map"]
+    assert replace_calls == []
+
+    # Deployment still created, but as a legacy (pre-v2) spec: no v2 label,
+    # no defs-state volume — so the capability gate keeps fast reload off.
+    deploy_name, _deploy_args, deploy_kw = next(
+        c for c in mock_apps.method_calls if c[0] == "create_namespaced_deployment"
+    )
+    assert deploy_name == "create_namespaced_deployment"
+    body = deploy_kw["body"].to_dict()
+    assert SERVER_SPEC_VERSION_LABEL_KEY not in body["metadata"]["labels"]
+    volume_names = {v["name"] for v in (body["spec"]["template"]["spec"].get("volumes") or [])}
+    assert DEFS_STATE_VOLUME_NAME not in volume_names
+
+
 def test_remove_server_handle_deletes_own_defs_state_config_map():
     """Removal deletes exactly this incarnation's CM (derived from handle.name) —
     never a CM belonging to a live replacement server for the same location.
@@ -1867,6 +1915,28 @@ def test_orphan_cm_cleanup_swallows_404(kubeconfig_file):
         core.delete_namespaced_config_map.side_effect = ApiException(status=404, reason="missing")
         # Should not raise.
         launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+
+
+def test_orphan_cm_cleanup_warns_once_on_403(kubeconfig_file):
+    """Missing ConfigMap RBAC: the sweep must not raise or log a traceback on
+    every pass — it warns once per namespace and skips.
+
+    (The same permission gap means no CMs were ever created, so there is
+    nothing to GC anyway.)
+    """
+    with _orphan_cm_launcher(kubeconfig_file, deployments=[], config_maps=[]) as (
+        launcher,
+        _apps,
+        core,
+    ):
+        core.list_namespaced_config_map.side_effect = ApiException(status=403, reason="Forbidden")
+        with mock.patch.object(launcher._logger, "warning") as mock_warning:  # noqa: SLF001
+            # Two sweeps: neither raises, and the warning is emitted only once.
+            launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+            launcher._cleanup_orphan_defs_state_config_maps()  # noqa: SLF001
+        assert mock_warning.call_count == 1
+        deletes = [c for c in core.method_calls if c[0] == "delete_namespaced_config_map"]
+        assert deletes == []
 
 
 def test_graceful_cleanup_servers_invokes_orphan_cm_sweep_after_super(kubeconfig_file):
