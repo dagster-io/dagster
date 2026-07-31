@@ -55,7 +55,10 @@ class SparkResource:
         )
         self.logger.info("Running spark-submit: " + " ".join(spark_shell_cmd))
 
-        retcode = subprocess.call(" ".join(spark_shell_cmd), shell=True)
+        # Invoke spark-submit directly as an argv list (no shell). This prevents shell
+        # metacharacters in config values (e.g. application_arguments) from being interpreted,
+        # closing a command-injection vector (CWE-78).
+        retcode = subprocess.call(spark_shell_cmd)
 
         if retcode != 0:
             raise SparkOpError("Spark job failed. Please consult your logs.")
