@@ -98,16 +98,35 @@ def _gql_client_from_env_or_config(
     )
 
 
+_SERVERLESS_V2_LAUNCHER = "ServerlessK8sUserCodeLauncher"
+
+
+def _has_running_serverless_v2_agent(agents: list) -> bool:
+    needle = _SERVERLESS_V2_LAUNCHER.lower()
+    for agent in agents:
+        if agent["status"] != "RUNNING":
+            continue
+        for metadata in agent["metadata"]:
+            if metadata["key"] == "type" and needle in metadata["value"].lower():
+                return True
+    return False
+
+
 def get_serverless_agent_platform(cli_config: DagsterPlusCliConfig | None) -> DgPlusAgentPlatform:
-    """Resolve the agent platform for a Serverless deployment, sourcing auth from the dg config
-    or the ``DAGSTER_CLOUD_*`` env vars (CI/dogfood auth). Only the org-level ``agents`` list is
-    read, so this does not depend on a resolvable ``currentDeployment``.
+    """Resolve whether a Serverless deployment runs on v2 (Kubernetes), for the PEX->Docker
+    redirect. Returns ``K8S`` only when a running ``ServerlessK8sUserCodeLauncher`` is present —
+    NOT for a generic K8s agent (e.g. Hybrid-on-K8s), which would otherwise false-positive the
+    redirect. Auth is sourced from the dg config or the ``DAGSTER_CLOUD_*`` env vars CI uses.
     """
     client = _gql_client_from_env_or_config(cli_config)
     if client is None:
         return DgPlusAgentPlatform.UNKNOWN
     result = client.execute_arbitrary(DEPLOYMENT_INFO_QUERY)
-    return _agent_platform_from_agents(result.get("agents", []))
+    return (
+        DgPlusAgentPlatform.K8S
+        if _has_running_serverless_v2_agent(result.get("agents", []))
+        else DgPlusAgentPlatform.UNKNOWN
+    )
 
 
 def get_agent_type_and_platform(

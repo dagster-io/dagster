@@ -7,6 +7,7 @@ import pytest
 from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_dg_cli.cli.plus.build import (
     _gql_client_from_env_or_config,  # pyright: ignore[reportPrivateUsage]
+    _has_running_serverless_v2_agent,  # pyright: ignore[reportPrivateUsage]
     get_agent_type_and_platform_from_graphql,
     get_serverless_agent_platform,
 )
@@ -25,6 +26,27 @@ class _FakeGqlClient:
 
 def _agent(launcher_class: str, status: str = "RUNNING") -> dict:
     return {"status": status, "metadata": [{"key": "type", "value": json.dumps(launcher_class)}]}
+
+
+@pytest.mark.parametrize(
+    "agents, expected",
+    [
+        # The v2 serverless launcher is the only thing that should read as v2.
+        ([_agent("ServerlessK8sUserCodeLauncher")], True),
+        # Hybrid-on-K8s reports the generic K8s launcher — must NOT be read as Serverless v2,
+        # else a working Hybrid/classic-Serverless PEX build gets wrongly redirected to Docker.
+        ([_agent("K8sUserCodeLauncher")], False),
+        # Classic (v1) serverless is not v2.
+        ([_agent("ServerlessUserCodeLauncher")], False),
+        ([_agent("EcsUserCodeLauncher")], False),
+        # A v2 launcher that isn't running doesn't count.
+        ([_agent("ServerlessK8sUserCodeLauncher", status="NOT_RUNNING")], False),
+        # A running v2 agent alongside a hybrid-k8s agent is still detected.
+        ([_agent("K8sUserCodeLauncher"), _agent("ServerlessK8sUserCodeLauncher")], True),
+    ],
+)
+def test_has_running_serverless_v2_agent(agents: list, expected: bool):
+    assert _has_running_serverless_v2_agent(agents) is expected
 
 
 @pytest.mark.parametrize(
