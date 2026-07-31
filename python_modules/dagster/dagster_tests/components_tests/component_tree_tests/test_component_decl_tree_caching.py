@@ -53,13 +53,12 @@ def test_cold_build_defs_materializes_component_decl_tree_once() -> None:
             ):
                 tree.build_defs()
 
-            # One materialization is enough to seed cacheable child decls for
-            # the rest of the load. A few more is fine if root / path lookup
-            # paths need a second pass; once-per-sibling is not.
-            assert call_count < n_siblings, (
+            # One materialization seeds cacheable child decls for the rest of
+            # the load. A looser bound (e.g. call_count < n) would still pass
+            # near-quadratic cold loads and miss regressions.
+            assert call_count == 1, (
                 f"_component_decl_tree was called {call_count} times for "
-                f"{n_siblings} sibling components (expected O(1) materializations, "
-                f"not once per component)"
+                f"{n_siblings} sibling components (expected one materialization)"
             )
 
 
