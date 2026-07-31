@@ -171,6 +171,27 @@ export const buildSVGPathVertical = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
+export const buildSVGPathWithBoundaryCorridors = (
+  {
+    from,
+    to,
+    sourceBoundary,
+    targetBoundary,
+  }: {
+    from: {x: number; y: number};
+    to: {x: number; y: number};
+    sourceBoundary: number;
+    targetBoundary: number;
+  },
+  direction: 'horizontal' | 'vertical',
+) => {
+  const middle = (sourceBoundary + targetBoundary) / 2;
+  if (direction === 'horizontal') {
+    return `M${from.x},${from.y}L${sourceBoundary},${from.y}C${middle},${from.y} ${middle},${to.y} ${targetBoundary},${to.y}L${to.x},${to.y}`;
+  }
+  return `M${from.x},${from.y}L${from.x},${sourceBoundary}C${from.x},${middle} ${to.x},${middle} ${to.x},${targetBoundary}L${to.x},${to.y}`;
+};
+
 export interface LiveDataForNode {
   stepKey: string;
   unstartedRunIds: string[]; // run in progress and step not started
