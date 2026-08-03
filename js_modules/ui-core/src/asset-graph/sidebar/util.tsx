@@ -37,6 +37,25 @@ export function getDisplayName(node: {assetKey: AssetKeyInput}) {
   return node.assetKey.path[node.assetKey.path.length - 1]!;
 }
 
+export const SIDEBAR_COLLATOR = new Intl.Collator(navigator.language, {
+  sensitivity: 'base',
+  numeric: true,
+});
+
+// Sidebar rows are ordered by the label the user actually sees, which for an
+// asset is the leaf segment of its key. Two assets in different key prefixes can
+// render the same label (`raw/orders` and `staging/orders` both show `orders`),
+// so fall back to the full key to keep the order stable.
+export function compareAssetNodesByDisplayName(
+  a: {assetKey: AssetKeyInput},
+  b: {assetKey: AssetKeyInput},
+) {
+  return (
+    SIDEBAR_COLLATOR.compare(getDisplayName(a), getDisplayName(b)) ||
+    SIDEBAR_COLLATOR.compare(a.assetKey.path.join('/'), b.assetKey.path.join('/'))
+  );
+}
+
 export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
   const type = useMemo(() => {
     switch (statusCase) {
