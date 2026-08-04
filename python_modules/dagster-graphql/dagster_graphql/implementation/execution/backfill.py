@@ -336,6 +336,17 @@ def cancel_partition_backfill(
             f"be stopped individually with terminateRuns."
         )
 
+    # FAILING is already a teardown. execute_job_backfill_iteration handles FAILING and CANCELING
+    # through the same path, cancelling the in-flight runs either way and differing only in the
+    # status it settles on. Cancelling a FAILING backfill therefore changes nothing the daemon
+    # does; it only relabels the outcome as an operator cancellation while the daemon's error
+    # object and failure count stay attached to the record.
+    if backfill.status == BulkActionStatus.FAILING:
+        raise DagsterInvariantViolationError(
+            f"Cannot cancel backfill {backfill_id} because it is already being torn down after a "
+            f"failure and will move to {BulkActionStatus.FAILED.value}."
+        )
+
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
 
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)

@@ -2557,7 +2557,7 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
 BACKFILL_GUARD_MATRIX = {
     BulkActionStatus.REQUESTED: {"cancel": True, "resume": False},
     BulkActionStatus.CANCELING: {"cancel": True, "resume": False},
-    BulkActionStatus.FAILING: {"cancel": True, "resume": False},
+    BulkActionStatus.FAILING: {"cancel": False, "resume": False},
     BulkActionStatus.FAILED: {"cancel": False, "resume": True},
     BulkActionStatus.CANCELED: {"cancel": False, "resume": False},
     BulkActionStatus.COMPLETED_SUCCESS: {"cancel": False, "resume": False},
@@ -2670,11 +2670,7 @@ class TestBackfillTerminalStateGuards(ExecutingGraphQLContextTestMatrix):
             assert graphql_context.instance.get_backfill(backfill_id).status == status
 
     def test_cancel_still_accepts_active_backfill(self, graphql_context):
-        for status in (
-            BulkActionStatus.REQUESTED,
-            BulkActionStatus.CANCELING,
-            BulkActionStatus.FAILING,
-        ):
+        for status in (BulkActionStatus.REQUESTED, BulkActionStatus.CANCELING):
             backfill_id = self._backfill_in_status(graphql_context, status)
 
             result = execute_dagster_graphql(
@@ -2690,6 +2686,21 @@ class TestBackfillTerminalStateGuards(ExecutingGraphQLContextTestMatrix):
                 graphql_context.instance.get_backfill(backfill_id).status
                 == BulkActionStatus.CANCELING
             )
+
+    def test_cancel_rejects_failing_backfill(self, graphql_context):
+        backfill_id = self._backfill_in_status(graphql_context, BulkActionStatus.FAILING)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            CANCEL_BACKFILL_MUTATION,
+            variables={"backfillId": backfill_id},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["cancelPartitionBackfill"]["__typename"] == "PythonError"
+        assert "already being torn down" in result.data["cancelPartitionBackfill"]["message"]
+        assert graphql_context.instance.get_backfill(backfill_id).status == BulkActionStatus.FAILING
 
     def test_guard_matrix(self, graphql_context):
         """Every status x {cancel, resume} cell, so a change to either guard shows up as a diff
