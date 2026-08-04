@@ -2551,6 +2551,21 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
 
 
+# The states each mutation accepts, spelled out rather than derived from the implementation so the
+# table is an independent statement of intent. Keep in sync with cancel_partition_backfill and
+# resume_partition_backfill in dagster_graphql/implementation/execution/backfill.py.
+BACKFILL_GUARD_MATRIX = {
+    BulkActionStatus.REQUESTED: {"cancel": True, "resume": False},
+    BulkActionStatus.CANCELING: {"cancel": True, "resume": False},
+    BulkActionStatus.FAILING: {"cancel": True, "resume": False},
+    BulkActionStatus.FAILED: {"cancel": False, "resume": True},
+    BulkActionStatus.CANCELED: {"cancel": False, "resume": False},
+    BulkActionStatus.COMPLETED_SUCCESS: {"cancel": False, "resume": False},
+    BulkActionStatus.COMPLETED_FAILED: {"cancel": False, "resume": False},
+    BulkActionStatus.COMPLETED: {"cancel": False, "resume": False},
+}
+
+
 class TestBackfillTerminalStateGuards(ExecutingGraphQLContextTestMatrix):
     """cancel and resume must reject a backfill whose current status makes the transition invalid.
 
@@ -2627,3 +2642,85 @@ class TestBackfillTerminalStateGuards(ExecutingGraphQLContextTestMatrix):
         assert (
             graphql_context.instance.get_backfill(backfill_id).status == BulkActionStatus.REQUESTED
         )
+
+    def test_cancel_rejects_terminal_backfill(self, graphql_context):
+        for status in (
+            BulkActionStatus.COMPLETED_SUCCESS,
+            BulkActionStatus.COMPLETED_FAILED,
+            BulkActionStatus.COMPLETED,
+            BulkActionStatus.CANCELED,
+            BulkActionStatus.FAILED,
+        ):
+            backfill_id = self._backfill_in_status(graphql_context, status)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                CANCEL_BACKFILL_MUTATION,
+                variables={"backfillId": backfill_id},
+            )
+
+            assert not result.errors
+            assert result.data
+            assert result.data["cancelPartitionBackfill"]["__typename"] == "PythonError"
+            assert (
+                "already in a terminal state" in result.data["cancelPartitionBackfill"]["message"]
+            )
+            assert status.value in result.data["cancelPartitionBackfill"]["message"]
+
+            assert graphql_context.instance.get_backfill(backfill_id).status == status
+
+    def test_cancel_still_accepts_active_backfill(self, graphql_context):
+        for status in (
+            BulkActionStatus.REQUESTED,
+            BulkActionStatus.CANCELING,
+            BulkActionStatus.FAILING,
+        ):
+            backfill_id = self._backfill_in_status(graphql_context, status)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                CANCEL_BACKFILL_MUTATION,
+                variables={"backfillId": backfill_id},
+            )
+
+            assert not result.errors
+            assert result.data
+            assert result.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
+            assert (
+                graphql_context.instance.get_backfill(backfill_id).status
+                == BulkActionStatus.CANCELING
+            )
+
+    def test_guard_matrix(self, graphql_context):
+        """Every status x {cancel, resume} cell, so a change to either guard shows up as a diff
+        against the table rather than as a missing test. Collects all mismatches before failing.
+        """
+        mutations = {
+            "cancel": (CANCEL_BACKFILL_MUTATION, "cancelPartitionBackfill"),
+            "resume": (RESUME_BACKFILL_MUTATION, "resumePartitionBackfill"),
+        }
+
+        mismatches = []
+        for status, expected in BACKFILL_GUARD_MATRIX.items():
+            for name, (mutation, field) in mutations.items():
+                backfill_id = self._backfill_in_status(graphql_context, status)
+
+                result = execute_dagster_graphql(
+                    graphql_context, mutation, variables={"backfillId": backfill_id}
+                )
+                assert not result.errors
+                assert result.data
+
+                typename = result.data[field]["__typename"]
+                accepted = typename != "PythonError"
+                if accepted != expected[name]:
+                    mismatches.append(
+                        f"{status.value}/{name}: expected "
+                        f"{'accept' if expected[name] else 'reject'}, got {typename}"
+                    )
+
+        assert not mismatches, "guard matrix mismatches:\n" + "\n".join(mismatches)
+
+    def test_guard_matrix_covers_every_status(self):
+        """The matrix is only exhaustive if it lists every enum member."""
+        assert set(BACKFILL_GUARD_MATRIX) == set(BulkActionStatus)

@@ -325,6 +325,17 @@ def cancel_partition_backfill(
 
     assert_permission_for_backfill(graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, backfill)
 
+    # A terminal backfill is no longer polled by the daemon, so moving it to CANCELING both
+    # re-enqueues finished work and destroys the record of how it originally ended: the daemon's
+    # next iteration overwrites backfill_end_timestamp on its way to CANCELED, and only the latest
+    # status is stored, so the original outcome cannot be recovered.
+    if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+        raise DagsterInvariantViolationError(
+            f"Cannot cancel backfill {backfill_id} because it is already in a terminal state "
+            f"({backfill.status.value}). Any runs of this backfill that are still in flight can "
+            f"be stopped individually with terminateRuns."
+        )
+
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
 
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
