@@ -7,6 +7,7 @@ tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-fivetran
 pypi: https://pypi.org/project/dagster-fivetran/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/fivetran.svg
 partnerlink: https://www.fivetran.com/
 canonicalUrl: '/integrations/libraries/fivetran'

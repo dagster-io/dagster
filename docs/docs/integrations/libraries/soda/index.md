@@ -8,6 +8,9 @@ source: https://github.com/dagster-io/dagster/tree/master/python_modules/librari
 pypi: https://pypi.org/project/dagster-soda
 canonicalUrl: '/integrations/libraries/soda'
 slug: '/integrations/libraries/soda'
+sidebar_custom_props:
+  component: true
+  logo: images/integrations/soda.png
 ---
 
 The [dagster-soda](/integrations/libraries/soda) library integrates [Soda Core](https://docs.soda.io/soda-documentation/soda-v3/overview-main) data quality checks with Dagster. It provides the **SodaScanComponent**, a Dagster component that runs Soda Core scans and maps SodaCL check results to Dagster asset checks.

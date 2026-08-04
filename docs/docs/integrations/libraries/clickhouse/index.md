@@ -7,6 +7,7 @@ tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-clickhouse
 pypi: https://pypi.org/project/dagster-clickhouse/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/guides/build/assets/metadata-tags/kinds/icons/tool-clickhouse-color.svg
 partnerlink: https://clickhouse.com/
 canonicalUrl: '/integrations/libraries/clickhouse'
