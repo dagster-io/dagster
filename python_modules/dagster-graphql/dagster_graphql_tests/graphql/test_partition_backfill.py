@@ -2549,3 +2549,81 @@ class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):
 
         assert retried_backfill.tags.get(PARENT_BACKFILL_ID_TAG) == backfill_id
         assert retried_backfill.tags.get(ROOT_BACKFILL_ID_TAG) == backfill_id
+
+
+class TestBackfillTerminalStateGuards(ExecutingGraphQLContextTestMatrix):
+    """cancel and resume must reject a backfill whose current status makes the transition invalid.
+
+    Both mutations used to transition unconditionally, so any of the eight statuses was accepted by
+    either one -- including driving a finished backfill back into an active state, which loses the
+    record of how it originally ended and lets the daemon launch partitions the operator had
+    cancelled.
+    """
+
+    def _launch_backfill(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": infer_repository_selector(graphql_context),
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3"],
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        return result.data["launchPartitionBackfill"]["backfillId"]
+
+    def _backfill_in_status(self, graphql_context, status):
+        backfill_id = self._launch_backfill(graphql_context)
+        backfill = graphql_context.instance.get_backfill(backfill_id)
+        graphql_context.instance.update_backfill(backfill.with_status(status))
+        return backfill_id
+
+    def test_resume_rejects_backfill_that_is_not_failed(self, graphql_context):
+        for status in (
+            BulkActionStatus.REQUESTED,
+            BulkActionStatus.CANCELING,
+            BulkActionStatus.FAILING,
+            BulkActionStatus.CANCELED,
+            BulkActionStatus.COMPLETED_SUCCESS,
+            BulkActionStatus.COMPLETED_FAILED,
+            BulkActionStatus.COMPLETED,
+        ):
+            backfill_id = self._backfill_in_status(graphql_context, status)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                RESUME_BACKFILL_MUTATION,
+                variables={"backfillId": backfill_id},
+            )
+
+            assert not result.errors
+            assert result.data
+            assert result.data["resumePartitionBackfill"]["__typename"] == "PythonError"
+            assert "not in a failed state" in result.data["resumePartitionBackfill"]["message"]
+            assert status.value in result.data["resumePartitionBackfill"]["message"]
+
+            # a rejected mutation must not have written anything
+            assert graphql_context.instance.get_backfill(backfill_id).status == status
+
+    def test_resume_still_accepts_failed_backfill(self, graphql_context):
+        backfill_id = self._backfill_in_status(graphql_context, BulkActionStatus.FAILED)
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            RESUME_BACKFILL_MUTATION,
+            variables={"backfillId": backfill_id},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["resumePartitionBackfill"]["__typename"] == "ResumeBackfillSuccess"
+        assert (
+            graphql_context.instance.get_backfill(backfill_id).status == BulkActionStatus.REQUESTED
+        )
