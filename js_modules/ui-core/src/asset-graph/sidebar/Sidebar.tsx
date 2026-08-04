@@ -12,6 +12,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
+import {buildSidebarSearchValues} from './searchValues';
 import {
   SIDEBAR_COLLATOR as COLLATOR,
   FolderNodeType,
@@ -20,7 +21,6 @@ import {
 } from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {useFeatureFlags} from '../../app/useFeatureFlags';
-import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {invariant} from '../../util/invariant';
@@ -45,7 +45,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     selectNode: _selectNode,
     explorerPath,
     onChangeExplorerPath,
-    allAssetKeys,
     hideSidebar,
     viewType,
     onFilterToGroup,
@@ -57,7 +56,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-    allAssetKeys: AssetKey[];
     hideSidebar: () => void;
     viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;
@@ -236,13 +234,12 @@ export const AssetGraphExplorerSidebar = React.memo(
           }}
         >
           <SearchFilter
-            values={React.useMemo(() => {
-              return allAssetKeys.map((key) => ({
-                value: JSON.stringify(key.path),
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                label: key.path[key.path.length - 1]!,
-              }));
-            }, [allAssetKeys])}
+            // Scoped to the assets the sidebar tree is built from, so a result
+            // is always a row the user can actually be taken to.
+            values={React.useMemo(
+              () => buildSidebarSearchValues(graphData.nodes),
+              [graphData.nodes],
+            )}
             onSelectValue={selectNode}
           />
           <Tooltip content="Hide sidebar">
