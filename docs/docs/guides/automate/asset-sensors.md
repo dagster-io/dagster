@@ -14,11 +14,22 @@ For situations where you are automating execution of assets only, we recommend u
 
 :::
 
+## Triggering code after an asset materializes
+
+Two mechanisms let you run code after an asset materializes:
+
+| Mechanism                                                                     | When to use                                                                                                                                                                                       |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| <PyObject section="hooks" module="dagster" object="success_hook" decorator /> | Lightweight side effects (notifications, metrics emission) tied directly to the producing op or asset. The hook fires automatically once the materialization succeeds.                            |
+| Asset sensor                                                                  | Any case requiring conditional logic, multi-asset coordination, cross-job triggering, or behavior that depends on the run/materialization metadata. Sensors give you the full evaluation context. |
+
+For success hook usage, see [Op hooks](/guides/build/ops/op-hooks). The remainder of this guide covers asset sensors.
+
 ## Getting started
 
 To get started, you can use the <PyObject module="dagster" section="schedules-sensors" object="asset_sensor" decorator /> decorator to create an asset sensor where the decorated function is used as the asset sensor's evaluation function.
 
-Asset sensors monitor an asset for new materialization events and target a [job](/guides/build/jobs) when a new materialization occurs.
+Asset sensors monitor an asset for new materialization events and target a job when a new materialization occurs. See [Jobs](/guides/build/jobs).
 
 Typically, asset sensors return a <PyObject module="dagster" section="schedules-sensors" object="RunRequest" /> when a new job is to be triggered. However, they may provide a <PyObject module="dagster" section="schedules-sensors" object="SkipReason" /> if the asset materialization doesn't trigger a job.
 

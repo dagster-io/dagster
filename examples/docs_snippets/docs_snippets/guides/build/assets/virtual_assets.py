@@ -14,4 +14,6 @@ def my_virtual_asset(upstream_asset):
 my_virtual_spec = dg.AssetSpec(
     "my_virtual_asset", deps=["upstream_asset"], is_virtual=True
 )
+
+
 # end_spec

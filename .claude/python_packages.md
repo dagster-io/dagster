@@ -8,6 +8,7 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-graphql**: `python_modules/dagster-graphql`
 **dagster-pipes**: `python_modules/dagster-pipes`
 **dagster-webserver**: `python_modules/dagster-webserver`
+**dagster-cloud**: `python_modules/dagster-cloud`
 **dagit**: `python_modules/dagit`
 
 ## test packages

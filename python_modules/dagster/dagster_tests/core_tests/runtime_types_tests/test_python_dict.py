@@ -69,7 +69,7 @@ def test_dagster_dictionary_output():
 
 
 def test_basic_dagster_dictionary_input():
-    @dg.op(ins={"data": dg.In(dg.Dict)}, out=dg.Out(str))  # pyright: ignore[reportArgumentType]
+    @dg.op(ins={"data": dg.In(dg.Dict)}, out=dg.Out(str))  # ty: ignore[invalid-argument-type]
     def input_dict(data):
         return data["key"]
 
@@ -82,7 +82,7 @@ def test_basic_dagster_dictionary_input():
 
 
 def test_basic_typing_dictionary_output():
-    @dg.op(out=dg.Out(typing.Dict))
+    @dg.op(out=dg.Out(typing.Dict))  # ty: ignore[invalid-argument-type]
     def emit_dict():
         return {"key": "value"}
 
@@ -91,7 +91,7 @@ def test_basic_typing_dictionary_output():
 
 def test_basic_typing_dictionary_input():
     @dg.op(
-        ins={"data": dg.In(typing.Dict)},
+        ins={"data": dg.In(typing.Dict)},  # ty: ignore[invalid-argument-type]
         out=dg.Out(str),
     )
     def input_dict(data):
@@ -121,8 +121,8 @@ def test_basic_closed_typing_dictionary_output():
 
     assert wrap_op_in_graph_and_execute(emit_dict).output_value() == {"key": "value"}
     assert emit_dict.output_defs[0].dagster_type.key == "TypedPythonDict.String.String"
-    assert emit_dict.output_defs[0].dagster_type.key_type.unique_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
-    assert emit_dict.output_defs[0].dagster_type.value_type.unique_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
+    assert emit_dict.output_defs[0].dagster_type.key_type.unique_name == "String"  # ty: ignore[unresolved-attribute]
+    assert emit_dict.output_defs[0].dagster_type.value_type.unique_name == "String"  # ty: ignore[unresolved-attribute]
 
 
 def test_basic_closed_typing_dictionary_input():

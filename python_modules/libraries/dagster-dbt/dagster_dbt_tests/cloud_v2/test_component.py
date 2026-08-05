@@ -22,7 +22,7 @@ def mock_workspace_data():
     return DbtCloudWorkspaceData(
         project_id=123,
         environment_id=456,
-        adhoc_job_id=789,
+        adhoc_job_ids=[789],
         manifest={
             "metadata": {
                 "dbt_schema_version": "1.0.0",
@@ -126,7 +126,7 @@ def test_dbt_cloud_component_execution(mock_workspace):
     assert call_args["args"] == ["build", "--select", "tag:staging"]
 
 
-BASIC_DBT_CLOUD_COMPONENT_BODY = {
+BASIC_DBT_CLOUD_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_dbt.DbtCloudComponent",
     "attributes": {
         "workspace": {

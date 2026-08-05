@@ -110,7 +110,7 @@ class ScopedResourcesBuilder(
                 def original_resource_dict(self) -> Mapping[str, object]:
                     return resource_instance_dict
 
-            return _ScopedResourcesContainsGenerator(**resources_to_attach_to_context)
+            return _ScopedResourcesContainsGenerator(**resources_to_attach_to_context)  # ty: ignore[invalid-return-type]
 
         else:
 
@@ -122,7 +122,7 @@ class ScopedResourcesBuilder(
                 def original_resource_dict(self) -> Mapping[str, object]:
                     return resource_instance_dict
 
-            return _ScopedResources(**resources_to_attach_to_context)
+            return _ScopedResources(**resources_to_attach_to_context)  # ty: ignore[invalid-return-type]
 
     @classmethod
     def build_empty(cls) -> Resources:

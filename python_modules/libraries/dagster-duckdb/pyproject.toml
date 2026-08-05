@@ -9,10 +9,6 @@ description = "Package for DuckDB-specific Dagster framework op and resource com
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "duckdb",
     "dagster==1!0+dev",
@@ -29,3 +25,15 @@ pyspark = [
     "pyspark>=4.1; python_version>='3.14'",
     "pyspark>=3.5,<4; python_version<'3.14'",
 ]
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }

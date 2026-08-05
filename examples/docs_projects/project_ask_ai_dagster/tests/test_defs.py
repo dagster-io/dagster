@@ -2,8 +2,11 @@ from unittest.mock import MagicMock
 
 import dagster as dg
 from langchain_core.documents import Document
-from project_ask_ai_dagster.definitions import defs as _raw_defs
-from project_ask_ai_dagster.defs.ingestion import github_discussions_raw, github_issues_raw
+from project_ask_ai_dagster.definitions import defs as _raw_defs  # ty: ignore[unresolved-import]
+from project_ask_ai_dagster.defs.ingestion import (  # ty: ignore[unresolved-import]
+    github_discussions_raw,
+    github_issues_raw,
+)
 
 defs: dg.Definitions = _raw_defs() if not isinstance(_raw_defs, dg.Definitions) else _raw_defs
 

@@ -129,7 +129,8 @@ def test_on_cron_on_asset_check() -> None:
     def A() -> None: ...
 
     @dg.asset_check(asset=A, automation_condition=AutomationCondition.on_cron("@hourly"))
-    def foo_check() -> ...: ...
+    def foo_check() -> ...:  # ty: ignore[invalid-type-form]
+        ...
 
     current_time = datetime.datetime(2024, 8, 16, 4, 35)
     defs = dg.Definitions(assets=[A], asset_checks=[foo_check])

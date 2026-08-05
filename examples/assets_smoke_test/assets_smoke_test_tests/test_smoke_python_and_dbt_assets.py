@@ -30,11 +30,11 @@ def smoke_all_test():
         columns_str = ", ".join(
             [
                 f"{column.name} {column.type}"
-                for column in source_asset.metadata["column_schema"].schema.columns
+                for column in source_asset.metadata["column_schema"].schema.columns  # ty: ignore[unresolved-attribute]
             ]
         )
         conn.cursor().execute(f"CREATE OR REPLACE TABLE {table_name} ({columns_str})")
 
     assets = load_assets_from_modules([python_and_dbt_assets])
 
-    materialize(assets, resources={"io_manager": io_manager, "dbt": dbt_resource})
+    materialize(assets, resources={"io_manager": io_manager, "dbt": dbt_resource})  # ty: ignore[invalid-argument-type]

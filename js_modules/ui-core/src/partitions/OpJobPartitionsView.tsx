@@ -2,10 +2,10 @@ import {
   Box,
   Button,
   Dialog,
+  Heading,
   Icon,
   NonIdealState,
   Spinner,
-  Subheading,
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -284,7 +284,9 @@ export const OpJobPartitionsViewContent = React.memo(
           border="bottom"
           padding={{vertical: 16, horizontal: 24}}
         >
-          <Subheading>Status</Subheading>
+          <Heading size={14} weight={600}>
+            Status
+          </Heading>
           <Box flex={{gap: 8}}>
             <Button onClick={() => setShowSteps(!showSteps)}>
               {showSteps ? 'Hide per-step status' : 'Show per-step status'}
@@ -375,7 +377,9 @@ export const OpJobPartitionsViewContent = React.memo(
           ) : null}
         </Box>
         <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
-          <Subheading>Run duration</Subheading>
+          <Heading size={14} weight={600}>
+            Run duration
+          </Heading>
         </Box>
         <Box margin={24}>
           <PartitionGraph
@@ -389,7 +393,9 @@ export const OpJobPartitionsViewContent = React.memo(
         {showSteps ? (
           <>
             <Box padding={{horizontal: 24, vertical: 16}}>
-              <Subheading>Step duration</Subheading>
+              <Heading size={14} weight={600}>
+                Step duration
+              </Heading>
             </Box>
             <Box margin={24}>
               <PartitionGraph
@@ -407,7 +413,9 @@ export const OpJobPartitionsViewContent = React.memo(
           border="top-and-bottom"
           style={{marginBottom: -1}}
         >
-          <Subheading>Backfill history</Subheading>
+          <Heading size={14} weight={600}>
+            Backfill history
+          </Heading>
         </Box>
         <Box margin={{bottom: 20}}>
           <JobBackfillsTable

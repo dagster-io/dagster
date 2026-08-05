@@ -442,13 +442,17 @@ def kubeconfig_with_namespace(tmpdir) -> str:
     return _kubeconfig(tmpdir, "ctx-with-namespace")
 
 
-def test_namespace_autodetect_fails(kubeconfig_dummy):
-    got = detect_current_namespace(kubeconfig_dummy)
+def test_namespace_autodetect_fails(kubeconfig_dummy, tmp_path):
+    # Override the in-cluster namespace path so the test exercises the
+    # kubeconfig-fallback branch even when run inside a pod (e.g. EKS CI).
+    got = detect_current_namespace(kubeconfig_dummy, namespace_secret_path=tmp_path / "absent")
     assert got is None
 
 
-def test_namespace_autodetect_from_kubeconfig_active_context(kubeconfig_with_namespace):
-    got = detect_current_namespace(kubeconfig_with_namespace)
+def test_namespace_autodetect_from_kubeconfig_active_context(kubeconfig_with_namespace, tmp_path):
+    got = detect_current_namespace(
+        kubeconfig_with_namespace, namespace_secret_path=tmp_path / "absent"
+    )
     assert got == "my-namespace"
 
 

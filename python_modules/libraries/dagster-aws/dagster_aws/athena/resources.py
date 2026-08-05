@@ -81,7 +81,7 @@ class AthenaClient:
             raise AthenaTimeout()
 
         if state != "SUCCEEDED":
-            raise AthenaError(execution["Status"]["StateChangeReason"])  # pyright: ignore[reportPossiblyUnboundVariable]
+            raise AthenaError(execution["Status"]["StateChangeReason"])
 
     def _results(self, execution_id):
         execution = self.client.get_query_execution(QueryExecutionId=execution_id)["QueryExecution"]
@@ -90,12 +90,10 @@ class AthenaClient:
         bucket = urlparse(output_location).netloc
         prefix = urlparse(output_location).path.lstrip("/")
 
-        results = []
         rows = s3.Bucket(bucket).Object(prefix).get()["Body"].read().decode("utf-8").splitlines()
         reader = csv.reader(rows)
         next(reader)  # Skip the CSV's header row
-        for row in reader:
-            results.append(tuple(row))
+        results = [tuple(row) for row in reader]
 
         return results
 

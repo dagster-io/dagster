@@ -4,7 +4,7 @@ description: Comparing Dagster's partitions with run configuration for parameter
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Partition.png
 ---
 
 In this example, we'll explore two different approaches to parameterizing Dagster pipelines. When you need to process data for different segments (like customers, regions, or dates), you can choose between Dagster's [partitions](/guides/build/partitions-and-backfills/partitioning-assets) or [run configuration](/guides/operate/configuration/run-configuration). Each approach has distinct trade-offs in terms of tracking, observability, and workflow.
@@ -13,7 +13,7 @@ In this example, we'll explore two different approaches to parameterizing Dagste
 
 Imagine you need to process data for multiple customers, where each customer's data should be processed independently. You want to be able to run the pipeline for specific customers and potentially reprocess historical data when needed.
 
-The key question is: Should you use partitions to create a segment for each customer, or should you use config to pass the customer ID as a parameter?
+Should you use partitions to create a segment for each customer, or config to pass the customer ID as a parameter?
 
 **Use partitions when:**
 

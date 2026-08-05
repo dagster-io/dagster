@@ -80,7 +80,7 @@ def test_execution_plan_reexecution():
         )
         known_state = KnownExecutionState.build_for_reexecution(
             instance,
-            instance.get_run_by_id(run_id),  # pyright: ignore[reportArgumentType]
+            instance.get_run_by_id(run_id),  # ty: ignore[invalid-argument-type]
         )
         _check_known_state(known_state)
 
@@ -152,7 +152,7 @@ def test_execution_plan_reexecution_with_in_memory():
         resolved_run_config = ResolvedRunConfig.build(job_def, run_config=run_config)
         known_state = KnownExecutionState.build_for_reexecution(
             instance,
-            instance.get_run_by_id(run_id),  # pyright: ignore[reportArgumentType]
+            instance.get_run_by_id(run_id),  # ty: ignore[invalid-argument-type]
         )
         _check_known_state(known_state)
 

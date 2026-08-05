@@ -1,0 +1,12 @@
+.keyboardTag {
+  color: var(--color-text-default);
+  background: var(--color-background-gray);
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.keyboardTag.withinTooltip {
+  color: var(--color-accent-white);
+}

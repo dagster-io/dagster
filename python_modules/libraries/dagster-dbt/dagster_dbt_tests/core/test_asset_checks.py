@@ -382,7 +382,7 @@ def test_materialize_asset_and_checks(
     assert len(result.get_asset_observation_events()) == 6
     # no tests were excluded, so we include singular and relationship tests
     assert {
-        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)  # type: ignore[attr-defined]
+        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)  # ty: ignore[unresolved-attribute]
         for e in result.get_asset_observation_events()
     } == {
         (
@@ -822,7 +822,7 @@ def test_select_model_with_tests(
     # no tests were excluded, so we include singular and relationship tests
     assert len(result.get_asset_observation_events()) == 6
     assert {
-        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)  # type: ignore[attr-defined]
+        (e.asset_key, e.asset_observation_data.asset_observation.metadata.get("unique_id").value)  # ty: ignore[unresolved-attribute]
         for e in result.get_asset_observation_events()
     } == {
         (

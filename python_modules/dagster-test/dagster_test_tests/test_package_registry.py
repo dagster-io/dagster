@@ -79,9 +79,13 @@ def find_actual_packages() -> dict[str, str]:
         # Skip CI-specific build artifacts that appear in CI but not locally
         ci_build_artifacts = {"cython", "limited_api", "plugin"}
 
+        # Only inspect parts inside python_modules so absolute-path components
+        # (e.g. "/workspace/build/buildkite/..." on EKS, which contains the
+        # generic "build" segment) don't accidentally trigger skip_patterns.
+        relative_parts = package_dir.relative_to(python_modules_dir).parts
         if any(
             part.endswith("_tests") or part in skip_patterns or part in ci_build_artifacts
-            for part in package_dir.parts
+            for part in relative_parts
         ):
             continue
 

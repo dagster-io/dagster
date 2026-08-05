@@ -17,7 +17,7 @@ def snap_from_dagster_type(dagster_type: DagsterType) -> ConfigTypeSnap:
 
 def test_enum_snap():
     enum_snap = snap_from_dagster_type(
-        dg.Enum(  # pyright: ignore[reportArgumentType]
+        dg.Enum(  # ty: ignore[invalid-argument-type]
             "CowboyType",
             [
                 dg.EnumValue("good"),
@@ -36,7 +36,7 @@ def test_enum_snap():
 
 
 def test_basic_int_snap():
-    int_snap = snap_from_dagster_type(int)  # pyright: ignore[reportArgumentType]
+    int_snap = snap_from_dagster_type(int)  # ty: ignore[invalid-argument-type]
     assert int_snap.given_name == "Int"
     assert int_snap.key == "Int"
     assert int_snap.kind == ConfigTypeKind.SCALAR
@@ -45,7 +45,7 @@ def test_basic_int_snap():
 
 
 def test_basic_dict():
-    dict_snap = snap_from_dagster_type({"foo": int})  # pyright: ignore[reportArgumentType]
+    dict_snap = snap_from_dagster_type({"foo": int})  # ty: ignore[invalid-argument-type]
     assert dict_snap.key.startswith("Shape.")
     assert dict_snap.given_name is None
     child_type_keys = dict_snap.get_child_type_keys()
@@ -62,7 +62,7 @@ def test_basic_dict():
 
 def test_field_things():
     dict_snap = snap_from_dagster_type(
-        {  # pyright: ignore[reportArgumentType]
+        {  # ty: ignore[invalid-argument-type]
             "req": int,
             "opt": dg.Field(int, is_required=False),
             "opt_with_default": dg.Field(int, is_required=False, default_value=2),
@@ -82,7 +82,7 @@ def test_field_things():
     assert field_snap_dict["opt"].default_value_as_json_str is None
     assert field_snap_dict["opt_with_default"].is_required is False
     assert field_snap_dict["opt_with_default"].default_provided is True
-    assert dg.deserialize_value(field_snap_dict["opt_with_default"].default_value_as_json_str) == 2  # pyright: ignore[reportArgumentType]
+    assert dg.deserialize_value(field_snap_dict["opt_with_default"].default_value_as_json_str) == 2  # ty: ignore[invalid-argument-type]
 
     assert field_snap_dict["req_with_desc"].is_required is True
     assert field_snap_dict["req_with_desc"].description == "A desc"
@@ -91,7 +91,7 @@ def test_field_things():
 
 
 def test_basic_list():
-    list_snap = snap_from_dagster_type(dg.Array(int))  # pyright: ignore[reportArgumentType]
+    list_snap = snap_from_dagster_type(dg.Array(int))  # ty: ignore[invalid-argument-type]
     assert list_snap.key.startswith("Array")
     child_type_keys = list_snap.get_child_type_keys()
     assert child_type_keys
@@ -100,7 +100,7 @@ def test_basic_list():
 
 
 def test_basic_optional():
-    optional_snap = snap_from_dagster_type(dg.Noneable(int))  # pyright: ignore[reportArgumentType]
+    optional_snap = snap_from_dagster_type(dg.Noneable(int))  # ty: ignore[invalid-argument-type]
     assert optional_snap.key.startswith("Noneable")
 
     child_type_keys = optional_snap.get_child_type_keys()
@@ -112,7 +112,7 @@ def test_basic_optional():
 
 
 def test_basic_list_list():
-    list_snap = snap_from_dagster_type([[int]])  # pyright: ignore[reportArgumentType]
+    list_snap = snap_from_dagster_type([[int]])  # ty: ignore[invalid-argument-type]
     assert list_snap.key.startswith("Array")
     child_type_keys = list_snap.get_child_type_keys()
     assert child_type_keys
@@ -123,7 +123,7 @@ def test_basic_list_list():
 
 def test_list_of_dict():
     inner_dict_dagster_type = dg.Shape({"foo": dg.Field(str)})
-    list_of_dict_snap = snap_from_dagster_type([inner_dict_dagster_type])  # pyright: ignore[reportArgumentType]
+    list_of_dict_snap = snap_from_dagster_type([inner_dict_dagster_type])  # ty: ignore[invalid-argument-type]
 
     assert list_of_dict_snap.key.startswith("Array")
     child_type_keys = list_of_dict_snap.get_child_type_keys()
@@ -133,7 +133,7 @@ def test_list_of_dict():
 
 
 def test_selector_of_things():
-    selector_snap = snap_from_dagster_type(dg.Selector({"bar": dg.Field(int)}))  # pyright: ignore[reportArgumentType]
+    selector_snap = snap_from_dagster_type(dg.Selector({"bar": dg.Field(int)}))  # ty: ignore[invalid-argument-type]
     assert selector_snap.key.startswith("Selector")
     assert selector_snap.kind == ConfigTypeKind.SELECTOR
     assert selector_snap.fields and len(selector_snap.fields) == 1
@@ -143,7 +143,7 @@ def test_selector_of_things():
 
 
 def test_basic_map():
-    map_snap = snap_from_dagster_type(dg.Map(str, int))  # pyright: ignore[reportArgumentType]
+    map_snap = snap_from_dagster_type(dg.Map(str, int))  # ty: ignore[invalid-argument-type]
     assert map_snap.key.startswith("Map")
     child_type_keys = map_snap.get_child_type_keys()
     assert child_type_keys
@@ -153,7 +153,7 @@ def test_basic_map():
 
 
 def test_named_map():
-    map_snap = snap_from_dagster_type(dg.Map(str, float, key_label_name="title"))  # pyright: ignore[reportArgumentType]
+    map_snap = snap_from_dagster_type(dg.Map(str, float, key_label_name="title"))  # ty: ignore[invalid-argument-type]
     assert map_snap.key.startswith("Map")
     assert map_snap.given_name == "title"
     child_type_keys = map_snap.get_child_type_keys()
@@ -164,7 +164,7 @@ def test_named_map():
 
 
 def test_basic_map_nested():
-    map_snap = snap_from_dagster_type({int: {str: int}})  # pyright: ignore[reportArgumentType]
+    map_snap = snap_from_dagster_type({int: {str: int}})  # ty: ignore[invalid-argument-type]
     assert map_snap.key.startswith("Map")
     child_type_keys = map_snap.get_child_type_keys()
     assert child_type_keys
@@ -176,7 +176,7 @@ def test_basic_map_nested():
 
 def test_map_of_dict():
     inner_dict_dagster_type = dg.Shape({"foo": dg.Field(str)})
-    map_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})  # pyright: ignore[reportArgumentType]
+    map_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})  # ty: ignore[invalid-argument-type]
 
     assert map_of_dict_snap.key.startswith("Map")
     child_type_keys = map_of_dict_snap.get_child_type_keys()
@@ -204,7 +204,7 @@ def test_kitchen_sink():
         ]
     )
 
-    kitchen_sink_snap = snap_from_dagster_type(kitchen_sink)  # pyright: ignore[reportArgumentType]
+    kitchen_sink_snap = snap_from_dagster_type(kitchen_sink)  # ty: ignore[invalid-argument-type]
 
     rehydrated_snap = dg.deserialize_value(dg.serialize_value(kitchen_sink_snap), ConfigTypeSnap)
     assert kitchen_sink_snap == rehydrated_snap
@@ -236,7 +236,7 @@ def test_check_op_config_correct():
     def single_op_job():
         op_with_config()
 
-    op_config_key = op_with_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
+    op_config_key = op_with_config.config_schema.config_type.key  # ty: ignore[unresolved-attribute]
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
@@ -245,9 +245,9 @@ def test_check_op_config_correct():
     op_config_snap = config_snaps[op_config_key]
 
     assert op_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
-    assert len(op_config_snap.fields) == 1  # pyright: ignore[reportArgumentType]
+    assert len(op_config_snap.fields) == 1  # ty: ignore[invalid-argument-type]
 
-    foo_field = op_config_snap.fields[0]  # pyright: ignore[reportOptionalSubscript]
+    foo_field = op_config_snap.fields[0]  # ty: ignore[not-subscriptable]
 
     assert foo_field.name == "foo"
     assert foo_field.type_key == "String"
@@ -262,16 +262,16 @@ def test_check_op_list_list_config_correct():
     def single_op_job():
         op_with_config()
 
-    op_config_key = op_with_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
+    op_config_key = op_with_config.config_schema.config_type.key  # ty: ignore[unresolved-attribute]
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
     assert op_config_key in config_snaps
     op_config_snap = config_snaps[op_config_key]
 
     assert op_config_snap.kind == ConfigTypeKind.STRICT_SHAPE
-    assert len(op_config_snap.fields) == 1  # pyright: ignore[reportArgumentType]
+    assert len(op_config_snap.fields) == 1  # ty: ignore[invalid-argument-type]
 
-    list_list_field = op_config_snap.fields[0]  # pyright: ignore[reportOptionalSubscript]
+    list_list_field = op_config_snap.fields[0]  # ty: ignore[not-subscriptable]
 
     list_list_type_key = list_list_field.type_key
 
@@ -311,7 +311,7 @@ def test_kitchen_sink_break_out():
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
-    op_config_key = op_with_kitchen_sink_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
+    op_config_key = op_with_kitchen_sink_config.config_schema.config_type.key  # ty: ignore[unresolved-attribute]
     assert op_config_key in config_snaps
     op_config_snap = config_snaps[op_config_key]
 
@@ -319,7 +319,7 @@ def test_kitchen_sink_break_out():
 
     dict_within_list = config_snaps[op_config_snap.inner_type_key]
 
-    assert len(dict_within_list.fields) == 3  # pyright: ignore[reportArgumentType]
+    assert len(dict_within_list.fields) == 3  # ty: ignore[invalid-argument-type]
 
     opt_field = dict_within_list.get_field("opt_list_of_int")
 
@@ -327,7 +327,7 @@ def test_kitchen_sink_break_out():
     assert config_snaps[opt_field.type_key].kind == ConfigTypeKind.ARRAY
 
     nested_dict = config_snaps[dict_within_list.get_field("nested_dict").type_key]
-    assert len(nested_dict.fields) == 2  # pyright: ignore[reportArgumentType]
+    assert len(nested_dict.fields) == 2  # ty: ignore[invalid-argument-type]
     nested_selector = config_snaps[nested_dict.get_field("nested_selector").type_key]
     noneable_list_bool = config_snaps[nested_selector.get_field("noneable_list").type_key]
     assert noneable_list_bool.kind == ConfigTypeKind.NONEABLE
@@ -337,7 +337,7 @@ def test_kitchen_sink_break_out():
     amap = config_snaps[dict_within_list.get_field("map").type_key]
     assert amap.kind == ConfigTypeKind.MAP
     map_dict = config_snaps[amap.inner_type_key]
-    assert len(map_dict.fields) == 2  # pyright: ignore[reportArgumentType]
+    assert len(map_dict.fields) == 2  # ty: ignore[invalid-argument-type]
     map_a = config_snaps[map_dict.get_field("map_a").type_key]
     assert map_a.kind == ConfigTypeKind.SCALAR
 
@@ -362,7 +362,7 @@ def test_scalar_union():
 
     config_snaps = build_config_schema_snapshot(single_op_job).all_config_snaps_by_key
 
-    scalar_union_key = op_with_config.config_schema.config_type.key  # pyright: ignore[reportOptionalMemberAccess]
+    scalar_union_key = op_with_config.config_schema.config_type.key  # ty: ignore[unresolved-attribute]
 
     assert scalar_union_key in config_snaps
 

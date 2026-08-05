@@ -1,12 +1,11 @@
-import {Caption, Colors} from '@dagster-io/ui-components';
+import {Colors, Row, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {forwardRef} from 'react';
-import styled from 'styled-components';
 
+import styles from './css/VirtualizedWorkspaceTable.module.css';
 import {RepoAddress} from './types';
 import {QueryResult} from '../apollo-client';
 import {RepoSectionHeader} from '../runs/RepoSectionHeader';
-import {Row} from '../ui/VirtualizedTable';
 
 interface RepoRowProps {
   repoAddress: RepoAddress;
@@ -33,7 +32,7 @@ export const RepoRow = ({
   rightElement,
 }: StaticRepoRowProps) => {
   return (
-    <Row $height={height} $start={start}>
+    <Row height={height} start={start}>
       <RepoSectionHeader
         repoName={repoAddress.name}
         repoLocation={repoAddress.location}
@@ -89,19 +88,10 @@ export const LoadingOrNone = ({
 
 export const CaptionText = ({children}: {children: React.ReactNode}) => {
   return (
-    <CaptionTextContainer>
-      <Caption>{children}</Caption>
-    </CaptionTextContainer>
+    <div className={styles.captionTextContainer}>
+      <Text size={12} color="textLight">
+        {children}
+      </Text>
+    </div>
   );
 };
-
-const CaptionTextContainer = styled.div`
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-
-  .captionGlobal {
-    color: ${Colors.textLight()};
-    white-space: nowrap;
-  }
-`;

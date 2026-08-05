@@ -289,7 +289,7 @@ class CustomPointer(CodePointer, IHaveNew, LegacyNamedTupleMixin):
     def __hash__(self) -> int:
         if not hasattr(self, "_hash"):
             self._hash = hash_collection(
-                self,  # type: ignore
+                self,
             )
         return self._hash
 

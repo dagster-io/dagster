@@ -1,9 +1,20 @@
-import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
+import {
+  Box,
+  Checkbox,
+  Colors,
+  HeaderCell,
+  HeaderRow,
+  Icon,
+  Row,
+  RowCell,
+  Skeleton,
+  Text,
+} from '@dagster-io/ui-components';
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/VirtualizedAssetRow.module.css';
 import {RepoAddress} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {
@@ -26,7 +37,6 @@ import {AssetKind} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.3fr 1fr 80px';
 const TEMPLATE_COLUMNS_FOR_CATALOG = '76px 1.3fr 1.3fr 1.3fr 80px';
@@ -87,8 +97,14 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   const kinds = definition?.kinds;
 
   return (
-    <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
+    <Row height={height} start={start}>
+      <Box
+        border="bottom"
+        className={styles.rowGrid}
+        style={{
+          gridTemplateColumns: showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS,
+        }}
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Checkbox
@@ -129,11 +145,12 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               maxWidth: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            <Caption style={{color: Colors.textLight(), whiteSpace: 'nowrap'}}>
+            <Text size={12} color="textLight">
               {definition?.description}
-            </Caption>
+            </Text>
           </div>
         </RowCell>
         {showRepoColumn ? (
@@ -164,7 +181,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
           {definition?.partitionDefinition && definition?.isMaterializable ? (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
               <PartitionCountLabels partitionStats={liveData?.partitionStats} />
-              <Caption>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Caption>
+              <Text size={12}>{partitionCountString(liveData?.partitionStats?.numPartitions)}</Text>
             </Box>
           ) : (
             <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 4}}>
@@ -215,7 +232,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             />
           ) : null}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -239,8 +256,16 @@ export const VirtualizedAssetCatalogHeader = ({
 };
 
 export const ShimmerRow = (props: {$height: number; $start: number; $showRepoColumn: boolean}) => (
-  <Row {...props}>
-    <RowGrid border="bottom" $showRepoColumn={props.$showRepoColumn}>
+  <Row height={props.$height} start={props.$start}>
+    <Box
+      border="bottom"
+      className={styles.rowGrid}
+      style={{
+        gridTemplateColumns: props.$showRepoColumn
+          ? TEMPLATE_COLUMNS_FOR_CATALOG
+          : TEMPLATE_COLUMNS,
+      }}
+    >
       <RowCell>
         <Skeleton $height={21} $width="45%" />
       </RowCell>
@@ -260,7 +285,7 @@ export const ShimmerRow = (props: {$height: number; $start: number; $showRepoCol
           </RowCell>
         </>
       ) : null}
-    </RowGrid>
+    </Box>
   </Row>
 );
 
@@ -273,13 +298,6 @@ export const VirtualizedAssetHeader = ({nameLabel}: {nameLabel: React.ReactNode}
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showRepoColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showRepoColumn}) =>
-    $showRepoColumn ? TEMPLATE_COLUMNS_FOR_CATALOG : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 const LIVE_QUERY_DELAY = 250;
 

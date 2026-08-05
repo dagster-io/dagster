@@ -72,7 +72,7 @@ class _Job:
         check.callable_param(fn, "fn")
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         from dagster._core.definitions.composition import do_composition
 
@@ -230,6 +230,9 @@ def job(
             can't also be supplied.
         input_values (Optional[Mapping[str, Any]]):
             A dictionary that maps python objects to the top-level inputs of a job.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the job.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
 
     Examples:
         .. code-block:: python

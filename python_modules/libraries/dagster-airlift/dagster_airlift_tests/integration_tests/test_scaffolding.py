@@ -1,9 +1,9 @@
 import subprocess
 from pathlib import Path
 
-import yaml
 from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yaml
 from dagster_airlift.test import configured_airflow_home
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def path_to_test_proj() -> Path:
@@ -42,9 +42,9 @@ def test_scaffold_proxied_state() -> None:
         assert all([symbol.suffix == ".yaml" for symbol in symbols])
         assert {symbol.name for symbol in symbols} == {"print_dag.yaml", "other_print_dag.yaml"}
         print_dag_yaml = path_to_proxied_state / "print_dag.yaml"
-        assert yaml.safe_load(print_dag_yaml.read_text()) == yaml.safe_load(expected_yaml())
+        assert safe_load_yaml(print_dag_yaml.read_text()) == safe_load_yaml(expected_yaml())
         other_print_dag_yaml = path_to_proxied_state / "other_print_dag.yaml"
-        assert yaml.safe_load(other_print_dag_yaml.read_text()) == yaml.safe_load(expected_yaml())
+        assert safe_load_yaml(other_print_dag_yaml.read_text()) == safe_load_yaml(expected_yaml())
         proxied_state = load_proxied_state_from_yaml(path_to_proxied_state)
         assert (
             proxied_state.get_task_proxied_state(dag_id="print_dag", task_id="print_task") is False

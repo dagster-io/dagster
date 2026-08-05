@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "assets_pandas_pyspark"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "pandas",
@@ -13,8 +14,29 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["dagster-webserver", "pytest"]
-test = ["pandas", "pyarrow; python_version < '3.9'", "pyspark<4"]
-
 [tool.dagster]
 module_name = "assets_pandas_pyspark.definitions"
 code_location_name = "assets_pandas_pyspark"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-spark",
+    "dagster-pyspark",
+    "pandas",
+    "pyarrow; python_version < '3.9'",
+    "pyspark<4",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-spark = { path = "../../python_modules/libraries/dagster-spark", editable = true }
+dagster-pyspark = { path = "../../python_modules/libraries/dagster-pyspark", editable = true }

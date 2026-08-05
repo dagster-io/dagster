@@ -1,5 +1,5 @@
-from dagster_omni.component import OmniComponent
-from dagster_omni.objects import (
+from dagster_omni.component import OmniComponent  # ty: ignore[unresolved-import]
+from dagster_omni.objects import (  # ty: ignore[unresolved-import]
     OmniDocument,
     OmniFolder,
     OmniOwner,
@@ -8,7 +8,7 @@ from dagster_omni.objects import (
     OmniUser,
     OmniWorkspaceData,
 )
-from dagster_omni.workspace import OmniWorkspace
+from dagster_omni.workspace import OmniWorkspace  # ty: ignore[unresolved-import]
 
 
 class MockOmniWorkspace(OmniWorkspace):

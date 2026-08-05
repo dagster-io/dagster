@@ -1,6 +1,7 @@
 import os
 
 import docker
+import docker.errors
 import pytest
 
 # fixtures: redundant alias marks them as used imports
@@ -9,11 +10,24 @@ from dagster_k8s_test_infra.cluster import (
     define_cluster_provider_fixture,
     helm_postgres_url as helm_postgres_url,
 )
+from dagster_k8s_test_infra.helm import LOCALSTACK_IMAGE
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 
-cluster_provider = define_cluster_provider_fixture()
+# Preload supporting images into the kind node so kubelet doesn't have to pull
+# them from Docker Hub at test time. The dind sidecar's docker daemon hits the
+# in-cluster Docker Hub mirror; kind load then copies into the kind node's
+# containerd. Without this, parallel kind clusters sharing one NAT egress IP
+# saturate Docker Hub's anonymous rate limit.
+cluster_provider = define_cluster_provider_fixture(
+    additional_kind_images=[
+        "docker.io/bitnamilegacy/rabbitmq:3.8.12",
+        "docker.io/library/postgres:14.6",
+        "docker.io/bitnamilegacy/redis:6.0.16",
+        f"docker.io/{LOCALSTACK_IMAGE}",
+    ]
+)
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -30,7 +44,7 @@ def dagster_docker_image():
                 f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
                 f"docker rmi {docker_image}"
             )
-        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+        except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)
 
     return docker_image

@@ -34,7 +34,7 @@ class TestPostgresInstance:
         from dagster_postgres.utils import get_conn_string
 
         return get_conn_string(
-            **dict(  # pyright: ignore[reportArgumentType]
+            **dict(  # ty: ignore[invalid-argument-type]
                 dict(
                     username="test",
                     password="test",

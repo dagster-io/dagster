@@ -25,7 +25,7 @@ class EvaluateValueResult(Generic[T]):
 
     @staticmethod
     def for_value(value: T) -> "EvaluateValueResult[T]":
-        return EvaluateValueResult(success=True, value=value, errors=None)
+        return EvaluateValueResult(success=True, value=value, errors=None)  # ty: ignore[invalid-return-type]
 
     def errors_at_level(self, *levels: str) -> Sequence[EvaluationError]:
         return list(self._iterate_errors_at_level(list(levels)))

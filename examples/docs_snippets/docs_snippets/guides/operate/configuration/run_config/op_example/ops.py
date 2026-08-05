@@ -3,7 +3,7 @@
 # start
 import dagster as dg
 
-from .resources import MyOpConfig
+from .resources import MyOpConfig  # ty: ignore[unresolved-import]
 
 
 @dg.op

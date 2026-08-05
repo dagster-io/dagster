@@ -1,4 +1,4 @@
-from shared.factory import asset_factory
+from shared.factory import asset_factory  # ty: ignore[unresolved-import]
 
 asset_configurations = [
     "asset_1",

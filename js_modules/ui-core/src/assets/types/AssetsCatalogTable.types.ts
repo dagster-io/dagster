@@ -1,10 +1,33 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type AssetCatalogTableQueryVariables = Types.Exact<{
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  limit: Types.Scalars['Int']['input'];
+export type AssetGroupSelector = {
+  groupName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+};
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type AssetCatalogTableQueryVariables = Exact<{
+  cursor?: string | null | undefined;
+  limit: number;
 }>;
 
 export type AssetCatalogTableQuery = {
@@ -64,6 +87,11 @@ export type AssetCatalogTableQuery = {
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -85,8 +113,8 @@ export type AssetCatalogTableQuery = {
       };
 };
 
-export type AssetCatalogGroupTableQueryVariables = Types.Exact<{
-  group?: Types.InputMaybe<Types.AssetGroupSelector>;
+export type AssetCatalogGroupTableQueryVariables = Exact<{
+  group?: Types.AssetGroupSelector | null | undefined;
 }>;
 
 export type AssetCatalogGroupTableQuery = {
@@ -137,6 +165,11 @@ export type AssetCatalogGroupTableQuery = {
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -192,6 +225,11 @@ export type AssetCatalogGroupTableNodeFragment = {
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  storageAddress: {
+    __typename: 'StorageAddress';
+    storageKind: string | null;
+    tableName: string;
+  } | null;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -200,6 +238,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = 'd63b140c51e18d40ed5d951c67516347c1b280d6c0c3961664792c96e02678f2';
+export const AssetCatalogTableQueryVersion = '67bd29bba7f7d1ddc9c2d3e7bd5a1b3fe26d36875ba9dea6052c799ab4c98955';
 
-export const AssetCatalogGroupTableQueryVersion = 'a684253c157f76947ee21c5317123fd1401dea950dc93b3857b3d9b3e19f3b08';
+export const AssetCatalogGroupTableQueryVersion = '2a2ce4dd539e52f1a5c95072d6c41e61fd0939380ed25f5e0700188b1e6edd20';

@@ -472,7 +472,7 @@ class PipesSession:
     ) -> Sequence[PipesExecutionResult]:
         results_with_metadata = []
         for result in results:
-            result = result._replace(metadata={**(result.metadata or {}), **metadata})  # noqa: PLW2901
+            result = result._replace(metadata={**(result.metadata or {}), **metadata})  # noqa: PLW2901  # ty: ignore[invalid-argument-type]
             results_with_metadata.append(result)
 
         return results_with_metadata

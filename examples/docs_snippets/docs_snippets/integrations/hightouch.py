@@ -1,7 +1,7 @@
 import os
 
-from dagster_hightouch.ops import hightouch_sync_op
-from dagster_hightouch.resources import ht_resource
+from dagster_hightouch.ops import hightouch_sync_op  # ty: ignore[unresolved-import]
+from dagster_hightouch.resources import ht_resource  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

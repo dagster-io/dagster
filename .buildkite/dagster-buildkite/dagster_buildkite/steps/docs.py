@@ -15,8 +15,10 @@ def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConf
     return (
         CommandStepBuilder("yarn-format-check", [":notebook:"])
         .on_test_image()
+        .with_env({"COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"})
         .run(
             f"cd {oss_path('docs')}",
+            "corepack enable",
             "yarn install",
             "yarn format_check",
         )
@@ -29,8 +31,10 @@ def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
         CommandStepBuilder("build-docs")
         .on_test_image()
+        .with_env({"COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"})
         .run(
             f"cd {oss_path('docs')}",
+            "corepack enable",
             "yarn install",
             "yarn test",
             "yarn lint-check",

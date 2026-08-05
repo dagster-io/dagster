@@ -6,7 +6,7 @@ from dagster import InputContext, OutputContext, UPathIOManager
 
 
 class PandasParquetIOManager(UPathIOManager):
-    extension: str = ".parquet"  # ty: ignore[invalid-method-override]
+    extension: str = ".parquet"
 
     def dump_to_path(self, context: OutputContext, obj: pd.DataFrame, path: UPath):
         with path.open("wb") as file:

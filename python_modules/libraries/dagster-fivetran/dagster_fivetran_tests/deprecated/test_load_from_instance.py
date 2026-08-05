@@ -74,7 +74,7 @@ def test_load_from_instance_with_translator(
                     ]
                 )
             )
-            for key, metadata in assets_def.metadata_by_key.items()
+            for metadata in assets_def.metadata_by_key.values()
         ), str(assets_def.metadata_by_key)
 
         for key, metadata in assets_def.metadata_by_key.items():

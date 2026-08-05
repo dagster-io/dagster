@@ -11,4 +11,4 @@ def subprocess_asset(
         shutil.which("python"),
         dg.file_relative_path(__file__, "external_code.py"),
     ]
-    return pipes_subprocess_client.run(command=cmd, context=context).get_results()
+    return pipes_subprocess_client.run(command=cmd, context=context).get_results()  # ty: ignore[invalid-argument-type]

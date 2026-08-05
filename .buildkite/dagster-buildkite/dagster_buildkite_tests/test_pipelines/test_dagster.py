@@ -107,17 +107,17 @@ def test_helm_steps(packages):
     assert get_step_skip(steps, "helm") is None
 
 
-def test_pyright_steps(packages):
+def test_ty_steps(packages):
     # No changes: skipped
     steps = _build_steps([], packages)
-    assert get_step_skip(steps, "pyright") is not None
+    assert get_step_skip(steps, "ty") is not None
 
     # Python file change: runs
     steps = _build_steps(
         [oss_path("python_modules/dagster/dagster/some_module.py")],
         packages,
     )
-    assert get_step_skip(steps, "pyright") is None
+    assert get_step_skip(steps, "ty") is None
 
 
 def test_prettier_steps(packages):

@@ -1,0 +1,55 @@
+// If you make changes to this file, run "python -m dagster_cloud.pex.grpc.compile" after.
+
+syntax = "proto3";
+
+package multi_pex_api;
+
+service MultiPexApi {
+  rpc CreatePexServer (CreatePexServerRequest) returns (CreatePexServerReply) {}
+  rpc GetPexServers (GetPexServersRequest) returns (GetPexServersReply) {}
+  rpc GetCrashedPexServers (GetCrashedPexServersRequest) returns (GetCrashedPexServersReply) {}
+  rpc ShutdownPexServer (ShutdownPexServerRequest) returns (ShutdownPexServerReply) {}
+  rpc Ping (PingRequest) returns (PingReply) {}
+}
+
+message Empty {}
+
+message CreatePexServerRequest {
+  string create_pex_server_args = 1;
+}
+
+message CreatePexServerReply {
+  string create_pex_server_response = 1;
+}
+
+message GetPexServersRequest {
+  string get_pex_servers_args = 1;
+}
+
+message GetPexServersReply {
+  string get_pex_servers_response = 1;
+}
+
+message GetCrashedPexServersRequest {
+  string get_crashed_pex_servers_args = 1;
+}
+
+message GetCrashedPexServersReply {
+  string get_crashed_pex_servers_response = 1;
+}
+
+message ShutdownPexServerRequest {
+  string shutdown_pex_server_args = 1;
+}
+
+message ShutdownPexServerReply {
+  string shutdown_pex_server_response = 1;
+}
+
+message PingRequest {
+  string echo = 1;
+}
+
+message PingReply {
+  string echo = 1;
+}

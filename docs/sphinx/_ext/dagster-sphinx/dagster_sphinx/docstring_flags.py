@@ -82,7 +82,7 @@ def inline_flag_role(_name, _rawtext, text, _lineno, inliner, _options={}, _cont
 
 
 class inline_flag(nodes.Inline, nodes.TextElement):
-    local_attributes = FLAG_ATTRS
+    local_attributes = FLAG_ATTRS  # ty: ignore[override-of-final-variable]
 
 
 def visit_inline_flag(self, node: inline_flag):
@@ -100,7 +100,7 @@ def visit_inline_flag(self, node: inline_flag):
 
 
 class flag(nodes.Element):
-    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]
+    local_attributes = [*nodes.Element.local_attributes, *FLAG_ATTRS]  # ty: ignore[override-of-final-variable]
 
 
 def visit_flag(self, node: flag):

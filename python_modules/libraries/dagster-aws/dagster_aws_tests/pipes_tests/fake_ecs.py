@@ -6,7 +6,6 @@ from datetime import datetime
 from subprocess import PIPE, Popen
 
 import boto3
-import botocore
 import botocore.exceptions
 
 

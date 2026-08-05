@@ -1,0 +1,221 @@
+.gridColumn {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.gridColumn .cell {
+  height: 32px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  padding: 2px;
+  box-sizing: border-box;
+  line-height: initial;
+}
+
+.gridColumn .square {
+  width: 20px;
+  height: 20px;
+  margin: 6px;
+  display: inline-block;
+}
+
+.gridColumn .square:hover:not(.empty):before {
+  box-shadow: var(--color-accent-blue) 0 0 0 3px;
+}
+
+.gridColumn .square:before {
+  content: ' ';
+  background: var(--color-accent-gray);
+  border-radius: 10px;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
+
+.gridColumn .square.loading:before {
+  background: radial-gradient(
+    var(--color-background-gray) 0%,
+    var(--color-background-gray) 45%,
+    var(--color-background-gray-hover) 60%
+  );
+}
+
+.gridColumn .square.success:before {
+  background: var(--color-accent-green);
+}
+
+.gridColumn .square.failure:before {
+  background: var(--color-accent-red);
+}
+
+.gridColumn .square.success-missing:before {
+  background: var(--color-accent-green-hover);
+}
+
+.gridColumn .square.failure-missing:before {
+  background: var(--color-accent-red-hover);
+}
+
+.gridColumn .square.failure-blank:before {
+  background: var(--color-accent-red-hover);
+}
+
+.gridColumn .square.skipped:before {
+  background: var(--color-accent-yellow);
+}
+
+.gridColumn .square.started:before,
+.gridColumn .square.starting:before,
+.gridColumn .square.canceling:before {
+  background: var(--color-accent-blue);
+}
+
+/* GridColumn hovered state (not disabled, not focused, not multiselectFocused) */
+.gridColumn.hovered .topLabelTiltedInner {
+  background: var(--color-background-default-hover);
+}
+
+.gridColumn.hovered .topLabelTiltedInner .tilted {
+  background: var(--color-background-light);
+}
+
+.gridColumn.hovered .square {
+  filter: brightness(95%);
+}
+
+.gridColumn.hoverable:hover {
+  background: var(--color-background-default-hover);
+  cursor: default;
+}
+
+.gridColumn.hoverable:hover .topLabelTiltedInner {
+  background: var(--color-background-default-hover);
+}
+
+.gridColumn.hoverable:hover .topLabelTiltedInner .tilted {
+  background: var(--color-background-light);
+}
+
+.gridColumn.hoverable:hover .square {
+  filter: brightness(95%);
+}
+
+.gridColumn.hovered {
+  background: var(--color-background-default-hover);
+  cursor: default;
+}
+
+/* GridColumn disabled state */
+.gridColumn.disabled .topLabelTiltedInner {
+  color: var(--color-text-light);
+}
+
+/* GridColumn focused state */
+.gridColumn.focused {
+  background: var(--color-accent-blue);
+}
+
+.gridColumn.focused .leftLabel {
+  color: var(--color-accent-reversed);
+}
+
+.gridColumn.focused .topLabelTiltedInner {
+  background: var(--color-accent-primary);
+  color: var(--color-accent-reversed);
+}
+
+.gridColumn.focused .topLabelTiltedInner .tilted {
+  background: var(--color-accent-blue);
+}
+
+/* GridColumn multiselectFocused state */
+.gridColumn.multiselectFocused {
+  background: var(--color-accent-blue-hover);
+}
+
+.gridColumn.multiselectFocused .leftLabel {
+  color: var(--color-accent-reversed);
+}
+
+.gridColumn.multiselectFocused .topLabelTiltedInner {
+  background: var(--color-accent-primary);
+  color: var(--color-accent-reversed);
+}
+
+.gridColumn.multiselectFocused .topLabelTiltedInner .tilted {
+  background: var(--color-accent-blue-hover);
+}
+
+/* LeftLabel */
+.leftLabel {
+  height: 32px;
+  line-height: 32px;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  background: transparent;
+}
+
+.leftLabel.hovered {
+  background: linear-gradient(
+    to left,
+    var(--color-background-light) 0%,
+    var(--color-background-light) 100%
+  );
+}
+
+/* TopLabel */
+.topLabel {
+  position: relative;
+  height: 70px;
+  padding: 4px;
+  padding-bottom: 0;
+  min-width: 15px;
+  align-items: flex-end;
+  display: flex;
+}
+
+/* TopLabelTiltedInner */
+.topLabelTiltedInner {
+  position: relative;
+  height: unset; /* provide via style tag */
+  padding: 4px;
+  padding-bottom: 0;
+  min-width: 15px;
+  margin-bottom: 15px;
+  align-items: end;
+  display: flex;
+  line-height: normal;
+}
+
+.topLabelTiltedInner > div.tilted {
+  font-size: 12px;
+  white-space: nowrap;
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  padding: 2px;
+  padding-right: 4px;
+  padding-left: 0;
+  transform: rotate(-41deg);
+  transform-origin: top left;
+}
+
+/* GridFloatingContainer */
+.gridFloatingContainer {
+  display: flex;
+  border-right: 1px solid var(--color-border-default);
+  padding-bottom: 16px;
+  width: 330px;
+  z-index: 1;
+}
+
+.gridFloatingContainer.floating {
+  box-shadow: 1px 0 4px var(--color-shadow-default);
+}

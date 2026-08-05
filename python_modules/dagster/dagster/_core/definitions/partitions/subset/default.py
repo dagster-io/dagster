@@ -1,6 +1,6 @@
 import json
 from collections.abc import Iterable, Sequence, Set
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 import dagster._check as check
 from dagster._core.definitions.partitions.definition.partitions_definition import (
@@ -170,7 +170,7 @@ class DefaultPartitionsSubset(
 
         if isinstance(data, list):
             # backwards compatibility
-            return cls(subset=set(data))
+            return cls(subset=set(cast("list[str]", data)))
         else:
             if data.get("version") != cls.SERIALIZATION_VERSION:
                 raise DagsterInvalidDeserializationVersionError(
@@ -198,7 +198,7 @@ class DefaultPartitionsSubset(
     def __eq__(self, other: object) -> bool:
         return isinstance(other, DefaultPartitionsSubset) and self.subset == other.subset
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
     def __len__(self) -> int:
         return len(self.subset)

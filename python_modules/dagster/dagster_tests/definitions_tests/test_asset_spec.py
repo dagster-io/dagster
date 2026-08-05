@@ -14,7 +14,7 @@ def test_validate_asset_owner() -> None:
 
 
 def test_validate_group_name() -> None:
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not a valid name"):
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not a valid asset group name"):
         dg.AssetSpec(key="asset1", group_name="group@$#&*1")
 
     with pytest.raises(
@@ -22,6 +22,21 @@ def test_validate_group_name() -> None:
         match="Empty asset group name was provided, which is not permitted",
     ):
         dg.AssetSpec(key="asset1", group_name="")
+
+
+def test_validate_hierarchical_group_name() -> None:
+    # Valid hierarchical names
+    dg.AssetSpec(key="asset1", group_name="marketing")
+    dg.AssetSpec(key="asset2", group_name="marketing/foo")
+    dg.AssetSpec(key="asset3", group_name="marketing/foo/bar")
+    dg.AssetSpec(key="asset4", group_name="a_1/b_2/c_3")
+
+    # Invalid: leading/trailing/empty segments
+    for invalid in ("/leading", "trailing/", "double//slash", "/", "with space/x"):
+        with pytest.raises(
+            dg.DagsterInvalidDefinitionError, match="is not a valid asset group name"
+        ):
+            dg.AssetSpec(key="asset1", group_name=invalid)
 
 
 def test_resolve_automation_condition() -> None:

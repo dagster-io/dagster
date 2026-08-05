@@ -9,14 +9,6 @@ description = "Package for integrating Fivetran with Dagster."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
 ]
@@ -34,6 +26,30 @@ dagster_fivetran = "dagster_fivetran"
 managed = [
     "dagster-managed-elements==1!0+dev",
 ]
+
+[dependency-groups]
 test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-managed-elements",
+    "create-dagster",
+    "dagster-dg-cli",
+    "dagster-dg-core[test]",
+    "dagster-cloud-cli",
+    "dagster-rest-resources",
+    "dagster-graphql",
     "pytest-order",
 ]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-managed-elements = { path = "../dagster-managed-elements", editable = true }
+create-dagster = { path = "../create-dagster", editable = true }
+dagster-dg-cli = { path = "../dagster-dg-cli", editable = true }
+dagster-dg-core = { path = "../dagster-dg-core", editable = true }
+dagster-cloud-cli = { path = "../dagster-cloud-cli", editable = true }
+dagster-rest-resources = { path = "../dagster-rest-resources", editable = true }
+dagster-graphql = { path = "../../dagster-graphql", editable = true }

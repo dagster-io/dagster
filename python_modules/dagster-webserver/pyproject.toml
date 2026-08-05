@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dagster-webserver"
@@ -10,14 +10,6 @@ authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 readme = "README.rst"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "click>=7.0,<9.0",
     "dagster==1!0+dev",
@@ -33,16 +25,24 @@ Homepage = "https://github.com/dagster-io/dagster"
 dagster-webserver = "dagster_webserver.cli:main"
 dagster-webserver-debug = "dagster_webserver.debug:main"
 
+[tool.hatch.build]
+artifacts = ["dagster_webserver/webapp/build/"]
+
 [project.optional-dependencies]
 notebook = ["nbconvert"]  # notebooks support
-test = ["starlette[full]"]  # TestClient deps in full
 
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-graphql",
+    "objgraph",
+    "starlette[full]",  # TestClient deps; folded from dagster-webserver[test] extra
+]
 
-[tool.setuptools.packages.find]
-exclude = ["dagster_webserver_tests*"]
-
-[tool.check-manifest]
-ignore = [".coveragerc", "tox.ini", "dagster_webserver_tests/**", "build_js.sh"]
+[tool.uv.sources]
+dagster = { path = "../dagster", editable = true }
+dagster-pipes = { path = "../dagster-pipes", editable = true }
+dagster-shared = { path = "../libraries/dagster-shared", editable = true }
+dagster-graphql = { path = "../dagster-graphql", editable = true }

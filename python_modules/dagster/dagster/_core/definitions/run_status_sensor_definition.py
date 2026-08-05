@@ -52,8 +52,6 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
     from dagster._core.definitions.resource_definition import ResourceDefinition
     from dagster._core.definitions.selector import (
         CodeLocationSelector,
@@ -525,7 +523,7 @@ def run_failure_sensor(
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
         if name is None or callable(name):
-            sensor_name = fn.__name__
+            sensor_name = fn.__name__  # ty: ignore[unresolved-attribute]
         else:
             sensor_name = name
 
@@ -566,7 +564,7 @@ def run_failure_sensor(
 
     # This case is for when decorator is used bare, without arguments
     if callable(name):
-        return inner(name)
+        return inner(name)  # ty: ignore[invalid-argument-type]
 
     return inner
 
@@ -729,7 +727,7 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
             process_limit = _get_run_status_sensor_process_limit()
 
             fetch_limit = _get_run_status_sensor_fetch_limit(
-                monitor_all_code_locations=cast("bool", monitor_all_code_locations)
+                monitor_all_code_locations=monitor_all_code_locations
             )
 
             # Fetch events after the cursor id
@@ -745,8 +743,8 @@ class RunStatusSensorDefinition(SensorDefinition, IHasInternalInit):
                 event_records = context.instance.fetch_run_status_changes(
                     records_filter=RunStatusChangeRecordsFilter(
                         event_type=cast("RunStatusChangeEventType", event_type),
-                        after_timestamp=cast(
-                            "datetime", parse_time_string(sensor_cursor.update_timestamp)
+                        after_timestamp=parse_time_string(
+                            sensor_cursor.update_timestamp
                         ).timestamp(),
                     ),
                     ascending=True,
@@ -1179,7 +1177,7 @@ def run_status_sensor(
         fn: RunStatusSensorEvaluationFunction,
     ) -> RunStatusSensorDefinition:
         check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
+        sensor_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         jobs = monitored_jobs if monitored_jobs else job_selection
         monitor_all = normalize_renamed_param(

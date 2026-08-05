@@ -32,8 +32,8 @@ class GrapheneResource(graphene.ObjectType):
         self._resource_def_snap = check.inst_param(
             resource_def_snap, "resource_def_snap", ResourceDefSnap
         )
-        self.name = resource_def_snap.name
-        self.description = resource_def_snap.description
+        self.name = resource_def_snap.name  # ty: ignore[invalid-assignment]
+        self.description = resource_def_snap.description  # ty: ignore[invalid-assignment]
 
     def resolve_configField(self, _graphene_info: ResolveInfo):
         if self._resource_def_snap.config_field_snap:

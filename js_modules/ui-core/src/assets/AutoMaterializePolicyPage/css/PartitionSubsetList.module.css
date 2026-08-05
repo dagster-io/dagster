@@ -1,0 +1,14 @@
+.searchContainer {
+  display: flex;
+}
+
+.searchContainer > * {
+  flex: 1;
+}
+
+.partitionStatusDot {
+  height: 8px;
+  width: 8px;
+  border-radius: 50%;
+  transition: background-color 100ms linear;
+}

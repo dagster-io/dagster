@@ -108,7 +108,7 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         # subset
         return self._get_stable_unique_id(target_key)
 
-    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(  # ty: ignore[invalid-method-override]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # must evaluate child condition over the entire subset to avoid missing state transitions

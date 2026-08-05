@@ -249,7 +249,7 @@ def test_io_manager_coercion():
 def test_bad_executor():
     with pytest.raises(CheckError):
         # ignoring type to catch runtime error
-        dg.Definitions(executor="not an executor")  # pyright: ignore[reportArgumentType]
+        dg.Definitions(executor="not an executor")  # ty: ignore[invalid-argument-type]
 
 
 def test_custom_executor_in_definitions():
@@ -291,13 +291,13 @@ def test_bad_logger_key():
 
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        dg.Definitions(loggers={1: a_logger})  # pyright: ignore[reportArgumentType]
+        dg.Definitions(loggers={1: a_logger})  # ty: ignore[invalid-argument-type]
 
 
 def test_bad_logger_value():
     with pytest.raises(CheckError):
         # ignore type to catch runtime error
-        dg.Definitions(loggers={"not_a_logger": "not_a_logger"})  # pyright: ignore[reportArgumentType]
+        dg.Definitions(loggers={"not_a_logger": "not_a_logger"})  # ty: ignore[invalid-argument-type]
 
 
 def test_kitchen_sink_on_create_helper_and_definitions():
@@ -572,10 +572,10 @@ def test_bare_executor():
     def an_asset(): ...
 
     class DummyExecutor(dg.Executor):
-        def execute(self, plan_context, execution_plan): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+        def execute(self, plan_context, execution_plan): ...
 
         @property
-        def retries(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+        def retries(self): ...
 
     executor_inst = DummyExecutor()
 
@@ -585,7 +585,7 @@ def test_bare_executor():
     assert isinstance(job, dg.JobDefinition)
 
     # ignore typecheck because we know our implementation doesn't use the context
-    assert job.executor_def.executor_creation_fn(None) is executor_inst  # pyright: ignore[reportArgumentType,reportOptionalCall]
+    assert job.executor_def.executor_creation_fn(None) is executor_inst  # ty: ignore[call-non-callable,invalid-argument-type]
 
 
 def test_assets_with_io_manager():
@@ -1146,11 +1146,11 @@ def test_definitions_dedupe_reference_equality():
     assert len(list(underlying_repo.schedule_defs)) == 1
 
     # properties on the definitions object do not dedupe
-    assert len(defs.assets) == 2  # pyright: ignore[reportArgumentType]
-    assert len(defs.asset_checks) == 2  # pyright: ignore[reportArgumentType]
-    assert len(defs.jobs) == 2  # pyright: ignore[reportArgumentType]
-    assert len(defs.sensors) == 2  # pyright: ignore[reportArgumentType]
-    assert len(defs.schedules) == 2  # pyright: ignore[reportArgumentType]
+    assert len(defs.assets) == 2  # ty: ignore[invalid-argument-type]
+    assert len(defs.asset_checks) == 2  # ty: ignore[invalid-argument-type]
+    assert len(defs.jobs) == 2  # ty: ignore[invalid-argument-type]
+    assert len(defs.sensors) == 2  # ty: ignore[invalid-argument-type]
+    assert len(defs.schedules) == 2  # ty: ignore[invalid-argument-type]
 
 
 def test_definitions_class_metadata():
@@ -1160,7 +1160,7 @@ def test_definitions_class_metadata():
 
 
 def test_assets_def_with_only_checks():
-    @dg.asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset="asset1")
     def check1():
         pass
 

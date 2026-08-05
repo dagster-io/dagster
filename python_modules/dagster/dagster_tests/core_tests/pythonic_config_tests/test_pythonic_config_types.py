@@ -103,7 +103,7 @@ def test_struct_config_persmissive_cached_method() -> None:
             calls["plus"] += 1
             return self.x + self.y
 
-    plus_config = PlusConfig(x=1, y=2, z=10)  # type: ignore
+    plus_config = PlusConfig(x=1, y=2, z=10)
 
     assert plus_config.plus() == 3
     assert calls["plus"] == 1
@@ -438,11 +438,11 @@ def test_discriminated_unions() -> None:
     @dg.op
     def a_struct_config_op(config: OpConfigWithUnion):
         if config.pet.pet_type == "cat":
-            assert config.pet.meows == 2
+            assert config.pet.meows == 2  # ty: ignore[unresolved-attribute]
         elif config.pet.pet_type == "dog":
-            assert config.pet.barks == 3.0
+            assert config.pet.barks == 3.0  # ty: ignore[unresolved-attribute]
         elif config.pet.pet_type == "lizard":
-            assert config.pet.scales
+            assert config.pet.scales  # ty: ignore[unresolved-attribute]
         assert config.n == 4
 
         executed["yes"] = True
@@ -809,7 +809,7 @@ def test_literal_in_resource_config() -> None:
     a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="bar")})
 
     with pytest.raises(pydantic.ValidationError):
-        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})  # type: ignore
+        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})
 
 
 def test_enum_complex() -> None:
@@ -997,12 +997,12 @@ def test_permissive_extra_field_via_dot():
     class ExtraConfig(PermissiveConfig):
         foo: int
 
-    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
-    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
+    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
+    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
     assert conf == conf1
     assert conf.foo == 10
-    assert conf.bar == "hello"
-    assert conf.baz == [1, 2, 3]
+    assert conf.bar == "hello"  # ty: ignore[unresolved-attribute]
+    assert conf.baz == [1, 2, 3]  # ty: ignore[unresolved-attribute]
     # confirm it's in dict and convert_to_config_dictionary
     expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
     assert conf.model_dump() == expected

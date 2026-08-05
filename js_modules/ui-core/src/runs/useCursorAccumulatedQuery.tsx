@@ -2,7 +2,6 @@ import {DocumentNode} from 'graphql';
 import {useEffect, useMemo, useState} from 'react';
 
 import {OperationVariables, useApolloClient} from '../apollo-client';
-import {QueryRefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 
 export type AccumulatingFetchResult<DataType, CursorType, ErrorType> = {
   data: DataType[];
@@ -120,14 +119,9 @@ export function useCursorAccumulatedQuery<
   }, [client, query, variablesJSON, getResult]);
 
   useEffect(() => {
+    void fetch();
     return stop;
-  }, [stop]);
+  }, [fetch, stop]);
 
-  const refreshState = useRefreshAtInterval({
-    refresh: fetch,
-    intervalMs: 10000,
-    leading: true,
-  }) as QueryRefreshState;
-
-  return {fetched, error, refreshState};
+  return {fetched, error, fetch};
 }

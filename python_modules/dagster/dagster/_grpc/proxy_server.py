@@ -182,6 +182,31 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         return dagster_api_pb2.ReloadCodeReply()
 
+    def RefreshComponentState(self, request, context):
+        if self._load_error:
+            return dagster_api_pb2.RefreshComponentStateReply(
+                serialized_error=serialize_value(self._load_error)
+            )
+        if not self._client:
+            raise Exception("No available client to code server")
+        return self._client.refresh_component_state(
+            defs_state_keys=list(request.defs_state_keys),
+        )
+
+    def ReloadCodeWithState(self, request, context):
+        # Forward into the long-lived inner code server so the in-process
+        # incremental reload happens there. Unlike ReloadCode, this does not
+        # restart the subprocess.
+        if self._load_error:
+            return dagster_api_pb2.ReloadCodeWithStateReply(
+                serialized_error=serialize_value(self._load_error)
+            )
+        if not self._client:
+            raise Exception("No available client to code server")
+        return self._client.reload_code_with_state(
+            serialized_defs_state_info=request.serialized_defs_state_info,
+        )
+
     def cleanup(self):
         # In case ShutdownServer was not called
         self._shutdown_once_executions_finish_event.set()
@@ -408,6 +433,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         run_id = execute_external_job_args.run_id
 
         client = self._client
+        assert client is not None
 
-        self._run_clients[run_id] = client  # pyright: ignore[reportArgumentType]
-        return client._get_response("StartRun", request)  # noqa  # pyright: ignore[reportOptionalMemberAccess]
+        self._run_clients[run_id] = client
+        return client._get_response("StartRun", request)  # noqa

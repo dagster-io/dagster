@@ -421,7 +421,7 @@ class DagsterInstance(
         asset_key: "AssetKey",
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Mapping[str, "AssetPartitionStatus"] | None:
+    ) -> Mapping[str, "AssetPartitionStatus | None"] | None:
         """Get the current status of provided partition_keys for the provided asset.
 
         Args:
@@ -845,7 +845,7 @@ class DagsterInstance(
                 compute_log_manager,
                 "Compute log manager not configured in instance ref",
             )
-            self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
+            self._compute_log_manager = compute_log_manager
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 

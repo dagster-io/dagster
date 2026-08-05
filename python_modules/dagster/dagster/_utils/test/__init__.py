@@ -135,7 +135,7 @@ def build_job_with_input_stubs(
 
     return JobDefinition(
         name=job_def.name + "_stubbed",
-        graph_def=GraphDefinition(
+        graph_def=GraphDefinition(  # ty: ignore[missing-argument]
             node_defs=[*job_def.top_level_node_defs, *stub_node_defs],
             dependencies=deps,  # type: ignore
         ),
@@ -153,16 +153,15 @@ def wrap_op_in_graph(
     check.opt_mapping_param(tags, "tags", key_type=str)
 
     if do_input_mapping:
-        input_mappings = []
-        for input_name in op_def.ins.keys():
-            # create an input mapping to the inner node with the same name.
-            input_mappings.append(
-                InputMapping(
-                    graph_input_name=input_name,
-                    mapped_node_name=op_def.name,
-                    mapped_node_input_name=input_name,
-                )
+        # create an input mapping to the inner node with the same name.
+        input_mappings = [
+            InputMapping(
+                graph_input_name=input_name,
+                mapped_node_name=op_def.name,
+                mapped_node_input_name=input_name,
             )
+            for input_name in op_def.ins.keys()
+        ]
     else:
         input_mappings = None
 
@@ -262,7 +261,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
         self._inst_data = inst_data
 
     @property
-    def inst_data(self) -> object:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inst_data(self) -> object:
         return self._inst_data
 
     @classmethod
@@ -279,7 +278,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def debug_info(self) -> str:
         return ""
 
-    def get_logs_path(self, _instance: DagsterInstance, schedule_origin_id: str) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_logs_path(self, _instance: DagsterInstance, schedule_origin_id: str) -> str:  # ty: ignore[invalid-method-override]
         check.str_param(schedule_origin_id, "schedule_origin_id")
         return os.path.join(self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log")
 
@@ -316,13 +315,13 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         return {"base_dir": StringSource, "sleep_interval": Field(float, is_required=False)}
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData | None, config_value: TestStorageConfig
     ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
         return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
 
     @property
-    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def supports_global_concurrency_limits(self) -> bool:
         return True
 
     def get_records_for_run(

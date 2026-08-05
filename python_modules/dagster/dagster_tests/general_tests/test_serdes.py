@@ -41,7 +41,7 @@ def test_deserialize_value_ok():
 
 def test_deserialize_json_non_namedtuple():
     with pytest.raises(DeserializationError, match="was not expected type"):
-        dg.deserialize_value('{"foo": "bar"}', NamedTuple)
+        dg.deserialize_value('{"foo": "bar"}', NamedTuple)  # ty: ignore[no-matching-overload]
 
 
 @pytest.mark.parametrize("bad_obj", [1, None, False])
@@ -297,8 +297,8 @@ def test_wrong_first_arg():
 
         @serdes_test_class
         class NotCls(namedtuple("NotCls", "field_one field_two")):
-            def __new__(not_cls, field_two, field_one):  # type: ignore
-                return super().__new__(field_one, field_two)  # pyright: ignore[reportCallIssue]
+            def __new__(not_cls, field_two, field_one):
+                return super().__new__(field_one, field_two)  # ty: ignore[missing-argument]
 
     assert str(exc_info.value) == 'For NotCls: First parameter must be _cls or cls. Got "not_cls".'
 
@@ -309,7 +309,7 @@ def test_incorrect_order():
         @serdes_test_class
         class WrongOrder(namedtuple("WrongOrder", "field_one field_two")):
             def __new__(cls, field_two, field_one):
-                return super().__new__(field_one, field_two)  # pyright: ignore[reportCallIssue]
+                return super().__new__(field_one, field_two)  # ty: ignore[missing-argument]
 
     assert (
         str(exc_info.value) == "For WrongOrder: "
@@ -325,7 +325,7 @@ def test_missing_one_parameter():
         @serdes_test_class
         class MissingFieldInNew(namedtuple("MissingFieldInNew", "field_one field_two field_three")):
             def __new__(cls, field_one, field_two):
-                return super().__new__(field_one, field_two, None)  # pyright: ignore[reportCallIssue]
+                return super().__new__(field_one, field_two, None)  # ty: ignore[missing-argument]
 
     assert (
         str(exc_info.value) == "For MissingFieldInNew: "
@@ -345,7 +345,7 @@ def test_missing_many_parameters():
             namedtuple("MissingFieldsInNew", "field_one field_two field_three, field_four")
         ):
             def __new__(cls, field_one, field_two):
-                return super().__new__(field_one, field_two, None, None)  # pyright: ignore[reportCallIssue]
+                return super().__new__(field_one, field_two, None, None)  # ty: ignore[missing-argument]
 
     assert (
         str(exc_info.value) == "For MissingFieldsInNew: "
@@ -373,7 +373,7 @@ def test_extra_parameters_must_have_defaults():
                 field_one,
                 field_two,
             ):
-                return super().__new__(field_three, field_four)  # pyright: ignore[reportCallIssue]
+                return super().__new__(field_three, field_four)  # ty: ignore[missing-argument]
 
     assert (
         str(exc_info.value) == "For OldFieldsWithoutDefaults: "
@@ -402,7 +402,7 @@ def test_extra_parameters_have_working_defaults():
             another_falsey_field="",
             value_field="klsjkfjd",
         ):
-            return super().__new__(field_three, field_four)  # pyright: ignore[reportCallIssue]
+            return super().__new__(field_three, field_four)  # ty: ignore[missing-argument]
 
 
 def test_set():
@@ -544,7 +544,7 @@ def test_named_tuple_field_serializers() -> None:
         ) -> Sequence[Sequence[str]]:
             return list(entries.items())
 
-        def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
+        def unpack(  # ty: ignore[invalid-method-override]
             self,
             entries: Sequence[Sequence[str]],
             whitelist_map: WhitelistMap,
@@ -798,7 +798,7 @@ def test_long_int():
     x = NumHolder(98765432109876543210)
     ser_x = dg.serialize_value(x, test_map)
     roundtrip_x = dg.deserialize_value(ser_x, whitelist_map=test_map)
-    assert x.num == roundtrip_x.num  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert x.num == roundtrip_x.num  # ty: ignore[unresolved-attribute]
 
 
 def test_enum_storage_name() -> None:
@@ -843,11 +843,11 @@ def test_enum_custom_serializer():
     test_env = WhitelistMap.create()
 
     class MyEnumSerializer(EnumSerializer["Foo"]):
-        def unpack(self, packed_val: str) -> "Foo":  # pyright: ignore[reportIncompatibleMethodOverride]
+        def unpack(self, packed_val: str) -> "Foo":  # ty: ignore[invalid-method-override]
             packed_val = packed_val.replace("BLUE", "RED")
             return Foo[packed_val]
 
-        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:  # ty: ignore[invalid-method-override]
             return f"Foo.{unpacked_val.name.replace('RED', 'BLUE')}"
 
     @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)
@@ -869,7 +869,7 @@ def test_serialize_non_scalar_key_mapping():
 
     non_scalar_key_mapping = SerializableNonScalarKeyMapping({Bar("red"): 1})
 
-    serialized = dg.serialize_value(non_scalar_key_mapping, whitelist_map=test_env)  # pyright: ignore[reportArgumentType]
+    serialized = dg.serialize_value(non_scalar_key_mapping, whitelist_map=test_env)  # ty: ignore[invalid-argument-type]
     assert serialized == """{"__mapping_items__": [[{"__class__": "Bar", "color": "red"}, 1]]}"""
     assert non_scalar_key_mapping == dg.deserialize_value(serialized, whitelist_map=test_env)
 
@@ -888,7 +888,7 @@ def test_serializable_non_scalar_key_mapping():
     assert list(iter(non_scalar_key_mapping)) == list(iter([Bar("red")]))
 
     with pytest.raises(NotImplementedError, match="SerializableNonScalarKeyMapping is immutable"):
-        non_scalar_key_mapping["foo"] = None  # pyright: ignore[reportArgumentType]
+        non_scalar_key_mapping["foo"] = None  # ty: ignore[invalid-assignment]
 
 
 def test_serializable_non_scalar_key_mapping_in_named_tuple():
@@ -963,12 +963,12 @@ def test_object_migration():
     nt_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(nt_env)
-    class MyEnt(NamedTuple):  # type: ignore
+    class MyEnt(NamedTuple):
         name: str
         age: int
         children: list["MyEnt"]
 
-    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])  # pyright: ignore[reportArgumentType]
+    nt_ent = MyEnt("dad", 40, [MyEnt("sis", 4, [])])
     ser_nt_ent = dg.serialize_value(nt_ent, whitelist_map=nt_env)
     assert dg.deserialize_value(ser_nt_ent, whitelist_map=nt_env) == nt_ent
 
@@ -976,7 +976,7 @@ def test_object_migration():
 
     @_whitelist_for_serdes(py_dc_env)
     @pydantic.dataclasses.dataclass
-    class MyEnt:  # type: ignore
+    class MyEnt:
         name: str
         age: int
         children: list["MyEnt"]
@@ -1168,20 +1168,20 @@ def test_record_kwargs():
         def __new__(cls, **kwargs):
             return super().__new__(
                 cls,
-                name=kwargs.get("name", ""),  # pyright: ignore[reportCallIssue]
-                stuff=kwargs.get("stuff", []),  # pyright: ignore[reportCallIssue]
+                name=kwargs.get("name", ""),  # ty: ignore[unknown-argument]
+                stuff=kwargs.get("stuff", []),  # ty: ignore[unknown-argument]
             )
 
     r = MyRecord()
     assert r
     assert (
-        dg.deserialize_value(dg.serialize_value(r, whitelist_map=test_env), whitelist_map=test_env)  # pyright: ignore[reportArgumentType]
+        dg.deserialize_value(dg.serialize_value(r, whitelist_map=test_env), whitelist_map=test_env)  # ty: ignore[invalid-argument-type]
         == r
     )
     r = MyRecord(name="CUSTOM", stuff=[1, 2, 3, 4, 5, 6])
     assert r
     assert (
-        dg.deserialize_value(dg.serialize_value(r, whitelist_map=test_env), whitelist_map=test_env)  # pyright: ignore[reportArgumentType]
+        dg.deserialize_value(dg.serialize_value(r, whitelist_map=test_env), whitelist_map=test_env)  # ty: ignore[invalid-argument-type]
         == r
     )
 

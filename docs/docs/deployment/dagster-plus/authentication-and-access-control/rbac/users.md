@@ -71,13 +71,6 @@ In the **Roles** section, you can assign a [user role](/deployment/dagster-plus/
 
 **Dagster+ Pro** users can set user roles per code location and branch deployment.
 
-:::info Early access preview
-
-Setting user roles per branch deployment is in preview phase and is available in Dagster+ Pro in limited **early access**. Functionality and APIs may change as we continue development.
-To get early access to this feature, reach out to your Dagster account team.
-
-:::
-
 <Tabs>
    <TabItem value="pro" label="Pro">
 

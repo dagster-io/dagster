@@ -1,0 +1,17 @@
+version = 1
+revision = 3
+requires-python = ">=3.10, <3.15"
+
+[options]
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer-span = "PT48H"
+
+[[package]]
+name = "dagster-ui-components-tox"
+version = "1!0+dev"
+source = { virtual = "." }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+test = []

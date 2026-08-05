@@ -1,4 +1,4 @@
-import {Box, Caption, Colors} from '@dagster-io/ui-components';
+import {Box, Colors, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {compactNumber} from '../../ui/formatters';
@@ -16,34 +16,53 @@ export const EvaluationCounts = React.memo((props: Props) => {
 
   const requested =
     numRequested || isPartitionedAsset ? (
-      <Caption
+      <Text
+        size={12}
         key="requested"
-        color={
-          selected ? Colors.textBlue() : numRequested ? Colors.textGreen() : Colors.textLight()
-        }
+        style={{
+          color: selected
+            ? Colors.textBlue()
+            : numRequested
+              ? Colors.textGreen()
+              : Colors.textLight(),
+        }}
       >
         {isPartitionedAsset ? `${compactNumber(numRequested)} launched` : 'Launched'}
-      </Caption>
+      </Text>
     ) : null;
 
   const skipped =
     numSkipped || isPartitionedAsset ? (
-      <Caption
+      <Text
+        size={12}
         key="skipped"
-        color={selected ? Colors.textBlue() : numSkipped ? Colors.textYellow() : Colors.textLight()}
+        style={{
+          color: selected
+            ? Colors.textBlue()
+            : numSkipped
+              ? Colors.textYellow()
+              : Colors.textLight(),
+        }}
       >
         {isPartitionedAsset ? `${compactNumber(numSkipped)} skipped` : 'Skipped'}
-      </Caption>
+      </Text>
     ) : null;
 
   const discarded =
     numDiscarded || isPartitionedAsset ? (
-      <Caption
+      <Text
+        size={12}
         key="discarded"
-        color={selected ? Colors.textBlue() : numDiscarded ? Colors.textRed() : Colors.textLight()}
+        style={{
+          color: selected
+            ? Colors.textBlue()
+            : numDiscarded
+              ? Colors.textRed()
+              : Colors.textLight(),
+        }}
       >
         {isPartitionedAsset ? `${compactNumber(numDiscarded)} discarded` : 'Discarded'}
-      </Caption>
+      </Text>
     ) : null;
 
   const filtered = [requested, skipped, discarded].filter(
@@ -55,9 +74,9 @@ export const EvaluationCounts = React.memo((props: Props) => {
       {filtered
         .map((element, ii) => [
           element,
-          <Caption key={`spacer-${ii}`} color={selected ? Colors.textBlue() : Colors.textLighter()}>
+          <Text key={`spacer-${ii}`} size={12} color={selected ? 'textBlue' : 'textLighter'}>
             /
-          </Caption>,
+          </Text>,
         ])
         .flat()
         .slice(0, -1)}

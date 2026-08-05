@@ -164,7 +164,7 @@ class MultiPartitionKey(str):
 
         return str_key
 
-    def __getnewargs__(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def __getnewargs__(self):
         # When this instance is pickled, replace the argument to __new__ with the
         # dimension key mapping instead of the string representation.
         return ({dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys},)
@@ -252,7 +252,7 @@ class PartitionDimensionDefinition(
             and self.partitions_def == other.partitions_def
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
 
 class MultiDimensionalPartitionKeyIterator:

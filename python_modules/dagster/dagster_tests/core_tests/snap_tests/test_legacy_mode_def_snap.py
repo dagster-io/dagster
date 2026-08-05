@@ -12,11 +12,11 @@ def test_mode_snap(snapshot):
     def no_config_resource(_):
         pass
 
-    @dg.logger(config_schema={"bar": str})  # pyright: ignore[reportArgumentType]
+    @dg.logger(config_schema={"bar": str})
     def a_logger(_):
         pass
 
-    @dg.logger(description="logger_description")  # pyright: ignore[reportCallIssue]
+    @dg.logger(description="logger_description")  # ty: ignore[no-matching-overload]
     def no_config_logger(_):
         pass
 
@@ -25,7 +25,7 @@ def test_mode_snap(snapshot):
             "some_resource": a_resource,
             "no_config_resource": no_config_resource,
         },
-        logger_defs={  # pyright: ignore[reportArgumentType]
+        logger_defs={
             "some_logger": a_logger,
             "no_config_logger": no_config_logger,
         },

@@ -29,7 +29,7 @@ def story_sentiment_analysis(
     - Dagster tracking AI workload costs
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         # Optimized query: Select only needed columns and use CTE for reusability
         cursor.execute(f"""

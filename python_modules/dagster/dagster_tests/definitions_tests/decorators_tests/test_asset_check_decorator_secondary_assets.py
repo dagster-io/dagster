@@ -57,7 +57,7 @@ def test_additional_deps_overlap():
         ),
     ):
 
-        @dg.asset_check(asset=asset1, additional_deps=[asset1])  # pyright: ignore[reportArgumentType]
+        @dg.asset_check(asset=asset1, additional_deps=[asset1])
         def check1(asset_1):
             pass
 
@@ -69,7 +69,7 @@ def test_additional_deps_overlap():
         ),
     ):
 
-        @dg.asset_check(asset=asset1, additional_deps=[asset1])  # pyright: ignore[reportArgumentType]
+        @dg.asset_check(asset=asset1, additional_deps=[asset1])
         def check2():
             pass
 
@@ -83,7 +83,7 @@ def test_additional_ins_overlap():
         ),
     ):
 
-        @dg.asset_check(asset=asset1, additional_ins={"asset_1": dg.AssetIn("asset1")})  # pyright: ignore[reportArgumentType]
+        @dg.asset_check(asset=asset1, additional_ins={"asset_1": dg.AssetIn("asset1")})
         def check1(asset_1):
             pass
 

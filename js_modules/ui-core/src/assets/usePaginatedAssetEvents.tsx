@@ -3,12 +3,12 @@ import uniqBy from 'lodash/uniqBy';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {AssetKey, AssetViewParams} from './types';
+import {useApolloClient} from '../apollo-client';
 import {
   RecentAssetEventsQuery,
   RecentAssetEventsQueryVariables,
 } from './types/useRecentAssetEvents.types';
 import {AssetEventFragment, RECENT_ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
-import {useApolloClient} from '../apollo-client';
 import {AssetEventHistoryEventTypeSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
@@ -57,6 +57,11 @@ export function usePaginatedAssetEvents(
         return;
       }
       setLoading(true);
+      const eventTypeSelectors = params.statuses ?? [
+        AssetEventHistoryEventTypeSelector.MATERIALIZATION,
+        AssetEventHistoryEventTypeSelector.OBSERVATION,
+        AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
+      ];
       const {data} = await client.query<RecentAssetEventsQuery, RecentAssetEventsQueryVariables>({
         query: RECENT_ASSET_EVENTS_QUERY,
         variables: {
@@ -66,21 +71,22 @@ export function usePaginatedAssetEvents(
           before,
           after: afterParam,
           partitions: params.partitions,
-          eventTypeSelectors: params.statuses ?? [
-            AssetEventHistoryEventTypeSelector.MATERIALIZATION,
-            AssetEventHistoryEventTypeSelector.OBSERVATION,
-            AssetEventHistoryEventTypeSelector.FAILED_TO_MATERIALIZE,
-          ],
+          eventTypeSelectors,
         },
       });
       setLoading(false);
 
       const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
-
+      const eventHistory = asset?.assetEventHistory?.results.filter(
+        (e) =>
+          e.__typename === 'MaterializationEvent' ||
+          e.__typename === 'ObservationEvent' ||
+          e.__typename === 'FailedToMaterializeEvent',
+      );
       setLoaded(true);
       setEvents((loaded) =>
         uniqBy(
-          [...loaded, ...(asset?.assetEventHistory?.results || [])],
+          [...loaded, ...(eventHistory || [])],
           (e) => `${e.runId}${e.timestamp}.${e.__typename}`,
         ),
       );

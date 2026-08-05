@@ -2,24 +2,27 @@ import {
   Box,
   Button,
   Colors,
+  Container,
   Icon,
+  Inner,
   Menu,
   MenuItem,
   Popover,
+  Row,
   Spinner,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef, useState} from 'react';
 import * as React from 'react';
-import styled, {createGlobalStyle} from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
+import styles from './css/FilterDropdown.module.css';
+import './css/FilterDropdownPopover.css';
 import {FilterObject} from './useFilter';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface FilterDropdownProps {
   filters: FilterObject[];
@@ -221,7 +224,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
 
   return (
     <div>
-      <TextInputWrapper>
+      <div className={styles.textInputWrapper}>
         <TextInput
           type="text"
           value={search}
@@ -244,11 +247,16 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
           flex={{justifyContent: 'center', alignItems: 'center'}}
           padding={{vertical: 12, horizontal: 16}}
         >
-          <SlashShortcut>f</SlashShortcut>
+          <div className={styles.slashShortcut}>f</div>
         </Box>
-      </TextInputWrapper>
+      </div>
       <Menu>
-        <DropdownMenuContainer id={menuKey} ref={dropdownRef} onKeyDown={handleKeyDown}>
+        <div
+          className={styles.dropdownMenuContainer}
+          id={menuKey}
+          ref={dropdownRef}
+          onKeyDown={handleKeyDown}
+        >
           {selectedFilter && selectedFilter.isLoadingFilters ? (
             <Box padding={{vertical: 12, horizontal: 16}}>
               <Spinner purpose="section" />
@@ -262,10 +270,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
                 width: selectedFilter?.menuWidth || 'auto',
               }}
             >
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {items.map(({index, size, start}) => {
                   return (
-                    <Row $height={size} $start={start} key={index}>
+                    <Row height={size} start={start} key={index}>
                       {allResultsJsx[index]}
                     </Row>
                   );
@@ -277,7 +285,7 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
               {selectedFilter?.getNoResultsPlaceholder?.(search) || 'No results'}
             </Box>
           )}
-        </DropdownMenuContainer>
+        </div>
       </Menu>
     </div>
   );
@@ -338,7 +346,6 @@ export const FilterDropdownButton = React.memo(
         }
         onShortcut={() => setIsOpen((isOpen) => !isOpen)}
       >
-        <PopoverStyle />
         <Popover
           content={
             <div ref={dropdownRef}>
@@ -383,35 +390,6 @@ export const FilterDropdownButton = React.memo(
   },
 );
 
-const DropdownMenuContainer = styled.div`
-  .iconGlobal {
-    margin-left: 0 !important;
-  }
-`;
-
-const TextInputWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex-gap: 12px;
-
-  > *:first-child {
-    flex-grow: 1;
-  }
-
-  input {
-    background-color: ${Colors.popoverBackground()};
-    padding: 12px 16px;
-
-    &,
-    :focus,
-    :active,
-    :hover {
-      box-shadow: none;
-      background-color: ${Colors.popoverBackground()};
-    }
-  }
-`;
-
 type FilterDropdownMenuItemProps = React.ComponentProps<typeof MenuItem> & {
   menuKey: string;
   index: number;
@@ -433,40 +411,11 @@ const FilterDropdownMenuItem = React.memo(
         aria-selected={rest.active ? 'true' : 'false'}
         ref={divRef}
       >
-        <StyledMenuItem {...rest} />
+        <MenuItem className={styles.styledMenuItem} {...rest} />
       </div>
     );
   },
 );
-
-const StyledMenuItem = styled(MenuItem)`
-  &.bp5-active:focus {
-    box-shadow: initial;
-  }
-`;
-
-const SlashShortcut = styled.div`
-  border-radius: 4px;
-  padding: 0px 6px;
-  background: ${Colors.backgroundLight()};
-  color: ${Colors.textLight()};
-`;
-
-const PopoverStyle = createGlobalStyle`
-  .filter-dropdown.filter-dropdown.filter-dropdown.filter-dropdown {
-    border-radius: 8px;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    .bp5-popover-content {
-      border-radius: 8px;
-    }
-  }
-  
-  .bp5-overlay-content {
-    max-width: 100%;
-  }
-`;
 
 function itemId(menuKey: string, index: number) {
   return `item-${menuKey}-${index}`;

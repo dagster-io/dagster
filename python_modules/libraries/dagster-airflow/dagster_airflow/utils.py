@@ -83,7 +83,7 @@ def serialize_connections(connections: list[Connection] = []) -> list[Mapping[st
         if hasattr(c, "host") and c.host:
             serialized_connection["host"] = c.host
         if hasattr(c, "schema") and c.schema:
-            serialized_connection["schema"] = c.schema
+            serialized_connection["schema"] = c.schema  # ty: ignore[invalid-assignment]
         if hasattr(c, "port") and c.port:
             serialized_connection["port"] = c.port
         if hasattr(c, "extra") and c.extra:
@@ -91,7 +91,7 @@ def serialize_connections(connections: list[Connection] = []) -> list[Mapping[st
         if hasattr(c, "description") and c.description:
             serialized_connection["description"] = c.description
         serialized_connections.append(serialized_connection)
-    return serialized_connections
+    return serialized_connections  # ty: ignore[invalid-return-type]
 
 
 if os.name == "nt":

@@ -1,7 +1,7 @@
 from collections.abc import Generator
 
 import pytest
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, get_dagster_adhoc_job_name
+from dagster_dbt.cloud_v2.resources import DAGSTER_ADHOC_PREFIX, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudEnvironment, DbtCloudProject
 from dagster_dbt_cloud_kitchen_sink.resources import (
     get_dbt_cloud_workspace,
@@ -37,20 +37,16 @@ def ensure_cleanup(
     finally:
         client = workspace.get_client()
         jobs = client.list_jobs(project_id=project_id, environment_id=environment_id)
-        project = DbtCloudProject.from_project_details(
+        # Resolve project / environment so the fixture validates the same IDs.
+        DbtCloudProject.from_project_details(
             project_details=client.get_project_details(project_id=project_id)
         )
-        environment = DbtCloudEnvironment.from_environment_details(
+        DbtCloudEnvironment.from_environment_details(
             environment_details=client.get_environment_details(environment_id=environment_id)
         )
+        # Clean up every Dagster-managed adhoc job (including suffixed pool entries).
         adhoc_job_ids = {
-            job["id"]
-            for job in jobs
-            if job["name"]
-            == get_dagster_adhoc_job_name(
-                project_id=project.id,
-                environment_id=environment.id,
-            )
+            job["id"] for job in jobs if (job.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX)
         }
         for job_id in adhoc_job_ids:
             client.destroy_job(job_id=job_id)

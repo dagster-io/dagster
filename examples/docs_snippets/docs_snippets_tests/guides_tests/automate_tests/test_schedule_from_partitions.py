@@ -7,4 +7,4 @@ from docs_snippets.guides.build.partitions_backfills.schedule_from_partitions im
 
 
 def test_build_schedule_from_partitioned_job():
-    assert partitioned_op_schedule.job_name == partitioned_op_job.name
+    assert partitioned_op_schedule.job_name == partitioned_op_job.name  # ty: ignore[unresolved-attribute]

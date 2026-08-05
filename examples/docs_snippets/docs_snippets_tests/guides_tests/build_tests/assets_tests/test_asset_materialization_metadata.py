@@ -2,4 +2,4 @@ from docs_snippets.guides.build.assets.asset_materialization_metadata import tab
 
 
 def test():
-    assert table1().metadata
+    assert table1().metadata  # ty: ignore[unresolved-attribute]

@@ -79,7 +79,7 @@ Make sure you have your root venv activated and run the codegen command from the
 
 ```bash
 source .venv/bin/active
-just py-graphql-codegen
+just generate-graphql
 ```
 
 This will scan the `/queries` directory and generate new type definitions, graphql queries, client methods, and so on, in the `/__generated__/` directory, according to the schema and your query changes.

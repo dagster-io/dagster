@@ -136,21 +136,22 @@ class DagsterGrpcClient:
             ("grpc.max_receive_message_length", max_rx_bytes()),
             ("grpc.max_send_message_length", max_send_bytes()),
         ]
-        async with (
-            grpc.aio.secure_channel(
+        if self._use_ssl:
+            assert self._ssl_creds is not None
+            async with grpc.aio.secure_channel(
                 self._server_address,
                 self._ssl_creds,
                 options=options,
                 compression=grpc.Compression.Gzip,
-            )
-            if self._use_ssl
-            else grpc.aio.insecure_channel(
+            ) as channel:
+                yield channel
+        else:
+            async with grpc.aio.insecure_channel(
                 self._server_address,
                 options=options,
                 compression=grpc.Compression.Gzip,
-            )
-        ) as channel:
-            yield channel
+            ) as channel:
+                yield channel
 
     def _get_response(
         self,
@@ -426,6 +427,32 @@ class DagsterGrpcClient:
     def reload_code(self, timeout: int) -> dagster_api_pb2.ReloadCodeReply:
         return self._query("ReloadCode", dagster_api_pb2.ReloadCodeRequest, timeout=timeout)
 
+    def refresh_component_state(
+        self,
+        defs_state_keys: Sequence[str],
+        timeout: int = 300,
+    ) -> dagster_api_pb2.RefreshComponentStateReply:
+        # Refresh can hit external APIs (e.g. dbt manifests, Airbyte) so the
+        # default timeout is much higher than the standard request timeout.
+        return self._query(
+            "RefreshComponentState",
+            dagster_api_pb2.RefreshComponentStateRequest,
+            defs_state_keys=list(defs_state_keys),
+            timeout=timeout,
+        )
+
+    def reload_code_with_state(
+        self,
+        serialized_defs_state_info: str,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ) -> dagster_api_pb2.ReloadCodeWithStateReply:
+        return self._query(
+            "ReloadCodeWithState",
+            dagster_api_pb2.ReloadCodeWithStateRequest,
+            serialized_defs_state_info=serialized_defs_state_info,
+            timeout=timeout,
+        )
+
     def external_repository(
         self,
         remote_repository_origin: RemoteRepositoryOrigin,
@@ -514,7 +541,7 @@ class DagsterGrpcClient:
     def _is_unimplemented_error(self, e: Exception) -> bool:
         return (
             isinstance(e.__cause__, grpc.RpcError)
-            and cast("grpc.RpcError", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+            and cast("grpc.Call", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
         )
 
     def external_schedule_execution(

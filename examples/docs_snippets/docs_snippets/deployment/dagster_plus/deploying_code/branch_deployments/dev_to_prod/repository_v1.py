@@ -35,4 +35,4 @@ def get_current_env():
 
 @dg.definitions
 def resources():
-    return dg.Definitions(resources=resources[get_current_env()])
+    return dg.Definitions(resources=resources[get_current_env()])  # ty: ignore[not-subscriptable]

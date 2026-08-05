@@ -64,3 +64,16 @@ In the example below:
   path="docs_snippets/docs_snippets/integrations/databricks/databricks_connect.py"
   title="src/<project-name>/defs/databricks-assets.py"
 />
+
+## Data validation example
+
+A common use case for Databricks Connect is enforcing data quality gates in a pipeline. Because your Python logic runs in Dagster, you can raise exceptions that block downstream assets when validation fails.
+
+The example below runs two Spark SQL queries against a Unity Catalog table — one for row count and one for null rate — and raises an error if either threshold is breached. The downstream `customer_summary_report` asset only materializes when `validated_customer_data` succeeds.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/databricks/databricks_connect_validation.py"
+  title="src/<project-name>/defs/customer-pipeline.py"
+/>
+
+The `spark` resource is the `DatabricksSession` configured in Step 2. Validation failures surface as asset failures in the Dagster UI, with the error message and Spark query results visible in the event log.

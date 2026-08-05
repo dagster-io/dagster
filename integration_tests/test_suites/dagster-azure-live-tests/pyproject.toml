@@ -1,17 +1,37 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "azure-test-proj"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "dagster-webserver",
     "dagster-azure",
 ]
 
-[project.optional-dependencies]
-test = ["pytest"]
+[tool.hatch.build.targets.wheel]
+packages = ["azure_test_proj", "integration_tests"]
 
-[tool.setuptools.packages.find]
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-webserver",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-graphql",
+    "dagster-azure",
+    "pytest",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../../python_modules/dagster", editable = true }
+dagster-webserver = { path = "../../../python_modules/dagster-webserver", editable = true }
+dagster-test = { path = "../../../python_modules/dagster-test", editable = true }
+dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
+dagster-graphql = { path = "../../../python_modules/dagster-graphql", editable = true }
+dagster-azure = { path = "../../../python_modules/libraries/dagster-azure", editable = true }

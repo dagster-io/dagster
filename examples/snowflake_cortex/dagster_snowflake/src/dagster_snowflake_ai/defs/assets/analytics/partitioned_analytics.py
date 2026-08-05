@@ -32,7 +32,7 @@ def daily_sentiment_aggregates(
     partition_date = context.partition_key
 
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         # Create table if it doesn't exist
         cursor.execute(f"""
@@ -177,7 +177,7 @@ def daily_entity_summary(
     partition_date = context.partition_key
 
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         # Create table if it doesn't exist
         cursor.execute(f"""

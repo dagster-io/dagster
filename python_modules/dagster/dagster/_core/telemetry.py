@@ -118,9 +118,9 @@ def _telemetry_wrapper(
 ) -> Callable[P, T]:
     metadata = check.opt_mapping_param(metadata, "metadata", key_type=str, value_type=str)
 
-    if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
+    if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:  # ty: ignore[unresolved-attribute]
         raise DagsterInvariantViolationError(
-            f"Attempted to log telemetry for function {f.__name__} that is not in telemetry whitelisted "
+            f"Attempted to log telemetry for function {f.__name__} that is not in telemetry whitelisted "  # ty: ignore[unresolved-attribute]
             f"functions list: {TELEMETRY_WHITELISTED_FUNCTIONS}."
         )
     sig = inspect.signature(f)
@@ -142,7 +142,7 @@ def _telemetry_wrapper(
         start_time = datetime.datetime.now()
         log_action(
             instance=instance,
-            action=f.__name__ + "_started",
+            action=f.__name__ + "_started",  # ty: ignore[unresolved-attribute]
             client_time=start_time,
             metadata=metadata,
         )
@@ -151,7 +151,7 @@ def _telemetry_wrapper(
         success_metadata = {"success": getattr(result, "success", None)}
         log_action(
             instance=instance,
-            action=f.__name__ + "_ended",
+            action=f.__name__ + "_ended",  # ty: ignore[unresolved-attribute]
             client_time=end_time,
             elapsed_time=end_time - start_time,
             metadata=merge_dicts(success_metadata, metadata),
@@ -185,17 +185,15 @@ def _check_telemetry_instance_param(
     args: Sequence[object], kwargs: Mapping[str, object], instance_index: int
 ) -> DagsterInstance:
     if "instance" in kwargs:
-        return check.inst_param(
-            kwargs["instance"],  # type: ignore
-            "instance",
+        return check.inst(
+            kwargs["instance"],
             DagsterInstance,
             "'instance' parameter passed as keyword argument must be a DagsterInstance",
         )
     else:
         check.invariant(len(args) > instance_index)
-        return check.inst_param(
-            args[instance_index],  # type: ignore
-            "instance",
+        return check.inst(
+            args[instance_index],
             DagsterInstance,
             f"'instance' argument at position {instance_index} must be a DagsterInstance",
         )

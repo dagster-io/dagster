@@ -24,7 +24,13 @@ export const AssetTimeMetadataPlots = ({
     AssetEventHistoryEventTypeSelector.MATERIALIZATION,
     AssetEventHistoryEventTypeSelector.OBSERVATION,
   ]);
-  const grouped = useGroupedEvents('time', events, undefined);
+  const grouped = useGroupedEvents(
+    'time',
+    events.filter(
+      (e) => e.__typename === 'MaterializationEvent' || e.__typename === 'ObservationEvent',
+    ),
+    undefined,
+  );
 
   if (loading) {
     return (

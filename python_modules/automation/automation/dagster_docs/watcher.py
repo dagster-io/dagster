@@ -86,7 +86,7 @@ class GitignoreAwareHandler(FileSystemEventHandler):
         if not gitignore_path.exists():
             return pathspec.PathSpec.from_lines("gitwildmatch", [])
 
-        with open(gitignore_path) as f:
+        with open(gitignore_path, encoding="utf-8") as f:
             return pathspec.PathSpec.from_lines("gitwildmatch", f.readlines())
 
     def _should_ignore_path(self, file_path: Path) -> bool:

@@ -269,7 +269,7 @@ def test_multi_asset_internal_asset_deps_invalid():
 
 
 def test_asset_with_dagster_type():
-    @dg.asset(dagster_type=String)  # pyright: ignore[reportArgumentType]
+    @dg.asset(dagster_type=String)  # ty: ignore[invalid-argument-type]
     def my_asset(arg1):
         return arg1
 
@@ -456,8 +456,8 @@ def test_infer_output_dagster_type():
     def my_asset() -> str:
         return "foo"
 
-    assert my_asset.op.outs["result"].dagster_type.display_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
-    assert my_asset.op.outs["result"].dagster_type.typing_type == str  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "String"  # ty: ignore[unresolved-attribute]
+    assert my_asset.op.outs["result"].dagster_type.typing_type == str  # ty: ignore[unresolved-attribute]
 
 
 def test_infer_output_dagster_type_none():
@@ -465,8 +465,8 @@ def test_infer_output_dagster_type_none():
     def my_asset() -> None:
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)  # pyright: ignore[reportAttributeAccessIssue]
-    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)  # ty: ignore[unresolved-attribute]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"  # ty: ignore[unresolved-attribute]
 
 
 def test_infer_output_dagster_type_empty():
@@ -474,8 +474,8 @@ def test_infer_output_dagster_type_empty():
     def my_asset():
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type is Any  # pyright: ignore[reportAttributeAccessIssue]
-    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.typing_type is Any  # ty: ignore[unresolved-attribute]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_with_docstring_description():
@@ -657,11 +657,11 @@ def test_multi_asset_resource_defs():
     def baz_resource():
         pass
 
-    @dg.io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"baz"})
     def foo_manager():
         pass
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def bar_manager():
         pass
 
@@ -688,11 +688,11 @@ def test_multi_asset_resource_defs_specs() -> None:
     def baz_resource():
         pass
 
-    @dg.io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"baz"})
     def foo_manager():
         pass
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def bar_manager():
         pass
 
@@ -732,7 +732,7 @@ def test_multi_asset_code_versions():
 @ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 @ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_asset_io_manager_def():
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_manager():
         pass
 
@@ -742,7 +742,7 @@ def test_asset_io_manager_def():
 
     # If IO manager def is passed directly, then it doesn't appear as a
     # required resource key on the underlying op.
-    assert set(the_asset.node_def.required_resource_keys) == set()  # pyright: ignore[reportAttributeAccessIssue]
+    assert set(the_asset.node_def.required_resource_keys) == set()  # ty: ignore[unresolved-attribute]
 
     @dg.asset(io_manager_key="blah", resource_defs={"blah": the_manager})
     def other_asset():
@@ -750,7 +750,7 @@ def test_asset_io_manager_def():
 
     # If IO manager def is provided as a resource def, it appears in required
     # resource keys on the underlying op.
-    assert set(other_asset.node_def.required_resource_keys) == {"blah"}  # pyright: ignore[reportAttributeAccessIssue]
+    assert set(other_asset.node_def.required_resource_keys) == {"blah"}  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_retry_policy():

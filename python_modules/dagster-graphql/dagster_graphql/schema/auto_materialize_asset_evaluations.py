@@ -105,7 +105,8 @@ def create_graphene_auto_materialize_rule_evaluation(
             if key.startswith("will_update_parent") and isinstance(value, DagsterAssetMetadataValue)
         ]
         rule_evaluation_data = GrapheneParentMaterializedRuleEvaluationData(
-            updatedAssetKeys=updatedAssetKeys, willUpdateAssetKeys=willUpdateAssetKeys
+            updatedAssetKeys=updatedAssetKeys,
+            willUpdateAssetKeys=willUpdateAssetKeys,
         )
     elif any(key.startswith("waiting_on_ancestor") for key in metadata.keys()):
         waitingOnAssetKeys = [
@@ -121,7 +122,8 @@ def create_graphene_auto_materialize_rule_evaluation(
         rule_evaluation_data = None
 
     return GrapheneAutoMaterializeRuleEvaluation(
-        partitionKeysOrError=partition_keys_or_error, evaluationData=rule_evaluation_data
+        partitionKeysOrError=partition_keys_or_error,
+        evaluationData=rule_evaluation_data,
     )
 
 

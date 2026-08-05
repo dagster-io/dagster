@@ -6,6 +6,7 @@ from dagster import AutomationCondition
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import (
     AssetPostProcessorModel,
+    SharedAssetKwargs,
     apply_post_processor_to_defs,
 )
 from dagster.components.utils import TranslatorResolvingInfo
@@ -138,7 +139,7 @@ def test_render_attributes_custom_context() -> None:
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetPostProcessorModel.model()]).validate_python([python])  # ty: ignore[invalid-type-form]
     assert len(loaded) == 1
     assert loaded[0] == expected
 
@@ -319,3 +320,25 @@ def test_cacheable_assets_with_post_processing() -> None:
 
     assert found_regular, "regular asset should be post-processed"
     assert found_cacheable, "CacheableAssetsDefinition should be preserved"
+
+
+def test_integer_tag_values_coerced_to_strings() -> None:
+    """Test that non-string scalar tag values in YAML are coerced to strings (issue #30954)."""
+    op = AssetPostProcessorModel.model()(
+        attributes={"tags": {"priority": 1, "enabled": True, "score": 3.5}},
+    )
+    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
+    asset_graph = newdefs.resolve_asset_graph()
+    assert asset_graph.get(dg.AssetKey("a")).tags == {
+        "priority": "1",
+        "enabled": "True",
+        "score": "3.5",
+    }
+
+
+def test_shared_asset_kwargs_integer_tags() -> None:
+    """Test that SharedAssetKwargs resolves integer tag values to strings."""
+    model_cls = SharedAssetKwargs.model()
+    model = model_cls(tags={"priority": 1, "version": 2})
+    resolved = SharedAssetKwargs.resolve_from_model(ResolutionContext.default(), model)
+    assert resolved.tags == {"priority": "1", "version": "2"}

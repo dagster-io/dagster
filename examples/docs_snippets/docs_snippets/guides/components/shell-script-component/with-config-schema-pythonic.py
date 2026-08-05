@@ -13,4 +13,4 @@ class ShellCommand(dg.Component, dg.Resolvable):
 
     # highlight-end
 
-    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions: ...  # ty: ignore[empty-body]

@@ -84,7 +84,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
     def resolve_rootConfigType(self, _graphene_info: ResolveInfo):
         return to_config_type(
             self._represented_job.config_schema_snapshot.get_config_snap,
-            self._represented_job.get_mode_def_snap(  # type: ignore  # (possible none)
+            self._represented_job.get_mode_def_snap(
                 self._mode or DEFAULT_MODE_NAME
             ).root_config_key,
         )
@@ -99,7 +99,7 @@ class GrapheneRunConfigSchema(graphene.ObjectType):
             graphene_info,
             self._represented_job,
             self._mode,
-            parse_run_config_input(runConfigData or {}, raise_on_error=False),  # type: ignore
+            parse_run_config_input(runConfigData or {}, raise_on_error=False),
         )
 
     def resolve_rootDefaultYaml(self, _graphene_info) -> str:

@@ -95,7 +95,7 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         self._name = check.str_param(name, "name")
         self._requirements_fn: ExecutorRequirementsFunction
         if callable(requirements):
-            self._requirements_fn = requirements
+            self._requirements_fn = requirements  # ty: ignore[invalid-assignment]
         else:
             requirements_lst = check.opt_list_param(
                 requirements, "requirements", of_type=ExecutorRequirement
@@ -137,9 +137,9 @@ class ExecutorDefinition(NamedConfigurableDefinition):
         return self._executor_creation_fn
 
     def copy_for_configured(self, name, description, config_schema) -> Self:
-        return ExecutorDefinition(
+        return ExecutorDefinition(  # ty: ignore[invalid-return-type]
             name=name,
-            config_schema=config_schema,  # type: ignore
+            config_schema=config_schema,
             executor_creation_fn=self.executor_creation_fn,
             description=description or self.description,
             requirements=self._requirements_fn,
@@ -230,7 +230,7 @@ def executor(
     if callable(name):
         check.invariant(config_schema is None)
         check.invariant(requirements is None)
-        return _ExecutorDecoratorCallable()(name)
+        return _ExecutorDecoratorCallable()(name)  # ty: ignore[invalid-argument-type]
 
     return _ExecutorDecoratorCallable(
         name=name, config_schema=config_schema, requirements=requirements
@@ -247,7 +247,7 @@ class _ExecutorDecoratorCallable:
         check.callable_param(fn, "fn")
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         executor_def = ExecutorDefinition(
             name=self.name,

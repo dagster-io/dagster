@@ -1,4 +1,7 @@
-from dagster_meltano import meltano_resource, meltano_run_op
+from dagster_meltano import (  # ty: ignore[unresolved-import]
+    meltano_resource,
+    meltano_run_op,
+)
 
 import dagster as dg
 

@@ -1,4 +1,4 @@
-import {Box, Colors, Mono, Spinner, useViewport} from '@dagster-io/ui-components';
+import {Box, Colors, Container, Inner, Spinner, Text, useViewport} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React from 'react';
 import {Link} from 'react-router-dom';
@@ -16,7 +16,6 @@ import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from '../../runs/batchRunsForTimeline';
 import {mergeStatusToBackground} from '../../runs/mergeStatusToBackground';
-import {Container, Inner} from '../../ui/VirtualizedTable';
 
 const {DATE_TIME_HEIGHT, ONE_HOUR_MSEC, EMPTY_STATE_HEIGHT, LEFT_SIDE_SPACE_ALLOTTED} = CONSTANTS;
 
@@ -73,7 +72,7 @@ export const ExecutionTimeline = (props: Props) => {
       {runs.length ? (
         <div ref={measureRef} style={{overflow: 'hidden', position: 'relative'}}>
           <Container ref={parentRef}>
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => (
                 <ExecutionTimelineRow
                   key={key}
@@ -159,7 +158,7 @@ export const ExecutionTimelineRow = ({
   }, [run, start, end, width]);
 
   return (
-    <TimelineRowContainer $height={height} $start={top}>
+    <TimelineRowContainer height={height} start={top}>
       <Box
         style={{width: LEFT_SIDE_SPACE_ALLOTTED}}
         padding={{horizontal: 24}}
@@ -168,7 +167,9 @@ export const ExecutionTimelineRow = ({
         <Box flex={{alignItems: 'center', gap: 4}}>
           <RunStatusDot status={run.status} size={12} />
           <Link to={`/runs/${run.id}`}>
-            <Mono>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono">
+              {titleForRun(run)}
+            </Text>
           </Link>
         </Box>
         <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
@@ -176,8 +177,8 @@ export const ExecutionTimelineRow = ({
       <RunChunks>
         {chunk && (
           <RunChunk
-            $background={mergeStatusToBackground(chunk.runs)}
-            $multiple={false}
+            background={mergeStatusToBackground(chunk.runs)}
+            multiple={false}
             style={{
               left: `${chunk.left}px`,
               width: `${chunk.width}px`,

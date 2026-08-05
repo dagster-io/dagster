@@ -7,7 +7,7 @@ lineage = {
     "b": [{"asset_key": "upstream", "column": "column2"}],
 }
 # Then, when reporting the asset materialization:
-context.report_asset_materialization(
+context.report_asset_materialization(  # ty: ignore[unresolved-attribute]
     asset_key="foo",
     metadata={
         "lineage_meta": {

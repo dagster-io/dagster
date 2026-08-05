@@ -5,11 +5,11 @@ import {
   Icon,
   MenuItem,
   MiddleTruncate,
-  TAG_SELECTOR_CONTAINER_CLASS,
   TagSelectorDefaultTagTooltipStyle,
   TagSelectorWithSearch,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
+
+import styles from './css/PartitionTagSelector.module.css';
 
 interface Props {
   allPartitions: string[];
@@ -23,7 +23,7 @@ export const PartitionTagSelector = ({
   selectPartition,
 }: Props) => {
   return (
-    <TagSelectorWrapper>
+    <div className={styles.tagSelectorWrapper}>
       <TagSelectorWithSearch
         closeOnSelect
         placeholder="Select a partition to view its result"
@@ -67,29 +67,9 @@ export const PartitionTagSelector = ({
         )}
         usePortal={false}
       />
-      <SearchIconWrapper>
+      <div className={styles.searchIconWrapper}>
         <Icon name="search" />
-      </SearchIconWrapper>
-    </TagSelectorWrapper>
+      </div>
+    </div>
   );
 };
-
-const TagSelectorWrapper = styled.div`
-  position: relative;
-
-  .${TAG_SELECTOR_CONTAINER_CLASS} {
-    width: 370px;
-    padding-left: 32px;
-    height: 36px;
-  }
-`;
-
-const SearchIconWrapper = styled.div`
-  position: absolute;
-  left: 12px;
-  top: 0px;
-  bottom: 0px;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-`;

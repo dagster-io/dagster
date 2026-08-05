@@ -4,7 +4,7 @@ from dagster import DataVersion, Output, asset
 @asset(code_version="v5")
 def versioned_number():
     value = 10 + 10
-    return Output(value, logical_version=DataVersion(str(value)))
+    return Output(value, logical_version=DataVersion(str(value)))  # ty: ignore[unknown-argument]
 
 
 @asset(code_version="v1")

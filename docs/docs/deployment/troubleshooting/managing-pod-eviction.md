@@ -1,6 +1,6 @@
 ---
 title: Pod evictions occurring in Kubernetes deployments
-sidebar_position: 160
+sidebar_position: 1700
 description: How to handle pod eviction in Kubernetes deployments.
 ---
 

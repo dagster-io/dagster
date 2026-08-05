@@ -6,29 +6,6 @@ import {
 import * as RadixPopover from '@radix-ui/react-popover';
 import deepmerge from 'deepmerge';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {css} from 'styled-components';
-
-import {Colors} from './Color';
-
-export const PopoverWrapperStyle = css`
-  box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
-`;
-
-export const PopoverContentStyle = css`
-  background-color: ${Colors.popoverBackground()};
-  border-radius: 4px;
-
-  > :first-child {
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-  }
-
-  > :last-child {
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-`;
-
 // Overwrite arrays instead of concatting them.
 const overwriteMerge = (_destination: unknown[], source: unknown[]) => source;
 

@@ -6,6 +6,7 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_rest_resources.schemas.enums import DgApiPullRequestStatus
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
+from dagster_shared.yaml_utils import safe_load_yaml
 
 # Lazy import to avoid loading pydantic at CLI startup
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
@@ -53,7 +54,15 @@ def list_deployments_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List deployments in the organization."""
+    """List deployments in the organization.
+
+    Example::
+
+        $ dg api deployment list
+        NAME     ID  TYPE
+        prod     1   PRODUCTION
+        staging  2   PRODUCTION
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -99,7 +108,15 @@ def get_deployment_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Show detailed information about a specific deployment."""
+    """Show detailed information about a specific deployment.
+
+    Example::
+
+        $ dg api deployment get prod
+        Name: prod
+        ID:   1
+        Type: PRODUCTION
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
@@ -142,7 +159,18 @@ def get_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get settings for a deployment."""
+    """Get settings for a deployment.
+
+    Example::
+
+        $ dg api deployment settings get
+        run_queue:
+          max_concurrent_runs: 10
+          tag_concurrency_limits: []
+        run_retries:
+          max_retries: 3
+        sso_default_role: VIEWER
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -182,11 +210,20 @@ def set_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Set deployment settings from a YAML file."""
-    import yaml
+    """Set deployment settings from a YAML file.
 
-    with open(file_path) as f:
-        settings_dict = yaml.safe_load(f)
+    Example::
+
+        $ dg api deployment settings set deployment-settings.yaml
+        run_queue:
+          max_concurrent_runs: 25
+          tag_concurrency_limits: []
+        run_retries:
+          max_retries: 3
+        sso_default_role: VIEWER
+    """
+    with open(file_path, encoding="utf-8") as f:
+        settings_dict = safe_load_yaml(f)
 
     if not isinstance(settings_dict, dict):
         raise click.ClickException(
@@ -238,7 +275,15 @@ def delete_deployment_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Delete a deployment by name."""
+    """Delete a deployment by name.
+
+    Example::
+
+        $ dg api deployment delete pr-123-feature-branch
+        Name: pr-123-feature-branch
+        ID:   42
+        Type: BRANCH
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,

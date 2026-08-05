@@ -280,7 +280,7 @@ def asset_wipe_command(key, **cli_args):
             confirmation = click.prompt(prompt)
 
         if confirmation == "DELETE":
-            instance.wipe_assets(asset_keys)  # pyright: ignore[reportArgumentType]
+            instance.wipe_assets(asset_keys)  # ty: ignore[invalid-argument-type]
             click.echo("Removed asset indexes from event logs")
         else:
             click.echo("Exiting without removing asset indexes")
@@ -338,7 +338,7 @@ def asset_wipe_cache_command(key, **cli_args):
             confirmation = click.prompt(prompt)
 
         if confirmation == "DELETE":
-            instance.wipe_asset_cached_status(asset_keys)  # pyright: ignore[reportArgumentType]
+            instance.wipe_asset_cached_status(asset_keys)  # ty: ignore[invalid-argument-type]
             click.echo("Cleared the partitions status cache")
         else:
             click.echo("Exiting without wiping the partitions status cache")

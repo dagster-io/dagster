@@ -22,7 +22,6 @@ from dagster._core.workspace.workspace import (
     CodeLocationLoadStatus,
     DefinitionsSource,
 )
-from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
 from dagster_shared.serdes.objects.models.defs_state_info import (
     DefsStateInfo,
     DefsStateManagementType,
@@ -31,12 +30,7 @@ from graphene.types.generic import GenericScalar
 
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
-from dagster_graphql.implementation.utils import capture_error
 from dagster_graphql.schema.asset_graph import GrapheneAssetGroup, GrapheneAssetNode
-from dagster_graphql.schema.env_vars import (
-    GrapheneLocationDocsJson,
-    GrapheneLocationDocsJsonOrError,
-)
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from dagster_graphql.schema.partition_sets import GraphenePartitionSet
 from dagster_graphql.schema.permissions import GraphenePermission
@@ -115,7 +109,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
         )
 
     def resolve_id(self, _) -> str:
-        return self.name
+        return self.name  # ty: ignore[invalid-return-type]
 
     def get_location(self, graphene_info: ResolveInfo) -> CodeLocation:
         if self._location is None:
@@ -133,7 +127,7 @@ class GrapheneRepositoryLocation(graphene.ObjectType):
         if libs is None:
             return None
 
-        return [GrapheneDagsterLibraryVersion(name, ver) for name, ver in libs.items()]
+        return [GrapheneDagsterLibraryVersion(name, ver) for name, ver in libs.items()]  # ty: ignore[too-many-positional-arguments]
 
     def resolve_server_id(self, graphene_info: ResolveInfo):
         location = self.get_location(graphene_info)
@@ -318,15 +312,6 @@ class GrapheneRepository(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
     allTopLevelResourceDetails = non_null_list(GrapheneResourceDetails)
-    hasLocationDocs = graphene.Field(
-        graphene.NonNull(graphene.Boolean),
-        description="Retrieves whether the code location has integrated docs.",
-    )
-
-    locationDocsJsonOrError = graphene.Field(
-        graphene.NonNull(GrapheneLocationDocsJsonOrError),
-        description="Retrieves JSON blob to drive integrated code location docs.",
-    )
 
     class Meta:
         name = "Repository"
@@ -517,7 +502,7 @@ class GrapheneRepository(graphene.ObjectType):
 
         return [
             GrapheneAssetGroup(
-                f"{self._handle.location_name}-{self._handle.repository_name}-{group_name}",
+                f"{self._handle.location_name}-{self._handle.repository_name}-{group_name}",  # ty: ignore[too-many-positional-arguments]
                 group_name,
                 [external_node.asset_key for external_node in asset_node_snaps],
             )
@@ -537,30 +522,6 @@ class GrapheneRepository(graphene.ObjectType):
             )
             if resource.is_top_level
         ]
-
-    def resolve_hasLocationDocs(self, graphene_info: ResolveInfo):
-        repository = self.get_repository(graphene_info)
-
-        return bool(
-            repository.repository_snap.metadata
-            and repository.repository_snap.metadata.get(PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY)
-        )
-
-    @capture_error
-    def resolve_locationDocsJsonOrError(
-        self,
-        graphene_info: ResolveInfo,
-    ) -> GrapheneLocationDocsJson:
-        repository = self.get_repository(graphene_info)
-        value = []
-        if repository.repository_snap.metadata:
-            entry = repository.repository_snap.metadata.get(
-                PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
-            )
-            if entry:
-                value = entry.value
-
-        return GrapheneLocationDocsJson(json=value)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):
@@ -690,9 +651,11 @@ class GrapheneDefsStateInfo(graphene.ObjectType):
         super().__init__(
             keyStateInfo=[
                 GrapheneDefsKeyStateInfoEntry(
-                    key,
+                    key,  # ty: ignore[too-many-positional-arguments]
                     GrapheneDefsKeyStateInfo(
-                        info.version, info.create_timestamp, info.management_type
+                        info.version,  # ty: ignore[too-many-positional-arguments]
+                        info.create_timestamp,
+                        info.management_type,
                     )
                     if info
                     else None,

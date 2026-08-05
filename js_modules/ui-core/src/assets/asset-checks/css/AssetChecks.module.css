@@ -1,0 +1,14 @@
+.checkRow {
+  padding: 5px 8px 5px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  user-select: none;
+}
+
+.checkRow:hover {
+  background: var(--color-background-light-hover);
+}
+
+.checkRowSelected {
+  background: var(--color-background-blue);
+}

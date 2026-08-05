@@ -602,6 +602,6 @@ def list_component_tree_command(
 
     if output_file:
         click.echo("[dagster-components] Writing to file " + output_file)
-        Path(output_file).write_text(output)
+        Path(output_file).write_text(output, encoding="utf-8")
     else:
         click.echo(output)

@@ -9,10 +9,6 @@ description = "Package for using Celery as Dagster's execution engine."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     "celery>=4.3.0",
@@ -36,6 +32,34 @@ redis = [
 kubernetes = [
     "kubernetes",
 ]
+
+[dependency-groups]
 test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-graphql",
+    "dagster-test",
+    "dagster-postgres",
+    "dagster-k8s",
+    "dagster-aws",
+    "dagster-pandas",
+    "dagster-gcp",
+    "dagster-celery-k8s",
+    "dagster-celery-docker",
     "docker",
 ]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-graphql = { path = "../../dagster-graphql", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-postgres = { path = "../dagster-postgres", editable = true }
+dagster-k8s = { path = "../dagster-k8s", editable = true }
+dagster-aws = { path = "../dagster-aws", editable = true }
+dagster-pandas = { path = "../dagster-pandas", editable = true }
+dagster-gcp = { path = "../dagster-gcp", editable = true }
+dagster-celery-k8s = { path = "../dagster-celery-k8s", editable = true }
+dagster-celery-docker = { path = "../dagster-celery-docker", editable = true }

@@ -10,10 +10,7 @@ sidebar_custom_props:
 partnerlink: https://clickhouse.com/
 ---
 
-Dagster’s <PyObject section="components" module="dagster" object="TemplatedSqlComponent" /> runs SQL through a connection object.
-The <PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse" object="ClickhouseQueryComponent" />
-(in **`dagster-clickhouse`**) supplies a ClickHouse connection compatible with that workflow so you can
-scaffold a reusable connection and reference it from templated SQL definitions.
+Dagster’s <PyObject section="components" module="dagster" object="TemplatedSqlComponent" /> runs SQL through a connection object. The <PyObject section="libraries" integration="clickhouse" module="dagster_clickhouse" object="ClickhouseQueryComponent" /> (in **`dagster-clickhouse`**) supplies a ClickHouse connection compatible with that workflow so you can scaffold a reusable connection and reference it from templated SQL definitions.
 
 :::info
 

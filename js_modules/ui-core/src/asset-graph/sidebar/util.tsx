@@ -1,7 +1,7 @@
 import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import styled, {keyframes} from 'styled-components';
 
+import dotStyles from './css/Dot.module.css';
 import {AssetKeyInput} from '../../graphql/types';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
@@ -35,6 +35,25 @@ export function nodePathKey(node: {path: string; id: string} | {id: string}) {
 export function getDisplayName(node: {assetKey: AssetKeyInput}) {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return node.assetKey.path[node.assetKey.path.length - 1]!;
+}
+
+export const SIDEBAR_COLLATOR = new Intl.Collator(navigator.language, {
+  sensitivity: 'base',
+  numeric: true,
+});
+
+// Sidebar rows are ordered by the label the user actually sees, which for an
+// asset is the leaf segment of its key. Two assets in different key prefixes can
+// render the same label (`raw/orders` and `staging/orders` both show `orders`),
+// so fall back to the full key to keep the order stable.
+export function compareAssetNodesByDisplayName(
+  a: {assetKey: AssetKeyInput},
+  b: {assetKey: AssetKeyInput},
+) {
+  return (
+    SIDEBAR_COLLATOR.compare(getDisplayName(a), getDisplayName(b)) ||
+    SIDEBAR_COLLATOR.compare(a.assetKey.path.join('/'), b.assetKey.path.join('/'))
+  );
 }
 
 export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
@@ -71,7 +90,7 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
 
   switch (type) {
     case 'loading':
-      return <LoadingDot />;
+      return <div className={dotStyles.loadingDot} />;
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
@@ -90,29 +109,3 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
       return <Icon name="run_success" color={Colors.accentGreen()} />;
   }
 }
-
-const pulse = keyframes`
-  from {
-    background-color: ${Colors.accentGray()}
-  }
-
-  50% {
-    background-color: ${Colors.accentGrayHover()}
-  }
-
-  to {
-    background-color: ${Colors.accentGray()}
-  }
-`;
-
-// 1px margin for 12px total width (matches <Spinner /> size)
-const Dot = styled.div`
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin: 0 1px;
-`;
-
-const LoadingDot = styled(Dot)`
-  animation: ${pulse} 1s ease-out infinite;
-`;

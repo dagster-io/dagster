@@ -72,8 +72,8 @@ def record_error(message: str) -> None:
 # ########################
 
 
-def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: object) -> None:
-    if name != "__init__" and not hasattr(obj, "__doc__"):
+def check_public_method_has_docstring(env: BuildEnvironment | None, name: str, obj: object) -> None:
+    if name != "__init__" and not getattr(obj, "__doc__", None):
         message = (
             f"Docstring not found for {obj!r}.{name}. "
             "All public methods and properties must have docstrings."
@@ -115,6 +115,15 @@ class DagsterClassDocumenter(ClassDocumenter):
             and self._is_member_public(self.object.__dict__[m.__name__])
         ]
         for member in filtered_members:
+            # Only enforce docstrings on members explicitly marked `@public`. The
+            # documentation filter above is broader (e.g. it includes every member
+            # of `dagster_pipes` classes), but the docstring requirement should not
+            # apply to dunder/private members or to members that merely happen to be
+            # documented without being part of the decorated public API.
+            if member.__name__.startswith("_"):
+                continue
+            if not is_public(self.object.__dict__[member.__name__]):
+                continue
             check_public_method_has_docstring(self.env, member.__name__, member.object)
         return False, filtered_members
 

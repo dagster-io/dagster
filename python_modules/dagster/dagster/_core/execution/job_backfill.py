@@ -133,7 +133,9 @@ def execute_job_backfill_iteration(
         if has_more:
             # refetch, in case the backfill was updated in the meantime
             backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
-            instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
+            instance.update_backfill(
+                backfill.with_partition_checkpoint(checkpoint).with_failure_count(0)
+            )
             time.sleep(CHECKPOINT_INTERVAL)
         else:
             unfinished_runs = instance.get_runs(
@@ -147,7 +149,9 @@ def execute_job_backfill_iteration(
                 logger.info(
                     f"Backfill {backfill.backfill_id} has unfinished runs. Status will be updated when all runs are finished."
                 )
-                instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
+                instance.update_backfill(
+                    backfill.with_partition_checkpoint(checkpoint).with_failure_count(0)
+                )
                 return
             partition_names = cast("Sequence[str]", backfill.partition_names)
             logger.info(

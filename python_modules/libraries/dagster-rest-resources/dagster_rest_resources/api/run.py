@@ -3,10 +3,19 @@ from dataclasses import dataclass
 from typing_extensions import assert_never
 
 from dagster_rest_resources.__generated__.enums import RunStatus
-from dagster_rest_resources.__generated__.input_types import RunsFilter
+from dagster_rest_resources.__generated__.input_types import (
+    AssetKeyInput,
+    ExecutionMetadata,
+    ExecutionParams,
+    ExecutionTag,
+    JobOrPipelineSelector,
+    RunsFilter,
+)
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
-from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunList
+from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunLaunchResult, DgApiRunList
+
+PARTITION_TAG = "dagster/partition"
 
 
 @dataclass(frozen=True)
@@ -71,5 +80,82 @@ class DgApiRunApi:
                 )
             case "PythonError":
                 raise DagsterPlusGraphqlError(f"Error fetching runs: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def create_run(
+        self,
+        *,
+        location_name: str,
+        repository_name: str,
+        job_name: str | None,
+        asset_keys: list[str] | None,
+        tags: dict[str, str] | None,
+        run_config: dict | None,
+        partition: str | None,
+    ) -> DgApiRunLaunchResult:
+        if not job_name and not asset_keys:
+            raise DagsterPlusGraphqlError(
+                "At least one of `job_name` or `asset_keys` must be provided."
+            )
+
+        execution_tags: list[ExecutionTag] = []
+        if tags:
+            execution_tags.extend(ExecutionTag(key=k, value=v) for k, v in tags.items())
+        if partition:
+            execution_tags.append(ExecutionTag(key=PARTITION_TAG, value=partition))
+
+        selector = JobOrPipelineSelector(
+            repositoryLocationName=location_name,
+            repositoryName=repository_name,
+            jobName=job_name,
+            assetSelection=(
+                [AssetKeyInput(path=key.split("/")) for key in asset_keys] if asset_keys else None
+            ),
+        )
+
+        params = ExecutionParams(
+            selector=selector,
+            runConfigData=run_config,
+            executionMetadata=(ExecutionMetadata(tags=execution_tags) if execution_tags else None),
+        )
+
+        result = self._client.launch_run(execution_params=params).launch_run
+
+        match result.typename__:
+            case "LaunchRunSuccess":
+                return DgApiRunLaunchResult(
+                    run_id=result.run.run_id,  # ty: ignore[unresolved-attribute]
+                    status=result.run.status,  # ty: ignore[unresolved-attribute]
+                )
+            case "RunConfigValidationInvalid":
+                joined = "\n  ".join(e.message for e in result.errors)  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusGraphqlError(f"Invalid run config:\n  {joined}")
+            case "PipelineNotFoundError":
+                raise DagsterPlusGraphqlError(f"Job not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "InvalidStepError":
+                raise DagsterPlusGraphqlError(
+                    f"Invalid step key: {result.invalid_step_key}"  # ty: ignore[unresolved-attribute]
+                )
+            case "InvalidOutputError":
+                raise DagsterPlusGraphqlError(
+                    f"Invalid output `{result.invalid_output_name}` on step `{result.step_key}`"  # ty: ignore[unresolved-attribute]
+                )
+            case "InvalidSubsetError":
+                raise DagsterPlusGraphqlError(f"Invalid subset: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PresetNotFoundError":
+                raise DagsterPlusGraphqlError(f"Preset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "ConflictingExecutionParamsError":
+                raise DagsterPlusGraphqlError(
+                    f"Conflicting execution params: {result.message}"  # ty: ignore[unresolved-attribute]
+                )
+            case "NoModeProvidedError":
+                raise DagsterPlusGraphqlError(f"No mode provided: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "RunConflict":
+                raise DagsterPlusGraphqlError(f"Run conflict: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "UnauthorizedError":
+                raise DagsterPlusGraphqlError(f"Unauthorized: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusGraphqlError(f"Error launching run: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)

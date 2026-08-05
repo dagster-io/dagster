@@ -1,4 +1,5 @@
 import os
+from unittest.mock import MagicMock
 
 import duckdb
 import polars as pl
@@ -10,6 +11,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_output_context,
     graph,
     instance_for_test,
     materialize,
@@ -23,7 +25,31 @@ from dagster._core.definitions.partitions.definition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
+from dagster._core.storage.db_io_manager import TableSlice
 from dagster_duckdb_polars import DuckDBPolarsIOManager, duckdb_polars_io_manager
+from dagster_duckdb_polars.duckdb_polars_type_handler import DuckDBPolarsTypeHandler
+
+
+def test_handle_output_empty_dataframe():
+    handler = DuckDBPolarsTypeHandler()
+    df = pl.DataFrame({"a": pl.Series([], dtype=pl.Int64), "b": pl.Series([], dtype=pl.Int64)})
+    connection = MagicMock()
+    output_context = build_output_context()
+
+    handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+            columns=None,
+            partition_dimensions=[],
+        ),
+        df,
+        connection,
+    )
+
+    connection.execute.assert_not_called()
 
 
 @pytest.fixture

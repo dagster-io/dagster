@@ -1,4 +1,5 @@
 import datetime
+import multiprocessing.process
 import os
 import sys
 import time
@@ -12,6 +13,10 @@ import pytest
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.automation_condition_sensor_definition import (
+    DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+    asset_job_keys_from_sensor_metadata,
+)
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.execution.backfill import PartitionBackfill
@@ -26,6 +31,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.storage.tags import PARTITION_NAME_TAG, SENSOR_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     SingleThreadPoolExecutor,
@@ -38,8 +44,11 @@ from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import GrpcServerTarget
 from dagster._daemon.asset_daemon import (
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
     asset_daemon_cursor_from_instigator_serialized_cursor,
+    set_auto_materialize_paused,
 )
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._daemon.daemon import get_default_daemon_logger
@@ -147,6 +156,21 @@ def get_threadpool_executor():
         yield executor
 
 
+def wait_for_daemon_subprocess(
+    process: multiprocessing.process.BaseProcess,
+    *,
+    timeout: float = 180.0,
+    poll_interval: float = 0.5,
+) -> None:
+    deadline = time.monotonic() + timeout
+    while process.is_alive() and time.monotonic() < deadline:
+        process.join(timeout=poll_interval)
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout=5)
+        raise RuntimeError(f"Daemon subprocess (pid={process.pid}) did not exit within {timeout}s")
+
+
 def _execute_ticks(
     context: WorkspaceProcessContext,
     threadpool_executor: InheritContextThreadPoolExecutor,
@@ -191,7 +215,9 @@ def _execute_ticks(
     wait_for_futures(backfill_daemon_futures)
 
 
-def _get_current_state(context: WorkspaceRequestContext) -> Mapping[str, InstigatorState]:
+def _get_current_state(
+    context: WorkspaceRequestContext,
+) -> Mapping[str, InstigatorState]:
     state_by_name = {}
     for sensor in _get_automation_sensors(context):
         state = check.not_none(
@@ -201,7 +227,9 @@ def _get_current_state(context: WorkspaceRequestContext) -> Mapping[str, Instiga
     return state_by_name
 
 
-def _get_current_cursors(context: WorkspaceProcessContext) -> Mapping[str, AssetDaemonCursor]:
+def _get_current_cursors(
+    context: WorkspaceProcessContext,
+) -> Mapping[str, AssetDaemonCursor]:
     request_context = context.create_request_context()
 
     return {
@@ -229,7 +257,9 @@ def _get_latest_ticks(context: WorkspaceRequestContext) -> Sequence[InstigatorTi
     return latest_ticks
 
 
-def _get_reserved_ids_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[str]:
+def _get_reserved_ids_for_latest_ticks(
+    context: WorkspaceProcessContext,
+) -> Sequence[str]:
     ids = []
     request_context = context.create_request_context()
     for latest_tick in _get_latest_ticks(request_context):
@@ -238,13 +268,18 @@ def _get_reserved_ids_for_latest_ticks(context: WorkspaceProcessContext) -> Sequ
     return ids
 
 
-def _get_runs_for_latest_ticks(context: WorkspaceProcessContext) -> Sequence[dg.DagsterRun]:
+def _get_runs_for_latest_ticks(
+    context: WorkspaceProcessContext,
+) -> Sequence[dg.DagsterRun]:
     reserved_ids = _get_reserved_ids_for_latest_ticks(context)
     if reserved_ids:
         # return the runs in a stable order to make unit testing easier
         return sorted(
             context.instance.get_runs(filters=dg.RunsFilter(run_ids=reserved_ids)),
-            key=lambda r: (sorted(r.asset_selection or []), sorted(r.asset_check_selection or [])),
+            key=lambda r: (
+                sorted(r.asset_selection or []),
+                sorted(r.asset_check_selection or []),
+            ),
         )
     else:
         return []
@@ -272,7 +307,7 @@ def test_checks_and_assets_in_same_run() -> None:
         assert _get_runs_for_latest_ticks(context) == []
 
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # nothing happening yet, as parent hasn't updated
             assert _get_latest_evaluation_ids(context) == {1}
@@ -285,7 +320,7 @@ def test_checks_and_assets_in_same_run() -> None:
                 dg.AssetMaterialization(asset_key=dg.AssetKey("processed_files"))
             )
 
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # should just request the check
             assert _get_latest_evaluation_ids(context) == {2}
@@ -304,7 +339,7 @@ def test_checks_and_assets_in_same_run() -> None:
                 dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
             )
 
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # should create a single run request targeting both the downstream asset
             # and the associated check
@@ -316,6 +351,170 @@ def test_checks_and_assets_in_same_run() -> None:
             assert run.asset_check_selection == {
                 dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
             }
+
+
+def test_no_da_checks_falls_back_to_none_selection() -> None:
+    # `processed_files` is requested by an automation tick, and neither of its checks
+    # (`row_count`, `non_null`) uses declarative automation, so the run records
+    # `asset_check_selection=None`
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["check_without_condition"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            # nothing yet -- parent hasn't updated
+            assert _get_runs_for_latest_ticks(context) == []
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            # update the parent so `processed_files` eager condition fires
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
+            assert run.asset_check_selection is None
+
+
+def test_requested_conditioned_check_selection() -> None:
+    # `processed_files` has a conditional `row_count` check and an unconditional `non_null` check.
+    # Updating `raw_files` requests `processed_files` AND fires `row_count`'s condition, but does
+    # not fire any condition for `non_null` (it has none). The explicitly-requested `row_count` is
+    # unioned with the unconditioned ride-along `non_null`.
+    expected_check_selection = {
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count"),
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null"),
+    }
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["check_subset_with_unconditioned_sibling"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            # nothing yet -- parent hasn't updated
+            assert _get_runs_for_latest_ticks(context) == []
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
+            assert run.asset_check_selection == expected_check_selection
+
+
+def test_unconditioned_default_check_selection() -> None:
+    # `processed_files` has `yearly_check` (owns an automation condition that does NOT fire in the
+    # test window) and `non_null` (no condition). Updating `raw_files` requests `processed_files`
+    # with no check individually requested. Only the unconditioned `non_null` rides along;
+    # `yearly_check` is excluded from the default set because it owns an automation condition (and
+    # did not fire this tick).
+    expected_check_selection = {dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null")}
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["check_conditioned_sibling_not_firing"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
+            assert run.asset_check_selection == expected_check_selection
+
+
+def test_check_on_other_asset_not_included() -> None:
+    # `processed_files` is requested with a conditioned `row_count` check (which fires) and an
+    # unconditioned `non_null` sibling; the requested `row_count` is unioned with the unconditioned
+    # ride-along `non_null`. `other_check` targets a DIFFERENT asset (`other_asset`), so it must
+    # NOT be attached to `processed_files`'s run.
+    expected_check_selection = {
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count"),
+        dg.AssetCheckKey(dg.AssetKey("processed_files"), "non_null"),
+    }
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["check_on_other_asset_excluded"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
+            assert run.asset_check_selection == expected_check_selection
+            # `other_check` (on `other_asset`) is never attached -- it targets a different asset
+            assert dg.AssetCheckKey(dg.AssetKey("other_asset"), "other_check") not in (
+                run.asset_check_selection or set()
+            )
+
+
+def test_cross_location_check_excluded_from_ride_along() -> None:
+    # `processed_files` (location A) has a SAME-location conditioned check `row_count` (which fires)
+    # plus an unconditioned check `external_not_null` in a DIFFERENT location. The run records only
+    # `row_count`; `external_not_null` is excluded by the ride-along repo-filter. This specifically
+    # exercises the repo-filter branch of `_ride_along_check_keys_for_assets`, which the
+    # no-DA-check cross-location case (fast-path) does not reach -- and building the run must not
+    # fail.
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(
+            ["cross_location_da_check_asset", "cross_location_da_check_other"]
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+
+            runs = _get_runs_for_latest_ticks(context)
+            run = next(r for r in runs if r.asset_selection == {dg.AssetKey("processed_files")})
+            # only the same-location check; the other-location `external_not_null` is repo-filtered
+            assert run.asset_check_selection == {
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
+            }
+            assert dg.AssetCheckKey(dg.AssetKey("processed_files"), "external_not_null") not in (
+                run.asset_check_selection or set()
+            )
 
 
 def _get_location_name(run: DagsterRun):
@@ -334,7 +533,7 @@ def test_cross_location_source_assets() -> None:
         assert _get_runs_for_latest_ticks(context) == []
 
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             # observable source asset executes
             assert _get_latest_evaluation_ids(context) == {1, 2}
             runs = _get_runs_for_latest_ticks(context)
@@ -363,7 +562,7 @@ def test_multiple_materializable_breaks_ties() -> None:
         assert _get_runs_for_latest_ticks(context) == []
 
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             # observable source asset executes
             assert _get_latest_evaluation_ids(context) == {
                 0,
@@ -386,7 +585,7 @@ def test_cross_location_checks() -> None:
         assert _get_runs_for_latest_ticks(context) == []
 
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # nothing happening yet, as parent hasn't updated
             assert _get_latest_evaluation_ids(context) == {1, 2}
@@ -399,7 +598,7 @@ def test_cross_location_checks() -> None:
                 dg.AssetMaterialization(asset_key=dg.AssetKey("processed_files"))
             )
 
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # should request both checks on processed_files, but one of the checks
             # is in a different code location, so two separate runs should be created
@@ -417,6 +616,9 @@ def test_cross_location_checks() -> None:
             }
             assert len(runs[0].asset_selection or []) == 0
 
+        row_count_key = dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
+        no_nulls_key = dg.AssetCheckKey(dg.AssetKey("processed_files"), "no_nulls")
+
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             # now update the asset at the top
@@ -424,40 +626,87 @@ def test_cross_location_checks() -> None:
                 dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
             )
 
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
-            # should create a single run request targeting both the downstream asset
-            # and the associated check -- the check in the other location cannot
-            # be grouped with these and will need to wait
+            # A combined run is always produced for processed_files + row_count
+            # (raw_files newly updated -> eager processed_files will-be-requested
+            # -> same-location row_count fires alongside in the same run). The
+            # no_nulls check lives in a different code location and cannot be
+            # grouped into that run.
+            #
+            # Whether no_nulls also fires in this same tick is non-deterministic:
+            # the asset daemon round-robins across code locations, and the test
+            # uses a synchronous run launcher, so if the row_count sensor is
+            # visited first its run completes (materializing processed_files)
+            # before no_nulls evaluates -- letting no_nulls see the new
+            # materialization and fire immediately. Otherwise no_nulls waits
+            # for the next tick.
             assert _get_latest_evaluation_ids(context) == {5, 6}
             runs = _get_runs_for_latest_ticks(context)
-            assert len(runs) == 1
-            run = runs[0]
-            assert run.asset_selection == {dg.AssetKey("processed_files")}
-            assert run.asset_check_selection == {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
-            }
+            combined_run = next(
+                r for r in runs if r.asset_selection == {dg.AssetKey("processed_files")}
+            )
+            assert combined_run.asset_check_selection == {row_count_key}
+            no_nulls_fired_early = any(r.asset_check_selection == {no_nulls_key} for r in runs)
+            assert len(runs) == (2 if no_nulls_fired_early else 1)
 
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
-            # now, after processed_files gets materialized, the no_nulls check
-            # can be executed (and row_count also gets executed again because
-            # its condition has been set up poorly)
+            # row_count is always re-requested here because its condition is set
+            # up loosely (any-dep newly_updated re-fires on the just-completed
+            # processed_files materialization). no_nulls is only re-requested if
+            # it didn't already fire in the previous tick.
             assert _get_latest_evaluation_ids(context) == {7, 8}
             runs = _get_runs_for_latest_ticks(context)
-            assert len(runs) == 2
-            # in location 1
-            assert runs[1].asset_check_selection == {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
-            }
-            assert len(runs[1].asset_selection or []) == 0
-            # in location 2
-            assert runs[0].asset_check_selection == {
-                dg.AssetCheckKey(dg.AssetKey("processed_files"), "no_nulls")
-            }
-            assert len(runs[0].asset_selection or []) == 0
+            row_count_run = next(r for r in runs if r.asset_check_selection == {row_count_key})
+            assert len(row_count_run.asset_selection or []) == 0
+            if no_nulls_fired_early:
+                assert len(runs) == 1
+            else:
+                assert len(runs) == 2
+                no_nulls_run = next(r for r in runs if r.asset_check_selection == {no_nulls_key})
+                assert len(no_nulls_run.asset_selection or []) == 0
+
+
+def test_unconditioned_check_in_other_location_not_pulled_into_asset_run() -> None:
+    # `processed_files` lives in one code location; an unconditioned check on it
+    # (`external_non_null`) lives in a *different* location. When `processed_files` is
+    # requested by an automation tick and no check is individually requested, the run for
+    # `processed_files` must NOT attach the other-location check: that check is not part of
+    # this location's implicit asset job, so selecting it would make the run un-submittable.
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(
+            [
+                "cross_location_unconditioned_check_asset",
+                "cross_location_unconditioned_check",
+            ]
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            # nothing yet -- parent hasn't updated
+            assert _get_runs_for_latest_ticks(context) == []
+
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            # update the parent so `processed_files` (eager) is requested with no check
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+
+            runs = _get_runs_for_latest_ticks(context)
+            # `external_non_null` has no automation condition, so it is never individually
+            # requested; the only run produced is for `processed_files` in its own location.
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.asset_selection == {dg.AssetKey("processed_files")}
+            # the other-location check must not be attached to this location's run
+            assert (run.asset_check_selection or set()) == set()
 
 
 def test_default_condition() -> None:
@@ -467,7 +716,7 @@ def test_default_condition() -> None:
         get_threadpool_executor() as executor,
     ):
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -476,7 +725,7 @@ def test_default_condition() -> None:
 
         time += datetime.timedelta(seconds=60)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # passed a cron tick, so cron asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -491,7 +740,7 @@ def test_non_subsettable_check() -> None:
     ):
         time = datetime.datetime(2024, 8, 17, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             # eager asset materializes
             runs = _get_runs_for_latest_ticks(context)
@@ -549,7 +798,7 @@ def test_backfill_creation_simple(location: str) -> None:
         # all start off missing, should be requested
         time = get_current_datetime()
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 1
             subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
@@ -574,7 +823,7 @@ def test_backfill_creation_simple(location: str) -> None:
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             # second tick, don't kick off again
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
             # still don't create runs
@@ -594,7 +843,7 @@ def test_backfill_creation_dynamic() -> None:
         # all start off missing, should be requested
         time = get_current_datetime()
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 1
             subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
@@ -625,7 +874,7 @@ def test_backfill_with_runs_and_checks() -> None:
         # all start off missing, should be requested
         time = get_current_datetime()
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             # create a backfill for the part of the graph that has multiple partitions
             # required
             backfills = _get_backfills_for_latest_ticks(context)
@@ -664,7 +913,7 @@ def test_backfill_with_runs_and_checks() -> None:
         time += datetime.timedelta(seconds=30)
         with freeze_time(time):
             # second tick, don't kick off again
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
 
             backfills = _get_backfills_for_latest_ticks(context)
             assert len(backfills) == 0
@@ -702,7 +951,7 @@ def test_toggle_user_code() -> None:
                 time += datetime.timedelta(seconds=35)
                 with freeze_time(time):
                     # first tick, nothing happened
-                    _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+                    _execute_ticks(context, executor)
                     runs = _get_runs_for_latest_ticks(context)
                     assert len(runs) == 0
 
@@ -710,14 +959,14 @@ def test_toggle_user_code() -> None:
                 with freeze_time(time):
                     # second tick, root gets updated
                     instance.report_runless_asset_event(dg.AssetMaterialization("root"))
-                    _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+                    _execute_ticks(context, executor)
                     runs = _get_runs_for_latest_ticks(context)
                     assert runs[0].asset_selection == {dg.AssetKey("downstream")}
 
                 time += datetime.timedelta(seconds=35)
                 with freeze_time(time):
                     # third tick, don't kick off again
-                    _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+                    _execute_ticks(context, executor)
                     runs = _get_runs_for_latest_ticks(context)
                     assert len(runs) == 0
 
@@ -732,19 +981,19 @@ def test_custom_condition() -> None:
         # custom condition only materializes on the 5th tick
         for _ in range(4):
             with freeze_time(time):
-                _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+                _execute_ticks(context, executor)
                 runs = _get_runs_for_latest_ticks(context)
                 assert len(runs) == 0
             time += datetime.timedelta(minutes=1)
 
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
 
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
@@ -772,7 +1021,7 @@ def test_500_eager_assets_user_code(capsys) -> None:
         for _ in range(2):
             clock_time = time.time()
             with freeze_time(freeze_dt):
-                _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+                _execute_ticks(context, executor)
                 runs = _get_runs_for_latest_ticks(context)
                 assert len(runs) == 0
             duration = time.time() - clock_time
@@ -796,7 +1045,7 @@ def test_fail_if_not_use_sensors(capsys) -> None:
         ) as context,
         get_threadpool_executor() as executor,
     ):
-        _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+        _execute_ticks(context, executor)
         latest_ticks = _get_latest_ticks(context.create_request_context())
         assert len(latest_ticks) == 1
         # no failure
@@ -815,7 +1064,7 @@ def test_simple_old_code_server() -> None:
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
             # initial evaluation
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
 
@@ -827,13 +1076,13 @@ def test_observable_source_asset() -> None:
     ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
         time += datetime.timedelta(hours=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
             assert runs[0].asset_selection == {dg.AssetKey("obs")}
@@ -841,7 +1090,7 @@ def test_observable_source_asset() -> None:
         # runs haven't completed yet
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
@@ -853,7 +1102,7 @@ def test_observable_source_asset_is_not_backfilled() -> None:
     ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
             backfills = _get_backfills_for_latest_ticks(context)
@@ -861,7 +1110,7 @@ def test_observable_source_asset_is_not_backfilled() -> None:
 
         time += datetime.timedelta(hours=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 3
             assert all(run.asset_selection == {dg.AssetKey("obs")} for run in runs)
@@ -871,7 +1120,7 @@ def test_observable_source_asset_is_not_backfilled() -> None:
         # runs haven't completed yet
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
             backfills = _get_backfills_for_latest_ticks(context)
@@ -885,7 +1134,7 @@ def test_dynamic_partitions() -> None:
     ):
         time = datetime.datetime(2024, 8, 16, 1, 35)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
@@ -895,7 +1144,7 @@ def test_dynamic_partitions() -> None:
 
         time += datetime.timedelta(hours=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
             assert runs[0].asset_selection == {dg.AssetKey("A")}
@@ -903,7 +1152,7 @@ def test_dynamic_partitions() -> None:
 
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
 
@@ -911,7 +1160,7 @@ def test_dynamic_partitions() -> None:
         time += datetime.timedelta(minutes=1)
         context.instance.add_dynamic_partitions("dynamic", ["d"])
         with freeze_time(time):
-            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            _execute_ticks(context, executor)
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 1
 
@@ -919,6 +1168,603 @@ def test_dynamic_partitions() -> None:
         time += datetime.timedelta(minutes=1)
         context.instance.delete_dynamic_partition("dynamic", "d")
         with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+
+def test_eager_asset_and_job() -> None:
+    """Tests a mixed topology where an asset has its own eager() condition and a
+    downstream job also has an eager() condition via all_job_root_assets_match.
+
+    Topology: external -> a -> (b, c in my_job)
+    - "a" has eager() directly
+    - "my_job" containing (b, c) has all_job_root_assets_match(eager())
+
+    Expected sequence:
+    1. Initial tick: nothing happens (no materializations yet)
+    2. Materialize external: "a" should be requested, but "my_job" should NOT be
+       (its deps haven't materialized yet)
+    3. After "a" materializes (via the run): "my_job" should be requested
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["eager_asset_and_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: initial evaluation — nothing to do
+        with freeze_time(time):
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
+
+        # tick 2: materialize external, expect only "a" to be requested
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("external"))
+            )
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+
+            # "a" should be requested but not the job
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {dg.AssetKey("a")}
+
+        # tick 3: "a" has now materialized (run completed synchronously),
+        # so "my_job" should now be requested
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].job_name == "my_job"
+
+
+def test_eager_sibling_asset_and_job() -> None:
+    """An asset with its own eager() condition and a conditioned job that are SIBLINGS
+    under the same manual root: a single tick must request BOTH the asset
+    materialization and the whole-job run. (In the chained topology of
+    test_eager_asset_and_job the two fire across consecutive ticks, so this is the
+    test that pins mixed asset+job requests on one tick.).
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["eager_sibling_asset_and_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: initial evaluation — nothing to do
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+        # tick 2: materialize external → the SAME tick requests asset "a" and my_job
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("external"))
+            )
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+
+            assert len(runs) == 2
+            asset_runs = [r for r in runs if r.asset_selection]
+            job_runs = [r for r in runs if r.job_name == "my_job" and not r.asset_selection]
+            assert len(asset_runs) == 1
+            assert asset_runs[0].asset_selection == {dg.AssetKey("a")}
+            assert len(job_runs) == 1
+
+        # tick 3: nothing further is requested (eager only fires on newly-updated
+        # parents, and the job run's materializations of b/c have no downstream)
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+
+
+def test_job_evaluated_by_exactly_one_sensor() -> None:
+    """With an explicit automation condition sensor in the code location, the conditioned
+    job's key is claimed by the default sensor (recorded in its metadata) and must be
+    evaluated by exactly one of the two sensors. Regression test for jobs being evaluated
+    -- and their runs requested -- once per sensor.
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["job_with_explicit_sensor"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        request_context = context.create_request_context()
+        sensors = {s.name: s for s in _get_automation_sensors(request_context)}
+        assert set(sensors) == {"explicit_sensor", DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME}
+
+        # job-key ownership is recorded in sensor metadata: the default sensor claims the
+        # job, the explicit sensor does not
+        assert asset_job_keys_from_sensor_metadata(
+            sensors[DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME].metadata
+        ) == {dg.AssetJobKey(job_name="my_job")}
+        assert not asset_job_keys_from_sensor_metadata(sensors["explicit_sensor"].metadata)
+
+        # tick 1: the job fires immediately (its root asset is missing). exactly one run,
+        # from exactly one sensor's tick -- the default sensor's
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].job_name == "my_job"
+            assert not runs[0].asset_selection
+
+            ticks = _get_latest_ticks(context.create_request_context())
+            assert len(ticks) == 1
+            assert ticks[0].instigator_name == DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME
+
+        # tick 2: the job's root asset materialized via the run, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_user_code_sensor_alongside_conditioned_job() -> None:
+    """A use_user_code_server=True sensor targeting an eager asset coexists with a
+    conditioned job that lands on the DEFAULT daemon-evaluated sensor;
+    one upstream materialization makes both fire on the same tick -- the user-code
+    sensor requesting the asset run, the default sensor requesting the whole-job run.
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["user_code_sensor_with_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        request_context = context.create_request_context()
+        sensors = {s.name: s for s in _get_automation_sensors(request_context)}
+        assert set(sensors) == {"user_code_sensor", DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME}
+        assert sensors["user_code_sensor"].sensor_type == SensorType.AUTOMATION
+
+        # the job key is claimed by the default sensor, never the user-code sensor
+        assert asset_job_keys_from_sensor_metadata(
+            sensors[DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME].metadata
+        ) == {dg.AssetJobKey(job_name="my_job")}
+        assert not asset_job_keys_from_sensor_metadata(sensors["user_code_sensor"].metadata)
+
+        # tick 1: nothing has materialized; eager() has nothing to react to
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert len(_get_runs_for_latest_ticks(context)) == 0
+
+        # tick 2: materialize external -> asset "a" (user-code sensor) and a whole-job
+        # run of my_job (default sensor) are requested on the same tick
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("external"))
+            )
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+
+            asset_runs = [r for r in runs if r.asset_selection]
+            job_runs = [r for r in runs if not r.asset_selection]
+
+            assert len(asset_runs) == 1
+            assert asset_runs[0].asset_selection == {dg.AssetKey("a")}
+            assert asset_runs[0].tags[SENSOR_NAME_TAG] == "user_code_sensor"
+
+            assert len(job_runs) == 1
+            assert job_runs[0].job_name == "my_job"
+            assert job_runs[0].tags[SENSOR_NAME_TAG] == DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME
+
+        # tick 3: everything materialized via the runs; nothing further fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_job_run_requested_in_pre_sensor_mode() -> None:
+    """A conditioned job is evaluated in the sensorless daemon mode (instance setting
+    `auto_materialize: use_sensors: false`). In that mode there is no sensor metadata to
+    claim job keys, so the single global evaluation owns every conditioned job.
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(
+            ["job_fires_immediately"], overrides={"auto_materialize": {"use_sensors": False}}
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # the sensorless daemon is paused unless explicitly unpaused
+        set_auto_materialize_paused(context.instance, False)
+
+        def _get_legacy_tick() -> InstigatorTick:
+            ticks = context.instance.get_ticks(
+                _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+                _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+                limit=1,
+            )
+            assert len(ticks) == 1
+            return ticks[0]
+
+        # tick 1: the job fires immediately (its root asset is missing) and is submitted
+        # as a whole-job run by the single global evaluation
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            tick = _get_legacy_tick()
+            assert tick.status == TickStatus.SUCCESS
+            reserved_ids = tick.tick_data.reserved_run_ids or []
+            runs = context.instance.get_runs(filters=dg.RunsFilter(run_ids=list(reserved_ids)))
+            assert len(runs) == 1
+            assert runs[0].job_name == "my_job"
+            assert not runs[0].asset_selection
+
+        # tick 2: the job's root asset materialized via the run, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            tick = _get_legacy_tick()
+            assert tick.status == TickStatus.SKIPPED
+            assert not tick.tick_data.reserved_run_ids
+
+
+def _get_runs_by_instigator_for_latest_ticks(
+    context: WorkspaceProcessContext,
+) -> Mapping[str, Sequence[dg.DagsterRun]]:
+    """The runs reserved by each automation sensor's latest tick, keyed by sensor name."""
+    runs_by_instigator = {}
+    for tick in _get_latest_ticks(context.create_request_context()):
+        reserved_ids = (tick.tick_data.reserved_run_ids or []) if tick.tick_data else []
+        runs_by_instigator[tick.instigator_name] = (
+            context.instance.get_runs(filters=dg.RunsFilter(run_ids=list(reserved_ids)))
+            if reserved_ids
+            else []
+        )
+    return runs_by_instigator
+
+
+def test_assets_checks_and_job_on_default_sensor() -> None:
+    """Assets, an asset check, and a job -- all conditioned, no explicit sensor -- are
+    evaluated together by the default automation condition sensor.
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["assets_checks_and_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        request_context = context.create_request_context()
+        sensors = _get_automation_sensors(request_context)
+        assert [s.name for s in sensors] == [DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME]
+        assert asset_job_keys_from_sensor_metadata(sensors[0].metadata) == {
+            dg.AssetJobKey(job_name="my_job")
+        }
+
+        # tick 1: only the job fires (its member asset is missing); the eager asset's
+        # parent hasn't updated yet
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].job_name == "my_job"
+            assert not runs[0].asset_selection
+
+        # tick 2: the parent updates, so the eager asset and its conditioned check are
+        # requested in a single run; the job stays quiet (its member materialized in
+        # tick 1's run)
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            context.instance.report_runless_asset_event(
+                dg.AssetMaterialization(asset_key=dg.AssetKey("raw_files"))
+            )
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {dg.AssetKey("processed_files")}
+            assert runs[0].asset_check_selection == {
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
+            }
+
+        # tick 3: processed_files materialized via tick 2's run, so the check's
+        # any_deps_match(newly_updated) condition fires once more, alone this time
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert not runs[0].asset_selection
+            assert runs[0].asset_check_selection == {
+                dg.AssetCheckKey(dg.AssetKey("processed_files"), "row_count")
+            }
+
+        # tick 4: everything satisfied
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_entities_split_across_sensors() -> None:
+    """Assets and jobs distributed across an explicit sensor and the default sensor: the
+    explicit sensor covers one asset and claims one job (via the hidden asset_job_keys
+    param), the default sensor picks up the uncovered asset and the unclaimed job. Each
+    entity is evaluated by exactly one sensor.
+    """
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["entities_split_across_sensors"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        request_context = context.create_request_context()
+        sensors = {s.name: s for s in _get_automation_sensors(request_context)}
+        assert set(sensors) == {"explicit_sensor", DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME}
+
+        # job-key ownership: the explicit sensor claims claimed_job, the default sensor
+        # claims the rest
+        assert asset_job_keys_from_sensor_metadata(sensors["explicit_sensor"].metadata) == {
+            dg.AssetJobKey(job_name="claimed_job")
+        }
+        assert asset_job_keys_from_sensor_metadata(
+            sensors[DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME].metadata
+        ) == {dg.AssetJobKey(job_name="unclaimed_job")}
+
+        # tick 1: everything is missing, so each sensor requests its own entities --
+        # one asset run and one whole-job run apiece
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs_by_instigator = _get_runs_by_instigator_for_latest_ticks(context)
+            assert set(runs_by_instigator) == {
+                "explicit_sensor",
+                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+            }
+
+            explicit_runs = runs_by_instigator["explicit_sensor"]
+            assert {run.job_name for run in explicit_runs if not run.asset_selection} == {
+                "claimed_job"
+            }
+            assert [run.asset_selection for run in explicit_runs if run.asset_selection] == [
+                {dg.AssetKey("covered")}
+            ]
+
+            default_runs = runs_by_instigator[DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME]
+            assert {run.job_name for run in default_runs if not run.asset_selection} == {
+                "unclaimed_job"
+            }
+            assert [run.asset_selection for run in default_runs if run.asset_selection] == [
+                {dg.AssetKey("uncovered")}
+            ]
+
+            # each job fired exactly once across the whole workspace
+            all_runs = [run for runs in runs_by_instigator.values() for run in runs]
+            assert len(all_runs) == 4
+
+        # tick 2: everything materialized via tick 1's runs, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_partitioned_job() -> None:
+    """A conditioned job over a partitioned asset launches one whole-job run per
+    requested partition, each carrying its partition tag.
+    """
+    from dagster._core.storage.tags import PARTITION_NAME_TAG
+
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["partitioned_job"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: both partitions are missing, so the job launches once per partition
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+            assert all(run.job_name == "my_job" for run in runs)
+            assert all(not run.asset_selection for run in runs)
+            assert {run.tags[PARTITION_NAME_TAG] for run in runs} == {"p1", "p2"}
+
+        # the runs executed synchronously: each partition materialized exactly once
+        for partition in ["p1", "p2"]:
+            records = context.instance.fetch_materializations(
+                dg.AssetRecordsFilter(
+                    asset_key=dg.AssetKey("part_asset"), asset_partitions=[partition]
+                ),
+                limit=10,
+            ).records
+            assert len(records) == 1
+
+        # tick 2: both partitions materialized via tick 1's runs, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_partitioned_job_with_explicit_partitions_def() -> None:
+    """A conditioned job that declares its partitions_def explicitly (rather than
+    inheriting it from its member assets) behaves the same as the implicit form:
+    one whole-job run per requested partition, each carrying its partition tag.
+    """
+    from dagster._core.storage.tags import PARTITION_NAME_TAG
+
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["partitioned_job_explicit_partitions_def"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: both partitions are missing, so the job launches once per partition
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+            assert all(run.job_name == "my_job" for run in runs)
+            assert all(not run.asset_selection for run in runs)
+            assert {run.tags[PARTITION_NAME_TAG] for run in runs} == {"p1", "p2"}
+
+        # the runs executed synchronously: each partition materialized exactly once
+        for partition in ["p1", "p2"]:
+            records = context.instance.fetch_materializations(
+                dg.AssetRecordsFilter(
+                    asset_key=dg.AssetKey("part_asset"), asset_partitions=[partition]
+                ),
+                limit=10,
+            ).records
+            assert len(records) == 1
+
+        # tick 2: both partitions materialized via tick 1's runs, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_partitioned_job_with_unpartitioned_member_and_check() -> None:
+    """Each partition run of a mixed-membership job materializes the partitioned member
+    for its own partition, re-materializes the unpartitioned member (with no partition),
+    and executes the member's asset check.
+    """
+    from dagster._core.storage.tags import PARTITION_NAME_TAG
+
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["partitioned_job_mixed_members"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: all roots missing, so the job launches once per partition
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+            assert all(run.job_name == "my_job" for run in runs)
+            assert {run.tags[PARTITION_NAME_TAG] for run in runs} == {"p1", "p2"}
+
+        # the partitioned member materialized exactly once per partition
+        for partition in ["p1", "p2"]:
+            records = context.instance.fetch_materializations(
+                dg.AssetRecordsFilter(
+                    asset_key=dg.AssetKey("part_asset"), asset_partitions=[partition]
+                ),
+                limit=10,
+            ).records
+            assert len(records) == 1
+
+        # the unpartitioned member was re-materialized by each partition run, with no
+        # partition of its own
+        records = context.instance.fetch_materializations(
+            dg.AssetRecordsFilter(asset_key=dg.AssetKey("unpart_asset")), limit=10
+        ).records
+        assert len(records) == 2
+        assert all(r.asset_materialization.partition is None for r in records)
+
+        # the checks -- on the unpartitioned and the partitioned member alike -- rode
+        # along in both partition runs
+        for check_key in [
+            dg.AssetCheckKey(dg.AssetKey("unpart_asset"), "unpart_check"),
+            dg.AssetCheckKey(dg.AssetKey("part_asset"), "part_asset_check"),
+        ]:
+            check_records = context.instance.event_log_storage.get_asset_check_execution_history(
+                check_key, limit=10
+            )
+            assert len(check_records) == 2, check_key
+
+        # tick 2: every root materialized via tick 1's runs, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_partitioned_and_unpartitioned_jobs() -> None:
+    """A partitioned and an unpartitioned conditioned job evaluated on the same tick:
+    the partitioned job launches one run per partition, the unpartitioned job a single
+    run with no partition tag.
+    """
+    from dagster._core.storage.tags import PARTITION_NAME_TAG
+
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["partitioned_and_unpartitioned_jobs"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            runs = _get_runs_for_latest_ticks(context)
+            assert sorted((run.job_name, run.tags.get(PARTITION_NAME_TAG)) for run in runs) == [
+                ("part_job", "p1"),
+                ("part_job", "p2"),
+                ("unpart_job", None),
+            ]
+
+        # tick 2: everything materialized via tick 1's runs, so nothing new fires
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)
+            assert _get_runs_for_latest_ticks(context) == []
+
+
+def test_any_vs_all_partitioned_jobs() -> None:
+    """ANY/ALL job operators evaluate per partition: a single eager root fires any_job
+    for its partition only; cross-partition upstream updates within one tick fire
+    any_job for both partitions and all_job for neither; both upstreams updated for the
+    SAME partition within one tick fire both jobs for it.
+    """
+
+    def _materialize(context, key: str, partition: str) -> None:
+        context.instance.report_runless_asset_event(
+            dg.AssetMaterialization(asset_key=dg.AssetKey(key), partition=partition)
+        )
+
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["any_vs_all_partitioned_jobs"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        # tick 1: initial evaluation -- nothing to do
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+        # materialize upstream_b[p1] -> only any_job fires, pinned to p1
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _materialize(context, "upstream_b", "p1")
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert [(r.job_name, r.tags[PARTITION_NAME_TAG]) for r in runs] == [("any_job", "p1")]
+
+        # quiet tick: eager does not accumulate across ticks
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+        # upstream_b[p1] + upstream_c[p2] in one tick -> any_job fires for BOTH
+        # partitions, all_job for neither (no single partition has all roots eager)
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _materialize(context, "upstream_b", "p1")
+            _materialize(context, "upstream_c", "p2")
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert sorted((r.job_name, r.tags[PARTITION_NAME_TAG]) for r in runs) == [
+                ("any_job", "p1"),
+                ("any_job", "p2"),
+            ]
+
+        # quiet tick
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            assert _get_runs_for_latest_ticks(context) == []
+
+        # BOTH upstreams for the SAME partition in one tick -> both jobs fire for p1
+        time += datetime.timedelta(seconds=30)
+        with freeze_time(time):
+            _materialize(context, "upstream_b", "p1")
+            _materialize(context, "upstream_c", "p1")
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert sorted((r.job_name, r.tags[PARTITION_NAME_TAG]) for r in runs) == [
+                ("all_job", "p1"),
+                ("any_job", "p1"),
+            ]

@@ -1,6 +1,6 @@
-import lakefs_client
-from lakefs_client import models
-from lakefs_client.client import LakeFSClient
+import lakefs_client  # ty: ignore[unresolved-import]
+from lakefs_client import models  # ty: ignore[unresolved-import]
+from lakefs_client.client import LakeFSClient  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

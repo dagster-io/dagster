@@ -1,11 +1,18 @@
-import {Box, MiddleTruncate, useDelayedState} from '@dagster-io/ui-components';
+import {
+  Box,
+  HeaderCell,
+  HeaderRow,
+  MiddleTruncate,
+  RowCell,
+  useDelayedState,
+} from '@dagster-io/ui-components';
 import {forwardRef, useMemo} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {SINGLE_JOB_QUERY} from './SingleJobQuery';
 import {CaptionText, LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {buildPipelineSelector} from './WorkspaceContext/util';
+import styles from './css/VirtualizedJobRow.module.css';
 import {RepoAddress} from './types';
 import {SingleJobQuery, SingleJobQueryVariables} from './types/SingleJobQuery.types';
 import {workspacePathFromAddress} from './workspacePath';
@@ -15,7 +22,6 @@ import {JobMenu} from '../instance/JobMenu';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {RunStatusPezList} from '../runs/RunStatusPez';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 1fr 180px 96px 80px';
 
@@ -64,7 +70,7 @@ export const VirtualizedJobRow = forwardRef(
 
     return (
       <div data-index={index} ref={ref}>
-        <RowGrid border="bottom">
+        <Box border="bottom" className={styles.rowGrid}>
           <RowCell>
             <div style={{maxWidth: '100%', whiteSpace: 'nowrap', fontWeight: 500}}>
               <Link to={workspacePathFromAddress(repoAddress, `/jobs/${name}`)}>
@@ -76,13 +82,13 @@ export const VirtualizedJobRow = forwardRef(
           <RowCell>
             {schedules.length || sensors.length ? (
               <Box flex={{direction: 'column', alignItems: 'flex-start', gap: 8}}>
-                <ScheduleSensorTagContainer>
+                <div className={styles.scheduleSensorTagContainer}>
                   <ScheduleOrSensorTag
                     schedules={schedules}
                     sensors={sensors}
                     repoAddress={repoAddress}
                   />
-                </ScheduleSensorTagContainer>
+                </div>
               </Box>
             ) : (
               <LoadingOrNone queryResult={queryResult} />
@@ -119,7 +125,7 @@ export const VirtualizedJobRow = forwardRef(
               />
             </Box>
           </RowCell>
-        </RowGrid>
+        </Box>
       </div>
     );
   },
@@ -136,17 +142,3 @@ export const VirtualizedJobHeader = () => {
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
-
-const ScheduleSensorTagContainer = styled.div`
-  width: 100%;
-
-  > .bp5-popover-target {
-    width: 100%;
-  }
-`;

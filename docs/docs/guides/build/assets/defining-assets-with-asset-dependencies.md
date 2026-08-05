@@ -26,7 +26,21 @@ In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals
 
 ## Defining asset dependencies across code locations
 
-Assets can depend on assets in different [code locations](/guides/build/projects). In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
+:::info
+
+Assets in different code locations cannot be materialized in the same run. To trigger a downstream asset in another code location after an upstream asset materializes, use a [sensor](/guides/automate/sensors) or [declarative automation](/guides/automate/declarative-automation).
+
+:::
+
+Assets can depend on assets in different [code locations](/guides/build/projects).
+
+:::note
+
+Declaring a dependency with `deps` only tracks lineage across code locations. To pass the upstream asset's data to the downstream asset as an input, see [Using data from another code location as an input](#using-data-from-another-code-location-as-an-input).
+
+:::
+
+In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
 
 <CodeExample
     path="docs_snippets/docs_snippets/guides/build/assets/asset-dependencies/asset-dependencies.py"
@@ -46,3 +60,26 @@ In `code_location_2`, we can reference `code_location_1_asset` it via its asset 
     title="src/<project_name>/defs/assets.py"
 />
 
+### Using data from another code location as an input
+
+Declaring a dependency with `deps` tracks lineage across code locations, but does not pass the upstream asset's data to the downstream asset as an input.
+
+To use data from an asset in another code location as an input to a downstream asset, declare the upstream asset as an `AssetSpec` in your code location with an I/O manager key. Include the `AssetSpec` in your `Definitions` object alongside your downstream asset.
+
+:::note
+
+`SourceAsset` was the previous way to do this and is now deprecated. Use `AssetSpec(...).with_io_manager_key(...)` instead.
+
+:::
+
+In the example below, `daily_sales_data` is defined in another code location and used as an input to `enriched_sales_data`:
+
+<CodeExample
+    path="docs_snippets/docs_snippets/guides/build/assets/cross_code_location_dependencies.py"
+    language="python"
+    startAfter="start_scenario_b"
+    endBefore="end_scenario_b"
+    title="src/<project_name>/defs/assets.py"
+/>
+
+Cross-code-location dependencies on partitioned assets work the same way. For more information, see [Partitioning assets](/guides/build/partitions-and-backfills/partitioning-assets).

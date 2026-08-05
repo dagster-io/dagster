@@ -1,7 +1,7 @@
 ---
 title: 'Troubleshooting hanging or slow code with py-spy'
 description: Debug slow or hanging Dagster code with py-spy.
-sidebar_position: 30
+sidebar_position: 200
 ---
 
 If your Dagster code is hanging or taking longer than you expect to execute, we recommend using [py-spy](https://github.com/benfred/py-spy) to profile your code.

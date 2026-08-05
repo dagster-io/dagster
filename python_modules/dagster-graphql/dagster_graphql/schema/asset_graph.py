@@ -1,3 +1,4 @@
+import os
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Union, cast
 
@@ -148,6 +149,23 @@ GrapheneAssetStaleCauseCategory = graphene.Enum.from_enum(
 )
 
 GrapheneAssetChangedReason = graphene.Enum.from_enum(AssetDefinitionChangeType, name="ChangeReason")
+
+# Cap on the per-asset description size in the workspace asset manifest.
+# The two surfaces that read this off the workspace path (the asset graph
+# node card and the legacy catalog row caption) both ellipsis at well
+# under 100 characters of one-line text, so anything past this cap is
+# never visible without navigating to the per-asset detail view, which
+# uses its own resolver and gets the full description.
+DEFAULT_MANIFEST_DESCRIPTION_MAX_CHARS = 240
+
+
+def get_manifest_description_max_chars() -> int:
+    return int(
+        os.getenv(
+            "DAGSTER_MANIFEST_DESCRIPTION_MAX_CHARS",
+            str(DEFAULT_MANIFEST_DESCRIPTION_MAX_CHARS),
+        )
+    )
 
 
 class GrapheneAssetStaleCause(graphene.ObjectType):
@@ -810,7 +828,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return [
             GrapheneAssetStaleCause(
-                GrapheneAssetKey(path=cause.asset_key.path),
+                GrapheneAssetKey(path=cause.asset_key.path),  # ty: ignore[too-many-positional-arguments]
                 cause.partition_key,
                 cause.category,
                 cause.reason,
@@ -954,7 +972,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         ac_snapshot = get_ac_snapshot(self._asset_node_snap)
         return GrapheneAutomationCondition(ac_snapshot) if ac_snapshot else None
 
-    def resolve_targetingInstigators(self, graphene_info: ResolveInfo) -> Sequence[GrapheneSensor]:
+    def resolve_targetingInstigators(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[GrapheneSensor | GrapheneSchedule]:
         if isinstance(self._remote_node, RemoteWorkspaceAssetNode):
             # global nodes have saved references to their targeting instigators
             schedules = [
@@ -1222,7 +1242,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         if address is None:
             return None
         return GrapheneStorageAddress(
-            storageKind=address.storage_kind, tableName=address.table_name
+            storageKind=address.storage_kind,
+            tableName=address.table_name,
         )
 
     def resolve_isAutoCreatedStub(self, _graphene_info: ResolveInfo) -> bool:
@@ -1437,7 +1458,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> GrapheneAssetCheckOrError:
         validation_error = check_asset_checks_support(graphene_info, self._repository_handle)
         if validation_error:
-            return validation_error
+            return validation_error  # ty: ignore[invalid-return-type]
 
         remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
             self._asset_node_snap.asset_key
@@ -1454,10 +1475,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             None,
         )
         if not matching_node:
-            return GrapheneAssetCheckNotFoundError(
+            return GrapheneAssetCheckNotFoundError(  # ty: ignore[invalid-return-type]
                 message=f"Asset check '{checkName}' not found for asset '{self._asset_node_snap.asset_key.to_user_string()}'"
             )
-        return GrapheneAssetCheck(matching_node)
+        return GrapheneAssetCheck(matching_node)  # ty: ignore[invalid-return-type]
 
     def resolve_assetChecksOrError(
         self,
@@ -1482,7 +1503,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         elif asset_check_support == AssetCheckInstanceSupport.NEEDS_AGENT_UPGRADE:
             return GrapheneAssetCheckNeedsAgentUpgradeError(
-                "Asset checks require an agent upgrade to 1.5.0 or greater."
+                "Asset checks require an agent upgrade to 1.5.0 or greater."  # ty: ignore[too-many-positional-arguments]
             )
         else:
             check.invariant(
@@ -1584,7 +1605,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             "internalFreshnessPolicy": freshness_policy,
             "partitionDefinition": partition_def,
             "automationCondition": automation_condition,
-            "description": snap.description,
+            "description": (
+                snap.description[: get_manifest_description_max_chars()]
+                if snap.description is not None
+                else None
+            ),
             "owners": [GrapheneAssetOwner.to_manifest_dict(o) for o in owners],
             "tags": [
                 GrapheneDefinitionTag.to_manifest_dict(k, v) for k, v in (snap.tags or {}).items()

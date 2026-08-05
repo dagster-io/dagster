@@ -27,7 +27,7 @@ class ScaffoldBranchLogsHandler(BaseHTTPRequestHandler):
     def _serve_index(self):
         index_path = Path(__file__).parent / "index.html"
         try:
-            with open(index_path) as f:
+            with open(index_path, encoding="utf-8") as f:
                 content = f.read()
             self._send_response(200, content, "text/html")
         except Exception as e:
@@ -38,7 +38,7 @@ class ScaffoldBranchLogsHandler(BaseHTTPRequestHandler):
             sessions = []
             for file_path in self.logs_directory.glob("scaffold_diagnostics_*.jsonl"):
                 # Parse first line to get session info
-                with open(file_path) as f:
+                with open(file_path, encoding="utf-8") as f:
                     first_line = f.readline().strip()
                     if first_line:
                         session_start = json.loads(first_line)
@@ -70,7 +70,7 @@ class ScaffoldBranchLogsHandler(BaseHTTPRequestHandler):
             entries = []
             session_start = None
 
-            with open(file_path) as f:
+            with open(file_path, encoding="utf-8") as f:
                 for line_content in f:
                     stripped_line = line_content.strip()
                     if stripped_line:

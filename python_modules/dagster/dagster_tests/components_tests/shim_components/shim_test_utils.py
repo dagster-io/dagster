@@ -35,7 +35,7 @@ def execute_ruff_compliance_test(code: str) -> None:
     with tempfile.NamedTemporaryFile(suffix=".py", delete=False) as temp_file:
         # Create an empty __init__.py file in the same directory as the temp file
         init_path = os.path.join(os.path.dirname(temp_file.name), "__init__.py")
-        with open(init_path, "w"):
+        with open(init_path, "w", encoding="utf-8"):
             pass
         temp_file.write(code.encode())
         temp_file_path = temp_file.name

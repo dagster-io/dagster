@@ -399,7 +399,7 @@ def expand_map(original_root: object, the_dict: Mapping[object, object], stack: 
 
     key = next(iter(the_dict.keys()))
     key_type = _convert_potential_type(original_root, key, stack)
-    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:  # type: ignore
+    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:
         raise DagsterInvalidConfigDefinitionError(
             original_root,
             the_dict,

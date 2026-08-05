@@ -1,9 +1,9 @@
-import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Colors, Container, Inner, MiddleTruncate, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
+import clsx from 'clsx';
 import {CSSProperties, useEffect, useRef} from 'react';
 
-import {AssetListContainer, AssetListRow} from './AssetEventList';
-import {Inner} from '../ui/VirtualizedTable';
+import {assetEventListStyles} from './AssetEventList';
 
 export interface PartitionListSelectorProps<TStatus> {
   partitions: string[];
@@ -45,8 +45,9 @@ export function PartitionListSelector<TStatus>({
   }, [focusedDimensionKey, rowVirtualizer, partitions]);
 
   return (
-    <AssetListContainer
+    <Container
       ref={parentRef}
+      className={assetEventListStyles.assetListContainer}
       tabIndex={-1}
       onKeyDown={(e) => {
         const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
@@ -61,17 +62,20 @@ export function PartitionListSelector<TStatus>({
         }
       }}
     >
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const dimensionKey = partitions[index]!;
           const state = statusForPartition(dimensionKey);
           return (
-            <AssetListRow
+            <Row
               key={key}
-              $height={size}
-              $start={start}
-              $focused={dimensionKey === focusedDimensionKey}
+              height={size}
+              start={start}
+              className={clsx(
+                assetEventListStyles.assetListRow,
+                dimensionKey === focusedDimensionKey && assetEventListStyles.assetListRowFocused,
+              )}
               onClick={(e) => {
                 // If you're interacting with something in the row, don't trigger a focus change.
                 // Since focus is stored in the URL bar this overwrites any link click navigation.
@@ -113,11 +117,11 @@ export function PartitionListSelector<TStatus>({
                   })}
                 </Box>
               </Box>
-            </AssetListRow>
+            </Row>
           );
         })}
       </Inner>
-    </AssetListContainer>
+    </Container>
   );
 }
 

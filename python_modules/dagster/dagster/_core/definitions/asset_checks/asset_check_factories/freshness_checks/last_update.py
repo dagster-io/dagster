@@ -1,6 +1,6 @@
 import datetime
 from collections.abc import Iterable, Sequence
-from typing import Any, cast
+from typing import Any
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks.asset_check_factories.utils import (
@@ -192,7 +192,7 @@ def _build_freshness_multi_check(
                 datetime.datetime,
             )
 
-            last_update_time_lower_bound = cast("datetime.datetime", deadline - lower_bound_delta)
+            last_update_time_lower_bound = deadline - lower_bound_delta
 
             latest_record = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None

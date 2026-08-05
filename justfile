@@ -24,26 +24,28 @@ check_prettier:
         ':!:README.md' ':!:GEMINI.md') \
         --check
 
-install_pyright:
-    uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
-
-pyright:
+prettier:
     #!/usr/bin/env bash
     set -euo pipefail
-    ulimit -Sn 4096
-    python scripts/run-pyright.py --all
-
-rebuild_pyright_pins:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    ulimit -Sn 4096
-    python scripts/run-pyright.py --update-pins --skip-typecheck
+    prettier $(git ls-files \
+        'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
+        '*.md' '.claude/*.md' \
+        ':!:docs/*.md' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' \
+        ':!:README.md' ':!:GEMINI.md') \
+        --write
 
 ty:
     #!/usr/bin/env bash
     set -euo pipefail
     ulimit -Sn 4096
     python scripts/run-ty.py --all
+
+# ty type checker, only on files changed vs origin/master.
+quick-ty *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ulimit -Sn 4096
+    python scripts/run-ty.py --diff {{ args }}
 
 # Skip typecheck so that this can be used to test if all requirements can successfully be resolved
 # in CI independently of typechecking.
@@ -56,3 +58,6 @@ rebuild_ty_pins:
 rebuild_ui:
     corepack enable
     cd js_modules && yarn install && yarn workspace @dagster-io/app-oss build
+
+generate-graphql:
+    uv run --active --no-project python scripts/generate_graphql.py

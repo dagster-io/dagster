@@ -36,6 +36,9 @@ Dagster+ Serverless code will make requests from one of the following IP address
 16.170.24.133
 13.62.119.65
 56.228.54.244
+13.61.215.41
+13.50.153.40
+51.21.242.187
 ```
 
   </TabItem>
@@ -43,6 +46,6 @@ Dagster+ Serverless code will make requests from one of the following IP address
 
 :::note
 
-Additional IP addresses may be added over time. This list was last updated on **December 17, 2025**.
+Additional IP addresses may be added over time. This list was last updated on **May 15, 2026**.
 
 :::

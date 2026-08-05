@@ -223,5 +223,10 @@
     "source": "/migration/airflow-to-dagster/task-level-migration/setup",
     "destination": "/migration/airflow-to-dagster/airlift-v1/task-level-migration/setup",
     "permanent": true
+  },
+  {
+    "source": "/migration/prefect-to-dagster",
+    "destination": "/migration/migrating-to-dagster",
+    "permanent": true
   }
 ]

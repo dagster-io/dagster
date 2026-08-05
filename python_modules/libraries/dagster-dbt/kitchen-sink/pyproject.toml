@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-dbt-cloud-kitchen-sink"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.14"
 description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
@@ -16,6 +17,26 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+
+[dependency-groups]
 test = [
+    "dagster[test]",
+    "dagster-webserver",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-graphql",
+    "dagster-shared",
+    "dagster-pandas",
+    "dagster-dbt",
     "pytest",
 ]
+
+[tool.uv.sources]
+dagster = { path = "../../../dagster", editable = true }
+dagster-webserver = { path = "../../../dagster-webserver", editable = true }
+dagster-test = { path = "../../../dagster-test", editable = true }
+dagster-pipes = { path = "../../../dagster-pipes", editable = true }
+dagster-graphql = { path = "../../../dagster-graphql", editable = true }
+dagster-shared = { path = "../../dagster-shared", editable = true }
+dagster-pandas = { path = "../../dagster-pandas", editable = true }
+dagster-dbt = { path = "../../dagster-dbt", editable = true }

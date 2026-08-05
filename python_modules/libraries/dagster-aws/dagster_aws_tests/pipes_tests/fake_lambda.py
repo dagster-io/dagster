@@ -73,10 +73,10 @@ class FakeLambdaClient:
             out_path = os.path.join(tempdir, "out.json")
             log_path = os.path.join(tempdir, "logs")
 
-            with open(in_path, "w") as f:
+            with open(in_path, "w", encoding="utf-8") as f:
                 f.write(kwargs["Payload"])
 
-            with open(log_path, "w") as log_file:
+            with open(log_path, "w", encoding="utf-8") as log_file:
                 result = subprocess.run(
                     [
                         sys.executable,
@@ -86,7 +86,12 @@ class FakeLambdaClient:
                         out_path,
                     ],
                     check=False,
-                    env={},  # env vars part of lambda fn definition, can't vary at runtime
+                    # Real lambda env is fixed at fn definition, but botocore
+                    # inside the subprocess still needs AWS_* creds to sign
+                    # requests (even against moto). Pass through stub creds
+                    # set by the autouse `fake_aws_credentials` fixture; without
+                    # this we only got creds via EC2 IMDS on the MEDIUM queue.
+                    env={k: v for k, v in os.environ.items() if k.startswith("AWS_")},
                     stdout=log_file,
                     stderr=log_file,
                 )
@@ -97,7 +102,7 @@ class FakeLambdaClient:
                 response["FunctionError"] = "Unhandled"
 
             elif result.returncode != 0:
-                with open(log_path) as f:
+                with open(log_path, encoding="utf-8") as f:
                     print(f.read())  # noqa: T201
                 result.check_returncode()
 
@@ -125,7 +130,7 @@ if __name__ == "__main__":
     assert len(sys.argv) == 4, "python fake_lambda.py <fn_name> <in_path> <out_path>"
     _, fn_name, in_path, out_path = sys.argv
 
-    event = json.load(open(in_path))
+    event = json.load(open(in_path, encoding="utf-8"))
     fn = getattr(LambdaFunctions, fn_name)
 
     val = None
@@ -146,7 +151,7 @@ if __name__ == "__main__":
         }
         return_code = 42
 
-    with open(out_path, "w") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(val, f)
 
     sys.exit(return_code)

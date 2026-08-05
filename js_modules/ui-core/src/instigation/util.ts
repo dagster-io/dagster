@@ -1,4 +1,5 @@
 import {DynamicPartitionsRequestType, InstigationTickStatus} from '../graphql/types';
+import type {TickResultType} from '../ticks/TickStatusTag';
 
 type DynamicPartitionsRequestResult = {
   partitionKeys: string[] | null;
@@ -44,4 +45,17 @@ export function countPartitionsAddedOrDeleted(
     }
     return sum;
   }, 0);
+}
+
+/**
+ * Decide which view the tick details dialog should show.
+ *
+ * When the "run" that was createed is a backfill, the runs view can't render (400s when its backfill ID is passed to the
+ * runs feed as a run UUID). So when a tick requested any materializations, show the materializations view; otherwise show
+ * the runs view.
+ */
+export function getTickResultType(tick: {
+  requestedAssetMaterializationCount: number;
+}): TickResultType {
+  return tick.requestedAssetMaterializationCount > 0 ? 'materializations' : 'runs';
 }

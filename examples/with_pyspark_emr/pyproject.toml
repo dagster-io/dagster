@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "with_pyspark_emr"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "dagster-aws",
@@ -16,3 +17,33 @@ dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "with_pyspark_emr"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-graphql",
+    "dagster-aws",
+    "dagster-spark",
+    "dagster-pyspark",
+    # Previously pulled via `dagster-aws[test]`; folded when removing dagster-aws's test extra
+    "botocore!=1.32.1",
+    "moto[s3,server,glue,emrserverless,logs,emrcontainers]>=5.0",
+    "requests-mock",
+    "xmltodict>=0.12.0",
+    "pytest-rerunfailures",
+    "pytest-cases",
+    "s3fs",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }
+dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }
+dagster-aws = { path = "../../python_modules/libraries/dagster-aws", editable = true }
+dagster-spark = { path = "../../python_modules/libraries/dagster-spark", editable = true }
+dagster-pyspark = { path = "../../python_modules/libraries/dagster-pyspark", editable = true }

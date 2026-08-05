@@ -41,9 +41,9 @@ def create_transaction_event(event_id: int) -> dict:
 def delivery_callback(err, msg):
     """Callback for message delivery reports."""
     if err is not None:
-        print(f"Message delivery failed: {err}")  # noqa: T201
+        print(f"Message delivery failed: {err}")
     else:
-        print(  # noqa: T201
+        print(
             f"Message delivered to {msg.topic()} "
             f"[partition {msg.partition()}] @ offset {msg.offset()}"
         )
@@ -56,9 +56,9 @@ def produce_events(
     interval: float,
 ) -> None:
     """Produce sample events to Kafka."""
-    print(f"Producing {count} events to topic '{topic}'...")  # noqa: T201
-    print(f"Interval between events: {interval}s")  # noqa: T201
-    print("-" * 50)  # noqa: T201
+    print(f"Producing {count} events to topic '{topic}'...")
+    print(f"Interval between events: {interval}s")
+    print("-" * 50)
 
     for i in range(1, count + 1):
         event = create_transaction_event(i)
@@ -80,8 +80,8 @@ def produce_events(
 
     # Wait for any outstanding messages to be delivered
     producer.flush()
-    print("-" * 50)  # noqa: T201
-    print(f"Produced {count} events successfully!")  # noqa: T201
+    print("-" * 50)
+    print(f"Produced {count} events successfully!")
 
 
 def main():

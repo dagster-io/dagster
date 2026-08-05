@@ -1,8 +1,8 @@
-import {Box, Caption, Colors, Popover} from '@dagster-io/ui-components';
+import {Box, Colors, Popover, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled, {css} from 'styled-components';
 
+import styles from './css/TagActions.module.css';
 import {TagType} from '../runs/RunTag';
 
 export type TagAction =
@@ -13,22 +13,33 @@ export type TagAction =
   | {
       label: React.ReactNode;
       to: string; // link-style action (supports cmd-click for new tab)
+      disabled?: boolean; // render greyed out and non-navigable (e.g. data still loading)
     };
 
 export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]}) => (
-  <ActionContainer background={Colors.tooltipBackground()} flex={{direction: 'row'}}>
+  <Box
+    className={styles.actionContainer}
+    background={Colors.tooltipBackground()}
+    flex={{direction: 'row'}}
+  >
     {actions.map((action, ii) =>
       'to' in action ? (
-        <TagButtonLink to={action.to} key={ii}>
-          <Caption>{action.label}</Caption>
-        </TagButtonLink>
+        action.disabled ? (
+          <button key={ii} className={styles.tagButton} disabled>
+            <Text size={12}>{action.label}</Text>
+          </button>
+        ) : (
+          <Link to={action.to} key={ii} className={styles.tagButtonLink}>
+            <Text size={12}>{action.label}</Text>
+          </Link>
+        )
       ) : (
-        <TagButton key={ii} onClick={() => action.onClick(data)}>
-          <Caption>{action.label}</Caption>
-        </TagButton>
+        <button key={ii} className={styles.tagButton} onClick={() => action.onClick(data)}>
+          <Text size={12}>{action.label}</Text>
+        </button>
       ),
     )}
-  </ActionContainer>
+  </Box>
 );
 
 export const TagActionsPopover = ({
@@ -36,11 +47,13 @@ export const TagActionsPopover = ({
   actions,
   children,
   childrenMiddleTruncate,
+  onOpening,
 }: {
   data: TagType;
   actions: TagAction[];
   children: React.ReactNode;
   childrenMiddleTruncate?: boolean;
+  onOpening?: () => void;
 }) => {
   return (
     <Popover
@@ -50,50 +63,9 @@ export const TagActionsPopover = ({
       targetProps={childrenMiddleTruncate ? {style: {minWidth: 0, maxWidth: '100%'}} : {}}
       placement="top"
       interactionKind="hover"
+      onOpening={onOpening}
     >
       {children}
     </Popover>
   );
 };
-
-const ActionContainer = styled(Box)`
-  border-radius: 8px;
-  overflow: hidden;
-`;
-
-const TagButtonSharedStyles = css`
-  border: none;
-  background: ${Colors.tooltipBackground()};
-  color: ${Colors.tooltipText()};
-  cursor: pointer;
-  padding: 8px 12px;
-  text-align: left;
-  opacity: 0.85;
-  transition: opacity 50ms linear;
-
-  :not(:last-child) {
-    box-shadow: -1px 0 0 inset ${Colors.borderHover()};
-  }
-
-  :focus {
-    outline: none;
-  }
-`;
-
-const TagButton = styled.button`
-  ${TagButtonSharedStyles}
-
-  :hover {
-    opacity: 1;
-  }
-`;
-
-const TagButtonLink = styled(Link)`
-  ${TagButtonSharedStyles}
-
-  :hover {
-    color: ${Colors.tooltipText()};
-    text-decoration: none;
-    opacity: 1;
-  }
-`;

@@ -40,6 +40,6 @@ class JinjaTemplateLoader:
 
         env = Environment(loader=FileSystemLoader(template_path))
         env.filters["to_yaml"] = self.to_yaml
-        env.globals["get_env"] = self.get_env
+        env.globals["get_env"] = self.get_env  # ty: ignore[invalid-assignment]
         template = env.get_template(filename)
         return template.render(context)

@@ -8,7 +8,7 @@ def test_weather_assets():
 
     with instance_for_test() as instance:
         assert materialize(
-            list(table_assets.defs.assets or []),
+            list(table_assets.defs.assets or []),  # ty: ignore[invalid-argument-type]
             instance=instance,
             resources={"io_manager": LocalFileSystemIOManager()},
         ).success
@@ -20,7 +20,7 @@ def test_spark_weather_assets():
     assets = list(table_assets.defs.assets or [])
     with instance_for_test() as instance:
         assert materialize(
-            [*list(assets), spark_asset.daily_temperature_high_diffs],
+            [*list(assets), spark_asset.daily_temperature_high_diffs],  # ty: ignore[invalid-argument-type]
             instance=instance,
             resources={"io_manager": LocalFileSystemIOManager()},
         ).success

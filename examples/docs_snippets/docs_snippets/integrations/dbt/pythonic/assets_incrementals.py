@@ -4,7 +4,7 @@ from dagster_dbt import DbtCliResource, dbt_assets
 
 import dagster as dg
 
-from .resources import dbt_project
+from .resources import dbt_project  # ty: ignore[unresolved-import]
 
 # start_incremental_partition
 INCREMENTAL_SELECTOR = "config.materialized:incremental"

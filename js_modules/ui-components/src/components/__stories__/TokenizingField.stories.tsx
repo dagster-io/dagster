@@ -1,5 +1,4 @@
 import {useState} from 'react';
-import styled from 'styled-components';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -101,7 +100,7 @@ export const CustomSuggestionRenderer = () => {
       suggestionProviders={suggestionProviders}
       suggestionRenderer={(suggestion) => (
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <ColorSwatch $color={suggestion.text} />
+          <ColorSwatch color={suggestion.text} />
           {suggestion.text}
         </Box>
       )}
@@ -109,10 +108,14 @@ export const CustomSuggestionRenderer = () => {
   );
 };
 
-const ColorSwatch = styled.div<{$color: string}>`
-  border-radius: 50%;
-  background-color: ${(p) => p.$color};
-  width: 16px;
-  height: 16px;
-  border: 1px solid;
-`;
+const ColorSwatch = ({color}: {color: string}) => (
+  <div
+    style={{
+      borderRadius: '50%',
+      backgroundColor: color,
+      width: 16,
+      height: 16,
+      border: '1px solid',
+    }}
+  />
+);

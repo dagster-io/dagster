@@ -478,7 +478,7 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         if not isinstance(_solid_def_snap, OpDefSnap):
             check.failed("Expected OpDefSnap")
         self._solid_def_snap = _solid_def_snap
-        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
+        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)  # ty: ignore[missing-argument]
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_config_field(self, _graphene_info: ResolveInfo) -> GrapheneConfigTypeField | None:
@@ -688,7 +688,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
         )
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
         self._comp_solid_dep_index = represented_pipeline.get_dep_structure_index(solid_def_name)
-        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)
+        super().__init__(name=solid_def_name, description=self._solid_def_snap.description)  # ty: ignore[missing-argument]
         ISolidDefinitionMixin.__init__(self, represented_pipeline, solid_def_name)
 
     def resolve_id(self, _graphene_info: ResolveInfo) -> str:

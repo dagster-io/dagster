@@ -4,7 +4,7 @@ description: How to redact personally identifiable information (PII) from Dagste
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Secure.png
 ---
 
 In this example, we'll explore how to protect sensitive data by redacting personally identifiable information (PII) from Dagster [compute logs](/guides/log-debug/logging). When your pipelines process customer data, logs may inadvertently capture sensitive information like emails, phone numbers, or social security numbers. A custom compute log manager can automatically redact this data before it's displayed in the UI.

@@ -9,12 +9,6 @@ description = "Package for PySpark Dagster framework components."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     "dagster_spark==1!0+dev",
@@ -23,3 +17,19 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-framework/pyspark"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-spark",
+    "dagster-aws",
+    "dagster-shared",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-spark = { path = "../dagster-spark", editable = true }
+dagster-aws = { path = "../dagster-aws", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }

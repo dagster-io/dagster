@@ -246,7 +246,7 @@ class SnowflakeResourceHelper:
             "table",
         }
 
-        return (
+        return bool(
             name.lower() in reserved_words
             or (name and name[0].isdigit())
             or not re.match(r"^[a-zA-Z_][a-zA-Z0-9_$]*$", name)

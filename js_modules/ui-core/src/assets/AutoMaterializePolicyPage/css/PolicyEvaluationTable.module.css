@@ -1,0 +1,45 @@
+.veryCompactTable tr td {
+  vertical-align: middle;
+  padding: 4px 16px;
+}
+
+.veryCompactTable tr th:last-child,
+.veryCompactTable tr td:last-child {
+  box-shadow:
+    inset 1px 1px 0 var(--color-keyline-default),
+    inset -1px 0 0 var(--color-keyline-default) !important;
+}
+
+.veryCompactTable tr:last-child td:last-child {
+  box-shadow:
+    inset -1px -1px 0 var(--color-keyline-default),
+    inset 1px 1px 0 var(--color-keyline-default) !important;
+}
+
+.evaluationRow {
+  cursor: pointer;
+}
+
+.evaluationRowHovered {
+  background-color: var(--color-background-light-hover);
+}
+
+.evaluationRowHovered td {
+  box-shadow:
+    inset 0 -1px 0 var(--color-keyline-default),
+    inset 1px 1px 0 var(--color-keyline-default) !important;
+}
+
+.evaluationRowHovered td:last-child {
+  box-shadow:
+    inset -1px -1px 0 var(--color-keyline-default),
+    inset 1px 1px 0 var(--color-keyline-default) !important;
+}
+
+.evaluationRowHighlighted {
+  background-color: var(--color-background-default-hover);
+}
+
+.evaluationRowNone {
+  background-color: var(--color-background-default);
+}

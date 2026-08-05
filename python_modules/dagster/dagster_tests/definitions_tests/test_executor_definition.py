@@ -52,7 +52,7 @@ def primitive_config_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
+            retries=RetryMode.from_config({"enabled": {}}),  # ty: ignore[invalid-argument-type]
             marker_to_close=None,
         )
 
@@ -81,7 +81,7 @@ def dict_config_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
+            retries=RetryMode.from_config({"enabled": {}}),  # ty: ignore[invalid-argument-type]
             marker_to_close=None,
         )
 
@@ -110,7 +110,7 @@ def requirement_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
+            retries=RetryMode.from_config({"enabled": {}}),  # ty: ignore[invalid-argument-type]
             marker_to_close=None,
         )
 
@@ -149,7 +149,7 @@ def executor_dict_config_configured_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
+            retries=RetryMode.from_config({"enabled": {}}),  # ty: ignore[invalid-argument-type]
             marker_to_close=None,
         )
 
@@ -157,7 +157,7 @@ def executor_dict_config_configured_job():
         {"value": "secret testing value!!"}, "configured_test_executor"
     )
 
-    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)  # pyright: ignore[reportArgumentType]
+    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)  # ty: ignore[invalid-argument-type]
 
     return get_job_for_executor(test_executor_configured)
 
@@ -175,14 +175,14 @@ def configured_executor_job():
 
         return InProcessExecutor(
             # shouldn't need to .get() here - issue with defaults in config setup
-            retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
+            retries=RetryMode.from_config({"enabled": {}}),  # ty: ignore[invalid-argument-type]
             marker_to_close=None,
         )
 
     test_executor_configured = test_executor.configured(
         {"value": "secret testing value!!"}, "configured_test_executor"
     )
-    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)  # pyright: ignore[reportArgumentType]
+    assert test_executor_configured.get_requirements(None) == test_executor.get_requirements(None)  # ty: ignore[invalid-argument-type]
 
     return get_job_for_executor(test_executor_configured)
 
@@ -225,7 +225,7 @@ def needs_config(_):
     from dagster._core.executor.in_process import InProcessExecutor
 
     return InProcessExecutor(
-        retries=RetryMode.from_config({"enabled": {}}),  # pyright: ignore[reportArgumentType]
+        retries=RetryMode.from_config({"enabled": {}}),  # ty: ignore[invalid-argument-type]
         marker_to_close=None,
     )
 
@@ -265,7 +265,7 @@ def test_failing_executor_initialization():
         assert event_records[0].dagster_event_type == DagsterEventType.RUN_FAILURE
 
         run = instance.get_run_by_id(result.run_id)
-        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.JOB_INITIALIZATION_FAILURE.value  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.JOB_INITIALIZATION_FAILURE.value  # ty: ignore[unresolved-attribute]
 
 
 def test_multiprocess_executor_default():

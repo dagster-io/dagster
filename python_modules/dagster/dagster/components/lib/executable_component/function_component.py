@@ -84,7 +84,7 @@ class ExecuteFnMetadata:
         return {arg.name for arg in get_function_params(self.execute_fn)}
 
     @cached_property
-    def config_cls(self) -> type | None:
+    def config_cls(self) -> type[Config] | None:
         return get_config_param_type(self.execute_fn)
 
     @cached_property
@@ -134,7 +134,7 @@ class FunctionComponent(ExecutableComponent):
         return (
             self.execution
             if isinstance(self.execution, FunctionSpec)
-            else FunctionSpec(name=self.execution.__name__, fn=self.execution)
+            else FunctionSpec(name=self.execution.__name__, fn=self.execution)  # ty: ignore[unresolved-attribute]
         )
 
     @property
@@ -146,7 +146,7 @@ class FunctionComponent(ExecutableComponent):
         return self.execute_fn_metadata.config_fields
 
     @property
-    def config_cls(self) -> type | None:
+    def config_cls(self) -> type[Config] | None:
         return self.execute_fn_metadata.config_cls
 
     def invoke_execute_fn(

@@ -17,6 +17,11 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
     DepsAutomationCondition as DepsAutomationCondition,
     EntityMatchesCondition as EntityMatchesCondition,
 )
+from dagster._core.definitions.declarative_automation.operators.job_operators import (
+    AllJobRootAssetsMatchCondition as AllJobRootAssetsMatchCondition,
+    AnyJobRootAssetsMatchCondition as AnyJobRootAssetsMatchCondition,
+    JobRootAssetsAutomationCondition as JobRootAssetsAutomationCondition,
+)
 from dagster._core.definitions.declarative_automation.operators.newly_true_operator import (
     NewlyTrueCondition as NewlyTrueCondition,
 )

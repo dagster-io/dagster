@@ -1,0 +1,24 @@
+.operand {
+  background-color: var(--color-background-gray);
+  border-radius: 8px;
+  color: var(--color-text-light);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 4px 8px;
+  max-width: 300px;
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operandSmall {
+  padding: 1px 8px;
+}
+
+.operator {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--color-text-default);
+}

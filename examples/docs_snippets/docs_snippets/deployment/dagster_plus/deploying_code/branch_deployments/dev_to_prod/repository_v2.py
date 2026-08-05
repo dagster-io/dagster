@@ -5,7 +5,10 @@ from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 import dagster as dg
 
-from .clone_and_drop_db import clone_prod, drop_prod_clone
+from .clone_and_drop_db import (  # ty: ignore[unresolved-import]
+    clone_prod,
+    drop_prod_clone,
+)
 
 snowflake_config = {
     "account": {"env": "SNOWFLAKE_ACCOUNT"},
@@ -45,7 +48,7 @@ def get_current_env():
 @dg.definitions
 def resources():
     return dg.Definitions(
-        resources=resources[get_current_env()],
+        resources=resources[get_current_env()],  # ty: ignore[not-subscriptable]
     )
 
 

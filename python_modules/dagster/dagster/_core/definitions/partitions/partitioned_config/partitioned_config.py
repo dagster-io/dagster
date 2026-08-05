@@ -230,7 +230,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         else:
             hardcoded_config = config if config else {}
             return cls(
-                partitions_def,  # type: ignore # ignored for update, fix me!
+                partitions_def,  # ignored for update, fix me!
                 run_config_for_partition_key_fn=lambda _: cast("Mapping", hardcoded_config),
             )
 

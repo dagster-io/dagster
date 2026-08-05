@@ -9,9 +9,9 @@ from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 
 # Define credentials
 creds = DbtCloudCredentials(
-    account_id=os.getenv("DBT_CLOUD_ACCOUNT_ID"),
-    access_url=os.getenv("DBT_CLOUD_ACCESS_URL"),
-    token=os.getenv("DBT_CLOUD_TOKEN"),
+    account_id=os.getenv("DBT_CLOUD_ACCOUNT_ID"),  # ty: ignore[invalid-argument-type]
+    access_url=os.getenv("DBT_CLOUD_ACCESS_URL"),  # ty: ignore[invalid-argument-type]
+    token=os.getenv("DBT_CLOUD_TOKEN"),  # ty: ignore[invalid-argument-type]
 )
 
 # Define the workspace

@@ -38,7 +38,16 @@ def list_sensors_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List sensors in the deployment."""
+    """List sensors in the deployment.
+
+    Example::
+
+        $ dg api sensor list
+        NAME                         STATUS   TYPE
+        new_file_sensor              RUNNING  STANDARD
+        slack_alert_sensor           RUNNING  RUN_STATUS
+        retrain_trigger_sensor       STOPPED  ASSET
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -88,7 +97,17 @@ def get_sensor_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get specific sensor details."""
+    """Get specific sensor details.
+
+    Example::
+
+        $ dg api sensor get new_file_sensor
+        Name:        new_file_sensor
+        Status:      RUNNING
+        Type:        STANDARD
+        Description: Triggers ingest_customers when a new file lands in S3
+        Next Tick:   2026-05-06 18:43:00 UTC
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -144,7 +163,18 @@ def get_sensor_ticks_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get tick history for a specific sensor."""
+    """Get tick history for a specific sensor.
+
+    Example::
+
+        $ dg api sensor get-ticks new_file_sensor --limit 3
+        TIMESTAMP                STATUS    RUN IDS                               SKIP REASON
+        2026-05-06 18:42:00 UTC  SUCCESS   5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        2026-05-06 18:41:30 UTC  SKIPPED   -                                     No new files in s3://incoming/customers/
+        2026-05-06 18:41:00 UTC  SKIPPED   -                                     No new files in s3://incoming/customers/
+
+        Total ticks: 3
+    """
     from dagster_rest_resources.api.tick import DgApiTickApi
 
     config = DagsterPlusCliConfig.create_for_deployment(

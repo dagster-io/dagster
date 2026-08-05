@@ -2,7 +2,7 @@ import collections.abc
 from collections import defaultdict
 from collections.abc import Collection, Mapping
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -81,12 +81,8 @@ class StaticPartitionMapping(
             raise DagsterInvalidDefinitionError(
                 "Downstream partitions definition must be a StaticPartitionsDefinition",
             )
-        self._check_upstream(
-            upstream_partitions_def=cast("StaticPartitionsDefinition", upstream_partitions_def)
-        )
-        self._check_downstream(
-            downstream_partitions_def=cast("StaticPartitionsDefinition", downstream_partitions_def)
-        )
+        self._check_upstream(upstream_partitions_def=upstream_partitions_def)
+        self._check_downstream(downstream_partitions_def=downstream_partitions_def)
 
     @cached_method
     def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
@@ -121,7 +117,7 @@ class StaticPartitionMapping(
                 f" {extra_keys}"
             )
 
-    def get_downstream_partitions_for_partitions(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_downstream_partitions_for_partitions(  # ty: ignore[invalid-method-override]
         self,
         upstream_partitions_subset: PartitionsSubset,
         upstream_partitions_def: StaticPartitionsDefinition,
@@ -138,7 +134,7 @@ class StaticPartitionMapping(
                 downstream_keys.update(self._mapping[key])
             return downstream_subset.with_partition_keys(downstream_keys)
 
-    def get_upstream_mapped_partitions_result_for_partitions(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_upstream_mapped_partitions_result_for_partitions(  # ty: ignore[invalid-method-override]
         self,
         downstream_partitions_subset: PartitionsSubset | None,
         downstream_partitions_def: PartitionsDefinition | None,

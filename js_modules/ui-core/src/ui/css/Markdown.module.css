@@ -8,7 +8,7 @@
   & table tr th {
     box-shadow: none !important;
     color: var(--color-text-light);
-    font-family: var(--font-family-default);
+    font-family: var(--font-default);
     font-size: 12px;
     font-weight: normal;
     padding: 2px 8px;

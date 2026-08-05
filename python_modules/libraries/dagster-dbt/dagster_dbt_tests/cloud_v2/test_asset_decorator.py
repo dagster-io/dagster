@@ -289,7 +289,7 @@ def test_selections(
         exclude=exclude,
         selector=selector,
     )
-    def my_dbt_assets(context: context_type): ...  # pyright: ignore
+    def my_dbt_assets(context: context_type): ...  # ty: ignore
 
     assert len(my_dbt_assets.keys) == len(expected_specs)
     assert my_dbt_assets.keys == {spec.key for spec in expected_specs}

@@ -1,6 +1,6 @@
-import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Icon} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {COMPUTE_KIND_TAG} from './KindTags';
 import {OpIOBox, metadataForIO} from './OpIOBox';
@@ -8,6 +8,7 @@ import {IOpTag, OpTags} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
 import {Edge, position} from './common';
 import {gql} from '../apollo-client';
+import styles from './css/OpNode.module.css';
 import {OpNodeDefinitionFragment, OpNodeInvocationFragment} from './types/OpNode.types';
 import {withMiddleTruncation} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -115,25 +116,37 @@ export class OpNode extends React.Component<IOpNodeProps> {
     const label = invocation ? invocation.name : definition.name;
 
     return (
-      <NodeContainer
-        $minified={minified}
-        $selected={selected}
-        $secondaryHighlight={focused}
-        $dim={dim}
+      <div
+        className={clsx(styles.nodeContainer, dim && styles.dim)}
         onClick={this.handleClick}
         onDoubleClick={this.handleDoubleClick}
         data-testid={testId(definition.name)}
       >
-        <div className="highlight-box" style={{...position(layout.bounds)}} />
-        {composite && <div className="composite-marker" style={{...position(layout.op)}} />}
+        <div
+          className={clsx(styles.highlightBox, selected && styles.highlightBoxSelected)}
+          style={{...position(layout.bounds)}}
+        />
+        {composite && (
+          <div
+            className={clsx(
+              styles.compositeMarker,
+              minified && styles.compositeMarkerMinified,
+              selected && styles.compositeMarkerSelected,
+            )}
+            style={{...position(layout.op)}}
+          />
+        )}
 
         {invocation?.isDynamicMapped && (
-          <div className="dynamic-marker" style={{...position(layout.op)}} />
+          <div
+            className={clsx(styles.dynamicMarker, minified && styles.dynamicMarkerMinified)}
+            style={{...position(layout.op)}}
+          />
         )}
 
         {configField && configField.configType.key !== 'Any' && (
           <div
-            className="config-marker"
+            className={clsx(styles.configMarker, minified && styles.configMarkerMinified)}
             style={{left: layout.op.x + layout.op.width, top: layout.op.y}}
           >
             {minified ? 'C' : 'Config'}
@@ -153,15 +166,27 @@ export class OpNode extends React.Component<IOpNodeProps> {
             ))}
           </div>
         )}
-        <div className="node-box" style={{...position(layout.op)}}>
-          <div className="name">
+        <div
+          className={clsx(
+            styles.nodeBox,
+            minified && styles.nodeBoxMinified,
+            selected && (minified ? styles.nodeBoxSelectedMinified : styles.nodeBoxSelected),
+            !selected &&
+              focused &&
+              (minified ? styles.nodeBoxFocusedMinified : styles.nodeBoxFocused),
+          )}
+          style={{...position(layout.op)}}
+        >
+          <div className={clsx(styles.name, minified && styles.nameMinified)}>
             {!minified && <Icon name="op" size={16} />}
-            <div className="label" data-tooltip={label} data-tooltip-style={TOOLTIP_STYLE}>
+            <div className={styles.label} data-tooltip={label} data-tooltip-style={TOOLTIP_STYLE}>
               {withMiddleTruncation(label, {maxLength: 48})}
             </div>
           </div>
           {!minified && (definition.description || definition.assetNodes.length === 0) && (
-            <div className="description">{(definition.description || '').split('\n')[0]}</div>
+            <div className={styles.description}>
+              {(definition.description || '').split('\n')[0]}
+            </div>
           )}
           {!minified && definition.assetNodes.length > 0 && (
             <OpNodeAssociatedAssets nodes={definition.assetNodes} />
@@ -192,7 +217,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
             ))}
           </div>
         )}
-      </NodeContainer>
+      </div>
     );
   }
 }
@@ -200,7 +225,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
 const OpNodeAssociatedAssets = ({nodes}: {nodes: {assetKey: AssetKey}[]}) => {
   const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
   return (
-    <div className="assets">
+    <div className={styles.assets}>
       <Icon name="asset" size={16} />
       {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
       {withMiddleTruncation(displayNameForAssetKey(nodes[0]!.assetKey), {
@@ -323,102 +348,5 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
     type {
       displayName
     }
-  }
-`;
-
-const NodeHighlightColors = {
-  Border: Colors.accentBlue(),
-  Background: Colors.backgroundBlue(),
-};
-
-const NodeContainer = styled.div<{
-  $minified: boolean;
-  $selected: boolean;
-  $secondaryHighlight: boolean;
-  $dim: boolean;
-}>`
-  opacity: ${({$dim}) => ($dim ? 0.3 : 1)};
-  pointer-events: auto;
-  user-select: none;
-  cursor: default;
-
-  .highlight-box {
-    border-radius: 13px;
-    background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
-  }
-  .node-box {
-    border: ${(p) =>
-      p.$selected
-        ? `2px dashed ${NodeHighlightColors.Border}`
-        : p.$secondaryHighlight
-          ? `2px solid ${Colors.accentBlue()}55`
-          : `2px solid ${Colors.keylineDefault()}`};
-
-    border-width: ${(p) => (p.$minified ? '3px' : '2px')};
-    border-radius: 8px;
-    background: ${(p) => (p.$minified ? Colors.backgroundLight() : Colors.backgroundDefault())};
-  }
-  .composite-marker {
-    outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : Colors.accentYellow())};
-    outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
-    border-radius: 3px;
-  }
-  .dynamic-marker {
-    transform: translate(-5px, -5px);
-    border: ${(p) => (p.$minified ? '3px' : '2px')} solid ${Colors.keylineDefault()};
-    border-radius: 8px;
-  }
-  .config-marker {
-    position: absolute;
-    transform: ${(p) => (p.$minified ? ' translate(-100%, -28px)' : ' translate(-100%, -21px)')};
-    font-size: ${(p) => (p.$minified ? '24px' : '12px')};
-    font-family: ${FontFamily.monospace};
-    font-weight: 700;
-    opacity: 0.5;
-  }
-  .name {
-    display: flex;
-    gap: 5px;
-    padding: 4px ${(p) => (p.$minified ? '8px' : '3px')};
-    font-size: ${(p) => (p.$minified ? '32px' : '14px')};
-    font-family: ${FontFamily.monospace};
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-    align-items: center;
-    font-weight: 600;
-    .label {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-  .assets {
-    padding: 0 4px;
-    white-space: nowrap;
-    line-height: 22px;
-    height: 22px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    background: ${Colors.backgroundLighter()};
-    font-size: 12px;
-    display: flex;
-    gap: 4px;
-    align-items: center;
-  }
-  .description {
-    padding: 0 8px;
-    white-space: nowrap;
-    line-height: 22px;
-    height: 22px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    background: ${Colors.backgroundLighter()};
-    border-top: ${Colors.keylineDefault()} 1px solid;
-
-    /* 6px because it's inside a bordered box with a 2px line at our standard 8px radius */
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
-    font-size: 12px;
   }
 `;

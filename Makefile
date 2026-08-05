@@ -1,4 +1,4 @@
-.PHONY: ty pyright
+.PHONY: ty
 
 export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
 
@@ -12,27 +12,8 @@ export COREPACK_ENABLE_DOWNLOAD_PROMPT := 0
 # (the buildkite-test image no longer ships make). These wrappers exist for
 # local developer convenience.
 
-pyright:
-	just pyright
-
 install_prettier:
 	just install_prettier
-
-install_pyright:
-	just install_pyright
-
-rebuild_pyright:
-	ulimit -Sn 4096 # pyright build uses a lot of open files
-	python scripts/run-pyright.py --all --rebuild
-
-rebuild_pyright_pins:
-	just rebuild_pyright_pins
-
-quick_pyright:
-	python scripts/run-pyright.py --diff
-
-unannotated_pyright:
-	python scripts/run-pyright.py --unannotated
 
 ty:
 	just ty
@@ -77,15 +58,6 @@ install_dev_python_modules_verbose:
 install_dev_python_modules_verbose_m1:
 	python scripts/install_dev_python_modules.py --include-prebuilt-grpcio-wheel
 
-graphql_codegen_js:
-	cd js_modules; make generate-graphql; make generate-perms
-
-graphql_codegen_py:
-	cd python_modules/libraries/dagster-rest-resources; uv run --active --no-project ariadne-codegen
-
-graphql_codegen:
-	make graphql_codegen_js;
-	make graphql_codegen_py;
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)

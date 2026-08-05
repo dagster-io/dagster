@@ -169,7 +169,7 @@ class DynamicPartitionsRequestMixin:
 
 
 class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "DynamicPartitionRequest"
 
     def __init__(
@@ -186,7 +186,7 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
 
 class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "DynamicPartitionsRequestResult"
 
     skippedPartitionKeys = non_null_list(graphene.String)
@@ -226,6 +226,14 @@ class GrapheneRequestedMaterializationsForAsset(graphene.ObjectType):
         name = "RequestedMaterializationsForAsset"
 
 
+class GrapheneRequestedRunsForJob(graphene.ObjectType):
+    jobName = graphene.NonNull(graphene.String)
+    partitionKeys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "RequestedRunsForJob"
+
+
 class GrapheneInstigationTick(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     tickId = graphene.NonNull(graphene.ID)
@@ -245,6 +253,8 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedAssetKeys = non_null_list(GrapheneAssetKey)
     requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
+    requestedJobRunCount = graphene.NonNull(graphene.Int)
+    requestedRunsForJobs = non_null_list(GrapheneRequestedRunsForJob)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.ID)
     instigationType = graphene.NonNull(GrapheneInstigationType)
 
@@ -311,13 +321,23 @@ class GrapheneInstigationTick(graphene.ObjectType):
     def resolve_requestedMaterializationsForAssets(self, _):
         return [
             GrapheneRequestedMaterializationsForAsset(
-                assetKey=GrapheneAssetKey(path=asset_key.path), partitionKeys=list(partition_keys)
+                assetKey=GrapheneAssetKey(path=asset_key.path),
+                partitionKeys=list(partition_keys),
             )
             for asset_key, partition_keys in self._tick.requested_assets_and_partitions.items()
         ]
 
     def resolve_requestedAssetMaterializationCount(self, _):
         return self._tick.requested_asset_materialization_count
+
+    def resolve_requestedJobRunCount(self, _):
+        return self._tick.requested_job_run_count
+
+    def resolve_requestedRunsForJobs(self, _):
+        return [
+            GrapheneRequestedRunsForJob(jobName=job_name, partitionKeys=sorted(partition_keys))
+            for job_name, partition_keys in sorted(self._tick.requested_jobs_and_partitions.items())
+        ]
 
 
 class GrapheneDryRunInstigationTick(graphene.ObjectType):
@@ -780,7 +800,7 @@ class GrapheneInstigationStateNotFoundError(graphene.ObjectType):
 
     def __init__(self, target):
         super().__init__()
-        self.name = check.str_param(target, "target")
+        self.name = check.str_param(target, "target")  # ty: ignore[invalid-assignment]
         self.message = f"Could not find instigation state for `{target}`"
 
 

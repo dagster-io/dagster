@@ -2,16 +2,32 @@ from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, No
 
 
 def test_node_input_handle_str():
-    assert str(NodeInputHandle(NodeHandle("foo", parent=None), "bar")) == "foo:bar"  # pyright: ignore[reportCallIssue,reportArgumentType]
     assert (
-        str(NodeInputHandle(NodeHandle("foo", parent=NodeHandle("baz", parent=None)), "bar"))  # pyright: ignore[reportCallIssue,reportArgumentType]
+        str(NodeInputHandle(node_handle=NodeHandle("foo", parent=None), input_name="bar"))
+        == "foo:bar"
+    )
+    assert (
+        str(
+            NodeInputHandle(
+                node_handle=NodeHandle("foo", parent=NodeHandle("baz", parent=None)),
+                input_name="bar",
+            )
+        )
         == "baz.foo:bar"
     )
 
 
 def test_node_output_handle_str():
-    assert str(NodeOutputHandle(NodeHandle("foo", parent=None), "bar")) == "foo:bar"  # pyright: ignore[reportCallIssue,reportArgumentType]
     assert (
-        str(NodeOutputHandle(NodeHandle("foo", parent=NodeHandle("baz", parent=None)), "bar"))  # pyright: ignore[reportCallIssue,reportArgumentType]
+        str(NodeOutputHandle(node_handle=NodeHandle("foo", parent=None), output_name="bar"))
+        == "foo:bar"
+    )
+    assert (
+        str(
+            NodeOutputHandle(
+                node_handle=NodeHandle("foo", parent=NodeHandle("baz", parent=None)),
+                output_name="bar",
+            )
+        )
         == "baz.foo:bar"
     )

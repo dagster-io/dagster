@@ -69,7 +69,7 @@ In this example, we are sending a POST request to the Dagster+ API with the asse
 
 ### Step 3: Run the job
 
-In this example, we are running the script in [a Dagster job](./metadata_to_plus/migrate_metadata_job.py) to replicate the recent 100 records. You can also run it in a one-off Python script or any other way that suits your needs. The benefit of running it in a Dagster job is that you can parameterize the job and monitor the progress and logs in the Dagster UI.
+In this example, we are running the script in [a Dagster job](./oss_metadata_to_plus/migrate_metadata_job.py) to replicate the recent 100 records. You can also run it in a one-off Python script or any other way that suits your needs. The benefit of running it in a Dagster job is that you can parameterize the job and monitor the progress and logs in the Dagster UI.
 
 - Configure information such as the asset key, new org info in the Dagster UI. The `asset_key` config value accepts a plain string for simple keys (e.g. `my_asset`) or a slash-delimited string for prefixed keys (e.g. `bronze/metadata`, `bronze/silver/metadata`).
   <img width="1464" alt="config" src="https://github.com/dagster-io/dagster/assets/4531914/7398cc90-f83b-4571-8a53-9830a7f109e5">

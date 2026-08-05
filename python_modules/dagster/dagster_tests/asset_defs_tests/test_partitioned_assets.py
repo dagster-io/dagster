@@ -121,7 +121,7 @@ def test_assets_with_same_partitioning():
     assert get_upstream_partitions_for_partition_range(
         downstream_asset,
         downstream_asset.key,
-        upstream_asset.partitions_def,  # pyright: ignore[reportArgumentType]
+        upstream_asset.partitions_def,  # ty: ignore[invalid-argument-type]
         dg.AssetKey("upstream_asset"),
         dg.PartitionKeyRange("a", "c"),
     ) == dg.PartitionKeyRange("a", "c")
@@ -280,7 +280,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
 
 def test_output_context_asset_partitions_time_window():
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             assert context.asset_partitions_time_window == dg.TimeWindow(
                 parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )
@@ -303,7 +303,7 @@ def test_input_context_asset_partitions_time_window():
     partitions_def = dg.DailyPartitionsDefinition(start_date="2021-05-05")
 
     class MyIOManager(dg.IOManager):
-        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, context, _obj):  # ty: ignore[invalid-method-override]
             assert context.asset_partitions_time_window == dg.TimeWindow(
                 parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )
@@ -414,7 +414,7 @@ def test_multi_assets_with_same_partitioning():
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_1,
         downstream_asset_1.key,
-        upstream_asset.partitions_def,  # pyright: ignore[reportArgumentType]
+        upstream_asset.partitions_def,  # ty: ignore[invalid-argument-type]
         dg.AssetKey("upstream_asset_1"),
         dg.PartitionKeyRange("a", "c"),
     ) == dg.PartitionKeyRange("a", "c")
@@ -422,7 +422,7 @@ def test_multi_assets_with_same_partitioning():
     assert get_upstream_partitions_for_partition_range(
         downstream_asset_2,
         downstream_asset_2.key,
-        upstream_asset.partitions_def,  # pyright: ignore[reportArgumentType]
+        upstream_asset.partitions_def,  # ty: ignore[invalid-argument-type]
         dg.AssetKey("upstream_asset_2"),
         dg.PartitionKeyRange("a", "c"),
     ) == dg.PartitionKeyRange("a", "c")
@@ -1114,7 +1114,7 @@ def test_time_partitioned_asset_get_partition_key():
         dg.materialize(
             assets=[daily_asset],
             resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
-            partition_key=daily_partition_definition.get_partition_key(None),  # pyright: ignore[reportArgumentType]
+            partition_key=daily_partition_definition.get_partition_key(None),  # ty: ignore[invalid-argument-type]
         )
 
 

@@ -377,7 +377,12 @@ agent_queue = "us-east-1"
 
 ### Performing a failover
 
-When the primary region (`us-east-1`) becomes unavailable, update `agent_queue` in each affected code location's `pyproject.toml` to the secondary region and redeploy:
+When the primary region (`us-east-1`) becomes unavailable, point affected code locations at the secondary region's queue. You can do this by updating `pyproject.toml` and redeploying, or by editing the code location's agent queue directly in the Dagster+ UI.
+
+<Tabs groupId="failoverMethod">
+<TabItem value="codeChange" label="Code change">
+
+Update `agent_queue` in each affected code location's `pyproject.toml` to the secondary region and redeploy:
 
 ```toml
 # pyproject.toml
@@ -387,6 +392,31 @@ agent_queue = "eu-west-1"
 ```
 
 Once the updated code location is deployed, the secondary region's agent handles all requests. No changes to the agent configuration are needed.
+
+</TabItem>
+<TabItem value="hotReload" label="No code change (hot reload)">
+
+You can also update a code location's agent queue directly from the Dagster+ UI without redeploying:
+
+1. In the Dagster+ UI, navigate to the **Deployment** tab.
+2. In the row for the code location you want to fail over, click the dropdown next to **Redeploy** in the **Actions** column, then select **Modify**.
+
+   ![Screenshot of the Actions dropdown for a code location, with "Modify" highlighted](/images/dagster-plus/deployment/code-locations/modify-code-location.png)
+
+3. In the **Edit location** dialog, update the `agent_queue` value to the secondary region (e.g., `eu-west-1`), then click **Update code location**.
+
+   ![Screenshot of the Edit location dialog with agent_queue set to eu-west-1](/images/dagster-plus/deployment/code-locations/edit-code-location-agent-queue.png)
+
+The secondary region's agent handles requests for the code location immediately, with no redeploy required.
+
+:::warning
+
+Edits made through the **Edit location** dialog persist only until the next deployment from CI/CD, which overwrites the code location's metadata with the values from `pyproject.toml`. To make the failover durable across deploys, also update `agent_queue` in `pyproject.toml` using the **Code change** flow above.
+
+:::
+
+</TabItem>
+</Tabs>
 
 ### Optional: Reduce standby costs
 

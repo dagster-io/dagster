@@ -305,6 +305,7 @@ const buildExternalAssetQueryItem = (asset: {
       __typename: 'AssetKey',
       ...asset.key,
     },
+    storageAddress: null,
     dependencyKeys: [],
     dependedByKeys: [],
   };

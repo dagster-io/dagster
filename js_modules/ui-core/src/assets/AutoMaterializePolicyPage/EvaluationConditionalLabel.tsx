@@ -1,16 +1,21 @@
 import {
   Box,
   ButtonLink,
-  CaptionMono,
   Code,
   Colors,
-  FontFamily,
   Icon,
   MiddleTruncate,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import clsx from 'clsx';
 
+import styles from './css/EvaluationConditionalLabel.module.css';
+import {
+  assetCheckNameForEntityKey,
+  assetKeyForEntityKey,
+  jobNameForEntityKey,
+} from './flattenEvaluations';
 import {EvaluationHistoryStackItem} from './types';
 import {
   EntityKeyFragment as EntityKey,
@@ -50,19 +55,19 @@ export const EvaluationSinceLabel = ({
       })
     : null;
 
-  const assetKey =
-    entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.assetKey : entityKey;
-  const checkName =
-    entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+  const assetKey = assetKeyForEntityKey(entityKey) ?? undefined;
+  const checkName = assetCheckNameForEntityKey(entityKey);
+  const jobName = jobNameForEntityKey(entityKey);
 
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
       <Tooltip content={<TooltipContent text={triggerLabel} />} placement="top">
-        <Operand>{triggerLabel}</Operand>
+        <Code className={styles.operand}>{triggerLabel}</Code>
       </Tooltip>
       <EvaluationSinceMetadata
         assetKey={assetKey}
         checkName={checkName}
+        jobName={jobName}
         detailLabel={
           triggerTime
             ? `${triggerLabel} was last True at ${triggerTime}`
@@ -72,13 +77,14 @@ export const EvaluationSinceLabel = ({
         timestamp={sinceMetadata.triggerTimestamp}
         pushHistory={pushHistory}
       />
-      <Operator>SINCE</Operator>
+      <div className={styles.operator}>SINCE</div>
       <Tooltip content={<TooltipContent text={resetLabel} />} placement="top">
-        <Operand>{resetLabel}</Operand>
+        <Code className={styles.operand}>{resetLabel}</Code>
       </Tooltip>
       <EvaluationSinceMetadata
         assetKey={assetKey}
         checkName={checkName}
+        jobName={jobName}
         detailLabel={
           resetTime
             ? `${resetLabel} last occurred ${resetTime}`
@@ -95,13 +101,15 @@ export const EvaluationSinceLabel = ({
 export const EvaluationSinceMetadata = ({
   assetKey,
   checkName,
+  jobName,
   detailLabel,
   evaluationId,
   timestamp,
   pushHistory,
 }: {
-  assetKey: {path: string[]};
+  assetKey?: {path: string[]};
   checkName?: string;
+  jobName?: string;
   detailLabel: string;
   evaluationId: string | null;
   timestamp: number | null;
@@ -119,8 +127,9 @@ export const EvaluationSinceMetadata = ({
       <ButtonLink
         onClick={() => {
           pushHistory({
-            assetKeyPath: assetKey.path,
+            assetKeyPath: assetKey?.path,
             assetCheckName: checkName,
+            jobName,
             evaluationID: evaluationId,
           });
         }}
@@ -140,11 +149,15 @@ export const EvaluationConditionalLabel = ({segments}: Props) => {
           const inner = segment.slice(1, -1);
           return (
             <Tooltip key={key} content={<TooltipContent text={inner} />} placement="top">
-              <Operand>{inner}</Operand>
+              <Code className={styles.operand}>{inner}</Code>
             </Tooltip>
           );
         }
-        return <Operator key={key}>{segment}</Operator>;
+        return (
+          <div key={key} className={styles.operator}>
+            {segment}
+          </div>
+        );
       })}
     </Box>
   );
@@ -165,7 +178,7 @@ export const EvaluationUserLabel = ({
   return (
     <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
       <Tooltip content={<TooltipContent text={expandedLabel.join(' ')} />} placement="top">
-        <Operand small={small}>{displayLabel}</Operand>
+        <Code className={clsx(styles.operand, small && styles.operandSmall)}>{displayLabel}</Code>
       </Tooltip>
     </Box>
   );
@@ -174,28 +187,9 @@ export const EvaluationUserLabel = ({
 const TooltipContent = ({text}: {text: string}) => {
   return (
     <div style={{maxWidth: '500px', whiteSpace: 'normal'}}>
-      <CaptionMono>{text}</CaptionMono>
+      <Text size={12} family="mono">
+        {text}
+      </Text>
     </div>
   );
 };
-
-const Operand = styled(Code)<{small?: boolean}>`
-  background-color: ${Colors.backgroundGray()};
-  border-radius: 8px;
-  color: ${Colors.textLight()};
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  padding: ${({small}) => (small ? '1' : '4')}px 8px;
-  max-width: 300px;
-  outline: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const Operator = styled.div`
-  font-size: 12px;
-  font-family: ${FontFamily.monospace};
-  color: ${Colors.textDefault()};
-`;

@@ -77,7 +77,7 @@ def new_resources_assets_defs() -> "dg.Definitions":
     )
 
 
-def new_resources_ops_defs() -> "dg.Definitions":
+def new_resources_ops_defs() -> "dg.Definitions":  # ty: ignore[invalid-return-type]
     # start_new_resources_ops_defs
     import dagster as dg
     import requests
@@ -140,7 +140,7 @@ def new_resources_configurable_defs() -> "dg.Definitions":
     )
 
 
-def new_resources_configurable_defs_ops() -> "dg.Definitions":
+def new_resources_configurable_defs_ops() -> "dg.Definitions":  # ty: ignore[invalid-return-type]
     # start_new_resources_configurable_defs_ops
     import dagster as dg
     import requests
@@ -212,7 +212,7 @@ def new_resource_runtime() -> "dg.Definitions":
     @dg.sensor(job=update_data_job)
     def table_update_sensor():
         tables = ...
-        for table_name in tables:
+        for table_name in tables:  # ty: ignore[not-iterable]
             yield dg.RunRequest(
                 run_config=dg.RunConfig(
                     resources={
@@ -340,7 +340,7 @@ def new_resources_env_vars() -> None:
                 password=dg.EnvVar("MY_PASSWORD"),
             )
         },
-    )
+    )  # ty: ignore[invalid-return-type]
 
 
 class GitHubOrganization:
@@ -478,7 +478,9 @@ def io_adapter() -> None:
 
         def handle_output(self, context: dg.OutputContext, obj):
             with open(
-                os.path.join(self.base_path, context.step_key, context.name), "w"
+                os.path.join(self.base_path, context.step_key, context.name),
+                "w",
+                encoding="utf-8",
             ) as fd:
                 fd.write(obj)
 
@@ -489,6 +491,7 @@ def io_adapter() -> None:
                     context.upstream_output.step_key,  # type: ignore
                     context.upstream_output.name,  # type: ignore
                 ),
+                encoding="utf-8",
             ) as fd:
                 return fd.read()
 
@@ -633,7 +636,7 @@ def new_resource_testing_with_context():
             assert (
                 MyContextResource(base_path=None)
                 .with_resource_context(context)
-                .effective_base_path()
+                .effective_base_path()  # ty: ignore[unresolved-attribute]
                 == instance.storage_directory()
             )
 
@@ -684,7 +687,7 @@ def with_complex_state_example() -> None:
 
         def query(self, body: str): ...
 
-    @contextmanager  # type: ignore
+    @contextmanager
     def get_database_connection(username: str, password: str): ...
 
     class MyClientResource(dg.ConfigurableResource):
@@ -729,7 +732,7 @@ def new_resource_testing_with_state_ops() -> None:
         password: str
 
         def get_client(self):
-            return MyClient(self.username, self.password)
+            return MyClient(self.username, self.password)  # ty: ignore[too-many-positional-arguments]
 
     @dg.op
     def my_op(client: MyClientResource):
@@ -803,7 +806,7 @@ def new_resource_on_sensor() -> None:
 
         context = dg.build_sensor_context()
         run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
-        assert len(run_requests) == 3
+        assert len(run_requests) == 3  # ty: ignore[invalid-argument-type]
 
         # end_test_resource_on_sensor
 
@@ -851,13 +854,13 @@ def new_resource_on_schedule() -> None:
 
     def test_process_data_schedule():
         context = dg.build_schedule_context(
-            scheduled_execution_time=datetime.datetime(2020, 1, 1)
+            scheduled_execution_time=datetime.datetime(2020, 1, 1)  # ty: ignore[unresolved-attribute]
         )
         run_request = process_data_schedule(
             context, date_formatter=DateFormatter(format="%Y-%m-%d")
         )
         assert (
-            run_request.run_config["ops"]["fetch_data"]["config"]["date"]
+            run_request.run_config["ops"]["fetch_data"]["config"]["date"]  # ty: ignore[unresolved-attribute]
             == "2020-01-01"
         )
 

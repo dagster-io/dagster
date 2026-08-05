@@ -1,5 +1,6 @@
 import time
 
+import dagster as dg
 from dagster import AssetKey, DagsterEvent, DagsterEventType
 from dagster._core.definitions.asset_checks.asset_check_evaluation import (
     AssetCheckEvaluation,
@@ -13,6 +14,8 @@ from dagster._core.definitions.partitions.subset.default import DefaultPartition
 from dagster._core.event_api import EventLogRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.snap import snapshot_from_execution_plan
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -213,6 +216,27 @@ query RunQuery($runId: ID!) {
             }
             name
         }
+      }
+    }
+  }
+"""
+
+RUN_SELECTION_LIMIT_QUERY = """
+query RunSelectionLimitQuery($runId: ID!, $limit: Int) {
+  runOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        assetSelection(limit: $limit) {
+            path
+        }
+        assetSelectionCount
+        assetCheckSelection(limit: $limit) {
+            assetKey {
+                path
+            }
+            name
+        }
+        assetCheckSelectionCount
       }
     }
   }
@@ -968,6 +992,84 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             if log.dagster_event:
                 assert log.dagster_event.event_type != DagsterEventType.ASSET_MATERIALIZATION.value
 
+    def test_run_asset_selection_limit_and_count(self, graphql_context: WorkspaceRequestContext):
+        # Launch a run that selects two assets and two checks so we can exercise the optional
+        # `limit` argument (including truncation) and the *Count fields used by the runs feed.
+        selector = infer_job_selector(
+            graphql_context,
+            "asset_check_job",
+            asset_selection=[{"path": ["asset_1"]}, {"path": ["check_in_op_asset"]}],
+            asset_check_selection=[
+                {"assetKey": {"path": ["asset_1"]}, "name": "my_check"},
+                {"assetKey": {"path": ["check_in_op_asset"]}, "name": "my_check"},
+            ],
+        )
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "mode": "default",
+                    "stepKeys": None,
+                }
+            },
+        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess", (
+            result.data
+        )
+        run_id = result.data["launchPipelineExecution"]["run"]["runId"]
+
+        # A non-zero limit truncates to a stable prefix (the resolver sorts the unordered selection
+        # before truncating) while the *Count fields still report the untruncated totals.
+        result = execute_dagster_graphql(
+            graphql_context, RUN_SELECTION_LIMIT_QUERY, variables={"runId": run_id, "limit": 1}
+        )
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": [{"path": ["asset_1"]}],
+                "assetSelectionCount": 2,
+                "assetCheckSelection": [{"assetKey": {"path": ["asset_1"]}, "name": "my_check"}],
+                "assetCheckSelectionCount": 2,
+            }
+        }
+
+        # limit=0 truncates the returned lists to empty while the *Count fields are unchanged.
+        result = execute_dagster_graphql(
+            graphql_context, RUN_SELECTION_LIMIT_QUERY, variables={"runId": run_id, "limit": 0}
+        )
+        assert result.data == {
+            "runOrError": {
+                "__typename": "Run",
+                "assetSelection": [],
+                "assetSelectionCount": 2,
+                "assetCheckSelection": [],
+                "assetCheckSelectionCount": 2,
+            }
+        }
+
+        # A null limit (the default) returns the full lists, preserving back-compat. The unlimited
+        # selection is an unordered set, so compare without assuming an order.
+        result = execute_dagster_graphql(
+            graphql_context, RUN_SELECTION_LIMIT_QUERY, variables={"runId": run_id, "limit": None}
+        )
+        run_data = result.data["runOrError"]
+        assert run_data["__typename"] == "Run"
+        assert run_data["assetSelectionCount"] == 2
+        assert run_data["assetCheckSelectionCount"] == 2
+        assert sorted(run_data["assetSelection"], key=lambda key: key["path"]) == [
+            {"path": ["asset_1"]},
+            {"path": ["check_in_op_asset"]},
+        ]
+        assert sorted(
+            run_data["assetCheckSelection"],
+            key=lambda handle: (handle["assetKey"]["path"], handle["name"]),
+        ) == [
+            {"assetKey": {"path": ["asset_1"]}, "name": "my_check"},
+            {"assetKey": {"path": ["check_in_op_asset"]}, "name": "my_check"},
+        ]
+
     def test_launch_subset_asset_and_included_check(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(
             graphql_context,
@@ -1451,6 +1553,66 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
         assert res.data["pipelineRunOrError"]["assetChecks"] == [
             {"name": "my_check", "assetKey": {"path": ["one"]}},
             {"name": "my_other_check", "assetKey": {"path": ["one"]}},
+        ]
+
+    def test_run_asset_checks_planned_and_unplanned(self, graphql_context: WorkspaceRequestContext):
+        # A run that targets every check on its assets stores asset_check_selection=None, so the
+        # planned checks must be read from the run's execution plan snapshot rather than the event
+        # log. A run can also emit evaluations for checks that were not planned, which must come
+        # from the event log. The resolver unions both sources.
+        @dg.asset
+        def my_asset():
+            return 1
+
+        @dg.asset_check(asset=my_asset)
+        def my_check():
+            return dg.AssetCheckResult(passed=True)
+
+        defs = dg.Definitions(assets=[my_asset], asset_checks=[my_check])
+        job_def = defs.get_implicit_global_asset_job_def()
+        job_snapshot = job_def.get_job_snapshot()
+        execution_plan_snapshot = snapshot_from_execution_plan(
+            create_execution_plan(job_def), job_snapshot.snapshot_id
+        )
+
+        run = create_run_for_test(
+            graphql_context.instance,
+            job_name=job_def.name,
+            job_snapshot=job_snapshot,
+            execution_plan_snapshot=execution_plan_snapshot,
+            asset_check_selection=None,
+        )
+
+        # With no events stored, the planned check comes solely from the execution plan snapshot.
+        res = execute_dagster_graphql(
+            graphql_context,
+            RUN_ASSET_CHECKS_QUERY,
+            variables={"runId": run.run_id},
+        )
+        assert res.data["pipelineRunOrError"]["assetChecks"] == [
+            {"name": "my_check", "assetKey": {"path": ["my_asset"]}},
+        ]
+
+        # An evaluation for a check that was never planned must still be surfaced from the event log.
+        graphql_context.instance.event_log_storage.store_event(
+            _evaluation_event(
+                run.run_id,
+                AssetCheckEvaluation(
+                    asset_key=AssetKey(["my_asset"]),
+                    check_name="my_unplanned_check",
+                    passed=True,
+                ),
+            )
+        )
+
+        res = execute_dagster_graphql(
+            graphql_context,
+            RUN_ASSET_CHECKS_QUERY,
+            variables={"runId": run.run_id},
+        )
+        assert res.data["pipelineRunOrError"]["assetChecks"] == [
+            {"name": "my_check", "assetKey": {"path": ["my_asset"]}},
+            {"name": "my_unplanned_check", "assetKey": {"path": ["my_asset"]}},
         ]
 
     def test_partitioned_asset_check_executions(self, graphql_context: WorkspaceRequestContext):

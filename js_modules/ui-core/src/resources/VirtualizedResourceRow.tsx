@@ -1,9 +1,19 @@
-import {Box, Caption, Colors, Icon, MiddleTruncate, Mono, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  HeaderCell,
+  HeaderRow,
+  Icon,
+  MiddleTruncate,
+  Row,
+  RowCell,
+  Text,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {succinctType} from './ResourceRoot';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
+import styles from './css/VirtualizedResourceRow.module.css';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesQuery.types';
@@ -39,8 +49,8 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
     sensorsUsing.length;
 
   return (
-    <Row $height={height} $start={start}>
-      <RowGrid border="bottom">
+    <Row height={height} start={start}>
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <Box flex={{direction: 'column', gap: 4}}>
             <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
@@ -57,28 +67,26 @@ export const VirtualizedResourceRow = (props: ResourceRowProps) => {
                 maxWidth: '100%',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Caption
-                style={{
-                  color: Colors.textLight(),
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <Text size={12} color="textLight">
                 {description}
-              </Caption>
+              </Text>
             </div>
           </Box>
         </RowCell>
         <RowCell>
           <Tooltip content={resourceType}>
-            <Mono>{resourceTypeSuccinct}</Mono>
+            <Text size={14} family="mono">
+              {resourceTypeSuccinct}
+            </Text>
           </Tooltip>
         </RowCell>
         <RowCell>
           <Link to={workspacePathFromAddress(repoAddress, `/resources/${name}/uses`)}>{uses}</Link>
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -92,9 +100,3 @@ export const VirtualizedResourceHeader = () => {
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;

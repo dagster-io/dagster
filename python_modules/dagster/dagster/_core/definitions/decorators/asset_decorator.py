@@ -12,6 +12,7 @@ from dagster._annotations import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import (
     AssetDep,
     CoercibleToAssetDep,
@@ -88,7 +89,9 @@ def asset(
     op_tags: Mapping[str, Any] | None = ...,
     group_name: str | None = ...,
     output_required: bool = ...,
-    automation_condition: AutomationCondition[AssetKey] | None = ...,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = ...,
     backfill_policy: BackfillPolicy | None = ...,
     retry_policy: RetryPolicy | None = ...,
     code_version: str | None = ...,
@@ -174,7 +177,9 @@ def asset(
     op_tags: Mapping[str, Any] | None = None,
     group_name: str | None = None,
     output_required: bool = True,
-    automation_condition: AutomationCondition[AssetKey] | None = None,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = None,
     freshness_policy: FreshnessPolicy | None = None,
     backfill_policy: BackfillPolicy | None = None,
     retry_policy: RetryPolicy | None = None,
@@ -383,7 +388,7 @@ def resolve_asset_key_and_name_for_decorator(
         )
     key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
     key = AssetKey.from_coercible(key) if key else None
-    assigned_name = name or fn.__name__
+    assigned_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
     return (
         (
             # the filter here appears unnecessary per typing, but this exists
@@ -786,7 +791,9 @@ def graph_asset(
     kinds: AbstractSet[str] | None = None,
     legacy_freshness_policy: LegacyFreshnessPolicy | None = ...,
     auto_materialize_policy: AutoMaterializePolicy | None = ...,
-    automation_condition: AutomationCondition[AssetKey] | None = ...,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = ...,
     backfill_policy: BackfillPolicy | None = ...,
     resource_defs: Mapping[str, ResourceDefinition] | None = ...,
     check_specs: Sequence[AssetCheckSpec] | None = None,
@@ -820,7 +827,9 @@ def graph_asset(
     metadata: RawMetadataMapping | None = None,
     tags: Mapping[str, str] | None = None,
     owners: Sequence[str] | None = None,
-    automation_condition: AutomationCondition[AssetKey] | None = None,
+    automation_condition: AutomationCondition[AssetKey]
+    | AutomationCondition[AssetOrCheckKey]
+    | None = None,
     backfill_policy: BackfillPolicy | None = None,
     resource_defs: Mapping[str, ResourceDefinition] | None = None,
     check_specs: Sequence[AssetCheckSpec] | None = None,
@@ -901,8 +910,8 @@ def graph_asset(
     only_allow_hidden_params_in_kwargs(graph_asset, kwargs)
 
     if compose_fn is None:
-        return lambda fn: graph_asset(
-            fn,  # type: ignore
+        return lambda fn: graph_asset(  # ty: ignore[no-matching-overload]
+            fn,
             name=name,
             description=description,
             ins=ins,
@@ -1014,7 +1023,7 @@ def graph_asset_no_defaults(
         name=out_asset_key.to_python_identifier(),
         description=description,
         config=config,
-        ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},
+        ins={input_name: GraphIn() for (input_name, _) in named_ins.values()},
         out=combined_outs_by_output_name,
     )(compose_fn)
     return AssetsDefinition.from_graph(
@@ -1115,10 +1124,10 @@ def graph_multi_asset(
         }
 
         op_graph = graph(
-            name=name or fn.__name__,
+            name=name or fn.__name__,  # ty: ignore[unresolved-attribute]
             out=combined_outs_by_output_name,
             config=config,
-            ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},
+            ins={input_name: GraphIn() for (input_name, _) in named_ins.values()},
         )(fn)
 
         # source metadata from the AssetOuts (if any)

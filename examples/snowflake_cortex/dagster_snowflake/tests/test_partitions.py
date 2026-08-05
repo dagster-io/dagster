@@ -27,7 +27,7 @@ class TestPartitionedStories:
         assert isinstance(result, MaterializeResult)
         assert result.metadata is not None
 
-        assert result.metadata["stories_in_staging"].value == 10
+        assert result.metadata["stories_in_staging"].value == 10  # ty: ignore[unresolved-attribute]
         assert mock_cursor.execute.called
 
 
@@ -52,9 +52,9 @@ class TestPartitionedAnalytics:
         assert isinstance(result, MaterializeResult)
         assert result.metadata is not None
 
-        assert result.metadata["partition_date"].value == "2024-01-15"
-        assert result.metadata["total_stories"].value == 100
-        assert result.metadata["data_engineering_count"].value == 25
+        assert result.metadata["partition_date"].value == "2024-01-15"  # ty: ignore[unresolved-attribute]
+        assert result.metadata["total_stories"].value == 100  # ty: ignore[unresolved-attribute]
+        assert result.metadata["data_engineering_count"].value == 25  # ty: ignore[unresolved-attribute]
 
     def test_daily_entity_summary_with_partition(self, mock_snowflake_resource):
         """Test daily entity summary with partition."""
@@ -74,6 +74,6 @@ class TestPartitionedAnalytics:
         assert isinstance(result, MaterializeResult)
         assert result.metadata is not None
 
-        assert result.metadata["partition_date"].value == "2024-01-15"
-        assert result.metadata["total_stories"].value == 50
-        assert result.metadata["stories_with_skills"].value == 25
+        assert result.metadata["partition_date"].value == "2024-01-15"  # ty: ignore[unresolved-attribute]
+        assert result.metadata["total_stories"].value == 50  # ty: ignore[unresolved-attribute]
+        assert result.metadata["stories_with_skills"].value == 25  # ty: ignore[unresolved-attribute]

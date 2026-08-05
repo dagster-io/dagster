@@ -1,5 +1,7 @@
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.io_manager.pandas import PandasIcebergIOManager
+from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
+from dagster_iceberg.io_manager.pandas import (
+    PandasIcebergIOManager,  # ty: ignore[unresolved-import]
+)
 
 from dagster import Definitions
 
@@ -16,4 +18,4 @@ resources = {
         namespace="dagster",
     )
 }
-defs = Definitions(resources=resources, assets=[...])
+defs = Definitions(resources=resources, assets=[...])  # ty: ignore[invalid-argument-type]

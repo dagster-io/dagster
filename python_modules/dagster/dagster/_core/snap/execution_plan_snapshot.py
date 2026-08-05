@@ -3,7 +3,8 @@ from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.execution.plan.inputs import (
@@ -110,6 +111,19 @@ class ExecutionPlanSnapshot(
         return asset_keys
 
     @property
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+        asset_check_keys = set()
+
+        for step in self.steps:
+            if step.key in self.step_keys_to_execute:
+                for output in step.outputs:
+                    asset_check_key = check.not_none(output.properties).asset_check_key
+                    if asset_check_key:
+                        asset_check_keys.add(asset_check_key)
+
+        return asset_check_keys
+
+    @property
     def step_deps(self):
         # Construct dependency dictionary (downstream to upstreams)
         deps = {step.key: set() for step in self.steps}
@@ -185,7 +199,7 @@ class ExecutionStepSnap(
         )
 
     @property
-    def required_entity_keys(self) -> AbstractSet[EntityKey]:
+    def required_entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
         """The set of entity keys on required outputs for this step."""
         return {
             output.entity_key
@@ -194,7 +208,7 @@ class ExecutionStepSnap(
         }
 
     @property
-    def entity_keys(self) -> AbstractSet[EntityKey]:
+    def entity_keys(self) -> AbstractSet[AssetOrCheckKey]:
         """The set of entity keys on all outputs for this step."""
         return {output.entity_key for output in self.outputs if output.entity_key}
 
@@ -268,7 +282,7 @@ class ExecutionStepOutputSnap(
         )
 
     @property
-    def entity_key(self) -> EntityKey | None:
+    def entity_key(self) -> AssetOrCheckKey | None:
         if self.properties:
             return self.properties.asset_key or self.properties.asset_check_key
         return None

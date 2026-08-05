@@ -1,0 +1,99 @@
+.ticksWrapper {
+  position: relative;
+  height: 100px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--color-keyline-default);
+}
+
+.timeAxisWrapper {
+  height: 24px;
+}
+
+.tick {
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  height: 80px;
+  will-change: transform, width;
+  border-radius: 2px;
+  color: var(--color-background-default);
+}
+
+.tick div {
+  place-content: center;
+  display: grid;
+}
+
+.tickSuccess {
+  background: var(--color-accent-green);
+}
+
+.tickSuccess:hover {
+  background: var(--color-accent-green-hover);
+}
+
+.tickFailure {
+  background: var(--color-accent-red);
+}
+
+.tickFailure:hover {
+  background: var(--color-accent-red-hover);
+}
+
+.tickStarted {
+  background: var(--color-accent-lavender);
+}
+
+.tickStarted:hover {
+  background: var(--color-accent-lavender-hover);
+}
+
+.tickSkipped {
+  background: var(--color-background-disabled);
+}
+
+.tickSkipped:hover {
+  background: var(--color-accent-gray-hover);
+}
+
+.gridTick {
+  position: absolute;
+  top: 0;
+  height: 124px;
+  will-change: transform;
+}
+
+.gridTickLine {
+  position: absolute;
+  top: 0;
+  height: 108px;
+  width: 1px;
+  background: var(--color-keyline-default);
+}
+
+.gridTickTime {
+  height: 16px;
+  position: absolute;
+  bottom: 0;
+  width: 100px;
+  margin-left: -24px;
+}
+
+.nowIndicator {
+  position: absolute;
+  top: 0;
+  height: 126px;
+  width: 2px;
+  background: var(--color-accent-primary);
+}
+
+.nowIndicator::after {
+  content: 'Now';
+  position: absolute;
+  left: 0;
+  background: var(--color-accent-primary);
+  color: var(--color-accent-reversed);
+  bottom: 0;
+  font-size: 12px;
+  padding: 3px 4px;
+}

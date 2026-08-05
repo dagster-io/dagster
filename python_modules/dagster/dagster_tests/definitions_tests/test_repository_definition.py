@@ -31,7 +31,7 @@ def create_single_node_job(name, called):
 def test_repo_lazy_definition():
     called = defaultdict(int)
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def lazy_repo():
         return {
             "jobs": {
@@ -78,7 +78,7 @@ def test_dupe_op_repo_definition():
     def noop2():
         pass
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def error_repo():
         return {
             "jobs": {
@@ -130,7 +130,7 @@ def test_conflict():
 def test_key_mismatch():
     called = defaultdict(int)
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def some_repo():
         return {"jobs": {"foo": lambda: create_single_node_job("bar", called)}}
 
@@ -143,7 +143,7 @@ def test_non_job_in_jobs():
         dg.DagsterInvalidDefinitionError, match="all elements of list must be of type"
     ):
 
-        @dg.repository  # pyright: ignore[reportArgumentType]
+        @dg.repository
         def _some_repo():
             return ["not-a-job"]
 
@@ -168,7 +168,7 @@ def test_bad_schedule():
 
 
 def test_bad_sensor():
-    @dg.sensor(  # pyright: ignore[reportArgumentType]
+    @dg.sensor(
         job_name="foo",
     )
     def foo_sensor(_):
@@ -231,7 +231,7 @@ def test_direct_sensor_target():
     def wonder():
         wow()
 
-    @dg.sensor(job=wonder)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=wonder)
     def direct_sensor(_):
         return {}
 
@@ -249,7 +249,7 @@ def test_direct_sensor_unresolved_target():
     def foo():
         return None
 
-    @dg.sensor(job=unresolved_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=unresolved_job)
     def direct_sensor(_):
         return {}
 
@@ -271,7 +271,7 @@ def test_target_dupe_job():
 
     w_job = wonder.to_job()
 
-    @dg.sensor(job=w_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=w_job)
     def direct_sensor(_):
         return {}
 
@@ -289,7 +289,7 @@ def test_target_dupe_unresolved():
     def foo():
         return None
 
-    @dg.sensor(job=unresolved_job)  # pyright: ignore[reportArgumentType]
+    @dg.sensor(job=unresolved_job)
     def direct_sensor(_):
         return {}
 
@@ -492,7 +492,7 @@ def test_job_validation():
         match=r"Object mapped to my_job is not an instance of JobDefinition or GraphDefinition.",
     ):
 
-        @dg.repository  # pyright: ignore[reportArgumentType]
+        @dg.repository
         def _my_repo():
             return {"jobs": {"my_job": "blah"}}
 
@@ -550,7 +550,7 @@ def test_lazy_graph():
     def my_graph():
         pass
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def jobs():
         return {
             "jobs": {
@@ -598,7 +598,7 @@ def test_bad_coerce():
         match="resource with key 'x' required by op 'foo' was not provided",
     ):
 
-        @dg.repository  # pyright: ignore[reportArgumentType]
+        @dg.repository
         def _fails():
             return {
                 "jobs": {"bar": bar},
@@ -610,7 +610,7 @@ def test_bad_resolve():
         dg.DagsterInvalidSubsetError, match=r"AssetKey\(s\) \['foo'\] were selected"
     ):
 
-        @dg.repository  # pyright: ignore[reportArgumentType]
+        @dg.repository
         def _fails():
             return {"jobs": {"tbd": dg.define_asset_job(name="tbd", selection="foo")}}
 
@@ -631,7 +631,7 @@ def test_source_assets():
 def test_assets_checks():
     foo = dg.SourceAsset(key=dg.AssetKey("foo"))
 
-    @dg.asset_check(asset=foo)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=foo)
     def foo_check():
         return True
 
@@ -643,7 +643,7 @@ def test_assets_checks():
 
 
 def test_direct_assets():
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
 
@@ -725,7 +725,7 @@ def test_direct_asset_unsatified_resource_transitive():
 
 
 def test_source_asset_unsatisfied_resource():
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
 
@@ -744,7 +744,7 @@ def test_source_asset_unsatisfied_resource():
 
 
 def test_source_asset_unsatisfied_resource_transitive():
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
 
@@ -794,7 +794,7 @@ def test_source_asset_resource_conflicts():
     def the_asset():
         pass
 
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
 
@@ -1110,15 +1110,15 @@ def test_default_executor_jobs():
 
     unresolved_job = dg.define_asset_job("asset_job", selection="*")
 
-    @dg.executor  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.executor
     def custom_executor(_):
         pass
 
-    @dg.executor  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.executor
     def other_custom_executor(_):
         pass
 
-    @dg.job(executor_def=custom_executor)  # pyright: ignore[reportArgumentType]
+    @dg.job(executor_def=custom_executor)
     def op_job_with_executor():
         pass
 
@@ -1134,7 +1134,7 @@ def test_default_executor_jobs():
     def the_job():
         pass
 
-    @dg.repository(default_executor_def=other_custom_executor)  # pyright: ignore[reportArgumentType]
+    @dg.repository(default_executor_def=other_custom_executor)
     def the_repo():
         return [
             the_asset,
@@ -1167,9 +1167,9 @@ def test_list_load():
 
     source = dg.SourceAsset(key=dg.AssetKey("a_source_asset"))
 
-    all_assets: Sequence[dg.AssetsDefinition, dg.SourceAsset] = [asset1, asset2, source]  # pyright: ignore[reportInvalidTypeArguments,reportAssignmentType]
+    all_assets: Sequence[dg.AssetsDefinition, dg.SourceAsset] = [asset1, asset2, source]  # ty: ignore[invalid-type-arguments]
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def assets_repo():
         return [all_assets]
 
@@ -1197,7 +1197,7 @@ def test_list_load():
 
     job_list = [job1, job2]
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def job_repo():
         return [job_list]
 
@@ -1217,7 +1217,7 @@ def test_list_load():
 
     combo_list = [asset3, job3]
 
-    @dg.repository  # pyright: ignore[reportArgumentType]
+    @dg.repository
     def combo_repo():
         return [combo_list]
 
@@ -1238,12 +1238,12 @@ def test_multi_nested_list():
 
     source = dg.SourceAsset(key=dg.AssetKey("a_source_asset"))
 
-    layer_1: Sequence[dg.AssetsDefinition, dg.SourceAsset] = [asset2, source]  # pyright: ignore[reportInvalidTypeArguments,reportAssignmentType]
+    layer_1: Sequence[dg.AssetsDefinition, dg.SourceAsset] = [asset2, source]  # ty: ignore[invalid-type-arguments]
     layer_2 = [layer_1, asset1]
 
     with pytest.raises(dg.DagsterInvalidDefinitionError, match="Bad return value from repository"):
 
-        @dg.repository  # pyright: ignore[reportArgumentType]
+        @dg.repository
         def assets_repo():
             return [layer_2]
 
@@ -1286,11 +1286,11 @@ def test_scheduled_partitioned_asset_job():
 
 
 def test_default_loggers_repo():
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger  # ty: ignore[no-matching-overload]
     def basic():
         pass
 
-    @dg.repository(default_logger_defs={"foo": basic})  # pyright: ignore[reportArgumentType]
+    @dg.repository(default_logger_defs={"foo": basic})
     def the_repo():
         return []
 
@@ -1304,11 +1304,11 @@ def test_default_loggers_assets_repo():
     def the_asset():
         pass
 
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger  # ty: ignore[no-matching-overload]
     def basic():
         pass
 
-    @dg.repository(default_logger_defs={"foo": basic})  # pyright: ignore[reportArgumentType]
+    @dg.repository(default_logger_defs={"foo": basic})
     def the_repo():
         return [no_logger_provided, the_asset]
 
@@ -1324,15 +1324,15 @@ def test_default_loggers_for_jobs():
 
     unresolved_job = dg.define_asset_job("asset_job", selection="*")
 
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger
     def custom_logger(_):
         pass
 
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger
     def other_custom_logger(_):
         pass
 
-    @dg.job(logger_defs={"bar": custom_logger})  # pyright: ignore[reportArgumentType]
+    @dg.job(logger_defs={"bar": custom_logger})
     def job_with_loggers():
         pass
 
@@ -1344,7 +1344,7 @@ def test_default_loggers_for_jobs():
     def job_explicitly_specifies_default_loggers():
         pass
 
-    @dg.repository(default_logger_defs={"foo": other_custom_logger})  # pyright: ignore[reportArgumentType]
+    @dg.repository(default_logger_defs={"foo": other_custom_logger})
     def the_repo():
         return [
             the_asset,
@@ -1366,19 +1366,19 @@ def test_default_loggers_for_jobs():
 
 
 def test_default_loggers_keys_conflict():
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger  # ty: ignore[no-matching-overload]
     def some_logger():
         pass
 
-    @dg.logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.logger  # ty: ignore[no-matching-overload]
     def other_logger():
         pass
 
-    @dg.job(logger_defs={"foo": some_logger})  # pyright: ignore[reportArgumentType]
+    @dg.job(logger_defs={"foo": some_logger})
     def the_job():
         pass
 
-    @dg.repository(default_logger_defs={"foo": other_logger})  # pyright: ignore[reportArgumentType]
+    @dg.repository(default_logger_defs={"foo": other_logger})
     def the_repo():
         return [the_job]
 
@@ -1481,3 +1481,106 @@ def test_external_job_assets() -> None:
         return [my_job, my_asset]
 
     assert repo.assets_defs_by_key[my_asset.key] == my_asset
+
+
+def test_repository_asset_graph_contains_automatable_job_nodes() -> None:
+    from dagster._core.definitions.asset_key import AssetJobKey
+    from dagster._core.definitions.assets.graph.base_asset_graph import AssetJobNode
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    @dg.asset
+    def asset_b(asset_a):
+        return 2
+
+    conditioned = dg.define_asset_job(
+        name="conditioned_job",
+        selection=[asset_a, asset_b],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
+    )
+    unconditioned = dg.define_asset_job(name="unconditioned_job", selection=[asset_a])
+
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[conditioned, unconditioned])
+    graph = defs.get_repository_def().asset_graph
+
+    # only jobs with an automation condition become graph nodes
+    assert graph.has(AssetJobKey("conditioned_job"))
+    assert not graph.has(AssetJobKey("unconditioned_job"))
+
+    node = graph.get(AssetJobKey("conditioned_job"))
+    assert isinstance(node, AssetJobNode)
+    assert node.automation_condition is not None
+    assert node.asset_keys == {asset_a.key, asset_b.key}
+
+
+def test_directly_provided_job_definition_with_automation_condition() -> None:
+    """A resolved JobDefinition (not an UnresolvedAssetJobDefinition) carrying an
+    automation condition also becomes an asset-graph job node.
+    """
+    from dagster._core.definitions.asset_key import AssetJobKey
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+    from dagster._core.definitions.assets.graph.base_asset_graph import AssetJobNode
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    resolved_job = dg.define_asset_job(
+        name="direct_job",
+        selection=[asset_a],
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
+    ).resolve(asset_graph=AssetGraph.from_assets([asset_a]))
+    assert isinstance(resolved_job, dg.JobDefinition)
+
+    defs = dg.Definitions(assets=[asset_a], jobs=[resolved_job])
+    graph = defs.get_repository_def().asset_graph
+
+    assert graph.has(AssetJobKey("direct_job"))
+    node = graph.get(AssetJobKey("direct_job"))
+    assert isinstance(node, AssetJobNode)
+    assert node.automation_condition is not None
+    assert node.asset_keys == {asset_a.key}
+
+    # node list is cached: repeated access returns the identical object
+    repo_data = defs.get_repository_def()._repository_data  # noqa: SLF001
+    assert repo_data.get_asset_job_nodes() is repo_data.get_asset_job_nodes()
+
+
+def test_custom_repository_data_has_no_job_nodes() -> None:
+    """The base RepositoryData.get_asset_job_nodes default keeps custom (non-caching)
+    RepositoryData subclasses working: no job nodes, no errors.
+    """
+    from dagster._core.definitions.repository_definition import RepositoryData
+
+    @dg.op
+    def do_something():
+        pass
+
+    @dg.job
+    def some_job():
+        do_something()
+
+    class CustomRepositoryData(RepositoryData):
+        def get_all_jobs(self):
+            return [some_job]
+
+        def get_top_level_resources(self):
+            return {}
+
+        def get_env_vars_by_top_level_resource(self):
+            return {}
+
+    repo_data = CustomRepositoryData()
+    assert repo_data.get_asset_job_nodes() == []
+
+    @dg.repository
+    def custom_repo():
+        return CustomRepositoryData()
+
+    assert list(custom_repo.asset_graph.asset_job_nodes) == []

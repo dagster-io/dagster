@@ -9,7 +9,7 @@
     min-height: 24px;
     display: flex;
     align-items: center;
-    font-family: var(--font-family-default);
+    font-family: var(--font-default);
     font-size: 12px;
     border-radius: 8px;
   }

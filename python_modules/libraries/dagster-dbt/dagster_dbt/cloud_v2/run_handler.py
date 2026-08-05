@@ -57,6 +57,9 @@ class DbtCloudJobRunHandler:
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run
 
+    def cancel(self) -> None:
+        self.client.cancel_run(run_id=self.run_id)
+
     def get_run_results(self) -> Mapping[str, Any]:
         return self.client.get_run_results_json(run_id=self.run_id)
 
@@ -216,8 +219,9 @@ class DbtCloudJobRunResults:
                         get_completed_at_timestamp(result=result)
                     ),
                 }
-                if result["failures"] is not None:
-                    metadata["dagster_dbt/failed_row_count"] = result["failures"]
+                failure_count = result.get("failures")
+                if failure_count is not None:
+                    metadata["dagster_dbt/failed_row_count"] = failure_count
 
                 asset_check_key = get_asset_check_key_for_test(
                     manifest=manifest,

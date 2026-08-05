@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled, {CSSObject} from 'styled-components';
 
 import {gql} from '../apollo-client';
 import {labelForFacet} from './AssetNodeFacets';
@@ -68,7 +67,7 @@ export const AssetNodeWithLiveData = ({
   assetHealthEnabled: boolean;
 }) => {
   return (
-    <AssetNodeContainer $selected={selected}>
+    <div className={styles.assetNodeContainer}>
       {facets.has(AssetNodeFacet.UnsyncedTag) ? (
         <Box
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
@@ -85,16 +84,24 @@ export const AssetNodeWithLiveData = ({
       ) : (
         <div style={{minHeight: ASSET_NODE_HOVER_EXPAND_HEIGHT}} />
       )}
-      <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+      <div
+        className={clsx(
+          styles.assetNodeBox,
+          definition.isMaterializable ? styles.materializable : styles.source,
+          selected && styles.selected,
+        )}
+      >
         <AssetNameRow definition={definition} />
         {facets.has(AssetNodeFacet.Description) && (
           <AssetNodeRow label={null}>
             {definition.description ? (
-              <AssetDescription $color={Colors.textDefault()}>
+              <div className={styles.assetDescription} style={{color: Colors.textDefault()}}>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
-              </AssetDescription>
+              </div>
             ) : (
-              <AssetDescription $color={Colors.textDefault()}>No description</AssetDescription>
+              <div className={styles.assetDescription} style={{color: Colors.textDefault()}}>
+                No description
+              </div>
             )}
           </AssetNodeRow>
         )}
@@ -146,7 +153,7 @@ export const AssetNodeWithLiveData = ({
           ) : (
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
           ))}
-      </AssetNodeBox>
+      </div>
       {facets.has(AssetNodeFacet.KindTag) && (
         <Box
           style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
@@ -162,7 +169,7 @@ export const AssetNodeWithLiveData = ({
           ))}
         </Box>
       )}
-    </AssetNodeContainer>
+    </div>
   );
 };
 
@@ -179,13 +186,14 @@ const AssetNodeStatusRow = ({
     liveData,
   });
   return (
-    <AssetNodeRowBox
+    <Box
+      className={styles.assetNodeRowBox}
       background={background}
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
     >
       {content}
-    </AssetNodeRowBox>
+    </Box>
   );
 };
 
@@ -341,14 +349,15 @@ export const AssetNodeRow = ({
   children: React.ReactNode | null;
 }) => {
   return (
-    <AssetNodeRowBox
+    <Box
+      className={styles.assetNodeRowBox}
       padding={{horizontal: 8}}
       flex={{justifyContent: 'space-between', alignItems: 'center', gap: 6}}
       border="bottom"
     >
       {label ? <span style={{color: Colors.textLight()}}>{label}</span> : undefined}
       {children ? children : <span style={{color: Colors.textLighter()}}>–</span>}
-    </AssetNodeRowBox>
+    </Box>
   );
 };
 
@@ -439,7 +448,12 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;
 
   return (
-    <AssetName $isMaterializable={definition.isMaterializable}>
+    <div
+      className={clsx(
+        styles.assetName,
+        definition.isMaterializable ? styles.materializable : styles.source,
+      )}
+    >
       <span style={{marginTop: 1}}>
         <Icon name={definition.isMaterializable ? 'asset' : 'source_asset'} />
       </span>
@@ -453,23 +467,9 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
         })}
       </div>
       <div style={{flex: 1}} />
-    </AssetName>
+    </div>
   );
 };
-
-export const AssetNodeRowBox = styled(Box)`
-  white-space: nowrap;
-  line-height: 12px;
-  font-size: 12px;
-  height: 24px;
-  a:hover {
-    text-decoration: none;
-  }
-  &:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-  }
-`;
 
 export const AssetNodeContextMenuWrapper = React.memo(
   ({children, ...menuProps}: AssetNodeMenuProps & {children: React.ReactNode}) => {
@@ -549,27 +549,43 @@ export const AssetNodeMinimalWithHealth = ({
   }
 
   return (
-    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+    <div
+      className={clsx(styles.assetNodeContainer, styles.minimalAssetNodeContainer)}
+      style={{paddingTop}}
+    >
       <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
-        <MinimalAssetNodeBox
-          $selected={selected}
-          $isMaterializable={isMaterializable}
-          $background={backgroundColor}
-          $border={borderColor}
-          $inProgress={!!inProgressRuns}
-          $isQueued={!!queuedRuns}
-          $height={nodeHeight}
+        <div
+          className={clsx(
+            styles.minimalAssetNodeBox,
+            isMaterializable ? styles.materializable : styles.source,
+            selected && styles.selected,
+            !!inProgressRuns && styles.inProgress,
+            !!queuedRuns && styles.queued,
+          )}
+          style={
+            {
+              '--minimal-bg': backgroundColor,
+              '--minimal-border': borderColor,
+              height: nodeHeight,
+            } as React.CSSProperties
+          }
         >
           {isChanged ? (
             <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
           ) : null}
           {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-          <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
+          <div
+            className={clsx(
+              styles.assetName,
+              styles.minimalName,
+              isMaterializable ? styles.materializable : styles.source,
+            )}
+          >
             {withMiddleTruncation(displayName, {maxLength: 18})}
-          </MinimalName>
-        </MinimalAssetNodeBox>
+          </div>
+        </div>
       </Tooltip>
-    </MinimalAssetNodeContainer>
+    </div>
   );
 };
 
@@ -613,27 +629,43 @@ export const AssetNodeMinimalWithoutHealth = ({
   }
 
   return (
-    <MinimalAssetNodeContainer $selected={selected} style={{paddingTop}}>
+    <div
+      className={clsx(styles.assetNodeContainer, styles.minimalAssetNodeContainer)}
+      style={{paddingTop}}
+    >
       <Tooltip content={displayName} canShow={displayName.length > 14} position="top">
-        <MinimalAssetNodeBox
-          $selected={selected}
-          $isMaterializable={isMaterializable}
-          $background={background}
-          $border={border}
-          $inProgress={!!inProgressRuns}
-          $isQueued={!!queuedRuns}
-          $height={nodeHeight}
+        <div
+          className={clsx(
+            styles.minimalAssetNodeBox,
+            isMaterializable ? styles.materializable : styles.source,
+            selected && styles.selected,
+            !!inProgressRuns && styles.inProgress,
+            !!queuedRuns && styles.queued,
+          )}
+          style={
+            {
+              '--minimal-bg': background,
+              '--minimal-border': border,
+              height: nodeHeight,
+            } as React.CSSProperties
+          }
         >
           {isChanged ? (
             <MinimalNodeChangedDot changedReasons={definition.changedReasons} assetKey={assetKey} />
           ) : null}
           {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-          <MinimalName style={{fontSize: 24}} $isMaterializable={isMaterializable}>
+          <div
+            className={clsx(
+              styles.assetName,
+              styles.minimalName,
+              isMaterializable ? styles.materializable : styles.source,
+            )}
+          >
             {withMiddleTruncation(displayName, {maxLength: 18})}
-          </MinimalName>
-        </MinimalAssetNodeBox>
+          </div>
+        </div>
       </Tooltip>
-    </MinimalAssetNodeContainer>
+    </div>
   );
 };
 
@@ -681,49 +713,8 @@ export const ASSET_NODE_FRAGMENT = gql`
 
 export const ASSET_NODE_VERTICAL_MARGIN = 6;
 
-export const AssetNodeContainer = styled.div<{$selected: boolean}>`
-  user-select: none;
-  cursor: pointer;
-
-  & *:focus {
-    outline: 0;
-  }
-`;
-
-const AssetNodeShowOnHover = styled.span`
-  display: none;
-`;
-
-export const AssetNodeBox = styled.div<{
-  $isMaterializable: boolean;
-  $selected: boolean;
-  $noScale?: boolean;
-}>`
-  ${(p) =>
-    !p.$isMaterializable
-      ? `border: 2px dashed ${p.$selected ? Colors.accentGrayHover() : Colors.accentGray()}`
-      : `border: 2px solid ${
-          p.$selected ? Colors.lineageNodeBorderSelected() : Colors.lineageNodeBorder()
-        }`};
-  ${(p) => p.$selected && `outline: 2px solid ${Colors.lineageNodeBorderSelected()}`};
-
-  background: ${Colors.backgroundDefault()};
-  border-radius: 10px;
-  position: relative;
-  margin: ${ASSET_NODE_VERTICAL_MARGIN}px 0;
-  transition: all 150ms linear;
-  &:hover {
-    ${(p) => !p.$selected && `border: 2px solid ${Colors.lineageNodeBorderHover()};`};
-    box-shadow: ${Colors.shadowDefault()} 0px 1px 4px 0px;
-    scale: ${(p) => (p.$noScale ? '1' : '1.03')};
-    ${AssetNodeShowOnHover} {
-      display: initial;
-    }
-  }
-`;
-
 /** Keep in sync with DISPLAY_NAME_PX_PER_CHAR */
-const NameCSS: CSSObject = {
+const NameCSS: React.CSSProperties = {
   padding: '3px 0 3px 6px',
   color: Colors.textDefault(),
   fontSize: 14,
@@ -731,7 +722,7 @@ const NameCSS: CSSObject = {
   fontWeight: 600,
 };
 
-export const NameTooltipCSS: CSSObject = {
+export const NameTooltipCSS: React.CSSProperties = {
   ...NameCSS,
   top: -9,
   left: -12,
@@ -750,102 +741,12 @@ const NameTooltipStyleSource = JSON.stringify({
   border: `none`,
 });
 
-const AssetName = styled.div<{$isMaterializable: boolean}>`
-  ${NameCSS};
-  display: flex;
-  gap: 4px;
-  background: ${(p) =>
-    p.$isMaterializable ? Colors.lineageNodeBackground() : Colors.backgroundLight()};
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-`;
+export const AssetNodeRowBox = (props: React.ComponentProps<typeof Box>) => (
+  <Box {...props} className={clsx(styles.assetNodeRowBox, props.className)} />
+);
 
-const MinimalAssetNodeContainer = styled(AssetNodeContainer)`
-  height: 100%;
-`;
-
-const MinimalAssetNodeBox = styled.div<{
-  $isMaterializable: boolean;
-  $selected: boolean;
-  $background: string;
-  $border: string;
-  $inProgress: boolean;
-  $isQueued: boolean;
-  $height: number;
-}>`
-  background: ${(p) => p.$background};
-  overflow: hidden;
-  ${(p) =>
-    !p.$isMaterializable
-      ? `border: 4px dashed ${p.$selected ? Colors.accentGray() : p.$border}`
-      : `border: 4px solid ${p.$selected ? Colors.lineageNodeBorderSelected() : p.$border}`};
-  ${(p) =>
-    p.$inProgress
-      ? `
-      background-color: ${p.$background};
-      &::after {
-        inset: 0;
-        position: absolute;
-        transform: translateX(-100%);
-        mask-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3));
-        background: ${p.$background};
-        animation: shimmer 1.5s infinite;
-        content: '';
-      }
-
-      @keyframes shimmer {
-        100% {
-          transform: translateX(100%);
-        }
-      }
-  `
-      : ''}
-
-  ${(p) =>
-    p.$isQueued
-      ? `
-      border: none;
-      &::after {
-        inset: 0;
-        position: absolute;
-        animation: pulse 0.75s infinite alternate;
-        border-radius: 16px;
-        border: 4px solid ${p.$border};
-        content: '';
-      }
-      @keyframes pulse {
-        0% {
-          opacity: 0.2;
-        }
-        100% {
-          opacity: 1;
-        }
-      }
-      `
-      : ''}
-  border-radius: 16px;
-  position: relative;
-  padding: 2px;
-  height: ${(p) => p.$height}px;
-  &:hover {
-    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px 0px;
-  }
-`;
-
-const MinimalName = styled(AssetName)`
-  font-weight: 600;
-  white-space: nowrap;
-  position: absolute;
-  background: none;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-`;
-
-export const AssetDescription = styled.div<{$color: string}>`
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: ${(p) => p.$color};
-  font-size: 12px;
-`;
+export const AssetDescription = ({children, color}: {children: React.ReactNode; color: string}) => (
+  <div className={styles.assetDescription} style={{color}}>
+    {children}
+  </div>
+);

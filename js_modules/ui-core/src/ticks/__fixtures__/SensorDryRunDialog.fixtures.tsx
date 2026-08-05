@@ -234,7 +234,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
           runConfigData:
             'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],
@@ -260,7 +260,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
           runConfigData:
             'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],
@@ -286,7 +286,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
           runConfigData:
             'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],
@@ -322,7 +322,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
               __typename: 'Run',
               id: '504b3a77-d6c4-440c-a128-7f59c9d75d59',
               pipeline: buildPipelineSnapshot({
-                name: 'saepe',
+                name: 'vehemens',
               }),
               tags: [
                 buildPipelineTag({key: 'dagster2', value: 'test'}),
@@ -341,7 +341,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
               __typename: 'Run',
               id: '6745cd03-3d89-4fd2-a41f-6b9d9ffdc134',
               pipeline: buildPipelineSnapshot({
-                name: 'saepe',
+                name: 'vehemens',
               }),
               tags: [
                 buildPipelineTag({key: 'dagster3', value: 'test'}),

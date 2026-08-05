@@ -5,7 +5,7 @@ import re
 from collections.abc import Iterable, Iterator, Sequence
 from datetime import date, datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -222,6 +222,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     @public
     @cached_property
     def start(self) -> datetime:
+        """datetime: The start of the first partition's time window."""
         start_timestamp_with_timezone = self.start_ts
         return datetime_from_timestamp(
             start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
@@ -230,6 +231,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     @public
     @cached_property
     def end(self) -> datetime | None:
+        """Optional[datetime]: The end of the last partition's time window, or None if the partition set is unbounded."""
         end_timestamp_with_timezone = self.end_ts
 
         if not end_timestamp_with_timezone:
@@ -941,9 +943,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 " minute_of_hour/hour_of_day/day_of_week/day_of_month arguments"
             )
 
-        minute_of_hour = cast(
-            "int",
-            check.opt_int_param(minute_of_hour, "minute_of_hour", default=self.minute_offset),
+        minute_of_hour = check.opt_int_param(
+            minute_of_hour, "minute_of_hour", default=self.minute_offset
         )
 
         if schedule_type == ScheduleType.HOURLY:
@@ -951,9 +952,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 hour_of_day is None, "Cannot set hour parameter with hourly partitions."
             )
         else:
-            hour_of_day = cast(
-                "int", check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset)
-            )
+            hour_of_day = check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset)
 
         if schedule_type == ScheduleType.DAILY:
             check.invariant(

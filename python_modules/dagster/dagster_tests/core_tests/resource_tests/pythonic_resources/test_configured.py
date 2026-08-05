@@ -2,7 +2,7 @@ from typing import Any
 
 import dagster as dg
 import pytest
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import InitResourceContext
 from dagster._check import CheckError
 
 
@@ -15,7 +15,7 @@ def test_config_mapping_return_resource_config_dict_noargs() -> None:
         return {"resource_param": "foo"}
 
     @dg.op
-    def do_something(my_resource: ConfigurableResource) -> str:
+    def do_something(my_resource: MyResource) -> str:
         return my_resource.resource_param
 
     @dg.job
@@ -40,7 +40,7 @@ def test_config_mapping_return_resource_config_dict() -> None:
         return {"resource_param": config_in["simplified_param"]}
 
     @dg.op
-    def do_something(my_resource: ConfigurableResource) -> str:
+    def do_something(my_resource: MyResource) -> str:
         return my_resource.resource_param
 
     @dg.job
@@ -75,7 +75,7 @@ def test_config_mapping_return_resource_object() -> None:
         resource_param: str
 
     @dg.op
-    def do_something(my_resource: ConfigurableResource) -> str:
+    def do_something(my_resource: MyResource) -> str:
         return my_resource.resource_param
 
     @dg.job
@@ -141,7 +141,7 @@ def test_factory_resource_pattern_noargs() -> None:
             return MyResource(resource_param="foo")
 
     @dg.op
-    def do_something(my_resource: ConfigurableResource) -> str:
+    def do_something(my_resource: MyResource) -> str:
         return my_resource.resource_param
 
     @dg.job
@@ -164,7 +164,7 @@ def test_factory_resource_pattern_args() -> None:
             return MyResource(resource_param=str(self.an_int))
 
     @dg.op
-    def do_something(my_resource: ConfigurableResource) -> str:
+    def do_something(my_resource: MyResource) -> str:
         return my_resource.resource_param
 
     @dg.job

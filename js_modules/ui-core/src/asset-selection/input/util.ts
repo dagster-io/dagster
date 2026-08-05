@@ -90,6 +90,7 @@ export const getAttributesMap = (
     group: groups,
     kind: kinds,
     code_location: codeLocations,
+    is: ['external', 'materializable'],
     partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
     automation_type: [
       'any',
@@ -145,6 +146,7 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   sensor: 'sensors',
   schedule: 'schedule',
   job: 'job',
+  is: 'flag',
 };
 
 export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(

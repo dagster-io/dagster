@@ -18,7 +18,7 @@ def raw_transactions_sensor(
     else:
         external_asset_last_updated_at_ms = 0
 
-    if file_last_modified_at_ms > external_asset_last_updated_at_ms:
+    if file_last_modified_at_ms > external_asset_last_updated_at_ms:  # ty: ignore[unsupported-operator]
         # The external asset has been modified since it was last updated,
         # so record a materialization and update the cursor.
         return dg.SensorResult(
@@ -26,7 +26,7 @@ def raw_transactions_sensor(
                 dg.AssetMaterialization(
                     asset_key=raw_transactions.key,
                     # You can optionally attach metadata
-                    metadata={"file_last_modified_at_ms": file_last_modified_at_ms},
+                    metadata={"file_last_modified_at_ms": file_last_modified_at_ms},  # ty: ignore[invalid-argument-type]
                 )
             ],
             cursor=str(file_last_modified_at_ms),

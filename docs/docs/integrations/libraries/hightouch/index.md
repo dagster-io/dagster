@@ -1,6 +1,7 @@
 ---
 title: Dagster & Hightouch
 sidebar_label: Hightouch
+sidebar_position: 1
 description: Integrate with Hightouch to trigger and monitor syncs.
 tags: [dagster-supported, reverse-etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-hightouch

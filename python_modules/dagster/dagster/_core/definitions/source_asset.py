@@ -505,4 +505,4 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
                 and self.observe_fn == other.observe_fn
             )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None

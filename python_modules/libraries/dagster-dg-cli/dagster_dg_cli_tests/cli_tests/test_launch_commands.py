@@ -95,7 +95,7 @@ def test_launch_assets() -> None:
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
                 f.write(defs_source)
 
@@ -184,11 +184,13 @@ def test_launch_assets_config_files() -> None:
         )
         assert result.returncode == 0
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
             defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
             f.write(defs_source)
 
-        Path("config.json").write_text(json.dumps({"ops": {"my_asset_3": {"config": {"foo": 7}}}}))
+        Path("config.json").write_text(
+            json.dumps({"ops": {"my_asset_3": {"config": {"foo": 7}}}}), encoding="utf-8"
+        )
 
         result = subprocess.run(
             ["dg", "launch", "--assets", "my_asset_3", "--config", "config.json"],
@@ -199,7 +201,9 @@ def test_launch_assets_config_files() -> None:
 
         assert "CONFIG: 7" in result.stderr.decode("utf-8")
 
-        Path("config.yaml").write_text(yaml.dump({"ops": {"my_asset_3": {"config": {"foo": 3}}}}))
+        Path("config.yaml").write_text(
+            yaml.dump({"ops": {"my_asset_3": {"config": {"foo": 3}}}}), encoding="utf-8"
+        )
         result = subprocess.run(
             ["dg", "launch", "--assets", "my_asset_3", "-c", "config.yaml"],
             check=True,
@@ -209,7 +213,9 @@ def test_launch_assets_config_files() -> None:
 
         assert "CONFIG: 3" in result.stderr.decode("utf-8")
 
-        Path("config.yaml").write_text(yaml.dump({"ops": {"my_asset_3": {"config": {"foo": 3}}}}))
+        Path("config.yaml").write_text(
+            yaml.dump({"ops": {"my_asset_3": {"config": {"foo": 3}}}}), encoding="utf-8"
+        )
         result = subprocess.run(
             ["dg", "launch", "--assets", "my_asset_3", "-c", "config.yaml", "-c", "config.json"],
             check=True,
@@ -235,7 +241,7 @@ def test_launch_job_partitioned() -> None:
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(inspect.getsource(_sample_job).split("\n", 1)[1])
                 f.write(defs_source)
 
@@ -292,7 +298,7 @@ def test_launch_job_configured() -> None:
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(inspect.getsource(_sample_job).split("\n", 1)[1])
                 f.write(defs_source)
 
@@ -337,12 +343,12 @@ def test_launch_job_config_files() -> None:
         )
         assert result.returncode == 0
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
             defs_source = textwrap.dedent(inspect.getsource(_sample_job).split("\n", 1)[1])
             f.write(defs_source)
 
         Path("config.json").write_text(
-            json.dumps({"ops": {"my_configured_op": {"config": {"foo": 7}}}})
+            json.dumps({"ops": {"my_configured_op": {"config": {"foo": 7}}}}), encoding="utf-8"
         )
 
         result = subprocess.run(
@@ -355,7 +361,7 @@ def test_launch_job_config_files() -> None:
         assert "CONFIG: 7" in result.stderr.decode("utf-8")
 
         Path("config.yaml").write_text(
-            yaml.dump({"ops": {"my_configured_op": {"config": {"foo": 3}}}})
+            yaml.dump({"ops": {"my_configured_op": {"config": {"foo": 3}}}}), encoding="utf-8"
         )
         result = subprocess.run(
             ["dg", "launch", "--job", "my_configured_job", "-c", "config.yaml"],
@@ -367,7 +373,7 @@ def test_launch_job_config_files() -> None:
         assert "CONFIG: 3" in result.stderr.decode("utf-8")
 
         Path("config.yaml").write_text(
-            yaml.dump({"ops": {"my_configured_op": {"config": {"foo": 3}}}})
+            yaml.dump({"ops": {"my_configured_op": {"config": {"foo": 3}}}}), encoding="utf-8"
         )
         result = subprocess.run(
             [
@@ -404,7 +410,7 @@ def test_launch_job_point_to_module_explicitly() -> None:
         )
         assert result.returncode == 0
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
             defs_source = textwrap.dedent(inspect.getsource(_sample_single_job).split("\n", 1)[1])
             f.write(defs_source)
 
@@ -438,7 +444,7 @@ def test_launch_assets_point_to_module_explicitly() -> None:
         )
         assert result.returncode == 0
 
-        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
             defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
             f.write(defs_source)
 

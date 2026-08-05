@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "assets_dynamic_partitions"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "dagster",
     "dagster-duckdb-pandas",
@@ -17,3 +18,20 @@ dev = ["dagster-webserver", "pytest"]
 [tool.dagster]
 module_name = "assets_dynamic_partitions.definitions"
 code_location_name = "assets_dynamic_partitions"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-duckdb",
+    "dagster-duckdb-pandas",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }
+dagster-duckdb = { path = "../../python_modules/libraries/dagster-duckdb/", editable = true }
+dagster-duckdb-pandas = { path = "../../python_modules/libraries/dagster-duckdb-pandas/", editable = true }
+dagster-webserver = { path = "../../python_modules/dagster-webserver", editable = true }

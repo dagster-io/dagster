@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 
 from dagster import Bool, Field, StringSource
-from dagster._core.storage.captured_log_manager import (
-    CapturedLogData,  # ty: ignore[unresolved-import]
+from dagster._core.storage.captured_log_manager import (  # ty: ignore[unresolved-import]
+    CapturedLogData,
 )
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
@@ -44,7 +44,7 @@ class PIIComputeLogManager(LocalComputeLogManager, ConfigurableClass):
         }
 
     @classmethod
-    def from_config_value(cls, inst_data: ConfigurableClassData, config_value):
+    def from_config_value(cls, inst_data: ConfigurableClassData | None, config_value):
         return cls(inst_data=inst_data, **config_value)
 
     def _redact_bytes(self, data: bytes | None) -> bytes | None:
@@ -81,8 +81,8 @@ class PIIComputeLogManager(LocalComputeLogManager, ConfigurableClass):
         self,
         log_key: Sequence[str],
         io_type: ComputeIOType,
-        offset: int,
-        max_bytes: int | None,
+        offset: int | None = 0,
+        max_bytes: int | None = None,
     ) -> tuple[bytes | None, int]:
         """Override to apply PII redaction to log data chunks."""
         data, new_offset = super().get_log_data_for_type(log_key, io_type, offset, max_bytes)

@@ -298,7 +298,7 @@ def test_successful_run_from_pending(
 
 
 def test_invalid_instance_run():
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
         correct_run_storage_dir = os.path.join(temp_dir, "history", "")
         wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
 
@@ -347,7 +347,7 @@ def test_invalid_instance_run():
                             instance.launch_run(run_id=run.run_id, workspace=workspace)
 
                         failed_run = instance.get_run_by_id(run.run_id)
-                        assert failed_run.status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
+                        assert failed_run.status == DagsterRunStatus.FAILURE  # ty: ignore[unresolved-attribute]
 
 
 @pytest.mark.parametrize(

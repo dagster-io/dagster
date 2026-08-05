@@ -183,7 +183,7 @@ def get_changes_info(
                 elif r"\.md" in str(modified_files):
                     diff_summary += " (documentation changes)"
 
-    result = {
+    result: dict[str, Any] = {
         "files_changed": files_changed,
         "additions": additions,
         "deletions": deletions,

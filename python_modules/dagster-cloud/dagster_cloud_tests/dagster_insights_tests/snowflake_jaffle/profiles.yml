@@ -1,0 +1,31 @@
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+
+      # Key-pair auth
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key: "{{ env_var('SNOWFLAKE_DEMO_PRIVATE_KEY') }}"
+
+      role: PETE
+      database: SANDBOX
+      warehouse: ELEMENTL
+      schema: PETE
+      threads: 1
+      client_session_keep_alive: False
+      query_tag: pete-test
+
+      # optional
+      #connect_retries: 0 # default 0
+      #connect_timeout: 10 # default: 10
+      #retry_on_database_errors: False # default: false
+      #retry_all: False # default: false
+      #reuse_connections: False # default: false (available v1.4+)
+
+unittest:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb

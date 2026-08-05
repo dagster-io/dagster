@@ -136,7 +136,7 @@ def test_decorators_wrap_attributes():
         def mutate(self, graphene_info, **_kwargs):
             pass
 
-    assert EndpointWithAttributeSet.mutate.__wrapped__.__wrapped__.__wrapped__.my_attribute is True  # pyright: ignore[reportFunctionMemberAccess]
+    assert EndpointWithAttributeSet.mutate.__wrapped__.__wrapped__.__wrapped__.my_attribute is True
 
 
 class EndpointMissingRequiredPermissionCheck:

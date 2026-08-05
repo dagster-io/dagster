@@ -1,0 +1,137 @@
+.nodeContainer {
+  pointer-events: auto;
+  user-select: none;
+  cursor: default;
+}
+
+.dim {
+  opacity: 0.3;
+}
+
+.highlightBox {
+  border-radius: 13px;
+  background: transparent;
+}
+
+.highlightBoxSelected {
+  background: var(--color-background-blue);
+}
+
+.nodeBox {
+  border: 2px solid var(--color-keyline-default);
+  border-radius: 8px;
+  background: var(--color-background-default);
+}
+
+.nodeBoxMinified {
+  border-width: 3px;
+  background: var(--color-background-light);
+}
+
+.nodeBoxSelected {
+  border: 2px dashed var(--color-accent-blue);
+}
+
+.nodeBoxSelectedMinified {
+  border-width: 3px;
+}
+
+.nodeBoxFocused {
+  border: 2px solid color-mix(in srgb, var(--color-accent-blue) 33%, transparent);
+}
+
+.nodeBoxFocusedMinified {
+  border-width: 3px;
+}
+
+.compositeMarker {
+  outline: 2px solid var(--color-accent-yellow);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.compositeMarkerMinified {
+  outline-width: 3px;
+  outline-offset: 5px;
+}
+
+.compositeMarkerSelected {
+  outline-color: transparent;
+}
+
+.dynamicMarker {
+  transform: translate(-5px, -5px);
+  border: 2px solid var(--color-keyline-default);
+  border-radius: 8px;
+}
+
+.dynamicMarkerMinified {
+  border-width: 3px;
+}
+
+.configMarker {
+  position: absolute;
+  transform: translate(-100%, -21px);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  opacity: 0.5;
+}
+
+.configMarkerMinified {
+  transform: translate(-100%, -28px);
+  font-size: 24px;
+}
+
+.name {
+  display: flex;
+  gap: 5px;
+  padding: 4px 3px;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  align-items: center;
+  font-weight: 600;
+}
+
+.nameMinified {
+  padding: 4px 8px;
+  font-size: 32px;
+}
+
+.label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.assets {
+  padding: 0 4px;
+  white-space: nowrap;
+  line-height: 22px;
+  height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--color-background-lighter);
+  font-size: 12px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.description {
+  padding: 0 8px;
+  white-space: nowrap;
+  line-height: 22px;
+  height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--color-background-lighter);
+  border-top: var(--color-keyline-default) 1px solid;
+
+  /* 6px because it's inside a bordered box with a 2px line at our standard 8px radius */
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+  font-size: 12px;
+}

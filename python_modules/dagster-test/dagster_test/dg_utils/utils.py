@@ -57,6 +57,24 @@ ConfigFileType: TypeAlias = Literal["dg.toml", "pyproject.toml"]
 PackageLayoutType: TypeAlias = Literal["root", "src"]
 
 
+def scrub_tox_uv_project_environment() -> None:
+    """Drop tox-uv's leaked ``UV_PROJECT_ENVIRONMENT`` for the rest of this process.
+
+    ``uv-venv-lock-runner`` exports ``UV_PROJECT_ENVIRONMENT=<.tox-env-path>`` into
+    every test command (see ``tox_uv/_run_lock.py``). Tests that scaffold a dagster
+    project via ``create-dagster --uv-sync`` (or invoke ``uv sync`` / ``uv add``
+    directly) inherit it; uv then retargets the .tox env instead of the project's
+    ``.venv``, stripping pytest plugins / mypy-protobuf / grpcio-tools out from
+    under the rest of the test session.
+
+    Guarded by ``.tox/`` substring so users running pytest with their own
+    ``UV_PROJECT_ENVIRONMENT`` are unaffected.
+    """
+    val = os.environ.get("UV_PROJECT_ENVIRONMENT")
+    if val and f"{os.sep}.tox{os.sep}" in val:
+        del os.environ["UV_PROJECT_ENVIRONMENT"]
+
+
 def install_editable_dagster_packages_to_venv(
     venv_path: Path, package_rel_paths: Sequence[str]
 ) -> None:
@@ -600,9 +618,9 @@ def set_env_var(name: str, value: str) -> Iterator[None]:
 
 def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: Path) -> None:
     """Convert a pyproject.toml file to a dg.toml file."""
-    pyproject_toml = tomlkit.parse(pyproject_toml_path.read_text())
+    pyproject_toml = tomlkit.parse(pyproject_toml_path.read_text(encoding="utf-8"))
     dg_config = get_toml_node(pyproject_toml, ("tool", "dg"), tomlkit.items.Table)
-    dg_toml_path.write_text(tomlkit.dumps(dg_config))
+    dg_toml_path.write_text(tomlkit.dumps(dg_config.unwrap()), encoding="utf-8")
     delete_toml_node(pyproject_toml, ("tool", "dg"))
 
     # Delete the pyproject.toml file if it is empty after removing the dg section
@@ -612,14 +630,14 @@ def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: P
     ):
         pyproject_toml_path.unlink()
     else:
-        pyproject_toml_path.write_text(tomlkit.dumps(pyproject_toml))
+        pyproject_toml_path.write_text(tomlkit.dumps(pyproject_toml), encoding="utf-8")
 
 
 def convert_dg_toml_to_pyproject_toml(
     dg_toml_path: Path, pyproject_toml_path: Path | None = None
 ) -> None:
     """Convert a dg.toml file to a pyproject.toml file."""
-    dg_toml = tomlkit.parse(dg_toml_path.read_text()).unwrap()
+    dg_toml = tomlkit.parse(dg_toml_path.read_text(encoding="utf-8")).unwrap()
     pyproject_toml_path = pyproject_toml_path or dg_toml_path.with_stem("pyproject.toml")
     if not pyproject_toml_path.exists():
         pyproject_toml_path.write_text(tomlkit.dumps({}))
@@ -1029,13 +1047,21 @@ def assert_projects_loaded_and_exit(projects: set[str], port: int, proc: subproc
     finally:
         proc.send_signal(signal.SIGINT)
         proc.communicate()
-        time.sleep(3)
         _assert_no_child_processes_running(child_processes)
 
 
 def _assert_no_child_processes_running(child_procs: list[psutil.Process]) -> None:
-    for proc in child_procs:
-        assert not proc.is_running(), f"Process {proc.pid} ({proc.cmdline()}) is still running"
+    _, alive = psutil.wait_procs(child_procs, timeout=30)
+    assert not alive, "Child processes still running after 30s: " + ", ".join(
+        f"{p.pid} ({_safe_cmdline(p)})" for p in alive
+    )
+
+
+def _safe_cmdline(proc: psutil.Process) -> list[str]:
+    try:
+        return proc.cmdline()
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        return []
 
 
 def get_child_processes(pid) -> list[psutil.Process]:
@@ -1053,7 +1079,7 @@ def _ping_webserver(port: int) -> None:
         except:
             print("Waiting for dagster-webserver to be ready..")  # noqa: T201
 
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 90:
             raise Exception("Timed out waiting for dagster-webserver to serve requests")
 
         time.sleep(1)

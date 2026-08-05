@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Any
 
 import dagster as dg
 from dagster import AssetsDefinition
@@ -32,21 +33,12 @@ def with_auto_materialize_policy(
 ) -> Sequence[dg.AssetsDefinition]:
     ret = []
     for assets_def in assets_defs:
-        ret.append(
-            AssetsDefinition.dagster_internal_init(
-                **{
-                    **assets_def.get_attributes_dict(),
-                    **{
-                        "specs": [
-                            spec._replace(
-                                automation_condition=auto_materialize_policy.to_automation_condition()
-                            )
-                            for spec in assets_def.specs
-                        ]
-                    },
-                }
-            )
-        )
+        attrs: dict[str, Any] = dict(assets_def.get_attributes_dict())
+        attrs["specs"] = [
+            spec._replace(automation_condition=auto_materialize_policy.to_automation_condition())
+            for spec in assets_def.specs
+        ]
+        ret.append(AssetsDefinition.dagster_internal_init(**attrs))
     return ret
 
 

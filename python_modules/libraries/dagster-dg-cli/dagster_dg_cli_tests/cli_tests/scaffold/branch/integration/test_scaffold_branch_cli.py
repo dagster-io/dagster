@@ -4,7 +4,7 @@ import os
 import subprocess
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 import pytest
 from dagster_test.dg_utils.utils import (
@@ -121,11 +121,15 @@ class TestScaffoldBranchCLI:
             assert "feature-with-spaces" in branches.stdout
             assert "  feature-with-spaces  " not in branches.stdout
 
-    @patch("dagster_dg_cli.cli.scaffold.branch.git.run_gh_command")
-    def test_scaffold_branch_with_pr(self, mock_gh):
+    @patch("dagster_dg_cli.cli.scaffold.branch.git.get_remote_origin_github_repo")
+    def test_scaffold_branch_with_pr(self, mock_github_repo):
         """Test scaffold branch with PR creation."""
-        mock_gh.return_value = Mock(
-            returncode=0, stdout="https://github.com/user/repo/pull/456\n", stderr=""
+        pull_request = Mock()
+        pull_request.number = 456
+        pull_request.html_url = "https://github.com/user/repo/pull/456"
+        mock_github_repo.return_value = Mock(
+            get_repository=Mock(return_value=Mock(default_branch="main")),
+            create_pull_request=Mock(return_value=pull_request),
         )
 
         with isolated_project_with_runner() as (runner, project_dir):
@@ -143,13 +147,15 @@ class TestScaffoldBranchCLI:
             assert "Created pull request: https://github.com/user/repo/pull/456" in result.output
             assert "✅ Successfully created branch and pull request" in result.output
 
-            # Verify gh was called
-            mock_gh.assert_called_once()
-            args = mock_gh.call_args[0][0]
-            assert args[0] == "pr"
-            assert args[1] == "create"
-            assert "--title" in args
-            assert "--body" in args
+            mock_github_repo.assert_called_once()
+            mock_github_repo.return_value.get_repository.assert_called_once()
+            mock_github_repo.return_value.create_pull_request.assert_called_once_with(
+                title=ANY,
+                head="pr-feature",
+                base="main",
+                body=ANY,
+                draft=False,
+            )
 
     def test_scaffold_branch_not_in_git_repo(self):
         """Test that scaffold branch fails gracefully when not in a git repo."""

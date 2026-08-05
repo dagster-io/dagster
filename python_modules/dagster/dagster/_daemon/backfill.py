@@ -59,8 +59,12 @@ def _get_instigation_logger_if_log_storage_enabled(
         yield default_logger
 
 
-def _get_max_asset_backfill_retries():
-    return int(os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES", "5"))
+def _get_max_backfill_retries():
+    return int(
+        os.getenv(
+            "DAGSTER_MAX_BACKFILL_RETRIES", os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES", "5")
+        )
+    )
 
 
 def execute_backfill_iteration_loop(
@@ -148,7 +152,7 @@ def execute_backfill_iteration(
     )
 
 
-def _is_retryable_asset_backfill_error(e: Exception):
+def _is_retryable_backfill_error(e: Exception):
     # Retry on issues reaching or loading user code, or transient race conditions submitting runs.
     if isinstance(
         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError, DagsterRunAlreadyExists)
@@ -200,10 +204,9 @@ def execute_backfill_iteration_with_instigation_logger(
         except Exception as e:
             backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
             if (
-                backfill.is_asset_backfill
-                and backfill.status == BulkActionStatus.REQUESTED
-                and backfill.failure_count < _get_max_asset_backfill_retries()
-                and _is_retryable_asset_backfill_error(e)
+                backfill.status == BulkActionStatus.REQUESTED
+                and backfill.failure_count < _get_max_backfill_retries()
+                and _is_retryable_backfill_error(e)
             ):
                 if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
                     try:

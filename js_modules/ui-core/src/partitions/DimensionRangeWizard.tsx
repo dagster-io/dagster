@@ -182,7 +182,6 @@ export const DimensionRangeWizard = ({
       <JoinedButtons>
         {isTimeseries && (
           <ActivatableButton
-            as={Button}
             $active={selectState === 'latest'}
             onClick={() => {
               setSelectState('latest');
@@ -194,7 +193,6 @@ export const DimensionRangeWizard = ({
           </ActivatableButton>
         )}
         <ActivatableButton
-          as={Button}
           $active={selectState === 'all'}
           onClick={() => {
             setSelectState('all');
@@ -205,7 +203,6 @@ export const DimensionRangeWizard = ({
           All
         </ActivatableButton>
         <ActivatableButton
-          as={Button}
           $active={selectState === 'failed'}
           onClick={() => {
             setSelectState('failed');
@@ -215,7 +212,6 @@ export const DimensionRangeWizard = ({
           Failed
         </ActivatableButton>
         <ActivatableButton
-          as={Button}
           $active={selectState === 'missing'}
           onClick={() => {
             setSelectState('missing');
@@ -225,7 +221,6 @@ export const DimensionRangeWizard = ({
           Missing
         </ActivatableButton>
         <ActivatableButton
-          as={Button}
           $active={selectState === 'failed_and_missing'}
           onClick={() => {
             setSelectState('failed_and_missing');
@@ -235,7 +230,6 @@ export const DimensionRangeWizard = ({
           Failed and missing
         </ActivatableButton>
         <ActivatableButton
-          as={Button}
           $active={selectState === 'custom'}
           onClick={() => {
             setSelectState('custom');

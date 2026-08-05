@@ -435,7 +435,7 @@ def s3_resource_with_context_manager(context):
         context.log.info("tearing down s3_resource_with_context_manager")
         bucket = "dagster-scratch-80542c2"
         key = f"resource_termination_test/{context.run_id}"
-        s3.put_object(Bucket=bucket, Key=key, Body=b"foo")  # pyright: ignore[reportPossiblyUnboundVariable]
+        s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
 
 
 @op(required_resource_keys={"s3_resource_with_context_manager"})
@@ -464,9 +464,7 @@ def sum_fan_in(_, nums):
 
 
 def construct_fan_in_level(source, level, fanout):
-    fan_outs = []
-    for i in range(0, fanout):
-        fan_outs.append(add_one_fan.alias(f"add_one_fan_{level}_{i}")(source))
+    fan_outs = [add_one_fan.alias(f"add_one_fan_{level}_{i}")(source) for i in range(0, fanout)]
 
     return sum_fan_in.alias(f"sum_{level}")(fan_outs)
 

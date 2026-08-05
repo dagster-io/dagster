@@ -1,8 +1,9 @@
-import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Icon} from '@dagster-io/ui-components';
 import * as Collapsible from '@radix-ui/react-collapsible';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/SidebarComponents.module.css';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 interface ISidebarSectionProps {
@@ -20,14 +21,14 @@ export const SidebarSection = (props: ISidebarSectionProps) => {
   return (
     <Collapsible.Root open={open} onOpenChange={setOpen}>
       <Collapsible.Trigger asChild>
-        <CollapsingHeaderBar>
-          <SidebarTitleTextWrap>{title}</SidebarTitleTextWrap>
+        <div className={styles.collapsingHeaderBar}>
+          <div className={styles.sidebarTitleTextWrap}>{title}</div>
           <Icon
             size={24}
             name="arrow_drop_down"
             style={{transform: open ? 'rotate(0)' : 'rotate(-90deg)'}}
           />
-        </CollapsingHeaderBar>
+        </div>
       </Collapsible.Trigger>
       <Collapsible.Content style={{overflowX: 'auto'}}>
         <div>{children}</div>
@@ -36,68 +37,40 @@ export const SidebarSection = (props: ISidebarSectionProps) => {
   );
 };
 
-const SidebarTitleTextWrap = styled.div`
-  overflow: hidden;
-  min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
+export const SidebarTitle = ({
+  children,
+  className,
+  ...rest
+}: React.HTMLAttributes<HTMLHeadingElement>) => (
+  <h3 className={clsx(styles.sidebarTitle, className)} {...rest}>
+    {children}
+  </h3>
+);
 
-export const SidebarTitle = styled.h3`
-  font-family: ${FontFamily.monospace};
-  font-size: 16px;
-  margin: 0 0 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+export const SectionHeader = ({
+  children,
+  className,
+  ...rest
+}: React.HTMLAttributes<HTMLHeadingElement>) => (
+  <h4 className={clsx(styles.sectionHeader, className)} {...rest}>
+    {children}
+  </h4>
+);
 
-  :first-child:last-child {
-    margin-bottom: 0;
-  }
-`;
+export const SectionSmallHeader = ({
+  children,
+  className,
+  ...rest
+}: React.HTMLAttributes<HTMLHeadingElement>) => (
+  <h4 className={clsx(styles.sectionSmallHeader, className)} {...rest}>
+    {children}
+  </h4>
+);
 
-export const SectionHeader = styled.h4`
-  font-family: ${FontFamily.monospace};
-  font-size: 16px;
-  margin: 2px 0 0 0;
-`;
+export const SidebarSubhead = ({children}: {children?: React.ReactNode}) => (
+  <div className={styles.sidebarSubhead}>{children}</div>
+);
 
-export const SectionSmallHeader = styled.h4`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  font-weight: 500;
-  margin: 2px 0;
-`;
-
-export const SidebarSubhead = styled.div`
-  color: ${Colors.textLight()};
-  font-size: 0.7rem;
-`;
-
-export const SectionItemContainer = styled.div`
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  font-size: 0.8rem;
-  &:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-  }
-`;
-
-const CollapsingHeaderBar = styled.div`
-  height: 32px;
-  padding-left: 24px;
-  padding-right: 8px;
-  background: ${Colors.backgroundLight()};
-  border-top: 1px solid ${Colors.keylineDefault()};
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  color: ${Colors.textDefault()};
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  user-select: none;
-`;
+export const SectionItemContainer = ({children}: {children?: React.ReactNode}) => (
+  <div className={styles.sectionItemContainer}>{children}</div>
+);

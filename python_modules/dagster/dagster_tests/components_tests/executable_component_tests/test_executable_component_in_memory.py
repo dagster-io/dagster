@@ -214,7 +214,7 @@ def test_local_import() -> None:
         ):
             assert isinstance(component, dg.FunctionComponent)
             assert isinstance(component.execution, FunctionSpec)
-            assert component.execution.fn.__name__ == "execute_fn_to_copy"
+            assert component.execution.fn.__name__ == "execute_fn_to_copy"  # ty: ignore[unresolved-attribute]
             assert isinstance(component.execution.fn(None), dg.MaterializeResult)
 
             assets_def = defs.get_assets_def("asset")

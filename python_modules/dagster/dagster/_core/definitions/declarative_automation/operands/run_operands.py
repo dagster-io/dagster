@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, AssetOrCheckKey
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operands.subset_automation_condition import (
     SubsetAutomationCondition,
@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 
 @whitelist_for_serdes
 @record
-class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
+class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     @property
     def name(self) -> str:
         return "executed_with_root_target"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         def _filter_fn(run_record: "RunRecord") -> bool:
             if context.key == context.root_context.key:
                 # this happens when this is evaluated for a self-dependent asset. in these cases,
@@ -79,7 +79,7 @@ def _get_run_tag_filter_name(
 
 @whitelist_for_serdes
 @record
-class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
+class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition[AssetOrCheckKey]):
     tag_keys: Set[str] | None = None
     tag_values: Mapping[str, str] | None = None
 
@@ -87,7 +87,7 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return _get_run_tag_filter_name("executed_with_tags", self.tag_keys, self.tag_values)
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # ty: ignore[invalid-method-override]
         return await context.asset_graph_view.compute_latest_run_matches_subset(
             from_subset=context.candidate_subset,
             filter_fn=lambda run_record: _run_tag_filter_fn(
@@ -128,7 +128,7 @@ class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
         run_records = await RunRecord.gen_many(context, run_ids)
         return [record for record in run_records if record]
 
-    async def compute_subset(  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def compute_subset(  # ty: ignore[invalid-method-override]
         self,
         context: AutomationContext,
     ) -> EntitySubset[AssetKey]:
@@ -141,6 +141,7 @@ class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
         new_materializations = context.asset_graph_view.get_inner_queryer_for_back_compat().get_asset_materializations_updated_after_cursor(
             asset_key=context.key,
             after_cursor=context.previous_temporal_context.last_event_id,
+            before_cursor=context.max_storage_id,
         )
         if not new_materializations:
             return context.get_empty_subset()

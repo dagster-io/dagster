@@ -1,4 +1,5 @@
 import shutil
+import sys
 from collections.abc import Iterator
 
 import dagster as dg
@@ -8,7 +9,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
 
-_PYTHON_EXECUTABLE = shutil.which("python")
+_PYTHON_EXECUTABLE = shutil.which("python") or sys.executable
 
 
 @pytest.fixture

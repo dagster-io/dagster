@@ -12,7 +12,7 @@ def subprocess_asset(
 ) -> dg.Output[pd.DataFrame]:
     cmd = [shutil.which("python"), dg.file_relative_path(__file__, "external_code.py")]
     result = pipes_subprocess_client.run(
-        command=cmd,
+        command=cmd,  # ty: ignore[invalid-argument-type]
         context=context,
     )
 

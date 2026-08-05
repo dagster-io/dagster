@@ -269,12 +269,12 @@ def test_event_stream():
     ) = events_for_step
 
     # apologies for verboseness here! we can do better.
-    expectation_result = expectation_event.event_specific_data.expectation_result
+    expectation_result = expectation_event.event_specific_data.expectation_result  # ty: ignore[unresolved-attribute]
     assert isinstance(expectation_result, dg.ExpectationResult)
     assert expectation_result.success
     assert expectation_result.label == "positive"
 
-    materialization = materialization_event.event_specific_data.materialization
+    materialization = materialization_event.event_specific_data.materialization  # ty: ignore[unresolved-attribute]
     assert isinstance(materialization, dg.AssetMaterialization)
     assert materialization.label == "persisted_string"
 

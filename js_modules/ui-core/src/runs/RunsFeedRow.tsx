@@ -1,16 +1,17 @@
 import {
   Box,
   ButtonLink,
-  Caption,
   Checkbox,
   Colors,
+  HeaderCell,
+  HeaderRow,
   Icon,
-  Mono,
+  RowCell,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
@@ -23,12 +24,12 @@ import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunsFeedDialogState} from './RunsFeedTable';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
+import styles from './css/RunsFeedRow.module.css';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const RunsFeedRow = ({
@@ -89,7 +90,8 @@ export const RunsFeedRow = ({
     entry.__typename === 'Run' ? entry.tags.find((t) => t.key === DagsterTag.Partition) : null;
 
   return (
-    <RowGrid
+    <Box
+      className={styles.rowGrid}
       border="bottom"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -109,7 +111,9 @@ export const RunsFeedRow = ({
           >
             <Box flex={{gap: 4, alignItems: 'center'}}>
               <Icon name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'} />
-              <Mono>{titleForRun(entry)}</Mono>
+              <Text size={14} family="mono">
+                {titleForRun(entry)}
+              </Text>
             </Box>
           </Link>
           <Box
@@ -128,14 +132,14 @@ export const RunsFeedRow = ({
             />
 
             {entry.runStatus === RunStatus.QUEUED ? (
-              <Caption>
+              <Text size={12}>
                 <ButtonLink
                   onClick={() => onShowDialog({type: 'queue-criteria', entry})}
                   color={Colors.textLight()}
                 >
                   View queue criteria
                 </ButtonLink>
-              </Caption>
+              </Text>
             ) : null}
           </Box>
         </Box>
@@ -144,7 +148,7 @@ export const RunsFeedRow = ({
         {entry.__typename === 'Run' ? (
           <RunTargetLink
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
+            run={{...entry, pipelineName: entry.jobName!}}
             repoAddress={repoAddress}
             extraTags={
               partitionTag
@@ -195,7 +199,7 @@ export const RunsFeedRow = ({
           <RunActionsMenu run={entry} onAddTag={onAddTag} anchorLabel="View" />
         )}
       </RowCell>
-    </RowGrid>
+    </Box>
   );
 };
 
@@ -218,9 +222,3 @@ export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => 
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;

@@ -167,7 +167,7 @@ def _core_resource_initialization_event_generator(
                     # Add tags with information about the resource
                     log_manager=resource_log_manager.with_tags(
                         resource_name=resource_name,
-                        resource_fn_name=str(resource_fn.__name__),
+                        resource_fn_name=str(resource_fn.__name__),  # ty: ignore[unresolved-attribute]
                     ),
                     resources=resources,
                     instance=instance,
@@ -238,7 +238,7 @@ def resource_initialization_event_generator(
         step = execution_plan.get_step(
             cast(
                 "StepHandleUnion",
-                cast("ExecutionPlan", execution_plan).step_handle_for_single_step_plans(),
+                execution_plan.step_handle_for_single_step_plans(),
             )
         )
         resource_log_manager = log_manager.with_tags(**cast("ExecutionStep", step).logging_tags)
@@ -316,9 +316,9 @@ def single_resource_event_generator(
             try:
                 with time_execution_scope() as timer_result:
                     resource_or_gen = (
-                        resource_def.resource_fn(context)
-                        if has_at_least_one_parameter(resource_def.resource_fn)
-                        else resource_def.resource_fn()  # type: ignore[call-arg]
+                        resource_def.resource_fn(context)  # ty: ignore[too-many-positional-arguments]
+                        if has_at_least_one_parameter(resource_def.resource_fn)  # ty: ignore[invalid-argument-type]
+                        else resource_def.resource_fn()  # type: ignore[call-arg]  # ty: ignore[missing-argument]
                     )
 
                     # Flag for whether resource is generator. This is used to ensure that teardown
@@ -451,7 +451,7 @@ def _wrapped_resource_iterator(
     if isinstance(resource_or_gen, ContextDecorator):
 
         def _gen_resource():
-            with resource_or_gen as resource:  # pyright: ignore[reportGeneralTypeIssues]
+            with resource_or_gen as resource:  # ty: ignore[invalid-context-manager]
                 yield resource
 
         return _gen_resource()

@@ -36,7 +36,7 @@ export const ScheduleRoot = (props: Props) => {
   const {repoAddress} = props;
   const {scheduleName} = useParams<{scheduleName: string}>();
 
-  useDocumentTitle(`Schedule: ${scheduleName}`);
+  useDocumentTitle(`Schedules | ${scheduleName}`);
 
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),

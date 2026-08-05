@@ -5,3 +5,9 @@
   top: 2px;
   margin-left: 2px;
 }
+
+.metadataEditor :global(.CodeMirror.cm-s-code-location-metadata.cm-s-code-location-metadata) {
+  background-color: var(--color-background-default);
+  padding: 12px 20px;
+  height: 300px;
+}

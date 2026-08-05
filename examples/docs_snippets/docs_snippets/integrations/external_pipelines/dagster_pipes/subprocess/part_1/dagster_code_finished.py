@@ -9,5 +9,6 @@ def subprocess_asset(
 ) -> dg.MaterializeResult:
     cmd = [shutil.which("python"), dg.file_relative_path(__file__, "external_code.py")]
     return pipes_subprocess_client.run(
-        command=cmd, context=context
+        command=cmd,
+        context=context,  # ty: ignore[invalid-argument-type]
     ).get_materialize_result()

@@ -1,4 +1,4 @@
-import {Body, Box, Colors, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, MiddleTruncate, Spinner, Text} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -16,7 +16,7 @@ import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {PoolTag} from '../instance/PoolTag';
 import {SidebarSection} from '../pipelines/SidebarComponents';
-
+import styles from './css/AssetSidebarActivitySummary.module.css';
 interface Props {
   asset: SidebarAssetFragment;
   liveData?: LiveDataForNodeWithStaleData;
@@ -72,7 +72,9 @@ export const AssetSidebarActivitySummary = ({
       {asset.freshnessPolicy && (
         <SidebarSection title="Freshness policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>{freshnessPolicyDescription(asset.freshnessPolicy)}</Body>
+            <Text size={14} style={{flex: 1}}>
+              {freshnessPolicyDescription(asset.freshnessPolicy)}
+            </Text>
             <OverdueTag policy={asset.freshnessPolicy} assetKey={asset.assetKey} />
           </Box>
         </SidebarSection>
@@ -81,7 +83,9 @@ export const AssetSidebarActivitySummary = ({
       {asset.backfillPolicy && (
         <SidebarSection title="Backfill policy">
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1}}>{asset.backfillPolicy.description}</Body>
+            <Text size={14} style={{flex: 1}}>
+              {asset.backfillPolicy.description}
+            </Text>
           </Box>
         </SidebarSection>
       )}
@@ -89,14 +93,19 @@ export const AssetSidebarActivitySummary = ({
       {isPartitionedAsset ? null : (
         <>
           <SidebarSection title={!isObservable ? 'Latest materialization' : 'Latest observation'}>
-            {displayedEvent ? (
-              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-                <LatestMaterializationMetadata
-                  assetKey={asset.assetKey}
-                  latest={displayedEvent}
-                  liveData={liveData}
-                  definition={asset}
-                />
+            {displayedEvent &&
+            (displayedEvent.__typename === 'MaterializationEvent' ||
+              displayedEvent.__typename === 'ObservationEvent' ||
+              displayedEvent.__typename === 'FailedToMaterializeEvent') ? (
+              <div className={styles.removeTableBorderOuter}>
+                <div className={styles.removeTableBorderInner}>
+                  <LatestMaterializationMetadata
+                    assetKey={asset.assetKey}
+                    latest={displayedEvent}
+                    liveData={liveData}
+                    definition={asset}
+                  />
+                </div>
               </div>
             ) : loading ? (
               <Box padding={{vertical: 20}}>
@@ -115,9 +124,14 @@ export const AssetSidebarActivitySummary = ({
             title={!isObservable ? 'Materialization tags' : 'Observation tags'}
             collapsedByDefault
           >
-            {displayedEvent ? (
-              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-                <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
+            {displayedEvent &&
+            (displayedEvent.__typename === 'MaterializationEvent' ||
+              displayedEvent.__typename === 'ObservationEvent' ||
+              displayedEvent.__typename === 'FailedToMaterializeEvent') ? (
+              <div className={styles.removeTableBorderOuter}>
+                <div className={styles.removeTableBorderInner}>
+                  <AssetEventSystemTags event={displayedEvent} paddingLeft={24} />
+                </div>
               </div>
             ) : loading ? (
               <Box padding={{vertical: 20}}>

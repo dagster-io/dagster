@@ -30,10 +30,7 @@ class S3FakeSession:
 
     def _list_objects(self, Bucket, Prefix):
         bucket = self.buckets.get(Bucket, {})
-        contents = []
-        for key in sorted(bucket.keys()):
-            if key.startswith(Prefix):
-                contents.append({"Key": key})
+        contents = [{"Key": key} for key in sorted(bucket.keys()) if key.startswith(Prefix)]
         return {"Contents": contents, "IsTruncated": False}
 
     def list_objects_v2(self, Bucket, Prefix, *args, **kwargs):

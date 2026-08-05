@@ -15,3 +15,8 @@ class DgApiRun(BaseModel):
 
 class DgApiRunList(DgApiTruncatedList[DgApiRun]):
     pass
+
+
+class DgApiRunLaunchResult(BaseModel):
+    run_id: str
+    status: DgApiRunStatus

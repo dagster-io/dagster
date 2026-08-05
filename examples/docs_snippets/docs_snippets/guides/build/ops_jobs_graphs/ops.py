@@ -16,7 +16,7 @@ class MockRequest:
         return MockResponse()
 
 
-requests = MockRequest()
+requests = MockRequest()  # ty: ignore[invalid-assignment]
 
 # start_op_marker
 

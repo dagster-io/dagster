@@ -62,10 +62,16 @@ class DatabricksWorkspace(ConfigurableResource):
 
         async with aiohttp.ClientSession(headers=headers) as session:
             list_url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/list"
-            async with session.get(list_url) as resp:
-                resp.raise_for_status()
-                data = await resp.json()
-                all_jobs_lite = data.get("jobs", [])
+            all_jobs_lite = []
+            params: dict[str, str] = {}
+            while True:
+                async with session.get(list_url, params=params) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+                    all_jobs_lite.extend(data.get("jobs", []))
+                    if not data.get("has_more"):
+                        break
+                    params["page_token"] = data["next_page_token"]
 
         job_ids_to_fetch = []
         for j in all_jobs_lite:
@@ -83,7 +89,7 @@ class DatabricksWorkspace(ConfigurableResource):
                 async with aiohttp.ClientSession(headers=headers) as session:
                     url = f"{base_url}{DATABRICKS_JOBS_API_PATH}/get?job_id={job_id}"
                     async with session.get(url) as resp:
-                        if resp.status == MAX_CONCURRENT_REQUESTS:
+                        if resp.status == RATE_LIMIT_STATUS_CODE:
                             await asyncio.sleep(1)
                             return await _fetch_single_job(job_id)
 

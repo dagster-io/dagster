@@ -11,7 +11,7 @@ def test_dagster_type_loader_one():
 def test_dagster_type_loader_missing_context():
     with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @dg.dagster_type_loader(dg.String)  # pyright: ignore[reportArgumentType]
+        @dg.dagster_type_loader(dg.String)  # ty: ignore[invalid-argument-type]
         def _foo(hello):
             return hello
 
@@ -19,6 +19,6 @@ def test_dagster_type_loader_missing_context():
 def test_dagster_type_loader_missing_variable():
     with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @dg.dagster_type_loader(dg.String)  # pyright: ignore[reportArgumentType]
+        @dg.dagster_type_loader(dg.String)  # ty: ignore[invalid-argument-type]
         def _foo(_):
             return 1

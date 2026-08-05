@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import requests
 from dagster import Failure, get_dagster_logger
+from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.cached_method import cached_method
 from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
@@ -284,6 +285,67 @@ class DbtCloudWorkspaceClient(DagsterModel):
         total_count = resp["extra"]["pagination"]["total_count"]
         return data, total_count
 
+    def get_active_job_ids(
+        self,
+        project_id: int,
+        environment_id: int,
+        job_ids: Sequence[int],
+    ) -> set[int]:
+        """Returns the subset of ``job_ids`` that currently have at least one
+        active (QUEUED, STARTING, or RUNNING) run in dbt Cloud.
+
+        Issues one ``/runs`` request per job ID with ``limit=1`` — we only need
+        a yes/no answer, so pagination is not required.
+
+        Args:
+            project_id (int): The dbt Cloud Project ID.
+            environment_id (int): The dbt Cloud Environment ID.
+            job_ids (Sequence[int]): The job IDs to test.
+
+        Returns:
+            set[int]: The subset of ``job_ids`` with at least one active run.
+        """
+        active_statuses = [
+            int(DbtCloudJobRunStatusType.QUEUED),
+            int(DbtCloudJobRunStatusType.STARTING),
+            int(DbtCloudJobRunStatusType.RUNNING),
+        ]
+        status_filter = f"[{','.join(str(s) for s in active_statuses)}]"
+        active_job_ids: set[int] = set()
+        for job_id in job_ids:
+            resp = self._make_request(
+                method="get",
+                endpoint="runs",
+                base_url=self.api_v2_url,
+                params={
+                    "account_id": self.account_id,
+                    "environment_id": environment_id,
+                    "project_id": project_id,
+                    "job_definition_id": job_id,
+                    "status__in": status_filter,
+                    "limit": 1,
+                },
+            ).json()
+            if resp.get("data"):
+                active_job_ids.add(job_id)
+        return active_job_ids
+
+    def cancel_run(self, run_id: int) -> Mapping[str, Any]:
+        """Cancels a dbt Cloud run.
+
+        Args:
+            run_id (int): The dbt Cloud Run ID.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        self._log.info(f"Cancelling dbt Cloud run {run_id}.")
+        return self._make_request(
+            method="post",
+            endpoint=f"runs/{run_id}/cancel",
+            base_url=self.api_v2_url,
+        ).json()["data"]
+
     def get_run_details(
         self, run_id: int, include_related: Sequence[str] | None = None
     ) -> Mapping[str, Any]:
@@ -333,18 +395,28 @@ class DbtCloudWorkspaceClient(DagsterModel):
         if not poll_timeout:
             poll_timeout = DAGSTER_DBT_CLOUD_POLL_TIMEOUT
         start_time = time.time()
-        while time.time() - start_time < poll_timeout:
-            run_details = self.get_run_details(run_id)
-            run = DbtCloudRun.from_run_details(run_details=run_details)
-            if run.status in {
-                DbtCloudJobRunStatusType.SUCCESS,
-                DbtCloudJobRunStatusType.ERROR,
-                DbtCloudJobRunStatusType.CANCELLED,
-            }:
-                return run_details
-            # Sleep for the configured time interval before polling again.
-            time.sleep(poll_interval)
-        raise Exception(f"Run {run.id} did not complete within {poll_timeout} seconds.")  # pyright: ignore[reportPossiblyUnboundVariable]
+        terminal_statuses = {
+            DbtCloudJobRunStatusType.SUCCESS,
+            DbtCloudJobRunStatusType.ERROR,
+            DbtCloudJobRunStatusType.CANCELLED,
+        }
+        run_details = None
+        try:
+            while time.time() - start_time < poll_timeout:
+                run_details = self.get_run_details(run_id)
+                run = DbtCloudRun.from_run_details(run_details=run_details)
+                if run.status in terminal_statuses:
+                    return run_details
+                # Sleep for the configured time interval before polling again.
+                time.sleep(poll_interval)
+        except DagsterExecutionInterruptedError:
+            self._log.warning(f"Dagster process interrupted. Cancelling dbt Cloud run {run_id}.")
+            self.cancel_run(run_id)
+            raise
+        run = DbtCloudRun.from_run_details(run_details=run_details) if run_details else None
+        raise Exception(
+            f"Run {run.id if run else run_id} did not complete within {poll_timeout} seconds."
+        )
 
     def list_run_artifacts(
         self,

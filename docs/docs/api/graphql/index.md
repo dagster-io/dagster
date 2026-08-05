@@ -233,3 +233,37 @@ mutation TerminateRun($runId: String!) {
   }
 }
 ```
+
+### Retrieve stdout/stderr logs for a step
+
+To download the captured `stdout` and `stderr` logs for a specific step, you'll need two queries: first to get the step's `logKey`, then to retrieve pre-signed download URLs.
+
+1. Query `logsForRun` with your run ID and find the `LogsCapturedEvent` whose `stepKeys` contains the step you're interested in:
+
+   ```shell
+   query GetLogCaptureEventsForRun($runId: ID!) {
+     logsForRun(runId: $runId) {
+       ... on EventConnection {
+         events {
+           ... on LogsCapturedEvent {
+             logKey
+             stepKeys
+           }
+         }
+       }
+     }
+   }
+   ```
+
+2. Pass that `logKey` into `capturedLogsMetadata` to retrieve the download URLs:
+
+   ```shell
+   query CapturedLogsMetadataQuery($logKey: [String!]!) {
+     capturedLogsMetadata(logKey: $logKey) {
+       stdoutDownloadUrl
+       stderrDownloadUrl
+     }
+   }
+   ```
+
+In Dagster+, logs are stored in S3 and the returned URLs are pre-signed links you can use to download the full `stdout` and `stderr` files directly.

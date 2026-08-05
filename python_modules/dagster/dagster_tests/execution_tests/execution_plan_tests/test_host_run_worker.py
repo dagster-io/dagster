@@ -58,14 +58,14 @@ class ExplodingTestPipeline(ReconstructableJob):
             asset_selection,
         )
 
-    def get_definition(self):  # pyright: ignore[reportIncompatibleVariableOverride]
+    def get_definition(self):  # ty: ignore[invalid-method-override]
         if os.getpid() == _explode_pid["pid"]:
             raise Exception("Got the definition in the run worker process")
         return super().get_definition()
 
 
 def test_host_run_worker():
-    _explode_pid["pid"] = os.getpid()  # pyright: ignore[reportArgumentType]
+    _explode_pid["pid"] = os.getpid()
 
     with dg.instance_for_test() as instance:
         run_config = {
@@ -92,7 +92,7 @@ def test_host_run_worker():
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS  # ty: ignore[unresolved-attribute]
 
         logs = instance.all_logs(dagster_run.run_id)
         assert any(
@@ -113,7 +113,7 @@ def test_executor(_init_context):
 
 
 def test_custom_executor_fn():
-    _explode_pid["pid"] = os.getpid()  # pyright: ignore[reportArgumentType]
+    _explode_pid["pid"] = os.getpid()
 
     with dg.instance_for_test() as instance:
         run_config = {
@@ -140,7 +140,7 @@ def test_custom_executor_fn():
             raise_on_error=True,
         )
 
-        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.SUCCESS  # ty: ignore[unresolved-attribute]
 
         logs = instance.all_logs(dagster_run.run_id)
         assert any(

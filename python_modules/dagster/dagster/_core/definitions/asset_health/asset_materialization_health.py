@@ -1,4 +1,5 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
+from functools import cached_property, reduce
 from typing import TYPE_CHECKING, Optional, TypeAlias
 
 from dagster_shared import record
@@ -37,12 +38,20 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
     partitions_snap: PartitionsSnap | None
     latest_failed_to_materialize_timestamp: float | None = None
     latest_failed_to_materialize_run_id: str | None = None
+    # Number of currently failed partitions whose failing run will be automatically retried.
+    # Derived from (up_for_retry ∩ failed) on the full state, so it never exceeds
+    # num_failed_partitions.
+    num_up_for_retry_partitions: int = 0
 
     @property
     def health_status(self) -> AssetHealthStatus:
         if self.num_failed_partitions == 0 and self.num_currently_materialized_partitions == 0:
             return AssetHealthStatus.UNKNOWN
         if self.num_failed_partitions > 0:
+            # If every currently failed partition is up for retry, the asset is in a transient
+            # WARNING state rather than DEGRADED.
+            if self.num_up_for_retry_partitions == self.num_failed_partitions:
+                return AssetHealthStatus.WARNING
             return AssetHealthStatus.DEGRADED
         else:
             return AssetHealthStatus.HEALTHY
@@ -66,6 +75,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
             partitions_snap=asset_materialization_health_state.partitions_snap,
             latest_failed_to_materialize_timestamp=asset_materialization_health_state.latest_failed_to_materialize_timestamp,
             latest_failed_to_materialize_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
+            num_up_for_retry_partitions=asset_materialization_health_state.num_up_for_retry_partitions,
         )
 
     @classmethod
@@ -78,7 +88,7 @@ class MinimalAssetMaterializationHealthState(LoadableBy[AssetKey]):
         return [asset_materialization_health_states.get(key) for key in keys]
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(skip_when_none_fields={"up_for_retry_subsets_by_run_id"})
 @record.record
 class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     """For tracking the materialization health of an asset, we only care about the most recent
@@ -98,6 +108,11 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     failed_subset: The subset of the asset that is currently in a failed state.
     partitions_snap: The partitions definition for the asset. None if it is not a partitioned asset.
     latest_terminal_run_id: The id of the latest run with a successful or failed materialization event for the asset.
+    up_for_retry_subsets_by_run_id: For each currently failed run that will be automatically
+        retried, the subset of the asset that failed in that run. Keyed by run id so that the
+        entries can be individually re-validated against the run's current retry status (a run
+        tagged as will-retry may never actually be retried, e.g. on infra failures). None when
+        up-for-retry state is not tracked (e.g. state computed before this was tracked).
     """
 
     materialized_subset: SerializableEntitySubset[AssetKey]
@@ -107,6 +122,7 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     latest_materialization_timestamp: float | None = None
     latest_failed_to_materialize_timestamp: float | None = None
     latest_failed_to_materialize_run_id: str | None = None
+    up_for_retry_subsets_by_run_id: Mapping[str, SerializableEntitySubset[AssetKey]] | None = None
 
     @property
     def partitions_def(self) -> PartitionsDefinition | None:
@@ -119,11 +135,48 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
         """The subset of the asset that is currently in a successfully materialized state."""
         return self.materialized_subset.compute_difference(self.failed_subset)
 
+    @cached_property
+    def up_for_retry_subset(self) -> SerializableEntitySubset[AssetKey] | None:
+        """The subset of the asset that is currently failed and whose failing run will be retried:
+        the union of the per-run up-for-retry subsets, intersected with the failed subset (so it
+        never extends beyond the failed subset, even if the per-run entries drift). None when
+        up-for-retry state is not tracked.
+
+        Cached: this record is immutable, so the union is invariant for the life of the instance.
+        """
+        if self.up_for_retry_subsets_by_run_id is None:
+            return None
+        union = reduce(
+            lambda acc, subset: acc.compute_union(subset),
+            self.up_for_retry_subsets_by_run_id.values(),
+            # empty subset of the same shape as failed_subset
+            self.failed_subset.compute_difference(self.failed_subset),
+        )
+        return union.compute_intersection(self.failed_subset)
+
+    @property
+    def num_up_for_retry_partitions(self) -> int:
+        """Number of currently failed partitions whose failing run will be retried. Returns 0 when
+        up-for-retry state is not tracked.
+        """
+        up_for_retry_subset = self.up_for_retry_subset
+        if up_for_retry_subset is None:
+            return 0
+        return up_for_retry_subset.size
+
     @property
     def health_status(self) -> AssetHealthStatus:
         if self.materialized_subset.is_empty and self.failed_subset.is_empty:
             return AssetHealthStatus.UNKNOWN
         elif not self.failed_subset.is_empty:
+            # If every currently failed partition is up for retry, the asset is in a transient
+            # WARNING state rather than DEGRADED.
+            up_for_retry_subset = self.up_for_retry_subset
+            if (
+                up_for_retry_subset is not None
+                and self.failed_subset.compute_difference(up_for_retry_subset).is_empty
+            ):
+                return AssetHealthStatus.WARNING
             return AssetHealthStatus.DEGRADED
         else:
             return AssetHealthStatus.HEALTHY
@@ -137,6 +190,12 @@ class AssetMaterializationHealthState(LoadableBy[AssetKey]):
     ) -> "AssetMaterializationHealthState":
         """Creates an AssetMaterializationHealthState for the given asset. Requires fetching the AssetRecord
         and potentially the latest run from the DB, or regenerating the partition status cache.
+
+        NOTE: this method always sets up_for_retry_subsets_by_run_id to None, so an asset whose
+        state is recomputed from scratch reports DEGRADED rather than WARNING until its next
+        failure event. We could compute the true up-for-retry state by fetching the latest run for
+        each failed partition; this is intentionally skipped in the first version of this change
+        and can be added later.
         """
         asset_record = await AssetRecord.gen(loading_context, asset_key)
 

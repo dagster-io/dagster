@@ -1,4 +1,12 @@
-import {Box, ButtonLink, Colors, ConfigTypeSchema, Icon, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  Colors,
+  ConfigTypeSchema,
+  Icon,
+  MiddleTruncate,
+  Tag,
+} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {metadataForAssetNode} from '../AssetMetadata';
@@ -52,7 +60,9 @@ export const ComputeDetailsSection = ({
         ) : null}
       </AttributeAndValue>
 
-      <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
+      <AttributeAndValue label="Code version">
+        <MiddleTruncate text={assetNode.opVersion} />
+      </AttributeAndValue>
 
       <AttributeAndValue label="Op tags">
         {opTags.length > 0 && opTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}

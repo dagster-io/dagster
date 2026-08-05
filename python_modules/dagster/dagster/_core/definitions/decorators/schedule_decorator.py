@@ -110,7 +110,9 @@ def schedule(
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This parameter will replace `job` and `job_name`.
-        owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the schedule.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the schedule.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
 
     def inner(fn: RawScheduleEvaluationFunction) -> ScheduleDefinition:
@@ -119,7 +121,7 @@ def schedule(
         check.callable_param(fn, "fn")
         validate_resource_annotated_function(fn)
 
-        schedule_name = name or fn.__name__
+        schedule_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         validated_tags = None
 
@@ -182,8 +184,8 @@ def schedule(
                     )
                     yield RunRequest(
                         run_key=None,
-                        run_config=evaluated_run_config,
-                        tags=evaluated_tags,
+                        run_config=evaluated_run_config,  # ty: ignore[invalid-argument-type]
+                        tags=evaluated_tags,  # ty: ignore[invalid-argument-type]
                     )
                 elif isinstance(result, list):
                     yield from cast("list[RunRequest]", result)

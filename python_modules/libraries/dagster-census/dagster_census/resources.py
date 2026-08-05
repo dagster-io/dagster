@@ -182,7 +182,7 @@ class CensusResource(ConfigurableResource):
         """Given a Census sync run, poll until the run is complete.
 
         Args:
-            sync_id (int): The Census Sync Run ID.
+            sync_run_id (int): The Census Sync Run ID.
             poll_interval (float): The time (in seconds) that will be waited between successive polls.
             poll_timeout (float): The maximum time that will waited before this operation is timed
                 out. By default, this will never time out.
@@ -298,17 +298,14 @@ class CensusResource(ConfigurableResource):
         Returns:
             CensusWorkspaceData: A snapshot of the Census workspace's syncs.
         """
-        all_syncs = []
         page = self.make_request(method="GET", endpoint="syncs")
 
         last_page_number = page["pagination"]["last_page"]
-        for sync in page["data"]:
-            all_syncs.append(self._census_sync_struct_from_json(sync))
+        all_syncs = [self._census_sync_struct_from_json(sync) for sync in page["data"]]
 
         for i in range(2, last_page_number + 1):
             page = self.make_request(method="GET", endpoint="syncs", page_number=i)
-            for sync in page["data"]:
-                all_syncs.append(self._census_sync_struct_from_json(sync))
+            all_syncs.extend(self._census_sync_struct_from_json(sync) for sync in page["data"])
 
         return CensusWorkspaceData(syncs=all_syncs)
 

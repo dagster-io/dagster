@@ -1,0 +1,27 @@
+@keyframes pulse {
+  0% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(0.6);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
+.runStatusDot {
+  border-radius: 50%;
+  transition: filter 200ms linear;
+}
+
+.runStatusDot:hover {
+  animation: none;
+  filter: brightness(0.6);
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}

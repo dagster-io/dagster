@@ -147,6 +147,6 @@ def scope_add_downstream_assets():
         defs = dg.Definitions(
             jobs=[my_upstream_job],
             assets=[fivetran_assets, survey_responses_file],
-            resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
+            resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},  # ty: ignore[too-many-positional-arguments]
         )
         # end_add_downstream_assets

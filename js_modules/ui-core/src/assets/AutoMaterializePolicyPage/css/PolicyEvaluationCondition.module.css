@@ -1,0 +1,19 @@
+.depthLine {
+  background-color: var(--color-keyline-default);
+  align-self: stretch;
+  margin: 0 4px 0 7px; /* 7px to align with center of icon in row above */
+  width: 2px;
+}
+
+.conditionLabel {
+  color: var(--color-text-default);
+  font-weight: 400;
+}
+
+.conditionLabelGroup {
+  font-weight: 600;
+}
+
+.conditionLabelSkipped {
+  color: var(--color-text-disabled);
+}

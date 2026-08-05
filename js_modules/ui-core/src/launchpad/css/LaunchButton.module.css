@@ -1,0 +1,18 @@
+.maxwidthText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 350px;
+}
+
+.launchMenuItem {
+  max-width: 200px;
+}
+
+.dropdownArrow {
+  min-width: initial;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: 1px solid var(--color-keyline-default);
+  margin-left: 0;
+}

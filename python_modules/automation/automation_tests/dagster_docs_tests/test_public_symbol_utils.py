@@ -243,7 +243,7 @@ class TestGetPublicMethodsFromClass:
         def problematic_attr(self):
             raise RuntimeError("Cannot access this attribute")
 
-        MockClass.problematic_attr = property(problematic_attr)  # type: ignore[misc]
+        MockClass.problematic_attr = property(problematic_attr)  # type: ignore[misc]  # ty: ignore[unresolved-attribute]
 
         try:
             methods = get_public_methods_from_class(MockClass, "test.MockClass")

@@ -52,19 +52,19 @@ def run2() -> dg.MaterializeResult:
 # these checks should never be executed as they are not required
 # and do not have an automation condition
 @dg.asset_check(name="outside", asset="backfillA")
-def outsideA() -> dg.AssetCheckResult: ...
+def outsideA() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
 
 @dg.asset_check(name="outside", asset="backfillB")
-def outsideB() -> dg.AssetCheckResult: ...
+def outsideB() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
 
 @dg.asset_check(name="outside", asset="run1")
-def outside1() -> dg.AssetCheckResult: ...
+def outside1() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
 
 @dg.asset_check(name="outside", asset="run2")
-def outside2() -> dg.AssetCheckResult: ...
+def outside2() -> dg.AssetCheckResult: ...  # ty: ignore[empty-body]
 
 
 defs = dg.Definitions(

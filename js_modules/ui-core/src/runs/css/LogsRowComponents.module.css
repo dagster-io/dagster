@@ -1,0 +1,92 @@
+.row {
+  font-size: 12px;
+  width: 100%;
+  height: 100%;
+  max-height: 200px;
+  word-break: break-word;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  overflow: hidden;
+  border-top: 1px solid var(--color-keyline-default);
+}
+
+.rowHighlighted {
+  background-color: var(--color-background-light-hover);
+}
+
+.rowDebug {
+  color: var(--color-text-light);
+  background-color: var(--color-background-default);
+}
+
+.rowInfo {
+  color: var(--color-text-default);
+  background-color: var(--color-background-default);
+}
+
+.rowEvent {
+  color: var(--color-text-default);
+  background-color: var(--color-background-default);
+}
+
+.rowWarning {
+  color: var(--color-text-yellow);
+  background-color: var(--color-background-yellow);
+}
+
+.rowError {
+  color: var(--color-text-red);
+  background-color: var(--color-background-red);
+}
+
+.rowCritical {
+  color: var(--color-text-red);
+  background-color: var(--color-background-red);
+}
+
+.structuredContent {
+  box-sizing: border-box;
+  border-left: 1px solid var(--color-keyline-default);
+  word-break: break-word;
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+}
+
+.opColumnContainer {
+  width: 250px;
+  flex-shrink: 0;
+  padding: 4px 12px;
+}
+
+.timestampColumnContainer {
+  flex-shrink: 0;
+  padding: 4px 4px 4px 12px;
+}
+
+.timestampColumnContainer a:link,
+.timestampColumnContainer a:visited,
+.timestampColumnContainer a:hover,
+.timestampColumnContainer a:active {
+  color: var(--color-text-light);
+}
+
+.timestampColumnContainer a:hover,
+.timestampColumnContainer a:active {
+  text-decoration: underline;
+}
+
+.eventTypeColumnContainer {
+  flex-shrink: 0;
+  color: var(--color-text-light);
+  padding: 4px;
+}

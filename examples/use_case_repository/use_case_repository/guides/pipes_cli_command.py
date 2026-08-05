@@ -9,7 +9,7 @@ def cli_command_asset(
 ):
     cmd = [shutil.which("bash"), "external_script.sh"]
     return pipes_subprocess_client.run(
-        command=cmd,
+        command=cmd,  # ty: ignore[invalid-argument-type]
         context=context,
         env={"MY_ENV_VAR": "example_value"},
     ).get_materialize_result()

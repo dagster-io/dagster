@@ -274,27 +274,27 @@ class FivetranWorkspaceData:
 
             for schema in schema_config.schemas.values():
                 if schema.enabled:
-                    for table in schema.tables.values():
-                        if table.enabled:
-                            data.append(
-                                FivetranConnectorTableProps(
-                                    table=get_fivetran_connector_table_name(
-                                        schema_name=schema.name_in_destination,
-                                        table_name=table.name_in_destination,
-                                    ),
-                                    connector_id=connector.id,
-                                    connector_name=connector.name,
-                                    connector_url=connector.url,
-                                    destination_id=connector.destination_id,
-                                    schema_config=schema_config,
-                                    database=destination.database,
-                                    service=destination.service,
-                                    sync_frequency=connector.sync_frequency,
-                                    schedule_type=connector.schedule_type,
-                                    daily_sync_time=connector.daily_sync_time,
-                                    connector_config=connector.config,
-                                )
-                            )
+                    data.extend(
+                        FivetranConnectorTableProps(
+                            table=get_fivetran_connector_table_name(
+                                schema_name=schema.name_in_destination,
+                                table_name=table.name_in_destination,
+                            ),
+                            connector_id=connector.id,
+                            connector_name=connector.name,
+                            connector_url=connector.url,
+                            destination_id=connector.destination_id,
+                            schema_config=schema_config,
+                            database=destination.database,
+                            service=destination.service,
+                            sync_frequency=connector.sync_frequency,
+                            schedule_type=connector.schedule_type,
+                            daily_sync_time=connector.daily_sync_time,
+                            connector_config=connector.config,
+                        )
+                        for table in schema.tables.values()
+                        if table.enabled
+                    )
         return data
 
     # Cache workspace data selection for a specific connector_selector_fn

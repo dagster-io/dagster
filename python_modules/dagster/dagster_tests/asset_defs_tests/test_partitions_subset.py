@@ -148,9 +148,7 @@ def test_time_window_partitions_subset_serialization_deserialization(
         ).with_partition_keys(["2023-01-01"]),
     )
 
-    deserialized = dg.deserialize_value(
-        dg.serialize_value(cast("TimeWindowPartitionsSubset", subset)), TimeWindowPartitionsSubset
-    )
+    deserialized = dg.deserialize_value(dg.serialize_value(subset), TimeWindowPartitionsSubset)
     assert deserialized == subset
     assert deserialized.get_partition_keys() == ["2023-01-01"]
     assert (

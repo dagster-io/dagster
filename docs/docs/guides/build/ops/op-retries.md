@@ -61,3 +61,16 @@ In certain more nuanced situations, we may need to evaluate code to determine if
 <CodeExample path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/retries.py" startAfter="manual_start" endBefore="manual_end" title="src/<project_name>/defs/ops.py"/>
 
 Using `raise from` will ensure the original exceptions information is captured by Dagster.
+
+### Preventing retries for specific exceptions
+
+When a `RetryPolicy` is attached to an op or asset, every exception triggers a retry by default. For exceptions that retrying cannot fix (validation errors, permanent permission issues, malformed input), raise <PyObject section="ops" module="dagster" object="Failure" /> with `allow_retries=False` to bypass the retry policy and fail the op immediately:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/retries.py"
+  startAfter="allow_retries_false_start"
+  endBefore="allow_retries_false_end"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+For more details on emitting failure events from ops, see [Op events and exceptions](/guides/build/ops/op-events#failures).

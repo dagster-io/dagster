@@ -17,16 +17,15 @@ app = Flask(__name__)
 def generate_sample_data() -> list[dict[str, Any]]:
     """Generate sample records spanning the last 7 days."""
     base_time = datetime.now() - timedelta(days=7)
-    data = []
-    for i in range(100):
-        data.append(
-            {
-                "id": f"record-{i:03d}",
-                "timestamp": (base_time + timedelta(hours=i)).isoformat(),
-                "value": 100 + i * 10,
-                "status": "active" if i % 2 == 0 else "inactive",
-            }
-        )
+    data = [
+        {
+            "id": f"record-{i:03d}",
+            "timestamp": (base_time + timedelta(hours=i)).isoformat(),
+            "value": 100 + i * 10,
+            "status": "active" if i % 2 == 0 else "inactive",
+        }
+        for i in range(100)
+    ]
     return data
 
 
@@ -83,9 +82,9 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"API server starting on {args.host}:{args.port}")  # noqa: T201
-    print(f"Sample data: {len(app.config['SAMPLE_DATA'])} records available")  # noqa: T201
-    print(f"Get records: GET http://localhost:{args.port}/records")  # noqa: T201
+    print(f"API server starting on {args.host}:{args.port}")
+    print(f"Sample data: {len(app.config['SAMPLE_DATA'])} records available")
+    print(f"Get records: GET http://localhost:{args.port}/records")
 
     app.run(host=args.host, port=args.port, debug=False)
 

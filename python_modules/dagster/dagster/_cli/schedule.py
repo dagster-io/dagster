@@ -188,7 +188,7 @@ def execute_start_command(
                 try:
                     instance.start_schedule(remote_schedule)
                 except DagsterInvariantViolationError as ex:
-                    raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+                    raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
             print_fn(f"Started all schedules for repository {repo.name}")
         else:
@@ -197,7 +197,7 @@ def execute_start_command(
             try:
                 instance.start_schedule(repo.get_schedule(schedule_name))
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+                raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
             print_fn(f"Started schedule {schedule_name}")
 
@@ -238,7 +238,7 @@ def execute_stop_command(
                 remote_schedule,
             )
         except DagsterInvariantViolationError as ex:
-            raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+            raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
         print_fn(f"Stopped schedule {schedule_name}")
 
@@ -371,7 +371,7 @@ def execute_restart_command(
                         )
                         instance.start_schedule(remote_schedule)
                     except DagsterInvariantViolationError as ex:
-                        raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+                        raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
             print_fn(f"Restarted all running schedules for repository {repo.name}")
         else:
@@ -389,13 +389,13 @@ def execute_restart_command(
 
             try:
                 instance.stop_schedule(
-                    schedule_state.instigator_origin_id,  # pyright: ignore[reportOptionalMemberAccess]
+                    schedule_state.instigator_origin_id,  # ty: ignore[unresolved-attribute]
                     remote_schedule.selector_id,
                     remote_schedule,
                 )
                 instance.start_schedule(remote_schedule)
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+                raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
             print_fn(f"Restarted schedule {schedule_name}")
 

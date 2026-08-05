@@ -1,0 +1,14 @@
+.filter-dropdown.filter-dropdown.filter-dropdown.filter-dropdown {
+  border-radius: 8px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-dropdown.filter-dropdown.filter-dropdown.filter-dropdown .bp5-popover-content {
+  border-radius: 8px;
+}
+
+.bp5-overlay-content {
+  max-width: 100%;
+}

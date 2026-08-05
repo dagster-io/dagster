@@ -30,8 +30,6 @@ def _parse_and_populate_model_with_annotated_errors(
     Args:
         cls (Type[T]): The Pydantic model class to use for validation.
         obj_parse_root (ValueAndSourcePositionTree): The parsed YAML object to use for validation.
-        file_root (Optional[ValueAndSourcePositionTree]): The root of the parsed YAML file, used for
-            error reporting.
         obj_key_path_prefix (KeyPath): The path of keys that lead to the current object, used for
             both error reporting and populating source position information.
     """
@@ -61,7 +59,7 @@ def _parse_and_populate_model_with_annotated_errors(
 
         raise ValidationError.from_exception_data(
             title=e.title,
-            line_errors=line_errors,
+            line_errors=line_errors,  # ty: ignore[invalid-argument-type]
             input_type="json",
             hide_input=False,
         ) from None
@@ -128,7 +126,7 @@ def enrich_validation_errors_with_source_position(
 
         err = ValidationError.from_exception_data(
             title=e.title,
-            line_errors=line_errors,
+            line_errors=line_errors,  # ty: ignore[invalid-argument-type]
             input_type="json",
             hide_input=False,
         )

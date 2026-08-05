@@ -6,8 +6,9 @@ build-backend = "hatchling.build"
 packages = ["mwaa_example"]
 
 [project]
-name = "mwaa-example"
+name = "airlift-mwaa-example"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster",
     "dagster-webserver",

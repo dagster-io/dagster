@@ -22,8 +22,8 @@ import {useAllAssets} from '../assets/useAllAssets';
 import {buildTagString} from '../ui/tagAsString';
 import {WorkspaceContext, WorkspaceState} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-import {workspacePath} from '../workspace/workspacePath';
+import {buildRepoAddress, buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+import {assetGroupPath, workspacePath} from '../workspace/workspacePath';
 
 const primaryDataToSearchResults = (
   locationEntries: WorkspaceState['locationEntries'],
@@ -70,7 +70,7 @@ const primaryDataToSearchResults = (
                   : 'Asset group',
               node: assetGroup,
               href: flagAssetGraphGroupsPerCodeLocation
-                ? workspacePath(repoName, locationName, `/asset-groups/${groupName}`)
+                ? assetGroupPath(buildRepoAddress(repoName, locationName), groupName)
                 : globalAssetGraphPathToString({opsQuery: `group:"${groupName}"`, opNames: []}),
               type: SearchResultType.AssetGroup,
             },

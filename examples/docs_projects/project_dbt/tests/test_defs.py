@@ -1,6 +1,6 @@
 import dagster as dg
 from dagster_duckdb import DuckDBResource
-from project_dbt.defs.assets.metrics import manhattan_stats
+from project_dbt.defs.assets.metrics import manhattan_stats  # ty: ignore[unresolved-import]
 
 
 def test_manhattan_stats_returns_row_count(tmp_path):

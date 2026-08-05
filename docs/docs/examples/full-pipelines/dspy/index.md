@@ -6,8 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/dspy.png
 tags: [code-example]
-canonicalUrl: '/examples/dspy'
-slug: '/examples/dspy'
+canonicalUrl: '/examples/full-pipelines/dspy'
+slug: '/examples/full-pipelines/dspy'
 ---
 
 In this example, you'll build an AI system that solves [NYT Connections puzzles](https://www.nytimes.com/games/connections) that:

@@ -1,7 +1,7 @@
 # ruff: isort: skip_file
 import dagster as dg
 
-from .unnested_ops import (
+from .unnested_ops import (  # ty: ignore[unresolved-import]
     add_thirty_two,
     log_number,
     multiply_by_one_point_eight,
@@ -74,7 +74,7 @@ def graph_with_multiple_outputs():
 
 @dg.job
 def subgraph_multiple_outputs_job():
-    x, y = graph_with_multiple_outputs()
+    x, y = graph_with_multiple_outputs()  # ty: ignore[not-iterable]
     echo(x)
     echo(y)
 

@@ -240,9 +240,8 @@ def compute_logical_data_version(
     ):
         return UNKNOWN_DATA_VERSION
 
-    ordered_input_versions = [
-        input_data_versions[k] for k in sorted(input_data_versions.keys(), key=str)
-    ]
+    sorted_keys = sorted(input_data_versions.keys(), key=str)
+    ordered_input_versions = [input_data_versions[k] for k in sorted_keys]  # ty: ignore[invalid-argument-type]
     all_inputs = (code_version, *(v.value for v in ordered_input_versions))
 
     hash_sig = sha256()

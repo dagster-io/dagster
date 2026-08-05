@@ -27,7 +27,7 @@ power_bi_assets = [
 
 power_bi_assets_job = dg.define_asset_job(
     name="power_bi_assets_job",
-    selection=power_bi_assets,
+    selection=power_bi_assets,  # ty: ignore[invalid-argument-type]
 )
 
 # start_power_bi_schedule

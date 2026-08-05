@@ -168,6 +168,10 @@
   justify-content: center;
 }
 
+.itemLabel {
+  flex: 1;
+}
+
 .identityItemText {
   overflow: hidden;
   text-overflow: ellipsis;

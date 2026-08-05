@@ -404,6 +404,111 @@ def test_user_deployment_checksum_changes(template: HelmTemplate):
         assert pre_upgrade_checksum != post_upgrade_checksum
 
 
+def _fixed_server_id_arg(deployment: models.V1Deployment) -> str:
+    args = deployment.spec.template.spec.containers[0].args
+    assert "--fixed-server-id" in args
+    return args[args.index("--fixed-server-id") + 1]
+
+
+def test_grpc_fixed_server_id_matches_checksum(template: HelmTemplate):
+    # The gRPC server id is the deployment checksum, so every replica shares one
+    # id that changes only when the deployment is redeployed.
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[
+                create_simple_user_deployment("deployment-one"),
+                create_complex_user_deployment("deployment-two"),
+            ],
+        )
+    )
+    for deployment in template.render(helm_values):
+        assert (
+            _fixed_server_id_arg(deployment)
+            == deployment.spec.template.metadata.annotations["checksum/dagster-user-deployment"]
+        )
+
+
+def test_grpc_fixed_server_id_unchanged_across_identical_renders(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("deployment-one")],
+        )
+    )
+    pre_upgrade_templates = template.render(helm_values)
+    post_upgrade_templates = template.render(helm_values)
+
+    for pre_upgrade_deployment, post_upgrade_deployment in zip(
+        pre_upgrade_templates, post_upgrade_templates
+    ):
+        assert _fixed_server_id_arg(pre_upgrade_deployment) == _fixed_server_id_arg(
+            post_upgrade_deployment
+        )
+
+
+def test_grpc_fixed_server_id_changes_when_config_changes(template: HelmTemplate):
+    pre_upgrade_helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_simple_user_deployment("deployment-one")],
+        )
+    )
+    post_upgrade_helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_complex_user_deployment("deployment-one")],
+        )
+    )
+
+    [pre_upgrade_deployment] = template.render(pre_upgrade_helm_values)
+    [post_upgrade_deployment] = template.render(post_upgrade_helm_values)
+
+    assert _fixed_server_id_arg(pre_upgrade_deployment) != _fixed_server_id_arg(
+        post_upgrade_deployment
+    )
+
+
+def test_code_server_has_no_fixed_server_id(template: HelmTemplate):
+    # Code servers reload in place by changing their own server id; pinning one
+    # would suppress that signal, so the flag is only injected for `api grpc`.
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert "--fixed-server-id" not in dagster_user_deployment.spec.template.spec.containers[0].args
+
+
+def test_code_server_rejects_multiple_replicas(template: HelmTemplate, capfd):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+        replicaCount=2,
+    )
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(
+            DagsterHelmValues.construct(
+                dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+            )
+        )
+
+    _, err = capfd.readouterr()
+    assert "codeServerArgs cannot be used with replicaCount > 1" in err
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     deployment = create_simple_user_deployment("foo")
@@ -855,6 +960,41 @@ def _assert_no_container_context(user_deployment):
 def _assert_has_container_context(user_deployment):
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
     assert "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT" in env_names
+
+
+def test_user_deployment_replica_count_default_is_one(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    user_deployments = template.render(helm_values)
+    assert len(user_deployments) == 1
+    assert user_deployments[0].spec.replicas == 1
+
+
+@pytest.mark.parametrize("replica_count", [1, 2])
+def test_user_deployment_replica_count(template: HelmTemplate, replica_count: int):
+    deployment = create_simple_user_deployment("foo")
+    deployment.replicaCount = replica_count
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    user_deployments = template.render(helm_values)
+    assert len(user_deployments) == 1
+    assert user_deployments[0].spec.replicas == replica_count
+
+
+def test_user_deployment_replica_count_rejects_zero():
+    with pytest.raises(Exception):
+        UserDeployment(
+            name="foo",
+            image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+            dagsterApiGrpcArgs=["-m", "foo"],
+            port=3030,
+            replicaCount=0,
+        )
 
 
 def test_user_deployment_image(template: HelmTemplate):
@@ -1617,6 +1757,101 @@ def test_env_container_context(template: HelmTemplate, user_deployment_configmap
                 }
             },
         }
+    }
+
+
+def test_code_server_cli_with_scheduling_fields(
+    template: HelmTemplate, user_deployment_configmap_template
+):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        codeServerArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+        nodeSelector=kubernetes.NodeSelector.parse_obj({"disktype": "ssd"}),
+        tolerations=kubernetes.Tolerations.parse_obj(
+            [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}]
+        ),
+        podSecurityContext=kubernetes.PodSecurityContext.parse_obj(
+            {"runAsUser": 1000, "runAsGroup": 3000}
+        ),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    assert len(dagster_user_deployment.spec.template.spec.containers[0].env) == 3
+
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CONTAINER_CONTEXT"
+    parsed = json.loads(container_context.value)
+    assert parsed == {
+        "k8s": {
+            "image_pull_policy": "Always",
+            "env_config_maps": ["release-name-dagster-user-deployments-foo-user-env"],
+            "namespace": "default",
+            "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+            "run_k8s_config": {
+                "pod_spec_config": {
+                    "automount_service_account_token": True,
+                    "node_selector": {"disktype": "ssd"},
+                    "tolerations": [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}],
+                    "security_context": {"runAsUser": 1000, "runAsGroup": 3000},
+                },
+            },
+        }
+    }
+
+
+def test_container_context_with_pod_scheduling_fields(
+    template: HelmTemplate, user_deployment_configmap_template
+):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+        nodeSelector=kubernetes.NodeSelector.parse_obj({"disktype": "ssd", "region": "us-east-1"}),
+        tolerations=kubernetes.Tolerations.parse_obj(
+            [
+                {
+                    "key": "dedicated",
+                    "operator": "Equal",
+                    "value": "dagster",
+                    "effect": "NoSchedule",
+                },
+            ]
+        ),
+        podSecurityContext=kubernetes.PodSecurityContext.parse_obj(
+            {"runAsUser": 1000, "runAsGroup": 3000, "fsGroup": 2000}
+        ),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+    container_context = dagster_user_deployment.spec.template.spec.containers[0].env[2]
+    assert container_context.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    parsed = json.loads(container_context.value)
+
+    pod_spec_config = parsed["k8s"]["run_k8s_config"]["pod_spec_config"]
+    assert pod_spec_config["node_selector"] == {"disktype": "ssd", "region": "us-east-1"}
+    assert pod_spec_config["tolerations"] == [
+        {
+            "key": "dedicated",
+            "operator": "Equal",
+            "value": "dagster",
+            "effect": "NoSchedule",
+        },
+    ]
+    assert pod_spec_config["security_context"] == {
+        "runAsUser": 1000,
+        "runAsGroup": 3000,
+        "fsGroup": 2000,
     }
 
 

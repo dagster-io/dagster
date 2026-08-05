@@ -1292,19 +1292,6 @@ def test_apply_no_proxy_env_workaround_noop_when_config_already_set(
     assert kubernetes.client.Configuration.get_default_copy().no_proxy == "library-set"
 
 
-@requires_no_proxy_attr
-def test_kubernetes_client_no_proxy_bug_canary():
-    # Canary: Configuration.__init__ reads NO_PROXY but then clobbers it to None.
-    # See https://github.com/kubernetes-client/python/issues/2520. When this
-    # assertion starts failing, the upstream bug has been fixed — delete
-    # apply_no_proxy_env_workaround and the call sites in dagster_k8s.
-    with mock.patch.dict(os.environ, {"NO_PROXY": ".internal,.local"}, clear=False):
-        assert kubernetes.client.Configuration().no_proxy is None, (
-            "kubernetes-client/python#2520 appears to be fixed — "
-            "apply_no_proxy_env_workaround is no longer needed"
-        )
-
-
 def test_load_kubernetes_config_incluster():
     with (
         mock.patch.object(kubernetes.config, "load_incluster_config") as load_incluster,

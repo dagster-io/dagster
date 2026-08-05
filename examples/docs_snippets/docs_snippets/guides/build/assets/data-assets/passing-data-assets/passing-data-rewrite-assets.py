@@ -1,12 +1,12 @@
 import dagster as dg
 
 
-def download_files() -> str:
+def download_files() -> str:  # ty: ignore[empty-body]
     # Download files from S3, the web, etc.
     ...
 
 
-def unzip_files(zipfile: str) -> list[str]:
+def unzip_files(zipfile: str) -> list[str]:  # ty: ignore[empty-body]
     # Unzip files to local disk or persistent storage
     ...
 

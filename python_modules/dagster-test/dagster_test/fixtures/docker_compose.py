@@ -2,21 +2,25 @@ import json
 import logging
 import os
 import subprocess
+import time
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 
 import pytest
-import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_test.fixtures.utils import BUILDKITE
 
 # Hard upper bound on `docker compose up`. Set generously enough to cover cold image pulls
 # on a busy CI agent, but well below pytest-timeout so we fail with diagnostics rather than
 # being killed mid-syscall by the per-test timeout (which gives an unactionable traceback).
-# Bumped 240s → 480s (2x) to give cold-cache image pulls comfortable headroom on
-# freshly-spun Karpenter nodes. With the retry path, worst-case fixture wallclock is
-# ~1050s (480s + 90s down + 480s retry), accommodated by pytest-timeout=1200s.
-_DOCKER_COMPOSE_UP_TIMEOUT = 480
+# Bumped progressively (240s → 480s → 720s) as cold-pull latency on freshly-spun Karpenter
+# nodes climbed. The previous 480s setting paired with a retry-on-timeout path; that retry
+# raced with dockerd, which kept materializing the in-flight container after the CLI was
+# killed, so the second `up` hit a name conflict (see #24146 thread for analysis). Empirical
+# data showed dockerd was slow, not stuck, so giving the first attempt enough wallclock to
+# finish naturally is the right shape.
+_DOCKER_COMPOSE_UP_TIMEOUT = 720
 
 # Tear-down should be fast; if it isn't, the daemon is already wedged and we shouldn't
 # block the rest of the suite trying to clean up.
@@ -207,51 +211,12 @@ def docker_compose_up(docker_compose_yml, context, service, env_file, no_build: 
         ["docker", "ps", "--all"],
         ["docker", "info"],
     ]
-    # Retry once on timeout: the first attempt populates the local image cache (partial
-    # layers persist in dockerd's storage), so a second attempt typically succeeds quickly.
-    # Before retrying we explicitly run `docker compose down --volumes --remove-orphans`
-    # to clean up any containers that the first attempt partially created — `--force-recreate`
-    # alone does not handle this, because compose's recreation logic requires the existing
-    # containers to be labeled as compose-managed, and a SIGTERM mid-`up` can leave partial
-    # state that compose doesn't recognize as its own. `down` reads the YAML directly and
-    # removes by service name, so it cleans up orphans reliably.
-    # See https://github.com/dagster-io/internal/pull/23770 for the underlying analysis.
-    try:
-        _run_docker(
-            compose_command,
-            env=docker_env,
-            timeout=_DOCKER_COMPOSE_UP_TIMEOUT,
-            on_timeout_dump=diagnostics,
-        )
-    except subprocess.TimeoutExpired:
-        logging.warning(
-            "docker compose up timed out after %.0fs; cleaning up partial state and"
-            " retrying once with warm image cache",
-            _DOCKER_COMPOSE_UP_TIMEOUT,
-        )
-        # Tear down any orphans from attempt 1 so the retry has a clean slate. We use
-        # the same compose_command prefix (preserving --context, --env-file, --file) and
-        # swap `up [...]` for `down --volumes --remove-orphans`. check=False because down
-        # may itself fail if dockerd is wedged; the retry below will surface the failure.
-        up_index = compose_command.index("up")
-        down_command = compose_command[:up_index] + ["down", "--volumes", "--remove-orphans"]
-        try:
-            _run_docker(
-                down_command,
-                env=docker_env,
-                timeout=_DOCKER_COMPOSE_DOWN_TIMEOUT,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            logging.warning(
-                "docker compose down between retries also timed out; retrying up anyway"
-            )
-        _run_docker(
-            compose_command,
-            env=docker_env,
-            timeout=_DOCKER_COMPOSE_UP_TIMEOUT,
-            on_timeout_dump=diagnostics,
-        )
+    _run_docker(
+        compose_command,
+        env=docker_env,
+        timeout=_DOCKER_COMPOSE_UP_TIMEOUT,
+        on_timeout_dump=diagnostics,
+    )
 
 
 def _force_disconnect_external_containers(docker_compose_yml, docker_env):
@@ -360,7 +325,7 @@ def list_containers():
 
 
 def current_container():
-    with open("/etc/hostname") as f:
+    with open("/etc/hostname", encoding="utf-8") as f:
         container_id = f.read().strip()
     result = _run_docker(
         ["docker", "ps", "--filter", f"id={container_id}", "--format", "{{.Names}}"],
@@ -419,16 +384,68 @@ def hostnames(network):
     return hostnames
 
 
+def _wait_for_network_ipam(network, *, timeout=30, settle_polls=3, interval=0.5):
+    """Block until docker's IPAM has populated an IPAddress on `network` for
+    every running container, or until `timeout` elapses.
+
+    `docker compose up --detach` returns when containers are `Started`, but
+    docker's IPAM populates `NetworkSettings.Networks[<network>].IPAddress`
+    asynchronously around that point. Without a barrier, `hostnames()` can
+    run mid-race and drop services from the returned dict — which surfaces
+    as a `KeyError` at the caller's lookup site.
+
+    On the legacy buildkite-agent layout, `docker network connect <network>
+    <agent>` doubled as an implicit barrier — it doesn't return until the
+    network is in a settled state. On the EKS layout we skip that call
+    (the agent is a kube pod, not a docker container — there's nothing to
+    join, and `current_container()` returns empty), so the barrier has to
+    be explicit. We poll until `hostnames(network)` returns the same
+    non-empty dict for `settle_polls` consecutive ticks, which empirically
+    corresponds to IPAM having finished assigning addresses.
+    """
+    deadline = time.monotonic() + timeout
+    prev: dict[str, str] = {}
+    stable = 0
+    while time.monotonic() < deadline:
+        current = hostnames(network)
+        if current and current == prev:
+            stable += 1
+            if stable >= settle_polls:
+                return
+        else:
+            stable = 0
+        prev = current
+        time.sleep(interval)
+    logging.warning(
+        "Network %s did not settle after %ds; proceeding with %d host(s): %s",
+        network,
+        timeout,
+        len(prev),
+        sorted(prev),
+    )
+
+
 @contextmanager
 def buildkite_hostnames_cm(network):
     container = current_container()
 
-    try:
+    # On the legacy buildkite-agent layout the agent runs as a sibling docker
+    # container; joining the compose network is what makes the compose IPs
+    # routable from this process. On the EKS layout the agent is a kube pod
+    # whose network namespace is shared with the dind sidecar, so the bridge
+    # networks created by dind already exist in our namespace — there is no
+    # container to join (`current_container()` returns empty, since
+    # /etc/hostname is the pod name, not a container ID dind knows). Skip the
+    # connect when there's no container to connect.
+    if container:
         connect_container_to_network(container, network)
-        yield hostnames(network)
 
+    try:
+        _wait_for_network_ipam(network)
+        yield hostnames(network)
     finally:
-        disconnect_container_from_network(container, network)
+        if container:
+            disconnect_container_from_network(container, network)
 
 
 def default_docker_compose_yml(default_directory) -> str:
@@ -439,8 +456,8 @@ def default_docker_compose_yml(default_directory) -> str:
 
 
 def network_names_from_yml(docker_compose_yml) -> list[str]:
-    with open(docker_compose_yml) as f:
-        config = yaml.safe_load(f)
+    with open(docker_compose_yml, encoding="utf-8") as f:
+        config = safe_load_yaml(f)
     if "name" in config:
         project_name = config["name"]
     else:

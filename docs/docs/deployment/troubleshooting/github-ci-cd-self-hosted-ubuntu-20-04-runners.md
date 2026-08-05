@@ -1,6 +1,6 @@
 ---
 title: GitHub CI/CD build process fails with self-hosted Ubuntu 20.04 runners
-sidebar_position: 120
+sidebar_position: 1200
 description: Replace the PEX file install with a direct dagster-cloud CLI install to work around Ubuntu 20.04 self-hosted runner limitations.
 ---
 

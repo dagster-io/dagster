@@ -6,12 +6,12 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-import yaml
 from dagster_databricks.components.databricks_asset_bundle.configs import (
     ResolvedDatabricksExistingClusterConfig,
     ResolvedDatabricksNewClusterConfig,
     ResolvedDatabricksServerlessConfig,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 DATABRICKS_CONFIG_LOCATION_PATH = Path(__file__).parent / "configs" / "databricks.yml"
 
@@ -58,12 +58,12 @@ def mock_databricks_cli_resolved_config():
     This simulates the Databricks CLI resolving all template variables like ${workspace.current_user.userName}.
     """
     # Load the raw YAML configs
-    with open(DATABRICKS_CONFIG_LOCATION_PATH) as f:
-        databricks_config = yaml.safe_load(f)
+    with open(DATABRICKS_CONFIG_LOCATION_PATH, encoding="utf-8") as f:
+        databricks_config = safe_load_yaml(f)
 
     jobs_yml_path = DATABRICKS_CONFIG_LOCATION_PATH.parent / "resources" / "jobs.yml"
-    with open(jobs_yml_path) as f:
-        jobs_config = yaml.safe_load(f)
+    with open(jobs_yml_path, encoding="utf-8") as f:
+        jobs_config = safe_load_yaml(f)
 
     # Simulate resolved configuration with template variables expanded
     resolved_config = {

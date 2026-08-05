@@ -10,7 +10,7 @@ def test_invalid_optional_in_config():
         match=re.escape("You have passed an instance of DagsterType Int? to the config system"),
     ):
 
-        @dg.op(config_schema=dg.Optional[int])  # pyright: ignore[reportArgumentType]
+        @dg.op(config_schema=dg.Optional[int])  # ty: ignore[invalid-argument-type]
         def _op(_):
             pass
 
@@ -19,7 +19,7 @@ def test_invalid_dict_call():
     # prior to 0.7.0 dicts in config contexts were callable
     with pytest.raises(TypeError, match=re.escape("'DagsterDictApi' object is not callable")):
 
-        @dg.op(config_schema=dg.Dict({"foo": int}))  # pyright: ignore[reportCallIssue]
+        @dg.op(config_schema=dg.Dict({"foo": int}))  # ty: ignore[call-non-callable]
         def _op(_):
             pass
 
@@ -33,7 +33,7 @@ def test_list_in_config():
         ),
     ):
 
-        @dg.op(config_schema=dg.List[int])  # pyright: ignore[reportArgumentType]
+        @dg.op(config_schema=dg.List[int])
         def _op(_):
             pass
 
@@ -54,6 +54,6 @@ def test_non_scalar_key_map():
         match=re.escape("Map dict must have a scalar type as its only key."),
     ):
 
-        @dg.op(config_schema={dg.Noneable(int): str})  # pyright: ignore[reportArgumentType]
+        @dg.op(config_schema={dg.Noneable(int): str})  # ty: ignore[invalid-argument-type]
         def _op(_):
             pass

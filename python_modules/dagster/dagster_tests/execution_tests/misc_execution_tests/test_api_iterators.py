@@ -82,12 +82,12 @@ def test_execute_run_iterator():
             event = next(iterator)
             event_type = event.event_type_value
 
-        iterator.close()  # pyright: ignore[reportAttributeAccessIssue]
+        iterator.close()  # ty: ignore[unresolved-attribute]
         events = [record.dagster_event for record in records if record.is_dagster_event]
         messages = [record.user_message for record in records if not record.is_dagster_event]
-        job_failure_events = [event for event in events if event.is_job_failure]  # pyright: ignore[reportOptionalMemberAccess]
+        job_failure_events = [event for event in events if event.is_job_failure]  # ty: ignore[unresolved-attribute]
         assert len(job_failure_events) == 1
-        assert "GeneratorExit" in job_failure_events[0].job_failure_data.error.message  # pyright: ignore[reportOptionalMemberAccess]
+        assert "GeneratorExit" in job_failure_events[0].job_failure_data.error.message  # ty: ignore[unresolved-attribute]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
 
@@ -126,7 +126,8 @@ def test_execute_run_iterator():
                     instance=run_monitoring_instance,
                 )
             )
-            assert (  # pyright: ignore[reportOperatorIssue]
+            assert event.message is not None
+            assert (
                 "Ignoring a duplicate run that was started from somewhere other than the run"
                 " monitor daemon" in event.message
             )
@@ -178,7 +179,7 @@ def test_restart_running_run_worker():
 
         assert any(
             [
-                f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"  # pyright: ignore[reportOperatorIssue]
+                f"{dagster_run.job_name} ({dagster_run.run_id}) started a new run worker"  # ty: ignore[unsupported-operator]
                 " while the run was already in state DagsterRunStatus.STARTED. " in event.message
                 for event in events
             ]
@@ -192,7 +193,7 @@ def test_restart_running_run_worker():
             ]
         )
 
-        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
+        assert instance.get_run_by_id(dagster_run.run_id).status == DagsterRunStatus.FAILURE  # ty: ignore[unresolved-attribute]
 
 
 def test_start_run_worker_after_run_failure():
@@ -213,7 +214,8 @@ def test_start_run_worker_after_run_failure():
         ).with_status(DagsterRunStatus.FAILURE)
 
         event = next(execute_run_iterator(InMemoryJob(job_def), dagster_run, instance=instance))
-        assert (  # pyright: ignore[reportOperatorIssue]
+        assert event.message is not None
+        assert (
             "Ignoring a run worker that started after the run had already finished."
             in event.message
         )
@@ -259,7 +261,8 @@ def test_execute_canceled_state():
         iter_events = list(execute_run_iterator(InMemoryJob(job_def), iter_run, instance=instance))
 
         assert len(iter_events) == 1
-        assert (  # pyright: ignore[reportOperatorIssue]
+        assert iter_events[0].message is not None
+        assert (
             "Not starting execution since the run was canceled before execution could start"
             in iter_events[0].message
         )
@@ -330,7 +333,7 @@ def test_execute_plan_iterator():
             event = next(iterator)
             event_type = event.event_type_value
 
-        iterator.close()  # pyright: ignore[reportAttributeAccessIssue]
+        iterator.close()  # ty: ignore[unresolved-attribute]
         messages = [record.user_message for record in records if not record.is_dagster_event]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
@@ -359,4 +362,4 @@ def test_run_fails_while_loading_code():
         list(gen_execute_run)
 
         # Execution is stopped, stays in failure state
-        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE  # pyright: ignore[reportOptionalMemberAccess]
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.FAILURE  # ty: ignore[unresolved-attribute]

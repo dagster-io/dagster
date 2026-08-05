@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+INTERNAL_REPO_URL = "https://github.com/dagster-io/internal.git"
+
 
 @dataclass
 class SyncConfig:
@@ -15,6 +17,8 @@ class SyncConfig:
     originated_label: str
     internal_path: str  # for outbound completeness (e.g. "dagster-oss/")
     internal_path_prefix: str  # for correctness normalization (e.g. "dagster-oss/")
+    copybara_workflow: str = ""  # workflow name in copy.bara.sky
+    dest_repo_url: str = ""  # URL copybara pushes to (rewritten to local path by `run`)
     file_renames: dict[str, str] = field(default_factory=dict)
     known_incorrect: list[str] = field(default_factory=list)
     source_repo_name: str = ""
@@ -62,6 +66,21 @@ KNOWN_DAGSTER_INBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     # intentionally reverted by "fix: revert trigger cluster_id + add queue to dogfood
     # gate steps (#23396)", so the current state is consistent.
     "e3554b46b14c77826141314ee2086be3ae04b71c",
+    # Adds kinds tags for Alteryx, Boomi, and SAP (#33807) -- inbound sync carried an
+    # extra revert of examples/docs_projects/project_components_pdf_extraction/pyproject.toml
+    # from a concurrent outbound (#24193). The pdf_extraction change was re-applied by
+    # a later inbound, so current state is consistent.
+    "3a0727013a194d4c9c44fec38aae69328f58e05b",
+    # [core] Allow special chars in team owners (#33781) -- inbound sync carried an
+    # extra revert of internal #24917's dagster-cloud-cli/dagster_cloud_cli/config_utils.py.
+    # Re-applied by a later sync, so current state is consistent.
+    "d202bb9948812825f9acc09ffcc44e371ebc5ea4",
+    # Add Microsoft Fabric and OneLake icons (#33834) -- inbound sync carried 8 extra
+    # reverts of in-flight internal work: config/ruff.toml, automation/git.py, dagster
+    # _core/execution/context/{invocation,system}.py, _core/workspace/context.py,
+    # dagster/pyproject.toml + uv.lock, and the sling replication-collection component
+    # test. All re-applied by later syncs, so current state is consistent.
+    "17daddb135b5243bfeeba4aa04236683395da53d",
 ]
 
 KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
@@ -120,6 +139,35 @@ KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
     # and reverted Joe Braha's cluster_id. Joe's cluster_id was later intentionally
     # reverted internally by #23396, so current state is consistent.
     "4ad89db4436a3ea6bc0804676093fb604ea2ff3a",
+    # remove dagster-test reference from example docs project (#24193) -- outbound sync
+    # to OSS reverted OSS PR #33807's kinds tags (8 files: _KindsTags.md, OpTags.tsx,
+    # alteryx/boomi/sap svgs in two locations). Kinds tags were re-applied by a later
+    # inbound sync, so current state is consistent.
+    "6893ae16f14335789804f736efaa4a2927dc922d",
+    # Exclude `_vendored` from ty (#24210) -- outbound sync to OSS reverted OSS PR #33807's
+    # kinds tags plus #24193's pdf_extraction pyproject.toml change (9 files). Both were
+    # re-applied by later syncs, so current state is consistent.
+    "da5b67754949bb4fef00b549568f0dee298d58b2",
+    # [rfc] deduplicate dagster-cloud-cli options (#24917) -- outbound sync to OSS carried
+    # 13 extra reverts of in-flight internal definitions work (dagster _core/definitions
+    # decorators + tests, dagster-powerbi/translator.py). Same family as #22455 below.
+    # Re-applied by later syncs, so current state is consistent.
+    "c735805559027160df8675be6ea6fdbabfb9cdd8",
+    # Fix dg check defs to auto-detect definitions.py (#22455) -- outbound sync to OSS
+    # carried 14 extra reverts: same definitions set as #24917 plus
+    # dagster-cloud-cli/config_utils.py (which #24917 authored). Re-applied by later
+    # syncs, so current state is consistent.
+    "731630aed0b668cef9f4856c62fb56fc02150c1a",
+    # chore(ruff): bump ruff to 0.15.15 (#25127) -- outbound sync to OSS reverted OSS PR
+    # #33834's Microsoft Fabric/OneLake icons (6 files: _KindsTags.md, OpTags.tsx, and
+    # the fabric/onelake svgs in two locations). Re-applied by a later inbound sync.
+    "c3137f11d7eae5169c0a96ab31b86c4e5d0562d4",
+    # PLA-1643: tag code_server.* metrics with per-replica server_instance_id (#25071) --
+    # outbound sync to OSS reverted OSS PR #33834's kinds tags AND carried 8 extra reverts
+    # of in-flight internal work (config/ruff.toml, automation/git.py, dagster context
+    # files, dagster/pyproject.toml + uv.lock, sling component test -- 14 files total).
+    # All re-applied by later syncs, so current state is consistent.
+    "a85074c55aae5c7433ed442a2c49757aab75e43a",
 ]
 
 KNOWN_SKILLS_INBOUND_INCORRECTLY_SYNCED_COMMITS: list[str] = [
@@ -151,6 +199,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Internal-RevId",
         internal_path="dagster-oss/",
         internal_path_prefix="dagster-oss/",
+        copybara_workflow="sync-internal",
+        dest_repo_url=INTERNAL_REPO_URL,
         file_renames=DAGSTER_FILE_RENAMES,
         known_incorrect=KNOWN_DAGSTER_INBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/dagster",
@@ -165,6 +215,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Dagster-RevId",
         internal_path="dagster-oss/",
         internal_path_prefix="dagster-oss/",
+        copybara_workflow="sync-dagster",
+        dest_repo_url="https://github.com/dagster-io/dagster.git",
         file_renames=DAGSTER_FILE_RENAMES,
         known_incorrect=KNOWN_DAGSTER_OUTBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/internal",
@@ -179,6 +231,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Internal-RevId",
         internal_path="public/skills/",
         internal_path_prefix="public/skills/",
+        copybara_workflow="sync-internal",
+        dest_repo_url=INTERNAL_REPO_URL,
         file_renames={},
         known_incorrect=KNOWN_SKILLS_INBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/skills",
@@ -193,6 +247,8 @@ SYNC_CONFIGS: list[SyncConfig] = [
         originated_label="Skills-RevId",
         internal_path="public/skills/",
         internal_path_prefix="public/skills/",
+        copybara_workflow="sync-skills",
+        dest_repo_url="https://github.com/dagster-io/skills.git",
         file_renames={},
         known_incorrect=KNOWN_SKILLS_OUTBOUND_INCORRECTLY_SYNCED_COMMITS,
         source_repo_name="dagster-io/internal",

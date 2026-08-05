@@ -83,7 +83,7 @@ class MockRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
-    def check_run_worker_health(self, _run):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def check_run_worker_health(self, _run):  # ty: ignore[invalid-method-override]
         health_check_env = os.environ.get("DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT")
         if health_check_env == "healthy":
             return CheckRunHealthResult(WorkerStatus.RUNNING, "")

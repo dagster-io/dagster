@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Tag, Text} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {MaterializationTag} from './MaterializationTag';
@@ -30,14 +30,14 @@ export const SimpleStakeholderAssetStatus = ({
   const [inProgressRunId] = liveData.inProgressRunIds || [];
   if (inProgressRunId) {
     return (
-      <Caption>
+      <Text size={12}>
         <Tag intent="none">
           <Box flex={{gap: 4, alignItems: 'center'}}>
             <StatusCaseDot statusCase={StatusCase.MATERIALIZING} />
             <AssetRunLink assetKey={assetNode.assetKey} runId={inProgressRunId} />
           </Box>
         </Tag>
-      </Caption>
+      </Text>
     );
   }
 
@@ -70,7 +70,9 @@ export const SimpleStakeholderAssetStatus = ({
   const partitionTag = partition ? (
     <Tag intent="none">
       <Link to={`?view=partitions&partition=${encodeURIComponent(partition)}`}>
-        <Caption color={Colors.textDefault()}>{partition}</Caption>
+        <Text size={12} color="textDefault">
+          {partition}
+        </Text>
       </Link>
     </Tag>
   ) : undefined;
@@ -100,8 +102,8 @@ export const SimpleStakeholderAssetStatus = ({
   }
 
   return (
-    <Caption color={Colors.textLighter()}>
+    <Text size={12} color="textLighter">
       {assetNode.isObservable ? 'Never observed' : 'Never materialized'}
-    </Caption>
+    </Text>
   );
 };

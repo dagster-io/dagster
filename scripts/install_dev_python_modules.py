@@ -1,4 +1,3 @@
-# ruff: noqa: T201
 import argparse
 import itertools
 import subprocess

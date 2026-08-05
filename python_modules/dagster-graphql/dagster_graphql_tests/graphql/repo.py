@@ -80,6 +80,7 @@ from dagster import (
     schedule,
     usable_as_dagster_type,
 )
+from dagster._core.definitions.asset_key import AssetJobKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
@@ -512,7 +513,7 @@ def scalar_output_job():
     def return_bool():
         return True
 
-    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
+    @op(out=Out(Any))
     def return_any():
         return "dkjfkdjfe"
 
@@ -628,7 +629,7 @@ def foo_logger(init_context):
     return logger_
 
 
-@logger({"log_level": Field(str), "prefix": Field(str)})  # pyright: ignore[reportArgumentType]
+@logger({"log_level": Field(str), "prefix": Field(str)})
 def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
@@ -1272,6 +1273,8 @@ def define_sensors():
     def jobless_sensor(_):
         pass
 
+    # claims job_with_automation_condition's job key so that no default automation
+    # condition sensor is summoned into this repository
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
         target=AssetSelection.assets(
@@ -1279,6 +1282,7 @@ def define_sensors():
             "asset_with_automation_condition",
             "asset_with_custom_automation_condition",
         ),
+        asset_job_keys={AssetJobKey("job_with_automation_condition")},
     )
 
     return [
@@ -1472,6 +1476,14 @@ def asset_two(asset_one):
 
 
 two_assets_job = define_asset_job(name="two_assets_job", selection=[asset_one, asset_two])
+
+job_with_automation_condition = define_asset_job(
+    name="job_with_automation_condition",
+    selection=[asset_one, asset_two],
+    automation_condition=AutomationCondition.all_job_root_assets_match(
+        AutomationCondition.missing()
+    ),
+)
 
 
 unexecutable_asset = AssetSpec("unexecutable_asset")
@@ -1922,7 +1934,7 @@ class MyAutomationCondition(AutomationCondition):
     def name(self) -> str:
         return "some_custom_name"
 
-    def evaluate(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
+    def evaluate(self): ...  # ty: ignore[invalid-method-override]
 
 
 @asset(automation_condition=MyAutomationCondition().since_last_handled())
@@ -2183,6 +2195,7 @@ def define_asset_jobs() -> Sequence[UnresolvedAssetJobDefinition]:
         static_partitioned_assets_job,
         time_partitioned_assets_job,
         two_assets_job,
+        job_with_automation_condition,
         typed_assets_job,
     ]
 

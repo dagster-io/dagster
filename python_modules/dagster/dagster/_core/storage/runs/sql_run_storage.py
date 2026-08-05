@@ -124,7 +124,7 @@ class SqlRunStorage(RunStorage):
         has_tags = dagster_run.tags and len(dagster_run.tags) > 0
         partition = dagster_run.tags.get(PARTITION_NAME_TAG) if has_tags else None
         partition_set = dagster_run.tags.get(PARTITION_SET_TAG) if has_tags else None
-        values = {
+        values: dict[str, Any] = {
             "run_id": dagster_run.run_id,
             "pipeline_name": dagster_run.job_name,
             "status": dagster_run.status.value,
@@ -188,6 +188,20 @@ class SqlRunStorage(RunStorage):
 
         new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
+        # Threaded into the run_body and the run_tags write below so readers that
+        # observe a finished status are guaranteed to also see this tag.
+        updated_run = run.with_status(new_job_status)
+        failure_reason_tag_value: str | None = None
+        if event.event_type == DagsterEventType.PIPELINE_FAILURE and isinstance(
+            event.event_specific_data, JobFailureData
+        ):
+            failure_reason = event.event_specific_data.failure_reason
+            if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
+                failure_reason_tag_value = failure_reason.value
+                updated_run = updated_run.with_tags(
+                    merge_dicts(run.tags, {RUN_FAILURE_REASON_TAG: failure_reason_tag_value})
+                )
+
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
         kwargs = {}
@@ -208,24 +222,41 @@ class SqlRunStorage(RunStorage):
             kwargs["end_time"] = update_timestamp.timestamp()
 
         with self.connect() as conn:
+            # Write the run_tags row before the runs update. PostgresRunStorage uses
+            # an AUTOCOMMIT engine, so each `conn.execute` commits independently;
+            # writing the tag first ensures that any reader that observes the new
+            # status sees the tag too.
+            if failure_reason_tag_value is not None:
+                if RUN_FAILURE_REASON_TAG in run.tags:
+                    conn.execute(
+                        RunTagsTable.update()
+                        .where(
+                            db.and_(
+                                RunTagsTable.c.run_id == run_id,
+                                RunTagsTable.c.key == RUN_FAILURE_REASON_TAG,
+                            )
+                        )
+                        .values(value=failure_reason_tag_value)
+                    )
+                else:
+                    conn.execute(
+                        RunTagsTable.insert().values(
+                            run_id=run_id,
+                            key=RUN_FAILURE_REASON_TAG,
+                            value=failure_reason_tag_value,
+                        )
+                    )
+
             conn.execute(
                 RunsTable.update()
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    run_body=serialize_value(run.with_status(new_job_status)),
+                    run_body=serialize_value(updated_run),
                     status=new_job_status.value,
                     update_timestamp=update_timestamp,
                     **kwargs,
                 )
             )
-
-        if event.event_type == DagsterEventType.PIPELINE_FAILURE and isinstance(
-            event.event_specific_data, JobFailureData
-        ):
-            failure_reason = event.event_specific_data.failure_reason
-
-            if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
-                self.add_run_tags(run_id, {RUN_FAILURE_REASON_TAG: failure_reason.value})
 
     def _row_to_run(self, row: dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
@@ -843,9 +874,7 @@ class SqlRunStorage(RunStorage):
 
     def get_daemon_heartbeats(self) -> Mapping[str, DaemonHeartbeat]:
         rows = self.fetchall(db_select([DaemonHeartbeatsTable.c.body]))
-        heartbeats = []
-        for row in rows:
-            heartbeats.append(deserialize_value(row["body"], DaemonHeartbeat))
+        heartbeats = [deserialize_value(row["body"], DaemonHeartbeat) for row in rows]
         return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self) -> None:
@@ -943,6 +972,8 @@ class SqlRunStorage(RunStorage):
             query = query.where(BulkActionsTable.c.timestamp < filters.created_before)
         if filters and filters.backfill_ids:
             query = query.where(BulkActionsTable.c.key.in_(filters.backfill_ids))
+        if filters and filters.selector_id:
+            query = query.where(BulkActionsTable.c.selector_id == filters.selector_id)
         return query
 
     def _add_cursor_limit_to_backfills_query(

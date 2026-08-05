@@ -78,3 +78,21 @@ This will generate the following files from the `AssetSelection.g4` grammar file
 - `AssetSelectionListener.py`
 - `AssetSelectionParser.py`
 - `AssetSelectionVisitor.py`
+
+## Adding a new `attributeExpr` alternative
+
+When you add a new labeled alternative under the `attributeExpr` rule in `AssetSelection.g4` (e.g. `# FooAttributeExpr`):
+
+1. **Backend resolution.** Add a corresponding `AssetSelection` subclass in `python_modules/dagster/dagster/_core/definitions/asset_selection.py`. If the new selection can be resolved against a `BaseAssetGraph` alone, implement `resolve_inner`. If it requires runtime state (materialization status, column metadata, automation registrations, etc.) and cannot be resolved against the asset graph, leave `resolve_inner` raising `NotImplementedError` — this signals to consumers that the selection must be pre-resolved before being sent to the backend.
+
+2. **Frontend grammar.** Regenerate the JS parser via `js_modules/ui-core` (see `src/scripts/generateAssetSelection.ts`). Add `visit<Foo>AttributeExpr` handlers in:
+   - `ui-core/src/shared/asset-selection/AntlrAssetSelectionVisitor.ts` (client-side evaluation)
+   - `ui-core/src/asset-selection/AssetSelectionSupplementaryDataVisitor.tsx` (if it needs out-of-band data, e.g. an asset→automation map)
+   - `ui-core/src/shared/asset-selection/input/useAssetSelectionAutoCompleteProvider.tsx` (autocomplete)
+
+3. **Backend-supported allowlist (CRITICAL).** Update `dagster-cloud/js_modules/app-cloud/src/asset-selection/BackendUnsupportedSelectionVisitor.tsx`:
+   - If the new filter's `resolve_inner` is implemented and works against the workspace asset graph, add its generated `<Foo>AttributeExprContext` to `BACKEND_SUPPORTED_ATTRIBUTE_EXPR_TYPES`.
+   - If it raises `NotImplementedError`, leave the allowlist alone — the new filter will automatically fall back to client-side resolution with `assetKeys` passed to the Insights backend.
+   - Add a test case to `__tests__/BackendUnsupportedSelectionVisitor.test.ts` under either `supported filters` or `unsupported filters`.
+
+   The allowlist is the source of truth for which filters can be sent to the Insights / reporting backend as a selection string. New alternatives default to "unsupported" — this is intentional, so forgetting step 3 is safe: Insights still works, it just pre-resolves the selection client-side.

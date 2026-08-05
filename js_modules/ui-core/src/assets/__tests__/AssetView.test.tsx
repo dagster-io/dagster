@@ -90,10 +90,16 @@ describe('AssetView', () => {
   describe('Launch button', () => {
     it('shows the "Materialize" button for a software-defined asset', async () => {
       await act(() => render(<Test path="/sda_asset" assetKey={{path: ['sda_asset']}} />));
-      await waitFor(async () => {
-        expect(await screen.findByText('Materialize')).toBeVisible();
-        expect(await screen.findByTestId('materialize-button')).toBeEnabled();
-      });
+      // Use synchronous queries inside waitFor rather than nested findBy*, which
+      // would compound their own async timeouts, and give the data-load + render
+      // chain more room than waitFor's default 1000ms on slow CI workers.
+      await waitFor(
+        () => {
+          expect(screen.getByText('Materialize')).toBeVisible();
+          expect(screen.getByTestId('materialize-button')).toBeEnabled();
+        },
+        {timeout: 5000},
+      );
     });
 
     it('shows the "Observe" button for a software-defined source asset', async () => {

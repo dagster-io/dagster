@@ -82,7 +82,7 @@ def resources():
     return dg.Definitions(
         # highlight-start
         # Provide the dictionary of resources to `Definitions`
-        resources=resources[deployment_name],
+        resources=resources[deployment_name],  # ty: ignore[not-subscriptable]
         # highlight-end
     )
 

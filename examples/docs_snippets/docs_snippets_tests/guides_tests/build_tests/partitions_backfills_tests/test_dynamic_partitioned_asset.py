@@ -15,7 +15,9 @@ def test():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         partition_key = "strawberry"
         os.mkdir(os.path.join(tmpdir_path, DIR))
-        open(os.path.join(tmpdir_path, DIR, partition_key), "a").close()
+        open(
+            os.path.join(tmpdir_path, DIR, partition_key), "a", encoding="utf-8"
+        ).close()
 
         mockenv = mock.patch.dict(
             os.environ, {"MY_DIRECTORY": os.path.join(os.path.join(tmpdir_path, DIR))}
@@ -26,10 +28,10 @@ def test():
                 with build_sensor_context(instance=instance) as context:
                     result = image_sensor(context)
                     assert isinstance(result, SensorResult)
-                    assert len(result.run_requests) == 1
-                    assert result.run_requests[0].partition_key == partition_key
-                    assert len(result.dynamic_partitions_requests) == 1
-                    assert result.dynamic_partitions_requests[0].partition_keys == [
+                    assert len(result.run_requests) == 1  # ty: ignore[invalid-argument-type]
+                    assert result.run_requests[0].partition_key == partition_key  # ty: ignore[not-subscriptable]
+                    assert len(result.dynamic_partitions_requests) == 1  # ty: ignore[invalid-argument-type]
+                    assert result.dynamic_partitions_requests[0].partition_keys == [  # ty: ignore[not-subscriptable]
                         partition_key
                     ]
 

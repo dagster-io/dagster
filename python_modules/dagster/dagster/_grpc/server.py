@@ -36,6 +36,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._core.errors import (
+    DagsterInvariantViolationError,
     DagsterUserCodeLoadError,
     DagsterUserCodeUnreachableError,
     user_code_error_boundary,
@@ -178,7 +179,7 @@ def _record_utilization_metrics(logger: logging.Logger) -> None:
             logger, last_cpu_measurement_time, last_cpu_measurement
         )
         for key, val in utilization_metrics.items():
-            _UTILIZATION_METRICS["container_utilization"][key] = val
+            _UTILIZATION_METRICS["container_utilization"][key] = val  # ty: ignore[invalid-key]
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -200,7 +201,7 @@ def _set_request_count(api_name: str, value: Any) -> None:
 def retrieve_metrics():
     class _MetricsRetriever:
         def __call__(self, fn: Callable[..., Any]) -> Callable:
-            api_call = fn.__name__
+            api_call = fn.__name__  # ty: ignore[unresolved-attribute]
             METRICS_RETRIEVAL_FUNCTIONS.add(api_call)
 
             def wrapper(self: "DagsterApiServer", request: Any, context: grpc.ServicerContext):
@@ -208,7 +209,7 @@ def retrieve_metrics():
                     # If metrics retrieval is disabled, short circuit to just calling the underlying function.
                     return fn(self, request, context)
                 # Only record utilization metrics on ping, so as to not over-burden with IO.
-                if fn.__name__ == "Ping":
+                if fn.__name__ == "Ping":  # ty: ignore[unresolved-attribute]
                     _update_threadpool_metrics(self._server_threadpool_executor)
                     _record_utilization_metrics(self._logger)
                 with _METRICS_LOCK:
@@ -237,6 +238,7 @@ class LoadedRepositories:
         entry_point: Sequence[str],
         container_context: Mapping[str, Any] | None,
         defs_state_info: DefsStateInfo | None = None,
+        code_location_name: str | None = None,
     ):
         self._loadable_target_origin = loadable_target_origin
 
@@ -253,6 +255,7 @@ class LoadedRepositories:
                 DefinitionsLoadType.INITIALIZATION,
                 repository_load_data=RepositoryLoadData(
                     defs_state_info=defs_state_info,
+                    code_location_name=code_location_name,
                 ),
             )
         )
@@ -330,6 +333,29 @@ class LoadedRepositories:
     @property
     def reconstructables_by_name(self) -> Mapping[str, ReconstructableRepository]:
         return self._recon_repos_by_name
+
+    def update_repo_defs(
+        self, new_repo_defs_by_name: Mapping[str, RepositoryDefinition]
+    ) -> "LoadedRepositories":
+        self._repo_defs_by_name = dict(new_repo_defs_by_name)
+        return self
+
+
+def _get_changed_defs_state_keys(old: DefsStateInfo | None, new: DefsStateInfo | None) -> set[str]:
+    """Diff old vs new ``DefsStateInfo`` and return the set of keys whose version changed,
+    plus keys that were added or removed.
+    """
+    old_versions = (
+        {k: (v.version if v else None) for k, v in old.info_mapping.items()} if old else {}
+    )
+    new_versions = (
+        {k: (v.version if v else None) for k, v in new.info_mapping.items()} if new else {}
+    )
+    changed: set[str] = set()
+    for key in old_versions.keys() | new_versions.keys():
+        if old_versions.get(key) != new_versions.get(key):
+            changed.add(key)
+    return changed
 
 
 def _get_code_pointer(
@@ -416,6 +442,19 @@ class DagsterApiServer(DagsterApiServicer):
         self._termination_times: dict[str, float] = {}
         self._execution_lock = threading.Lock()
 
+        # Serializes concurrent RefreshComponentState calls for the same
+        # defs_state_key, since refresh_state writes a new version to
+        # defs_state_storage and two interleaved writes could race. Different
+        # keys can refresh in parallel. _refresh_locks_meta guards the dict
+        # itself when lazily creating new per-key locks.
+        self._refresh_locks_meta = threading.Lock()
+        self._refresh_locks: dict[str, threading.Lock] = {}
+
+        # Serializes ReloadCodeWithState calls. Reads of self._loaded_repositories
+        # see either the pre- or post-reload value (we pointer-swap the whole
+        # LoadedRepositories under this lock) but do not block.
+        self._reload_lock = threading.Lock()
+
         self._serializable_load_error = None
 
         self._entry_point = (
@@ -469,6 +508,7 @@ class DagsterApiServer(DagsterApiServicer):
                 container_context=self._container_context,
                 # state info threaded through via CLI arguments
                 defs_state_info=self._defs_state_info,
+                code_location_name=location_name,
             )
         except Exception:
             if not lazy_load_user_code:
@@ -609,7 +649,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
-    def ReloadCode(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ReloadCode(  # ty: ignore[invalid-method-override]
         self, _request: dagster_api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ReloadCodeReply:
         self._logger.warn(
@@ -620,18 +660,188 @@ class DagsterApiServer(DagsterApiServicer):
 
         return dagster_api_pb2.ReloadCodeReply()
 
+    def _get_refresh_lock(self, key: str) -> threading.Lock:
+        with self._refresh_locks_meta:
+            lock = self._refresh_locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._refresh_locks[key] = lock
+            return lock
+
+    def RefreshComponentState(  # ty: ignore[invalid-method-override]  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        request: dagster_api_pb2.RefreshComponentStateRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.RefreshComponentStateReply:
+        import asyncio
+
+        from dagster._core.storage.defs_state.base import set_defs_state_storage
+        from dagster.components.component.state_backed_component import StateBackedComponent
+
+        try:
+            requested_keys = set(request.defs_state_keys)
+            loaded_repos = check.not_none(
+                self._loaded_repositories,
+                "Cannot refresh component state when the code server is in an error state.",
+            )
+
+            components_to_refresh: list[tuple[StateBackedComponent, str]] = []
+            found_keys: set[str] = set()
+            project_root = None
+            for repo_def in loaded_repos.definitions_by_name.values():
+                component_tree = repo_def.get_component_tree()
+                if component_tree is None:
+                    continue
+                project_root = component_tree.project_root
+                for comp in component_tree.get_all_components(of_type=StateBackedComponent):
+                    key = comp.defs_state_config.key
+                    if key in requested_keys:
+                        components_to_refresh.append((comp, key))
+                        found_keys.add(key)
+
+            missing_keys = requested_keys - found_keys
+            if missing_keys:
+                raise DagsterInvariantViolationError(
+                    "No matching state-backed components found for keys: "
+                    + ", ".join(sorted(missing_keys))
+                )
+
+            resolved_project_root = check.not_none(project_root, "No project root found")
+
+            # Acquire per-key locks in sorted order so concurrent requests
+            # with overlapping (but different) key sets can't deadlock.
+            sorted_keys = sorted({key for _, key in components_to_refresh})
+            locks = [self._get_refresh_lock(key) for key in sorted_keys]
+
+            # gRPC servicer methods run in a threadpool where the
+            # DefsStateStorage context var is not propagated, so we re-enter it.
+            state_storage = self._instance.defs_state_storage if self._instance else None
+            with ExitStack() as stack:
+                for lock in locks:
+                    stack.enter_context(lock)
+                stack.enter_context(set_defs_state_storage(state_storage))
+
+                async def _refresh_all() -> dict[str, str]:
+                    coros = [
+                        comp.refresh_state(resolved_project_root)
+                        for comp, _ in components_to_refresh
+                    ]
+                    versions = await asyncio.gather(*coros)
+                    return {
+                        key: version for (_, key), version in zip(components_to_refresh, versions)
+                    }
+
+                refreshed_versions = asyncio.run(_refresh_all())
+
+            result_info: DefsStateInfo | None = None
+            for key, version in refreshed_versions.items():
+                result_info = DefsStateInfo.add_version(result_info, key, version)
+
+            self._logger.info(
+                "Refreshed state for %d components: %s",
+                len(refreshed_versions),
+                list(refreshed_versions.keys()),
+            )
+
+            return dagster_api_pb2.RefreshComponentStateReply(
+                serialized_defs_state_info=serialize_value(result_info or DefsStateInfo.empty()),
+            )
+        except Exception:
+            _maybe_log_exception(self._logger, "RefreshComponentState")
+            return dagster_api_pb2.RefreshComponentStateReply(
+                serialized_error=serialize_value(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                )
+            )
+
+    def ReloadCodeWithState(  # ty: ignore[invalid-method-override]  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        request: dagster_api_pb2.ReloadCodeWithStateRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ReloadCodeWithStateReply:
+        from dagster._core.storage.defs_state.base import set_defs_state_storage
+
+        with self._reload_lock:
+            try:
+                new_defs_state_info: DefsStateInfo | None = (
+                    deserialize_value(request.serialized_defs_state_info, DefsStateInfo)
+                    if request.serialized_defs_state_info
+                    else None
+                )
+
+                # Idempotent: skip the rebuild if the incoming pin matches what
+                # we already have applied. Lets callers (especially the agent
+                # reconciler) safely retry or fan out to multiple replicas
+                # without forcing redundant work.
+                if new_defs_state_info == self._defs_state_info:
+                    return dagster_api_pb2.ReloadCodeWithStateReply(
+                        serialized_server_id=self._server_id,
+                    )
+
+                loaded_repos = check.not_none(
+                    self._loaded_repositories,
+                    "Cannot reload code with state when the code server is in an error state.",
+                )
+
+                # Re-set the defs state storage contextvar — gRPC's threadpool worker
+                # threads do not inherit the contextvar set on the main thread.
+                with set_defs_state_storage(
+                    self._instance.defs_state_storage if self._instance else None
+                ):
+                    DefinitionsLoadContext.set(
+                        DefinitionsLoadContext(
+                            DefinitionsLoadType.INITIALIZATION,
+                            repository_load_data=RepositoryLoadData(
+                                defs_state_info=new_defs_state_info,
+                            ),
+                        )
+                    )
+
+                    changed_state_keys = _get_changed_defs_state_keys(
+                        self._defs_state_info, new_defs_state_info
+                    )
+
+                    new_repo_defs_by_name: dict[str, RepositoryDefinition] = {}
+                    for repo_name, repo_def in loaded_repos.definitions_by_name.items():
+                        component_tree = repo_def.get_component_tree()
+                        if component_tree is None:
+                            new_repo_defs_by_name[repo_name] = repo_def
+                            continue
+                        new_defs = component_tree.reload_with_state(changed_state_keys)
+                        new_repo_def = new_defs.get_repository_def()
+                        new_repo_def.load_all_definitions()
+                        new_repo_defs_by_name[repo_name] = new_repo_def
+
+                # Atomic pointer swap — readers on other threads see either the
+                # pre- or post-reload value, never a partially-populated dict.
+                self._loaded_repositories = loaded_repos.update_repo_defs(new_repo_defs_by_name)
+                self._defs_state_info = new_defs_state_info
+                self._server_id = str(uuid.uuid4())
+                return dagster_api_pb2.ReloadCodeWithStateReply(
+                    serialized_server_id=self._server_id,
+                )
+            except Exception:
+                _maybe_log_exception(self._logger, "ReloadCodeWithState")
+                return dagster_api_pb2.ReloadCodeWithStateReply(
+                    serialized_error=serialize_value(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    )
+                )
+
     @retrieve_metrics()
     def Ping(self, request, _context: grpc.ServicerContext) -> dagster_api_pb2.PingReply:
         echo = request.echo
 
         return dagster_api_pb2.PingReply(
             echo=echo,
-            serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
+            serialized_server_utilization_metrics=json.dumps(
+                {**_UTILIZATION_METRICS, "server_id": self._server_id}
+            )
             if self._enable_metrics
             else "",
         )
 
-    def StreamingPing(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def StreamingPing(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
     ) -> Iterator[dagster_api_pb2.StreamingPingEvent]:
         sequence_length = request.sequence_length
@@ -639,19 +849,19 @@ class DagsterApiServer(DagsterApiServicer):
         for sequence_number in range(sequence_length):
             yield dagster_api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
-    def Heartbeat(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def Heartbeat(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.PingReply:
         self.__last_heartbeat_time = time.time()
         echo = request.echo
         return dagster_api_pb2.PingReply(echo=echo)
 
-    def GetServerId(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def GetServerId(  # ty: ignore[invalid-method-override]
         self, _request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.GetServerIdReply:
         return dagster_api_pb2.GetServerIdReply(server_id=self._server_id)
 
-    def ExecutionPlanSnapshot(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExecutionPlanSnapshot(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExecutionPlanSnapshotRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExecutionPlanSnapshotReply:
         execution_plan_args = deserialize_value(
@@ -674,7 +884,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_execution_plan_snapshot=serialize_value(execution_plan_snapshot_or_error)
         )
 
-    def ListRepositories(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ListRepositories(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ListRepositoriesRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ListRepositoriesReply:
         if self._serializable_load_error:
@@ -711,7 +921,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_list_repositories_response_or_error=serialized_response
         )
 
-    def ExternalPartitionNames(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionNames(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalPartitionNamesRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalPartitionNamesReply:
         try:
@@ -737,14 +947,14 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_names_or_external_partition_execution_error=serialized_response
         )
 
-    def ExternalNotebookData(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalNotebookData(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalNotebookDataRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalNotebookDataReply:
         notebook_path = request.notebook_path
         check.str_param(notebook_path, "notebook_path")
         return dagster_api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
-    def ExternalPartitionSetExecutionParams(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionSetExecutionParams(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalPartitionSetExecutionParamsRequest,
         _context: grpc.ServicerContext,
@@ -775,7 +985,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
-    def ExternalPartitionConfig(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionConfig(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalPartitionConfigRequest,
         _context: grpc.ServicerContext,
@@ -805,7 +1015,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
-    def ExternalPartitionTags(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPartitionTags(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalPartitionTagsRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalPartitionTagsReply:
         try:
@@ -835,7 +1045,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
         )
 
-    def ExternalPipelineSubsetSnapshot(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalPipelineSubsetSnapshot(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalPipelineSubsetSnapshotRequest,
         _context: grpc.ServicerContext,
@@ -893,7 +1103,7 @@ class DagsterApiServer(DagsterApiServicer):
                 RepositoryErrorSnap(error=serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
-    def ExternalRepository(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalRepository(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalRepositoryReply:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
@@ -902,7 +1112,7 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_repository_data=serialized_external_repository_data,
         )
 
-    def ExternalJob(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalJob(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalJobRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalJobReply:
         try:
@@ -924,7 +1134,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def StreamingExternalRepository(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def StreamingExternalRepository(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> Iterable[dagster_api_pb2.StreamingExternalRepositoryEvent]:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
@@ -963,7 +1173,7 @@ class DagsterApiServer(DagsterApiServicer):
                 serialized_chunk=serialized_data[start_index:end_index],
             )
 
-    def ExternalScheduleExecution(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ExternalScheduleExecution(  # ty: ignore[invalid-method-override]
         self,
         request: dagster_api_pb2.ExternalScheduleExecutionRequest,
         _context: grpc.ServicerContext,
@@ -972,7 +1182,7 @@ class DagsterApiServer(DagsterApiServicer):
             self._external_schedule_execution(request)
         )
 
-    def SyncExternalScheduleExecution(self, request, _context: grpc.ServicerContext):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def SyncExternalScheduleExecution(self, request, _context: grpc.ServicerContext):  # ty: ignore[invalid-method-override]
         return dagster_api_pb2.ExternalScheduleExecutionReply(
             serialized_schedule_result=self._external_schedule_execution(request)
         )
@@ -1053,7 +1263,7 @@ class DagsterApiServer(DagsterApiServicer):
             self._external_sensor_execution(request)
         )
 
-    def ShutdownServer(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def ShutdownServer(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ShutdownServerReply:
         try:
@@ -1076,7 +1286,7 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def CancelExecution(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def CancelExecution(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.CancelExecutionRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.CancelExecutionReply:
         success = False
@@ -1106,7 +1316,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def CanCancelExecution(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def CanCancelExecution(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.CanCancelExecutionRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.CanCancelExecutionReply:
         can_cancel_execution_request = deserialize_value(
@@ -1125,7 +1335,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def StartRun(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def StartRun(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.StartRunRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.StartRunReply:
         if self._shutdown_once_executions_finish_event.is_set():
@@ -1240,7 +1450,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def GetCurrentImage(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def GetCurrentImage(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.GetCurrentImageReply:
         return dagster_api_pb2.GetCurrentImageReply(
@@ -1251,7 +1461,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def GetCurrentRuns(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def GetCurrentRuns(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.GetCurrentRunsReply:
         with self._execution_lock:
@@ -1385,7 +1595,7 @@ class DagsterGrpcServer:
         try:
             self.server.wait_for_termination()
         finally:
-            self._api_servicer.cleanup()  # pyright: ignore[reportAttributeAccessIssue]
+            self._api_servicer.cleanup()  # ty: ignore[unresolved-attribute]
             server_termination_thread.join()
 
 

@@ -5,16 +5,16 @@ import {
   Checkbox,
   Code,
   Colors,
-  FontFamily,
   Icon,
   Intent,
   SplitPanelContainer,
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/RunPreview.module.css';
 import {LaunchpadType} from './types';
 import {gql} from '../apollo-client';
 import {
@@ -403,7 +403,7 @@ export const RunPreview = (props: RunPreviewProps) => {
       .filter(Boolean);
 
     if (!boxes.length) {
-      return <ItemsEmptyNotice>Nothing to display.</ItemsEmptyNotice>;
+      return <div className={styles.itemsEmptyNotice}>Nothing to display.</div>;
     }
     return boxes;
   };
@@ -413,9 +413,9 @@ export const RunPreview = (props: RunPreviewProps) => {
       identifier="run-preview"
       axis="horizontal"
       first={
-        <ErrorListContainer>
-          <Section>
-            <SectionTitle>Errors</SectionTitle>
+        <div className={styles.errorListContainer}>
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Errors</div>
             {errorsAndPaths.length ? (
               errorsAndPaths.map((item, idx) => (
                 <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
@@ -426,9 +426,9 @@ export const RunPreview = (props: RunPreviewProps) => {
                 No errors
               </Box>
             )}
-          </Section>
-          <Section>
-            <SectionTitle>Config actions:</SectionTitle>
+          </div>
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Config actions:</div>
             <Box flex={{direction: 'column', gap: 8}} padding={{top: 4, bottom: 20}}>
               <ScaffoldConfigButton
                 onScaffoldMissingConfig={onScaffoldMissingConfig}
@@ -445,40 +445,44 @@ export const RunPreview = (props: RunPreviewProps) => {
                 disabled={!extraNodes.length}
               />
             </Box>
-          </Section>
-        </ErrorListContainer>
+          </div>
+        </div>
       }
       firstInitialPercent={50}
       firstMinSize={150}
       second={
         <>
           <div style={{overflowY: 'scroll', width: '100%', height: '100%'}}>
-            <RuntimeAndResourcesSection>
-              <Section>
-                <SectionTitle>Runtime</SectionTitle>
-                <ItemSet>
+            <div className={styles.runtimeAndResourcesSection}>
+              <div className={styles.section}>
+                <div className={styles.sectionTitle}>Runtime</div>
+                <div className={styles.itemSet}>
                   {itemsIn(
                     [],
                     Object.keys(rest).map((name) => ({name, isRequired: false})),
                   )}
-                </ItemSet>
-              </Section>
+                </div>
+              </div>
               {(resources?.fields.length || 0) > 0 && (
-                <Section>
-                  <SectionTitle>Resources</SectionTitle>
-                  <ItemSet>{itemsIn(['resources'], resources?.fields || [])}</ItemSet>
-                </Section>
+                <div className={styles.section}>
+                  <div className={styles.sectionTitle}>Resources</div>
+                  <div className={styles.itemSet}>
+                    {itemsIn(['resources'], resources?.fields || [])}
+                  </div>
+                </div>
               )}
-            </RuntimeAndResourcesSection>
-            <Section>
-              <SectionTitle>{launchpadType === 'asset' ? 'Assets (Ops)' : 'Ops'}</SectionTitle>
-              <ItemSet>
+            </div>
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>
+                {launchpadType === 'asset' ? 'Assets (Ops)' : 'Ops'}
+              </div>
+              <div className={styles.itemSet}>
                 {itemsIn(
                   [hasOps ? 'ops' : 'solids'],
                   (hasOps ? ops?.fields : solids?.fields) || [],
                 )}
-              </ItemSet>
-            </Section>
+              </div>
+            </div>
             <div style={{height: 50}} />
           </div>
           <div
@@ -558,70 +562,6 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const SectionTitle = styled.div`
-  color: ${Colors.textLight()};
-  text-transform: uppercase;
-  font-size: 12px;
-  margin-bottom: 8px;
-`;
-
-const Section = styled.div`
-  margin-top: 14px;
-  margin-left: 10px;
-`;
-
-const ItemSet = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 4px;
-`;
-
-const ItemsEmptyNotice = styled.div`
-  font-size: 13px;
-  padding-top: 7px;
-  padding-bottom: 7px;
-`;
-
-const ErrorListContainer = styled.div`
-  margin-left: 10px;
-  overflow-y: scroll;
-  height: 100%;
-`;
-
-const ErrorRowContainer = styled.div<{hoverable: boolean}>`
-  text-align: left;
-  font-size: 11px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: ${FontFamily.monospace};
-  cursor: pointer;
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  border-bottom: 1px solid ${Colors.borderDefault()};
-  padding: 8px;
-  margin: 8px 12px 0 -8px;
-  &:last-child {
-    border-bottom: 0;
-    margin-bottom: 15px;
-  }
-  ${({hoverable}) =>
-    hoverable &&
-    `&:hover {
-      background: ${Colors.backgroundLight()};
-    }
-  `}
-`;
-
-const RuntimeAndResourcesSection = styled.div`
-  display: flex;
-  gap: 12px;
-  @media (max-width: 800px) {
-    flex-direction: column;
-  }
-`;
-
 const ErrorRow = ({
   error,
   onHighlight,
@@ -644,8 +584,8 @@ const ErrorRow = ({
   }
 
   return (
-    <ErrorRowContainer
-      hoverable={!!target}
+    <div
+      className={clsx(styles.errorRowContainer, target && styles.errorRowHoverable)}
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{paddingRight: 4}}>
@@ -668,7 +608,7 @@ const ErrorRow = ({
           </>
         )}
       </div>
-    </ErrorRowContainer>
+    </div>
   );
 };
 

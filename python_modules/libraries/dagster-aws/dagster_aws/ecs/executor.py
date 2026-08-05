@@ -417,10 +417,7 @@ class EcsStepHandler(StepHandler):
 
         t = tasks[0]
         if t.get("lastStatus") in STOPPED_STATUSES:
-            failed_containers = []
-            for c in t.get("containers"):
-                if c.get("exitCode") != 0:
-                    failed_containers.append(c)
+            failed_containers = [c for c in t.get("containers") if c.get("exitCode") != 0]
             if len(failed_containers) > 0:
                 cluster_failure_info = (
                     f"Task {t.get('taskArn')} failed.\n"

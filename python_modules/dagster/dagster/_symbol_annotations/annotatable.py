@@ -45,13 +45,13 @@ def _get_subject(obj: Annotatable, param: str | None = None) -> str:
             return f"Property `{obj.fget.__qualname__ if obj.fget else obj}`"
         # classmethod and staticmethod don't themselves get a `__qualname__` attr until Python 3.10.
         elif isinstance(obj, classmethod):
-            return f"Class method `{_get_annotation_target(obj).__qualname__}`"
+            return f"Class method `{_get_annotation_target(obj).__qualname__}`"  # ty: ignore[unresolved-attribute]
         elif isinstance(obj, staticmethod):
-            return f"Static method `{_get_annotation_target(obj).__qualname__}`"
+            return f"Static method `{_get_annotation_target(obj).__qualname__}`"  # ty: ignore[unresolved-attribute]
         elif inspect.isfunction(obj):
             return f"Function `{obj.__qualname__}`"
         elif is_resource_def(obj):
-            return f"Dagster resource `{obj.__qualname__}`"
+            return f"Dagster resource `{obj.__qualname__}`"  # ty: ignore[unresolved-attribute]
         else:
             check.failed(f"Unexpected object type: {type(obj)}")
 

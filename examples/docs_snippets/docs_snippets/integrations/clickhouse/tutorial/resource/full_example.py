@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster_clickhouse import ClickhouseResource
+from dagster_clickhouse import ClickhouseResource  # ty: ignore[unresolved-import]
 
 from dagster import Definitions, asset
 

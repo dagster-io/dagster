@@ -1,4 +1,4 @@
-import {Box, Icon, IconName, Subtitle1, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Heading, Icon, IconName, UnstyledButton} from '@dagster-io/ui-components';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import React from 'react';
 
@@ -40,12 +40,14 @@ export const LargeCollapsibleSection = ({
               border="bottom"
             >
               {icon && <Icon size={20} name={icon} />}
-              <Subtitle1
+              <Heading
+                size={16}
+                weight={600}
                 style={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}
               >
                 {header}
                 {count !== undefined ? ` (${count.toLocaleString()})` : ''}
-              </Subtitle1>
+              </Heading>
               {right}
               <Icon
                 name="arrow_drop_down"
@@ -55,7 +57,7 @@ export const LargeCollapsibleSection = ({
             </Box>
           </UnstyledButton>
         </Collapsible.Trigger>
-        <Collapsible.Content style={{overflowX: 'auto'}}>
+        <Collapsible.Content>
           <Box padding={{vertical: padChildren ? 12 : 0}}>{children}</Box>
         </Collapsible.Content>
       </Box>

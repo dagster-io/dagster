@@ -79,6 +79,7 @@ def test_display_name():
 def test_builtins_available():
     job_def = dg.GraphDefinition(name="test_builting_available", node_defs=[]).to_job()
     for builtin_type in ALL_RUNTIME_BUILTINS:
+        assert builtin_type.unique_name is not None
         assert job_def.has_dagster_type(builtin_type.unique_name)
         assert job_def.dagster_type_named(builtin_type.unique_name).is_builtin
 
@@ -100,13 +101,13 @@ def test_python_mapping():
     assert add_one.input_defs[0].dagster_type.unique_name == "Int"
 
     runtime = resolve_dagster_type(float)
-    runtime.type_check(None, 1.0)  # pyright: ignore[reportArgumentType]
-    res = runtime.type_check(None, 1)  # pyright: ignore[reportArgumentType]
+    runtime.type_check(None, 1.0)  # ty: ignore[invalid-argument-type]
+    res = runtime.type_check(None, 1)  # ty: ignore[invalid-argument-type]
     assert not res.success
 
     runtime = resolve_dagster_type(bool)
-    runtime.type_check(None, True)  # pyright: ignore[reportArgumentType]
-    res = runtime.type_check(None, 1)  # pyright: ignore[reportArgumentType]
+    runtime.type_check(None, True)  # ty: ignore[invalid-argument-type]
+    res = runtime.type_check(None, 1)  # ty: ignore[invalid-argument-type]
     assert not res.success
 
 

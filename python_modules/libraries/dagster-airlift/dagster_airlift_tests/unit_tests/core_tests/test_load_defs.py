@@ -56,12 +56,12 @@ from dagster_airlift_tests.unit_tests.conftest import (
 )
 
 
-@executor  # pyright: ignore[reportCallIssue,reportArgumentType]
+@executor
 def nonstandard_executor(init_context):
     pass
 
 
-@logger  # pyright: ignore[reportCallIssue,reportArgumentType]
+@logger
 def nonstandard_logger(init_context):
     pass
 

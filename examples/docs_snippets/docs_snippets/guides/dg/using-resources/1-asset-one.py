@@ -1,4 +1,4 @@
-from my_project.defs.aresource import AResource
+from my_project.defs.aresource import AResource  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

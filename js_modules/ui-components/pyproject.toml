@@ -1,0 +1,9 @@
+[project]
+name = "dagster-ui-components-tox"
+version = "1!0+dev"
+description = "Tox-only wrapper for the @dagster-io/ui-components yarn workspace. No Python runtime — exists so the package can participate in the dagster-oss uv.lock migration."
+requires-python = ">=3.10,<3.15"
+dependencies = []
+
+[dependency-groups]
+test = []

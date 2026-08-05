@@ -84,7 +84,7 @@ def test_scaffold_defs_classname_conflict_no_alias() -> None:
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
             full_type = "foo_bar.components.defs_folder_component.DefsFolderComponent"
-            assert f"type: {full_type}" in defs_yaml_path.read_text()
+            assert f"type: {full_type}" in defs_yaml_path.read_text(encoding="utf-8")
 
 
 def test_scaffold_defs_validation_failure() -> None:
@@ -142,7 +142,8 @@ def test_scaffold_defs_component_no_params_success(in_workspace: bool) -> None:
         defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
         assert defs_yaml_path.exists()
         assert (
-            "type: dagster_test.components.AllMetadataEmptyComponent" in defs_yaml_path.read_text()
+            "type: dagster_test.components.AllMetadataEmptyComponent"
+            in defs_yaml_path.read_text(encoding="utf-8")
         )
 
 
@@ -169,7 +170,7 @@ def test_scaffold_defs_component_substring_single_match_success(selection: str) 
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
             full_type = "dagster_test.components.SimpleAssetComponent"
-            assert f"type: {full_type}" in defs_yaml_path.read_text()
+            assert f"type: {full_type}" in defs_yaml_path.read_text(encoding="utf-8")
         elif selection in ["a"]:
             assert_runner_result(result, exit_0=False)
             assert "Did you mean this one?" in result.output
@@ -242,7 +243,7 @@ def test_scaffold_defs_component_substring_multiple_match_success(selection: str
                 if selection == "2"
                 else "dagster_test.components.ComplexAssetComponent"
             )
-            assert f"type: {full_type}" in defs_yaml_path.read_text()
+            assert f"type: {full_type}" in defs_yaml_path.read_text(encoding="utf-8")
         elif selection in ["3", "a"]:
             assert_runner_result(result, exit_0=False)
             assert "Did you mean one of these" in result.output
@@ -273,7 +274,8 @@ def test_scaffold_defs_component_json_params_success(in_workspace: bool) -> None
         defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
         assert defs_yaml_path.exists()
         assert (
-            "type: dagster_test.components.SimplePipesScriptComponent" in defs_yaml_path.read_text()
+            "type: dagster_test.components.SimplePipesScriptComponent"
+            in defs_yaml_path.read_text(encoding="utf-8")
         )
 
 
@@ -297,7 +299,8 @@ def test_scaffold_defs_component_key_value_params_success(in_workspace: bool) ->
         defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
         assert defs_yaml_path.exists()
         assert (
-            "type: dagster_test.components.SimplePipesScriptComponent" in defs_yaml_path.read_text()
+            "type: dagster_test.components.SimplePipesScriptComponent"
+            in defs_yaml_path.read_text(encoding="utf-8")
         )
 
 
@@ -380,7 +383,8 @@ def test_scaffold_defs_component_succeeds_non_default_defs_module() -> None:
         defs_yaml_path = Path("src/foo_bar/_defs/qux/defs.yaml")
         assert defs_yaml_path.exists()
         assert (
-            "type: dagster_test.components.AllMetadataEmptyComponent" in defs_yaml_path.read_text()
+            "type: dagster_test.components.AllMetadataEmptyComponent"
+            in defs_yaml_path.read_text(encoding="utf-8")
         )
 
 
@@ -418,7 +422,7 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type() -> None:
             assert Path("src/foo_bar/defs/qux").exists()
             defs_yaml_path = Path("src/foo_bar/defs/qux/defs.yaml")
             assert defs_yaml_path.exists()
-            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
+            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text(encoding="utf-8")
 
 
 # Make sure that we can always refer to a component in its defining module
@@ -442,7 +446,8 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type_defining_mod
             component_path.write_text(
                 textwrap.dedent("""
                 from foo_bar.baz import Baz
-            """)
+            """),
+                encoding="utf-8",
             )
 
             # target the defining module foo_bar.baz, not the registry module foo_bar.components.baz
@@ -452,7 +457,7 @@ def test_scaffold_defs_component_succeeds_scaffolded_component_type_defining_mod
             assert defs_yaml_path.exists()
 
             # The canonical name is still used in the scaffolded defs.yaml
-            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text()
+            assert "type: foo_bar.components.baz.Baz" in defs_yaml_path.read_text(encoding="utf-8")
 
 
 # ########################
@@ -651,7 +656,11 @@ def test_scaffold_defs_asset() -> None:
         result = runner.invoke("scaffold", "defs", "dagster.asset", "assets/foo.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/foo.py").exists()
-        assert Path("src/foo_bar/defs/assets/foo.py").read_text().startswith("import dagster as dg")
+        assert (
+            Path("src/foo_bar/defs/assets/foo.py")
+            .read_text(encoding="utf-8")
+            .startswith("import dagster as dg")
+        )
         assert not Path("src/foo_bar/defs/assets/foo.py").is_dir()
         assert not Path("src/foo_bar/defs/assets/defs.yaml").exists()
 
@@ -692,13 +701,12 @@ def test_scaffold_defs_asset_check_with_key() -> None:
         # check is uncommented if pointed at an asset
         assert (
             Path("src/foo_bar/defs/asset_checks/my_check.py")
-            .read_text()
+            .read_text(encoding="utf-8")
             .startswith("import dagster as dg")
         )
-        assert (
-            "asset=dg.AssetKey(['my', 'key'])"
-            in Path("src/foo_bar/defs/asset_checks/my_check.py").read_text()
-        )
+        assert "asset=dg.AssetKey(['my', 'key'])" in Path(
+            "src/foo_bar/defs/asset_checks/my_check.py"
+        ).read_text(encoding="utf-8")
         assert not Path("src/foo_bar/defs/asset_checks/my_check.py").is_dir()
         assert not Path("src/foo_bar/defs/asset_checks/defs.yaml").exists()
 
@@ -728,11 +736,15 @@ def test_scaffold_defs_multi_asset_basic() -> None:
         assert Path("src/foo_bar/defs/multi_assets/composite.py").exists()
         assert (
             Path("src/foo_bar/defs/multi_assets/composite.py")
-            .read_text()
+            .read_text(encoding="utf-8")
             .startswith("import dagster as dg")
         )
-        assert "@dg.multi_asset" in Path("src/foo_bar/defs/multi_assets/composite.py").read_text()
-        asset_content = Path("src/foo_bar/defs/multi_assets/composite.py").read_text()
+        assert "@dg.multi_asset" in Path("src/foo_bar/defs/multi_assets/composite.py").read_text(
+            encoding="utf-8"
+        )
+        asset_content = Path("src/foo_bar/defs/multi_assets/composite.py").read_text(
+            encoding="utf-8"
+        )
         assert "dg.AssetSpec(key=dg.AssetKey(['composite', 'first_asset']))" in asset_content
         assert "dg.AssetSpec(key=dg.AssetKey(['composite', 'second_asset']))" in asset_content
         assert not Path("src/foo_bar/defs/multi_assets/composite.py").is_dir()
@@ -763,7 +775,9 @@ def test_scaffold_defs_multi_asset_params() -> None:
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/multi_assets/custom_keys.py").exists()
-        asset_content = Path("src/foo_bar/defs/multi_assets/custom_keys.py").read_text()
+        asset_content = Path("src/foo_bar/defs/multi_assets/custom_keys.py").read_text(
+            encoding="utf-8"
+        )
         assert "dg.AssetSpec(key=dg.AssetKey(['orders']))" in asset_content
         assert "dg.AssetSpec(key=dg.AssetKey(['customers']))" in asset_content
 
@@ -784,7 +798,9 @@ def test_scaffold_defs_multi_asset_params() -> None:
         )
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/multi_assets/with_nested_keys.py").exists()
-        asset_content = Path("src/foo_bar/defs/multi_assets/with_nested_keys.py").read_text()
+        asset_content = Path("src/foo_bar/defs/multi_assets/with_nested_keys.py").read_text(
+            encoding="utf-8"
+        )
         assert "dg.AssetSpec(key=dg.AssetKey(['foo', 'bar']))" in asset_content
         assert "dg.AssetSpec(key=dg.AssetKey(['baz', 'qux']))" in asset_content
 
@@ -805,11 +821,11 @@ def test_scaffold_defs_job() -> None:
         assert Path("src/foo_bar/defs/jobs/my_pipeline.py").exists()
         assert (
             Path("src/foo_bar/defs/jobs/my_pipeline.py")
-            .read_text()
+            .read_text(encoding="utf-8")
             .startswith("import dagster as dg")
         )
-        assert "@dg.job" in Path("src/foo_bar/defs/jobs/my_pipeline.py").read_text()
-        job_content = Path("src/foo_bar/defs/jobs/my_pipeline.py").read_text()
+        assert "@dg.job" in Path("src/foo_bar/defs/jobs/my_pipeline.py").read_text(encoding="utf-8")
+        job_content = Path("src/foo_bar/defs/jobs/my_pipeline.py").read_text(encoding="utf-8")
         # Check for simple job scaffolding
         assert "pass" in job_content
         assert not Path("src/foo_bar/defs/jobs/my_pipeline.py").is_dir()
@@ -913,11 +929,12 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
             defs_yaml_path = Path("src/foo_bar/defs/my_project/defs.yaml")
             assert defs_yaml_path.exists()
-            assert "type: dagster_dbt.DbtProjectComponent" in defs_yaml_path.read_text()
-            assert (
-                cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
-                in defs_yaml_path.read_text()
+            assert "type: dagster_dbt.DbtProjectComponent" in defs_yaml_path.read_text(
+                encoding="utf-8"
             )
+            assert cross_platfrom_string_path(
+                "stub_projects/dbt_project_location/defs/jaffle_shop"
+            ) in defs_yaml_path.read_text(encoding="utf-8")
 
 
 # ########################
@@ -943,7 +960,7 @@ def test_scaffold_component_type_success() -> None:
         )
 
         assert (
-            Path("src/foo_bar/components/__init__.py").read_text().strip()
+            Path("src/foo_bar/components/__init__.py").read_text(encoding="utf-8").strip()
             == textwrap.dedent("""
             from foo_bar.components.baz import Baz as Baz
         """).strip()
@@ -1014,7 +1031,7 @@ def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
                     return dg.Definitions()
         ''').strip()
 
-        assert Path("src/foo_bar/components/baz.py").read_text().strip() == output
+        assert Path("src/foo_bar/components/baz.py").read_text(encoding="utf-8").strip() == output
 
 
 @pytest.mark.parametrize(
@@ -1071,5 +1088,5 @@ def test_scaffold_component_no_entry_point_success(
                 "]",
             ]
         )
-        pyproject_toml = Path("pyproject.toml").read_text()
+        pyproject_toml = Path("pyproject.toml").read_text(encoding="utf-8")
         assert registry_modules_str in pyproject_toml

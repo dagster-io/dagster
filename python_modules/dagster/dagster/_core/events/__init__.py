@@ -1245,6 +1245,13 @@ class DagsterEvent(
         first_step_failure_event: Optional["DagsterEvent"] = None,
     ) -> "DagsterEvent":
         check.str_param(context_msg, "context_msg")
+        if (
+            error_info is None
+            and first_step_failure_event
+            and first_step_failure_event.event_type == DagsterEventType.STEP_FAILURE
+        ):
+            error_info = first_step_failure_event.step_failure_data.error
+
         if isinstance(job_context_or_name, IPlanContext):
             return DagsterEvent.from_job(
                 DagsterEventType.RUN_FAILURE,
@@ -1765,6 +1772,10 @@ class AssetFailedToMaterializeData(
     @property
     def reason(self) -> AssetMaterializationFailureReason:
         return self.asset_materialization_failure.reason
+
+    @property
+    def will_retry(self) -> bool | None:
+        return self.asset_materialization_failure.will_retry
 
 
 @whitelist_for_serdes

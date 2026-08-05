@@ -329,7 +329,7 @@ class EnvironmentManagers:
                     )
                     if loadable_target_origin.python_file
                     else ModuleTarget(
-                        module_name=loadable_target_origin.module_name,  # pyright: ignore[reportArgumentType]
+                        module_name=loadable_target_origin.module_name,
                         attribute=loadable_target_origin.attribute,
                         working_directory=loadable_target_origin.working_directory,
                         location_name=location_name,
@@ -362,7 +362,7 @@ class EnvironmentManagers:
                     GrpcServerTarget(
                         port=api_client.port,
                         socket=api_client.socket,
-                        host=api_client.host,  # pyright: ignore[reportArgumentType]
+                        host=api_client.host,
                         location_name=location_name,
                     ),
                     version="",
@@ -382,7 +382,7 @@ class EnvironmentManagers:
         def _mgr_fn(instance, read_only):
             loadable_target_origin = target or get_main_loadable_target_origin()
             with safe_tempfile_path() as socket:
-                subprocess_args = [  # pyright: ignore[reportOperatorIssue]
+                subprocess_args = [
                     "dagster",
                     "code-server",
                     "start",
@@ -883,7 +883,7 @@ def make_graphql_context_test_suite(context_variants):
             class MockedGraphQLClient:
                 def execute(self, gql_query, variable_values=None):
                     # Handle both gql v3 (DocumentNode) and v4 (GraphQLRequest)
-                    if HAS_GRAPHQL_REQUEST and isinstance(gql_query, GraphQLRequest):  # pyright: ignore[reportPossiblyUnboundVariable]
+                    if HAS_GRAPHQL_REQUEST and isinstance(gql_query, GraphQLRequest):
                         document = gql_query.document
                         variables = (
                             variable_values

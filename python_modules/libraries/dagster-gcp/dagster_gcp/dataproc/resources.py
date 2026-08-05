@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from typing import Any
 
 import dagster._check as check
-import yaml
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
 from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster_shared.yaml_utils import safe_load_yaml
 from googleapiclient.discovery import build
 from oauth2client.client import GoogleCredentials
 from pydantic import Field
@@ -227,7 +227,7 @@ class DataprocResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
 
     def _read_yaml_config(self, path: str) -> Mapping[str, Any]:
         with open(path, encoding="utf8") as f:
-            return yaml.safe_load(f)
+            return safe_load_yaml(f)
 
     def _read_json_config(self, path: str) -> Mapping[str, Any]:
         with open(path, encoding="utf8") as f:

@@ -12,6 +12,9 @@ export const ENTITY_KEY_FRAGMENT = gql`
         path
       }
     }
+    ... on AssetJobKey {
+      jobName
+    }
   }
 `;
 
@@ -175,12 +178,14 @@ export const GET_SLIM_EVALUATIONS_QUERY = gql`
   query GetSlimEvaluationsQuery(
     $assetKey: AssetKeyInput
     $assetCheckKey: AssetCheckHandleInput
+    $assetJobKey: AssetJobKeyInput
     $limit: Int!
     $cursor: String
   ) {
     assetConditionEvaluationRecordsOrError(
       assetKey: $assetKey
       assetCheckKey: $assetCheckKey
+      assetJobKey: $assetJobKey
       limit: $limit
       cursor: $cursor
     ) {

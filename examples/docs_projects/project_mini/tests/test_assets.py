@@ -1,13 +1,16 @@
 from typing import Any
 
 import dagster as dg
-from project_mini.defs.dynamic_fanout.dynamic_fanout import (
+from project_mini.defs.dynamic_fanout.dynamic_fanout import (  # ty: ignore[unresolved-import]
     aggregate_unit_results,
     extract_processing_units,
     final_report,
     process_single_unit,
 )
-from project_mini.defs.partitions_vs_config.with_config import CustomerConfig, customer_orders
+from project_mini.defs.partitions_vs_config.with_config import (  # ty: ignore[unresolved-import]
+    CustomerConfig,
+    customer_orders,
+)
 
 # --- dynamic_fanout helper functions ---
 

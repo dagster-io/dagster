@@ -1,0 +1,8 @@
+{
+  "label": "Databricks with Dagster Pipes",
+  "position": 20,
+  "link": {
+    "type": "doc",
+    "id": "integrations/libraries/databricks/pipes/index"
+  }
+}

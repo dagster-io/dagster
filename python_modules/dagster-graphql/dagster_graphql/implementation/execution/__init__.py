@@ -93,7 +93,10 @@ def terminate_pipeline_execution(
     run_id: str,
     terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> Union[
-    "GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure", "GrapheneUnauthorizedError"
+    "GrapheneTerminateRunSuccess",
+    "GrapheneTerminateRunFailure",
+    "GrapheneUnauthorizedError",
+    "GrapheneRunNotFoundError",
 ]:
     from dagster_graphql.schema.errors import GrapheneRunNotFoundError, GrapheneUnauthorizedError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun

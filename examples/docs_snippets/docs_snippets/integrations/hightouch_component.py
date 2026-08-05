@@ -1,4 +1,7 @@
-from dagster_hightouch import ConfigurableHightouchResource, hightouch_sync_op
+from dagster_hightouch import (  # ty: ignore[unresolved-import]
+    ConfigurableHightouchResource,
+    hightouch_sync_op,
+)
 
 import dagster as dg
 

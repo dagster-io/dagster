@@ -8,10 +8,10 @@ import dagster as dg
 
 # start_etl_job_model
 class EtlJob(dg.Model):
-    bucket: str = dg.Field
-    source_object: str = dg.Field
-    target_object: str = dg.Field
-    sql: str = dg.Field
+    bucket: str = dg.Field  # ty: ignore[invalid-assignment]
+    source_object: str = dg.Field  # ty: ignore[invalid-assignment]
+    target_object: str = dg.Field  # ty: ignore[invalid-assignment]
+    sql: str = dg.Field  # ty: ignore[invalid-assignment]
 
 
 # end_etl_job_model
@@ -20,8 +20,8 @@ class EtlJob(dg.Model):
 # start_asset_factory_component
 class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
     # highlight-start
-    access_key_id: str = dg.Field
-    secret_access_key: str = dg.Field
+    access_key_id: str = dg.Field  # ty: ignore[invalid-assignment]
+    secret_access_key: str = dg.Field  # ty: ignore[invalid-assignment]
 
     etl_job: list[EtlJob]
     # highlight-end
@@ -35,7 +35,7 @@ class AssetFactory(dg.Component, dg.Model, dg.Resolvable):
             def create_etl_asset(etl_config):
                 @dg.asset(name=asset_key)
                 def _etl_asset(context):
-                    s3_client = s3.get_client()
+                    s3_client = s3.get_client()  # ty: ignore[unresolved-attribute]
                     with tempfile.TemporaryDirectory() as root:
                         source_path = f"{root}/{etl_config.source_object}"
                         target_path = f"{root}/{etl_config.target_object}"

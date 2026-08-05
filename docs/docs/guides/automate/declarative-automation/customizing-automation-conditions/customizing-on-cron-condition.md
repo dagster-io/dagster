@@ -8,6 +8,22 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
 <ScaffoldAsset />
 
+## When to use `on_cron` vs. a job-based schedule
+
+`AutomationCondition.on_cron()` is the recommended starting point for most asset orchestration on Dagster 1.7 and later. Reach for `on_cron` when you want:
+
+- A schedule defined alongside a single asset or a small group of assets.
+- An asset-centric workflow that benefits from dependency tracking, freshness, and the rest of declarative automation.
+- Independent parallel materializations across the targeted assets, with no implicit ordering between them.
+
+Reach for a job-based schedule instead when you need:
+
+- Complex orchestration logic across ops, multiple assets, and external steps.
+- Conditional execution flows or shared state between steps.
+- Mixed asset and op workflows that don't map cleanly to per-asset conditions.
+
+When you use `on_cron` against multiple assets, each asset materializes independently in its own run; there is no queue or ordering between them. If you need to coordinate them as a single unit, use a job. For monitoring patterns that complement `on_cron`, see [Asset sensors](/guides/automate/asset-sensors), [asset checks](/guides/test/asset-checks), and [Op hooks](/guides/build/ops/op-hooks).
+
 ## Ignoring dependencies
 
 By default, <PyObject module="dagster" section="assets" object="AutomationCondition.on_cron" displayText="AutomationCondition.on_cron()" /> will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:

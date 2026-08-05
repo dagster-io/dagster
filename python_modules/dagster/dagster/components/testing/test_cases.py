@@ -13,7 +13,7 @@ from typing import Any, NamedTuple
 # Unfortunate hack - we only use this util in pytest tests, we just drop in a no-op
 # implementation if pytest is not installed.
 try:
-    import pytest  # type: ignore
+    import pytest
 except ImportError:
 
     class pytest:
@@ -81,7 +81,8 @@ test_cases = [
         name="deps",
         attributes={"deps": ["nonexistent"]},
         assertion=lambda asset_spec: (
-            len(asset_spec.deps) == 1 and asset_spec.deps[0].asset_key == AssetKey("nonexistent")
+            len(deps_list := list(asset_spec.deps)) == 1
+            and deps_list[0].asset_key == AssetKey("nonexistent")
         ),
     ),
     TranslationTestCase(

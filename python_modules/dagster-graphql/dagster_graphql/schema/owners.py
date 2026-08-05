@@ -38,12 +38,12 @@ def definition_owner_from_owner_str(
 
 # legacy classes for backcompatibility
 class GrapheneUserAssetOwner(GrapheneUserDefinitionOwner):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "UserAssetOwner"
 
 
 class GrapheneTeamAssetOwner(GrapheneTeamDefinitionOwner):
-    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
+    class Meta:
         name = "TeamAssetOwner"
 
 

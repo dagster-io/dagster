@@ -73,7 +73,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     elif inspect.isfunction(fn):
         target = fn
     elif hasattr(fn, "__call__"):
-        target = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
+        target = fn.__call__
     else:
         check.failed(f"Unhandled Callable object {fn}")
 
@@ -84,7 +84,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
         assert match
         annotation = match[1]
         raise DagsterInvalidDefinitionError(
-            f'Failed to resolve type annotation "{annotation}" in function {target.__name__}. This'
+            f'Failed to resolve type annotation "{annotation}" in function {target.__name__}. This'  # ty: ignore[unresolved-attribute]
             " can occur when the parameter has a string annotation that references either: (1) a"
             " type defined in a local scope (2) a type that is defined or imported in an `if"
             " TYPE_CHECKING` block. Note that if you are including `from __future__ import"

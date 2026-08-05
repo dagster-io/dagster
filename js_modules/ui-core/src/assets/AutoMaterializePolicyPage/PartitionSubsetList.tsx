@@ -1,30 +1,33 @@
 import {
   Box,
   Colors,
+  Container,
+  Inner,
   Menu,
   MenuItem,
   MiddleTruncate,
+  Row,
   SpinnerWithText,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef, useState} from 'react';
-import styled from 'styled-components';
 
 import {PARTITION_SUBSET_LIST_QUERY} from './PartitionSubsetListQuery';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
+import styles from './css/PartitionSubsetList.module.css';
 import {AssetConditionEvaluationStatus} from './types';
 import {
   PartitionSubsetListQuery,
   PartitionSubsetListQueryVariables,
 } from './types/PartitionSubsetListQuery.types';
 import {useQuery} from '../../apollo-client';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props {
   description: string;
   status?: AssetConditionEvaluationStatus;
-  assetKeyPath: string[];
+  assetKeyPath: string[] | null;
+  jobName?: string;
   evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
@@ -37,6 +40,7 @@ export const PartitionSubsetList = ({
   description,
   status,
   assetKeyPath,
+  jobName,
   evaluationId,
   nodeUniqueId,
   selectPartition,
@@ -44,7 +48,7 @@ export const PartitionSubsetList = ({
   const container = useRef<HTMLDivElement | null>(null);
   const [searchValue, setSearchValue] = useState('');
 
-  const {color, hoverColor} = useMemo(
+  const {color} = useMemo(
     () => statusToColors[status ?? AssetConditionEvaluationStatus.TRUE],
     [status],
   );
@@ -53,7 +57,8 @@ export const PartitionSubsetList = ({
     PARTITION_SUBSET_LIST_QUERY,
     {
       variables: {
-        assetKey: {path: assetKeyPath},
+        assetKey: !jobName && assetKeyPath ? {path: assetKeyPath} : null,
+        assetJobKey: jobName ? {jobName} : null,
         evaluationId,
         nodeUniqueId,
       },
@@ -94,14 +99,14 @@ export const PartitionSubsetList = ({
     return (
       <>
         {partitionKeys.length > MAX_ITEMS_BEFORE_TRUNCATION ? (
-          <SearchContainer padding={{vertical: 4, horizontal: 8}}>
+          <Box className={styles.searchContainer} padding={{vertical: 4, horizontal: 8}}>
             <TextInput
               icon="search"
               placeholder="Filter partitions…"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
             />
-          </SearchContainer>
+          </Box>
         ) : null}
         <div
           style={{
@@ -111,12 +116,12 @@ export const PartitionSubsetList = ({
         >
           <Container ref={container}>
             <Menu>
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {virtualItems.map(({index, key, size, start}) => {
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const partitionKey = filteredKeys[index]!;
                   return (
-                    <Row $height={size} $start={start} key={key}>
+                    <Row height={size} start={start} key={key}>
                       <MenuItem
                         onClick={() => {
                           if (selectPartition) {
@@ -125,7 +130,10 @@ export const PartitionSubsetList = ({
                         }}
                         text={
                           <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                            <PartitionStatusDot $color={color} $hoverColor={hoverColor} />
+                            <div
+                              className={styles.partitionStatusDot}
+                              style={{backgroundColor: color}}
+                            />
                             <div>
                               <MiddleTruncate text={partitionKey} />
                             </div>
@@ -180,22 +188,3 @@ const statusToColors: Record<AssetConditionEvaluationStatus, ColorConfig> = {
     hoverColor: Colors.accentGrayHover(),
   },
 };
-
-const SearchContainer = styled(Box)`
-  display: flex;
-  > * {
-    flex: 1;
-  }
-`;
-
-const PartitionStatusDot = styled.div<{$color: string; $hoverColor: string}>`
-  background-color: ${({$color}) => $color};
-  height: 8px;
-  width: 8px;
-  border-radius: 50%;
-  transition: background-color 100ms linear;
-
-  :hover {
-    background-color: ${({$hoverColor}) => $hoverColor};
-  }
-`;

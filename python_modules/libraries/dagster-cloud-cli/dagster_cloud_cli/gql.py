@@ -682,7 +682,7 @@ def launch_run(
     config: dict[str, Any],
     asset_keys: list[str] | None,
 ) -> str:
-    formatted_tags = [{"key": cast("str", k), "value": cast("str", v)} for k, v in tags.items()]
+    formatted_tags = [{"key": k, "value": v} for k, v in tags.items()]
 
     params: dict[str, Any] = {
         "selector": {
@@ -715,6 +715,7 @@ query CliGetEcrInfo {
         awsRegion
         awsAuthToken
         registryAllowCustomBase
+        registryIsHarbor
         registryUrl
     }
 }
@@ -728,6 +729,7 @@ def get_ecr_info(client: DagsterCloudGraphQLClient) -> Any:
         "aws_region": data["serverless"]["awsRegion"],
         "aws_auth_token": data["serverless"]["awsAuthToken"],
         "allow_custom_base": data["serverless"]["registryAllowCustomBase"],
+        "is_harbor": data["serverless"].get("registryIsHarbor", False),
     }
 
 

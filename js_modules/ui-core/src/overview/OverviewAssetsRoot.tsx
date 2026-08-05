@@ -1,21 +1,27 @@
 import {
   Alert,
   Box,
-  Caption,
   Colors,
+  Container,
+  HeaderCell,
+  HeaderRow,
   Icon,
+  Inner,
   MenuItem,
+  Row,
+  RowCell,
   Select,
   Spinner,
   Tag,
+  Text,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/OverviewAssetsRoot.module.css';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, RefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -31,7 +37,6 @@ import {AssetCatalogTableQuery} from '../assets/types/AssetsCatalogTable.types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 type Props = {
@@ -125,7 +130,7 @@ export const OverviewAssetsRoot = ({Header, TabButton}: Props) => {
       <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
           <VirtualHeaderRow />
-          <Inner $totalHeight={totalHeight}>
+          <Inner totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const group = groupedAssets[index]!;
@@ -244,8 +249,8 @@ function VirtualRow({height, start, group}: RowProps) {
   const zeroOrBlank = isBatchStillLoading ? '' : '0';
 
   return (
-    <Row $height={height} $start={start}>
-      <RowGrid border="bottom">
+    <Row height={height} start={start}>
+      <Box className={styles.rowGrid} border="bottom">
         <Cell>
           <Box flex={{direction: 'row', justifyContent: 'space-between', grow: 1}}>
             <Box flex={{direction: 'column', gap: 2, grow: 1}}>
@@ -263,9 +268,12 @@ function VirtualRow({height, start, group}: RowProps) {
                 )}
               </Box>
               <div {...containerProps}>
-                <RepositoryLinkWrapper maxWidth={viewport.width}>
+                <div
+                  className={styles.repositoryLinkWrapper}
+                  style={{maxWidth: viewport.width ? `${viewport.width}px` : undefined}}
+                >
                   <RepositoryLink repoAddress={repoAddress} showRefresh={false} />
-                </RepositoryLinkWrapper>
+                </div>
               </div>
             </Box>
             <Box flex={{direction: 'column', justifyContent: 'center'}}>
@@ -385,19 +393,10 @@ function VirtualRow({height, start, group}: RowProps) {
             zeroOrBlank
           )}
         </Cell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 }
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-  > * {
-    vertical-align: middle;
-  }
-`;
 
 const Cell = ({children}: {children: React.ReactNode}) => {
   return (
@@ -406,16 +405,6 @@ const Cell = ({children}: {children: React.ReactNode}) => {
     </RowCell>
   );
 };
-
-const RepositoryLinkWrapper = styled.div<{maxWidth?: number}>`
-  font-size: 12px;
-  pointer-events: none;
-  a {
-    color: ${Colors.textLight()};
-    pointer-events: none;
-    max-width: ${({maxWidth}) => (maxWidth ? 'unset' : `${maxWidth}px`)};
-  }
-`;
 
 type AssetWithStatusType = {
   asset: Assets[0];
@@ -433,7 +422,7 @@ function SelectOnHover({
   adjective: string;
 }) {
   return (
-    <SelectWrapper>
+    <div className={styles.selectWrapper}>
       <Select
         items={assets}
         itemPredicate={(query, item) =>
@@ -444,7 +433,11 @@ function SelectOnHover({
         itemRenderer={(item) => {
           const count = getCount(item);
           return (
-            <LinkWithNoUnderline to={assetDetailsPathForKey(item.asset.key)} target="_blank">
+            <Link
+              className={styles.linkWithNoUnderline}
+              to={assetDetailsPathForKey(item.asset.key)}
+              target="_blank"
+            >
               <MenuItem
                 key={displayNameForAssetKey(item.asset.key)}
                 text={
@@ -458,33 +451,20 @@ function SelectOnHover({
                       {displayNameForAssetKey(item.asset.key)}
                     </div>
                     {count && count > 0 ? (
-                      <Caption style={{color: Colors.textLight()}}>
+                      <Text size={12} color="textLight">
                         {partitionCountString(count)} {adjective}
-                      </Caption>
+                      </Text>
                     ) : null}
                   </Box>
                 }
               />
-            </LinkWithNoUnderline>
+            </Link>
           );
         }}
         onItemSelect={() => {}}
       >
         {children}
       </Select>
-    </SelectWrapper>
+    </div>
   );
 }
-
-const SelectWrapper = styled.div`
-  cursor: pointer;
-  &:hover {
-    font-weight: 600;
-  }
-`;
-
-const LinkWithNoUnderline = styled(Link)`
-  &:hover {
-    text-decoration: none;
-  }
-`;

@@ -87,7 +87,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         return self._input_config_schema
 
     @property
-    def output_config_schema(self) -> IDefinitionConfigSchema | None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def output_config_schema(self) -> IDefinitionConfigSchema | None:
         return self._output_config_schema
 
     def copy_for_configured(

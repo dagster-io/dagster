@@ -1,9 +1,10 @@
-import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
+import {Box, Menu, MenuDivider, MenuItem, Spinner, showToast} from '@dagster-io/ui-components';
 import {AddToFavoritesMenuItem} from '@shared/assets/AddToFavoritesMenuItem';
 import * as React from 'react';
 
 import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
+import {useCopyToClipboard} from '../app/browser';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
@@ -67,6 +68,16 @@ export const useAssetNodeMenu = ({
 
   const {liveData} = useAssetBaseData(node.assetKey, 'context-menu');
 
+  const copyToClipboard = useCopyToClipboard();
+  const onCopyAssetKey = React.useCallback(() => {
+    copyToClipboard(tokenForAssetKey(node.assetKey));
+    showToast({
+      icon: 'copy_to_clipboard_done',
+      intent: 'success',
+      message: 'Copied asset key!',
+    });
+  }, [copyToClipboard, node.assetKey]);
+
   const isObservable = node.definition.isObservable;
   const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
   const lastObservationID = liveData?.lastObservation?.runId;
@@ -74,6 +85,7 @@ export const useAssetNodeMenu = ({
   return {
     menu: (
       <Menu>
+        <MenuItem icon="copy_to_clipboard" text="Copy asset key" onClick={onCopyAssetKey} />
         <AddToFavoritesMenuItem assetKey={node.assetKey} />
         <MenuLink
           to={assetDetailsPathForKey(node.assetKey)}

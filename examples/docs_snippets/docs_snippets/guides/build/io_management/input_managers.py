@@ -62,7 +62,7 @@ def a_job():
 # start_plain_input_manager
 # in this case PandasIOManager is an existing IO Manager
 class MyNumpyLoader(PandasIOManager):
-    def load_input(self, context: dg.InputContext) -> np.ndarray:  # ty: ignore[invalid-method-override]
+    def load_input(self, context: dg.InputContext) -> np.ndarray:
         file_path = "path/to/dataframe"
         array = np.genfromtxt(file_path, delimiter=",", dtype=None)
         return array
@@ -89,7 +89,7 @@ def my_job():
 class BetterPandasIOManager(dg.ConfigurableIOManager):
     def _get_path(self, output_context):
         return os.path.join(
-            self.base_dir,
+            self.base_dir,  # ty: ignore[unresolved-attribute]
             "storage",
             f"{output_context.step_key}_{output_context.name}.csv",
         )

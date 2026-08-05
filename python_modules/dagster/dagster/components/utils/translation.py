@@ -74,17 +74,14 @@ class TranslatorResolvingInfo:
         if isinstance(resolved_asset_attributes, AssetSpec):
             return resolved_asset_attributes
 
-        resolved_attributes = dict(
+        resolved_attributes: dict[str, Any] = dict(
             resolve_asset_spec_update_kwargs_to_mapping(
                 model=resolved_asset_attributes,
                 context=self.resolution_context.at_path(self.model_key).with_scope(**context),
             )
         )
         if "code_version" in resolved_attributes:
-            resolved_attributes = {
-                **resolved_attributes,
-                "code_version": str(resolved_attributes["code_version"]),
-            }
+            resolved_attributes["code_version"] = str(resolved_attributes["code_version"])
 
         if "key_prefix" in resolved_attributes:
             prefix = resolved_attributes.pop("key_prefix")
@@ -169,7 +166,7 @@ class TranslationFnResolver(Resolver, Generic[T]):
             _build_translation_fn(
                 template_vars_for_translation_fn=template_vars_for_translation_fn
             ),
-            model_field_type=str | model_field_type,
+            model_field_type=str | model_field_type,  # ty: ignore[unsupported-operator]
             inject_before_resolve=False,
         )
 

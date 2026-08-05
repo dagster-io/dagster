@@ -76,5 +76,5 @@ def test_s3_sensor():
         context = build_sensor_context()
         assert context.cursor is None
         run_requests = my_s3_sensor(context)
-        assert len(list(run_requests)) == 5
+        assert len(list(run_requests)) == 5  # ty: ignore[invalid-argument-type]
         assert context.cursor == "e"

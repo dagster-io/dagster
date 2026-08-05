@@ -77,7 +77,7 @@ class ModelConfig(dg.Config):
 class DigitCNN(nn.Module):
     """Improved CNN for MNIST digit classification based on research."""
 
-    def __init__(self, config: ModelConfig = None):
+    def __init__(self, config: ModelConfig | None = None):
         super().__init__()
         if config is None:
             config = ModelConfig()

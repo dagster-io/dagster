@@ -1,6 +1,6 @@
 ---
 title: Compute logs not visible in Dagster+ UI — "No Log File Available" error
-sidebar_position: 70
+sidebar_position: 700
 description: Fix "No Log File Available" in the Dagster+ UI by using the correct compute_logs configuration key.
 ---
 

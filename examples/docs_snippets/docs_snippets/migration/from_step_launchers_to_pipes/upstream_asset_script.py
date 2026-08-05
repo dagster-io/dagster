@@ -14,7 +14,7 @@ def main():
         path = "s3://" + "<my-bucket>/" + pipes.asset_key + "/.parquet"
 
         # this was probably previously logged by the IOManager
-        pipes.add_output_metadata({"path": path})
+        pipes.add_output_metadata({"path": path})  # ty: ignore[unresolved-attribute]
 
         df.write.parquet(path)
 

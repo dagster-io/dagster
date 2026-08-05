@@ -95,14 +95,17 @@ def _get_example_value(
         elif field_schema.get("additionalProperties"):
             # Handle objects with additionalProperties but no specific properties
             additional_props_schema = field_schema.get("additionalProperties")
-            if (
-                isinstance(additional_props_schema, dict)
-                and additional_props_schema.get("type") == "string"
-            ):
-                # Return a simple example object with string values
-                return {"key": "value"}
-            elif additional_props_schema is True:
+            if additional_props_schema is True:
                 # additionalProperties: true means any properties are allowed
+                return {"key": "value"}
+            if isinstance(additional_props_schema, dict):
+                # Scalar value schemas (including unions like `str | int | float | bool`)
+                # render as a `{"key": "value"}` placeholder, matching how plain
+                # string-typed mappings render. Complex value schemas referenced via
+                # $ref are left empty so the schema documentation section carries the
+                # detail instead.
+                if "$ref" in additional_props_schema:
+                    return {}
                 return {"key": "value"}
         return {}
 

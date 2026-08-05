@@ -8,7 +8,7 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 
 import dagster._check as check
-import kubernetes
+import kubernetes.client.rest
 import pytest
 import requests
 import yaml
@@ -19,6 +19,7 @@ from dagster_k8s.client import DagsterKubernetesClient
 
 from dagster_k8s_test_infra.integration_utils import (
     IS_BUILDKITE,
+    _execute_query_over_graphql,
     check_output,
     get_test_namespace,
     image_pull_policy,
@@ -31,6 +32,18 @@ TEST_CONFIGMAP_NAME = "test-env-configmap"
 TEST_OTHER_CONFIGMAP_NAME = "test-other-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 TEST_OTHER_SECRET_NAME = "test-other-env-secret"
+
+# Pin to a non-:latest tag so kubelet defaults imagePullPolicy to IfNotPresent
+# and uses the copy pre-loaded into the kind cluster, avoiding docker.io flakes
+# at test time. The kind pre-load list (`additional_kind_images` in the suite
+# conftest) must include this exact tag.
+LOCALSTACK_IMAGE = "localstack/localstack:3.8.1"
+
+# Poll interval for fixture pod-readiness waits. The library default
+# (DEFAULT_WAIT_BETWEEN_ATTEMPTS) is 10s, which leaves ~5-8s on the floor per
+# wait when pods reconcile in 1-3s. Tests run against a local kind cluster
+# where the API server is fast; a shorter interval is safe.
+_FIXTURE_WAIT_INTERVAL = 2.0
 
 # Secret that is set on the deployment only
 TEST_DEPLOYMENT_SECRET_NAME = "test-deployment-env-secret"
@@ -123,7 +136,7 @@ def run_monitoring_namespace(cluster_provider, pytestconfig, should_cleanup):
     # w/ a kind cluster
     if should_cleanup:
         print(f"Deleting namespace {namespace}")
-        kube_api.delete_namespace(name=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
+        kube_api.delete_namespace(name=namespace)
 
 
 @contextmanager
@@ -187,28 +200,39 @@ def configmaps(namespace, should_cleanup):
 
 @pytest.fixture(scope="session")
 def aws_configmap(namespace, should_cleanup):
-    if not IS_BUILDKITE:
-        kube_api = kubernetes.client.CoreV1Api()
+    kube_api = kubernetes.client.CoreV1Api()
 
+    if IS_BUILDKITE:
+        # On Buildkite the buildkite-agent pod uses IRSA, so the kind step pods cannot
+        # inherit AWS credentials via IMDS or the web-identity token. Propagate the
+        # temporary creds materialized by `aws configure export-credentials --format env`
+        # (see {k8s,celery_k8s}_integration_suite_pytest_extra_cmds) into step pods via
+        # this configmap.
+        aws_data = {
+            k: os.environ[k]
+            for k in ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
+            if os.environ.get(k)
+        }
+    else:
         aws_data = {
             "AWS_ENDPOINT_URL": f"http://s3.{namespace}.svc.cluster.local:4566",
             "AWS_ACCESS_KEY_ID": "fake",
             "AWS_SECRET_ACCESS_KEY": "fake",
         }
 
-        print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
-        aws_configmap = kubernetes.client.V1ConfigMap(
-            api_version="v1",
-            kind="ConfigMap",
-            data=aws_data,
-            metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
-        )
-        kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
+    print(f"Creating ConfigMap {TEST_AWS_CONFIGMAP_NAME} with AWS credentials")
+    aws_configmap = kubernetes.client.V1ConfigMap(
+        api_version="v1",
+        kind="ConfigMap",
+        data=aws_data,
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
+    )
+    kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
 
     yield TEST_AWS_CONFIGMAP_NAME
 
-    if should_cleanup and not IS_BUILDKITE:
-        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)  # pyright: ignore[reportPossiblyUnboundVariable]
+    if should_cleanup:
+        kube_api.delete_namespaced_config_map(name=TEST_AWS_CONFIGMAP_NAME, namespace=namespace)
 
 
 @pytest.fixture(scope="session")
@@ -485,7 +509,11 @@ def _helm_chart_helper(
                 pod_names = [p.metadata.name for p in pods.items if "webserver" in p.metadata.name]
                 if pod_names:
                     webserver_pod = pod_names[0]
-                    api_client.wait_for_pod(webserver_pod, namespace=namespace)
+                    api_client.wait_for_pod(
+                        webserver_pod,
+                        namespace=namespace,
+                        wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                    )
                     break
                 time.sleep(1)
 
@@ -499,7 +527,11 @@ def _helm_chart_helper(
                 pod_names = [p.metadata.name for p in pods.items if "daemon" in p.metadata.name]
                 if pod_names:
                     daemon_pod = pod_names[0]
-                    api_client.wait_for_pod(daemon_pod, namespace=namespace)
+                    api_client.wait_for_pod(
+                        daemon_pod,
+                        namespace=namespace,
+                        wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                    )
                     break
                 time.sleep(1)
 
@@ -531,10 +563,11 @@ def _helm_chart_helper(
 
                     labels = queue.get("labels")
                     if labels:
-                        target_deployments = []
-                        for item in deployments.items:
-                            if queue.get("name") in item.metadata.name:
-                                target_deployments.append(item)
+                        target_deployments = [
+                            item
+                            for item in deployments.items
+                            if queue.get("name") in item.metadata.name
+                        ]
 
                         assert len(target_deployments) > 0
                         for target in target_deployments:
@@ -546,7 +579,11 @@ def _helm_chart_helper(
                 print("Waiting for celery workers")
                 for pod_name in pod_names:
                     print(f"Waiting for Celery worker pod {pod_name}")
-                    api_client.wait_for_pod(pod_name, namespace=namespace)
+                    api_client.wait_for_pod(
+                        pod_name,
+                        namespace=namespace,
+                        wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                    )
 
                 rabbitmq_enabled = "rabbitmq" in helm_config and helm_config["rabbitmq"].get(
                     "enabled"
@@ -568,7 +605,11 @@ def _helm_chart_helper(
                             assert len(pod_names) == 1
                             print("Waiting for rabbitmq pod to be ready: " + str(pod_names[0]))
 
-                            api_client.wait_for_pod(pod_names[0], namespace=namespace)
+                            api_client.wait_for_pod(
+                                pod_names[0],
+                                namespace=namespace,
+                                wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                            )
                             break
                         time.sleep(1)
 
@@ -586,7 +627,11 @@ def _helm_chart_helper(
                         if pod_names and len(pod_names) >= 1:
                             for pod_name in pod_names:
                                 print("Waiting for redis pod to be ready: " + str(pod_name))
-                                api_client.wait_for_pod(pod_name, namespace=namespace)
+                                api_client.wait_for_pod(
+                                    pod_name,
+                                    namespace=namespace,
+                                    wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                                )
                             break
                         time.sleep(5)
 
@@ -608,7 +653,11 @@ def _helm_chart_helper(
             ]
             for pod_name in pod_names:
                 print(f"Waiting for user code deployment pod {pod_name}")
-                api_client.wait_for_pod(pod_name, namespace=namespace)
+                api_client.wait_for_pod(
+                    pod_name,
+                    namespace=namespace,
+                    wait_time_between_attempts=_FIXTURE_WAIT_INTERVAL,
+                )
 
         print(f"Helm chart successfully installed in namespace {namespace}")
         yield
@@ -619,7 +668,7 @@ def _helm_chart_helper(
         if should_cleanup:
             print("Uninstalling helm chart")
             check_output(
-                ["helm", "uninstall", release_name, "--namespace", namespace],  # pyright: ignore[reportPossiblyUnboundVariable]
+                ["helm", "uninstall", release_name, "--namespace", namespace],
                 cwd=discover_oss_root(Path(__file__)),
             )
 
@@ -691,8 +740,10 @@ def helm_chart_for_k8s_run_launcher(
                 "config": {
                     "k8sRunLauncher": {
                         "jobNamespace": user_code_namespace,
-                        "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}]
-                        + ([{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []),
+                        "envConfigMaps": [
+                            {"name": TEST_CONFIGMAP_NAME},
+                            {"name": TEST_AWS_CONFIGMAP_NAME},
+                        ],
                         "envSecrets": [{"name": TEST_SECRET_NAME}],
                         "envVars": ["BUILDKITE=1"] if os.getenv("BUILDKITE") else [],
                         "imagePullPolicy": image_pull_policy(),
@@ -809,7 +860,7 @@ def _deployment_config(docker_image):
                 else []
             )
             + [{"name": "MY_POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}],
-            "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else [],
+            "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}},
@@ -879,9 +930,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                         "worker_concurrency": 1,
                     },
                     "annotations": {"dagster-integration-tests": "celery-pod-annotation"},
-                    "envConfigMaps": (
-                        [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []
-                    ),
+                    "envConfigMaps": [{"name": TEST_AWS_CONFIGMAP_NAME}],
                     "env": {"TEST_SET_ENV_VAR": "test_celery_env_var"},
                     "envSecrets": [{"name": TEST_SECRET_NAME}],
                     "volumeMounts": [
@@ -969,7 +1018,7 @@ def _base_helm_config(system_namespace, docker_image, enable_subchart=True):
                             "containers": [
                                 {
                                     "name": "s3",
-                                    "image": "localstack/localstack:latest",
+                                    "image": LOCALSTACK_IMAGE,
                                     "ports": [{"containerPort": 4566}],
                                     "env": [
                                         {"name": "SERVICES", "value": "s3"},
@@ -1071,9 +1120,85 @@ def _port_forward_dagster_webserver(namespace):
                 pass
 
             time.sleep(1)
+
+        # The webserver can win the race to /listen on user-code-deployment-1:3030
+        # -- its initial workspace load sees `Connection refused`, the location
+        # goes into ERROR, and the natural workspace-refresh interval is too long
+        # for tests that start within a few seconds. Force a reload; the
+        # `_helm_chart_helper` wait_for_pod loop has already gated on user-code.
+        _ensure_user_code_location_loaded(
+            f"http://{webserver_url_url}",
+            location_name="user-code-deployment-1",
+            timeout_seconds=60.0,
+        )
+
         yield f"http://{webserver_url_url}"
 
     finally:
         print("Terminating port-forwarding")
         if p is not None:
             p.terminate()
+
+
+_RELOAD_LOCATION_MUTATION = """
+mutation($locationName: String!) {
+  reloadRepositoryLocation(repositoryLocationName: $locationName) {
+    __typename
+    ... on WorkspaceLocationEntry {
+      name
+      loadStatus
+      locationOrLoadError {
+        __typename
+        ... on PythonError {
+          message
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+
+def _ensure_user_code_location_loaded(
+    webserver_url: str,
+    *,
+    location_name: str,
+    timeout_seconds: float,
+) -> None:
+    """Force-reload the named code location and poll until it is LOADED.
+
+    Returns once the location reports loadStatus=LOADED with no
+    locationOrLoadError. Raises if the reload errors or doesn't converge
+    within timeout_seconds.
+    """
+    deadline = time.time() + timeout_seconds
+    last_response = None
+    while time.time() < deadline:
+        response = _execute_query_over_graphql(
+            webserver_url,
+            _RELOAD_LOCATION_MUTATION,
+            {"locationName": location_name},
+        )
+        last_response = response
+        payload = response.get("data", {}).get("reloadRepositoryLocation", {})
+        typename = payload.get("__typename")
+        if typename == "WorkspaceLocationEntry":
+            load_status = payload.get("loadStatus")
+            load_error_typename = (payload.get("locationOrLoadError") or {}).get("__typename")
+            if load_status == "LOADED" and load_error_typename != "PythonError":
+                print(f"Code location {location_name!r} loaded successfully")
+                return
+            print(
+                f"Code location {location_name!r} not yet loaded "
+                f"(loadStatus={load_status}, locationOrLoadError={load_error_typename}); retrying"
+            )
+        else:
+            print(f"reloadRepositoryLocation returned {typename}: {payload}; retrying")
+        time.sleep(2)
+    raise Exception(
+        f"Timed out waiting for code location {location_name!r} to load "
+        f"(last response: {last_response})"
+    )

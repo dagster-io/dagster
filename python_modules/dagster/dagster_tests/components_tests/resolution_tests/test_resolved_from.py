@@ -174,8 +174,8 @@ thing:
     )
     assert isinstance(c.thing, Sequence)
     assert len(c.thing) == 2
-    assert c.thing[0].num == 123
-    assert c.thing[1].num == 456
+    assert c.thing[0].num == 123  # ty: ignore[unresolved-attribute]
+    assert c.thing[1].num == 456  # ty: ignore[unresolved-attribute]
 
 
 def test_union_resolvable_discriminator():

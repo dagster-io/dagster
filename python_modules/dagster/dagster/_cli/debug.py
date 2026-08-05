@@ -10,15 +10,13 @@ from dagster._serdes import deserialize_value
 
 
 def _recent_failed_runs_text(instance):
-    lines = []
     runs = instance.get_runs(
         limit=5,
         filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED]),
     )
     if len(runs) <= 0:
         return ""
-    for run in runs:
-        lines.append(f"{run.run_id:<50}{run.job_name:<50}{run.status:<20}")
+    lines = [f"{run.run_id:<50}{run.job_name:<50}{run.status:<20}" for run in runs]
     return "Recently failed runs:\n{}".format("\n".join(lines))
 
 

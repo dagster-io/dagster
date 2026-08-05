@@ -1,8 +1,8 @@
 import {BaseTag, Colors, Icon, IconName} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
-import styled from 'styled-components';
 
+import styles from './css/useFilter.module.css';
 import {testId} from '../../testing/testId';
 import {TruncatedTextWithFullTextOnHover} from '../TruncatedTextWithFullTextOnHover';
 
@@ -72,13 +72,6 @@ export const FilterTag = ({
   );
 };
 
-const FilterTagHighlightedTextSpan = styled(TruncatedTextWithFullTextOnHover)<{color: string}>`
-  color: ${({color}) => color};
-  font-weight: 600;
-  font-size: 12px;
-  max-width: 100px;
-`;
-
 export const FilterTagHighlightedText = React.forwardRef(
   (
     {
@@ -92,20 +85,21 @@ export const FilterTagHighlightedText = React.forwardRef(
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     return (
-      <FilterTagHighlightedTextSpan
-        color={color}
-        text={
-          <>
-            {children}
-            {/* The following display:none div is a hack to trick CustomTooltipProvider into showing the tooltip even if the text isn't truncated */}
-            <div style={{display: 'none'}}>…</div>
-          </>
-        }
-        tooltipStyle={LabelTooltipStyles}
-        {...rest}
-        tooltipText={rest.tooltipText || children}
-        ref={ref}
-      />
+      <div className={styles.filterTagHighlightedText} style={{color}}>
+        <TruncatedTextWithFullTextOnHover
+          text={
+            <>
+              {children}
+              {/* The following display:none div is a hack to trick CustomTooltipProvider into showing the tooltip even if the text isn't truncated */}
+              <div style={{display: 'none'}}>…</div>
+            </>
+          }
+          tooltipStyle={LabelTooltipStyles}
+          {...rest}
+          tooltipText={rest.tooltipText || children}
+          ref={ref}
+        />
+      </div>
     );
   },
 );

@@ -74,8 +74,12 @@ def get_asset_health(
                 policy = node.freshness_policy
                 if latest_mat and hasattr(policy, "fail_window") and policy.fail_window:
                     lag = datetime.now().timestamp() - latest_mat.timestamp
-                    fail_secs = policy.fail_window.total_seconds()
-                    warn_secs = policy.warn_window.total_seconds() if policy.warn_window else None
+                    fail_secs = policy.fail_window.total_seconds()  # ty: ignore[unresolved-attribute]
+                    warn_secs = (
+                        policy.warn_window.total_seconds()  # ty: ignore[unresolved-attribute]
+                        if policy.warn_window  # ty: ignore[unresolved-attribute]
+                        else None
+                    )
                     if lag > fail_secs:
                         details["freshness_status"] = (
                             f"stale (lag: {lag / 60:.1f}m > fail: {fail_secs / 60:.1f}m)"

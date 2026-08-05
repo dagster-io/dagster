@@ -8,7 +8,7 @@ import time
 from typing import Iterator, Optional
 
 import dagster as dg
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer  # ty: ignore[unresolved-import]
 from pydantic import Field
 
 # Configuration constants

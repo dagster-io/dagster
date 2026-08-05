@@ -4,7 +4,7 @@ from google.cloud import bigquery as bq
 # start_example
 from dagster import asset
 
-from .create_table import iris_data
+from .create_table import iris_data  # ty: ignore[unresolved-import]
 
 # this example uses the iris_dataset asset from Step 2
 

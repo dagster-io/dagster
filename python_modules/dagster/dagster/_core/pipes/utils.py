@@ -70,7 +70,7 @@ class PipesFileContextInjector(PipesContextInjector):
             PipesParams: A dict of parameters that can be used by the external process to locate and
             load the injected context data.
         """
-        with open(self._path, "w") as input_stream:
+        with open(self._path, "w", encoding="utf-8") as input_stream:
             json.dump(context_data, input_stream)
         try:
             yield {PipesDefaultContextLoader.FILE_PATH_KEY: self._path}
@@ -89,12 +89,9 @@ class PipesTempFileContextInjector(PipesContextInjector):
     """
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
         """Inject context to external environment by writing it to an automatically-generated
         temporary file as JSON and exposing the path to the file.
-
-        Args:
-            context_data (PipesContextData): The context data to inject.
 
         Yields:
             PipesParams: A dict of parameters that can be used by the external process to locate and
@@ -155,7 +152,7 @@ class PipesFileMessageReader(PipesMessageReader):
         )
         self._cleanup_file = cleanup_file
 
-    def on_launched(self, params: PipesLaunchedData) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def on_launched(self, params: PipesLaunchedData) -> None:  # ty: ignore[invalid-method-override]
         self.launched_payload = params
 
     @contextmanager
@@ -176,7 +173,7 @@ class PipesFileMessageReader(PipesMessageReader):
         is_session_closed = Event()
         thread = None
         try:
-            open(self._path, "w").close()  # create file
+            open(self._path, "w", encoding="utf-8").close()  # create file
             thread = Thread(
                 target=self._reader_thread,
                 args=(handler, is_session_closed),
@@ -320,7 +317,7 @@ class PipesCompositeMessageReader(PipesMessageReader):
             per_writer_params = [
                 stack.enter_context(
                     reader.read_messages(
-                        _ChildMessageHandler(handler, reader)  # type: ignore[arg-type]
+                        _ChildMessageHandler(handler, reader)  # ty: ignore[invalid-argument-type]
                     )
                 )
                 for reader in self._readers

@@ -8,21 +8,21 @@ slug: '/guides/labs'
 
 The features in this section are under active development. You may encounter feature gaps, and the APIs may change.
 
-### Dagster+ AI Agent
+### Dagster+ MCP (Dagster+)
 
-With Dagster+ AI, you can interact with Dagster+ through chat. The agent can analyze run logs, identify root causes of failures, and suggest improvements. Start an open-ended chat, or trigger a summary from any completed run or from a degraded asset on the home page. For more information, see the [Dagster+ AI Agent guide](/guides/labs/dagster-ai-agent).
+Connect your AI agent of choice to the Dagster+ MCP server to query your Dagster+ deployment for information such as run logs, asset details, and Insights metrics. You can also take actions such as launching runs. For more information, see the [Dagster+ MCP docs](/guides/labs/dagster-mcp).
+
+### Dagster+ AI (Dagster+)
+
+Dagster+ AI helps you detect, understand, and resolve pipeline failures — from chat-based summaries and proactive monitoring to AI-powered code fixes. For more information, see the [Dagster+ AI docs](/guides/labs/dagster-ai).
 
 ### Issues (Dagster+)
 
-Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. For more information, see the [Issues docs](/guides/labs/issues).
+Issues let you link together multiple failures with a shared root cause. Dagster+ AI can automatically create Issues from detected failure patterns, and you can dispatch an AI agent to implement fixes. For more information, see the [Issues docs](/guides/labs/issues).
 
 ### Connections (Dagster+)
 
 Connections allow you to easily discover and sync data warehouse assets from sources like Snowflake, BigQuery, Postgres, and Databricks into Dagster. These assets are viewable in the Dagster UI catalog, and you can set alerts on schema changes or metadata values (like row count). For more information, see the [Connections docs](/guides/labs/connections).
-
-### Terraform provider (Dagster+)
-
-The Dagster+ Terraform provider lets you manage your organization's deployments, users, teams, secrets, and alerts as infrastructure-as-code. For more information, see the [Terraform provider docs](/guides/labs/terraform).
 
 ### Webhook alert notifications (Dagster+)
 

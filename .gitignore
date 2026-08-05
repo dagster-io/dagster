@@ -187,8 +187,9 @@ exponent.txt
 .cloudstorage/
 
 # personal claude files
-.claude/**/*.local.md
-.claude/.local
+.claude/**/*.local.*
+.claude/worktrees
+**/CLAUDE.local.md
 
 .workstack
 .erk/scratch/

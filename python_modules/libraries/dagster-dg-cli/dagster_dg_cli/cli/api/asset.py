@@ -56,7 +56,17 @@ def list_assets_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """List assets with pagination."""
+    """List assets with pagination.
+
+    Example::
+
+        $ dg api asset list
+        ASSET KEY        GROUP      DESCRIPTION                        KINDS
+        raw_customers    ingestion  Customer records from Snowflake    snowflake
+        stg_customers    staging    Cleaned customer records           dbt, snowflake
+        dim_customers    marts      Customer dimension table           dbt, snowflake
+        daily_orders     marts      Daily order aggregates             dbt, snowflake
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -97,7 +107,18 @@ def get_asset_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get specific asset details."""
+    """Get specific asset details.
+
+    Example::
+
+        $ dg api asset get dim_customers
+        Asset Key: dim_customers
+        ID: 7e4c8b2a-1f3d-4e6b-9c5a-8d2f1e3b4c7d
+        Description: Customer dimension table
+        Group: marts
+        Kinds: dbt, snowflake
+        Deps: stg_customers
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -135,7 +156,24 @@ def get_health_asset_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get health and runtime status for an asset."""
+    """Get health and runtime status for an asset.
+
+    Example::
+
+        $ dg api asset get-health dim_customers
+        Asset Key: dim_customers
+
+        Asset Health: HEALTHY
+        Materialization Status: MATERIALIZED
+        Freshness Status: PASSING
+        Asset Checks Status: PASSED
+        Last Materialized: 2026-05-06 18:00:12 UTC
+        Latest Materialization: 2026-05-06 18:00:12 UTC
+        Latest Run ID: 5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        Total Checks: 3
+        Failed Checks: 0
+        Warning Checks: 0
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -202,7 +240,16 @@ def get_events_asset_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get materialization and observation events for an asset."""
+    """Get materialization and observation events for an asset.
+
+    Example::
+
+        $ dg api asset get-events dim_customers --limit 3
+        TIMESTAMP                LEVEL  TYPE                    RUN ID                                PARTITION
+        2026-05-06 18:00:12 UTC  INFO   ASSET_MATERIALIZATION   5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        2026-05-05 18:00:08 UTC  INFO   ASSET_MATERIALIZATION   2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a
+        2026-05-04 18:00:15 UTC  INFO   ASSET_MATERIALIZATION   8c4d2e7f-1a9b-4e3d-7c5b-9f2a1d8e3b6c
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,
@@ -273,6 +320,13 @@ def get_evaluations_asset_command(
 
     Evaluations are only recorded when at least one subcondition has a different
     value than the previous evaluation.
+
+    Example::
+
+        $ dg api asset get-evaluations dim_customers --limit 2
+        EVAL ID  TIMESTAMP                NUM REQUESTED  RUN IDS
+        4218     2026-05-06 18:00:00 UTC  1              5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a
+        4196     2026-05-05 18:00:00 UTC  1              2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a
     """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
@@ -319,7 +373,16 @@ def get_partition_status_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get partition materialization stats for an asset."""
+    """Get partition materialization stats for an asset.
+
+    Example::
+
+        $ dg api asset get-partition-status daily_orders
+        Materialized: 364
+        Failed:       1
+        In Progress:  0
+        Total:        365
+    """
     config = DagsterPlusCliConfig.create_for_deployment(
         deployment=deployment,
         organization=organization,

@@ -220,9 +220,16 @@ class CachingDataTimeResolver:
         )
         if not upstream_records_by_key:
             if not self.asset_graph.has_materializable_parents(asset_key):
+                # Truncate to millisecond granularity. GraphQL renders both this
+                # datetime (`int(dt.timestamp() * 1000)`) and the same EventLogEntry
+                # via `int(event.timestamp * 1000)` elsewhere; sub-microsecond bits
+                # of `record_timestamp` make `datetime.fromtimestamp`'s round-half-
+                # to-even microsecond rounding land on the next millisecond ~0.04%
+                # of the time, causing the two paths to disagree by 1 ms.
                 return {
                     asset_key: datetime.datetime.fromtimestamp(
-                        record_timestamp, tz=datetime.timezone.utc
+                        int(record_timestamp * 1000) / 1000.0,
+                        tz=datetime.timezone.utc,
                     )
                 }
             else:
@@ -287,9 +294,12 @@ class CachingDataTimeResolver:
 
         # otherwise, we have all available data up to the point in time that the new version arrived
         next_version_timestamp = next_version_record.event_log_entry.timestamp
+        # Truncate to millisecond granularity for parity with int(t*1000)
+        # rendering elsewhere. See note in `_calculate_data_time_by_key_unpartitioned`.
         return {
             asset_key: datetime.datetime.fromtimestamp(
-                next_version_timestamp, tz=datetime.timezone.utc
+                int(next_version_timestamp * 1000) / 1000.0,
+                tz=datetime.timezone.utc,
             )
         }
 

@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -42,10 +43,10 @@ class _DirectContextLoader(PipesContextLoader):
 
 
 def _make_external_execution_context(**kwargs):
-    kwargs = {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs}
+    context_data = cast("PipesContextData", {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs})
     return PipesContext(
         params_loader=MagicMock(),
-        context_loader=_DirectContextLoader(PipesContextData(**kwargs)),
+        context_loader=_DirectContextLoader(context_data),
         message_writer=MagicMock(),
     )
 

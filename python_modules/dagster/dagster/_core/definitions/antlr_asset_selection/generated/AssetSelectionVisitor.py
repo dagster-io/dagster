@@ -95,6 +95,10 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#IsAttributeExpr.
+    def visitIsAttributeExpr(self, ctx: AssetSelectionParser.IsAttributeExprContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#StatusAttributeExpr.
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         return self.visitChildren(ctx)

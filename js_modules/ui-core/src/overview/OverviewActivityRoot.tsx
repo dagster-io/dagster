@@ -1,4 +1,5 @@
 import {Box, JoinedButtons} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
 import {Redirect, Switch} from 'react-router-dom';
 
@@ -8,13 +9,11 @@ import {OverviewTabs} from './OverviewTabs';
 import {OverviewTimelineRoot} from './OverviewTimelineRoot';
 import {Route} from '../app/Route';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {ActivatableButton} from '../runs/ActivatableButton';
+import {activatableButtonStyles} from '../runs/ActivatableButton';
+import {AnchorButton} from '../ui/AnchorButton';
 
 export const OverviewActivityRoot = () => {
-  useDocumentTitle('Overview | Activity');
-
   const header = React.useCallback(
     ({refreshState}: {refreshState: React.ComponentProps<typeof OverviewTabs>['refreshState']}) => (
       <OverviewPageHeader tab="activity" refreshState={refreshState} />
@@ -40,12 +39,28 @@ export const OverviewActivityRoot = () => {
       }
       return (
         <JoinedButtons>
-          <ActivatableButton $active={selected === 'timeline'} to="/overview/activity/timeline">
+          <AnchorButton
+            className={clsx(
+              activatableButtonStyles.activatableButton,
+              selected === 'timeline'
+                ? activatableButtonStyles.active
+                : activatableButtonStyles.inactive,
+            )}
+            to="/overview/activity/timeline"
+          >
             Timeline
-          </ActivatableButton>
-          <ActivatableButton $active={selected === 'assets'} to="/overview/activity/assets">
+          </AnchorButton>
+          <AnchorButton
+            className={clsx(
+              activatableButtonStyles.activatableButton,
+              selected === 'assets'
+                ? activatableButtonStyles.active
+                : activatableButtonStyles.inactive,
+            )}
+            to="/overview/activity/assets"
+          >
             Assets
-          </ActivatableButton>
+          </AnchorButton>
         </JoinedButtons>
       );
     },

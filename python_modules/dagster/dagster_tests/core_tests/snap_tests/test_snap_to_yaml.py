@@ -52,7 +52,7 @@ def test_with_spaces():
 def _remote_repository_for_function(
     instance: DagsterInstance, fn: Callable[..., Any]
 ) -> RemoteRepository:
-    return _remote_repository_for_module(instance, fn.__module__, fn.__name__)
+    return _remote_repository_for_module(instance, fn.__module__, fn.__name__)  # ty: ignore[unresolved-attribute]
 
 
 def _remote_repository_for_module(

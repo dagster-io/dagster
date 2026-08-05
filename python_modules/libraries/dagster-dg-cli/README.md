@@ -37,7 +37,7 @@ API command tests live in `dagster_dg_cli_tests/cli_tests/api_tests/`. Each doma
 2. Record the GraphQL response:
 
    ```bash
-   dagster-dev dg-api-record asset --recording my_new_test
+   python dagster_dg_cli_tests/cli_tests/api_tests/_record.py asset --recording my_new_test
    ```
 
 3. Generate snapshots:
@@ -56,7 +56,7 @@ pytest dagster_dg_cli_tests/cli_tests/api_tests/asset_check_tests/
 pytest dagster_dg_cli_tests/cli_tests/api_tests/asset_check_tests/ --snapshot-update
 
 # Re-record API responses after API changes
-dagster-dev dg-api-record asset --recording success_single_asset
+python dagster_dg_cli_tests/cli_tests/api_tests/_record.py asset --recording success_single_asset
 
 # Run a specific scenario
 pytest dagster_dg_cli_tests/cli_tests/api_tests/asset_check_tests/ -k "my_new_test"

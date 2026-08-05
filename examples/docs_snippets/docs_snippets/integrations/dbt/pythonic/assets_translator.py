@@ -5,7 +5,7 @@ from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 import dagster as dg
 
-from .resources import dbt_project
+from .resources import dbt_project  # ty: ignore[unresolved-import]
 
 
 # start_custom_dagster_dbt_translator

@@ -390,3 +390,29 @@ Once the `dagster-plus-deploy.yml` is updated and changes pushed to your repo, t
 If you have separate `deploy.yml` and `branch_deployments.yml` files, you will need to repeat the above steps for your `branch_deployments.yml` as needed.
 
 :::
+
+## Suppress debug logs
+
+By default, `managed_python_loggers` only applies to standard Python loggers - it does not affect loggers created with `get_dagster_logger()`. If you configure `python_log_level: INFO` but debug logs from `get_dagster_logger()` continue to appear, switch to the standard Python logging module.
+
+1. Replace `get_dagster_logger()` with a standard Python logger:
+
+   <CodeExample
+     path="docs_snippets/docs_snippets/deployment/dagster_plus/serverless/runtime-environment/suppress_debug_logs.py"
+     startAfter="start_suppress_debug_logs"
+     endBefore="end_suppress_debug_logs"
+     title="Standard Python logger replacement"
+   />
+
+2. Add the logger name to `managed_python_loggers` in your deployment settings:
+
+   ```yaml
+   python_logs:
+     managed_python_loggers:
+       - your_logger_name
+     python_log_level: INFO
+   ```
+
+3. Verify that debug messages are suppressed while `INFO`-level messages continue to appear.
+
+For more information, see the [Python logging documentation](https://docs.python.org/3/library/logging.html).

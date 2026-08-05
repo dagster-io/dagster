@@ -9,8 +9,8 @@ import {
   Table,
   Tooltip,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {useCallback, useMemo, useState} from 'react';
-import styled, {css} from 'styled-components';
 
 import {
   EvaluationConditionalLabel,
@@ -20,17 +20,20 @@ import {
 import {PartitionSegmentWithPopover} from './PartitionSegmentWithPopover';
 import {PolicyEvaluationCondition} from './PolicyEvaluationCondition';
 import {PolicyEvaluationStatusTag} from './PolicyEvaluationStatusTag';
+import styles from './css/PolicyEvaluationTable.module.css';
 import {
   Evaluation,
   FlattenedConditionEvaluation,
+  assetCheckNameForEntityKey,
+  assetKeyForEntityKey,
   defaultExpanded,
   displayNameForEntityKey,
   entityKeyMatches,
   flattenEvaluations,
+  jobNameForEntityKey,
   statusForEvaluation,
   tokenForEntityKey,
 } from './flattenEvaluations';
-import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {numberFormatter} from '../../ui/formatters';
@@ -47,10 +50,12 @@ import {
 } from './types/GetEvaluationsQuery.types';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {AssetConditionEvaluationStatus} from '../../graphql/types';
+import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 
 interface Props {
   assetKeyPath: string[] | null;
   assetCheckName?: string;
+  jobName?: string;
   evaluationNodes: Evaluation[];
   evaluationId: string;
   rootUniqueId: string;
@@ -64,6 +69,7 @@ export const PolicyEvaluationTable = (props: Props) => {
   const {
     assetKeyPath,
     assetCheckName,
+    jobName,
     evaluationNodes,
     evaluationId,
     rootUniqueId,
@@ -107,6 +113,7 @@ export const PolicyEvaluationTable = (props: Props) => {
       <NewPolicyEvaluationTable
         assetKeyPath={assetKeyPath}
         assetCheckName={assetCheckName}
+        jobName={jobName}
         evaluationId={evaluationId}
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
@@ -149,6 +156,7 @@ export const PolicyEvaluationTable = (props: Props) => {
 const NewPolicyEvaluationTable = ({
   assetKeyPath: rootAssetKeyPath,
   assetCheckName: rootAssetCheckName,
+  jobName: rootJobName,
   evaluationId,
   flattenedRecords,
   expandedRecords,
@@ -158,6 +166,7 @@ const NewPolicyEvaluationTable = ({
 }: {
   assetKeyPath: string[] | null;
   assetCheckName?: string;
+  jobName?: string;
   evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
@@ -168,6 +177,13 @@ const NewPolicyEvaluationTable = ({
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   const isPartitioned = !!flattenedRecords[0]?.evaluation.isPartitioned;
   const rootEntityKey = useMemo(() => {
+    if (rootJobName) {
+      const entityKey: EntityKey = {
+        __typename: 'AssetJobKey',
+        jobName: rootJobName,
+      };
+      return entityKey;
+    }
     if (!rootAssetKeyPath) {
       return null;
     }
@@ -183,10 +199,10 @@ const NewPolicyEvaluationTable = ({
         }
       : rootAssetKey;
     return entityKey;
-  }, [rootAssetKeyPath, rootAssetCheckName]);
+  }, [rootAssetKeyPath, rootAssetCheckName, rootJobName]);
 
   return (
-    <VeryCompactTable>
+    <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
           <th>Condition</th>
@@ -205,12 +221,8 @@ const NewPolicyEvaluationTable = ({
             startTimestamp = evaluation.startTimestamp;
           }
 
-          const assetKey =
-            entityKey && entityKey.__typename === 'AssetCheckhandle'
-              ? entityKey.assetKey
-              : entityKey;
-          const checkName =
-            entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+          const assetKey = entityKey ? assetKeyForEntityKey(entityKey) : null;
+          const checkName = entityKey ? assetCheckNameForEntityKey(entityKey) : undefined;
           const entityDisplayName = entityKey ? displayNameForEntityKey(entityKey) : '';
           const lastEvaluationForEntityKey =
             entityKey &&
@@ -234,9 +246,9 @@ const NewPolicyEvaluationTable = ({
                 onClick={(e) => {
                   e?.stopPropagation();
                   pushHistory({
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    assetKeyPath: assetKey!.path,
+                    assetKeyPath: assetKey?.path,
                     assetCheckName: checkName,
+                    jobName: entityKey ? jobNameForEntityKey(entityKey) : undefined,
                     evaluationID: lastEvaluationForEntityKey.evaluationId,
                   });
                 }}
@@ -258,11 +270,16 @@ const NewPolicyEvaluationTable = ({
           ) : null;
 
           return (
-            <EvaluationRow
+            <tr
               key={id}
-              $highlight={
-                hoveredKey === id ? 'hovered' : parentId === hoveredKey ? 'highlighted' : 'none'
-              }
+              className={clsx(
+                styles.evaluationRow,
+                hoveredKey === id
+                  ? styles.evaluationRowHovered
+                  : parentId === hoveredKey
+                    ? styles.evaluationRowHighlighted
+                    : styles.evaluationRowNone,
+              )}
               onMouseEnter={() => setHoveredKey(id)}
               onMouseLeave={() => setHoveredKey(null)}
               onClick={() => {
@@ -287,7 +304,7 @@ const NewPolicyEvaluationTable = ({
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
-              {isPartitioned && rootAssetKeyPath ? (
+              {isPartitioned && (rootAssetKeyPath || rootJobName) ? (
                 <td style={{width: 0}}>
                   <Box
                     flex={{direction: 'row', alignItems: 'center', gap: 2}}
@@ -301,6 +318,7 @@ const NewPolicyEvaluationTable = ({
                           : `${numberFormatter.format(numTrue ?? 0)} partitions`)
                       }
                       assetKeyPath={rootAssetKeyPath}
+                      jobName={rootJobName}
                       evaluationId={evaluationId}
                       nodeUniqueId={evaluation.uniqueId}
                       numTrue={numTrue ?? 0}
@@ -321,11 +339,11 @@ const NewPolicyEvaluationTable = ({
                   '\u2014'
                 )}
               </td>
-            </EvaluationRow>
+            </tr>
           );
         })}
       </tbody>
-    </VeryCompactTable>
+    </Table>
   );
 };
 
@@ -370,7 +388,7 @@ const UnpartitionedPolicyEvaluationTable = ({
     flattenedRecords[0]?.evaluation.__typename === 'SpecificPartitionAssetConditionEvaluationNode';
 
   return (
-    <VeryCompactTable>
+    <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
           <th>Condition</th>
@@ -388,11 +406,16 @@ const UnpartitionedPolicyEvaluationTable = ({
             startTimestamp = evaluation.startTimestamp;
           }
           return (
-            <EvaluationRow
+            <tr
               key={id}
-              $highlight={
-                hoveredKey === id ? 'hovered' : parentId === hoveredKey ? 'highlighted' : 'none'
-              }
+              className={clsx(
+                styles.evaluationRow,
+                hoveredKey === id
+                  ? styles.evaluationRowHovered
+                  : parentId === hoveredKey
+                    ? styles.evaluationRowHighlighted
+                    : styles.evaluationRowNone,
+              )}
               onMouseEnter={() => setHoveredKey(id)}
               onMouseLeave={() => setHoveredKey(null)}
               onClick={() => {
@@ -428,11 +451,11 @@ const UnpartitionedPolicyEvaluationTable = ({
                   <ViewDetailsButton evaluation={evaluation} />
                 ) : null}
               </td>
-            </EvaluationRow>
+            </tr>
           );
         })}
       </tbody>
-    </VeryCompactTable>
+    </Table>
   );
 };
 
@@ -490,7 +513,7 @@ export const PartitionedPolicyEvaluationTable = ({
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   return (
-    <VeryCompactTable>
+    <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
           <th>Condition</th>
@@ -505,11 +528,16 @@ export const PartitionedPolicyEvaluationTable = ({
             evaluation;
 
           return (
-            <EvaluationRow
+            <tr
               key={id}
-              $highlight={
-                hoveredKey === id ? 'hovered' : parentId === hoveredKey ? 'highlighted' : 'none'
-              }
+              className={clsx(
+                styles.evaluationRow,
+                hoveredKey === id
+                  ? styles.evaluationRowHovered
+                  : parentId === hoveredKey
+                    ? styles.evaluationRowHighlighted
+                    : styles.evaluationRowNone,
+              )}
               onMouseEnter={() => setHoveredKey(id)}
               onMouseLeave={() => setHoveredKey(null)}
               onClick={() => {
@@ -563,65 +591,10 @@ export const PartitionedPolicyEvaluationTable = ({
               <td>
                 <TimeElapsed startUnix={startTimestamp} endUnix={endTimestamp} showMsec />
               </td>
-            </EvaluationRow>
+            </tr>
           );
         })}
       </tbody>
-    </VeryCompactTable>
+    </Table>
   );
 };
-
-const VeryCompactTable = styled(Table)`
-  & tr td {
-    vertical-align: middle;
-    padding: 4px 16px;
-  }
-
-  & tr th:last-child,
-  & tr td:last-child {
-    box-shadow:
-      inset 1px 1px 0 ${Colors.keylineDefault()},
-      inset -1px 0 0 ${Colors.keylineDefault()} !important;
-  }
-
-  & tr:last-child td:last-child {
-    box-shadow:
-      inset -1px -1px 0 ${Colors.keylineDefault()},
-      inset 1px 1px 0 ${Colors.keylineDefault()} !important;
-  }
-`;
-
-type RowHighlightType = 'hovered' | 'highlighted' | 'none';
-
-const EvaluationRow = styled.tr<{$highlight: RowHighlightType}>`
-  cursor: pointer;
-  background-color: ${({$highlight}) => {
-    switch ($highlight) {
-      case 'hovered':
-        return Colors.backgroundLightHover();
-      case 'highlighted':
-        return Colors.backgroundDefaultHover();
-      case 'none':
-        return Colors.backgroundDefault();
-    }
-  }};
-
-  ${({$highlight}) => {
-    if ($highlight === 'hovered') {
-      return css`
-        && td {
-          box-shadow:
-            inset 0 -1px 0 ${Colors.keylineDefault()},
-            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
-        }
-
-        && td:last-child {
-          box-shadow:
-            inset -1px -1px 0 ${Colors.keylineDefault()},
-            inset 1px 1px 0 ${Colors.keylineDefault()} !important;
-        }
-      `;
-    }
-    return '';
-  }}
-`;

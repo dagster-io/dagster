@@ -7,7 +7,7 @@ from collections import OrderedDict, deque
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from contextvars import copy_context
-from typing import AbstractSet, Any, Callable, Final, TypedDict, TypeVar, cast  # noqa: UP035
+from typing import AbstractSet, Any, Callable, Final, TypedDict, TypeVar  # noqa: UP035
 from weakref import WeakSet
 
 import toposort as toposort_
@@ -58,7 +58,9 @@ def toposort(
     data: Mapping[T, AbstractSet[T]], sort_key: Callable[[T], Any] | None = None
 ) -> Sequence[Sequence[T]]:
     # Workaround a bug in older versions of toposort that choke on frozenset
-    data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
+    data = {  # ty: ignore[invalid-assignment]
+        k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()
+    }
     return [sorted(list(level), key=sort_key) for level in toposort_.toposort(data)]
 
 
@@ -105,7 +107,7 @@ def parse_env_var(env_var_str: str) -> tuple[str, str]:
         env_var_value = os.getenv(env_var_str)
         if env_var_value is None:
             raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
-        return (env_var_str, cast("str", env_var_value))
+        return (env_var_str, env_var_value)
 
 
 class RequestUtilizationMetrics(TypedDict):

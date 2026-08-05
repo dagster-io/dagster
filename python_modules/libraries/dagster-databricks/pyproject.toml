@@ -9,10 +9,6 @@ description = "Package for Databricks-specific Dagster framework op and resource
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Programming Language :: Python :: 3.10",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     "dagster-pipes==1!0+dev",
@@ -21,10 +17,40 @@ dependencies = [
     "databricks-sdk>=0.41,<0.61.0",
 ]
 
-[project.optional-dependencies]
-test = [
-    "build",
-]
-
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-databricks"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-aws",
+    "dagster-azure",
+    "dagster-spark",
+    "dagster-pyspark",
+    "build",
+]
+test-pydantic1 = [
+    "pydantic!=1.10.7,<2.0.0",
+]
+test-pydantic2 = [
+    "pydantic>=2.0.0",
+]
+
+[tool.uv]
+conflicts = [
+    [{group = "test-pydantic1"}, {group = "test-pydantic2"}],
+]
+# Override upstream pydantic constraints (notably dagster-shared's
+# `pydantic>=2,<3`) so the test-pydantic1 fork can pin pydantic<2.
+override-dependencies = ["pydantic"]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-aws = { path = "../dagster-aws", editable = true }
+dagster-azure = { path = "../dagster-azure", editable = true }
+dagster-spark = { path = "../dagster-spark", editable = true }
+dagster-pyspark = { path = "../dagster-pyspark", editable = true }

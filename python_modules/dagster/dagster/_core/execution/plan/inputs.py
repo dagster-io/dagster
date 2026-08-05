@@ -84,7 +84,7 @@ class StepInputSource(ABC):
     ) -> Iterator[object]: ...
 
     def required_resource_keys(
-        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> AbstractSet[str]:
         return set()
 
@@ -395,7 +395,7 @@ class FromStepOutput(StepInputSource, IHaveNew):
         )
 
     def required_resource_keys(
-        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> set[str]:
         return set()
 
@@ -473,7 +473,7 @@ class FromDirectInputValue(
         yield job_def.get_direct_input_value(self.input_name)
 
     def required_resource_keys(
-        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> set[str]:
         return set()
 
@@ -503,7 +503,7 @@ class MultiStepInputSource(StepInputSource, ABC):
     sources: Sequence[StepInputSource]
 
     @property
-    def step_key_dependencies(self) -> AbstractSet[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def step_key_dependencies(self) -> AbstractSet[str]:
         keys = set()
         for source in self.sources:
             keys.update(source.step_key_dependencies)
@@ -627,7 +627,7 @@ class FromMultipleSourcesLoadSingleSource(MultiStepInputSource, IHaveNew):
 def _load_input_with_input_manager(
     input_manager: "InputManager", context: "InputContext"
 ) -> Iterator[object]:
-    step_context = cast("StepExecutionContext", context.step_context)
+    step_context = context.step_context
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
         msg_fn=lambda: (
@@ -700,7 +700,7 @@ class FromPendingDynamicStepOutput(IHaveNew):
         return self.step_output_handle
 
     def required_resource_keys(
-        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> set[str]:
         return set()
 
@@ -751,7 +751,7 @@ class FromUnresolvedStepOutput(IHaveNew):
         return self.unresolved_step_output_handle.get_step_output_handle_with_placeholder()
 
     def required_resource_keys(
-        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> set[str]:
         return set()
 
@@ -791,7 +791,7 @@ class FromDynamicCollect(IHaveNew):
         return self.source.get_step_output_handle_dep_with_placeholder()
 
     def required_resource_keys(
-        self, _job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
+        self, job_def: JobDefinition, op_handle: NodeHandle, op_input_name: str
     ) -> set[str]:
         return set()
 

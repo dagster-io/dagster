@@ -5,7 +5,7 @@ import sys
 import traceback
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, TextIO, TypeAlias
 
 import coloredlogs
 import dagster_shared.seven as seven
@@ -324,11 +324,18 @@ def configure_loggers(
 
     # override the default warnings handler as per https://docs.python.org/3/library/warnings.html#warnings.showwarning
     # to use the same formatting
-    def custom_warning_handler(message, category, filename, lineno, file=None, line=None):
+    def custom_warning_handler(
+        message: Warning | str,
+        category: type[Warning],
+        filename: str,
+        lineno: int,
+        file: TextIO | None = None,
+        line: str | None = None,
+    ) -> None:
         log_message = warnings.formatwarning(message, category, filename, lineno, line)
         logging.getLogger("dagster").warning(log_message)
 
-    warnings.showwarning = custom_warning_handler
+    warnings.showwarning = custom_warning_handler  # ty: ignore[invalid-assignment]
 
 
 def create_console_logger(name: str, level: str | int) -> logging.Logger:

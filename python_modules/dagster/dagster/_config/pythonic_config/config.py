@@ -138,21 +138,21 @@ def ensure_env_vars_set_post_init(set_value: T, input_value: Any) -> T:
             if isinstance(value, (EnvVar, IntEnvVar)):
                 set_value[key] = value
             elif isinstance(value, dict):
-                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or {}, value)
+                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or {}, value)  # ty: ignore[invalid-assignment]
             elif isinstance(value, list):
-                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or [], value)
+                set_value[key] = ensure_env_vars_set_post_init(set_value.get(key) or [], value)  # ty: ignore[invalid-assignment]
     if isinstance(set_value, list) and isinstance(input_value, list):
         for i in range(len(set_value)):
             value = input_value[i]
             if isinstance(value, (EnvVar, IntEnvVar)):
                 set_value[i] = value
             elif isinstance(value, (dict, list)):
-                set_value[i] = ensure_env_vars_set_post_init(set_value[i], value)
+                set_value[i] = ensure_env_vars_set_post_init(set_value[i], value)  # ty: ignore[invalid-assignment]
 
     return set_value
 
 
-@public
+@public  # ty: ignore[conflicting-metaclass]
 class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
     """Base class for Dagster configuration models, used to specify config schema for
     ops and assets. Subclasses :py:class:`pydantic.BaseModel`.
@@ -230,13 +230,13 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             elif (
                 field
                 and safe_is_subclass(field.annotation, Enum)
-                and value in field.annotation.__members__
+                and value in field.annotation.__members__  # ty: ignore[unresolved-attribute]
                 and value not in [member.value for member in field.annotation]  # type: ignore
             ):
-                modified_data_by_config_key[config_key] = field.annotation.__members__[value].value
+                modified_data_by_config_key[config_key] = field.annotation.__members__[value].value  # ty: ignore[unresolved-attribute]
             elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):
                 modified_data_by_config_key[field_key] = (
-                    field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001
+                    field.annotation._get_non_default_public_field_values_cls(  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                         value
                     )
                 )
@@ -328,7 +328,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         This is useful when interacting with legacy code that expects a dictionary of fields but you
         want the source of truth to be a config class.
         """
-        return cast("Shape", cls.to_config_schema().as_field().config_type).fields  # pyright: ignore[reportReturnType]
+        return cast("Shape", cls.to_config_schema().as_field().config_type).fields  # ty: ignore[invalid-return-type]
 
 
 def _discriminated_union_config_dict_to_selector_config_dict(

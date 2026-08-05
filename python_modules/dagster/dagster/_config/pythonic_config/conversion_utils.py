@@ -116,12 +116,14 @@ def _convert_pydantic_field(
         if pydantic_field.default and isinstance(pydantic_field.default, Config):
             default = pydantic_field.default._get_non_default_public_field_values()  # noqa: SLF001
         inferred_field = infer_schema_from_config_class(
-            field_type, description=pydantic_field.description, default=default
+            field_type,  # ty: ignore[invalid-argument-type]
+            description=pydantic_field.description,
+            default=default,
         )
         return inferred_field
     else:
         if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
-            field_type = Optional[field_type]  # noqa: UP045
+            field_type = Optional[field_type]  # noqa: UP045  # ty: ignore[invalid-type-form]
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
@@ -210,7 +212,7 @@ def _config_type_for_type_on_pydantic_field(
 
     if safe_is_subclass(potential_dagster_type, Config):
         inferred_field = infer_schema_from_config_class(
-            potential_dagster_type,
+            potential_dagster_type,  # ty: ignore[invalid-argument-type]
         )
         return inferred_field.config_type
 

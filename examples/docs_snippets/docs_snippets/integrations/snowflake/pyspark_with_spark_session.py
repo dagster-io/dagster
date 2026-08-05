@@ -10,7 +10,7 @@ SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowfla
 
 @asset
 def iris_dataset() -> DataFrame:
-    spark = SparkSession.builder.config(  # type: ignore
+    spark = SparkSession.builder.config(
         key="spark.jars.packages",
         value=SNOWFLAKE_JARS,
     ).getOrCreate()
@@ -26,7 +26,7 @@ def iris_dataset() -> DataFrame:
     )
 
     url = ("https://docs.dagster.io/assets/iris.csv",)
-    spark.sparkContext.addFile(url)
+    spark.sparkContext.addFile(url)  # ty: ignore[invalid-argument-type]
 
     return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
 

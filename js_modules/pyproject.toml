@@ -1,0 +1,24 @@
+[project]
+name = "dagster-js-modules-tox"
+version = "1!0+dev"
+description = "Tox-only wrapper for the dagster js_modules yarn workspaces. Pulls in dagster Python deps because generateGraphQLTypes.ts shells out to dagster-graphql to introspect the schema."
+requires-python = ">=3.10,<3.15"
+dependencies = []
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-graphql",
+    "dagster-slack",
+    "dagster-webserver",
+]
+
+[tool.uv.sources]
+dagster = { path = "../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../python_modules/libraries/dagster-shared", editable = true }
+dagster-graphql = { path = "../python_modules/dagster-graphql", editable = true }
+dagster-slack = { path = "../python_modules/libraries/dagster-slack", editable = true }
+dagster-webserver = { path = "../python_modules/dagster-webserver", editable = true }

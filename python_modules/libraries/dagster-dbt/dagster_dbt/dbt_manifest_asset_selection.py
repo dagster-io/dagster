@@ -74,7 +74,7 @@ class DbtManifestAssetSelection(AssetSelection):
             and self.selector == other.selector
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
     @classmethod
     def build(

@@ -188,7 +188,7 @@ def test_execute_nested_graphs():
     nested_graph_job = nesting_graph(2, 2).to_job()
     nested_graph = nested_graph_job.nodes[0].definition
 
-    res = nested_graph.execute_in_process()  # pyright: ignore[reportAttributeAccessIssue]
+    res = nested_graph.execute_in_process()  # ty: ignore[unresolved-attribute]
 
     assert res.success
 
@@ -222,8 +222,8 @@ def test_single_op_with_bad_inputs():
 
     assert not result.success
     failure_data = result.failure_data_for_node("add_op")
-    assert failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"  # pyright: ignore[reportOptionalMemberAccess]
+    assert failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"  # ty: ignore[unresolved-attribute]
     assert (
         'Type check failed for step input "num_two" - expected type "Int"'
-        in failure_data.error.message  # pyright: ignore[reportOptionalMemberAccess]
+        in failure_data.error.message  # ty: ignore[unresolved-attribute]
     )

@@ -1,0 +1,22 @@
+.pytest_cache
+__pycache__
+*.egg-info/
+.DS_Store
+.vscode/
+node_modules/
+*.pyc
+
+**/.tox/*
+
+.coverage*
+
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# dotenv
+.env
+
+# build files
+build

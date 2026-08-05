@@ -1,4 +1,4 @@
-import {Box, Icon, Tag, Tooltip} from '@dagster-io/ui-components';
+import {Box, Icon, MiddleTruncate, Tag, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {POOL_DETAILS_QUERY} from './PoolDetailsQuery';
@@ -17,9 +17,11 @@ export const PoolTag = ({pool}: {pool: string}) => {
   const concurrencyLimit = data?.instance.concurrencyLimit;
   return (
     <Tag intent={concurrencyLimit && concurrencyLimit.limit === null ? 'warning' : 'none'}>
-      <Box flex={{gap: 4, alignItems: 'center'}}>
+      <Box flex={{gap: 4, alignItems: 'center'}} style={{minWidth: 0, maxWidth: 360}}>
         <Icon name="dynamic_feed" />
-        <Link to={path}>{pool}</Link>
+        <Link to={path} style={{minWidth: 0, overflow: 'hidden'}}>
+          <MiddleTruncate text={pool} />
+        </Link>
         {concurrencyLimit && concurrencyLimit.limit === null ? (
           <Tooltip
             placement="top"

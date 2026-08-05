@@ -186,7 +186,7 @@ class ResolvedRunConfig(
         input_configs = config_value.get("inputs", {})
         return ResolvedRunConfig(
             ops=op_config_dict,
-            execution=ExecutionConfig.from_dict(config_mapped_execution_configs),
+            execution=ExecutionConfig.from_dict(config_mapped_execution_configs),  # ty: ignore[invalid-argument-type]
             loggers=config_mapped_logger_configs,
             original_config_dict=run_config,
             resources=config_mapped_resource_configs,

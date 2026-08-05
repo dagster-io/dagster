@@ -1,0 +1,20 @@
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:focus,
+.clickableRow:active {
+  outline: none;
+}
+
+.clickableRow .iconGlobal[aria-label='arrow_drop_down'] {
+  transition: transform 100ms linear;
+}
+
+.clickableRowCollapsed .iconGlobal[aria-label='arrow_drop_down'] {
+  transform: rotate(-90deg);
+}
+
+.notToggleable {
+  cursor: default;
+}

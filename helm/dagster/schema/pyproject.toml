@@ -5,13 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "dagster-helm"
 version = "0.0.1"
+requires-python = ">=3.10,<3.15"
 description = "Tools for Dagster Helm schema"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-classifiers = [
-    "Programming Language :: Python :: 3.12",
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "click",
     "pydantic>=2",
@@ -24,14 +21,34 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/helm/dagster/schem
 dagster-helm = "schema.cli:main"
 
 [project.optional-dependencies]
+[tool.hatch.build]
+packages = ["schema"]
+
+[dependency-groups]
 test = [
-    "kubernetes>=31",
-    "dagster",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-pandas",
     "dagster-aws",
     "dagster-azure",
     "dagster-gcp",
     "dagster-k8s",
+    "dagster-celery",
+    "dagster-celery-k8s",
+    "pyparsing<3.0.0",
+    "kubernetes>=31",
+    "dagster",
 ]
 
-[tool.hatch.build]
-packages = ["schema"]
+[tool.uv.sources]
+dagster = { path = "../../../python_modules/dagster", editable = true }
+dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
+dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
+dagster-pandas = { path = "../../../python_modules/libraries/dagster-pandas", editable = true }
+dagster-aws = { path = "../../../python_modules/libraries/dagster-aws", editable = true }
+dagster-azure = { path = "../../../python_modules/libraries/dagster-azure", editable = true }
+dagster-gcp = { path = "../../../python_modules/libraries/dagster-gcp", editable = true }
+dagster-k8s = { path = "../../../python_modules/libraries/dagster-k8s", editable = true }
+dagster-celery = { path = "../../../python_modules/libraries/dagster-celery", editable = true }
+dagster-celery-k8s = { path = "../../../python_modules/libraries/dagster-celery-k8s", editable = true }

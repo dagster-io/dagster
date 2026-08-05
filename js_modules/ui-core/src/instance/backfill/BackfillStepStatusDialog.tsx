@@ -52,6 +52,12 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
       title={`Step status for backfill: ${backfill?.id}`}
       onClose={onClose}
       style={{width: '80vw'}}
+      // The step status matrix renders its own nested "View runs" dialog. With
+      // Blueprint's default focus enforcement, this outer dialog's focus trap
+      // steals focus back from the nested dialog the moment it opens, so the
+      // "View runs" action silently does nothing. Disabling enforceFocus here
+      // lets the nested dialog take focus. See PartitionStepStatus.tsx.
+      enforceFocus={false}
     >
       {content()}
       <DialogFooter topBorder>

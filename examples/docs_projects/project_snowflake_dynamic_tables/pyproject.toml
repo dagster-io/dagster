@@ -1,0 +1,35 @@
+[project]
+name = "project-snowflake-dynamic-tables"
+requires-python = ">=3.10,<3.15"
+version = "0.1.0"
+dependencies = [
+    "dagster>=1.13.0",
+    "dagster-snowflake>=0.23.0",
+    "cryptography>=41.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["src/project_snowflake_dynamic_tables"]
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_snowflake_dynamic_tables"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::dagster_shared.utils.warnings.PreviewWarning",
+]

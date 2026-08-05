@@ -1,3 +1,5 @@
+import logging
+
 import dagster as dg
 import pytest
 from dagster._core.execution.api import create_execution_plan
@@ -624,6 +626,40 @@ def test_blocking_check_optional():
     result = job_def.execute_in_process()
     skips = {ev.step_key for ev in result.get_step_skipped_events()}
     assert skips == {"asset_two"}
+
+
+def test_blocking_check_missing_result_does_not_skip_downstream(caplog):
+    # When an asset materializes its output but a declared blocking check yields
+    # no result, downstream assets should still run -- blocking gates on check
+    # failure, not on the absence of a result -- and the missing evaluation
+    # should be surfaced via a warning.
+    @dg.multi_asset(
+        specs=[dg.AssetSpec("asset_one")],
+        check_specs=[dg.AssetCheckSpec("check_one", asset="asset_one", blocking=True)],
+        can_subset=True,
+    )
+    def asset_one():
+        yield dg.MaterializeResult(asset_key=dg.AssetKey("asset_one"))
+
+    @dg.asset(deps=[asset_one])
+    def asset_two():
+        pass
+
+    defs = dg.Definitions(assets=[asset_one, asset_two])
+    job_def = defs.get_implicit_global_asset_job_def()
+
+    with caplog.at_level(logging.WARNING, logger="dagster._core.execution.plan.active"):
+        result = job_def.execute_in_process()
+
+    assert result.success
+    skips = {ev.step_key for ev in result.get_step_skipped_events()}
+    assert "asset_two" not in skips
+    assert len(result.asset_materializations_for_node("asset_two")) == 1
+
+    warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("check_one" in m and "emitted no result" in m for m in warning_messages), (
+        warning_messages
+    )
 
 
 def test_non_required_dynamic_collect_skips():

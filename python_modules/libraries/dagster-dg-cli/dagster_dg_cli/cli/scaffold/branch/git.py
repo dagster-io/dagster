@@ -7,6 +7,9 @@ from pathlib import Path
 import click
 from dagster_dg_core.version import __version__ as dg_version
 
+from dagster_dg_cli.cli.scaffold.branch.errors import GitCommandError, GitRepositoryError
+from dagster_dg_cli.utils.github import parse_github_remote_url
+
 
 def get_dg_version() -> str:
     """Get the current dg version, using git commit hash for development versions."""
@@ -30,7 +33,7 @@ def run_git_command(args: list[str], cwd: Path | None = None) -> subprocess.Comp
         subprocess.CompletedProcess result
 
     Raises:
-        click.ClickException: If git is not found or command fails
+        GitCommandError: If git is not found or command fails
     """
     try:
         result = subprocess.run(
@@ -41,54 +44,52 @@ def run_git_command(args: list[str], cwd: Path | None = None) -> subprocess.Comp
             cwd=cwd,
         )
         return result
-    except FileNotFoundError:
-        raise click.ClickException(
+    except FileNotFoundError as exc:
+        raise GitCommandError(
             "git command not found. Please ensure git is installed and available in PATH."
-        )
-    except subprocess.CalledProcessError as e:
-        raise click.ClickException(f"git command failed: {e.stderr.strip() or e.stdout.strip()}")
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        output = exc.stderr.strip() or exc.stdout.strip()
+        command = "git " + " ".join(args)
+        if output:
+            raise GitCommandError(f"{output}\n(command: {command})") from exc
+        raise GitCommandError(f"git command failed: {command}") from exc
 
 
 def check_git_repository() -> None:
     """Check if the current directory is within a git repository.
 
     Raises:
-        click.ClickException: If not in a git repository with instructions on how to fix it
+        GitRepositoryError: If not in a git repository with instructions on how to fix it
+        GitCommandError: If another git command fails
     """
     try:
         run_git_command(["rev-parse", "--git-dir"])
-    except click.ClickException as e:
-        if "not a git repository" in str(e).lower():
-            raise click.ClickException(
+    except GitCommandError as exc:
+        if "not a git repository" in str(exc).lower():
+            raise GitRepositoryError(
                 "This command must be run within a git repository.\n"
                 "To initialize a new git repository, run:\n"
                 "  git init"
-            )
+            ) from exc
         # Re-raise other git-related errors
         raise
 
 
-def run_gh_command(args: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run a gh (GitHub CLI) command and return the result.
-
-    Args:
-        args: List of gh command arguments (without 'gh' prefix)
-
-    Returns:
-        subprocess.CompletedProcess result
-
-    Raises:
-        click.ClickException: If gh is not found or command fails
-    """
-    try:
-        result = subprocess.run(["gh"] + args, capture_output=True, text=True, check=True)
-        return result
-    except FileNotFoundError:
-        raise click.ClickException(
-            "gh command not found. Please ensure GitHub CLI is installed and available in PATH."
+def get_remote_origin_github_repo():
+    """Resolve the GitHub repository associated with the origin remote."""
+    remote_url = run_git_command(["remote", "get-url", "origin"]).stdout.strip()
+    parsed = parse_github_remote_url(remote_url)
+    if parsed is None:
+        raise GitRepositoryError(
+            "Could not infer GitHub repo from git remote 'origin'. Ensure origin points to a supported GitHub host or use --local-only."
         )
-    except subprocess.CalledProcessError as e:
-        raise click.ClickException(f"gh command failed: {e.stderr.strip() or e.stdout.strip()}")
+
+    # Lazy import to avoid loading GitHub client dependencies at CLI startup.
+    from dagster_dg_cli.utils.github import get_github_repository
+
+    owner, repo = parsed
+    return get_github_repository(owner, repo)
 
 
 def create_git_branch(branch_name: str) -> str:
@@ -101,7 +102,7 @@ def create_git_branch(branch_name: str) -> str:
         The commit hash of the new branch
 
     Raises:
-        click.ClickException: If git operations fail
+        GitCommandError: If git operations fail
     """
     run_git_command(["checkout", "-b", branch_name])
     click.echo(f"Created and checked out new branch: {branch_name}")
@@ -115,7 +116,7 @@ def create_empty_commit(message: str) -> None:
         message: Commit message
 
     Raises:
-        click.ClickException: If git operations fail
+        GitCommandError: If git operations fail
     """
     run_git_command(["commit", "--allow-empty", "-m", message])
     click.echo(f"Created empty commit: {message}")
@@ -132,7 +133,7 @@ def create_content_commit_and_push(message: str, local_only: bool = False) -> st
         The commit hash of the created commit
 
     Raises:
-        click.ClickException: If git operations fail
+        GitCommandError: If git operations fail
     """
     run_git_command(["add", "-A"])
     run_git_command(["commit", "-m", message])
@@ -164,7 +165,8 @@ def create_branch_and_pr(
         URL of the created pull request, or empty string if local_only
 
     Raises:
-        click.ClickException: If git or gh operations fail
+        GitCommandError: If git operations fail
+        GitRepositoryError: If repository metadata is unavailable
     """
     if local_only or not has_remote_origin():
         click.echo(f"Branch {branch_name} created locally (no remote push)")
@@ -174,9 +176,15 @@ def create_branch_and_pr(
     run_git_command(["push", "-u", "origin", branch_name])
     click.echo(f"Pushed branch {branch_name} to remote")
 
-    # Create the pull request
-    result = run_gh_command(["pr", "create", "--title", pr_title, "--body", pr_body])
+    repository = get_remote_origin_github_repo()
+    default_branch = repository.get_repository().default_branch
 
-    pr_url = result.stdout.strip()
-    click.echo(f"Created pull request: {pr_url}")
-    return pr_url
+    pull_request = repository.create_pull_request(
+        title=pr_title,
+        head=branch_name,
+        base=default_branch,
+        body=pr_body,
+        draft=False,
+    )
+    click.echo(f"Created pull request: {pull_request.html_url}")
+    return pull_request.html_url

@@ -11,7 +11,7 @@ def resources():
             "pipes_emr_containers_client": PipesEMRContainersClient(
                 message_reader=PipesS3MessageReader(
                     client=boto3.client("s3"),
-                    bucket=...,
+                    bucket=...,  # ty: ignore[invalid-argument-type]
                     include_stdio_in_messages=True,
                 ),
             )

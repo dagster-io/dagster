@@ -3,7 +3,6 @@ import sys
 import uuid
 from unittest import mock
 
-import google
 import google.api_core.exceptions
 import pandas as pd
 import pytest

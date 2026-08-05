@@ -12,9 +12,9 @@ This reference describes the various configuration options Dagster+ currently su
 To see the different customizations that can be applied to the Kubernetes agent, you can view the chart's default values:
 
 ```shell
-helm repo add dagster-plus https://dagster-io.github.io/helm-user-cloud
+helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
 helm repo update
-helm show values dagster-plus/dagster-plus-agent
+helm show values dagster-cloud/dagster-cloud-agent
 ```
 
 You can also view the chart values on [ArtifactHub](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values).
@@ -136,6 +136,31 @@ Refer to the following guides for more info about environment variables:
 
 - [Dagster+ environment variables and secrets](/deployment/dagster-plus/management/environment-variables)
 - [Using environment variables and secrets in Dagster code](/guides/operate/configuration/using-environment-variables-and-secrets)
+
+## Isolated agents
+
+The `isolatedAgents` setting controls how run termination is handled in Kubernetes deployments.
+
+| Setting           | Behavior                                                                                                 |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
+| `false` (default) | The agent triggers termination requests through the Kubernetes API. Recommended for simpler deployments. |
+| `true`            | Runs check for termination themselves using a background thread in each worker pod.                      |
+
+To enable isolated agents, set `isolatedAgents.enabled: true` in your Helm `values.yaml`:
+
+```yaml
+# values.yaml
+isolatedAgents:
+  enabled: true
+```
+
+When isolated agents are enabled, you must also set up separate resource allocations for each agent and configure routing for multiple agents if needed.
+
+:::note
+
+The background thread termination used by isolated agents is generally reliable, but could be affected if the worker process becomes completely locked. Normal operations like slow web requests won't impact the thread's ability to terminate a run.
+
+:::
 
 ## Op isolation
 

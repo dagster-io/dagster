@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock, patch
 
 import dagster as dg
-from project_dagster_modal_pipes.definitions import defs as _raw_defs
+from project_dagster_modal_pipes.definitions import (
+    defs as _raw_defs,  # ty: ignore[unresolved-import]
+)
 
 defs: dg.Definitions = _raw_defs() if not isinstance(_raw_defs, dg.Definitions) else _raw_defs
 

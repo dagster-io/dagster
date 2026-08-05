@@ -1,13 +1,13 @@
-// eslint-disable-next-line no-restricted-imports
-import {Overlay} from '@blueprintjs/core';
-import {Colors, FontFamily, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
+import {createPortal} from 'react-dom';
 import {useHistory} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {SearchResults} from './SearchResults';
+import styles from './css/SearchDialog.module.css';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
@@ -179,16 +179,12 @@ export const useSearchDialog = () => {
   return {
     openSearch,
     overlay: (
-      <Overlay
-        backdropProps={{style: {backgroundColor: Colors.dialogBackground()}}}
-        isOpen={shown}
-        onClose={() => dispatch({type: 'hide-dialog'})}
-        transitionDuration={100}
-      >
-        <Container>
-          <SearchBox $hasQueryString={!!queryString.length}>
+      <SearchOverlay isOpen={shown} onClose={() => dispatch({type: 'hide-dialog'})}>
+        <div className={styles.container}>
+          <div className={clsx(styles.searchBox, !!queryString.length && styles.hasQueryString)}>
             <Icon name="search" color={Colors.accentGray()} size={20} />
-            <SearchInput
+            <input
+              className={styles.searchInput}
               data-search-input="1"
               autoFocus
               spellCheck={false}
@@ -199,7 +195,7 @@ export const useSearchDialog = () => {
               value={queryString}
             />
             {loading ? <Spinner purpose="body-text" /> : null}
-          </SearchBox>
+          </div>
           <SearchResults
             highlight={highlight}
             queryString={queryString}
@@ -207,63 +203,54 @@ export const useSearchDialog = () => {
             onClickResult={onClickResult}
             searching={loading || state.searching}
           />
-        </Container>
-      </Overlay>
+        </div>
+      </SearchOverlay>
     ),
   };
 };
 
-const Container = styled.div`
-  background-color: ${Colors.backgroundDefault()};
-  border-radius: 8px;
-  box-shadow:
-    2px 2px 8px ${Colors.shadowDefault()},
-    ${Colors.keylineDefault()} inset 0px 0px 0px 1px;
-  max-height: 60vh;
-  left: calc(50% - 300px);
-  overflow: hidden;
-  width: 600px;
-  top: 20vh;
-`;
+const SEARCH_DIALOG_BACKDROP_STYLE = {
+  '--search-dialog-backdrop-color': Colors.dialogBackground(),
+} as React.CSSProperties;
 
-export interface SearchBoxProps {
-  readonly $hasQueryString: boolean;
+interface SearchOverlayProps {
+  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const SearchBox = styled.div<SearchBoxProps>`
-  background: ${Colors.backgroundDefault()};
-  border-radius: ${({$hasQueryString}) => ($hasQueryString ? '8px 8px 0 0' : '8px')};
-  border: none;
-  align-items: center;
-  box-shadow: ${({$hasQueryString}) =>
-      $hasQueryString ? Colors.keylineDefault() : Colors.borderDefault()}
-    inset 0px 0px 0px 1px;
-  display: flex;
-  padding: 12px 20px 12px 12px;
-  transition: all 100ms linear;
+const SearchOverlay = ({children, isOpen, onClose}: SearchOverlayProps) => {
+  React.useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
 
-  :hover {
-    box-shadow: ${({$hasQueryString}) =>
-        $hasQueryString ? Colors.keylineDefault() : Colors.borderHover()}
-      0 0 0 1px inset;
-  }
-`;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
 
-export const SearchInput = styled.input`
-  background-color: transparent;
-  border: none;
-  color: ${Colors.textDefault()};
-  font-family: ${FontFamily.default};
-  font-size: 16px;
-  margin-left: 4px;
-  outline: none;
-  width: 100%;
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
 
-  &::placeholder {
-    color: ${Colors.textDisabled()};
+  if (!isOpen || typeof document === 'undefined') {
+    return null;
   }
 
-  ::focus {
-    outline: none;
-  }
-`;
+  return createPortal(
+    <div
+      className={styles.backdrop}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+      style={SEARCH_DIALOG_BACKDROP_STYLE}
+    >
+      {children}
+    </div>,
+    document.body,
+  );
+};

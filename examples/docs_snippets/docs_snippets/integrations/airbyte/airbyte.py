@@ -150,7 +150,7 @@ def scope_add_downstream_assets():
         defs = dg.Definitions(
             jobs=[my_upstream_job],
             assets=[airbyte_assets, stargazers_file],
-            resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},
+            resources={"snowflake_io_manager": SnowflakePandasIOManager(...)},  # ty: ignore[too-many-positional-arguments]
         )
 
         # end_add_downstream_assets
@@ -196,7 +196,7 @@ def scope_add_downstream_assets_w_deps():
         defs = dg.Definitions(
             jobs=[my_upstream_job],
             assets=[airbyte_assets, stargazers_file],
-            resources={"snowflake": SnowflakeResource(...)},
+            resources={"snowflake": SnowflakeResource(...)},  # ty: ignore[too-many-positional-arguments]
         )
 
         # end_with_deps_add_downstream_assets
@@ -241,9 +241,9 @@ def scope_add_downstream_assets_cloud():
 
         defs = dg.Definitions(
             jobs=[my_upstream_job],
-            assets=[airbyte_assets, stargazers_file],
+            assets=[airbyte_assets, stargazers_file],  # ty: ignore[invalid-argument-type]
             resources={
-                "snowflake_io_manager": SnowflakePandasIOManager(...),
+                "snowflake_io_manager": SnowflakePandasIOManager(...),  # ty: ignore[too-many-positional-arguments]
                 "airbyte_instance": airbyte_instance,
             },
         )
@@ -293,9 +293,9 @@ def scope_add_downstream_assets_cloud_with_deps():
 
         defs = dg.Definitions(
             jobs=[my_upstream_job],
-            assets=[airbyte_assets, stargazers_file],
+            assets=[airbyte_assets, stargazers_file],  # ty: ignore[invalid-argument-type]
             resources={
-                "snowflake": SnowflakeResource(...),
+                "snowflake": SnowflakeResource(...),  # ty: ignore[too-many-positional-arguments]
                 "airbyte_instance": airbyte_instance,
             },
         )
@@ -360,7 +360,7 @@ def scope_schedule_assets_cloud():
     run_everything_job = dg.define_asset_job("run_everything", selection="*")
 
     defs = dg.Definitions(
-        assets=[airbyte_assets],
+        assets=[airbyte_assets],  # ty: ignore[invalid-argument-type]
         schedules=[
             dg.ScheduleDefinition(
                 job=run_everything_job,

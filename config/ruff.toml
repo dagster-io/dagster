@@ -26,9 +26,16 @@ target-version = "py310"
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.15.0"
+required-version = "0.15.15"
 
 [lint]
+
+# Enable preview-mode behavior for stable rules (tighter detection, additional autofixes
+# like PERF401's loop→comprehension transform). Required for preview-status rules too,
+# but explicit-preview-rules below prevents prefix selectors (e.g. "PERF") from sweeping
+# unrelated preview rules in — preview rules must be selected by exact code.
+preview = true
+explicit-preview-rules = true
 
 ignore = [
 
@@ -85,9 +92,8 @@ ignore = [
   "D205", # (blank line after summary)
   "D417", # (missing arg in docstring)
 
-  # (assorted perf rules) We have a lot of violations, enable when autofix is available
-  "PERF401", # (manual-list-comprehension)
-  "PERF402", # (manual-list-copy)
+  # (manual-list-copy) No autofix available; enable once violations are fixed by hand.
+  "PERF402",
 
 ]
 
@@ -114,11 +120,21 @@ select = [
   # "convention=google" setting, we set under tool.ruff.pydocstyle.
   "D",
 
+  # (pydoclint) Docstring lint. Preview-status rule; must be listed by exact code under
+  # explicit-preview-rules=true. DOC102 catches `Args:` entries that don't correspond to
+  # an actual function parameter.
+  "DOC102",
+
   # (pycodestyle) pycodestyle rules
   "E",
 
   # (pyflakes) pyflakes rules
   "F",
+
+  # (unspecified-encoding) Flag `open()` and related calls in text mode without an explicit
+  # `encoding=`. Preview-status rule; must be listed by exact code under
+  # explicit-preview-rules=true. Locale-default text decoding is non-portable.
+  "PLW1514",
 
   # (isort) detect improperly sorted imports
   "I001",
@@ -177,6 +193,8 @@ builtins-ignorelist = ["id"]
 [lint.flake8-tidy-imports.banned-api]
 
 "__future__.annotations".msg = "Directly quote annotations instead."
+"yaml.safe_load".msg = "Use dagster_shared.yaml_utils.safe_load_yaml — preserves date-like strings as strings (GH-6465)."
+"yaml.load".msg = "Use dagster_shared.yaml_utils.safe_load_yaml — yaml.load parses date-like strings as datetime objects (GH-6465)."
 
 [lint.pydocstyle]
 

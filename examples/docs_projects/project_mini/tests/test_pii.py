@@ -1,4 +1,6 @@
-from project_mini.defs.pii_compute_logs.pii_redactor import redact_pii
+from project_mini.defs.pii_compute_logs.pii_redactor import (
+    redact_pii,  # ty: ignore[unresolved-import]
+)
 
 
 def test_redacts_email():

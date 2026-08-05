@@ -1,6 +1,7 @@
 import uuid
 
 import kubernetes
+import kubernetes.client.rest
 import pytest
 from dagster import RetryRequested, job, op
 from dagster._core.test_utils import instance_for_test
@@ -8,7 +9,7 @@ from dagster_k8s import execute_k8s_job, k8s_job_op
 from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
 from dagster_k8s.job import get_k8s_job_name
 
-from tests.utils import _wait_k8s_job_to_delete
+from tests.utils import BUSYBOX_IMAGE, _wait_k8s_job_to_delete
 
 
 def _get_pods_logs(cluster_provider, job_name, namespace, container_name=None):
@@ -32,7 +33,7 @@ def _get_pod_logs(cluster_provider, job_name, namespace, container_name=None):
 def test_k8s_job_op(namespace, cluster_provider):
     first_op = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "command": ["/bin/sh", "-c"],
             "args": ["echo HI"],
             "namespace": namespace,
@@ -43,7 +44,7 @@ def test_k8s_job_op(namespace, cluster_provider):
     )
     second_op = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "command": ["/bin/sh", "-c"],
             "args": ["echo GOODBYE"],
             "namespace": namespace,
@@ -76,7 +77,7 @@ def test_custom_k8s_op_override_job_name(namespace, cluster_provider):
     def my_custom_op(context):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=["echo HI"],
             namespace=namespace,
@@ -101,7 +102,7 @@ def test_custom_k8s_op(namespace, cluster_provider):
     def my_custom_op(context):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=["echo HI"],
             namespace=namespace,
@@ -114,7 +115,7 @@ def test_custom_k8s_op(namespace, cluster_provider):
     def my_second_custom_op(context, what_to_echo: str):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=[f"echo {what_to_echo}"],
             namespace=namespace,
@@ -141,7 +142,7 @@ def test_custom_k8s_op(namespace, cluster_provider):
 def test_k8s_job_op_with_timeout_success(namespace, cluster_provider):
     first_op = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "command": ["/bin/sh", "-c"],
             "args": ["echo HI"],
             "namespace": namespace,
@@ -172,7 +173,7 @@ def test_k8s_job_op_with_timeout_fail(namespace, cluster_provider):
     def timeout_op(context):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=["sleep 15 && echo HI"],
             namespace=namespace,
@@ -207,7 +208,7 @@ def test_k8s_job_op_with_failure(namespace, cluster_provider):
     def failure_op(context):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=["exit 1"],
             namespace=namespace,
@@ -237,7 +238,7 @@ def test_k8s_job_op_with_failure(namespace, cluster_provider):
 def test_k8s_job_op_with_container_config(namespace, cluster_provider):
     with_container_config = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "container_config": {"command": ["echo", "SHELL_FROM_CONTAINER_CONFIG"]},
             "namespace": namespace,
             "load_incluster_config": False,
@@ -298,7 +299,7 @@ def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
                 "ops": {
                     "k8s_job_op": {
                         "config": {
-                            "image": "busybox",
+                            "image": BUSYBOX_IMAGE,
                             "container_config": {
                                 "command": ["/bin/sh", "-c"],
                                 "args": ['echo "FOO IS $FOO AND BAR IS $BAR"'],
@@ -331,7 +332,7 @@ def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
                 "ops": {
                     "k8s_job_op": {
                         "config": {
-                            "image": "busybox",
+                            "image": BUSYBOX_IMAGE,
                             "container_config": {
                                 "command": ["/bin/sh", "-c"],
                                 "args": ['echo "FOO IS $FOO AND BAR IS $BAR"'],
@@ -360,7 +361,7 @@ def test_k8s_job_op_with_deep_merge(namespace, cluster_provider):
 def test_k8s_job_op_with_container_config_and_command(namespace, cluster_provider):
     with_container_config = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "container_config": {"command": ["echo", "SHELL_FROM_CONTAINER_CONFIG"]},
             "namespace": namespace,
             "load_incluster_config": False,
@@ -385,7 +386,7 @@ def test_k8s_job_op_with_container_config_and_command(namespace, cluster_provide
 def test_k8s_job_op_with_multiple_containers(namespace, cluster_provider):
     with_multiple_containers = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "container_config": {
                 "name": "first-container",
             },
@@ -398,7 +399,7 @@ def test_k8s_job_op_with_multiple_containers(namespace, cluster_provider):
                 "containers": [
                     {
                         "name": "other-container",
-                        "image": "busybox",
+                        "image": BUSYBOX_IMAGE,
                         "command": ["/bin/sh", "-c"],
                         "args": ["echo OTHER_CONTAINER"],
                     }
@@ -430,7 +431,7 @@ def test_k8s_job_op_retries(namespace, cluster_provider):
     def fails_sometimes(context):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=[f"echo HERE IS RETRY NUMBER {context.retry_number}"],
             namespace=namespace,
@@ -458,7 +459,7 @@ def test_k8s_job_op_ignore_job_tags(namespace, cluster_provider):
     def the_op(context):
         execute_k8s_job(
             context,
-            image="busybox",
+            image=BUSYBOX_IMAGE,
             command=["/bin/sh", "-c"],
             args=["echo DID I GET CONFIG? $THE_ENV_VAR_FROM_JOB $THE_ENV_VAR_FROM_OP"],
             namespace=namespace,
@@ -506,7 +507,7 @@ def test_k8s_job_op_ignore_job_tags(namespace, cluster_provider):
 def test_k8s_job_op_with_paralellism(namespace, cluster_provider):
     with_parallelism = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "command": ["/bin/sh", "-c"],
             "args": ["echo HI"],
             "namespace": namespace,
@@ -541,7 +542,7 @@ def test_k8s_job_op_with_restart_policy(namespace, cluster_provider):
     """
     with_restart_policy = k8s_job_op.configured(
         {
-            "image": "busybox",
+            "image": BUSYBOX_IMAGE,
             "command": ["/bin/sh", "-c"],
             "args": [
                 "filename=/data/retries; (count=$(cat $filename) && echo $(($count+1)) >"

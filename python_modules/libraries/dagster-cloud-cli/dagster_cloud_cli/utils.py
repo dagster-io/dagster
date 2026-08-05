@@ -87,8 +87,8 @@ def add_options(options: dict[str, tuple[Any, "OptionInfo"]]):
                 }
             return to_wrap(*args, **modified_kwargs)
 
-        wrap_function.__signature__ = sig  # pyright: ignore[reportAttributeAccessIssue]
-        wrap_function.modified_options = True  # pyright: ignore[reportAttributeAccessIssue]
+        wrap_function.__signature__ = sig  # ty: ignore[unresolved-attribute]
+        wrap_function.modified_options = True  # ty: ignore[unresolved-attribute]
         return wrap_function
 
     return decorator

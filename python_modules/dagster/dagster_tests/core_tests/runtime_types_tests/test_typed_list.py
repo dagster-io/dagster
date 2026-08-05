@@ -43,7 +43,7 @@ def test_basic_list_input_fail():
 
 
 def test_typing_list_output_pass():
-    @dg.op(out=dg.Out(typing.List))
+    @dg.op(out=dg.Out(typing.List))  # ty: ignore[invalid-argument-type]
     def emit_list():
         return [1]
 
@@ -51,7 +51,7 @@ def test_typing_list_output_pass():
 
 
 def test_typing_list_output_fail():
-    @dg.op(out=dg.Out(typing.List))
+    @dg.op(out=dg.Out(typing.List))  # ty: ignore[invalid-argument-type]
     def emit_list():
         return "foo"
 
@@ -60,7 +60,7 @@ def test_typing_list_output_fail():
 
 
 def test_typing_list_input_pass():
-    @dg.op(ins={"alist": dg.In(typing.List)})
+    @dg.op(ins={"alist": dg.In(typing.List)})  # ty: ignore[invalid-argument-type]
     def ingest_list(alist):
         return alist
 
@@ -70,7 +70,7 @@ def test_typing_list_input_pass():
 
 
 def test_typing_list_input_fail():
-    @dg.op(ins={"alist": dg.In(typing.List)})
+    @dg.op(ins={"alist": dg.In(typing.List)})  # ty: ignore[invalid-argument-type]
     def ingest_list(alist):
         return alist
 

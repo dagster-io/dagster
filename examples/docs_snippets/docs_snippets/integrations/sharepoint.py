@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 
-from dagster_sharepoint import FileInfoConfig, SharePointResource
+from dagster_sharepoint import (  # ty: ignore[unresolved-import]
+    FileInfoConfig,
+    SharePointResource,
+)
 
 import dagster as dg
 
@@ -58,7 +61,7 @@ def sharepoint_new_files(
     )
 
     if not newly_created_files:
-        return dg.SkipReason(f"No new files found since {last_check.isoformat()}")
+        return dg.SkipReason(f"No new files found since {last_check.isoformat()}")  # ty: ignore[invalid-return-type]
 
     # Create run requests for each new file
     return dg.SensorResult(

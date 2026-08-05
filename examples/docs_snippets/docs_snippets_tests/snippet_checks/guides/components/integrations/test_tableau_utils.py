@@ -10,7 +10,7 @@ from dagster_tableau.translator import (
 
 
 class MockTableauWorkspace(TableauCloudWorkspace):
-    def fetch_tableau_workspace_data(self) -> TableauWorkspaceData:
+    def fetch_tableau_workspace_data(self) -> TableauWorkspaceData:  # ty: ignore[invalid-method-override]
         """Returns mock Tableau workspace data."""
         # Create mock workbook
         workbook = TableauContentData(

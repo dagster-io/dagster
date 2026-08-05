@@ -103,6 +103,9 @@ export const entityKeyMatches = (
   if (a.__typename === 'AssetKey') {
     return b.__typename === 'AssetKey' && tokenForAssetKey(a) === tokenForAssetKey(b);
   }
+  if (a.__typename === 'AssetJobKey') {
+    return b.__typename === 'AssetJobKey' && a.jobName === b.jobName;
+  }
   return (
     b.__typename === 'AssetCheckhandle' &&
     a.name === b.name &&
@@ -123,11 +126,24 @@ export const statusForEvaluation = (evaluation: Evaluation) => {
       : AssetConditionEvaluationStatus.FALSE;
 };
 
-export const assetKeyForEntityKey = (entityKey: EntityKey) => {
+export const assetKeyForEntityKey = (
+  entityKey: EntityKey,
+): {__typename: 'AssetKey'; path: string[]} | null => {
   if (entityKey.__typename === 'AssetKey') {
     return entityKey;
   }
+  if (entityKey.__typename === 'AssetJobKey') {
+    return null;
+  }
   return entityKey.assetKey;
+};
+
+export const assetCheckNameForEntityKey = (entityKey: EntityKey): string | undefined => {
+  return entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+};
+
+export const jobNameForEntityKey = (entityKey: EntityKey): string | undefined => {
+  return entityKey.__typename === 'AssetJobKey' ? entityKey.jobName : undefined;
 };
 
 export const entityKeyForEvaluation = (
@@ -146,6 +162,9 @@ export const tokenForEntityKey = (entityKey: EntityKey) => {
   if (entityKey.__typename === 'AssetKey') {
     return tokenForAssetKey(entityKey);
   }
+  if (entityKey.__typename === 'AssetJobKey') {
+    return `job:${entityKey.jobName}`;
+  }
   const assetCheck = entityKey as AssetCheckhandle;
   return `${assetCheck.name}::${tokenForAssetKey(assetCheck.assetKey)}`;
 };
@@ -154,6 +173,9 @@ export const displayNameForEntityKey = (entityKey: EntityKey) => {
   if (entityKey.__typename === 'AssetKey') {
     return displayNameForAssetKey(entityKey);
   }
+  if (entityKey.__typename === 'AssetJobKey') {
+    return entityKey.jobName;
+  }
   const assetCheck = entityKey as AssetCheckhandle;
   return `${assetCheck.name} (${displayNameForAssetKey(assetCheck.assetKey)})`;
 };
@@ -161,7 +183,14 @@ export const displayNameForEntityKey = (entityKey: EntityKey) => {
 export const buildEntityKey = (
   assetKeyPath: string[],
   assetCheckName: string | undefined,
+  jobName?: string,
 ): EntityKey => {
+  if (jobName) {
+    return {
+      __typename: 'AssetJobKey',
+      jobName,
+    };
+  }
   return assetCheckName
     ? {
         __typename: 'AssetCheckhandle',

@@ -95,7 +95,9 @@ def sensor(
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This is a parameter that will replace `job`, `jobs`, and `asset_selection`.
-        owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the sensor.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the sensor.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
     check.opt_str_param(name, "name")
 
@@ -103,7 +105,7 @@ def sensor(
         check.callable_param(fn, "fn")
 
         sensor_def = SensorDefinition.dagster_internal_init(
-            name=name or fn.__name__,
+            name=name or fn.__name__,  # ty: ignore[unresolved-attribute]
             job_name=job_name,
             evaluation_fn=fn,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -207,7 +209,7 @@ def asset_sensor(
 
     def inner(fn: AssetMaterializationFunction) -> AssetSensorDefinition:
         check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
+        sensor_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         def _wrapped_fn(*args, **kwargs) -> Any:
             result = fn(*args, **kwargs)
@@ -235,7 +237,7 @@ def asset_sensor(
 
         # Preserve any resource arguments from the underlying function, for when we inspect the
         # wrapped function later on
-        _wrapped_fn = update_wrapper(_wrapped_fn, wrapped=fn)
+        _wrapped_fn = update_wrapper(_wrapped_fn, wrapped=fn)  # ty: ignore[invalid-assignment]
 
         return AssetSensorDefinition(
             name=sensor_name,
@@ -325,7 +327,7 @@ def multi_asset_sensor(
 
     def inner(fn: MultiAssetMaterializationFunction) -> MultiAssetSensorDefinition:
         check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
+        sensor_name = name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         sensor_def = MultiAssetSensorDefinition(
             name=sensor_name,

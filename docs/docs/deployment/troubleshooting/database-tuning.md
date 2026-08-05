@@ -1,6 +1,6 @@
 ---
 title: 'Cleaning older data from your Dagster database'
-sidebar_position: 20
+sidebar_position: 400
 description: How to bulk delete older data from your Dagster database to reduce its size.
 ---
 

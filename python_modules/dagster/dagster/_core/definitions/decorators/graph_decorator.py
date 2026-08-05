@@ -50,7 +50,7 @@ class _Graph:
         check.callable_param(fn, "fn")
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         if self.ins is not None:
             input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]

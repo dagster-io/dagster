@@ -61,13 +61,13 @@ def test_run_always_finishes():
                 )
                 run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # ty: ignore[unresolved-attribute]
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
         dagster_run = instance.get_run_by_id(run_id)
-        assert not dagster_run.is_finished  # pyright: ignore[reportOptionalMemberAccess]
+        assert not dagster_run.is_finished  # ty: ignore[unresolved-attribute]
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
@@ -159,13 +159,13 @@ def test_run_from_pending_repository():
 
                 run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # ty: ignore[unresolved-attribute]
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
         dagster_run = instance.get_run_by_id(run_id)
-        assert not dagster_run.is_finished  # pyright: ignore[reportOptionalMemberAccess]
+        assert not dagster_run.is_finished  # ty: ignore[unresolved-attribute]
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
@@ -193,8 +193,8 @@ def test_run_from_pending_repository():
         assert call_counts.get("compute_cacheable_data_called_b") == "1"
         # once at initial load time, once inside the run launch process, once for each (3) subprocess
         # upper bound of 5 here because race conditions result in lower count sometimes
-        assert int(call_counts.get("get_definitions_called_a")) < 6  # pyright: ignore[reportArgumentType]
-        assert int(call_counts.get("get_definitions_called_b")) < 6  # pyright: ignore[reportArgumentType]
+        assert int(call_counts.get("get_definitions_called_a")) < 6  # ty: ignore[invalid-argument-type]
+        assert int(call_counts.get("get_definitions_called_b")) < 6  # ty: ignore[invalid-argument-type]
 
 
 def test_terminate_after_shutdown():
@@ -229,7 +229,7 @@ def test_terminate_after_shutdown():
 
             code_location = workspace.get_code_location("test")
             # Tell the server to shut down once executions finish
-            code_location.grpc_server_registry.get_grpc_endpoint(  # pyright: ignore[reportAttributeAccessIssue]
+            code_location.grpc_server_registry.get_grpc_endpoint(  # ty: ignore[unresolved-attribute]
                 code_location.origin
             ).create_client().shutdown_server()
 
@@ -277,7 +277,7 @@ def test_server_down():
                     location_name="test",
                     port=api_client.port,
                     socket=api_client.socket,
-                    host=api_client.host,  # pyright: ignore[reportArgumentType]
+                    host=api_client.host,
                 ),
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
@@ -301,7 +301,7 @@ def test_server_down():
 
                 launcher = instance.run_launcher
 
-                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]  # pyright: ignore[reportOptionalMemberAccess]
+                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]  # ty: ignore[unresolved-attribute]
 
                 # Replace run tags with an invalid port
                 instance.add_run_tags(

@@ -1,7 +1,8 @@
 import {Box, ButtonLink, Colors, Icon} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled, {css} from 'styled-components';
 
+import styles from './css/LaunchpadTabs.module.css';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
   IStorageData,
@@ -63,7 +64,11 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
   }, [editing]);
 
   return (
-    <TabContainer $active={active || false} onDoubleClick={onDoubleClick} onClick={onClick}>
+    <div
+      className={clsx(styles.tabContainer, active ? styles.tabActive : styles.tabInactive)}
+      onDoubleClick={onDoubleClick}
+      onClick={onClick}
+    >
       {editing ? (
         <input
           ref={input}
@@ -72,17 +77,17 @@ const LaunchpadTab = (props: ExecutationTabProps) => {
           onChange={handleChange}
           onBlur={handleBlur}
           value={value}
-          placeholder="Type a tab name…"
+          placeholder="Type a tab name\u2026"
         />
       ) : (
         title
       )}
       {canRemove && !editing && onRemove ? (
-        <RemoveButton onClick={onClickRemove}>
+        <button className={styles.removeButton} onClick={onClickRemove}>
           <Icon name="close" color={Colors.accentPrimary()} />
-        </RemoveButton>
+        </button>
       ) : null}
-    </TabContainer>
+    </div>
   );
 };
 
@@ -139,7 +144,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
 
   return (
     <Box border="bottom" padding={{top: 12}}>
-      <LaunchpadTabsContainer>
+      <div className={styles.launchpadTabsContainer}>
         {sessionKeys.map((key) => (
           <LaunchpadTab
             canRemove={sessionCount > 1}
@@ -171,84 +176,7 @@ export const LaunchpadTabs = (props: LaunchpadTabsProps) => {
             </ButtonLink>
           </Box>
         ) : null}
-      </LaunchpadTabsContainer>
+      </div>
     </Box>
   );
 };
-
-const LaunchpadTabsContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  font-size: 13px;
-  gap: 8px;
-  z-index: 1;
-  flex-direction: row;
-  padding-left: 12px;
-  overflow-x: auto;
-
-  ::-webkit-scrollbar {
-    display: none; /* Safari and Chrome */
-  }
-`;
-
-const TabContainer = styled.div<{$active: boolean}>`
-  align-items: center;
-  user-select: none;
-  padding: 8px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-  white-space: nowrap;
-
-  ${({$active}) =>
-    $active
-      ? css`
-          font-weight: 600;
-          background-color: ${Colors.backgroundLighter()};
-          color: ${Colors.accentPrimary()};
-          box-shadow: ${Colors.accentPrimary()} 0 -2px 0 inset;
-        `
-      : css`
-          font-weight: normal;
-          background-color: ${Colors.backgroundLight()};
-          color: ${Colors.textLighter()};
-          box-shadow: ${Colors.accentGray()} 0 -1px 0 inset;
-
-          &:hover {
-            background-color: ${Colors.backgroundLight()};
-            box-shadow: ${Colors.accentGray()} 0 -1px 0 inset;
-            color: ${Colors.textLight()};
-          }
-        `}
-
-  &:last-child {
-    padding-right: 12px;
-  }
-
-  input {
-    background-color: transparent;
-    font-size: 13px;
-    border: 0;
-    outline: none;
-    padding: 0;
-  }
-
-  cursor: ${({$active}) => (!$active ? 'pointer' : 'inherit')};
-`;
-
-const RemoveButton = styled.button`
-  background-color: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 0;
-
-  .iconGlobal {
-    transition: background-color 100ms;
-  }
-
-  &:hover .iconGlobal {
-    background-color: ${Colors.accentPrimaryHover()};
-  }
-`;

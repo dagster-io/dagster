@@ -1,5 +1,4 @@
-import styled from 'styled-components';
-
+import styles from './css/OpGraphSelectionInput.module.css';
 import {
   opGraphSelectionSyntaxSupportedAttributes,
   useOpGraphSelectionAutoCompleteProvider,
@@ -7,9 +6,10 @@ import {
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {OpSelectionLexer} from '../op-selection/generated/OpSelectionLexer';
 import {OpSelectionParser} from '../op-selection/generated/OpSelectionParser';
-import {InputDiv, SelectionAutoCompleteInput} from '../selection/SelectionInput';
+import {SelectionAutoCompleteInput} from '../selection/SelectionInput';
 import {createSelectionLinter} from '../selection/createSelectionLinter';
 import {weakMapMemoize} from '../util/weakMapMemoize';
+
 export const OpGraphSelectionInput = ({
   items,
   value,
@@ -20,7 +20,7 @@ export const OpGraphSelectionInput = ({
   onChange: (value: string) => void;
 }) => {
   return (
-    <Wrapper>
+    <div className={styles.wrapper}>
       <SelectionAutoCompleteInput
         wildcardAttributeName="name"
         id="op-graph"
@@ -30,7 +30,7 @@ export const OpGraphSelectionInput = ({
         value={value}
         onChange={onChange}
       />
-    </Wrapper>
+    </div>
   );
 };
 
@@ -41,9 +41,3 @@ const getLinter = weakMapMemoize(() =>
     supportedAttributes: opGraphSelectionSyntaxSupportedAttributes,
   }),
 );
-
-const Wrapper = styled.div`
-  ${InputDiv} {
-    width: 24vw;
-  }
-`;

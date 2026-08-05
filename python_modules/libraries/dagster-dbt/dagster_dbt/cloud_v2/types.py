@@ -135,9 +135,11 @@ class DbtCloudWorkspaceData:
 
     project_id: int
     environment_id: int
-    # The ID of the ad hoc dbt Cloud job created by Dagster.
-    # This job is used to parse the dbt Cloud project.
-    # This job is also used to kick off cli invocation if no job ID is specified by users.
-    adhoc_job_id: int
+    # The IDs of the ad hoc dbt Cloud jobs created by Dagster.
+    # The first job is used to parse the dbt Cloud project.
+    # Jobs from this pool are used to kick off cli invocations; multiple
+    # jobs let Dagster run concurrent invocations against dbt Cloud, which
+    # limits each job to one in-flight run at a time.
+    adhoc_job_ids: Sequence[int]
     manifest: Mapping[str, Any]
     jobs: Sequence[Mapping[str, Any]]

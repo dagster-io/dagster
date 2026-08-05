@@ -1,7 +1,7 @@
 # ruff: isort: skip_file
 import datetime
 
-from .schedules import configurable_job_schedule, configurable_job
+from .schedules import configurable_job_schedule, configurable_job  # ty: ignore[unresolved-import]
 
 
 # start_test_cron_schedule_context

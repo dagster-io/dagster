@@ -18,7 +18,7 @@ from dagster._utils import pushd
 from dagster._utils.env import environ
 
 if TYPE_CHECKING:
-    from selenium import webdriver
+    from selenium import webdriver  # ty: ignore[unresolved-import]
 
 # https://stackoverflow.com/a/14693789
 ANSI_ESCAPE = re.compile(
@@ -179,14 +179,14 @@ def _assert_matches_or_update_snippet(
     snippet_output_file.parent.mkdir(parents=True, exist_ok=True)
 
     if update_snippets:
-        snippet_output_file.write_text(f"{contents.rstrip()}\n")
+        snippet_output_file.write_text(f"{contents.rstrip()}\n", encoding="utf-8")
         print(f"Updated snippet at {snippet_path}")  # noqa: T201
     else:
         if not snippet_output_file.exists():
             raise Exception(f"Snippet at {snippet_path} does not exist")
 
         contents = contents.rstrip()
-        snippet_contents = snippet_output_file.read_text().rstrip()
+        snippet_contents = snippet_output_file.read_text(encoding="utf-8").rstrip()
         if not comparison_fn(contents, snippet_contents):
             print(f"Snapshot mismatch {snippet_path}")  # noqa: T201
             print("\nActual file:")  # noqa: T201
@@ -317,7 +317,6 @@ class SnippetGenerationContext:
         Args:
             cmd (Union[str, Sequence[str]): The command to run.
             snippet_path (Optional[Union[Path, str]]): Relative path to the snippet file to check/update.
-            update_snippets (Optional[bool]): Whether to update the snippet file with the output.
             snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
                 substitution pairs to apply to the generated snippet file before checking it against the
                 existing version. Note these will apply to both the command and the output of the
@@ -367,7 +366,6 @@ class SnippetGenerationContext:
         Args:
             file_path (Union[Path, str]): The path to the file to check.
             snippet_path (Optional[Union[Path, str]]): Relative path to the snippet file to check/update.
-            update_snippets (Optional[bool]): Whether to update the snippet file with the file contents.
             snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
                 substitution pairs to apply to the file contents before checking it against the snippet.
                 Useful to remove dynamic content, e.g. the temporary directory path or timestamps.
