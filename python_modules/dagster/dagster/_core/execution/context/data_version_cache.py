@@ -16,6 +16,7 @@ import dagster._check as check
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
+    DataVersionsByPartition,
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey
@@ -57,15 +58,15 @@ class DataVersionCache:
         self._context = context
         self.input_asset_version_info: dict[AssetKey, InputAssetVersionInfo | None] = {}
         self.is_external_input_asset_version_info_loaded = False
-        self.values: dict[AssetKey, DataVersion] = {}
+        self.values: dict[AssetKey, "DataVersion | DataVersionsByPartition"] = {}
 
-    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion") -> None:
+    def set_data_version(self, asset_key: AssetKey, data_version: "DataVersion | DataVersionsByPartition") -> None:
         self.values[asset_key] = data_version
 
     def has_data_version(self, asset_key: AssetKey) -> bool:
         return asset_key in self.values
 
-    def get_data_version(self, asset_key: AssetKey) -> "DataVersion":
+    def get_data_version(self, asset_key: AssetKey) -> "DataVersion | DataVersionsByPartition":
         return self.values[asset_key]
 
     def maybe_fetch_and_get_input_asset_version_info(
