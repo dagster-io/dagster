@@ -27,6 +27,8 @@ import {
 import type {CSSProperties, ChangeEvent} from 'react';
 import {useState} from 'react';
 
+import {isValidCronString} from '../../schedules/humanCronString';
+
 /**
  * Shared via RJSF's ``formContext``. Validation errors are only *displayed*
  * for fields the user has visited (blur marks a field touched) — a pristine
@@ -193,11 +195,132 @@ function SelectWidget(props: WidgetProps) {
   );
 }
 
+function DateWidget(props: WidgetProps) {
+  const {id, value, onChange, onBlur, placeholder} = props;
+  const ctx = getFormContext(props);
+  const hasError = showErrors(props);
+  return (
+    <TextInput
+      id={id}
+      type="date"
+      value={value ?? ''}
+      onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value || undefined)}
+      onBlur={(e) => {
+        ctx?.markTouched(id);
+        onBlur(id, e.target.value || undefined);
+      }}
+      placeholder={placeholder}
+      strokeColor={hasError ? Colors.accentRed() : undefined}
+      fill
+    />
+  );
+}
+
+function SecretWidget(props: WidgetProps) {
+  const {id, value, onChange, onBlur, placeholder} = props;
+  const ctx = getFormContext(props);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const hasError = showErrors(props);
+  return (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <TextInput
+        id={id}
+        type={isRevealed ? 'text' : 'password'}
+        value={value ?? ''}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value || undefined)}
+        onBlur={(e) => {
+          ctx?.markTouched(id);
+          onBlur(id, e.target.value || undefined);
+        }}
+        placeholder={placeholder}
+        strokeColor={hasError ? Colors.accentRed() : undefined}
+        fill
+      />
+      <Button
+        type="button"
+        icon={<Icon name={isRevealed ? 'visibility_off' : 'visibility'} />}
+        onClick={() => setIsRevealed((r) => !r)}
+      />
+    </Box>
+  );
+}
+
+// Common schedules offered as one-click presets; "Custom…" leaves the field
+// free-form. Kept at module scope so the array isn't rebuilt on every render.
+const CRON_PRESETS: {label: string; value: string}[] = [
+  {label: 'Every 15 minutes', value: '*/15 * * * *'},
+  {label: 'Every hour', value: '0 * * * *'},
+  {label: 'Every day at midnight', value: '0 0 * * *'},
+  {label: 'Every Monday at 9am', value: '0 9 * * 1'},
+  {label: 'First of the month', value: '0 0 1 * *'},
+];
+
+function CronWidget(props: WidgetProps) {
+  const {id, value, onChange, onBlur, placeholder} = props;
+  const ctx = getFormContext(props);
+  const current: string = value ?? '';
+  const matchingPreset = CRON_PRESETS.find((preset) => preset.value === current);
+  // Display-only guidance: this flags a malformed cron inline but does not
+  // gate submit. Submit-enablement (validate.ts) enforces only required-field
+  // presence; a bad cron is caught server-side when the YAML is loaded, where
+  // the form defers its deeper validation.
+  const invalid = current !== '' && !isValidCronString(current);
+  const showInvalid = invalid && (ctx?.isTouched(id) ?? true);
+  const hasError = showErrors(props) || showInvalid;
+  return (
+    <Box flex={{direction: 'column', gap: 6}}>
+      <select
+        id={`${id}-preset`}
+        value={matchingPreset?.value ?? ''}
+        onChange={(e) => {
+          if (e.target.value) {
+            onChange(e.target.value);
+          }
+        }}
+        style={nativeSelectStyle()}
+      >
+        <option value="">Custom…</option>
+        {CRON_PRESETS.map((preset) => (
+          <option key={preset.value} value={preset.value}>
+            {preset.label}
+          </option>
+        ))}
+      </select>
+      <TextInput
+        id={id}
+        value={current}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value || undefined)}
+        onBlur={(e) => {
+          ctx?.markTouched(id);
+          onBlur(id, e.target.value || undefined);
+        }}
+        placeholder={placeholder ?? 'e.g. 0 0 * * *'}
+        strokeColor={hasError ? Colors.accentRed() : undefined}
+        style={{fontFamily: FontFamily.monospace}}
+        fill
+      />
+      <Text size={12} color="textLighter">
+        Cron times use the execution timezone (UTC by default).
+      </Text>
+      {showInvalid ? (
+        <Text size={12} color="accentRed">
+          This doesn’t look like a valid cron expression.
+        </Text>
+      ) : null}
+    </Box>
+  );
+}
+
 export const widgets: RegistryWidgetsType = {
   TextWidget,
   TextareaWidget,
   CheckboxWidget,
   SelectWidget,
+  // Custom widgets keyed to the ``ui:widget`` values emitted by
+  // ``ComponentFormConfig(widget=...)`` server-side (see form_config.py).
+  cron: CronWidget,
+  date: DateWidget,
+  secret: SecretWidget,
 };
 
 /**
