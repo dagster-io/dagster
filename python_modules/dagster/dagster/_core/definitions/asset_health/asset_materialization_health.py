@@ -541,7 +541,12 @@ async def get_materialization_status_and_metadata(
             # captures the case when asset is not partitioned, or the asset is partitioned and all partitions are materialized
             meta = None
         return AssetHealthStatus.HEALTHY, meta
-    elif asset_materialization_health_state.health_status == AssetHealthStatus.DEGRADED:
+    elif asset_materialization_health_state.health_status in (
+        AssetHealthStatus.DEGRADED,
+        AssetHealthStatus.WARNING,
+    ):
+        # WARNING means the asset has failed partitions that are all awaiting an automatic
+        # retry, so it carries the same failure metadata as DEGRADED.
         if asset_materialization_health_state.partitions_def is not None:
             with partition_loading_context(dynamic_partitions_store=context.instance):
                 total_num_partitions = (
@@ -563,7 +568,7 @@ async def get_materialization_status_and_metadata(
             meta = AssetHealthMaterializationDegradedNotPartitionedMeta(
                 failed_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
             )
-        return AssetHealthStatus.DEGRADED, meta
+        return asset_materialization_health_state.health_status, meta
     elif asset_materialization_health_state.health_status == AssetHealthStatus.UNKNOWN:
         return AssetHealthStatus.UNKNOWN, None
     else:
