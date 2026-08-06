@@ -437,10 +437,50 @@ class AssetHealthMaterializationDegradedNotPartitionedMeta:
         return self.failed_run_id
 
 
+@whitelist_for_serdes
+@record.record
+class AssetHealthMaterializationWarningPartitionedMeta:
+    """Metadata for a partitioned asset in WARNING materialization health: every currently failed
+    partition is covered by a pending auto-retry.
+
+    NOTE: registered on the GraphQL schema but not yet returned by
+    get_materialization_status_and_metadata, which reports WARNING with the degraded metadata
+    shapes. Deployed frontends must know these types before the server can return them; returning
+    them is deferred to the release after the one that adds them to the schema.
+    """
+
+    num_up_for_retry_partitions: int
+    num_missing_partitions: int
+    total_num_partitions: int
+    latest_run_id: str | None = None
+    latest_failed_to_materialize_run_id: str | None = None
+
+
+@whitelist_for_serdes
+@record.record
+class AssetHealthMaterializationWarningNotPartitionedMeta:
+    """Metadata for a non-partitioned asset in WARNING materialization health: the latest failed
+    run is pending an auto-retry.
+
+    NOTE: registered on the GraphQL schema but not yet returned by
+    get_materialization_status_and_metadata, which reports WARNING with the degraded metadata
+    shapes. Deployed frontends must know these types before the server can return them; returning
+    them is deferred to the release after the one that adds them to the schema.
+    """
+
+    failed_run_id: str | None
+
+    @property
+    def latest_failed_to_materialize_run_id(self) -> str | None:
+        return self.failed_run_id
+
+
 AssetHealthMaterializationMetadata: TypeAlias = (
     AssetHealthMaterializationDegradedPartitionedMeta
     | AssetHealthMaterializationHealthyPartitionedMeta
     | AssetHealthMaterializationDegradedNotPartitionedMeta
+    | AssetHealthMaterializationWarningPartitionedMeta
+    | AssetHealthMaterializationWarningNotPartitionedMeta
 )
 
 

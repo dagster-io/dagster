@@ -552,7 +552,23 @@ type AssetHealthMaterializationHealthyPartitionedMeta = {
 type AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedNotPartitionedMeta
   | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationHealthyPartitionedMeta;
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationWarningNotPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta;
+
+type AssetHealthMaterializationWarningNotPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+  failedRunId: Maybe<Scalars['String']['output']>;
+};
+
+type AssetHealthMaterializationWarningPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+  latestFailedRunId: Maybe<Scalars['String']['output']>;
+  latestRunId: Maybe<Scalars['String']['output']>;
+  numMissingPartitions: Scalars['Int']['output'];
+  numUpForRetryPartitions: Scalars['Int']['output'];
+  totalNumPartitions: Scalars['Int']['output'];
+};
 
 export {AssetHealthStatus};
 
@@ -7350,6 +7366,52 @@ export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
       overrides && overrides.hasOwnProperty('totalNumPartitions')
         ? overrides.totalNumPartitions!
         : 4019,
+  };
+};
+
+export const buildAssetHealthMaterializationWarningNotPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationWarningNotPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+} & AssetHealthMaterializationWarningNotPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationWarningNotPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta',
+    failedRunId:
+      overrides && overrides.hasOwnProperty('failedRunId') ? overrides.failedRunId! : 'tumultus',
+  };
+};
+
+export const buildAssetHealthMaterializationWarningPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationWarningPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+} & AssetHealthMaterializationWarningPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationWarningPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationWarningPartitionedMeta',
+    latestFailedRunId:
+      overrides && overrides.hasOwnProperty('latestFailedRunId')
+        ? overrides.latestFailedRunId!
+        : 'vulariter',
+    latestRunId:
+      overrides && overrides.hasOwnProperty('latestRunId') ? overrides.latestRunId! : 'supra',
+    numMissingPartitions:
+      overrides && overrides.hasOwnProperty('numMissingPartitions')
+        ? overrides.numMissingPartitions!
+        : 1285,
+    numUpForRetryPartitions:
+      overrides && overrides.hasOwnProperty('numUpForRetryPartitions')
+        ? overrides.numUpForRetryPartitions!
+        : 7818,
+    totalNumPartitions:
+      overrides && overrides.hasOwnProperty('totalNumPartitions')
+        ? overrides.totalNumPartitions!
+        : 8637,
   };
 };
 

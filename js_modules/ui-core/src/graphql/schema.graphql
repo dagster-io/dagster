@@ -1212,6 +1212,8 @@ union AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedPartitionedMeta
   | AssetHealthMaterializationHealthyPartitionedMeta
   | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta
+  | AssetHealthMaterializationWarningNotPartitionedMeta
 
 type AssetHealthMaterializationDegradedPartitionedMeta {
   numFailedPartitions: Int!
@@ -1228,6 +1230,18 @@ type AssetHealthMaterializationHealthyPartitionedMeta {
 }
 
 type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String
+}
+
+type AssetHealthMaterializationWarningPartitionedMeta {
+  numUpForRetryPartitions: Int!
+  numMissingPartitions: Int!
+  totalNumPartitions: Int!
+  latestRunId: String
+  latestFailedRunId: String
+}
+
+type AssetHealthMaterializationWarningNotPartitionedMeta {
   failedRunId: String
 }
 
