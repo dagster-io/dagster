@@ -1,5 +1,6 @@
-import {Box, Button, ButtonGroup, Icon} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
+import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useContext, useState} from 'react';
@@ -22,6 +23,9 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
 
   const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
+  // Git-backed authoring needs a connected repo to open the PR against; without
+  // one the author action is disabled with a nudge to connect an integration.
+  const gitProviderConnected = useGitProviderConnected();
 
   const params = useParams<{
     packageName?: string;
@@ -106,13 +110,21 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
             onClick={onSubTabClick}
           />
           {subTab === 'instances' ? (
-            <Button
-              intent="primary"
-              icon={<Icon name="add_circle" />}
-              onClick={() => setIsAddOpen(true)}
-            >
-              Add
-            </Button>
+            gitProviderConnected ? (
+              <Button
+                intent="primary"
+                icon={<Icon name="add_circle" />}
+                onClick={() => setIsAddOpen(true)}
+              >
+                Add
+              </Button>
+            ) : (
+              <Tooltip content="Connect a git integration to author components.">
+                <Button intent="primary" icon={<Icon name="add_circle" />} disabled>
+                  Add
+                </Button>
+              </Tooltip>
+            )
           ) : null}
         </Box>
       ) : null}
