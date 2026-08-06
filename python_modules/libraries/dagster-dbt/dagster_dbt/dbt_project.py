@@ -50,6 +50,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
         prepare_project_cli_args: Sequence[str] | None = None,
+        guard_timeout_seconds: float = 120,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
@@ -59,8 +60,13 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             prepare_project_cli_args (Sequence[str]):
                 The arguments to pass to the dbt cli to generate a manifest.json.
                 Default: ["parse", "--quiet"]
+            guard_timeout_seconds (float):
+                The maximum time to wait for another process to finish preparing the project.
+                The default preserves the former 60-second wait budget for each of the
+                dependency-installation and manifest-generation stages.
         """
         self._prepare_project_cli_args = prepare_project_cli_args or ["parse", "--quiet"]
+        self._guard_timeout_seconds = guard_timeout_seconds
 
     @public
     def prepare_if_dev(self, project: "DbtProject"):
@@ -96,6 +102,14 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             project (DbtProject):
                 The dbt project to be prepared.
         """
+        run_with_concurrent_update_guard(
+            project.manifest_path,
+            self._prepare,
+            guard_timeout_seconds=self._guard_timeout_seconds,
+            project=project,
+        )
+
+    def _prepare(self, project: "DbtProject") -> None:
         # Always run dbt deps when dependency files exist, not just when
         # packages appear uninstalled. The has_uninstalled_deps check uses a
         # heuristic (dbt_packages dir existence) that can incorrectly skip
@@ -106,17 +120,9 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             or project.project_dir.joinpath("packages.yml").exists()
         )
         if has_deps_files:
-            run_with_concurrent_update_guard(
-                project.project_dir.joinpath("package-lock.yml"),
-                self._prepare_packages,
-                project=project,
-            )
+            self._prepare_packages(project)
 
-        run_with_concurrent_update_guard(
-            project.manifest_path,
-            self._prepare_manifest,
-            project=project,
-        )
+        self._prepare_manifest(project)
 
     def _prepare_packages(self, project: "DbtProject") -> None:
         from dagster_dbt.core.resource import DbtCliResource
