@@ -27,6 +27,8 @@ from dagster import (
     MaterializeResult,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster.components.utils.defs_state import DefsStateConfigArgs
+from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 # Skip the whole module if the optional `dagster-dbt` dependency is not installed.
 pytest.importorskip("dagster_dbt")
@@ -104,9 +106,17 @@ def test_build_cancel_query_sql():
 
 
 def test_build_dagster_query_ids_sql():
-    sql = build_dagster_query_ids_sql(_QUERY_TAG_MARKER)
+    sql = build_dagster_query_ids_sql(_QUERY_TAG_MARKER, end_time_range_start=None)
     assert "INFORMATION_SCHEMA.QUERY_HISTORY" in sql
     assert f"query_tag LIKE '%{_QUERY_TAG_MARKER}%'" in sql
+    assert "END_TIME_RANGE_START" not in sql
+
+    # With a cursor timestamp the lookup is bounded, so QUERY_HISTORY's RESULT_LIMIT can't
+    # truncate away the window under consideration on busy accounts.
+    bounded = build_dagster_query_ids_sql(_QUERY_TAG_MARKER, end_time_range_start=1704067200.7)
+    assert "END_TIME_RANGE_START => TO_TIMESTAMP_LTZ(1704067200)" in bounded
+    assert "RESULT_LIMIT => 10000" in bounded
+    assert f"query_tag LIKE '%{_QUERY_TAG_MARKER}%'" in bounded
 
 
 def test_build_information_schema_tables_sql():
@@ -205,8 +215,12 @@ def test_write_state_fetches_manifest_from_snowflake(tmp_path):
     issued = [c.args[0] for c in cursor.execute.call_args_list]
     # The account is probed for dbt-on-Snowflake support before anything else.
     assert issued[0] == "SHOW FUNCTIONS LIKE 'SYSTEM$LOCATE_DBT_ARTIFACTS'"
-    assert issued[1] == "EXECUTE DBT PROJECT analytics.dbt.jaffle_shop ARGS='parse'"
-    assert issued[2] == "SELECT SYSTEM$LOCATE_DBT_ARTIFACTS('query-123')"
+    # The parse run is query-tagged like execution runs so the observation sensor never
+    # mistakes a state refresh for an externally-triggered run.
+    assert issued[1].startswith("ALTER SESSION SET QUERY_TAG")
+    assert _QUERY_TAG_MARKER in issued[1]
+    assert issued[2] == "EXECUTE DBT PROJECT analytics.dbt.jaffle_shop ARGS='parse'"
+    assert issued[3] == "SELECT SYSTEM$LOCATE_DBT_ARTIFACTS('query-123')"
 
 
 def test_write_state_fails_cleanly_on_unsupported_account(tmp_path):
@@ -412,7 +426,11 @@ def test_execute_emits_run_results_metadata_at_parity():
 
     model_key = AssetKey(["customers"])
     check_key = AssetCheckKey(asset_key=model_key, name="unique_customers")
-    context = _ctx(log=mock.MagicMock(), selected_asset_check_keys={check_key})
+    context = _ctx(
+        log=mock.MagicMock(),
+        selected_asset_keys={model_key},
+        selected_asset_check_keys={check_key},
+    )
 
     fake_translator = mock.MagicMock()
     fake_translator.get_asset_spec.return_value = SimpleNamespace(key=model_key)
@@ -601,7 +619,11 @@ def test_execute_fetches_row_counts_from_information_schema():
     )
     _connection_returning(cursor, component)
 
-    context = _ctx(log=mock.MagicMock(), selected_asset_check_keys=set())
+    context = _ctx(
+        log=mock.MagicMock(),
+        selected_asset_keys={AssetKey(["customers"]), AssetKey(["stg_customers"])},
+        selected_asset_check_keys=set(),
+    )
     fake_translator = _lineage_translator()
 
     with (
@@ -644,7 +666,11 @@ def test_execute_fetches_column_schema_and_lineage_from_information_schema():
         "models/stg_customers.sql": "SELECT 1 AS id, 2 AS name",
     }
 
-    context = _ctx(log=mock.MagicMock(), selected_asset_check_keys=set())
+    context = _ctx(
+        log=mock.MagicMock(),
+        selected_asset_keys={AssetKey(["customers"]), AssetKey(["stg_customers"])},
+        selected_asset_check_keys=set(),
+    )
     fake_translator = _lineage_translator()
 
     with (
@@ -707,7 +733,11 @@ def test_execute_extracts_compiled_sql_from_zip_for_lineage():
                 "SELECT 1 AS id, 2 AS name",
             )
 
-    context = _ctx(log=mock.MagicMock(), selected_asset_check_keys=set())
+    context = _ctx(
+        log=mock.MagicMock(),
+        selected_asset_keys={AssetKey(["customers"]), AssetKey(["stg_customers"])},
+        selected_asset_check_keys=set(),
+    )
     fake_translator = _lineage_translator()
 
     with (
@@ -767,6 +797,42 @@ def test_column_metadata_merges_warehouse_types_and_dbt_descriptions():
     assert cols["id"].description == "Customer identifier"  # dbt doc description merged in
     assert cols["name"].type == "TEXT"  # undocumented column still present, no description
     assert cols["name"].description is None
+
+
+def test_execute_drops_results_for_unselected_assets():
+    """Results for models outside the Dagster subset are dropped rather than failing the step.
+
+    dbt can build models beyond the subset's `--select` (e.g. via indirect selection or graph
+    operators in a user-provided `select`); yielding a MaterializeResult for an unselected
+    asset would raise at yield time.
+    """
+    component = _make_component()
+    setattr(component, "get_cli_args", lambda context: ["build"])
+
+    cursor = _FakeCursor(located_path="snow://dbt/x/results/q1/")
+    _connection_returning(cursor, component)
+
+    # run_results contains both models, but only `customers` is selected.
+    context = _ctx(
+        log=mock.MagicMock(),
+        selected_asset_keys={AssetKey(["customers"])},
+        selected_asset_check_keys=set(),
+    )
+    fake_translator = _lineage_translator()
+
+    with (
+        mock.patch.object(
+            SnowflakeDbtProjectComponent,
+            "_download_artifacts",
+            side_effect=lambda _c, _p, dest: _write_artifacts(dest),
+        ),
+        mock.patch.object(comp_mod, "validate_translator", return_value=fake_translator),
+        mock.patch.object(comp_mod, "get_subset_selection_for_context", return_value=([], None)),
+    ):
+        events = list(component.execute(context, _META_MANIFEST))
+
+    mats = [e for e in events if isinstance(e, MaterializeResult)]
+    assert {e.asset_key for e in mats} == {AssetKey(["customers"])}
 
 
 def test_qualified_relation_fills_in_connection_defaults():
@@ -856,7 +922,13 @@ def test_poll_external_runs_reports_new_runs_then_advances_cursor():
 
 
 def test_poll_external_runs_skips_dagster_triggered_runs_via_query_tag():
-    """Runs Dagster launched (identified by their session QUERY_TAG) are filtered out."""
+    """Runs Dagster launched (identified by their session QUERY_TAG) are filtered out.
+
+    The cursor must still advance past skipped rows: QUERY_HISTORY retains only ~7 days, so
+    a cursor lingering before an old Dagster-triggered run would eventually mis-report it as
+    external once its tag lookup ages out. Runs without locatable artifacts (e.g. `parse`)
+    likewise advance the cursor rather than being re-examined forever.
+    """
     component = _make_component(snowflake_dbt_project_name="analytics.dbt.jaffle_shop")
     end_time = datetime.datetime(2024, 1, 1, 0, 0, 5, tzinfo=datetime.timezone.utc)
     # q1 appears in the QUERY_HISTORY lookup as a Dagster-tagged run, so it is skipped.
@@ -878,9 +950,29 @@ def test_poll_external_runs_skips_dagster_triggered_runs_via_query_tag():
         ),
         mock.patch.object(comp_mod, "validate_translator", return_value=fake_translator),
     ):
-        events, _new_ts = component._poll_external_runs(_META_MANIFEST, None)  # noqa: SLF001
+        events, new_ts = component._poll_external_runs(_META_MANIFEST, None)  # noqa: SLF001
 
     assert events == []
+    # The Dagster-triggered run was already reported in-run; the cursor advances past it.
+    assert new_ts == end_time.timestamp()
+
+    # An external run whose artifacts cannot be located is skipped and also advances the cursor.
+    later = datetime.datetime(2024, 1, 1, 0, 0, 10, tzinfo=datetime.timezone.utc)
+    cursor = _HistoryCursor(history_rows=[("q2", later)], dagster_query_ids=[], located=None)
+    _connection_returning(cursor, component)
+    with (
+        mock.patch.object(
+            SnowflakeDbtProjectComponent,
+            "_download_artifacts",
+            side_effect=lambda _c, _p, dest: _write_artifacts(dest),
+        ),
+        mock.patch.object(comp_mod, "validate_translator", return_value=fake_translator),
+    ):
+        events, new_ts = component._poll_external_runs(  # noqa: SLF001
+            _META_MANIFEST, end_time.timestamp()
+        )
+    assert events == []
+    assert new_ts == later.timestamp()
 
 
 def test_create_sensor_builds_sensor():
@@ -893,3 +985,26 @@ def test_component_is_exported_when_dbt_installed():
     import dagster_snowflake
 
     assert hasattr(dagster_snowflake, "SnowflakeDbtProjectComponent")
+
+
+def test_defs_state_config_defaults_and_overrides():
+    """defs-state management is configurable (as in DbtCloudComponent), defaulting to
+    the local filesystem.
+    """
+    component = _make_component()
+    config = component.defs_state_config
+    assert config.key == "SnowflakeDbtProjectComponent[analytics.dbt.jaffle_shop]"
+    assert config.management_type == DefsStateManagementType.LOCAL_FILESYSTEM
+    assert config.refresh_if_dev is True
+
+    component = _make_component(
+        defs_state=DefsStateConfigArgs(
+            key="custom-key",
+            management_type=DefsStateManagementType.VERSIONED_STATE_STORAGE,
+            refresh_if_dev=False,
+        )
+    )
+    config = component.defs_state_config
+    assert config.key == "custom-key"
+    assert config.management_type == DefsStateManagementType.VERSIONED_STATE_STORAGE
+    assert config.refresh_if_dev is False
