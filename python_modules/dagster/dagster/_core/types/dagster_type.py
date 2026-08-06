@@ -966,6 +966,12 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     if isinstance(dagster_type, type):
         return resolve_python_type_to_dagster_type(dagster_type)
 
+    # Fall back to origin for generic type hints and
+    # resolves it, reading as unparameterized type instead.
+    origin = get_origin(dagster_type)
+    if isinstance(origin, type):
+        return resolve_dagster_type(origin)
+
     raise DagsterInvalidDefinitionError(
         DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
             dagster_type=str(dagster_type), additional_msg="."
