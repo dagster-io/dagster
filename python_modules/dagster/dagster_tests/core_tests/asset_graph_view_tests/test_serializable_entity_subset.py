@@ -1,8 +1,11 @@
+from unittest import mock
+
 import dagster as dg
 import pytest
 from dagster._check import CheckError
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.partitions.subset import DefaultPartitionsSubset
+from dagster._core.errors import DagsterInvalidInvocationError
 
 
 def test_union():
@@ -354,3 +357,34 @@ def test_is_compatible_with_partitions_def_default_subset_time_window():
     assert (
         out_of_range_subset.is_compatible_with_partitions_def(time_window_partitions_def) is False
     )
+
+
+def test_deleted_partition_graceful_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Creates a valid, empty subset using the framework helper
+    partitions_def = dg.StaticPartitionsDefinition([])
+    broken_subset = partitions_def.empty_subset()
+
+    # Safely mock the methods on the class level using the monkeypatch fixture
+    # automatically tears down and restores original functionality after the test ends
+    monkeypatch.setattr(
+        DefaultPartitionsSubset,
+        "__len__",
+        lambda self: (_ for _ in ()).throw(DagsterInvalidInvocationError("Nonexistent partition keys")),
+    )
+    monkeypatch.setattr(
+        DefaultPartitionsSubset,
+        "is_empty",
+        property(lambda self: (_ for _ in ()).throw(DagsterInvalidInvocationError("Nonexistent partition keys"))),
+    )
+
+    # Instantiate wrapper class
+    entity_subset = SerializableEntitySubset(key=dg.AssetKey("test_asset"), value=broken_subset)
+
+    # Assert that size and is_empty gracefully handle the error fallback
+    assert entity_subset.size == 0
+    assert entity_subset.is_empty is True
+
+    # Test that membership checking (__contains__) also handles the fallback safely
+    mock_item = mock.MagicMock()
+    mock_item.partition_key = "deleted_key"
+    assert (mock_item in entity_subset) is False
