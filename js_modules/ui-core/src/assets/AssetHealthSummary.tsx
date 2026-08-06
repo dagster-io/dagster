@@ -172,6 +172,10 @@ const Criteria = React.memo(
       | AssetHealthMaterializationDegradedPartitionedMetaFragment
       | AssetHealthMaterializationHealthyPartitionedMetaFragment
       | AssetHealthFreshnessMetaFragment
+      // Union members the query does not fragment on arrive as typename-only objects; the
+      // metadata switch renders no detail line for them.
+      | {__typename: 'AssetHealthMaterializationWarningNotPartitionedMeta'}
+      | {__typename: 'AssetHealthMaterializationWarningPartitionedMeta'}
       | undefined
       | null;
     type: 'materialization' | 'freshness' | 'checks' | 'no-definition';
@@ -321,7 +325,9 @@ const Criteria = React.memo(
         case undefined:
           return null;
         default:
-          assertUnreachable(metadata);
+          // The metadata union can gain members on the server before a deployed bundle knows
+          // about them; render no detail line rather than throwing.
+          return null;
       }
     }, [type, metadata, assetKey, onClick]);
 

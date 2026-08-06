@@ -54,6 +54,8 @@ export type AssetHealthQuery = {
                   totalNumPartitions: number;
                   latestRunId: string | null;
                 }
+              | {__typename: 'AssetHealthMaterializationWarningNotPartitionedMeta'}
+              | {__typename: 'AssetHealthMaterializationWarningPartitionedMeta'}
               | null;
             assetChecksStatusMetadata:
               | {
@@ -123,6 +125,8 @@ export type AssetHealthFragment = {
           totalNumPartitions: number;
           latestRunId: string | null;
         }
+      | {__typename: 'AssetHealthMaterializationWarningNotPartitionedMeta'}
+      | {__typename: 'AssetHealthMaterializationWarningPartitionedMeta'}
       | null;
     assetChecksStatusMetadata:
       | {

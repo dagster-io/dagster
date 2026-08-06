@@ -163,7 +163,9 @@
   "AssetHealthMaterializationMeta": [
     "AssetHealthMaterializationDegradedPartitionedMeta",
     "AssetHealthMaterializationHealthyPartitionedMeta",
-    "AssetHealthMaterializationDegradedNotPartitionedMeta"
+    "AssetHealthMaterializationDegradedNotPartitionedMeta",
+    "AssetHealthMaterializationWarningPartitionedMeta",
+    "AssetHealthMaterializationWarningNotPartitionedMeta"
   ],
   "AssetHealthCheckMeta": [
     "AssetHealthCheckDegradedMeta",

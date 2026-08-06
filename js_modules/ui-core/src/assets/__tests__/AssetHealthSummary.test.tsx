@@ -2,9 +2,15 @@ import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type React from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
-import {buildAssetKey} from '../../graphql/builders';
+import {
+  buildAssetHealth,
+  buildAssetHealthMaterializationDegradedNotPartitionedMeta,
+  buildAssetKey,
+} from '../../graphql/builders';
+import {AssetHealthStatus} from '../../graphql/types';
 
 // Mock useAllAssetsNodes
 const mockUseAllAssetsNodes = jest.fn();
@@ -27,6 +33,7 @@ jest.mock('../../app/analytics', () => ({
 describe('AssetHealthSummary integration tests', () => {
   let AssetHealthSummaryPopover: React.ComponentType<{
     assetKey: ReturnType<typeof buildAssetKey>;
+    health?: ReturnType<typeof buildAssetHealth>;
     children: React.ReactNode;
   }>;
 
@@ -234,6 +241,86 @@ describe('AssetHealthSummary integration tests', () => {
       await waitFor(() => {
         expect(screen.getByText('Missing software definition')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('up-for-retry warning behavior', () => {
+    it('should show execution warning with the failure detail for a warning asset', async () => {
+      const user = userEvent.setup();
+      const assetKey = buildAssetKey({path: ['warning_asset']});
+
+      mockUseAllAssetsNodes.mockReturnValue({
+        allAssetKeys: new Set([tokenForAssetKey(assetKey)]),
+        loading: false,
+      });
+
+      const health = buildAssetHealth({
+        assetHealth: AssetHealthStatus.WARNING,
+        materializationStatus: AssetHealthStatus.WARNING,
+        freshnessStatus: AssetHealthStatus.HEALTHY,
+        assetChecksStatus: AssetHealthStatus.HEALTHY,
+        materializationStatusMetadata: buildAssetHealthMaterializationDegradedNotPartitionedMeta({
+          failedRunId: 'abcd1234-run-id',
+        }),
+        freshnessStatusMetadata: null,
+        assetChecksStatusMetadata: null,
+      });
+
+      render(
+        <MemoryRouter>
+          <MockedProvider>
+            <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
+              <div>Trigger</div>
+            </AssetHealthSummaryPopover>
+          </MockedProvider>
+        </MemoryRouter>,
+      );
+
+      await user.hover(screen.getByText('Trigger'));
+
+      expect(await screen.findByText('Execution warning')).toBeInTheDocument();
+      const link = await screen.findByText(/Materialization failed in run/);
+      expect(link.closest('a')).toHaveAttribute('href', '/runs/abcd1234-run-id');
+    });
+
+    it('should render without a detail line when the metadata type is unknown to this bundle', async () => {
+      const user = userEvent.setup();
+      const assetKey = buildAssetKey({path: ['warning_asset_new_meta']});
+
+      mockUseAllAssetsNodes.mockReturnValue({
+        allAssetKeys: new Set([tokenForAssetKey(assetKey)]),
+        loading: false,
+      });
+
+      const health = buildAssetHealth({
+        assetHealth: AssetHealthStatus.WARNING,
+        materializationStatus: AssetHealthStatus.WARNING,
+        freshnessStatus: AssetHealthStatus.HEALTHY,
+        assetChecksStatus: AssetHealthStatus.HEALTHY,
+        // Simulates a newer server returning a union member this bundle was not built with.
+        materializationStatusMetadata: {
+          __typename: 'AssetHealthMaterializationFutureMeta',
+        } as unknown as ReturnType<
+          typeof buildAssetHealthMaterializationDegradedNotPartitionedMeta
+        >,
+        freshnessStatusMetadata: null,
+        assetChecksStatusMetadata: null,
+      });
+
+      render(
+        <MemoryRouter>
+          <MockedProvider>
+            <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
+              <div>Trigger</div>
+            </AssetHealthSummaryPopover>
+          </MockedProvider>
+        </MemoryRouter>,
+      );
+
+      await user.hover(screen.getByText('Trigger'));
+
+      expect(await screen.findByText('Execution warning')).toBeInTheDocument();
+      expect(screen.queryByText(/Materialization failed/)).not.toBeInTheDocument();
     });
   });
 
