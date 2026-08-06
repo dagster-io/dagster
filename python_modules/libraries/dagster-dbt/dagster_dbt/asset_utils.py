@@ -360,20 +360,35 @@ def build_dbt_asset_selection(
 
     from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
-    return DbtManifestAssetSelection.build(
-        manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
-        select=dbt_assets_select,
-        exclude=dbt_assets_exclude,
-        selector=dbt_assets_selector,
-        project=dbt_project,
-    ) & DbtManifestAssetSelection.build(
+    requested_selection = DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
         exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
         selector=dbt_selector or DBT_DEFAULT_SELECTOR,
         project=dbt_project,
+    )
+
+    # If the assets definition has no selection of its own, it spans the whole manifest,
+    # so intersecting with it cannot narrow the requested selection — but it does cost
+    # an extra dbt selector walk over the manifest every time the selection is resolved.
+    if (
+        dbt_assets_select == DBT_DEFAULT_SELECT
+        and dbt_assets_exclude == DBT_DEFAULT_EXCLUDE
+        and dbt_assets_selector == DBT_DEFAULT_SELECTOR
+    ):
+        return requested_selection
+
+    return (
+        DbtManifestAssetSelection.build(
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator,
+            select=dbt_assets_select,
+            exclude=dbt_assets_exclude,
+            selector=dbt_assets_selector,
+            project=dbt_project,
+        )
+        & requested_selection
     )
 
 
