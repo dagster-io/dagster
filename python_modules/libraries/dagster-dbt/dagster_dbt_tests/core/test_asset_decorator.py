@@ -1186,18 +1186,14 @@ def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: dict[str, Any], selec
     DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION < version.parse("1.11.0"),
     reason="dbt udf support is only available in `dbt-core>=1.11.0`",
 )
-@pytest.mark.parametrize("select", ["fqn:*", "tag:test"])
+@pytest.mark.parametrize("select", ["fqn:*", "tag:test", "resource_type:function"])
 def test_dbt_with_functions(test_dbt_functions_manifest: dict[str, Any], select: str) -> None:
     @dbt_assets(
         manifest=test_dbt_functions_manifest,
         select=select,
     )
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        # duckdb does not support building functions, so we exclude them here
-        # we only want to test a manifest with function nodes works
-        yield from dbt.cli(
-            ["build", "--exclude", "resource_type:function"], context=context
-        ).stream()
+        yield from dbt.cli(["build"], context=context).stream()
 
     result = materialize(
         [my_dbt_assets],
