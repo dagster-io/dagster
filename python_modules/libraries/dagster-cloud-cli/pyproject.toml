@@ -37,7 +37,7 @@ dagster-plus = "dagster_cloud_cli.entrypoint:app"
 test = [
     "dagster-shared",
     "freezegun",
-    "pytest>=8",
+    "pytest>=9.1.1",
     "pytest-mock==3.14.0",
     "pytest-rerunfailures",
     "pex>=2.1.132,<2.60.0",
