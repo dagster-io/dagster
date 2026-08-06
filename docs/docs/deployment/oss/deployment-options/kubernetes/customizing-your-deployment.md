@@ -229,6 +229,26 @@ global:
 generatePostgresqlPasswordSecret: false
 ```
 
+## Defining user code deployments as a map
+
+The `dagster-user-deployments.deployments` value accepts either a list (the default) or a map keyed by deployment name:
+
+```yaml
+dagster-user-deployments:
+  deployments:
+    k8s-example-user-code-1:
+      image:
+        repository: 'docker.io/dagster/user-code-example'
+        tag: ~
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - '--python-file'
+        - '/example_project/example_repo/repo.py'
+      port: 3030
+```
+
+The map form is useful when you layer values files — for example a base file plus a per-environment override. Helm merges maps by key but replaces lists wholesale, so with the map form an override file can change a single field of a single deployment instead of restating the entire list. When the map form is used, the map key is the deployment name and the per-entry `name` field is optional. Note that Helm renders map keys in alphabetical order, so deployments are always emitted in sorted key order rather than declaration order.
+
 ## Security
 
 Users will likely want to permission a ServiceAccount bound to a properly scoped Role to launch Jobs and create other Kubernetes resources.
