@@ -396,6 +396,18 @@ class BaseWorkspaceRequestContext(LoadingContext):
         """
         return self.reload_code_location(name)
 
+    def app_managed_component_write_allowed(self) -> bool:
+        """Whether a live-state app-managed component write is permitted for the
+        current deployment.
+
+        Defaults to ``True``: open source has no branch/production distinction and
+        the ``EDIT_APP_MANAGED_COMPONENTS`` permission already gates use. Dagster+
+        overrides this so that, once git-backed authoring is enabled, git is the
+        sole writer to production and live-state writes are allowed only on branch
+        deployments.
+        """
+        return True
+
     def refresh_component_state(self, name: str, defs_state_keys: Sequence[str]) -> "DefsStateInfo":
         """Refresh state for the given component keys at ``name`` and return the
         resulting ``DefsStateInfo``. Only meaningful for gRPC-backed code

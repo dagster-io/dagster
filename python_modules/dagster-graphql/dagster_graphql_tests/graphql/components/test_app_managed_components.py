@@ -12,6 +12,7 @@ suite, where a Dagster+ context can grant the permission.
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import cast
 from unittest.mock import Mock
 
 from dagster import Definitions
@@ -494,3 +495,34 @@ def test_validate_attributes_rejects_non_mapping():
         Mock(), LOCATION_NAME, "some.Type", "- just\n- a\n- list"
     )
     assert errors == ["Attributes must be a YAML mapping."]
+
+
+def test_set_blocked_when_write_not_allowed(monkeypatch):
+    """When the context disallows live writes (git-only for production), the
+    mutation returns a validation error and never writes to state.
+    """
+    import dagster_graphql.implementation.fetch_app_managed_components as fetch_mod
+    from dagster_graphql.schema.app_managed_components import (
+        GrapheneAppManagedComponentValidationError,
+    )
+
+    # Bypass the permission gate (OSS denies it, which would short-circuit first).
+    monkeypatch.setattr(fetch_mod, "assert_permission_for_location", lambda *a, **k: None)
+
+    graphene_info = Mock()
+    graphene_info.context.app_managed_component_write_allowed.return_value = False
+
+    result = fetch_mod.set_app_managed_component(
+        graphene_info,
+        LOCATION_NAME,
+        "my_component",
+        "dagster.SomeComponent",
+        "name: x\n",
+    )
+
+    assert isinstance(result, GrapheneAppManagedComponentValidationError)
+    # ``message`` is a graphene NonNull field; at runtime it holds the string
+    # passed to the constructor, so cast for the type checker.
+    assert "production" in cast("str", result.message).lower()
+    # Never reached the write / reload path.
+    graphene_info.context.reload_code_location_with_latest_defs_state.assert_not_called()

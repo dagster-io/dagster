@@ -216,6 +216,16 @@ def set_app_managed_component(
         graphene_info, Permissions.EDIT_APP_MANAGED_COMPONENTS, location_name
     )
 
+    if not graphene_info.context.app_managed_component_write_allowed():
+        return GrapheneAppManagedComponentValidationError(
+            componentId=component_id,
+            message=(
+                "Editing components directly is disabled for production deployments."
+                " Open a pull request to change production."
+            ),
+            errors=["Live component writes are only permitted on branch deployments."],
+        )
+
     validation_errors = _validate_app_managed_attributes(
         graphene_info, location_name, component_type, attributes
     )
