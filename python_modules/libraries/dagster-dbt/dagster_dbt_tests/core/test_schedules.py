@@ -1,9 +1,8 @@
-from collections.abc import Mapping, Sequence
-from typing import Any, cast
+from collections.abc import Mapping
+from typing import Any
 
 import pytest
 from dagster import DefaultScheduleStatus, RunConfig
-from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
@@ -101,15 +100,9 @@ def test_dbt_build_schedule(
     assert job.tags == (tags or {})
     assert job.config == (config.to_config_dict() if config else None)
 
-    assert isinstance(job.selection, AndAssetSelection)
-    assert len(job.selection.operands) == 2
-
-    [dbt_assets_selection, job_selection] = cast(
-        "Sequence[DbtManifestAssetSelection]", job.selection.operands
-    )
-    assert dbt_assets_selection.select == "fqn:*"
-    assert dbt_assets_selection.exclude == ""
-    assert dbt_assets_selection.selector == ""
-    assert job_selection.select == (dbt_select or "fqn:*")
-    assert job_selection.exclude == (dbt_exclude or "")
-    assert job_selection.selector == (dbt_selector or "")
+    # the assets definition has no selection of its own, so the job's selection is
+    # the requested selection directly, with no intersection built around it
+    assert isinstance(job.selection, DbtManifestAssetSelection)
+    assert job.selection.select == (dbt_select or "fqn:*")
+    assert job.selection.exclude == (dbt_exclude or "")
+    assert job.selection.selector == (dbt_selector or "")
