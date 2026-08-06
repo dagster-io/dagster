@@ -4,9 +4,11 @@
 
 ### New
 
+- An asset whose materialization failures are all pending an automatic retry now reports a `WARNING` health status instead of `DEGRADED`, and Slack, Microsoft Teams, and email alerts render a "Failed, retry pending" line for it.
 - [ui] The asset graph sidebar's search now matches only assets shown in the sidebar, matches on the full asset key as well as the displayed name, lists results alphabetically, and shows the namespace for results whose name is ambiguous.
 - [ui] Added a "Copy asset key" item to the asset node context menu.
 - [ui] Added a SLURM kind tag icon. (Thanks, [@geoHeil](https://github.com/geoHeil)!)
+- [dagster-snowflake] `SnowflakeDbtProjectComponent` now accepts a `defs_state` configuration, matching `DbtCloudComponent`, so deployments can opt into versioned state storage instead of the local filesystem.
 
 ### Bugfixes
 
@@ -15,6 +17,7 @@
 - [ui] Fixed the asset graph sidebar to sort assets by their displayed name rather than their full asset key.
 - [ui] Fixed an issue where text in the search UI was truncated earlier than necessary.
 - [dagster-cloud] The Kubernetes agent now degrades gracefully when its service account is not permitted to manage ConfigMaps, launching code servers without fast in-place reload rather than failing to deploy the code location. Granting the agent's Role permissions on `configmaps`, which the latest agent Helm chart includes, restores fast reloads.
+- [dagster-snowflake] Fixed several issues in `SnowflakeDbtProjectComponent`: the observation sensor could eventually report Dagster-triggered runs as externally triggered, executing a subset failed when dbt built models outside the requested subset, and a genuine import error in an optional dependency could silently hide the component.
 - [dagster-spark] Fixed a command injection issue in `spark_resource` and `create_spark_op`: `spark-submit` is now invoked directly instead of through a shell, so shell metacharacters in `application_arguments` are no longer interpreted. Multiple and quoted arguments continue to work.
 - [dagster-tableau] Fixed an issue where empty workbooks could cause code location loads to fail.
 
