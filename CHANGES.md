@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.13.17 (core) / 0.29.17 (libraries)
+
+### New
+
+- [ui] The asset graph sidebar's search now matches only assets shown in the sidebar, matches on the full asset key as well as the displayed name, lists results alphabetically, and shows the namespace for results whose name is ambiguous.
+- [ui] Added a "Copy asset key" item to the asset node context menu.
+- [ui] Added a SLURM kind tag icon. (Thanks, [@geoHeil](https://github.com/geoHeil)!)
+
+### Bugfixes
+
+- [dg] Fixed an issue where a Hybrid deployment running on Kubernetes could be misidentified as Serverless, causing PEX-configured builds to be packaged as Docker images.
+- [dg] Relaxed the `tomlkit` version constraint to allow newer releases. (Thanks, [@geoHeil](https://github.com/geoHeil)!)
+- [ui] Fixed the asset graph sidebar to sort assets by their displayed name rather than their full asset key.
+- [ui] Fixed an issue where text in the search UI was truncated earlier than necessary.
+- [dagster-cloud] The Kubernetes agent now degrades gracefully when its service account is not permitted to manage ConfigMaps, launching code servers without fast in-place reload rather than failing to deploy the code location. Granting the agent's Role permissions on `configmaps`, which the latest agent Helm chart includes, restores fast reloads.
+- [dagster-spark] Fixed a command injection issue in `spark_resource` and `create_spark_op`: `spark-submit` is now invoked directly instead of through a shell, so shell metacharacters in `application_arguments` are no longer interpreted. Multiple and quoted arguments continue to work.
+- [dagster-tableau] Fixed an issue where empty workbooks could cause code location loads to fail.
+
+### Documentation
+
+- Documented how to connect to the Dagster+ MCP server using OAuth.
+- Corrected the Helm repository and chart names in the Kubernetes agent configuration reference.
+- Integration pages can now be filtered by tag.
+
 ## 1.13.16 (core) / 0.29.16 (libraries)
 
 ### New
