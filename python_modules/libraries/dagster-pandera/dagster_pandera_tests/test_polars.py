@@ -4,7 +4,7 @@ import pandera.polars as pa
 import pandera.typing as pa_typing
 import polars as pl
 import pytest
-from dagster import DagsterType, TypeCheck, check_dagster_type
+from dagster import DagsterType, Out, TypeCheck, asset, check_dagster_type, job, materialize, op
 from dagster._core.definitions.metadata import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import (
     TableColumn,
@@ -152,6 +152,11 @@ def test_pandera_schema_to_dagster_type(schema):
     )
 
 
+def test_typing_type_is_polars(schema):
+    dagster_type = pandera_schema_to_dagster_type(schema)
+    assert dagster_type.typing_type is pl.DataFrame
+
+
 def test_name_extraction():
     schema = sample_schema_model()
     assert pandera_schema_to_dagster_type(schema).key == schema.__name__
@@ -191,3 +196,99 @@ def test_validate_inv_missing_column(dagster_type, dataframe):
     dataframe = dataframe.drop(["a"])
     result = check_dagster_type(dagster_type, dataframe)
     assert not result.success
+
+
+def test_validate_rejects_lazyframe(dagster_type, dataframe):
+    """Pandera silently skips value-level checks on LazyFrames, so we reject."""
+    result = check_dagster_type(dagster_type, dataframe.lazy())
+    assert not result.success
+    assert "LazyFrame" in (result.description or "")
+    assert "collect()" in (result.description or "")
+
+
+# ----- ASSET MATERIALIZATION (real Pandera + Dagster end-to-end)
+#
+# Reproduces #23714: a Polars-backed pandera schema used as an asset's
+# Dagster type. Before the fix, `typing_type` resolved to `pd.DataFrame`,
+# which broke materialization with Polars-aware IO managers. With the fix,
+# the asset materializes successfully against the in-memory IO manager.
+
+
+def test_polars_asset_materializes_with_pandera_schema():
+    SchemaModel = sample_schema_model()
+    PolarsPanderaType = pandera_schema_to_dagster_type(SchemaModel)
+
+    @asset(dagster_type=PolarsPanderaType)
+    def my_polars_asset() -> pl.DataFrame:
+        return pl.DataFrame(DATA_OK)
+
+    result = materialize([my_polars_asset])
+    assert result.success
+    output = result.output_for_node("my_polars_asset")
+    assert isinstance(output, pl.DataFrame)
+
+
+def test_polars_asset_materialization_fails_on_invalid_data():
+    SchemaModel = sample_schema_model()
+    PolarsPanderaType = pandera_schema_to_dagster_type(SchemaModel)
+
+    bad_data = dict(DATA_OK)
+    bad_data["a"] = [1, 4, 0, 10, 99]  # 99 violates le=10
+
+    @asset(dagster_type=PolarsPanderaType)
+    def bad_polars_asset() -> pl.DataFrame:
+        return pl.DataFrame(bad_data)
+
+    result = materialize([bad_polars_asset], raise_on_error=False)
+    assert not result.success
+
+
+def test_op_with_polars_pandera_schema_typed_output():
+    SchemaModel = sample_schema_model()
+    PolarsPanderaType = pandera_schema_to_dagster_type(SchemaModel)
+
+    @op(out=Out(dagster_type=PolarsPanderaType))
+    def make_df() -> pl.DataFrame:
+        return pl.DataFrame(DATA_OK)
+
+    @job
+    def my_job():
+        make_df()
+
+    result = my_job.execute_in_process()
+    assert result.success
+
+
+def test_typing_type_reaches_io_manager():
+    """Reproduces #23714: a Polars-aware IO manager reads
+    ``context.dagster_type.typing_type`` to decide how to handle the value.
+    Before the fix it saw ``pd.DataFrame`` even for polars schemas.
+    """
+    from dagster import IOManager, IOManagerDefinition
+
+    seen: dict[str, object] = {}
+
+    class TypingTypeAssertingIOManager(IOManager):
+        def handle_output(self, context, obj):
+            seen["typing_type"] = context.dagster_type.typing_type
+            seen["obj_type"] = type(obj)
+
+        def load_input(self, context):
+            raise NotImplementedError
+
+    SchemaModel = sample_schema_model()
+    PolarsPanderaType = pandera_schema_to_dagster_type(SchemaModel)
+
+    @asset(dagster_type=PolarsPanderaType, io_manager_key="custom")
+    def polars_asset() -> pl.DataFrame:
+        return pl.DataFrame(DATA_OK)
+
+    result = materialize(
+        [polars_asset],
+        resources={
+            "custom": IOManagerDefinition.hardcoded_io_manager(TypingTypeAssertingIOManager())
+        },
+    )
+    assert result.success
+    assert seen["typing_type"] is pl.DataFrame
+    assert seen["obj_type"] is pl.DataFrame
