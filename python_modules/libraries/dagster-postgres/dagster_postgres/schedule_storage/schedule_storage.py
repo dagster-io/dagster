@@ -86,12 +86,12 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         )
         self._token_provider = token_provider
 
-        # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_pg_engine(
             self.postgres_url,
             self._token_provider,
             isolation_level="AUTOCOMMIT",
-            poolclass=db_pool.NullPool,
+            poolclass=db_pool.QueuePool,
+            pool_size=3,
         )
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
@@ -158,7 +158,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         postgres_url: str, should_autocreate_tables: bool = True
     ) -> "PostgresScheduleStorage":
         engine = create_engine(
-            postgres_url, isolation_level="AUTOCOMMIT", poolclass=db_pool.NullPool
+            postgres_url, 
+            isolation_level="AUTOCOMMIT", 
+            poolclass=db_pool.QueuePool,
+            pool_size=3,
         )
         try:
             ScheduleStorageSqlMetadata.drop_all(engine)
