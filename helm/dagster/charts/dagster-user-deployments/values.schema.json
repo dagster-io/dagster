@@ -306,6 +306,15 @@
             "title": "Tolerations",
             "type": "array"
         },
+        "TopologySpreadConstraints": {
+            "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.19.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/topologySpreadConstraints",
+            "items": {
+                "additionalProperties": true,
+                "type": "object"
+            },
+            "title": "TopologySpreadConstraints",
+            "type": "array"
+        },
         "UserDeployment": {
             "properties": {
                 "name": {
@@ -466,6 +475,28 @@
                     "anyOf": [
                         {
                             "$ref": "#/$defs/Tolerations"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "topologySpreadConstraints": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/TopologySpreadConstraints"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "podDisruptionBudget": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/UserDeploymentPodDisruptionBudget"
                         },
                         {
                             "type": "null"
@@ -664,6 +695,59 @@
                 "enabled"
             ],
             "title": "UserDeploymentIncludeConfigInLaunchedRuns",
+            "type": "object"
+        },
+        "UserDeploymentPodDisruptionBudget": {
+            "properties": {
+                "enabled": {
+                    "default": false,
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "minAvailable": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Minavailable"
+                },
+                "maxUnavailable": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Maxunavailable"
+                },
+                "unhealthyPodEvictionPolicy": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Unhealthypodevictionpolicy"
+                }
+            },
+            "title": "UserDeploymentPodDisruptionBudget",
             "type": "object"
         },
         "Volume": {
