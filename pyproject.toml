@@ -28,6 +28,12 @@ filterwarnings = [
 markers = [
   "integration: Tests requiring real git operations or other I/O",
   "slow: Tests that take more than 1 second",
+  "core: dagster-dbt core tests (not cloud, snowflake, bigquery, or fusion)",
+  "cloud: dagster-dbt cloud integration tests",
+  "fusion: dagster-dbt tests requiring dbt-fusion (dbtf) binary",
+  "snowflake: dagster-dbt tests requiring Snowflake credentials",
+  "bigquery: dagster-dbt tests requiring BigQuery credentials",
+  "derived_metadata: dagster-dbt tests for derived metadata features",
 ]
 
 ### pytest-asyncio configuration
