@@ -54,6 +54,7 @@ export type SetAppManagedComponentMutationVariables = Exact<{
 export type SetAppManagedComponentMutation = {
   __typename: 'Mutation';
   setAppManagedComponent:
+    | {__typename: 'AppManagedComponentValidationError'}
     | {
         __typename: 'PythonError';
         message: string;

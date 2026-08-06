@@ -21,7 +21,11 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.errors import DagsterError, DagsterUserCodeUnreachableTimeoutError
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.implementation.fetch_app_managed_components import _live_defs_state_info
+from dagster_graphql.implementation.fetch_app_managed_components import (
+    _collect_required_field_errors,
+    _live_defs_state_info,
+    _validate_app_managed_attributes,
+)
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
 from dagster_shared.serdes.objects.models.defs_state_info import DefsKeyStateInfo, DefsStateInfo
 
@@ -368,3 +372,125 @@ def test_refresh_component_state_branches_on_exception_type(monkeypatch):
         ).data["refreshComponentState"]
         assert error_payload["__typename"] == "RefreshComponentStateError", error_payload
         assert "dbt manifest unavailable" in error_payload["message"]
+
+
+# ---------------------------------------------------------------------------
+# Pre-save config validation.
+#
+# The granted-permission happy/error path through ``setAppManagedComponent``
+# lives in the Cloud suite (OSS denies the permission). These cover the pure
+# validation helpers directly, where the logic — and the risk — actually lives.
+# ---------------------------------------------------------------------------
+
+
+def test_collect_required_field_errors_flags_missing_required():
+    schema = {
+        "type": "object",
+        "required": ["asset_key", "value"],
+        "properties": {"asset_key": {"type": "string"}, "value": {"type": "string"}},
+    }
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data={"asset_key": "foo"}, root=schema, path="", errors=errors
+    )
+    assert errors == ["value: required field is missing"]
+
+
+def test_collect_required_field_errors_accepts_complete():
+    schema = {
+        "type": "object",
+        "required": ["asset_key"],
+        "properties": {"asset_key": {"type": "string"}},
+    }
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data={"asset_key": "foo"}, root=schema, path="", errors=errors
+    )
+    assert errors == []
+
+
+def test_collect_required_field_errors_treats_empty_string_as_missing():
+    schema = {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}}}
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data={"name": "   "}, root=schema, path="", errors=errors
+    )
+    assert errors == ["name: required field is missing"]
+
+
+def test_collect_required_field_errors_anyof_string_escape_hatch_is_lenient():
+    # Fields carry the injectable ``| str`` escape hatch; a plain string (e.g. a
+    # templated value) must never be rejected — it would load fine.
+    schema = {
+        "type": "object",
+        "required": ["cfg"],
+        "properties": {
+            "cfg": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "required": ["host"],
+                        "properties": {"host": {"type": "string"}},
+                    },
+                    {"type": "string"},
+                ]
+            }
+        },
+    }
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data={"cfg": "{{ env.HOST }}"}, root=schema, path="", errors=errors
+    )
+    assert errors == []
+
+
+def test_collect_required_field_errors_recurses_nested_objects():
+    schema = {
+        "type": "object",
+        "required": ["outer"],
+        "properties": {
+            "outer": {
+                "type": "object",
+                "required": ["inner"],
+                "properties": {"inner": {"type": "string"}},
+            }
+        },
+    }
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data={"outer": {}}, root=schema, path="", errors=errors
+    )
+    assert errors == ["outer.inner: required field is missing"]
+
+
+def test_collect_required_field_errors_resolves_refs():
+    schema = {
+        "type": "object",
+        "required": ["nested"],
+        "properties": {"nested": {"$ref": "#/$defs/Nested"}},
+        "$defs": {
+            "Nested": {
+                "type": "object",
+                "required": ["x"],
+                "properties": {"x": {"type": "string"}},
+            }
+        },
+    }
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data={"nested": {}}, root=schema, path="", errors=errors
+    )
+    assert errors == ["nested.x: required field is missing"]
+
+
+def test_validate_attributes_rejects_malformed_yaml():
+    errors = _validate_app_managed_attributes(Mock(), LOCATION_NAME, "some.Type", "key: [unclosed")
+    assert len(errors) == 1
+    assert "not valid YAML" in errors[0]
+
+
+def test_validate_attributes_rejects_non_mapping():
+    errors = _validate_app_managed_attributes(
+        Mock(), LOCATION_NAME, "some.Type", "- just\n- a\n- list"
+    )
+    assert errors == ["Attributes must be a YAML mapping."]

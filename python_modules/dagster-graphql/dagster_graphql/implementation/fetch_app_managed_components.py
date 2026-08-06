@@ -1,5 +1,7 @@
-from typing import TYPE_CHECKING, Union
+import json
+from typing import TYPE_CHECKING, Any, Union
 
+import yaml
 from dagster._core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
@@ -13,6 +15,8 @@ from dagster.components.component.app_managed_state import (
     read_app_managed_component_entry,
     write_app_managed_component_entry,
 )
+from dagster.components.core.load_defs import get_plugin_component_jsons_for_code_location
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_graphql.implementation.utils import assert_permission_for_location
 
@@ -24,6 +28,7 @@ if TYPE_CHECKING:
 
     from dagster_graphql.schema.app_managed_components import (
         GrapheneAppManagedComponents,
+        GrapheneAppManagedComponentValidationError,
         GrapheneComponent,
         GrapheneComponents,
         GrapheneDeleteAppManagedComponentSuccess,
@@ -71,18 +76,156 @@ def get_app_managed_components_for_location(
     return GrapheneAppManagedComponents(locationName=location_name, components=components)
 
 
+def _resolve_ref(node: dict[str, Any], root: dict[str, Any]) -> dict[str, Any]:
+    ref = node.get("$ref")
+    if not isinstance(ref, str) or not ref.startswith("#/"):
+        return node
+    current: Any = root
+    for segment in ref[2:].split("/"):
+        if not isinstance(current, dict):
+            return node
+        current = current.get(segment)
+    return current if isinstance(current, dict) else node
+
+
+def _is_missing(value: Any) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == "")
+
+
+def _collect_required_field_errors(
+    *, schema_node: Any, data: Any, root: dict[str, Any], path: str, errors: list[str]
+) -> None:
+    """Server-side port of the frontend ``validate.ts`` required-field walker.
+
+    Verifies required fields are present and non-empty, recursing into objects
+    and treating an ``anyOf``/``oneOf`` as satisfied when any variant validates.
+    Deliberately narrow and lenient on types: it runs against the *raw* schema,
+    whose fields carry the injectable ``| str`` escape-hatch variant, so nothing
+    that would actually load is rejected. Deeper type validation stays with the
+    component model at load time, where full reference validation happens.
+    """
+    if not isinstance(schema_node, dict):
+        return
+    node = _resolve_ref(schema_node, root)
+
+    for key in ("anyOf", "oneOf"):
+        variants = node.get(key)
+        if isinstance(variants, list) and variants:
+            for variant in variants:
+                variant_errors: list[str] = []
+                _collect_required_field_errors(
+                    schema_node=variant,
+                    data=data,
+                    root=root,
+                    path=path,
+                    errors=variant_errors,
+                )
+                if not variant_errors:
+                    return
+            errors.append(f"{path or '<root>'}: does not match any allowed schema variant")
+            return
+
+    required = node.get("required")
+    properties = node.get("properties")
+    if isinstance(required, list) and isinstance(properties, dict):
+        if not isinstance(data, dict):
+            errors.append(f"{path or '<root>'}: expected a mapping")
+            return
+        for name in required:
+            if not isinstance(name, str):
+                continue
+            child_path = f"{path}.{name}" if path else name
+            if _is_missing(data.get(name)):
+                errors.append(f"{child_path}: required field is missing")
+                continue
+            _collect_required_field_errors(
+                schema_node=properties.get(name),
+                data=data.get(name),
+                root=root,
+                path=child_path,
+                errors=errors,
+            )
+
+
+def _validate_app_managed_attributes(
+    graphene_info: "ResolveInfo", location_name: str, component_type: str, attributes: str
+) -> list[str]:
+    """Validate authored attributes before persisting, returning error messages.
+
+    Catches the failures that today only surface on reload: malformed YAML, a
+    component type unknown to the location, and missing required fields. No
+    user-code execution — validates against the component type's schema already
+    available in the host.
+    """
+    try:
+        parsed = safe_load_yaml(attributes) if attributes.strip() else {}
+    except yaml.YAMLError as e:
+        return [f"Attributes are not valid YAML: {e}"]
+    if parsed is None:
+        parsed = {}
+    if not isinstance(parsed, dict):
+        return ["Attributes must be a YAML mapping."]
+
+    context = graphene_info.context
+    if not context.has_code_location(location_name):
+        # Location isn't loaded, so we can't resolve the schema here; let the
+        # reload path validate rather than blocking on a transient state.
+        return []
+    code_location = context.get_code_location(location_name)
+
+    schema: Any = None
+    type_found = False
+    for _namespace, component_json in get_plugin_component_jsons_for_code_location(code_location):
+        if component_json.get("name") == component_type:
+            type_found = True
+            raw_schema = component_json.get("schema")
+            if isinstance(raw_schema, str):
+                try:
+                    schema = json.loads(raw_schema)
+                except json.JSONDecodeError:
+                    schema = None
+            elif isinstance(raw_schema, dict):
+                schema = raw_schema
+            break
+
+    if not type_found:
+        return [f"Unknown component type '{component_type}' in location '{location_name}'."]
+    if not isinstance(schema, dict):
+        return []
+
+    errors: list[str] = []
+    _collect_required_field_errors(
+        schema_node=schema, data=parsed, root=schema, path="", errors=errors
+    )
+    return errors
+
+
 def set_app_managed_component(
     graphene_info: "ResolveInfo",
     location_name: str,
     component_id: str,
     component_type: str,
     attributes: str,
-) -> "GrapheneSetAppManagedComponentSuccess":
-    from dagster_graphql.schema.app_managed_components import GrapheneSetAppManagedComponentSuccess
+) -> "GrapheneSetAppManagedComponentSuccess | GrapheneAppManagedComponentValidationError":
+    from dagster_graphql.schema.app_managed_components import (
+        GrapheneAppManagedComponentValidationError,
+        GrapheneSetAppManagedComponentSuccess,
+    )
 
     assert_permission_for_location(
         graphene_info, Permissions.EDIT_APP_MANAGED_COMPONENTS, location_name
     )
+
+    validation_errors = _validate_app_managed_attributes(
+        graphene_info, location_name, component_type, attributes
+    )
+    if validation_errors:
+        return GrapheneAppManagedComponentValidationError(
+            componentId=component_id,
+            message="Component attributes failed validation and were not saved.",
+            errors=validation_errors,
+        )
+
     storage = _require_storage(graphene_info)
     entry = AppManagedComponentEntry(component_type=component_type, attributes=attributes)
     write_app_managed_component_entry(storage, location_name, component_id, entry)

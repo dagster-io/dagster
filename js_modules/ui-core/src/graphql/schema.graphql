@@ -3713,7 +3713,17 @@ type SetAppManagedComponentSuccess {
   component: AppManagedComponent!
 }
 
-union SetAppManagedComponentResult = SetAppManagedComponentSuccess | UnauthorizedError | PythonError
+union SetAppManagedComponentResult =
+  | SetAppManagedComponentSuccess
+  | AppManagedComponentValidationError
+  | UnauthorizedError
+  | PythonError
+
+type AppManagedComponentValidationError {
+  componentId: String!
+  message: String!
+  errors: [String!]!
+}
 
 type DeleteAppManagedComponentSuccess {
   locationName: String!

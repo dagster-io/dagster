@@ -115,6 +115,13 @@ type AppManagedComponent = {
   componentType: Scalars['String']['output'];
 };
 
+type AppManagedComponentValidationError = {
+  __typename: 'AppManagedComponentValidationError';
+  componentId: Scalars['String']['output'];
+  errors: Array<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+};
+
 type AppManagedComponents = {
   __typename: 'AppManagedComponents';
   components: Array<AppManagedComponent>;
@@ -5653,7 +5660,11 @@ type Sensors = {
 
 type SensorsOrError = PythonError | RepositoryNotFoundError | Sensors;
 
-type SetAppManagedComponentResult = PythonError | SetAppManagedComponentSuccess | UnauthorizedError;
+type SetAppManagedComponentResult =
+  | AppManagedComponentValidationError
+  | PythonError
+  | SetAppManagedComponentSuccess
+  | UnauthorizedError;
 
 type SetAppManagedComponentSuccess = {
   __typename: 'SetAppManagedComponentSuccess';
@@ -6424,6 +6435,21 @@ export const buildAppManagedComponent = (
       overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'fugiat',
     componentType:
       overrides && overrides.hasOwnProperty('componentType') ? overrides.componentType! : 'totus',
+  };
+};
+
+export const buildAppManagedComponentValidationError = (
+  overrides?: Partial<AppManagedComponentValidationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AppManagedComponentValidationError'} & AppManagedComponentValidationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AppManagedComponentValidationError');
+  return {
+    __typename: 'AppManagedComponentValidationError',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'vado',
+    errors: overrides && overrides.hasOwnProperty('errors') ? overrides.errors! : [],
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dicta',
   };
 };
 
@@ -11942,9 +11968,9 @@ export const buildMutation = (
     setAppManagedComponent:
       overrides && overrides.hasOwnProperty('setAppManagedComponent')
         ? overrides.setAppManagedComponent!
-        : relationshipsToOmit.has('PythonError')
-          ? ({} as PythonError)
-          : buildPythonError({}, relationshipsToOmit),
+        : relationshipsToOmit.has('AppManagedComponentValidationError')
+          ? ({} as AppManagedComponentValidationError)
+          : buildAppManagedComponentValidationError({}, relationshipsToOmit),
     setAutoMaterializePaused:
       overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
         ? overrides.setAutoMaterializePaused!

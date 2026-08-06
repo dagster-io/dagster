@@ -40,10 +40,28 @@ class GrapheneSetAppManagedComponentSuccess(graphene.ObjectType):
         name = "SetAppManagedComponentSuccess"
 
 
+class GrapheneAppManagedComponentValidationError(graphene.ObjectType):
+    """The submitted attributes failed validation and were not persisted.
+
+    Returned when the ``attributes`` YAML is malformed, the component type is
+    unknown in the location, or the parsed attributes don't conform to the
+    component's schema — caught before writing to state so invalid config never
+    reaches a reload.
+    """
+
+    componentId = graphene.NonNull(graphene.String)
+    message = graphene.NonNull(graphene.String)
+    errors = non_null_list(graphene.String)
+
+    class Meta:
+        name = "AppManagedComponentValidationError"
+
+
 class GrapheneSetAppManagedComponentResult(graphene.Union):
     class Meta:
         types = (
             GrapheneSetAppManagedComponentSuccess,
+            GrapheneAppManagedComponentValidationError,
             GrapheneUnauthorizedError,
             GraphenePythonError,
         )
