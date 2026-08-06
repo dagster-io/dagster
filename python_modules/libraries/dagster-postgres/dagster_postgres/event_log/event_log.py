@@ -19,6 +19,7 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster._core.storage.event_log.schema import ConcurrencyLimitsTable, ConcurrencySlotsTable
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
@@ -318,6 +319,98 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         else:
             query = query.on_conflict_do_nothing()
         conn.execute(query)
+
+    def _reconcile_concurrency_limits_from_slots(self) -> None:
+        if not self.has_concurrency_limits_table:
+            return
+
+        if not self._has_rows(ConcurrencySlotsTable) or self._has_rows(ConcurrencyLimitsTable):
+            return
+
+        with self.index_transaction() as conn:
+            rows = conn.execute(
+                db_select(
+                    [
+                        ConcurrencySlotsTable.c.concurrency_key,
+                        db.func.count().label("count"),
+                    ]
+                )
+                .where(
+                    ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                )
+                .group_by(
+                    ConcurrencySlotsTable.c.concurrency_key,
+                )
+            ).fetchall()
+            if rows:
+                conn.execute(
+                    db_dialects.postgresql.insert(ConcurrencyLimitsTable)
+                    .values(
+                        [
+                            {
+                                "concurrency_key": row[0],
+                                "limit": row[1],
+                            }
+                            for row in rows
+                        ]
+                    )
+                    .on_conflict_do_nothing(),
+                )
+
+    def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
+        if not self.has_concurrency_limits_table:
+            return False
+
+        self._reconcile_concurrency_limits_from_slots()
+
+        if not self.has_instance:
+            return False
+
+        default_limit = self._instance.global_op_concurrency_default_limit
+        has_default_pool_limit_col = self.has_default_pool_limit_col
+
+        if has_default_pool_limit_col:
+            with self.index_transaction() as conn:
+                if default_limit is None:
+                    conn.execute(
+                        ConcurrencyLimitsTable.delete().where(
+                            ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                        )
+                    )
+                    self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                else:
+                    stmt = db_dialects.postgresql.insert(ConcurrencyLimitsTable).values(
+                        concurrency_key=concurrency_key,
+                        limit=default_limit,
+                        using_default_limit=True,
+                    )
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=[ConcurrencyLimitsTable.c.concurrency_key],
+                        set_={
+                            "limit": stmt.excluded.limit,
+                            "using_default_limit": stmt.excluded.using_default_limit,
+                        },
+                        where=db.or_(
+                            ConcurrencyLimitsTable.c.limit != stmt.excluded.limit,
+                            ConcurrencyLimitsTable.c.using_default_limit
+                            != stmt.excluded.using_default_limit,
+                        ),
+                    )
+                    conn.execute(stmt)
+                    self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            return True
+
+        if default_limit is None:
+            return False
+
+        with self.index_transaction() as conn:
+            conn.execute(
+                db_dialects.postgresql.insert(ConcurrencyLimitsTable)
+                .values(concurrency_key=concurrency_key, limit=default_limit)
+                .on_conflict_do_nothing(),
+            )
+            self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+        return True
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
