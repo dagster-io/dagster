@@ -3766,6 +3766,7 @@ type ComponentTypeInfo {
   description: String
   owners: [String!]
   tags: [String!]
+  produces: [String!]
   isAppManaged: Boolean!
 }
 

@@ -1060,6 +1060,7 @@ type ComponentTypeInfo = {
   name: Scalars['String']['output'];
   namespace: Scalars['String']['output'];
   owners: Maybe<Array<Scalars['String']['output']>>;
+  produces: Maybe<Array<Scalars['String']['output']>>;
   schema: Maybe<Scalars['JsonSchema']['output']>;
   tags: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -8400,6 +8401,7 @@ export const buildComponentTypeInfo = (
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'adinventitias',
     namespace: overrides && overrides.hasOwnProperty('namespace') ? overrides.namespace! : 'minima',
     owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
+    produces: overrides && overrides.hasOwnProperty('produces') ? overrides.produces! : [],
     schema:
       overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : JSON.stringify({}),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
