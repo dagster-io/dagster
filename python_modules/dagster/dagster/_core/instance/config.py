@@ -323,15 +323,43 @@ def _tick_retention_config_schema() -> Field:
     )
 
 
+def _event_log_retention_config_schema() -> Field:
+    return Field(
+        {
+            "purge_after_days": Field(
+                int,
+                is_required=False,
+                description=(
+                    "Delete non-asset event log rows older than this many days. "
+                    "Asset materializations, observations, checks, freshness, health, "
+                    "and wipe events are always preserved."
+                ),
+            ),
+        },
+        is_required=False,
+    )
+
+
 def retention_config_schema() -> Field:
     return Field(
         {
             "schedule": _tick_retention_config_schema(),
             "sensor": _tick_retention_config_schema(),
             "auto_materialize": _tick_retention_config_schema(),
+            "event_logs": _event_log_retention_config_schema(),
         },
         is_required=False,
     )
+
+
+def get_event_log_retention_days(settings: Mapping[str, Any] | None) -> int | None:
+    """Return the configured retention in days, or None if not configured / disabled."""
+    if not settings:
+        return None
+    days = settings.get("purge_after_days")
+    if not isinstance(days, int) or days <= 0:
+        return None
+    return days
 
 
 def get_tick_retention_settings(

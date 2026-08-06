@@ -518,3 +518,99 @@ def test_step_worker_failure_attempts():
     assert len(run_step_stats) == 1
     step_stat = run_step_stats[0]
     assert step_stat.attempts == 1
+
+
+def test_purge_events_preserves_asset_events_and_recent_rows():
+    """purge_events deletes only non-asset rows older than the cutoff.
+
+    Asset materializations, observations, checks, and freshness events must survive regardless of
+    age; recent operational rows must survive as well. Covers the type filter, the timestamp
+    filter, and the chunked delete loop in one shot.
+    """
+    from dagster._core.definitions.freshness import FreshnessState, FreshnessStateChange
+    from dagster._core.events import (
+        AssetMaterializationPlannedData,
+        AssetObservationData,
+        DagsterEventType,
+        StepMaterializationData,
+    )
+    from dagster._core.execution.plan.objects import StepSuccessData
+
+    run_id = make_new_run_id()
+    old_ts = time.time() - 60 * 60 * 24 * 30  # 30 days ago
+    recent_ts = time.time()
+    cutoff = time.time() - 60 * 60 * 24 * 7  # 7 days ago
+
+    def _entry(timestamp, event_type, event_specific_data=None):
+        return dg.EventLogEntry(
+            error_info=None,
+            user_message="",
+            level="debug",
+            run_id=run_id,
+            timestamp=timestamp,
+            dagster_event=dg.DagsterEvent(
+                event_type_value=event_type.value,
+                job_name="nonce",
+                event_specific_data=event_specific_data,
+            ),
+        )
+
+    asset_key = dg.AssetKey("a")
+    preserved_old = [
+        _entry(
+            old_ts,
+            DagsterEventType.ASSET_MATERIALIZATION,
+            StepMaterializationData(dg.AssetMaterialization(asset_key=asset_key)),
+        ),
+        _entry(
+            old_ts,
+            DagsterEventType.ASSET_OBSERVATION,
+            AssetObservationData(dg.AssetObservation(asset_key=asset_key)),
+        ),
+        _entry(
+            old_ts,
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            AssetMaterializationPlannedData(asset_key=asset_key),
+        ),
+        _entry(
+            old_ts,
+            DagsterEventType.FRESHNESS_STATE_CHANGE,
+            FreshnessStateChange(
+                key=asset_key,
+                previous_state=FreshnessState.UNKNOWN,
+                new_state=FreshnessState.PASS,
+                state_change_timestamp=old_ts,
+            ),
+        ),
+    ]
+    purged_old = [
+        _entry(old_ts, DagsterEventType.STEP_SUCCESS, StepSuccessData(duration_ms=1.0)),
+        _entry(old_ts, DagsterEventType.ENGINE_EVENT, EngineEventData.in_process(1)),
+        _entry(old_ts, DagsterEventType.RUN_SUCCESS),
+    ]
+    recent_operational = [
+        _entry(recent_ts, DagsterEventType.STEP_SUCCESS, StepSuccessData(duration_ms=2.0)),
+        _entry(recent_ts, DagsterEventType.ENGINE_EVENT, EngineEventData.in_process(2)),
+    ]
+
+    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir:
+        storage = ConsolidatedSqliteEventLogStorage(base_dir=tmpdir)
+        for entry in [*preserved_old, *purged_old, *recent_operational]:
+            storage.store_event(entry)
+
+        deleted = storage.purge_events(cutoff)
+
+        assert deleted == len(purged_old)
+
+        with storage.index_connection() as conn:
+            remaining = conn.execute(
+                db_select([SqlEventLogStorageTable.c.dagster_event_type]).where(
+                    SqlEventLogStorageTable.c.run_id == run_id
+                )
+            ).fetchall()
+        remaining_types = sorted(row[0] for row in remaining)
+
+        expected_types = sorted(
+            [e.dagster_event.event_type_value for e in preserved_old + recent_operational]
+        )
+        assert remaining_types == expected_types
