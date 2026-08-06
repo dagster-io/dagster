@@ -222,10 +222,8 @@ def test_dbt_asset_selection_on_asset_definition_with_existing_selection(
 def test_dbt_asset_selection_default_assets_def_skips_intersection(
     test_jaffle_shop_manifest: dict[str, Any],
 ) -> None:
-    # An assets definition without its own select/exclude/selector spans the whole
-    # manifest, so the requested selection is returned directly instead of being
-    # intersected with a catch-all selection that cannot narrow it (but would walk
-    # the manifest with the dbt selector a second time on every resolution).
+    # An assets definition with no selection of its own resolves the requested
+    # selection directly, with no intersection wrapped around it.
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(): ...
 
@@ -238,7 +236,7 @@ def test_dbt_asset_selection_default_assets_def_skips_intersection(
         AssetKey("customers"),
     }
 
-    # An assets definition with its own selection is still intersected with the
+    # An assets definition with its own selection is intersected with the
     # requested selection.
     @dbt_assets(manifest=test_jaffle_shop_manifest, select="+stg_customers")
     def selected_dbt_assets(): ...

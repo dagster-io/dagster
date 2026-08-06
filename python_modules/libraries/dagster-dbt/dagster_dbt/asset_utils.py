@@ -369,9 +369,9 @@ def build_dbt_asset_selection(
         project=dbt_project,
     )
 
-    # If the assets definition has no selection of its own, it spans the whole manifest,
-    # so intersecting with it cannot narrow the requested selection — but it does cost
-    # an extra dbt selector walk over the manifest every time the selection is resolved.
+    # If the assets definition itself has a selection, we need to AND it with the requested
+    # selection. If it doesn't, save a pointless selector walk over the manifest and just
+    # return the requested selection directly.
     if (
         dbt_assets_select == DBT_DEFAULT_SELECT
         and dbt_assets_exclude == DBT_DEFAULT_EXCLUDE
