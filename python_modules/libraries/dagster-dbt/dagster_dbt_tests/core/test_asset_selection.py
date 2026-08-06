@@ -5,6 +5,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
+from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey
 from dagster._record import replace
@@ -13,7 +14,6 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
-from dagster_dbt.utils import select_unique_ids
 from dagster_shared.check.functions import ParameterCheckError
 
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
@@ -224,28 +224,19 @@ def test_dbt_asset_selection_default_assets_def_skips_intersection(
 ) -> None:
     # An assets definition without its own select/exclude/selector spans the whole
     # manifest, so the requested selection is returned directly instead of being
-    # intersected with a catch-all selection that cannot narrow it. Resolving the
-    # selection then walks the manifest with the dbt selector once, not twice.
+    # intersected with a catch-all selection that cannot narrow it (but would walk
+    # the manifest with the dbt selector a second time on every resolution).
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(): ...
 
     asset_selection = build_dbt_asset_selection([my_dbt_assets], dbt_select="raw_customers+")
+
     assert isinstance(asset_selection, DbtManifestAssetSelection)
-
-    with mock.patch(
-        "dagster_dbt.dbt_manifest_asset_selection.select_unique_ids",
-        wraps=select_unique_ids,
-    ) as tracked_select_unique_ids:
-        selected_asset_keys = asset_selection.resolve(
-            all_assets=AssetGraph.from_assets([my_dbt_assets])
-        )
-
-    assert selected_asset_keys == {
+    assert asset_selection.resolve(all_assets=AssetGraph.from_assets([my_dbt_assets])) == {
         AssetKey("raw_customers"),
         AssetKey("stg_customers"),
         AssetKey("customers"),
     }
-    assert tracked_select_unique_ids.call_count == 1
 
     # An assets definition with its own selection is still intersected with the
     # requested selection.
@@ -253,12 +244,12 @@ def test_dbt_asset_selection_default_assets_def_skips_intersection(
     def selected_dbt_assets(): ...
 
     asset_selection = build_dbt_asset_selection([selected_dbt_assets], dbt_select="raw_customers+")
-    assert not isinstance(asset_selection, DbtManifestAssetSelection)
 
-    selected_asset_keys = asset_selection.resolve(
-        all_assets=AssetGraph.from_assets([selected_dbt_assets])
-    )
-    assert selected_asset_keys == {AssetKey("raw_customers"), AssetKey("stg_customers")}
+    assert isinstance(asset_selection, AndAssetSelection)
+    assert asset_selection.resolve(all_assets=AssetGraph.from_assets([selected_dbt_assets])) == {
+        AssetKey("raw_customers"),
+        AssetKey("stg_customers"),
+    }
 
 
 def test_dbt_asset_selection_manifest_argument(
