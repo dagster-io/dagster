@@ -50,7 +50,7 @@ from dagster.components.component.state_backed_component import StateBackedCompo
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.core_models import OpSpec
 from dagster.components.resolved.model import Resolver
-from dagster.components.utils.defs_state import DefsStateConfig
+from dagster.components.utils.defs_state import DefsStateConfig, DefsStateConfigArgs
 from dagster.components.utils.translation import (
     ComponentTranslator,
     TranslationFn,
@@ -81,7 +81,6 @@ from dagster_dbt.components.dbt_component_utils import (
 from dagster_dbt.core.dbt_cli_event import EventHistoryMetadata, _build_column_lineage_metadata
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import validate_manifest
-from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 from pydantic import Field
 
 from dagster_snowflake.resources import SnowflakeResource
@@ -236,16 +235,30 @@ def build_cancel_query_sql(query_id: str) -> str:
     return f"SELECT SYSTEM$CANCEL_QUERY('{escaped}')"
 
 
-def build_dagster_query_ids_sql(marker: str, result_limit: int = 10000) -> str:
+def build_dagster_query_ids_sql(
+    marker: str,
+    result_limit: int = 10000,
+    *,
+    end_time_range_start: float | None,
+) -> str:
     """Build the query that returns the query ids of recent Dagster-triggered runs.
 
     Looks up the session ``QUERY_TAG`` (set by :py:meth:`SnowflakeDbtProjectComponent.execute`)
     in ``INFORMATION_SCHEMA.QUERY_HISTORY`` so the observation sensor can filter those runs out
     of the execution history -- a robust, first-class alternative to parsing the ``ARGS`` column.
+
+    ``QUERY_HISTORY`` returns at most ``result_limit`` rows (its most-recent ones), so on busy
+    accounts an unbounded lookup can fail to reach back to the sensor's cursor. When
+    ``end_time_range_start`` (an epoch timestamp) is provided, the lookup is bounded to queries
+    that ended at or after it -- exactly the window of history rows under consideration.
     """
     escaped = marker.replace("'", "''")
+    params = []
+    if end_time_range_start is not None:
+        params.append(f"END_TIME_RANGE_START => TO_TIMESTAMP_LTZ({int(end_time_range_start)})")
+    params.append(f"RESULT_LIMIT => {result_limit}")
     return (
-        f"SELECT query_id FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(RESULT_LIMIT => {result_limit})) "
+        f"SELECT query_id FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY({', '.join(params)})) "
         f"WHERE query_tag LIKE '%{escaped}%'"
     )
 
@@ -503,14 +516,17 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
             ),
         ),
     ] = False
+    defs_state: Annotated[
+        DefsStateConfigArgs,
+        Resolver.passthrough(
+            description="Configuration for how definitions state should be managed.",
+        ),
+    ] = field(default_factory=DefsStateConfigArgs.local_filesystem)
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
-        return DefsStateConfig(
-            key=f"SnowflakeDbtProjectComponent[{self.snowflake_dbt_project_name}]",
-            management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
-            refresh_if_dev=True,
-        )
+        key = f"SnowflakeDbtProjectComponent[{self.snowflake_dbt_project_name}]"
+        return DefsStateConfig.from_args(self.defs_state, default_key=key)
 
     @property
     def op_config_schema(self) -> type[dg.Config] | None:
@@ -635,6 +651,9 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
         with self.snowflake.get_connection() as conn:
             cursor = conn.cursor()
             self._assert_dbt_projects_supported(cursor)
+            # Tag the parse run like execution runs so the observation sensor never mistakes
+            # a state-refresh invocation for an externally-triggered run.
+            cursor.execute(build_set_query_tag_sql(_dagster_query_tag(None)))
             cursor.execute(
                 build_execute_dbt_project_sql(
                     self.snowflake_dbt_project_name, list(self.manifest_args)
@@ -923,6 +942,11 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 and not is_ephemeral
             ):
                 asset_key = translator.get_asset_spec(manifest, unique_id, None).key
+                # dbt may build models outside the Dagster subset (e.g. via indirect selection
+                # or graph operators in a user-provided `select`); yielding results for
+                # unselected assets would fail the step, so drop them (as for checks below).
+                if op_mode and asset_key not in context.selected_asset_keys:
+                    continue
                 metadata = {
                     **default_metadata,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: dg.MetadataValue.timestamp(
@@ -1210,10 +1234,17 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
             return self.snowflake.database, parts[0], parts[1]
         return self.snowflake.database, self.snowflake.schema_, parts[0]
 
-    def _fetch_dagster_query_ids(self, cursor: Any) -> set[str]:
-        """Return the query ids of recent Dagster-triggered runs (by their session QUERY_TAG)."""
+    def _fetch_dagster_query_ids(self, cursor: Any, since_timestamp: float | None) -> set[str]:
+        """Return the query ids of recent Dagster-triggered runs (by their session QUERY_TAG).
+
+        The lookup is bounded to queries ending at or after ``since_timestamp`` (the sensor
+        cursor) -- older rows are filtered out of the execution history anyway, and the bound
+        keeps the ``QUERY_HISTORY`` result limit from truncating the window we care about.
+        """
         try:
-            cursor.execute(build_dagster_query_ids_sql(_QUERY_TAG_MARKER))
+            cursor.execute(
+                build_dagster_query_ids_sql(_QUERY_TAG_MARKER, end_time_range_start=since_timestamp)
+            )
             return {row[0] for row in cursor.fetchall()}
         except Exception as e:
             logger.warning(f"Could not fetch Dagster-tagged query ids: {e}")
@@ -1243,7 +1274,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
             history_rows = cursor.fetchall()
             # Skip runs Dagster itself triggered, identified by their session QUERY_TAG -- the
             # robust, first-class analog of dbt Cloud filtering out its adhoc-job runs.
-            dagster_query_ids = self._fetch_dagster_query_ids(cursor)
+            dagster_query_ids = self._fetch_dagster_query_ids(cursor, since_timestamp)
             for query_id, query_end_time in history_rows:
                 ts = (
                     query_end_time.timestamp()
@@ -1252,19 +1283,27 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 )
                 if since_timestamp is not None and ts <= since_timestamp:
                     continue
+                # Advance the cursor past every processed row -- including Dagster-triggered
+                # runs (already reported in-run) and runs without artifacts (e.g. `parse`).
+                # QUERY_HISTORY only retains ~7 days, so re-checking a Dagster-tagged row
+                # forever would eventually mis-report it as external once its tag ages out.
+                max_timestamp = ts if max_timestamp is None else max(max_timestamp, ts)
                 if query_id in dagster_query_ids:
                     continue
                 run_results = self._locate_and_read_artifact(
                     cursor, query_id, _RUN_RESULTS_FILENAME
                 )
                 if run_results is None:
+                    logger.warning(
+                        f"Could not locate {_RUN_RESULTS_FILENAME} for external dbt run "
+                        f"(query id {query_id}); skipping it."
+                    )
                     continue
                 events.extend(
                     event
                     for event in self._run_results_to_events(run_results, manifest)
                     if isinstance(event, (dg.AssetMaterialization, dg.AssetCheckEvaluation))
                 )
-                max_timestamp = ts if max_timestamp is None else max(max_timestamp, ts)
         return events, max_timestamp
 
     def _build_observation_sensor(self, manifest: Mapping[str, Any]) -> dg.SensorDefinition:
