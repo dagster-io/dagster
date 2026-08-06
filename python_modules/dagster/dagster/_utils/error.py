@@ -261,11 +261,12 @@ def truncate_serialized_error(
 
     error_info = error_info._replace(stack=truncated_stack)
 
-    msg_len = len(error_info.message)
+    msg = error_info.message or ""
+    msg_len = len(msg)
     if msg_len > field_size_limit:
         truncations.append(f"message from {msg_len} to {field_size_limit}")
         error_info = error_info._replace(
-            message=error_info.message[:field_size_limit] + " (TRUNCATED)"
+            message=msg[:field_size_limit] + " (TRUNCATED)"
         )
 
     if error_info.cls_name and len(error_info.cls_name) > ERROR_CLASS_NAME_SIZE_LIMIT:
