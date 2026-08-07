@@ -49,6 +49,11 @@ def get_pex_flags(python_version: version.Version, build_sdists: bool = True) ->
     resolve_local = ["--resolve-local-platforms"] if build_sdists else []
     # This is mainly useful in local mac test environments
     include_current = ["--platform=current"] if os.getenv("PEX_INCLUDE_CURRENT_PLATFORM") else []
+    # This is needed to install local wheels
+    find_links = []
+    pex_find_links = os.getenv("PEX_FIND_LINKS")
+    if pex_find_links:
+        find_links = [item for x in pex_find_links.split(os.pathsep) for item in ["--find-links", x]]
 
     complete_platform = os.getenv(
         "PEX_COMPLETE_PLATFORM", json.dumps(COMPLETE_PLATFORMS[version_tag])
@@ -58,6 +63,7 @@ def get_pex_flags(python_version: version.Version, build_sdists: bool = True) ->
         # this complete platform matches what can run on our serverless base images
         f"--complete-platform={complete_platform}",
         *include_current,
+        *find_links,
         # this ensures PEX_PATH is not cleared and any subprocess invoked can also use this.
         # this is important for running console scripts that use the pex environment (eg dbt)
         "--no-strip-pex-env",
