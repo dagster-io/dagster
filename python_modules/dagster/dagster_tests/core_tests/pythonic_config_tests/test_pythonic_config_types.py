@@ -1006,3 +1006,62 @@ def test_permissive_extra_field_via_dot():
     # confirm it's in dict and convert_to_config_dictionary
     expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
     assert conf.model_dump() == expected
+
+
+def test_config_rejects_unknown_kwargs() -> None:
+    """`Config` subclasses should raise when instantiated with kwargs that don't
+    match any declared field. Previously these were silently dropped, so a typo
+    like `MyConfig(my_strr=...)` would survive validation and surface as a
+    missing-attribute error far from its source.
+
+    `PermissiveConfig` is the escape hatch for open-ended inputs.
+    """
+
+    class MyOpConfig(dg.Config):
+        person_name: str
+
+    # Sanity: declared field works.
+    MyOpConfig(person_name="Alice")
+
+    # Unknown kwarg should raise a clear error pointing at the bad name.
+    with pytest.raises(dg.DagsterInvalidConfigError, match="nonexistent_config_value"):
+        MyOpConfig(person_name="Alice", nonexistent_config_value=1)
+
+    # And again when passing via the RunConfig+materialize path the user hit.
+    class MyAssetConfig(dg.Config):
+        person_name: str
+
+    @dg.asset
+    def greeting(config: MyAssetConfig) -> str:
+        return f"hello {config.person_name}"
+
+    with pytest.raises(dg.DagsterInvalidConfigError, match="nonexistent_config_value"):
+        dg.materialize(
+            [greeting],
+            run_config=dg.RunConfig(
+                {"greeting": MyAssetConfig(person_name="Alice", nonexistent_config_value=1)}
+            ),
+        )
+
+
+def test_permissive_config_keeps_unknown_kwargs() -> None:
+    """`PermissiveConfig` continues to accept unknown kwargs."""
+
+    class OpenConfig(dg.PermissiveConfig):
+        person_name: str
+
+    conf = OpenConfig(person_name="Alice", whatever=1)
+    assert conf.person_name == "Alice"
+    assert conf.whatever == 1  # ty: ignore[unresolved-attribute]
+
+
+def test_configurable_resource_rejects_unknown_kwargs() -> None:
+    """Resources inherit from `Config`, so the same rule should apply."""
+
+    class MyResource(dg.ConfigurableResource):
+        url: str
+
+    MyResource(url="https://example.com")
+
+    with pytest.raises(dg.DagsterInvalidConfigError, match="not_a_field"):
+        MyResource(url="https://example.com", not_a_field=1)
