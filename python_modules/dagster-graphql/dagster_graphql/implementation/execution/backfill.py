@@ -325,6 +325,28 @@ def cancel_partition_backfill(
 
     assert_permission_for_backfill(graphene_info, Permissions.CANCEL_PARTITION_BACKFILL, backfill)
 
+    # A terminal backfill is no longer polled by the daemon, so moving it to CANCELING both
+    # re-enqueues finished work and destroys the record of how it originally ended: the daemon's
+    # next iteration overwrites backfill_end_timestamp on its way to CANCELED, and only the latest
+    # status is stored, so the original outcome cannot be recovered.
+    if backfill.status in BULK_ACTION_TERMINAL_STATUSES:
+        raise DagsterInvariantViolationError(
+            f"Cannot cancel backfill {backfill_id} because it is already in a terminal state "
+            f"({backfill.status.value}). Any runs of this backfill that are still in flight can "
+            f"be stopped individually with terminateRuns."
+        )
+
+    # FAILING is already a teardown. execute_job_backfill_iteration handles FAILING and CANCELING
+    # through the same path, cancelling the in-flight runs either way and differing only in the
+    # status it settles on. Cancelling a FAILING backfill therefore changes nothing the daemon
+    # does; it only relabels the outcome as an operator cancellation while the daemon's error
+    # object and failure count stay attached to the record.
+    if backfill.status == BulkActionStatus.FAILING:
+        raise DagsterInvariantViolationError(
+            f"Cannot cancel backfill {backfill_id} because it is already being torn down after a "
+            f"failure and will move to {BulkActionStatus.FAILED.value}."
+        )
+
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELING))
 
     return GrapheneCancelBackfillSuccess(backfill_id=backfill_id)
@@ -340,6 +362,20 @@ def resume_partition_backfill(
         check.failed(f"No backfill found for id: {backfill_id}")
 
     assert_permission_for_backfill(graphene_info, Permissions.LAUNCH_PARTITION_BACKFILL, backfill)
+
+    # FAILED is the only state a backfill can be resumed from. It is the one terminal state whose
+    # closure is involuntary -- the daemon hit an error, so partitions may remain unlaunched -- which
+    # makes it the only state where returning to REQUESTED is meaningful. Every other terminal state
+    # either finished its work (COMPLETED*) or was stopped on purpose (CANCELED), and resuming those
+    # launches runs the operator never asked for. Forking a finished backfill into a new one is what
+    # retry_partition_backfill is for.
+    if backfill.status != BulkActionStatus.FAILED:
+        raise DagsterInvariantViolationError(
+            f"Cannot resume backfill {backfill_id} because it is not in a failed state "
+            f"(current status: {backfill.status.value}). To re-run a backfill that has already "
+            f"finished, re-execute it instead, which allocates a new backfill and leaves this "
+            f"one's record intact."
+        )
 
     graphene_info.context.instance.update_backfill(backfill.with_status(BulkActionStatus.REQUESTED))
     return GrapheneResumeBackfillSuccess(backfill_id=backfill_id)
