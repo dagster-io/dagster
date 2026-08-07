@@ -192,12 +192,10 @@ You can write additional tests for them in the `docs_snippets_test` folder. See 
 
 You can also write tests to regenerate and test CLI snippets in the `docs_snippets_test/snippet_checks` folder. See that folder for more information.
 
-To type-check the code snippets during development, run the following command from the Dagster root folder.
-This will run `pyright` on all new/changed files relative to the master branch.
-
-```
-make quick_pyright
-```
+Note that `examples/docs_snippets` is excluded from the `ty` type-checking environment
+(see the `exclude` list in `ty/master/pyproject.toml`), so `make ty` and `make quick_ty`
+will not surface type errors in snippet code. Snippets are validated by the load tests
+described above.
 
 ### Line selection
 
