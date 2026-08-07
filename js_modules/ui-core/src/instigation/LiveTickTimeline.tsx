@@ -4,10 +4,10 @@ import dayjs from 'dayjs';
 import {memo, useEffect, useMemo, useState} from 'react';
 
 import styles from './css/LiveTickTimeline.module.css';
-import {Timestamp} from '../app/time/Timestamp';
 import {TickResultType} from '../ticks/TickStatusTag';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {isStuckStartedTick} from './util';
+import {Timestamp} from '../app/time/Timestamp';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus} from '../graphql/types';
 

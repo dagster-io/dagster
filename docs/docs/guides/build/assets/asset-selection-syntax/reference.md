@@ -25,6 +25,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
 | **Asset health status** | `status: "DEGRADED"` | Selects assets with a given [asset health status](/guides/observe/asset-health-status). Options are `"HEALTHY"`, `"WARNING"`, `"DEGRADED"`, `"UNKNOWN"`, or `"NOT_APPLICABLE"` | Dagster+ only |
+| **Not materialized in hours** | `not_materialized_in_hours:24` | Selects assets with no successful materialization within the last `N` hours, including assets that have never been materialized. `N` is a positive integer number of hours. | OSS, Dagster+, Dagster+ branch deployments |
 
 
 :::info Wildcard matching

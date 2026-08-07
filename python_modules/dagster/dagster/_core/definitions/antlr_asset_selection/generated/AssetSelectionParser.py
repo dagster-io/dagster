@@ -12,8 +12,8 @@ def serializedATN():
     return [
         4,
         1,
-        35,
-        138,
+        36,
+        141,
         2,
         0,
         7,
@@ -284,9 +284,15 @@ def serializedATN():
         6,
         1,
         6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
         3,
         6,
-        132,
+        135,
         8,
         6,
         1,
@@ -322,15 +328,15 @@ def serializedATN():
         0,
         26,
         28,
-        31,
         32,
-        34,
-        34,
+        33,
+        35,
+        35,
         1,
         0,
-        31,
-        33,
-        157,
+        32,
+        34,
+        161,
         0,
         18,
         1,
@@ -368,19 +374,19 @@ def serializedATN():
         0,
         0,
         12,
-        131,
+        134,
         1,
         0,
         0,
         0,
         14,
-        133,
+        136,
         1,
         0,
         0,
         0,
         16,
-        135,
+        138,
         1,
         0,
         0,
@@ -788,7 +794,7 @@ def serializedATN():
         0,
         0,
         74,
-        132,
+        135,
         3,
         16,
         8,
@@ -836,7 +842,7 @@ def serializedATN():
         0,
         0,
         81,
-        132,
+        135,
         1,
         0,
         0,
@@ -854,7 +860,7 @@ def serializedATN():
         0,
         0,
         84,
-        132,
+        135,
         3,
         14,
         7,
@@ -872,7 +878,7 @@ def serializedATN():
         0,
         0,
         87,
-        132,
+        135,
         3,
         14,
         7,
@@ -890,7 +896,7 @@ def serializedATN():
         0,
         0,
         90,
-        132,
+        135,
         3,
         14,
         7,
@@ -908,7 +914,7 @@ def serializedATN():
         0,
         0,
         93,
-        132,
+        135,
         3,
         14,
         7,
@@ -926,7 +932,7 @@ def serializedATN():
         0,
         0,
         96,
-        132,
+        135,
         3,
         14,
         7,
@@ -944,7 +950,7 @@ def serializedATN():
         0,
         0,
         99,
-        132,
+        135,
         3,
         14,
         7,
@@ -962,7 +968,7 @@ def serializedATN():
         0,
         0,
         102,
-        132,
+        135,
         3,
         14,
         7,
@@ -1010,7 +1016,7 @@ def serializedATN():
         0,
         0,
         109,
-        132,
+        135,
         1,
         0,
         0,
@@ -1028,7 +1034,7 @@ def serializedATN():
         0,
         0,
         112,
-        132,
+        135,
         3,
         14,
         7,
@@ -1046,7 +1052,7 @@ def serializedATN():
         0,
         0,
         115,
-        132,
+        135,
         3,
         14,
         7,
@@ -1064,7 +1070,7 @@ def serializedATN():
         0,
         0,
         118,
-        132,
+        135,
         3,
         14,
         7,
@@ -1082,7 +1088,7 @@ def serializedATN():
         0,
         0,
         121,
-        132,
+        135,
         3,
         14,
         7,
@@ -1100,7 +1106,7 @@ def serializedATN():
         0,
         0,
         124,
-        132,
+        135,
         3,
         14,
         7,
@@ -1118,7 +1124,7 @@ def serializedATN():
         0,
         0,
         127,
-        132,
+        135,
         3,
         14,
         7,
@@ -1136,138 +1142,162 @@ def serializedATN():
         0,
         0,
         130,
-        132,
+        135,
         3,
         14,
         7,
         0,
         131,
+        132,
+        5,
+        31,
+        0,
+        0,
+        132,
+        133,
+        5,
+        8,
+        0,
+        0,
+        133,
+        135,
+        5,
+        7,
+        0,
+        0,
+        134,
         72,
         1,
         0,
         0,
         0,
-        131,
+        134,
         75,
         1,
         0,
         0,
         0,
-        131,
+        134,
         82,
         1,
         0,
         0,
         0,
-        131,
+        134,
         85,
         1,
         0,
         0,
         0,
-        131,
+        134,
         88,
         1,
         0,
         0,
         0,
-        131,
+        134,
         91,
         1,
         0,
         0,
         0,
-        131,
+        134,
         94,
         1,
         0,
         0,
         0,
-        131,
+        134,
         97,
         1,
         0,
         0,
         0,
-        131,
+        134,
         100,
         1,
         0,
         0,
         0,
-        131,
+        134,
         103,
         1,
         0,
         0,
         0,
-        131,
+        134,
         110,
         1,
         0,
         0,
         0,
-        131,
+        134,
         113,
         1,
         0,
         0,
         0,
-        131,
+        134,
         116,
         1,
         0,
         0,
         0,
-        131,
+        134,
         119,
         1,
         0,
         0,
         0,
-        131,
+        134,
         122,
         1,
         0,
         0,
         0,
-        131,
+        134,
         125,
         1,
         0,
         0,
         0,
-        131,
+        134,
         128,
         1,
         0,
         0,
         0,
-        132,
-        13,
-        1,
-        0,
-        0,
-        0,
-        133,
         134,
-        7,
-        1,
-        0,
-        0,
-        134,
-        15,
+        131,
         1,
         0,
         0,
         0,
         135,
+        13,
+        1,
+        0,
+        0,
+        0,
         136,
+        137,
+        7,
+        1,
+        0,
+        0,
+        137,
+        15,
+        1,
+        0,
+        0,
+        0,
+        138,
+        139,
         7,
         2,
         0,
         0,
-        136,
+        139,
         17,
         1,
         0,
@@ -1282,7 +1312,7 @@ def serializedATN():
         68,
         80,
         108,
-        131,
+        134,
     ]
 
 
@@ -1327,6 +1357,7 @@ class AssetSelectionParser(Parser):
         "'job'",
         "'sinks'",
         "'roots'",
+        "'not_materialized_in_hours'",
         "<INVALID>",
         "<INVALID>",
         "<INVALID>",
@@ -1365,6 +1396,7 @@ class AssetSelectionParser(Parser):
         "JOB",
         "SINKS",
         "ROOTS",
+        "NOT_MATERIALIZED_IN_HOURS",
         "QUOTED_STRING",
         "UNQUOTED_STRING",
         "UNQUOTED_WILDCARD_STRING",
@@ -1425,11 +1457,12 @@ class AssetSelectionParser(Parser):
     JOB = 28
     SINKS = 29
     ROOTS = 30
-    QUOTED_STRING = 31
-    UNQUOTED_STRING = 32
-    UNQUOTED_WILDCARD_STRING = 33
-    NULL_STRING = 34
-    WS = 35
+    NOT_MATERIALIZED_IN_HOURS = 31
+    QUOTED_STRING = 32
+    UNQUOTED_STRING = 33
+    UNQUOTED_WILDCARD_STRING = 34
+    NULL_STRING = 35
+    WS = 36
 
     def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
         super().__init__(input, output)
@@ -1954,7 +1987,7 @@ class AssetSelectionParser(Parser):
             self.state = 59
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]:
+            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 31]:
                 localctx = AssetSelectionParser.AttributeExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 49
@@ -2507,6 +2540,36 @@ class AssetSelectionParser(Parser):
             else:
                 return visitor.visitChildren(self)
 
+    class NotMaterializedInHoursExprContext(AttributeExprContext):
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a AssetSelectionParser.AttributeExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def NOT_MATERIALIZED_IN_HOURS(self):
+            return self.getToken(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS, 0)
+
+        def COLON(self):
+            return self.getToken(AssetSelectionParser.COLON, 0)
+
+        def DIGITS(self):
+            return self.getToken(AssetSelectionParser.DIGITS, 0)
+
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterNotMaterializedInHoursExpr"):
+                listener.enterNotMaterializedInHoursExpr(self)
+
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitNotMaterializedInHoursExpr"):
+                listener.exitNotMaterializedInHoursExpr(self)
+
+        def accept(self, visitor: ParseTreeVisitor):
+            if hasattr(visitor, "visitNotMaterializedInHoursExpr"):
+                return visitor.visitNotMaterializedInHoursExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
     class StatusAttributeExprContext(AttributeExprContext):
         def __init__(
             self, parser, ctx: ParserRuleContext
@@ -2692,7 +2755,7 @@ class AssetSelectionParser(Parser):
         localctx = AssetSelectionParser.AttributeExprContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_attributeExpr)
         try:
-            self.state = 131
+            self.state = 134
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [12]:
@@ -2883,6 +2946,16 @@ class AssetSelectionParser(Parser):
                 self.state = 130
                 self.value()
                 pass
+            elif token in [31]:
+                localctx = AssetSelectionParser.NotMaterializedInHoursExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 18)
+                self.state = 131
+                self.match(AssetSelectionParser.NOT_MATERIALIZED_IN_HOURS)
+                self.state = 132
+                self.match(AssetSelectionParser.COLON)
+                self.state = 133
+                self.match(AssetSelectionParser.DIGITS)
+                pass
             else:
                 raise NoViableAltException(self)
 
@@ -2943,9 +3016,9 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 133
+            self.state = 136
             _la = self._input.LA(1)
-            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 24092082176) != 0):
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 47714402304) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -2998,9 +3071,9 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 135
+            self.state = 138
             _la = self._input.LA(1)
-            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 15032385536) != 0):
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 30064771072) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)

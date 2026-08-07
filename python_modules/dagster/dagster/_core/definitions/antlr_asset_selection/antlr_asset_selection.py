@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_selection import (
     IsAttributeAssetSelection,
     JobAssetSelection,
     KeyWildCardAssetSelection,
+    NotMaterializedInHoursAssetSelection,
     PartitionsAssetSelection,
     ScheduleNameAssetSelection,
     SensorNameAssetSelection,
@@ -185,6 +186,12 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitStatusAttributeExpr(self, ctx: AssetSelectionParser.StatusAttributeExprContext):
         status = self.visit(ctx.value())
         return StatusAssetSelection(selected_status=status)
+
+    def visitNotMaterializedInHoursExpr(
+        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
+    ):
+        hours = int(ctx.DIGITS().getText())
+        return NotMaterializedInHoursAssetSelection(hours=hours)
 
     def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
         column = self.visit(ctx.value())

@@ -151,6 +151,12 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitJobAttributeExpr(self, ctx: AssetSelectionParser.JobAttributeExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#NotMaterializedInHoursExpr.
+    def visitNotMaterializedInHoursExpr(
+        self, ctx: AssetSelectionParser.NotMaterializedInHoursExprContext
+    ):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#value.
     def visitValue(self, ctx: AssetSelectionParser.ValueContext):
         return self.visitChildren(ctx)

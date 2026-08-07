@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
+import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {
   ConfigPartitionsAssetsQuery,
@@ -8,7 +9,6 @@ import {
   ConfigPartitionsQuery,
   ConfigPartitionsQueryVariables,
 } from './types/usePartitionSetDetailsForLaunchpad.types';
-import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 
 export function usePartitionSetDetailsForLaunchpad({

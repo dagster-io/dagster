@@ -1386,3 +1386,60 @@ describe('createAssetSelectionHint', () => {
     });
   });
 });
+
+describe('createProvider - unquotedAttributes', () => {
+  const attributesMap = {
+    key: ['asset1', 'asset2'],
+    not_materialized_in_hours: ['1', '6', '24'],
+  };
+  const provider = createProvider({
+    attributesMap,
+    primaryAttributeKey: 'key',
+    attributeToIcon: {
+      key: 'magnify_glass',
+      not_materialized_in_hours: 'history',
+    },
+    unquotedAttributes: ['not_materialized_in_hours'],
+  });
+  const selectionHint = createSelectionAutoComplete(provider);
+
+  function testAutocomplete(testString: string) {
+    const cursorIndex = testString.indexOf('|');
+    const string = testString.replace('|', '');
+    const hints = selectionHint(string, cursorIndex);
+    return {list: hints?.list, from: hints?.from, to: hints?.to};
+  }
+
+  it('suggests unquoted values for a numeric attribute', () => {
+    expect(testAutocomplete('not_materialized_in_hours:|')).toEqual({
+      list: [
+        expect.objectContaining({text: '1'}),
+        expect.objectContaining({text: '6'}),
+        expect.objectContaining({text: '24'}),
+      ],
+      from: 26,
+      to: 26,
+    });
+  });
+
+  it('suggests unquoted attribute+value results from a bare query', () => {
+    expect(testAutocomplete('1|')).toEqual(
+      expect.objectContaining({
+        list: expect.arrayContaining([
+          expect.objectContaining({text: 'not_materialized_in_hours:1'}),
+        ]),
+      }),
+    );
+  });
+
+  it('still quotes values for non-unquoted attributes', () => {
+    expect(testAutocomplete('key:|')).toEqual({
+      list: [
+        expect.objectContaining({text: '"asset1"'}),
+        expect.objectContaining({text: '"asset2"'}),
+      ],
+      from: 4,
+      to: 4,
+    });
+  });
+});
