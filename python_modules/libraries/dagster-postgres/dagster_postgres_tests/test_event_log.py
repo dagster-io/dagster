@@ -1,6 +1,7 @@
 import gc
 import time
 from contextlib import contextmanager
+from unittest.mock import patch
 
 import objgraph
 import pytest
@@ -19,6 +20,9 @@ from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_t
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_shared.yaml_utils import safe_load_yaml
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Connection
+from sqlalchemy.pool import QueuePool
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.event_log_storage import (
@@ -150,6 +154,38 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
                 assert from_url.postgres_url == from_explicit.postgres_url  # ty: ignore[unresolved-attribute]
+
+
+def test_has_table_returns_connection_to_pool() -> None:
+    engine = create_engine(
+        "sqlite://",
+        poolclass=QueuePool,
+        pool_size=1,
+        max_overflow=0,
+        pool_timeout=0.1,
+    )
+    pool = engine.pool
+    assert isinstance(pool, QueuePool)
+    storage = object.__new__(PostgresEventLogStorage)
+    storage._engine = engine  # noqa: SLF001
+    # Keep each Connection alive so the test fails unless has_table explicitly closes it.
+    retained_connections: list[Connection] = []
+    engine_connect = engine.connect
+
+    def connect_and_retain() -> Connection:
+        connection = engine_connect()
+        retained_connections.append(connection)
+        return connection
+
+    try:
+        with patch.object(engine, "connect", side_effect=connect_and_retain):
+            for _ in range(2):
+                assert not storage.has_table("event_logs")
+                assert pool.checkedout() == 0
+    finally:
+        for connection in retained_connections:
+            connection.close()
+        engine.dispose()
 
 
 def test_all_asset_keys_excludes_wiped_asset_on_legacy_index_path(conn_string):
