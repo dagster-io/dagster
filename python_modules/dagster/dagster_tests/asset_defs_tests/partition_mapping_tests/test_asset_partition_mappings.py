@@ -9,6 +9,7 @@ from dagster import (
     DagsterInstance,
     Definitions,
     IOManagerDefinition,
+    Nothing,
     PartitionsDefinition,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
@@ -880,6 +881,102 @@ def test_self_dependent_partition_mapping_with_asset_deps():
         assert current_partition_key - asset_1_key == timedelta(days=1)
 
     dg.materialize([the_multi_asset], partition_key="2023-08-20")
+
+
+def test_graph_backed_self_dependent_partition_mapping():
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2023-08-15")
+
+    @dg.op(ins={"self_dependent": dg.In(Nothing)})
+    def build_graph_asset_self_dependent(context: AssetExecutionContext):
+        if context.partition_key == "2023-08-15":
+            assert context.asset_partition_keys_for_input("self_dependent") == []
+        else:
+            self_dependent_key = datetime.strptime(
+                context.asset_partition_key_for_input("self_dependent"), "%Y-%m-%d"
+            )
+            current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
+
+            assert current_partition_key - self_dependent_key == timedelta(days=1)
+
+        return 1
+
+    @dg.graph_asset(
+        partitions_def=partitions_def,
+        ins={
+            "self_dependent": dg.AssetIn(
+                dagster_type=Nothing,
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            )
+        },
+    )
+    def self_dependent(self_dependent):
+        return build_graph_asset_self_dependent(self_dependent)
+
+    assert self_dependent.get_partition_mapping(dg.AssetKey("self_dependent")) == (
+        dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    )
+
+    assert dg.materialize([self_dependent], partition_key="2023-08-15").success
+    assert dg.materialize([self_dependent], partition_key="2023-08-16").success
+
+    @dg.asset(partitions_def=partitions_def)
+    def upstream():
+        return 1
+
+    @dg.op
+    def build_regular(upstream_value: int) -> int:
+        return upstream_value + 1
+
+    @dg.op(ins={"self_dependent": dg.In(Nothing), "upstream_value": dg.In(int)})
+    def build_self_dependent(context: AssetExecutionContext, upstream_value: int) -> int:
+        if context.partition_key == "2023-08-15":
+            assert context.asset_partition_keys_for_input("self_dependent") == []
+        else:
+            self_dependent_key = datetime.strptime(
+                context.asset_partition_key_for_input("self_dependent"), "%Y-%m-%d"
+            )
+            current_partition_key = datetime.strptime(context.partition_key, "%Y-%m-%d")
+
+            assert current_partition_key - self_dependent_key == timedelta(days=1)
+
+        return upstream_value + 1
+
+    @dg.graph_multi_asset(
+        outs={
+            "regular": dg.AssetOut(),
+            "self_dependent": dg.AssetOut(),
+        },
+        ins={
+            "self_dependent": dg.AssetIn(
+                dagster_type=Nothing,
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+            ),
+        },
+        internal_asset_deps={
+            "regular": {dg.AssetKey("upstream")},
+            "self_dependent": {dg.AssetKey("upstream"), dg.AssetKey("self_dependent")},
+        },
+        partitions_def=partitions_def,
+    )
+    def graph_backed_asset(upstream, self_dependent):
+        return {
+            "regular": build_regular(upstream),
+            "self_dependent": build_self_dependent(
+                upstream_value=upstream,
+                self_dependent=self_dependent,
+            ),
+        }
+
+    assert graph_backed_asset.asset_deps == {
+        dg.AssetKey("regular"): {dg.AssetKey("upstream")},
+        dg.AssetKey("self_dependent"): {dg.AssetKey("upstream"), dg.AssetKey("self_dependent")},
+    }
+    assert graph_backed_asset.get_partition_mapping(dg.AssetKey("self_dependent")) == (
+        dg.TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)
+    )
+
+    assert dg.materialize([upstream, graph_backed_asset], partition_key="2023-08-15").success
+    assert dg.materialize([upstream, graph_backed_asset], partition_key="2023-08-16").success
 
 
 def test_dynamic_partition_mapping_with_asset_deps():
