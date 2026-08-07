@@ -36,8 +36,6 @@ def _dedupe_list(values):
     return new_list
 
 
-# Lists that don't make sense to append when they're set from two different raw k8s configs,
-# even if deep-merging
 ALWAYS_SHALLOW_MERGE_LIST_FIELDS = {
     "command",
     "args",
@@ -107,7 +105,7 @@ class K8sContainerContext(
         )
 
         run_k8s_config = K8sContainerContext._merge_k8s_config(
-            top_level_k8s_config._replace(  # remove k8s service/deployment fields
+            top_level_k8s_config._replace(
                 deployment_metadata={},
                 service_metadata={},
                 service_spec_config={},
@@ -116,7 +114,7 @@ class K8sContainerContext(
         )
 
         server_k8s_config = K8sContainerContext._merge_k8s_config(
-            top_level_k8s_config._replace(  # remove k8s job fields
+            top_level_k8s_config._replace(
                 job_config={},
                 job_metadata={},
                 job_spec_config={},
@@ -218,7 +216,6 @@ class K8sContainerContext(
         onto_config: UserDefinedDagsterK8sConfig,
         from_config: UserDefinedDagsterK8sConfig,
     ) -> UserDefinedDagsterK8sConfig:
-        # Keys are always the same and initialized in constructor
         merge_behavior = from_config.merge_behavior
         onto_dict = onto_config.to_dict()
         from_dict = from_config.to_dict()
@@ -267,8 +264,7 @@ class K8sContainerContext(
         self,
         other: "K8sContainerContext",
     ) -> "K8sContainerContext":
-        # Lists of attributes that can be combined are combined, scalar values are replaced
-        # prefering the passed in container context
+
         return K8sContainerContext(
             server_k8s_config=self._merge_k8s_config(
                 self.server_k8s_config, other.server_k8s_config
@@ -500,7 +496,6 @@ class K8sContainerContext(
                 K8sContainerContext(run_k8s_config=user_defined_k8s_config)
             )
 
-        # If there's an allowlist, make sure user_defined_container_context doesn't violate it
         if run_launcher:
             user_defined_container_context = (
                 user_defined_container_context.validate_user_k8s_config_for_run(
@@ -509,7 +504,7 @@ class K8sContainerContext(
                 )
             )
 
-        return context.merge(user_defined_container_context)
+        return user_defined_container_context.merge(context)
 
     @staticmethod
     def create_from_config(run_container_context) -> "K8sContainerContext":
