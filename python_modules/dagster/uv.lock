@@ -12,10 +12,6 @@ conflicts = [[
     { package = "dagster", group = "test-sqlalchemy-1-4" },
 ]]
 
-[options]
-exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
-exclude-newer-span = "PT48H"
-
 [[package]]
 name = "aiofile"
 version = "3.9.0"
@@ -665,6 +661,7 @@ dependencies = [
     { name = "antlr4-python3-runtime" },
     { name = "click" },
     { name = "coloredlogs" },
+    { name = "dagster-cron" },
     { name = "dagster-pipes" },
     { name = "dagster-shared" },
     { name = "docstring-parser" },
@@ -814,6 +811,7 @@ requires-dist = [
     { name = "boto3-stubs", extras = ["essential"], marker = "extra == 'ty'" },
     { name = "click", specifier = ">=5.0,<9.0" },
     { name = "coloredlogs", specifier = ">=6.1,<=14.0" },
+    { name = "dagster-cron", editable = "../libraries/dagster-cron" },
     { name = "dagster-pipes", editable = "../dagster-pipes" },
     { name = "dagster-shared", editable = "../libraries/dagster-shared" },
     { name = "docker", marker = "extra == 'docker'" },
@@ -979,6 +977,22 @@ test = [
     { name = "pytest", specifier = ">=8" },
     { name = "pytest-mock", specifier = "==3.14.0" },
     { name = "pytest-rerunfailures" },
+]
+
+[[package]]
+name = "dagster-cron"
+version = "1!0+dev"
+source = { editable = "../libraries/dagster-cron" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+test = [
+    { name = "croniter" },
+    { name = "maturin", specifier = ">=1.9,<2" },
+    { name = "pytest" },
+    { name = "python-dateutil" },
+    { name = "pytz" },
 ]
 
 [[package]]

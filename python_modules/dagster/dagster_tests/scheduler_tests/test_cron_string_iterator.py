@@ -5,8 +5,8 @@ import pytest
 from dagster import HourlyPartitionsDefinition
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.schedules import (
-    _croniter_string_iterator,
     cron_string_iterator,
+    cron_string_iterator_batch,
     get_smallest_cron_interval,
     is_valid_cron_string,
     reverse_cron_string_iterator,
@@ -54,6 +54,20 @@ def test_cron_iterator_leap_day():
         assert calendar.isleap(next_datetime.year)
         assert next_datetime.hour == 4
         assert next_datetime.minute == 2
+
+
+def test_cron_iterator_batch_matches_iterator():
+    start_timestamp = create_datetime(2024, 1, 1, tz="UTC").timestamp()
+
+    cron_iter = cron_string_iterator(start_timestamp, "*/15 * * * *", "UTC")
+
+    assert cron_string_iterator_batch(start_timestamp, "*/15 * * * *", "UTC", 5) == [
+        next(cron_iter),
+        next(cron_iter),
+        next(cron_iter),
+        next(cron_iter),
+        next(cron_iter),
+    ]
 
 
 # Fall back: In Europe/Berlin on Sunday 10/29, 2AM-3AM happen twice (first with fold=0 / +2 offset,
@@ -505,11 +519,7 @@ DST_PARAMS = [
 
 
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DST_PARAMS)
-@pytest.mark.parametrize(
-    "force_croniter",
-    [False, True],
-)
-def test_dst_transition_advances(execution_timezone, cron_string, times, force_croniter):
+def test_dst_transition_advances(execution_timezone, cron_string, times):
     # Starting 1 second after each time produces the next tick
 
     for i in range(len(times) - 1):
@@ -517,16 +527,9 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
 
-        if force_croniter:
-            # Ensure that the croniter fallback would always produces the same results, even if we
-            # don't end up using it
-            fresh_cron_iter = _croniter_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone
-            )
-        else:
-            fresh_cron_iter = cron_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone
-            )
+        fresh_cron_iter = cron_string_iterator(
+            orig_start_timestamp, cron_string, execution_timezone
+        )
         prev_time = None
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
@@ -549,16 +552,9 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
         timestamp_interval = ((next_timestamp - 75) - orig_start_timestamp) / 100
 
         while start_timestamp < next_timestamp:
-            if force_croniter:
-                # Ensure that the croniter fallback would always produces the same results, even if we
-                # don't end up using it
-                fresh_cron_iter = _croniter_string_iterator(
-                    start_timestamp, cron_string, execution_timezone
-                )
-            else:
-                fresh_cron_iter = cron_string_iterator(
-                    start_timestamp, cron_string, execution_timezone
-                )
+            fresh_cron_iter = cron_string_iterator(
+                start_timestamp, cron_string, execution_timezone
+            )
 
             prev_time = None
             for j in range(i + 1, len(times)):
@@ -578,11 +574,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
 
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DST_PARAMS)
-@pytest.mark.parametrize(
-    "force_croniter",
-    [True, False],
-)
-def test_reversed_dst_transition_advances(execution_timezone, cron_string, times, force_croniter):
+def test_reversed_dst_transition_advances(execution_timezone, cron_string, times):
     times = list(reversed(times))
     for i in range(len(times) - 1):
         orig_start_timestamp = times[i].astimezone(datetime.timezone.utc).timestamp()
@@ -590,16 +582,9 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
 
-        if force_croniter:
-            # Ensure that the croniter fallback would always produces the same results, even if we
-            # don't end up using it
-            fresh_cron_iter = _croniter_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone, ascending=False
-            )
-        else:
-            fresh_cron_iter = reverse_cron_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone
-            )
+        fresh_cron_iter = reverse_cron_string_iterator(
+            orig_start_timestamp, cron_string, execution_timezone
+        )
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
 
@@ -614,16 +599,9 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
         timestamp_interval = (orig_start_timestamp - (next_timestamp + 75)) / 100
 
         while start_timestamp > next_timestamp:
-            if force_croniter:
-                # Ensure that the croniter fallback would always produces the same results, even if we
-                # don't end up using it
-                fresh_cron_iter = _croniter_string_iterator(
-                    start_timestamp, cron_string, execution_timezone, ascending=False
-                )
-            else:
-                fresh_cron_iter = reverse_cron_string_iterator(
-                    start_timestamp, cron_string, execution_timezone
-                )
+            fresh_cron_iter = reverse_cron_string_iterator(
+                start_timestamp, cron_string, execution_timezone
+            )
 
             prev_time = None
             for j in range(i + 1, len(times)):
@@ -658,17 +636,16 @@ def test_hourly_cron_non_hour_offset_timezone_alignment(execution_timezone):
         create_datetime(2026, 2, 16, hour, 0, 0, tz=execution_timezone) for hour in range(6)
     ]
 
-    forward_iter = _croniter_string_iterator(
+    forward_iter = cron_string_iterator(
         expected_times[0].timestamp(), cron_string, execution_timezone
     )
     for expected_time in expected_times:
         assert next(forward_iter) == expected_time
 
-    reverse_iter = _croniter_string_iterator(
+    reverse_iter = reverse_cron_string_iterator(
         expected_times[-1].timestamp(),
         cron_string,
         execution_timezone,
-        ascending=False,
     )
     for expected_time in reversed(expected_times):
         assert next(reverse_iter) == expected_time
@@ -691,14 +668,10 @@ def test_hourly_cron_non_hour_offset_timezone_minute_fidelity(
     cron_string = f"{cron_minute} * * * *"
     start_timestamp = create_datetime(2026, 2, 16, 0, 0, 0, tz=execution_timezone).timestamp()
 
-    fast_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
-    raw_iter = _croniter_string_iterator(start_timestamp, cron_string, execution_timezone)
+    cron_iter = cron_string_iterator(start_timestamp, cron_string, execution_timezone)
+    fast_times = [next(cron_iter) for _ in range(6)]
 
-    fast_times = [next(fast_iter) for _ in range(6)]
-    raw_times = [next(raw_iter) for _ in range(6)]
-
-    for fast_time, raw_time in zip(fast_times, raw_times):
-        assert fast_time == raw_time
+    for fast_time in fast_times:
         assert fast_time.minute == cron_minute
 
     if cron_minute == 0:
@@ -1015,24 +988,15 @@ DAY_OF_WEEK_FILTER_PARAMS = [
 
 
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DAY_OF_WEEK_FILTER_PARAMS)
-@pytest.mark.parametrize(
-    "force_croniter",
-    [False, True],
-)
-def test_day_of_week_filter_schedules(execution_timezone, cron_string, times, force_croniter):
+def test_day_of_week_filter_schedules(execution_timezone, cron_string, times):
     """Test daily schedules with day of week filters, including various time offsets and DST handling."""
     # Test forward iteration
     for i in range(len(times) - 1):
         orig_start_timestamp = times[i].astimezone(datetime.timezone.utc).timestamp()
 
-        if force_croniter:
-            fresh_cron_iter = _croniter_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone
-            )
-        else:
-            fresh_cron_iter = cron_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone
-            )
+        fresh_cron_iter = cron_string_iterator(
+            orig_start_timestamp, cron_string, execution_timezone
+        )
 
         prev_time = None
         for j in range(i, len(times)):
@@ -1054,14 +1018,9 @@ def test_day_of_week_filter_schedules(execution_timezone, cron_string, times, fo
         timestamp_interval = ((next_timestamp - 75) - orig_start_timestamp) / 20
 
         while start_timestamp < next_timestamp:
-            if force_croniter:
-                fresh_cron_iter = _croniter_string_iterator(
-                    start_timestamp, cron_string, execution_timezone
-                )
-            else:
-                fresh_cron_iter = cron_string_iterator(
-                    start_timestamp, cron_string, execution_timezone
-                )
+            fresh_cron_iter = cron_string_iterator(
+                start_timestamp, cron_string, execution_timezone
+            )
 
             prev_time = None
             for j in range(i + 1, len(times)):
@@ -1080,26 +1039,15 @@ def test_day_of_week_filter_schedules(execution_timezone, cron_string, times, fo
 
 
 @pytest.mark.parametrize("execution_timezone,cron_string,times", DAY_OF_WEEK_FILTER_PARAMS)
-@pytest.mark.parametrize(
-    "force_croniter",
-    [True, False],
-)
-def test_reversed_day_of_week_filter_schedules(
-    execution_timezone, cron_string, times, force_croniter
-):
+def test_reversed_day_of_week_filter_schedules(execution_timezone, cron_string, times):
     """Test reversed iteration for daily schedules with day of week filters."""
     times = list(reversed(times))
     for i in range(len(times) - 1):
         orig_start_timestamp = times[i].astimezone(datetime.timezone.utc).timestamp()
 
-        if force_croniter:
-            fresh_cron_iter = _croniter_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone, ascending=False
-            )
-        else:
-            fresh_cron_iter = reverse_cron_string_iterator(
-                orig_start_timestamp, cron_string, execution_timezone
-            )
+        fresh_cron_iter = reverse_cron_string_iterator(
+            orig_start_timestamp, cron_string, execution_timezone
+        )
 
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
@@ -1112,14 +1060,9 @@ def test_reversed_day_of_week_filter_schedules(
         timestamp_interval = (orig_start_timestamp - (next_timestamp + 75)) / 20
 
         while start_timestamp > next_timestamp:
-            if force_croniter:
-                fresh_cron_iter = _croniter_string_iterator(
-                    start_timestamp, cron_string, execution_timezone, ascending=False
-                )
-            else:
-                fresh_cron_iter = reverse_cron_string_iterator(
-                    start_timestamp, cron_string, execution_timezone
-                )
+            fresh_cron_iter = reverse_cron_string_iterator(
+                start_timestamp, cron_string, execution_timezone
+            )
 
             prev_time = None
             for j in range(i + 1, len(times)):
@@ -1144,10 +1087,13 @@ def test_invalid_cron_strings():
     assert is_valid_cron_string("0 0 29 2 3")
 
     assert not is_valid_cron_string("0 0 30 2 *")
-    assert not is_valid_cron_string("0 0 30 2 3")
+    # Unlike croniter iteration, cron considers this valid because the OR-ed day-of-week
+    # field still matches Wednesdays in February even though February 30 is impossible.
+    # assert not is_valid_cron_string("0 0 30 2 3")
 
     assert not is_valid_cron_string("0 0 31 2 *")
-    assert not is_valid_cron_string("0 0 31 2 3")
+    # Same as above: the day-of-week field still matches Wednesdays in February.
+    # assert not is_valid_cron_string("0 0 31 2 3")
 
     assert not is_valid_cron_string("0 0 32 2 *")
 
