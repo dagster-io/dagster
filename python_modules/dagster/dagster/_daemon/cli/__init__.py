@@ -57,6 +57,7 @@ def _get_heartbeat_tolerance():
     required=False,
     default="colored",
     help="Format of the log output from the webserver",
+    envvar="DAGSTER_DAEMON_LOG_FORMAT",
 )
 @click.option(
     "--instance-ref",
