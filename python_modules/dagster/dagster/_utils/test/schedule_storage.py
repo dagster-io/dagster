@@ -997,3 +997,54 @@ class TestScheduleStorage:
 
         res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("asset_one"), limit=100)
         assert len(res) == 0
+
+    def test_auto_materialize_asset_evaluations_timestamp_uses_python_utc_clock(
+        self, storage
+    ) -> None:
+        """Regression test for https://github.com/dagster-io/dagster/issues/32901.
+
+        On PostgreSQL with a non-UTC server timezone (e.g. IST, UTC+5:30), the DB's
+        CURRENT_TIMESTAMP returns local time. If that value is then stamped as UTC by
+        utc_datetime_from_naive(), the resulting Unix epoch is offset by the full UTC
+        difference, and the frontend doubles it when converting back to local time.
+
+        The fix is to pass create_timestamp=get_current_datetime() explicitly in the
+        INSERT so the Python process always controls the timestamp in UTC.
+
+        This test verifies the fix by pinning the Python clock with freeze_time and
+        asserting that the stored record's timestamp exactly matches the frozen time,
+        not a DB-derived value.
+        """
+        if not self.can_store_auto_materialize_asset_evaluations():
+            pytest.skip("Storage cannot store auto materialize asset evaluations")
+
+        condition_snapshot = AutomationConditionNodeSnapshot(
+            class_name="foo", description="bar", unique_id=""
+        )
+        freeze_datetime = get_current_datetime()
+
+        with freeze_time(freeze_datetime):
+            storage.add_auto_materialize_asset_evaluations(
+                evaluation_id=42,
+                asset_evaluations=[
+                    AutomationConditionEvaluation(
+                        condition_snapshot=condition_snapshot,
+                        true_subset=SerializableEntitySubset(
+                            key=AssetKey("ts_asset"), value=False
+                        ),
+                        candidate_subset=SerializableEntitySubset(
+                            key=AssetKey("ts_asset"), value=False
+                        ),
+                        start_timestamp=0,
+                        end_timestamp=1,
+                        subsets_with_metadata=[],
+                        child_evaluations=[],
+                    ).with_run_ids(set()),
+                ],
+            )
+
+        res = storage.get_auto_materialize_asset_evaluations(key=AssetKey("ts_asset"), limit=100)
+        assert len(res) == 1
+        # timestamp must equal the Python-side UTC clock at insert time, not whatever
+        # the DB's CURRENT_TIMESTAMP would return (which varies with server timezone).
+        assert res[0].timestamp == freeze_datetime.timestamp()
