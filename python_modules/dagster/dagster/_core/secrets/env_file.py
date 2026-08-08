@@ -83,9 +83,9 @@ class EnvFileLoader(SecretsLoader, ConfigurableClass):
         self._base_dir = base_dir or os.getcwd()
 
     def get_secrets_for_environment(self, location_name: str | None) -> dict[str, str]:
-        env_file_path = os.path.join(self._base_dir, ".env")
-
-        env_var_dict = get_env_var_dict(env_file_path)
+        # get_env_var_dict takes the directory containing the .env file and joins
+        # ".env" onto it itself - joining it here too would look for <base_dir>/.env/.env
+        env_var_dict = get_env_var_dict(self._base_dir)
 
         if len(env_var_dict):
             logging.getLogger("dagster").info(
