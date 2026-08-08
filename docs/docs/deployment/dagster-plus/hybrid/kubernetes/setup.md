@@ -84,9 +84,8 @@ helm --namespace dagster-cloud upgrade agent \
 
 ## Troubleshooting
 
-You can see basic health information about your agent in the Dagster+ UI:
-
 [comment]: <> (TODO: Screenshot of Dagster+ Deployments agents tab)
+You can see basic health information about your agent in the Dagster+ UI.
 
 ### View logs
 
