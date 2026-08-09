@@ -800,16 +800,22 @@ class DagsterKubernetesClient:
                     tail_lines = int(
                         os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
                     )
-                    debug_info = self.get_pod_debug_info(
-                        pod_name,
-                        namespace,
-                        pod=pod,
-                        log_tail_lines=tail_lines,
-                    )
                     logs = "\n\n".join(error_logs)
+                    try:
+                        debug_info = self.get_pod_debug_info(
+                            pod_name,
+                            namespace,
+                            pod=pod,
+                            log_tail_lines=tail_lines,
+                        )
+                    except Exception as e:
+                        debug_info = (
+                            f"Debug information for pod {pod_name} could not be collected: "
+                            f"{e.__class__.__name__}: {e}"
+                        )
                     raise DagsterK8sError(
                         f"Pod {pod_name} terminated but some containers exited with errors:\n{logs}"
-                        f"{debug_info}"
+                        f"\n\n{debug_info}"
                     )
                 else:
                     self.logger(f"Pod {pod_name} exited successfully")
@@ -877,6 +883,14 @@ class DagsterKubernetesClient:
             f"Pod status: {pod.status.phase}"
             + (f": {pod.status.message}" if pod.status.message else "")
         ]
+
+        if pod.status.init_container_statuses:
+            pod_status.extend(
+                [
+                    f"Init container '{status.name}' status: {self._get_container_status_str(status)}"
+                    for status in pod.status.init_container_statuses
+                ]
+            )
 
         if pod.status.container_statuses:
             pod_status.extend(
@@ -970,16 +984,19 @@ class DagsterKubernetesClient:
 
         specific_warnings = []
 
-        container_statuses_by_name = (
-            {status.name: status for status in pod.status.container_statuses}
-            if pod and pod.status and pod.status.container_statuses
-            else {}
-        )
+        container_statuses = []
+        containers = []
+        if pod and pod.status:
+            container_statuses.extend(pod.status.init_container_statuses or [])
+            container_statuses.extend(pod.status.container_statuses or [])
+        if pod and pod.spec:
+            containers.extend(pod.spec.init_containers or [])
+            containers.extend(pod.spec.containers or [])
+
+        container_statuses_by_name = {status.name: status for status in container_statuses}
 
         if include_container_logs:
-            for container in (
-                pod.spec.containers if (pod and pod.spec and pod.spec.containers) else []
-            ):
+            for container in containers:
                 container_name = container.name
                 log_str = ""
 
