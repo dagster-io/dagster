@@ -800,7 +800,6 @@ class DagsterKubernetesClient:
                     tail_lines = int(
                         os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
                     )
-                    logs = "\n\n".join(error_logs)
                     try:
                         debug_info = self.get_pod_debug_info(
                             pod_name,
@@ -810,12 +809,14 @@ class DagsterKubernetesClient:
                         )
                     except Exception as e:
                         debug_info = (
-                            f"Debug information for pod {pod_name} could not be collected: "
-                            f"{e.__class__.__name__}: {e}"
+                            f"Failed to collect debug information for pod {pod_name}: "
+                            f"{type(e).__name__}: {e}"
                         )
+
+                    logs = "\n\n".join(error_logs)
                     raise DagsterK8sError(
-                        f"Pod {pod_name} terminated but some containers exited with errors:\n{logs}"
-                        f"\n\n{debug_info}"
+                        f"Pod {pod_name} terminated but some containers exited with errors:\n"
+                        f"{logs}\n\n{debug_info}"
                     )
                 else:
                     self.logger(f"Pod {pod_name} exited successfully")
@@ -887,7 +888,8 @@ class DagsterKubernetesClient:
         if pod.status.init_container_statuses:
             pod_status.extend(
                 [
-                    f"Init container '{status.name}' status: {self._get_container_status_str(status)}"
+                    f"Init container '{status.name}' status: "
+                    f"{self._get_container_status_str(status)}"
                     for status in pod.status.init_container_statuses
                 ]
             )
@@ -986,12 +988,13 @@ class DagsterKubernetesClient:
 
         container_statuses = []
         containers = []
-        if pod and pod.status:
-            container_statuses.extend(pod.status.init_container_statuses or [])
-            container_statuses.extend(pod.status.container_statuses or [])
-        if pod and pod.spec:
-            containers.extend(pod.spec.init_containers or [])
-            containers.extend(pod.spec.containers or [])
+        if pod:
+            if pod.status:
+                container_statuses.extend(pod.status.init_container_statuses or [])
+                container_statuses.extend(pod.status.container_statuses or [])
+            if pod.spec:
+                containers.extend(pod.spec.init_containers or [])
+                containers.extend(pod.spec.containers or [])
 
         container_statuses_by_name = {status.name: status for status in container_statuses}
 
@@ -1035,6 +1038,10 @@ class DagsterKubernetesClient:
                             log_str = (
                                 f"Failure fetching pod logs for container '{container_name}': {e}"
                             )
+                    except urllib3.exceptions.HTTPError as e:
+                        log_str = (
+                            f"Failure fetching pod logs for container '{container_name}': {e}"
+                        )
 
                 log_strs.append(log_str)
 
@@ -1059,7 +1066,7 @@ class DagsterKubernetesClient:
                         event_strs.append(f"{event.reason}: {event.message}{count_str}")
                     warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
 
-            except kubernetes.client.rest.ApiException as e:
+            except (kubernetes.client.rest.ApiException, urllib3.exceptions.HTTPError) as e:
                 warning_str = f"Failure fetching pod events: {e}"
 
         return (
