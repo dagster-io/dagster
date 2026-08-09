@@ -697,6 +697,7 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
             f'Pod {pod_name} terminated but some containers exited with errors:\n'
             f'Container "{container_name}" failed with message: "error_message". '
             'exit_code=1, reason="Error".'
+            '\n\n'
             'pod debug info'
         )
     )

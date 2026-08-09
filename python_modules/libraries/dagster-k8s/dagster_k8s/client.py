@@ -764,7 +764,9 @@ class DagsterKubernetesClient:
                     KubernetesWaitingReasons.CrashLoopBackOff,
                     KubernetesWaitingReasons.RunContainerError,
                 ]:
-                    debug_info = self.get_pod_debug_info(pod_name, namespace, pod=pod)
+                    debug_info = self._get_pod_debug_info_for_failure(
+                        pod_name, namespace, pod=pod
+                    )
                     raise DagsterK8sError(
                         f'Failed: Reason="{state.waiting.reason}"'
                         f' Message="{state.waiting.message}"\n{debug_info}'
@@ -800,18 +802,12 @@ class DagsterKubernetesClient:
                     tail_lines = int(
                         os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
                     )
-                    try:
-                        debug_info = self.get_pod_debug_info(
-                            pod_name,
-                            namespace,
-                            pod=pod,
-                            log_tail_lines=tail_lines,
-                        )
-                    except Exception as e:
-                        debug_info = (
-                            f"Failed to collect debug information for pod {pod_name}: "
-                            f"{type(e).__name__}: {e}"
-                        )
+                    debug_info = self._get_pod_debug_info_for_failure(
+                        pod_name,
+                        namespace,
+                        pod=pod,
+                        log_tail_lines=tail_lines,
+                    )
 
                     logs = "\n\n".join(error_logs)
                     raise DagsterK8sError(
@@ -966,6 +962,28 @@ class DagsterKubernetesClient:
             + "".join(["\n\n" + event_str for event_str in event_strs])
         )
 
+    def _get_pod_debug_info_for_failure(
+        self,
+        pod_name: str,
+        namespace: str,
+        pod: Optional[kubernetes.client.V1Pod] = None,
+        log_tail_lines: int | None = None,
+    ) -> str:
+        try:
+            if log_tail_lines is None:
+                return self.get_pod_debug_info(pod_name, namespace, pod=pod)
+            return self.get_pod_debug_info(
+                pod_name,
+                namespace,
+                pod=pod,
+                log_tail_lines=log_tail_lines,
+            )
+        except Exception as e:
+            return (
+                f"Failed to collect debug information for pod {pod_name}: "
+                f"{type(e).__name__}: {e}"
+            )
+
     def get_pod_debug_info(
         self,
         pod_name,
@@ -1038,9 +1056,10 @@ class DagsterKubernetesClient:
                             log_str = (
                                 f"Failure fetching pod logs for container '{container_name}': {e}"
                             )
-                    except urllib3.exceptions.HTTPError as e:
+                    except Exception as e:
                         log_str = (
-                            f"Failure fetching pod logs for container '{container_name}': {e}"
+                            f"Failure fetching pod logs for container '{container_name}': "
+                            f"{type(e).__name__}: {e}"
                         )
 
                 log_strs.append(log_str)
@@ -1066,8 +1085,8 @@ class DagsterKubernetesClient:
                         event_strs.append(f"{event.reason}: {event.message}{count_str}")
                     warning_str = "Warning events for pod:\n" + "\n".join(event_strs)
 
-            except (kubernetes.client.rest.ApiException, urllib3.exceptions.HTTPError) as e:
-                warning_str = f"Failure fetching pod events: {e}"
+            except Exception as e:
+                warning_str = f"Failure fetching pod events: {type(e).__name__}: {e}"
 
         return (
             f"Debug information for pod {pod_name}:"
