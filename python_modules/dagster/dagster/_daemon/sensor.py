@@ -1160,6 +1160,7 @@ def _submit_run_requests(
     existing_backfills_by_key = fetch_existing_backfills(
         instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
     )
+    backfill_submission_lock = threading.Lock()
     check_after_runs_num = instance.get_tick_termination_check_interval()
 
     def submit_run_request(
@@ -1173,6 +1174,7 @@ def _submit_run_requests(
                 instance=instance,
                 remote_sensor=remote_sensor,
                 existing_backfills_by_key=existing_backfills_by_key,
+                backfill_submission_lock=backfill_submission_lock,
             )
         else:
             return _submit_run_request(
@@ -1273,10 +1275,11 @@ def _submit_backfill_request(
     instance: DagsterInstance,
     remote_sensor: RemoteSensor,
     existing_backfills_by_key: dict[str, PartitionBackfill],
+    backfill_submission_lock: threading.Lock,
 ) -> SubmitRunRequestResult:
     run_key = run_request.run_key
-    existing_backfill = existing_backfills_by_key.get(run_key) if run_key else None
-    if existing_backfill is not None:
+
+    def skipped_result(existing_backfill: PartitionBackfill) -> SubmitRunRequestResult:
         return SubmitRunRequestResult(
             run_key=run_key,
             error_info=None,
@@ -1284,6 +1287,12 @@ def _submit_backfill_request(
                 run_key=check.not_none(run_key), existing_backfill=existing_backfill
             ),
         )
+
+    if run_key:
+        with backfill_submission_lock:
+            existing_backfill = existing_backfills_by_key.get(run_key)
+        if existing_backfill is not None:
+            return skipped_result(existing_backfill)
 
     tags = {
         **(run_request.tags or {}),
@@ -1307,9 +1316,15 @@ def _submit_backfill_request(
         description=None,
         run_config=run_request.run_config,
     )
-    instance.add_backfill(backfill)
     if run_key:
-        existing_backfills_by_key[run_key] = backfill
+        with backfill_submission_lock:
+            existing_backfill = existing_backfills_by_key.get(run_key)
+            if existing_backfill is not None:
+                return skipped_result(existing_backfill)
+            instance.add_backfill(backfill)
+            existing_backfills_by_key[run_key] = backfill
+    else:
+        instance.add_backfill(backfill)
 
     return SubmitRunRequestResult(
         run_key=run_key, error_info=None, run=BackfillSubmission(backfill_id=backfill_id)

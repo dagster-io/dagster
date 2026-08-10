@@ -1,4 +1,7 @@
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -6,6 +9,7 @@ from dagster import DagsterInstance, sensor
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -19,6 +23,11 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.load_target import ModuleTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
+from dagster._daemon.sensor import (
+    BackfillSubmission,
+    SkippedSensorBackfill,
+    _submit_backfill_request,
+)
 from dagster._time import create_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
@@ -427,6 +436,62 @@ def test_public_partition_range_backfill_request(instance, executor):
         validate_tick(ticks[0], sensor, None, TickStatus.SKIPPED)
         assert ticks[0].run_keys == ["public-a-b"]
         assert not ticks[0].run_ids
+
+
+def test_duplicate_partition_range_run_key_with_concurrent_submission(instance):
+    with create_test_daemon_workspace_context(
+        workspace_load_target=module_target, instance=instance
+    ) as workspace_context:
+        repo = load_remote_repo(workspace_context, "__repository__")
+        sensor = repo.get_sensor(public_partition_range_backfill_request_sensor.name)
+        run_request = RunRequest(
+            run_key="duplicate-public-a-b",
+            asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
+                asset_partitions_set={
+                    AssetKeyPartitionKey(public_partitioned_asset.key, "a"),
+                    AssetKeyPartitionKey(public_partitioned_asset.key, "b"),
+                },
+                asset_graph=defs.get_repository_def().asset_graph,
+            ),
+        )
+
+        construction_barrier = threading.Barrier(2)
+        original_from_asset_graph_subset = PartitionBackfill.from_asset_graph_subset
+        existing_backfills_by_key: dict[str, PartitionBackfill] = {}
+        backfill_submission_lock = threading.Lock()
+
+        def synchronized_from_asset_graph_subset(*args, **kwargs):
+            construction_barrier.wait(timeout=5)
+            return original_from_asset_graph_subset(*args, **kwargs)
+
+        with (
+            mock.patch.object(
+                PartitionBackfill,
+                "from_asset_graph_subset",
+                side_effect=synchronized_from_asset_graph_subset,
+            ),
+            ThreadPoolExecutor(max_workers=2) as submit_executor,
+        ):
+            results = [
+                future.result()
+                for future in [
+                    submit_executor.submit(
+                        _submit_backfill_request,
+                        backfill_id=f"backfill-{index}",
+                        run_request=run_request,
+                        instance=instance,
+                        remote_sensor=sensor,
+                        existing_backfills_by_key=existing_backfills_by_key,
+                        backfill_submission_lock=backfill_submission_lock,
+                    )
+                    for index in range(2)
+                ]
+            ]
+
+        backfills = instance.get_backfills()
+        assert len(backfills) == 1
+        assert sum(isinstance(result.run, BackfillSubmission) for result in results) == 1
+        assert sum(isinstance(result.run, SkippedSensorBackfill) for result in results) == 1
 
 
 def test_public_partition_range_backfill_uses_single_run_policy(instance, executor):
