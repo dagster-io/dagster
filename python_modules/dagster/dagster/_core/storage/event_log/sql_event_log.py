@@ -2665,7 +2665,9 @@ class SqlEventLogStorage(EventLogStorage):
 
         # initialize outside of connection context
         has_slots_col = self.has_pending_steps_slots_col
-        with self.index_connection() as conn:
+        # a real transaction (not statement-level autocommit) is required so that the slot-row
+        # locks are held until the pending-row assignments commit
+        with self.index_transaction() as conn:
             # sort keys so that concurrent assigners always lock pools in the same order
             for key in sorted(set(concurrency_keys)):
                 while True:
@@ -2866,7 +2868,9 @@ class SqlEventLogStorage(EventLogStorage):
             step_key (str): The step key to claim a slot for.
             slots (int): The number of slots to claim.
         """
-        with self.index_connection() as conn:
+        # a real transaction (not statement-level autocommit) is required so that the
+        # FOR UPDATE SKIP LOCKED row locks are held until the claiming update commits
+        with self.index_transaction() as conn:
             rows = conn.execute(
                 db_select([ConcurrencySlotsTable.c.id])
                 .select_from(ConcurrencySlotsTable)
