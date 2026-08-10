@@ -44,6 +44,7 @@ export type PipelineExplorerRootQuery = {
         description: string | null;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        groupName: string;
         externalJobSource: string | null;
         metadataEntries: Array<
           | {
@@ -1640,4 +1641,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = '4221d0d8b2d5f733513cc046448f5d9931186904aa33429dde0883718f3922e3';
+export const PipelineExplorerRootQueryVersion = 'e236b5fdeb0607f37337cf686c3177cc1d6eee618e421bca06ace924c80f2a56';

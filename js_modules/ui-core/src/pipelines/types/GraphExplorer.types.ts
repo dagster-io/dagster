@@ -4537,6 +4537,7 @@ export type GraphExplorerFragment_PipelineSnapshot = {
   description: string | null;
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  groupName: string;
   externalJobSource: string | null;
   metadataEntries: Array<
     | {
