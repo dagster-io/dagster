@@ -57,16 +57,23 @@ def test_for_asset_partition_range() -> None:
     @dg.asset(partitions_def=partitions_def)
     def partitioned_asset() -> None: ...
 
+    @dg.asset(partitions_def=partitions_def)
+    def other_partitioned_asset() -> None: ...
+
     @dg.asset
     def unpartitioned_asset() -> None: ...
 
-    defs = dg.Definitions(assets=[partitioned_asset, unpartitioned_asset])
+    defs = dg.Definitions(assets=[partitioned_asset, other_partitioned_asset, unpartitioned_asset])
 
-    @dg.sensor(asset_selection=[partitioned_asset, unpartitioned_asset])
+    @dg.sensor(asset_selection=[partitioned_asset, other_partitioned_asset, unpartitioned_asset])
     def range_sensor():
         return dg.RunRequest.for_asset_partition_range(
             run_key="a-b",
-            asset_selection=[partitioned_asset.key, unpartitioned_asset.key],
+            asset_selection=[
+                partitioned_asset.key,
+                other_partitioned_asset.key,
+                unpartitioned_asset.key,
+            ],
             partition_key_range=dg.PartitionKeyRange("a", "b"),
             run_config={"foo": "bar"},
             tags={"tagkey": "tagvalue"},
@@ -86,6 +93,8 @@ def test_for_asset_partition_range() -> None:
     assert set(request.asset_graph_subset.iterate_asset_partitions()) == {
         AssetKeyPartitionKey(partitioned_asset.key, "a"),
         AssetKeyPartitionKey(partitioned_asset.key, "b"),
+        AssetKeyPartitionKey(other_partitioned_asset.key, "a"),
+        AssetKeyPartitionKey(other_partitioned_asset.key, "b"),
         AssetKeyPartitionKey(unpartitioned_asset.key),
     }
 
@@ -110,6 +119,71 @@ def test_for_asset_partition_range_requires_multiple_partitions() -> None:
         with pytest.raises(
             dg.DagsterInvalidInvocationError,
             match="partition_key_range must contain at least two partitions",
+        ):
+            range_sensor.evaluate_tick(context)
+
+
+def test_for_asset_partition_range_requires_same_partitions_definition() -> None:
+    daily_partitions_def = dg.DailyPartitionsDefinition(
+        start_date="2024-05-01", end_date="2024-06-03"
+    )
+    monthly_partitions_def = dg.MonthlyPartitionsDefinition(
+        start_date="2024-05-01", end_date="2024-07-01"
+    )
+
+    @dg.asset(partitions_def=daily_partitions_def)
+    def daily_asset() -> None: ...
+
+    @dg.asset(partitions_def=monthly_partitions_def)
+    def monthly_asset() -> None: ...
+
+    defs = dg.Definitions(assets=[daily_asset, monthly_asset])
+
+    @dg.sensor(asset_selection=[daily_asset, monthly_asset])
+    def range_sensor():
+        return dg.RunRequest.for_asset_partition_range(
+            asset_selection=[daily_asset.key, monthly_asset.key],
+            partition_key_range=dg.PartitionKeyRange("2024-05-01", "2024-06-01"),
+        )
+
+    with dg.instance_for_test() as instance:
+        context = dg.build_sensor_context(definitions=defs, instance=instance)
+        with pytest.raises(
+            dg.DagsterInvalidInvocationError,
+            match="must have the same partitions definition",
+        ):
+            range_sensor.evaluate_tick(context)
+
+
+@pytest.mark.parametrize(
+    ("partition_key_range", "invalid_endpoint"),
+    [
+        (dg.PartitionKeyRange("2024-05-02", "2024-06-01"), "start '2024-05-02'"),
+        (dg.PartitionKeyRange("2024-05-01", "2024-05-31"), "end '2024-05-31'"),
+    ],
+)
+def test_for_asset_partition_range_requires_valid_endpoint_keys(
+    partition_key_range: dg.PartitionKeyRange, invalid_endpoint: str
+) -> None:
+    partitions_def = dg.MonthlyPartitionsDefinition(start_date="2024-05-01", end_date="2024-07-01")
+
+    @dg.asset(partitions_def=partitions_def)
+    def partitioned_asset() -> None: ...
+
+    defs = dg.Definitions(assets=[partitioned_asset])
+
+    @dg.sensor(asset_selection=[partitioned_asset])
+    def range_sensor():
+        return dg.RunRequest.for_asset_partition_range(
+            asset_selection=[partitioned_asset.key],
+            partition_key_range=partition_key_range,
+        )
+
+    with dg.instance_for_test() as instance:
+        context = dg.build_sensor_context(definitions=defs, instance=instance)
+        with pytest.raises(
+            dg.DagsterInvalidInvocationError,
+            match=f"partition_key_range {invalid_endpoint} is not a valid partition key",
         ):
             range_sensor.evaluate_tick(context)
 

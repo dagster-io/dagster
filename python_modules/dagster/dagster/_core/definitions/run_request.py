@@ -199,8 +199,9 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         When processed by the sensor daemon, this request launches a backfill instead of a single
         run. The selected assets and partition range are validated after the sensor finishes
         evaluating, including any dynamic partition changes requested in the same sensor result.
-        All partitioned assets in ``asset_selection`` must contain at least two partitions in
-        ``partition_key_range``. Unpartitioned assets in the selection are also included.
+        All partitioned assets in ``asset_selection`` must have the same partitions definition,
+        both endpoints must be valid partition keys, and the range must contain at least two
+        partitions. Unpartitioned assets in the selection are also included.
 
         Args:
             run_key (Optional[str]): A key that ensures only one backfill is created across sensor
@@ -266,28 +267,50 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
                 f"together: {sorted(missing_required_asset_keys)}"
             )
 
-        partitioned_subsets: dict[AssetKey, PartitionsSubset] = {}
-        non_partitioned_asset_keys: set[AssetKey] = set()
-        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
-            for asset_key in asset_keys:
-                partitions_def = asset_graph.get(asset_key).partitions_def
-                if partitions_def is None:
-                    non_partitioned_asset_keys.add(asset_key)
-                else:
-                    partitioned_subsets[asset_key] = (
-                        partitions_def.empty_subset().with_partition_key_range(
-                            partitions_def, partition_key_range
-                        )
-                    )
-
-        if not partitioned_subsets:
+        partitioned_assets = [
+            (asset_key, partitions_def)
+            for asset_key in sorted(asset_keys)
+            if (partitions_def := asset_graph.get(asset_key).partitions_def) is not None
+        ]
+        if not partitioned_assets:
             raise DagsterInvalidInvocationError(
                 "asset_selection must contain at least one partitioned asset"
             )
+
+        partitions_def = partitioned_assets[0][1]
+        if any(
+            candidate_partitions_def != partitions_def
+            for _, candidate_partitions_def in partitioned_assets
+        ):
+            raise DagsterInvalidInvocationError(
+                "All partitioned assets in an asset partition range request must have the same "
+                "partitions definition"
+            )
+
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
+            for endpoint_name, partition_key in [
+                ("start", partition_key_range.start),
+                ("end", partition_key_range.end),
+            ]:
+                if not partitions_def.has_partition_key(partition_key):
+                    raise DagsterInvalidInvocationError(
+                        f"partition_key_range {endpoint_name} {partition_key!r} is not a valid "
+                        "partition key for the selected assets"
+                    )
+
+            partitioned_subsets: dict[AssetKey, PartitionsSubset] = {
+                asset_key: candidate_partitions_def.empty_subset().with_partition_key_range(
+                    candidate_partitions_def, partition_key_range
+                )
+                for asset_key, candidate_partitions_def in partitioned_assets
+            }
+
         if not all(len(subset) > 1 for subset in partitioned_subsets.values()):
             raise DagsterInvalidInvocationError(
                 "partition_key_range must contain at least two partitions for each partitioned asset"
             )
+
+        non_partitioned_asset_keys = asset_keys - set(partitioned_subsets)
 
         return RunRequest(
             run_key=self.run_key,
