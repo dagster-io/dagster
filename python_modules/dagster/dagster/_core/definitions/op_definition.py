@@ -183,7 +183,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
         self._pool = pool
         pool = _validate_pool(pool, tags)
-        self._pool_slots = _validate_pool_slots(pool_slots)
+        self._pool_slots = _validate_pool_slots(pool_slots, pool, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -630,12 +630,23 @@ VALID_POOL_NAME_REGEX_STR = r"^\S+$"  # any non-whitespace characters
 VALID_POOL_NAME_REGEX = re.compile(VALID_POOL_NAME_REGEX_STR)
 
 
-def _validate_pool_slots(pool_slots):
+def _validate_pool_slots(pool_slots, pool, tags):
     check.opt_int_param(pool_slots, "pool_slots")
-    if pool_slots is not None and pool_slots < 1:
+    if pool_slots is None:
+        return None
+
+    if pool_slots < 1:
         raise DagsterInvalidDefinitionError(
             f"pool_slots must be a positive integer, got {pool_slots}."
         )
+
+    tags = check.opt_mapping_param(tags, "tags")
+    if not pool and not tags.get(GLOBAL_CONCURRENCY_TAG):
+        raise DagsterInvalidDefinitionError(
+            f"pool_slots={pool_slots} was set without a pool, so it would have no effect. Set "
+            "the `pool` argument to specify which concurrency pool the slots apply to."
+        )
+
     return pool_slots
 
 

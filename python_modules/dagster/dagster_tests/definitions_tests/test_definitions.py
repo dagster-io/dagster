@@ -341,3 +341,24 @@ def test_pool_slots_invalid():
             @dg.op(pool="foo", pool_slots=pool_slots)
             def my_op():
                 pass
+
+
+def test_pool_slots_without_pool():
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="without a pool"):
+
+        @dg.op(pool_slots=2)
+        def my_op():
+            pass
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="without a pool"):
+
+        @dg.asset(pool_slots=2)
+        def my_asset():
+            pass
+
+    # the legacy concurrency key tag also identifies a pool, so pool_slots applies to it
+    @dg.op(tags={GLOBAL_CONCURRENCY_TAG: "foo"}, pool_slots=2)
+    def tag_based_op():
+        pass
+
+    assert tag_based_op.pool_slots == 2
