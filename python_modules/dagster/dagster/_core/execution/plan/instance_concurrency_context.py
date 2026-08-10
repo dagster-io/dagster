@@ -146,8 +146,11 @@ class InstanceConcurrencyContext:
                 "lower the step's pool_slots or raise the pool's limit."
             )
 
+        # only pass slots for weighted claims, so that external EventLogStorage implementations
+        # that predate the slots parameter keep working for default-weight steps
+        slots_kwargs = {"slots": pool_slots} if pool_slots > 1 else {}
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
-            concurrency_key, self._run_id, step_key, priority, pool_slots
+            concurrency_key, self._run_id, step_key, priority, **slots_kwargs
         )
 
         if not claim_status.is_claimed:
