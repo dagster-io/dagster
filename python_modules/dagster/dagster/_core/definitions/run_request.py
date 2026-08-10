@@ -20,6 +20,7 @@ from dagster._core.definitions.dynamic_partitions_request import (
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
+from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -31,7 +32,9 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.partitions.subset.partitions_subset import PartitionsSubset
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.instance.types import DynamicPartitionsStore
 
@@ -61,7 +64,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[str | No
 
 
 @public
-@whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
+@whitelist_for_serdes(kwargs_fields={"asset_graph_subset", "asset_partition_key_range"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     """Represents all the information required to launch a single run.  Must be returned by a
@@ -106,6 +109,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     partition_key: str | None
     asset_check_keys: Sequence[AssetCheckKey] | None
     asset_graph_subset: AssetGraphSubset | None
+    asset_partition_key_range: PartitionKeyRange | None
 
     def __new__(
         cls,
@@ -122,12 +126,12 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         from dagster._core.definitions.run_config import convert_config_input
 
         if kwargs.get("asset_graph_subset") is not None:
-            # asset_graph_subset is only passed if you use the RunRequest.for_asset_graph_subset helper
-            # constructor, so we assume that no other parameters were passed.
+            # Asset graph subset requests target a backfill, so single-run targeting fields do not
+            # apply. Backfill-level run keys, config, and tags are preserved.
             return super().__new__(
                 cls,
-                run_key=None,
-                run_config={},
+                run_key=run_key,
+                run_config=convert_config_input(run_config) or {},
                 tags=normalize_tags(tags),
                 job_name=None,
                 asset_selection=None,
@@ -137,6 +141,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
                 asset_graph_subset=check.inst_param(
                     kwargs["asset_graph_subset"], "asset_graph_subset", AssetGraphSubset
                 ),
+                asset_partition_key_range=None,
             )
 
         return super().__new__(
@@ -150,6 +155,11 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             partition_key=partition_key,
             asset_check_keys=asset_check_keys,
             asset_graph_subset=None,
+            asset_partition_key_range=check.opt_inst_param(
+                kwargs.get("asset_partition_key_range"),
+                "asset_partition_key_range",
+                PartitionKeyRange,
+            ),
         )
 
     @classmethod
@@ -172,6 +182,122 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         of assets or checks: job_name is set and there is no asset or check selection.
         """
         return bool(self.job_name) and not self.asset_selection and not self.asset_check_keys
+
+    @public
+    @classmethod
+    def for_asset_partition_range(
+        cls,
+        *,
+        run_key: str | None = None,
+        asset_selection: Sequence[AssetKey],
+        partition_key_range: PartitionKeyRange,
+        run_config: Union["RunConfig", Mapping[str, Any]] | None = None,
+        tags: Mapping[str, Any] | None = None,
+    ) -> "RunRequest":
+        """Constructs a request for an asset backfill over a contiguous partition range.
+
+        When processed by the sensor daemon, this request launches a backfill instead of a single
+        run. The selected assets and partition range are validated after the sensor finishes
+        evaluating, including any dynamic partition changes requested in the same sensor result.
+        All partitioned assets in ``asset_selection`` must contain at least two partitions in
+        ``partition_key_range``. Unpartitioned assets in the selection are also included.
+
+        Args:
+            run_key (Optional[str]): A key that ensures only one backfill is created across sensor
+                evaluations for this request.
+            asset_selection (Sequence[AssetKey]): Asset keys to include in the backfill.
+            partition_key_range (PartitionKeyRange): Inclusive range of partition keys to target.
+            run_config (Optional[Union[RunConfig, Mapping[str, Any]]]): Configuration for runs
+                launched by the backfill.
+            tags (Optional[Mapping[str, Any]]): Tags to attach to the backfill and its runs.
+        """
+        asset_keys = check.sequence_param(asset_selection, "asset_selection", of_type=AssetKey)
+        check.invariant(asset_keys, "asset_selection must contain at least one asset key")
+        partition_key_range = check.inst_param(
+            partition_key_range, "partition_key_range", PartitionKeyRange
+        )
+        return RunRequest(
+            run_key=run_key,
+            run_config=run_config,
+            tags=tags,
+            asset_selection=asset_keys,
+            asset_partition_key_range=partition_key_range,
+        )
+
+    def with_resolved_asset_partition_range(
+        self,
+        asset_graph: "BaseAssetGraph",
+        dynamic_partitions_store: "DynamicPartitionsStore",
+    ) -> "RunRequest":
+        """Validates and resolves an asset partition range request into a backfill subset."""
+        partition_key_range = check.not_none(self.asset_partition_key_range)
+        asset_keys = set(check.not_none(self.asset_selection))
+
+        missing_asset_keys = {
+            asset_key for asset_key in asset_keys if not asset_graph.has(asset_key)
+        }
+        if missing_asset_keys:
+            raise DagsterInvalidSubsetError(
+                "Asset partition range request includes asset keys that do not exist: "
+                f"{sorted(missing_asset_keys)}"
+            )
+
+        non_materializable_asset_keys = {
+            asset_key
+            for asset_key in asset_keys
+            if not asset_graph.get(asset_key).is_materializable
+        }
+        if non_materializable_asset_keys:
+            raise DagsterInvalidSubsetError(
+                "Asset partition range request includes non-materializable asset keys: "
+                f"{sorted(non_materializable_asset_keys)}"
+            )
+
+        required_asset_keys = {
+            execution_set_key
+            for asset_key in asset_keys
+            for execution_set_key in asset_graph.get_execution_set_asset_and_check_keys(asset_key)
+            if isinstance(execution_set_key, AssetKey)
+        }
+        missing_required_asset_keys = required_asset_keys - asset_keys
+        if missing_required_asset_keys:
+            raise DagsterInvalidSubsetError(
+                "Asset partition range request must include asset keys that are required to execute "
+                f"together: {sorted(missing_required_asset_keys)}"
+            )
+
+        partitioned_subsets: dict[AssetKey, PartitionsSubset] = {}
+        non_partitioned_asset_keys: set[AssetKey] = set()
+        with partition_loading_context(dynamic_partitions_store=dynamic_partitions_store):
+            for asset_key in asset_keys:
+                partitions_def = asset_graph.get(asset_key).partitions_def
+                if partitions_def is None:
+                    non_partitioned_asset_keys.add(asset_key)
+                else:
+                    partitioned_subsets[asset_key] = (
+                        partitions_def.empty_subset().with_partition_key_range(
+                            partitions_def, partition_key_range
+                        )
+                    )
+
+        if not partitioned_subsets:
+            raise DagsterInvalidInvocationError(
+                "asset_selection must contain at least one partitioned asset"
+            )
+        if not all(len(subset) > 1 for subset in partitioned_subsets.values()):
+            raise DagsterInvalidInvocationError(
+                "partition_key_range must contain at least two partitions for each partitioned asset"
+            )
+
+        return RunRequest(
+            run_key=self.run_key,
+            run_config=self.run_config,
+            tags=self.tags,
+            asset_graph_subset=AssetGraphSubset(
+                partitions_subsets_by_asset_key=partitioned_subsets,
+                non_partitioned_asset_keys=non_partitioned_asset_keys,
+            ),
+        )
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
         fields = dict(self._asdict())
@@ -253,7 +379,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         eventaully we will want to introspect on the asset_graph_subset to determine if we can
         execute it as a single run instead.
         """
-        return self.asset_graph_subset is not None
+        return self.asset_graph_subset is not None or self.asset_partition_key_range is not None
 
 
 @whitelist_for_serdes(

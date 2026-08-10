@@ -34,7 +34,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterUserCodeUnreachableError,
 )
-from dagster._core.execution.backfill import PartitionBackfill
+from dagster._core.execution.backfill import BulkActionsFilter, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteJob, RemoteSensor
@@ -49,7 +49,12 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
+from dagster._core.storage.tags import (
+    RUN_KEY_TAG,
+    SENSOR_BACKFILL_RUN_KEY_TAG,
+    SENSOR_NAME_TAG,
+    SENSOR_SELECTOR_ID_TAG,
+)
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -108,6 +113,13 @@ class BackfillSubmission(NamedTuple):
     """Placeholder for launched backfills."""
 
     backfill_id: str
+
+
+class SkippedSensorBackfill(NamedTuple):
+    """Placeholder for backfills skipped during the run_key idempotence check."""
+
+    run_key: str
+    existing_backfill: PartitionBackfill
 
 
 class SensorLaunchContext(AbstractContextManager):
@@ -701,7 +713,7 @@ def mark_sensor_state_for_tick(
 class SubmitRunRequestResult(NamedTuple):
     run_key: str | None
     error_info: SerializableErrorInfo | None
-    run: SkippedSensorRun | DagsterRun | BackfillSubmission
+    run: SkippedSensorRun | SkippedSensorBackfill | DagsterRun | BackfillSubmission
 
 
 def _submit_run_request(
@@ -1145,6 +1157,9 @@ def _submit_run_requests(
     existing_runs_by_key = fetch_existing_runs(
         instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
     )
+    existing_backfills_by_key = fetch_existing_backfills(
+        instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
+    )
     check_after_runs_num = instance.get_tick_termination_check_interval()
 
     def submit_run_request(
@@ -1152,7 +1167,13 @@ def _submit_run_requests(
     ) -> SubmitRunRequestResult:
         run_id, run_request = run_id_with_run_request
         if run_request.requires_backfill_daemon():
-            return _submit_backfill_request(run_id, run_request, instance)
+            return _submit_backfill_request(
+                backfill_id=run_id,
+                run_request=run_request,
+                instance=instance,
+                remote_sensor=remote_sensor,
+                existing_backfills_by_key=existing_backfills_by_key,
+            )
         else:
             return _submit_run_request(
                 run_id,
@@ -1172,6 +1193,7 @@ def _submit_run_requests(
         gen_run_request_results = map(submit_run_request, resolved_run_ids_with_requests)
 
     skipped_runs: list[SkippedSensorRun] = []
+    skipped_backfills: list[SkippedSensorBackfill] = []
     evaluations_by_key = {
         evaluation.key: evaluation for evaluation in automation_condition_evaluations
     }
@@ -1184,8 +1206,11 @@ def _submit_run_requests(
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
             context.add_run_info(run_id=None, run_key=run_request_result.run_key)
+        elif isinstance(run, SkippedSensorBackfill):
+            skipped_backfills.append(run)
+            context.add_run_info(run_id=None, run_key=run_request_result.run_key)
         elif isinstance(run, BackfillSubmission):
-            context.add_run_info(run_id=run.backfill_id)
+            context.add_run_info(run_id=run.backfill_id, run_key=run_request_result.run_key)
         else:
             context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
             entity_keys = [*(run.asset_selection or []), *(run.asset_check_selection or [])]
@@ -1230,29 +1255,64 @@ def _submit_run_requests(
             f"Skipping {skipped_count} {'run' if skipped_count == 1 else 'runs'} for sensor "
             f"{remote_sensor.name} already completed with run keys: {seven.json.dumps(run_keys)}"
         )
+    if skipped_backfills:
+        run_keys = [skipped.run_key for skipped in skipped_backfills]
+        skipped_count = len(skipped_backfills)
+        context.logger.info(
+            f"Skipping {skipped_count} {'backfill' if skipped_count == 1 else 'backfills'} for "
+            f"sensor {remote_sensor.name} already requested with run keys:"
+            f" {seven.json.dumps(run_keys)}"
+        )
     yield
 
 
 def _submit_backfill_request(
+    *,
     backfill_id: str,
     run_request: RunRequest,
     instance: DagsterInstance,
+    remote_sensor: RemoteSensor,
+    existing_backfills_by_key: dict[str, PartitionBackfill],
 ) -> SubmitRunRequestResult:
-    instance.add_backfill(
-        PartitionBackfill.from_asset_graph_subset(
-            backfill_id=backfill_id,
-            dynamic_partitions_store=instance,
-            backfill_timestamp=get_current_timestamp(),
-            asset_graph_subset=check.inst(run_request.asset_graph_subset, AssetGraphSubset),
-            tags=run_request.tags or {},
-            # would need to add these as params to RunRequest
-            title=None,
-            description=None,
-            run_config=run_request.run_config,
+    run_key = run_request.run_key
+    existing_backfill = existing_backfills_by_key.get(run_key) if run_key else None
+    if existing_backfill is not None:
+        return SubmitRunRequestResult(
+            run_key=run_key,
+            error_info=None,
+            run=SkippedSensorBackfill(
+                run_key=check.not_none(run_key), existing_backfill=existing_backfill
+            ),
         )
+
+    tags = {
+        **(run_request.tags or {}),
+        **(
+            {
+                SENSOR_BACKFILL_RUN_KEY_TAG: run_key,
+                SENSOR_SELECTOR_ID_TAG: remote_sensor.selector_id,
+            }
+            if run_key
+            else {}
+        ),
+    }
+    backfill = PartitionBackfill.from_asset_graph_subset(
+        backfill_id=backfill_id,
+        dynamic_partitions_store=instance,
+        backfill_timestamp=get_current_timestamp(),
+        asset_graph_subset=check.inst(run_request.asset_graph_subset, AssetGraphSubset),
+        tags=tags,
+        # would need to add these as params to RunRequest
+        title=None,
+        description=None,
+        run_config=run_request.run_config,
     )
+    instance.add_backfill(backfill)
+    if run_key:
+        existing_backfills_by_key[run_key] = backfill
+
     return SubmitRunRequestResult(
-        run_key=None, error_info=None, run=BackfillSubmission(backfill_id=backfill_id)
+        run_key=run_key, error_info=None, run=BackfillSubmission(backfill_id=backfill_id)
     )
 
 
@@ -1334,6 +1394,33 @@ def fetch_existing_runs(
         existing_runs[run_key] = run
 
     return existing_runs
+
+
+def fetch_existing_backfills(
+    instance: DagsterInstance,
+    remote_sensor: RemoteSensor,
+    run_requests: Sequence[RunRequest],
+) -> dict[str, PartitionBackfill]:
+    run_keys = {
+        run_request.run_key
+        for run_request in run_requests
+        if run_request.requires_backfill_daemon() and run_request.run_key
+    }
+    existing_backfills: dict[str, PartitionBackfill] = {}
+    for run_key in run_keys:
+        matching_backfills = instance.get_backfills(
+            filters=BulkActionsFilter(
+                tags={
+                    SENSOR_BACKFILL_RUN_KEY_TAG: run_key,
+                    SENSOR_SELECTOR_ID_TAG: remote_sensor.selector_id,
+                }
+            ),
+            limit=1,
+        )
+        if matching_backfills:
+            existing_backfills[run_key] = matching_backfills[0]
+
+    return existing_backfills
 
 
 def _get_or_create_sensor_run(

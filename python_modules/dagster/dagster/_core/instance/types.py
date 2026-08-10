@@ -175,7 +175,7 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
     """
 
     wrapped_dynamic_partitions_store: DynamicPartitionsStore
-    added_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
+    added_partition_keys_by_partitions_def_name: Mapping[str, Sequence[str]]
     deleted_partition_keys_by_partitions_def_name: Mapping[str, AbstractSet[str]]
 
     @staticmethod
@@ -190,13 +190,13 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
             DeleteDynamicPartitionsRequest,
         )
 
-        added_partition_keys_by_partitions_def_name: dict[str, set[str]] = defaultdict(set)
+        added_partition_keys_by_partitions_def_name: dict[str, list[str]] = defaultdict(list)
         deleted_partition_keys_by_partitions_def_name: dict[str, set[str]] = defaultdict(set)
 
         for req in dynamic_partitions_requests:
             name = req.partitions_def_name
             if isinstance(req, AddDynamicPartitionsRequest):
-                added_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
+                added_partition_keys_by_partitions_def_name[name].extend(req.partition_keys)
             elif isinstance(req, DeleteDynamicPartitionsRequest):
                 deleted_partition_keys_by_partitions_def_name[name].update(set(req.partition_keys))
             else:
@@ -210,16 +210,28 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
 
     @cached_method
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
-        partition_keys = set(
-            self.wrapped_dynamic_partitions_store.get_dynamic_partitions(partitions_def_name)
-        )
-        added_partition_keys = self.added_partition_keys_by_partitions_def_name.get(
-            partitions_def_name, set()
-        )
         deleted_partition_keys = self.deleted_partition_keys_by_partitions_def_name.get(
             partitions_def_name, set()
         )
-        return list((partition_keys | added_partition_keys) - deleted_partition_keys)
+        partition_keys = [
+            partition_key
+            for partition_key in self.wrapped_dynamic_partitions_store.get_dynamic_partitions(
+                partitions_def_name
+            )
+            if partition_key not in deleted_partition_keys
+        ]
+        existing_partition_keys = set(partition_keys)
+        added_partition_keys = self.added_partition_keys_by_partitions_def_name.get(
+            partitions_def_name, ()
+        )
+        for partition_key in added_partition_keys:
+            if (
+                partition_key not in existing_partition_keys
+                and partition_key not in deleted_partition_keys
+            ):
+                partition_keys.append(partition_key)
+                existing_partition_keys.add(partition_key)
+        return partition_keys
 
     @cached_method
     def get_paginated_dynamic_partitions(
@@ -235,7 +247,7 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
             partitions_def_name, set()
         ) and (
             partition_key
-            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, ())
             or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
                 partitions_def_name, partition_key
             )
