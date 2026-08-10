@@ -7,7 +7,8 @@ import {MemoryRouter} from 'react-router-dom';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {
   buildAssetHealth,
-  buildAssetHealthMaterializationDegradedNotPartitionedMeta,
+  buildAssetHealthMaterializationWarningNotPartitionedMeta,
+  buildAssetHealthMaterializationWarningPartitionedMeta,
   buildAssetKey,
 } from '../../graphql/builders';
 import {AssetHealthStatus} from '../../graphql/types';
@@ -245,7 +246,7 @@ describe('AssetHealthSummary integration tests', () => {
   });
 
   describe('up-for-retry warning behavior', () => {
-    it('should show execution warning with the failure detail for a warning asset', async () => {
+    it('should show retry-pending explanation for a non-partitioned warning asset', async () => {
       const user = userEvent.setup();
       const assetKey = buildAssetKey({path: ['warning_asset']});
 
@@ -259,7 +260,7 @@ describe('AssetHealthSummary integration tests', () => {
         materializationStatus: AssetHealthStatus.WARNING,
         freshnessStatus: AssetHealthStatus.HEALTHY,
         assetChecksStatus: AssetHealthStatus.HEALTHY,
-        materializationStatusMetadata: buildAssetHealthMaterializationDegradedNotPartitionedMeta({
+        materializationStatusMetadata: buildAssetHealthMaterializationWarningNotPartitionedMeta({
           failedRunId: 'abcd1234-run-id',
         }),
         freshnessStatusMetadata: null,
@@ -279,8 +280,47 @@ describe('AssetHealthSummary integration tests', () => {
       await user.hover(screen.getByText('Trigger'));
 
       expect(await screen.findByText('Execution warning')).toBeInTheDocument();
-      const link = await screen.findByText(/Materialization failed in run/);
+      const link = await screen.findByText(/retry pending/);
       expect(link.closest('a')).toHaveAttribute('href', '/runs/abcd1234-run-id');
+    });
+
+    it('should show retry-pending partition counts for a partitioned warning asset', async () => {
+      const user = userEvent.setup();
+      const assetKey = buildAssetKey({path: ['warning_partitioned_asset']});
+
+      mockUseAllAssetsNodes.mockReturnValue({
+        allAssetKeys: new Set([tokenForAssetKey(assetKey)]),
+        loading: false,
+      });
+
+      const health = buildAssetHealth({
+        assetHealth: AssetHealthStatus.WARNING,
+        materializationStatus: AssetHealthStatus.WARNING,
+        freshnessStatus: AssetHealthStatus.HEALTHY,
+        assetChecksStatus: AssetHealthStatus.HEALTHY,
+        materializationStatusMetadata: buildAssetHealthMaterializationWarningPartitionedMeta({
+          numUpForRetryPartitions: 2,
+          numMissingPartitions: 1,
+          totalNumPartitions: 5,
+        }),
+        freshnessStatusMetadata: null,
+        assetChecksStatusMetadata: null,
+      });
+
+      render(
+        <MemoryRouter>
+          <MockedProvider>
+            <AssetHealthSummaryPopover assetKey={assetKey} health={health}>
+              <div>Trigger</div>
+            </AssetHealthSummaryPopover>
+          </MockedProvider>
+        </MemoryRouter>,
+      );
+
+      await user.hover(screen.getByText('Trigger'));
+
+      const link = await screen.findByText(/retries pending/);
+      expect(link.textContent).toContain('2 out of 5 partitions, retries pending');
     });
 
     it('should render without a detail line when the metadata type is unknown to this bundle', async () => {
@@ -300,9 +340,7 @@ describe('AssetHealthSummary integration tests', () => {
         // Simulates a newer server returning a union member this bundle was not built with.
         materializationStatusMetadata: {
           __typename: 'AssetHealthMaterializationFutureMeta',
-        } as unknown as ReturnType<
-          typeof buildAssetHealthMaterializationDegradedNotPartitionedMeta
-        >,
+        } as unknown as ReturnType<typeof buildAssetHealthMaterializationWarningNotPartitionedMeta>,
         freshnessStatusMetadata: null,
         assetChecksStatusMetadata: null,
       });
@@ -320,7 +358,7 @@ describe('AssetHealthSummary integration tests', () => {
       await user.hover(screen.getByText('Trigger'));
 
       expect(await screen.findByText('Execution warning')).toBeInTheDocument();
-      expect(screen.queryByText(/Materialization failed/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/retry pending/)).not.toBeInTheDocument();
     });
   });
 

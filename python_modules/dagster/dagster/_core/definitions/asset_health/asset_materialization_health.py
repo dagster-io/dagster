@@ -442,11 +442,6 @@ class AssetHealthMaterializationDegradedNotPartitionedMeta:
 class AssetHealthMaterializationWarningPartitionedMeta:
     """Metadata for a partitioned asset in WARNING materialization health: every currently failed
     partition is covered by a pending auto-retry.
-
-    NOTE: registered on the GraphQL schema but not yet returned by
-    get_materialization_status_and_metadata, which reports WARNING with the degraded metadata
-    shapes. Deployed frontends must know these types before the server can return them; returning
-    them is deferred to the release after the one that adds them to the schema.
     """
 
     num_up_for_retry_partitions: int
@@ -461,11 +456,6 @@ class AssetHealthMaterializationWarningPartitionedMeta:
 class AssetHealthMaterializationWarningNotPartitionedMeta:
     """Metadata for a non-partitioned asset in WARNING materialization health: the latest failed
     run is pending an auto-retry.
-
-    NOTE: registered on the GraphQL schema but not yet returned by
-    get_materialization_status_and_metadata, which reports WARNING with the degraded metadata
-    shapes. Deployed frontends must know these types before the server can return them; returning
-    them is deferred to the release after the one that adds them to the schema.
     """
 
     failed_run_id: str | None
@@ -581,12 +571,7 @@ async def get_materialization_status_and_metadata(
             # captures the case when asset is not partitioned, or the asset is partitioned and all partitions are materialized
             meta = None
         return AssetHealthStatus.HEALTHY, meta
-    elif asset_materialization_health_state.health_status in (
-        AssetHealthStatus.DEGRADED,
-        AssetHealthStatus.WARNING,
-    ):
-        # WARNING means the asset has failed partitions that are all awaiting an automatic
-        # retry, so it carries the same failure metadata as DEGRADED.
+    elif asset_materialization_health_state.health_status == AssetHealthStatus.DEGRADED:
         if asset_materialization_health_state.partitions_def is not None:
             with partition_loading_context(dynamic_partitions_store=context.instance):
                 total_num_partitions = (
@@ -608,7 +593,31 @@ async def get_materialization_status_and_metadata(
             meta = AssetHealthMaterializationDegradedNotPartitionedMeta(
                 failed_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
             )
-        return asset_materialization_health_state.health_status, meta
+        return AssetHealthStatus.DEGRADED, meta
+    elif asset_materialization_health_state.health_status == AssetHealthStatus.WARNING:
+        # WARNING means every currently failed partition is covered by a pending auto-retry.
+        if asset_materialization_health_state.partitions_def is not None:
+            with partition_loading_context(dynamic_partitions_store=context.instance):
+                total_num_partitions = (
+                    asset_materialization_health_state.partitions_def.get_num_partitions()
+                )
+            num_missing = (
+                total_num_partitions
+                - asset_materialization_health_state.num_currently_materialized_partitions
+                - asset_materialization_health_state.num_failed_partitions
+            )
+            meta = AssetHealthMaterializationWarningPartitionedMeta(
+                num_up_for_retry_partitions=asset_materialization_health_state.num_up_for_retry_partitions,
+                num_missing_partitions=num_missing,
+                total_num_partitions=total_num_partitions,
+                latest_run_id=asset_materialization_health_state.latest_terminal_run_id,
+                latest_failed_to_materialize_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
+            )
+        else:
+            meta = AssetHealthMaterializationWarningNotPartitionedMeta(
+                failed_run_id=asset_materialization_health_state.latest_failed_to_materialize_run_id,
+            )
+        return AssetHealthStatus.WARNING, meta
     elif asset_materialization_health_state.health_status == AssetHealthStatus.UNKNOWN:
         return AssetHealthStatus.UNKNOWN, None
     else:
