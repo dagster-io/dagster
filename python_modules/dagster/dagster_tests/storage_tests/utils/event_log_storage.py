@@ -5785,6 +5785,120 @@ class TestEventLogStorage:
         storage.delete_events(run_id=two)
         assert storage.get_concurrency_run_ids() == set()
 
+    def test_concurrency_weighted_slots(self, storage: EventLogStorage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0, slots=1):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority, slots)
+            return claim_status.slot_status
+
+        storage.set_concurrency_slots("foo", 4)
+
+        # a 3-slot step claims 3 of the 4 slots
+        assert claim("foo", run_id, "heavy_1", slots=3) == ConcurrencySlotStatus.CLAIMED
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 3
+        assert all(slot.step_key == "heavy_1" for slot in foo_info.claimed_slots)
+
+        # a 1-slot step fits in the remaining slot
+        assert claim("foo", run_id, "light_1") == ConcurrencySlotStatus.CLAIMED
+
+        # another 1-slot step is blocked
+        assert claim("foo", run_id, "light_2") == ConcurrencySlotStatus.BLOCKED
+
+        # freeing the 3-slot step releases all 3 slots
+        storage.free_concurrency_slot_for_step(run_id, "heavy_1")
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+
+        assert claim("foo", run_id, "light_2") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "light_3") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "light_4") == ConcurrencySlotStatus.CLAIMED
+
+    def test_concurrency_weighted_head_of_line(self, storage: EventLogStorage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0, slots=1):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority, slots)
+            return claim_status.slot_status
+
+        storage.set_concurrency_slots("foo", 4)
+
+        # fill two slots with 1-slot steps
+        assert claim("foo", run_id, "light_1") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "light_2") == ConcurrencySlotStatus.CLAIMED
+
+        # a 4-slot step does not fit and queues at the head
+        assert claim("foo", run_id, "heavy_1", slots=4) == ConcurrencySlotStatus.BLOCKED
+
+        # 1-slot steps queued behind the heavy step do not overtake it, even though 2 slots are
+        # free
+        assert claim("foo", run_id, "light_3") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "light_4") == ConcurrencySlotStatus.BLOCKED
+
+        # freeing one slot is not enough for the heavy step, and the light steps stay blocked
+        storage.free_concurrency_slot_for_step(run_id, "light_1")
+        assert claim("foo", run_id, "light_3") == ConcurrencySlotStatus.BLOCKED
+        assert claim("foo", run_id, "heavy_1", slots=4) == ConcurrencySlotStatus.BLOCKED
+
+        # once all slots are free, the heavy step runs
+        storage.free_concurrency_slot_for_step(run_id, "light_2")
+        assert claim("foo", run_id, "heavy_1", slots=4) == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "light_3") == ConcurrencySlotStatus.BLOCKED
+
+        # and freeing it lets the queued light steps through
+        storage.free_concurrency_slot_for_step(run_id, "heavy_1")
+        assert claim("foo", run_id, "light_3") == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "light_4") == ConcurrencySlotStatus.CLAIMED
+
+    def test_concurrency_weighted_no_deadlock(self, storage: EventLogStorage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        run_id = make_new_run_id()
+
+        def claim(key, run_id, step_key, priority=0, slots=1):
+            claim_status = storage.claim_concurrency_slot(key, run_id, step_key, priority, slots)
+            return claim_status.slot_status
+
+        storage.set_concurrency_slots("foo", 4)
+
+        # two 3-slot steps against a 4-slot pool: one claims all of its slots, the other waits
+        # (instead of each grabbing a partial claim and deadlocking)
+        assert claim("foo", run_id, "heavy_1", slots=3) == ConcurrencySlotStatus.CLAIMED
+        assert claim("foo", run_id, "heavy_2", slots=3) == ConcurrencySlotStatus.BLOCKED
+
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 3
+
+        # when the first completes, the second runs
+        storage.free_concurrency_slot_for_step(run_id, "heavy_1")
+        assert claim("foo", run_id, "heavy_2", slots=3) == ConcurrencySlotStatus.CLAIMED
+        foo_info = storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 3
+
+    def test_concurrency_weighted_exceeds_limit(self, storage: EventLogStorage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        run_id = make_new_run_id()
+
+        storage.set_concurrency_slots("foo", 2)
+
+        # a step requesting more slots than the pool limit raises instead of hanging forever
+        with pytest.raises(dg.DagsterInvalidInvocationError, match="exceeds the pool's limit"):
+            storage.claim_concurrency_slot("foo", run_id, "heavy_1", slots=3)
+
+        # invalid slot counts are rejected
+        with pytest.raises(check.CheckError):
+            storage.claim_concurrency_slot("foo", run_id, "heavy_1", slots=0)
+
     @pytest.mark.flaky(reruns=2)
     def test_threaded_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import Self
 
+from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import PoolGranularity
 from dagster._core.storage.dagster_run import DagsterRun
@@ -92,6 +93,7 @@ class InstanceConcurrencyContext:
         concurrency_key: str,
         step_key: str,
         step_priority: int = 0,
+        pool_slots: int = 1,
     ) -> bool:
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
@@ -136,8 +138,16 @@ class InstanceConcurrencyContext:
                 f"Tried to claim a concurrency slot with a priority {priority} that was not in the allowed range of a 32-bit signed integer."
             )
 
+        # a limit of 0 pauses the pool, blocking rather than raising
+        if pool_info.limit > 0 and pool_slots > pool_info.limit:
+            raise DagsterInvalidInvocationError(
+                f"Step '{step_key}' requires {pool_slots} slots from pool '{concurrency_key}', "
+                f"which exceeds the pool's limit of {pool_info.limit}. The step can never run - "
+                "lower the step's pool_slots or raise the pool's limit."
+            )
+
         claim_status = self._instance.event_log_storage.claim_concurrency_slot(
-            concurrency_key, self._run_id, step_key, priority
+            concurrency_key, self._run_id, step_key, priority, pool_slots
         )
 
         if not claim_status.is_claimed:

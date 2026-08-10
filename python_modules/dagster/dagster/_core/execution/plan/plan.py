@@ -301,6 +301,7 @@ class _PlanBuilder:
                         step_outputs=step_outputs,
                         tags=node.tags,
                         pool=node.definition.pool,
+                        pool_slots=node.definition.pool_slots,
                     )
                 elif has_pending_input:
                     new_step = UnresolvedCollectExecutionStep(
@@ -312,6 +313,7 @@ class _PlanBuilder:
                         step_outputs=step_outputs,
                         tags=node.tags,
                         pool=node.definition.pool,
+                        pool_slots=node.definition.pool_slots,
                     )
                 else:
                     new_step = ExecutionStep(
@@ -321,6 +323,7 @@ class _PlanBuilder:
                         step_outputs=step_outputs,
                         tags=node.tags,
                         pool=node.definition.pool,
+                        pool_slots=node.definition.pool_slots,
                     )
 
                 self.add_step(new_step)
@@ -1066,6 +1069,7 @@ class ExecutionPlan(
                     step_outputs,
                     step_snap.tags,
                     step_snap.pool,
+                    pool_slots=step_snap.pool_slots,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_MAPPED:
                 step = UnresolvedMappedExecutionStep(
@@ -1078,6 +1082,7 @@ class ExecutionPlan(
                     step_outputs,
                     step_snap.tags,
                     step_snap.pool,
+                    pool_slots=step_snap.pool_slots,
                 )
             elif step_snap.kind == StepKind.UNRESOLVED_COLLECT:
                 step = UnresolvedCollectExecutionStep(
@@ -1087,6 +1092,7 @@ class ExecutionPlan(
                     step_outputs,
                     step_snap.tags,
                     step_snap.pool,
+                    pool_slots=step_snap.pool_slots,
                 )
             else:
                 raise Exception(f"Unexpected step kind {step_snap.kind}")
