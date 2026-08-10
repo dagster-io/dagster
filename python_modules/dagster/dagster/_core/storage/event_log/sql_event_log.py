@@ -2666,11 +2666,25 @@ class SqlEventLogStorage(EventLogStorage):
         # initialize outside of connection context
         has_slots_col = self.has_pending_steps_slots_col
         with self.index_connection() as conn:
-            for key in OrderedDict.fromkeys(concurrency_keys):
+            # sort keys so that concurrent assigners always lock pools in the same order
+            for key in sorted(set(concurrency_keys)):
                 while True:
-                    free_slots = self._total_slots_count(
-                        conn, key
-                    ) - self._assigned_pending_slots_count(conn, key, has_slots_col)
+                    # lock the pool's slot rows to serialize concurrent assigners for this pool,
+                    # so that the total reserved weight can never exceed the pool's capacity
+                    slot_rows = conn.execute(
+                        db_select([ConcurrencySlotsTable.c.id])
+                        .select_from(ConcurrencySlotsTable)
+                        .where(
+                            db.and_(
+                                ConcurrencySlotsTable.c.concurrency_key == key,
+                                ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                            )
+                        )
+                        .with_for_update()
+                    ).fetchall()
+                    free_slots = len(slot_rows) - self._assigned_pending_slots_count(
+                        conn, key, has_slots_col
+                    )
                     if free_slots <= 0:
                         break
 

@@ -5933,6 +5933,43 @@ class TestEventLogStorage:
             assert foo_info.pending_step_count == 0
             assert foo_info.assigned_step_count == 0
 
+    @pytest.mark.flaky(reruns=2)
+    def test_threaded_weighted_concurrency(self, storage: EventLogStorage):
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        TOTAL_TIMEOUT_TIME = 90
+
+        run_id = make_new_run_id()
+
+        storage.set_concurrency_slots("foo", 5)
+
+        def _occupy_slot(step_index: int):
+            step_key = str(step_index)
+            slots = (step_index % 3) + 1  # mix of weights 1, 2, 3 against a 5-slot pool
+            start = time.time()
+            claim_status = storage.claim_concurrency_slot("foo", run_id, step_key, None, slots)
+            while time.time() < start + TOTAL_TIMEOUT_TIME:
+                if claim_status.slot_status == ConcurrencySlotStatus.CLAIMED:
+                    break
+                else:
+                    claim_status = storage.claim_concurrency_slot(
+                        "foo", run_id, step_key, None, slots
+                    )
+                    time.sleep(0.05)
+            # every step must eventually claim; a stall here indicates over-assignment of
+            # weighted steps or a deadlock in the assignment loop
+            assert claim_status.slot_status == ConcurrencySlotStatus.CLAIMED
+            storage.free_concurrency_slot_for_step(run_id, step_key)
+
+        with ThreadPoolExecutor() as executor:
+            list(executor.map(_occupy_slot, range(30), timeout=TOTAL_TIMEOUT_TIME))
+            foo_info = storage.get_concurrency_info("foo")
+            assert foo_info.slot_count == 5
+            assert foo_info.active_slot_count == 0
+            assert foo_info.pending_step_count == 0
+            assert foo_info.assigned_step_count == 0
+
     def test_zero_concurrency(self, storage: EventLogStorage):
         assert storage
         if not storage.supports_global_concurrency_limits:
