@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import datetime, timezone
 
 import dagster as dg
 import pytest
@@ -124,6 +125,54 @@ async def test_dep_missing_partitioned(is_any: bool) -> None:
     else:
         # now partition 2 has all parents true
         assert result.true_subset.size == 2
+
+
+@pytest.mark.parametrize(
+    ("allow_nonexistent_upstream_partitions", "expected_requested_partitions"),
+    [
+        (False, {"2024-01-01", "2024-01-02"}),
+        (True, {"2023-12-31", "2024-01-01", "2024-01-02"}),
+    ],
+)
+def test_any_deps_missing_with_required_but_nonexistent_partition(
+    allow_nonexistent_upstream_partitions: bool,
+    expected_requested_partitions: set[str],
+) -> None:
+    parent_partitions_def = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    child_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-12-31")
+
+    @dg.asset(partitions_def=parent_partitions_def)
+    def parent() -> None: ...
+
+    @dg.asset(
+        deps=[
+            dg.AssetDep(
+                parent,
+                partition_mapping=dg.TimeWindowPartitionMapping(
+                    allow_nonexistent_upstream_partitions=allow_nonexistent_upstream_partitions
+                ),
+            )
+        ],
+        partitions_def=child_partitions_def,
+        automation_condition=(
+            dg.AutomationCondition.missing() & ~dg.AutomationCondition.any_deps_missing()
+        ),
+    )
+    def child() -> None: ...
+
+    instance = dg.DagsterInstance.ephemeral()
+    for partition_key in ["2024-01-01", "2024-01-02"]:
+        instance.report_runless_asset_event(
+            dg.AssetMaterialization(parent.key, partition=partition_key)
+        )
+
+    result = dg.evaluate_automation_conditions(
+        defs=[parent, child],
+        instance=instance,
+        evaluation_time=datetime(2024, 1, 3, tzinfo=timezone.utc),
+    )
+
+    assert result.get_requested_partitions(child.key) == expected_requested_partitions
 
 
 @pytest.mark.asyncio
