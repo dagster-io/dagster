@@ -2688,6 +2688,9 @@ class SqlEventLogStorage(EventLogStorage):
                         .order_by(
                             PendingStepsTable.c.priority.desc(),
                             PendingStepsTable.c.create_timestamp.asc(),
+                            # deterministic tiebreak so that concurrent assigners lock pending
+                            # rows in the same order, avoiding db deadlocks
+                            PendingStepsTable.c.id.asc(),
                         )
                         .limit(1)
                     ).fetchone()
