@@ -1,4 +1,4 @@
-// Generated from dagster-oss/js_modules/ui-core/src/job-selection/JobSelection.g4 by ANTLR 4.13.1
+// Generated from /home/lucas/Documents/dagster/js_modules/ui-core/src/job-selection/JobSelection.g4 by ANTLR 4.13.1
 
 import * as antlr from 'antlr4ng';
 import {Token} from 'antlr4ng';
@@ -19,11 +19,12 @@ export class JobSelectionParser extends antlr.Parser {
   public static readonly LPAREN = 6;
   public static readonly RPAREN = 7;
   public static readonly NAME = 8;
-  public static readonly CODE_LOCATION = 9;
-  public static readonly QUOTED_STRING = 10;
-  public static readonly UNQUOTED_STRING = 11;
-  public static readonly UNQUOTED_WILDCARD_STRING = 12;
-  public static readonly WS = 13;
+  public static readonly GROUP = 9;
+  public static readonly CODE_LOCATION = 10;
+  public static readonly QUOTED_STRING = 11;
+  public static readonly UNQUOTED_STRING = 12;
+  public static readonly UNQUOTED_WILDCARD_STRING = 13;
+  public static readonly WS = 14;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
   public static readonly RULE_traversalAllowedExpr = 2;
@@ -41,6 +42,7 @@ export class JobSelectionParser extends antlr.Parser {
     "'('",
     "')'",
     "'name'",
+    "'group'",
     "'code_location'",
   ];
 
@@ -54,6 +56,7 @@ export class JobSelectionParser extends antlr.Parser {
     'LPAREN',
     'RPAREN',
     'NAME',
+    'GROUP',
     'CODE_LOCATION',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
@@ -147,6 +150,7 @@ export class JobSelectionParser extends antlr.Parser {
         switch (this.tokenStream.LA(1)) {
           case JobSelectionParser.LPAREN:
           case JobSelectionParser.NAME:
+          case JobSelectionParser.GROUP:
           case JobSelectionParser.CODE_LOCATION:
             {
               localContext = new TraversalAllowedExpressionContext(localContext);
@@ -262,6 +266,7 @@ export class JobSelectionParser extends antlr.Parser {
       this.errorHandler.sync(this);
       switch (this.tokenStream.LA(1)) {
         case JobSelectionParser.NAME:
+        case JobSelectionParser.GROUP:
         case JobSelectionParser.CODE_LOCATION:
           localContext = new AttributeExpressionContext(localContext);
           this.enterOuterAlt(localContext, 1);
@@ -301,7 +306,7 @@ export class JobSelectionParser extends antlr.Parser {
     let localContext = new AttributeExprContext(this.context, this.state);
     this.enterRule(localContext, 6, JobSelectionParser.RULE_attributeExpr);
     try {
-      this.state = 46;
+      this.state = 49;
       this.errorHandler.sync(this);
       switch (this.tokenStream.LA(1)) {
         case JobSelectionParser.NAME:
@@ -316,15 +321,27 @@ export class JobSelectionParser extends antlr.Parser {
             this.keyValue();
           }
           break;
-        case JobSelectionParser.CODE_LOCATION:
-          localContext = new CodeLocationExprContext(localContext);
+        case JobSelectionParser.GROUP:
+          localContext = new GroupExprContext(localContext);
           this.enterOuterAlt(localContext, 2);
           {
             this.state = 43;
-            this.match(JobSelectionParser.CODE_LOCATION);
+            this.match(JobSelectionParser.GROUP);
             this.state = 44;
             this.match(JobSelectionParser.COLON);
             this.state = 45;
+            this.keyValue();
+          }
+          break;
+        case JobSelectionParser.CODE_LOCATION:
+          localContext = new CodeLocationExprContext(localContext);
+          this.enterOuterAlt(localContext, 3);
+          {
+            this.state = 46;
+            this.match(JobSelectionParser.CODE_LOCATION);
+            this.state = 47;
+            this.match(JobSelectionParser.COLON);
+            this.state = 48;
             this.value();
           }
           break;
@@ -350,9 +367,9 @@ export class JobSelectionParser extends antlr.Parser {
     try {
       this.enterOuterAlt(localContext, 1);
       {
-        this.state = 48;
+        this.state = 51;
         _la = this.tokenStream.LA(1);
-        if (!(_la === 10 || _la === 11)) {
+        if (!(_la === 11 || _la === 12)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -378,9 +395,9 @@ export class JobSelectionParser extends antlr.Parser {
     try {
       this.enterOuterAlt(localContext, 1);
       {
-        this.state = 50;
+        this.state = 53;
         _la = this.tokenStream.LA(1);
-        if (!((_la & ~0x1f) === 0 && ((1 << _la) & 7168) !== 0)) {
+        if (!((_la & ~0x1f) === 0 && ((1 << _la) & 14336) !== 0)) {
           this.errorHandler.recoverInline(this);
         } else {
           this.errorHandler.reportMatch(this);
@@ -422,22 +439,23 @@ export class JobSelectionParser extends antlr.Parser {
   }
 
   public static readonly _serializedATN: number[] = [
-    4, 1, 13, 53, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 1, 0, 1,
+    4, 1, 14, 56, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7, 4, 2, 5, 7, 5, 1, 0, 1,
     0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 21, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1,
     29, 8, 1, 10, 1, 12, 1, 32, 9, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 39, 8, 2, 1, 3, 1, 3, 1,
-    3, 1, 3, 1, 3, 1, 3, 3, 3, 47, 8, 3, 1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 0, 1, 2, 6, 0, 2, 4, 6, 8,
-    10, 0, 2, 1, 0, 10, 11, 1, 0, 10, 12, 52, 0, 12, 1, 0, 0, 0, 2, 20, 1, 0, 0, 0, 4, 38, 1, 0, 0,
-    0, 6, 46, 1, 0, 0, 0, 8, 48, 1, 0, 0, 0, 10, 50, 1, 0, 0, 0, 12, 13, 3, 2, 1, 0, 13, 14, 5, 0,
-    0, 1, 14, 1, 1, 0, 0, 0, 15, 16, 6, 1, -1, 0, 16, 21, 3, 4, 2, 0, 17, 18, 5, 3, 0, 0, 18, 21, 3,
-    2, 1, 4, 19, 21, 5, 5, 0, 0, 20, 15, 1, 0, 0, 0, 20, 17, 1, 0, 0, 0, 20, 19, 1, 0, 0, 0, 21, 30,
-    1, 0, 0, 0, 22, 23, 10, 3, 0, 0, 23, 24, 5, 1, 0, 0, 24, 29, 3, 2, 1, 4, 25, 26, 10, 2, 0, 0,
-    26, 27, 5, 2, 0, 0, 27, 29, 3, 2, 1, 3, 28, 22, 1, 0, 0, 0, 28, 25, 1, 0, 0, 0, 29, 32, 1, 0, 0,
-    0, 30, 28, 1, 0, 0, 0, 30, 31, 1, 0, 0, 0, 31, 3, 1, 0, 0, 0, 32, 30, 1, 0, 0, 0, 33, 39, 3, 6,
-    3, 0, 34, 35, 5, 6, 0, 0, 35, 36, 3, 2, 1, 0, 36, 37, 5, 7, 0, 0, 37, 39, 1, 0, 0, 0, 38, 33, 1,
-    0, 0, 0, 38, 34, 1, 0, 0, 0, 39, 5, 1, 0, 0, 0, 40, 41, 5, 8, 0, 0, 41, 42, 5, 4, 0, 0, 42, 47,
-    3, 10, 5, 0, 43, 44, 5, 9, 0, 0, 44, 45, 5, 4, 0, 0, 45, 47, 3, 8, 4, 0, 46, 40, 1, 0, 0, 0, 46,
-    43, 1, 0, 0, 0, 47, 7, 1, 0, 0, 0, 48, 49, 7, 0, 0, 0, 49, 9, 1, 0, 0, 0, 50, 51, 7, 1, 0, 0,
-    51, 11, 1, 0, 0, 0, 5, 20, 28, 30, 38, 46,
+    3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 3, 3, 50, 8, 3, 1, 4, 1, 4, 1, 5, 1, 5, 1, 5, 0, 1, 2, 6,
+    0, 2, 4, 6, 8, 10, 0, 2, 1, 0, 11, 12, 1, 0, 11, 13, 56, 0, 12, 1, 0, 0, 0, 2, 20, 1, 0, 0, 0,
+    4, 38, 1, 0, 0, 0, 6, 49, 1, 0, 0, 0, 8, 51, 1, 0, 0, 0, 10, 53, 1, 0, 0, 0, 12, 13, 3, 2, 1, 0,
+    13, 14, 5, 0, 0, 1, 14, 1, 1, 0, 0, 0, 15, 16, 6, 1, -1, 0, 16, 21, 3, 4, 2, 0, 17, 18, 5, 3, 0,
+    0, 18, 21, 3, 2, 1, 4, 19, 21, 5, 5, 0, 0, 20, 15, 1, 0, 0, 0, 20, 17, 1, 0, 0, 0, 20, 19, 1, 0,
+    0, 0, 21, 30, 1, 0, 0, 0, 22, 23, 10, 3, 0, 0, 23, 24, 5, 1, 0, 0, 24, 29, 3, 2, 1, 4, 25, 26,
+    10, 2, 0, 0, 26, 27, 5, 2, 0, 0, 27, 29, 3, 2, 1, 3, 28, 22, 1, 0, 0, 0, 28, 25, 1, 0, 0, 0, 29,
+    32, 1, 0, 0, 0, 30, 28, 1, 0, 0, 0, 30, 31, 1, 0, 0, 0, 31, 3, 1, 0, 0, 0, 32, 30, 1, 0, 0, 0,
+    33, 39, 3, 6, 3, 0, 34, 35, 5, 6, 0, 0, 35, 36, 3, 2, 1, 0, 36, 37, 5, 7, 0, 0, 37, 39, 1, 0, 0,
+    0, 38, 33, 1, 0, 0, 0, 38, 34, 1, 0, 0, 0, 39, 5, 1, 0, 0, 0, 40, 41, 5, 8, 0, 0, 41, 42, 5, 4,
+    0, 0, 42, 50, 3, 10, 5, 0, 43, 44, 5, 9, 0, 0, 44, 45, 5, 4, 0, 0, 45, 50, 3, 10, 5, 0, 46, 47,
+    5, 10, 0, 0, 47, 48, 5, 4, 0, 0, 48, 50, 3, 8, 4, 0, 49, 40, 1, 0, 0, 0, 49, 43, 1, 0, 0, 0, 49,
+    46, 1, 0, 0, 0, 50, 7, 1, 0, 0, 0, 51, 52, 7, 0, 0, 0, 52, 9, 1, 0, 0, 0, 53, 54, 7, 1, 0, 0,
+    54, 11, 1, 0, 0, 0, 5, 20, 28, 30, 38, 49,
   ];
 
   private static __ATN: antlr.ATN;
@@ -740,6 +758,38 @@ export class AttributeExprContext extends antlr.ParserRuleContext {
   }
   public override copyFrom(ctx: AttributeExprContext): void {
     super.copyFrom(ctx);
+  }
+}
+export class GroupExprContext extends AttributeExprContext {
+  public constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    super.copyFrom(ctx);
+  }
+  public GROUP(): antlr.TerminalNode {
+    return this.getToken(JobSelectionParser.GROUP, 0)!;
+  }
+  public COLON(): antlr.TerminalNode {
+    return this.getToken(JobSelectionParser.COLON, 0)!;
+  }
+  public keyValue(): KeyValueContext {
+    return this.getRuleContext(0, KeyValueContext)!;
+  }
+  public override enterRule(listener: JobSelectionListener): void {
+    if (listener.enterGroupExpr) {
+      listener.enterGroupExpr(this);
+    }
+  }
+  public override exitRule(listener: JobSelectionListener): void {
+    if (listener.exitGroupExpr) {
+      listener.exitGroupExpr(this);
+    }
+  }
+  public override accept<Result>(visitor: JobSelectionVisitor<Result>): Result | null {
+    if (visitor.visitGroupExpr) {
+      return visitor.visitGroupExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
   }
 }
 export class NameExprContext extends AttributeExprContext {
