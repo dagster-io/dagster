@@ -26,7 +26,7 @@ from dagster._core.definitions.partitions.partitioned_config import PartitionedC
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.utils import validate_definition_owner
+from dagster._core.definitions.utils import validate_definition_owner, validate_group_name
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import ImportFrom
@@ -57,6 +57,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     hooks: AbstractSet[HookDefinition] | None
     op_retry_policy: RetryPolicy | None
     owners: Sequence[str] | None
+    group_name: str | None
     automation_condition: (
         Annotated[
             "AutomationCondition",
@@ -80,6 +81,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         hooks: AbstractSet[HookDefinition] | None = None,
         op_retry_policy: RetryPolicy | None = None,
         owners: Sequence[str] | None = None,
+        group_name: str | None = None,
         automation_condition: Optional["AutomationCondition[AssetJobKey]"] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
@@ -87,6 +89,8 @@ class UnresolvedAssetJobDefinition(IHaveNew):
         if owners:
             for owner in owners:
                 validate_definition_owner(owner, "job", name)
+
+        validate_group_name(group_name, "job")
 
         return super().__new__(
             cls,
@@ -105,6 +109,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
             hooks=hooks,
             op_retry_policy=op_retry_policy,
             owners=owners,
+            group_name=group_name,
             automation_condition=automation_condition,
         )
 
@@ -248,6 +253,7 @@ class UnresolvedAssetJobDefinition(IHaveNew):
             resource_defs=resource_defs,
             allow_different_partitions_defs=False,
             owners=self.owners,
+            group_name=self.group_name,
             automation_condition=self.automation_condition,
         )
 
@@ -276,6 +282,7 @@ def define_asset_job(
     hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: Optional["RetryPolicy"] = None,
     owners: Sequence[str] | None = None,
+    group_name: str | None = None,
     automation_condition: Optional["AutomationCondition[AssetJobKey]"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
@@ -345,6 +352,10 @@ def define_asset_job(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the job. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        group_name (Optional[str]): A string name used to organize this job alongside other jobs
+            into a group. Groups may be nested using `/` as a separator
+            (e.g. `"operational/maintenance"`). If not provided, the job belongs to the `default`
+            group.
         automation_condition (Optional[AutomationCondition[AssetJobKey]]): (Preview) A
             job-scoped automation condition. When the condition becomes true, the job is
             launched by the automation condition sensor/daemon.
@@ -431,5 +442,6 @@ def define_asset_job(
         hooks=hooks,
         op_retry_policy=op_retry_policy,
         owners=owners,
+        group_name=group_name,
         automation_condition=automation_condition,
     )
