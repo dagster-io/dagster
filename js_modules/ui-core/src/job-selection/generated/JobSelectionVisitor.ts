@@ -1,4 +1,4 @@
-// Generated from /home/lucas/Documents/dagster/js_modules/ui-core/src/job-selection/JobSelection.g4 by ANTLR 4.13.1
+// Generated from dagster-oss/js_modules/ui-core/src/job-selection/JobSelection.g4 by ANTLR 4.13.1
 
 import {AbstractParseTreeVisitor} from 'antlr4ng';
 
