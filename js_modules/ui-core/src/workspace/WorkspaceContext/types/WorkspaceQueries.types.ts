@@ -47,6 +47,7 @@ export type WorkspacePipelineFragment = {
   name: string;
   isJob: boolean;
   isAssetJob: boolean;
+  groupName: string;
   externalJobSource: string | null;
   pipelineSnapshotId: string;
   automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -109,6 +110,7 @@ export type PartialWorkspaceRepositoryFragment = {
     name: string;
     isJob: boolean;
     isAssetJob: boolean;
+    groupName: string;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
     automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -194,6 +196,7 @@ export type PartialWorkspaceLocationFragment = {
       name: string;
       isJob: boolean;
       isAssetJob: boolean;
+      groupName: string;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
       automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -301,6 +304,7 @@ export type PartialWorkspaceLocationNodeFragment = {
             name: string;
             isJob: boolean;
             isAssetJob: boolean;
+            groupName: string;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
             automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -582,6 +586,7 @@ export type WorkspaceLocationFragment = {
       name: string;
       isJob: boolean;
       isAssetJob: boolean;
+      groupName: string;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
       automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -848,6 +853,7 @@ export type LocationWorkspaceQuery = {
                   name: string;
                   isJob: boolean;
                   isAssetJob: boolean;
+                  groupName: string;
                   externalJobSource: string | null;
                   pipelineSnapshotId: string;
                   automationCondition: {
@@ -1171,6 +1177,7 @@ export type WorkspaceLocationNodeFragment = {
             name: string;
             isJob: boolean;
             isAssetJob: boolean;
+            groupName: string;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
             automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -1315,6 +1322,7 @@ export type WorkspaceRepositoryLocationFragment = {
       name: string;
       isJob: boolean;
       isAssetJob: boolean;
+      groupName: string;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
       automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -1450,6 +1458,7 @@ export type WorkspaceRepositoryFragment = {
     name: string;
     isJob: boolean;
     isAssetJob: boolean;
+    groupName: string;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
     automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
@@ -1569,7 +1578,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '8e4dff45086e9f3bdb86af2001e711d1c881d59d80266df3fc410ed599d16050';
+export const LocationWorkspaceQueryVersion = 'c2b8a2be0ef71f1409f7324172f9fa9f03a4e846afa90f399435c4641997897d';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
