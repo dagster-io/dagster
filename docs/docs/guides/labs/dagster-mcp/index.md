@@ -10,7 +10,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-The Dagster+ MCP server allows you to access information and take actions in your Dagster+ deployment within an AI session.
+The Dagster+ MCP server allows you to access information and take actions in your Dagster+ deployment within an AI session. Currently, the MCP server is not available for organizations in the EU region.
 
 ## Connecting to the MCP server
 
