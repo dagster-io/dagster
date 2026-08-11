@@ -54,7 +54,7 @@ export type SetAppManagedComponentMutationVariables = Exact<{
 export type SetAppManagedComponentMutation = {
   __typename: 'Mutation';
   setAppManagedComponent:
-    | {__typename: 'AppManagedComponentValidationError'}
+    | {__typename: 'AppManagedComponentValidationError'; message: string; errors: Array<string>}
     | {
         __typename: 'PythonError';
         message: string;
@@ -101,7 +101,7 @@ export type DeleteAppManagedComponentMutation = {
 
 export const CodeLocationAppManagedComponentsQueryVersion = '590944ed746ac52a5ec6df0069d26319cc5ef1d070546f71f09b0223c4a35320';
 
-export const SetAppManagedComponentMutationVersion = '3b53d7939ec8dea1ddd1a81b58f1457316ae0a13cfd22f5e65cb2c051462e67d';
+export const SetAppManagedComponentMutationVersion = '4726d60bf6eb5b88f136c1541326eb36bc3706177a7bcd162d0cdac134d09786';
 
 export const DeleteAppManagedComponentMutationVersion = '3db9b7817d9c4742d00c9e70dd6e270853d5668d5640d41b05411659bbf61bd4';
 
