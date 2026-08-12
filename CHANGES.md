@@ -1247,7 +1247,7 @@ This version of Dagster inadvertently did not include the webapp code in the pub
   ```python
   @dg.asset(deps=[the_asset])
   def the_downstream_asset(context: dg.AssetExecutionContext):
-    return context.load_asset_value(dg.AssetKey("the_asset"))
+      return context.load_asset_value(dg.AssetKey("the_asset"))
   ```
 - Expose asset_selection parameter for `submit_job_execution` function in DagsterGraphQLClient, thanks [@brunobbaraujo](https://github.com/brunobbaraujo)!
 - Large error stack traces from Dagster events will be automatically truncated if the message or stack trace exceeds 500kb. The exact value of the truncation can be overridden by setting the `DAGSTER_EVENT_ERROR_FIELD_SIZE_LIMIT` environment variable.
@@ -3148,10 +3148,12 @@ This version of Dagster resulted in errors when trying to launch runs that targe
   ```python
   from dagster import asset, Definitions
 
+
   @asset
   def my_asset(): ...
 
-  defs = Definitions(assets=[my_asset, my_asset]) # Deduped into just one AssetsDefinition.
+
+  defs = Definitions(assets=[my_asset, my_asset])  # Deduped into just one AssetsDefinition.
   ```
 
 - [dagster-embedded-elt] Adds translator options for dlt integration to override auto materialize policy, group name, owners, and tags
@@ -4855,8 +4857,8 @@ meta:
 - `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
 
 ```python
-def my_helper_function(context: AssetExecutionContext):
-    ...
+def my_helper_function(context: AssetExecutionContext): ...
+
 
 @op
 def my_op(context: OpExecutionContext):
@@ -4870,13 +4872,12 @@ will cause type checking errors. To migrate, update type hints to respect the ne
 ```python
 ## old
 @op
-def my_op(context: AssetExecutionContext):
-    ...
+def my_op(context: AssetExecutionContext): ...
+
 
 ## correct
 @op
-def my_op(context: OpExecutionContext):
-    ...
+def my_op(context: OpExecutionContext): ...
 ```
 
 - [ui] We have removed the option to launch an asset backfill as a single run. To achieve this behavior, add `backfill_policy=BackfillPolicy.single_run()` to your assets.
@@ -5078,8 +5079,7 @@ def my_op(context: OpExecutionContext):
 
   ```python
   @asset_check(asset=my_asset)
-  def my_check(my_asset) -> AssetCheckResult:
-      ...
+  def my_check(my_asset) -> AssetCheckResult: ...
   ```
 
 - [Breaking] `AssetCheckSpec` now takes `asset=` instead of `asset_key=`, and can accept either a key or an asset definition.
@@ -5453,9 +5453,7 @@ def my_op(context: OpExecutionContext):
 
 ```python
 dbt_manifest.build_schedule(
-  job_name="materialize_dbt_models",
-  cron_schedule="0 0 * * *",
-  dbt_select="fqn:*"
+    job_name="materialize_dbt_models", cron_schedule="0 0 * * *", dbt_select="fqn:*"
 )
 ```
 
@@ -5663,12 +5661,15 @@ models:
   class GreetingConfig(Config):
       message: str
 
+
   @op
   def greeting_op(config: GreetingConfig):
       print(config.message)
 
+
   class HelloConfig(Config):
       name: str
+
 
   @configured(greeting_op)
   def hello_op(config: HelloConfig):
@@ -6230,9 +6231,11 @@ models:
   class MyResource(ConfigurableResource):
       pass
 
+
   @op
   def my_op(x: int, y: int, my_resource: MyResource) -> int:
       return x + y
+
 
   my_op(4, 5, my_resource=MyResource())
   ```
@@ -6608,13 +6611,14 @@ Stay tuned, as this is only the first part of the overhaul. We’ll be adding mo
 ```python
 from dagster import asset, job, op
 
+
 @asset
-def emails_to_send():
-    ...
+def emails_to_send(): ...
+
 
 @op
-def send_emails(emails) -> None:
-    ...
+def send_emails(emails) -> None: ...
+
 
 @job
 def send_emails_job():

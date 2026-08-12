@@ -9,6 +9,10 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 
+[options]
+exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
+exclude-newer-span = "PT48H"
+
 [[package]]
 name = "a2wsgi"
 version = "1.10.10"
@@ -1968,8 +1972,8 @@ requires-dist = [
     { name = "filelock" },
     { name = "grpcio", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
     { name = "grpcio", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
-    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
-    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
+    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0,<1.82" },
+    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2,<1.82" },
     { name = "grpcio-tools", marker = "python_full_version >= '3.13' and extra == 'test'", specifier = ">=1.66.2" },
     { name = "grpcio-tools", marker = "python_full_version < '3.13' and extra == 'test'", specifier = ">=1.44.0" },
     { name = "jinja2" },
@@ -2001,8 +2005,8 @@ requires-dist = [
     { name = "requests" },
     { name = "responses", marker = "extra == 'test'", specifier = "<=0.23.1" },
     { name = "rich" },
-    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.15.15" },
-    { name = "ruff", marker = "extra == 'test'", specifier = "==0.15.15" },
+    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.16.2" },
+    { name = "ruff", marker = "extra == 'test'", specifier = "==0.16.2" },
     { name = "six" },
     { name = "sqlalchemy", specifier = ">=1.0,<3" },
     { name = "structlog" },
@@ -2516,7 +2520,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=5.1" },
     { name = "rich" },
     { name = "setuptools" },
-    { name = "tomlkit", specifier = "<0.13.3" },
+    { name = "tomlkit", specifier = "!=0.13.3,<0.16" },
     { name = "typer", specifier = ">=0.15.1,<1.0" },
     { name = "typing-extensions", specifier = ">=4.4.0,<5" },
     { name = "watchdog" },

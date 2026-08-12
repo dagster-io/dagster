@@ -36,4 +36,8 @@ registry_modules = ["project_dspy.components.*"]
 # Enable additional lint rule set: "I" = isort (import sorting) rules.
 
 lint.extend-select = ["I"]
+lint.ignore = [
+    "BLE001", # Example code deliberately catches broad exceptions when scoring LLM output.
+    "RUF012", # False positives on class-level constants used as DSL-style defaults.
+]
 extend-exclude = ["*.ipynb"] # Ignore Jupyter notebooks

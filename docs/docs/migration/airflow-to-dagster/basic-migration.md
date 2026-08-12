@@ -21,17 +21,21 @@ An Airflow DAG with three tasks and a daily schedule:
 from airflow.decorators import dag, task
 from datetime import datetime, timedelta
 
+
 @task
 def fetch_data(source: str = "api") -> dict:
     return {"source": source, "data": [1, 2, 3, 4, 5]}
+
 
 @task
 def process_data(data: dict) -> dict:
     return {"source": data["source"], "processed": [x * 2 for x in data["data"]]}
 
+
 @task
 def save_results(processed: dict) -> str:
     return f"Saved {len(processed['processed'])} items from {processed['source']}"
+
 
 @dag(
     dag_id="simple_sequential_pipeline",
@@ -45,6 +49,7 @@ def simple_sequential_pipeline():
     data = fetch_data()
     processed = process_data(data)
     save_results(processed)
+
 
 dag_instance = simple_sequential_pipeline()
 ```

@@ -58,7 +58,7 @@ sftp_resource = SSHResource(
 
 defs = Definitions(
     resources={
-        'sftp': sftp_resource,
+        "sftp": sftp_resource,
     }
 )
 ```

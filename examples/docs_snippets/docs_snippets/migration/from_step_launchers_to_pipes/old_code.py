@@ -26,7 +26,6 @@ def downstream(
 ) -> None:
     my_metric = calculate_metric(upstream)
     context.add_output_metadata({"my_metric": my_metric})
-    return
 
 
 @dg.definitions

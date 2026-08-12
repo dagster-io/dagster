@@ -459,7 +459,7 @@ SensorReturnTypesUnion: TypeAlias = (
 RawSensorEvaluationFunction: TypeAlias = Callable[..., SensorReturnTypesUnion]
 
 SensorEvaluationFunction: TypeAlias = Callable[
-    ..., Sequence[None | SensorResult | SkipReason | RunRequest]
+    ..., Sequence[SensorResult | SkipReason | RunRequest | None]
 ]
 
 

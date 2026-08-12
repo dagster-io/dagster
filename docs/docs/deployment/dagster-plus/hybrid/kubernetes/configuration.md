@@ -173,9 +173,9 @@ You can also configure your Dagster job with the <PyObject section="libraries" i
 import dagster as dg
 from dagster_k8s import k8s_job_executor
 
+
 @dg.job(executor_def=k8s_job_executor)
-def k8s_job():
-    ...
+def k8s_job(): ...
 ```
 
 ## Per-job and per-op configuration

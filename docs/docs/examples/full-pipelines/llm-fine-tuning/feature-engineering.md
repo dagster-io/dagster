@@ -60,9 +60,18 @@ A lot of these shelves would be hard to use for modeling (such as `owned` or `de
 
 ```python
 CATEGORIES = [
-    "fantasy", "horror", "humor", "adventure",
-    "action", "romance", "ya", "superheroes",
-    "comedy", "mystery", "supernatural", "drama",
+    "fantasy",
+    "horror",
+    "humor",
+    "adventure",
+    "action",
+    "romance",
+    "ya",
+    "superheroes",
+    "comedy",
+    "mystery",
+    "supernatural",
+    "drama",
 ]
 ```
 

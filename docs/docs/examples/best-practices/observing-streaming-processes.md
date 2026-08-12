@@ -80,7 +80,7 @@ In production, you would query actual Kafka metrics using a library like `conflu
 ```python
 from confluent_kafka.admin import AdminClient
 
-admin = AdminClient({'bootstrap.servers': 'kafka.internal.company.com:9092'})
+admin = AdminClient({"bootstrap.servers": "kafka.internal.company.com:9092"})
 # Query consumer groups, offsets, and topic metadata
 ```
 

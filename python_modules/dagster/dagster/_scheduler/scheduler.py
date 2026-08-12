@@ -557,7 +557,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     schedule_debug_crash_flags: SingleInstigatorDebugCrashFlags | None,
     submit_threadpool_executor: ThreadPoolExecutor | None,
     in_memory_last_iteration_timestamp: float | None,
-) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
+) -> Generator[SerializableErrorInfo | ScheduleIterationTimes | None, None, None]:
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
@@ -866,7 +866,7 @@ def _schedule_runs_at_time(
     tick_context: _ScheduleLaunchContext,
     submit_threadpool_executor: ThreadPoolExecutor | None,
     debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
-) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
+) -> Generator[SerializableErrorInfo | ScheduleIterationTimes | None, None, None]:
     instance = workspace_process_context.instance
     repository_handle = remote_schedule.handle.repository_handle
 

@@ -203,11 +203,7 @@ class TestGetRun:
 
 ```python
 # api_tests/test_rest_compliance
-ALL_API_CLASSES = [
-    ...,
-    DgApiRunApi,
-    ...
-]
+ALL_API_CLASSES = [..., DgApiRunApi, ...]
 ```
 
 Incidentally, coding agents have been pretty good at generating request/response boilerplate for unit tests, but have struggled to cover every logic path.

@@ -31,13 +31,10 @@ from dagster_hightouch import HightouchSyncComponent
 
 # Components are typically loaded from YAML, but can be used in Python definitions
 hightouch_sync = HightouchSyncComponent(
-    sync_id="my-hightouch-sync-id",
-    asset={"key": ["hightouch", "marketing_sync"]}
+    sync_id="my-hightouch-sync-id", asset={"key": ["hightouch", "marketing_sync"]}
 )
 
-defs = dg.Definitions(
-    assets=[hightouch_sync.build_defs(None)]
-)
+defs = dg.Definitions(assets=[hightouch_sync.build_defs(None)])
 ```
 
 For job-based workflows, the `ConfigurableHightouchResource` can be used with the `hightouch_sync_op` to trigger syncs within a job.

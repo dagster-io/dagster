@@ -37,6 +37,9 @@ directory_type = "workspace"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+lint.ignore = [
+    "UP017", # `datetime.UTC` needs 3.11+, but repo-wide type checking runs at Python 3.10.
+]
 
 [dependency-groups]
 test = [

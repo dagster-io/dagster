@@ -219,13 +219,14 @@ import dagster as dg
 @dg.asset(key_prefix=["one", "two", "three"])
 def upstream_asset():
     return [1, 2, 3]
+
+
 # end_marker
 
 
 @dg.asset(ins={"upstream_asset": dg.AssetIn(key_prefix=["one", "two", "three"])})
 def downstream_asset(upstream_asset):
     return upstream_asset + [4]
-
 ```
 
 ### Line highlighting
@@ -237,8 +238,8 @@ Highlighting code examples can be done by creating `highlight-start` and `highli
 # highlight-start
 # Provide the resource to the asset
 def iris_dataset(iris_db: SnowflakeResource) -> None:
-  # highlight-end
-  pass
+    # highlight-end
+    pass
 ```
 
 ### Explanatory text for code examples

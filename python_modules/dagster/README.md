@@ -40,6 +40,7 @@ import pandas as pd
 
 from sklearn.linear_model import LinearRegression
 
+
 @dg.asset
 def country_populations() -> pd.DataFrame:
     df = pd.read_html("https://tinyurl.com/mry64ebh")[0]
@@ -47,13 +48,17 @@ def country_populations() -> pd.DataFrame:
     df["change"] = df["change"].str.rstrip("%").astype("float")
     return df
 
+
 @dg.asset
 def continent_change_model(country_populations: pd.DataFrame) -> LinearRegression:
     data = country_populations.dropna(subset=["change"])
     return LinearRegression().fit(pd.get_dummies(data[["continent"]]), data["change"])
 
+
 @dg.asset
-def continent_stats(country_populations: pd.DataFrame, continent_change_model: LinearRegression) -> pd.DataFrame:
+def continent_stats(
+    country_populations: pd.DataFrame, continent_change_model: LinearRegression
+) -> pd.DataFrame:
     result = country_populations.groupby("continent").sum()
     result["pop_change_factor"] = continent_change_model.coef_
     return result

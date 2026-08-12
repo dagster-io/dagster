@@ -123,25 +123,29 @@ Open the `dagster_quickstart/assets.py` file and add the following code to defin
 import pandas as pd
 from dagster import asset
 
+
 @asset(required_resource_keys={"teradata"})
 def read_csv_file(context):
     df = pd.read_csv("dagster_quickstart/data/sample_data.csv")
     context.log.info(df)
     return df
 
+
 @asset(required_resource_keys={"teradata"})
 def drop_table(context):
     result = context.resources.teradata.drop_table(["tmp_table"])
     context.log.info(result)
 
+
 @asset(required_resource_keys={"teradata"})
 def create_table(context, drop_table):
-    result = context.resources.teradata.execute_query('''CREATE TABLE tmp_table (
+    result = context.resources.teradata.execute_query("""CREATE TABLE tmp_table (
                                                             id INTEGER,
                                                             name VARCHAR(50),
                                                             age INTEGER,
-                                                            city VARCHAR(50));''')
+                                                            city VARCHAR(50));""")
     context.log.info(result)
+
 
 @asset(required_resource_keys={"teradata"}, deps=[read_csv_file])
 def insert_rows(context, create_table, read_csv_file):
@@ -152,11 +156,11 @@ def insert_rows(context, create_table, read_csv_file):
         )
         context.log.info(result)
 
+
 @asset(required_resource_keys={"teradata"})
 def read_table(context, insert_rows):
     result = context.resources.teradata.execute_query("select * from tmp_table;", True)
     context.log.info(result)
-
 ```
 
 This Dagster pipeline defines a series of assets that interact with Teradata. It starts by reading data from a CSV file, then drops and recreates a table in Teradata. After that, it inserts rows from the CSV into the table and finally retrieves the data from the table.
@@ -183,7 +187,7 @@ defs = Definitions(
             password=EnvVar("TERADATA_PASSWORD"),
             database=EnvVar("TERADATA_DATABASE"),
         )
-    }
+    },
 )
 ```
 
