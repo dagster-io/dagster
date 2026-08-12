@@ -22,7 +22,7 @@ from dagster.components.utils.translation import (
 from dagster_shared.serdes import deserialize_value, serialize_value
 from pydantic import Field
 
-from dagster_dbt.asset_specs import build_dbt_source_asset_specs
+from dagster_dbt.asset_specs import build_dbt_exposure_asset_specs, build_dbt_source_asset_specs
 from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
@@ -364,17 +364,32 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         # so freshness policies, table metadata, kinds, etc. flow into the graph. dbt Cloud
         # has no local DbtProject object, so pass project=None (code references derived
         # from local file paths aren't meaningful for Cloud-loaded manifests anyway).
+        validated_manifest = validate_manifest(manifest)
         source_specs = (
             build_dbt_source_asset_specs(
-                manifest=validate_manifest(manifest),
+                manifest=validated_manifest,
                 dagster_dbt_translator=self.translator,
                 project=None,
             )
             if self.translator.settings.enable_source_assets
             else []
         )
+        # Emit dbt exposures (dashboards, notebooks, etc.) as downstream observable specs
+        # so users can trace materialization -> consumption chains through the graph.
+        exposure_specs = (
+            build_dbt_exposure_asset_specs(
+                manifest=validated_manifest,
+                dagster_dbt_translator=self.translator,
+                project=None,
+            )
+            if self.translator.settings.enable_exposure_assets
+            else []
+        )
 
-        return Definitions(assets=[_dbt_cloud_assets, *source_specs], sensors=sensors)
+        return Definitions(
+            assets=[_dbt_cloud_assets, *source_specs, *exposure_specs],
+            sensors=sensors,
+        )
 
     def execute(self, context: AssetExecutionContext) -> Iterator:
         invocation = self.workspace.cli(

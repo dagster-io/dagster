@@ -100,6 +100,14 @@ class DagsterDbtTranslatorSettings(Resolvable):
             different failure mode from asset checks. Users who want per-column
             verification should keep using explicit dbt tests, which ``dagster-dbt`` lifts
             into per-column asset checks separately.
+        enable_exposure_assets (bool): Whether to emit dbt exposures (dashboards, notebooks,
+            ML models, applications, analyses declared in ``exposures.yml``) as observable
+            external :py:class:`dagster.AssetSpec` objects, with deps on the upstream models
+            they reference. Defaults to False (opt-in). This gives users a downstream
+            relationship in the graph — "if this model breaks, which dashboards are
+            affected?" — without materializing anything. Exposure kind is derived from
+            ``exposure.type`` (``dashboard`` / ``notebook`` / ``analysis`` / ``application``
+            / ``ml``) so the UI can render a distinct icon.
     """
 
     enable_asset_checks: bool = True
@@ -112,6 +120,7 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_assets: bool = False
     enable_source_freshness_policies: bool = False
     enable_contract_metadata: bool = False
+    enable_exposure_assets: bool = False
 
 
 class DagsterDbtTranslator:
