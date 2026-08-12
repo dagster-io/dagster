@@ -107,6 +107,14 @@ class DagsterDbtTranslatorSettings(Resolvable):
             affected?" — without materializing anything. Exposure kind is derived from
             ``exposure.type`` (``dashboard`` / ``notebook`` / ``analysis`` / ``application``
             / ``ml``) so the UI can render a distinct icon.
+        enable_code_version_automation (bool): Whether to attach
+            :py:meth:`dagster.AutomationCondition.code_version_changed` to every dbt model
+            spec so Dagster's automation-tick loop rebuilds a model after a deploy that
+            changes its SQL. Defaults to False (opt-in). Uses the ``code_version`` that
+            ``dagster-dbt`` already sets on every model (``SHA1(raw_sql)``), so the
+            condition fires on the tick after the hash changes vs the last materialization.
+            When a model also has an explicit ``meta.dagster.auto_materialize_policy``, the
+            two are combined via OR — users don't lose per-model config by opting in.
     """
 
     enable_asset_checks: bool = True
@@ -120,6 +128,7 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_freshness_policies: bool = True
     enable_contract_metadata: bool = False
     enable_exposure_assets: bool = False
+    enable_code_version_automation: bool = False
 
 
 class DagsterDbtTranslator:
@@ -760,9 +769,29 @@ class DagsterDbtTranslator:
 
         """
         auto_materialize_policy = self.get_auto_materialize_policy(dbt_resource_props)
-        return (
+        base_condition: AutomationCondition | None = (
             auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
         )
+
+        # Opt-in: when enable_code_version_automation=True, add
+        # `AutomationCondition.code_version_changed()` to models so Dagster's
+        # automation-tick loop rebuilds them after a deploy that changes their SQL. The
+        # `default_code_version_fn` for dbt models is `SHA1(raw_sql)` — this condition
+        # fires on the tick after that hash changes. Combines with any explicit
+        # `meta.dagster.auto_materialize_policy` via OR so users don't lose per-model
+        # config when opting in globally.
+        if (
+            self.settings.enable_code_version_automation
+            and dbt_resource_props.get("resource_type") == "model"
+        ):
+            code_version_condition = AutomationCondition.code_version_changed()
+            return (
+                code_version_condition
+                if base_condition is None
+                else base_condition | code_version_condition
+            )
+
+        return base_condition
 
     @public
     @beta(emit_runtime_warning=False)
