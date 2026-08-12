@@ -105,6 +105,78 @@ def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspac
     assert asset_def.node_def.name == "dbt_cloud_assets"
 
 
+def test_dbt_cloud_component_state_manifest_tags_models(tmp_path, mock_workspace_data):
+    """When `state_manifest_path` is set, model specs get `dbt/state=modified|unchanged|new`
+    tags based on checksum comparison. Only SQL-body changes are detected (mirrors dbt's
+    `state:modified.sql`); users needing full `state:modified` semantics should use
+    `dbt ls --state <path> --select state:modified` at CI time.
+    """
+    import json
+
+    # Add checksums to the model node so comparison is meaningful. Also add a NEW model
+    # that doesn't exist in the state manifest so we can verify the `new` case.
+    mock_workspace_data.manifest["nodes"]["model.my_project.my_model"]["checksum"] = {
+        "name": "sha256",
+        "checksum": "current-hash",
+    }
+    mock_workspace_data.manifest["nodes"]["model.my_project.brand_new_model"] = {
+        "resource_type": "model",
+        "package_name": "my_project",
+        "path": "brand_new_model.sql",
+        "original_file_path": "models/brand_new_model.sql",
+        "unique_id": "model.my_project.brand_new_model",
+        "fqn": ["my_project", "brand_new_model"],
+        "name": "brand_new_model",
+        "config": {"enabled": True},
+        "tags": [],
+        "depends_on": {"nodes": []},
+        "description": "",
+        "checksum": {"name": "sha256", "checksum": "brand-new-hash"},
+    }
+    mock_workspace_data.manifest["child_map"]["model.my_project.brand_new_model"] = []
+    mock_workspace_data.manifest["parent_map"]["model.my_project.brand_new_model"] = []
+
+    # Write a state manifest with a *different* checksum for my_model, and no
+    # brand_new_model entry.
+    state_manifest = {
+        "nodes": {
+            "model.my_project.my_model": {
+                "resource_type": "model",
+                "unique_id": "model.my_project.my_model",
+                "name": "my_model",
+                "checksum": {"name": "sha256", "checksum": "prod-hash"},
+            }
+        }
+    }
+    state_path_file = tmp_path / "prod_manifest.json"
+    state_path_file.write_text(json.dumps(state_manifest))
+
+    workspace = MagicMock(spec=DbtCloudWorkspace)
+    workspace.unique_id = "123-456"
+    workspace.project_id = 123
+    workspace.environment_id = 456
+    workspace.credentials = MagicMock(account_id=999)
+    workspace.fetch_workspace_data.return_value = mock_workspace_data
+    workspace.get_or_fetch_workspace_data.return_value = mock_workspace_data
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        state_manifest_path=str(state_path_file),
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    all_specs = list(defs.resolve_all_asset_specs())
+    specs_by_str = {spec.key.to_user_string(): spec for spec in all_specs}
+
+    # my_model has a different checksum in state -> modified.
+    assert specs_by_str["my_model"].tags.get("dbt/state") == "modified"
+    # brand_new_model doesn't exist in state -> new.
+    assert specs_by_str["brand_new_model"].tags.get("dbt/state") == "new"
+
+
 def test_dbt_cloud_component_emits_exposure_assets(tmp_path, mock_workspace_data):
     """Dbt Cloud manifests that declare exposures should get corresponding observable
     external `AssetSpec` objects when `enable_exposure_assets=True`. Deps on referenced

@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from pathlib import Path
@@ -23,11 +23,14 @@ from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManage
 
 from dagster_dbt.asset_specs import build_dbt_exposure_asset_specs, build_dbt_source_asset_specs
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_STATE_TAG_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
+    compute_dbt_state_tags,
     get_node,
 )
 from dagster_dbt.components.dbt_component_utils import (
@@ -81,6 +84,47 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
 
 
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count", "insights"]
+
+
+def _resolve_state_manifest_path(path: Path) -> Path:
+    """Accept either a directory containing ``manifest.json`` or a direct file path."""
+    if path.is_dir():
+        return path / "manifest.json"
+    return path
+
+
+def _apply_dbt_state_tags(
+    *,
+    asset_specs: Sequence["dg.AssetSpec"],
+    current_manifest: Mapping[str, Any],
+    state_manifest_path: Path,
+) -> list["dg.AssetSpec"]:
+    """Load the state manifest, compare per-model checksums with the current manifest,
+    and attach ``dbt/state=modified|unchanged|new`` tags to the corresponding specs.
+    """
+    import json
+
+    resolved = _resolve_state_manifest_path(state_manifest_path)
+    if not resolved.exists():
+        raise dg.DagsterInvalidDefinitionError(
+            f"state_manifest_path does not exist: {state_manifest_path}. "
+            "Provide a path to a manifest.json (or a directory containing one) that "
+            "reflects your production dbt project state."
+        )
+    state_manifest = json.loads(resolved.read_text())
+    state_tags_by_unique_id = compute_dbt_state_tags(
+        current_manifest=current_manifest, state_manifest=state_manifest
+    )
+
+    tagged_specs: list[dg.AssetSpec] = []
+    for spec in asset_specs:
+        unique_id_meta = spec.metadata.get(DAGSTER_DBT_UNIQUE_ID_METADATA_KEY)
+        unique_id = getattr(unique_id_meta, "value", unique_id_meta)
+        state = state_tags_by_unique_id.get(str(unique_id or ""))
+        tagged_specs.append(
+            spec.merge_attributes(tags={DAGSTER_DBT_STATE_TAG_KEY: state}) if state else spec
+        )
+    return tagged_specs
 
 
 @public
@@ -212,6 +256,22 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             description="Whether to prepare the dbt project every time in `dagster dev` or `dg` cli calls."
         ),
     ] = True
+    state_manifest_path: Annotated[
+        str | None,
+        Resolver.default(
+            description=(
+                "Optional local path to a `manifest.json` (or a directory containing one) "
+                "representing dbt's known-good production state. When set, each dbt model spec "
+                "is tagged with `dbt/state=modified|unchanged|new` by comparing per-model "
+                "`checksum.checksum` values to the current manifest. Users can select changed "
+                "models with `tag:dbt/state=modified` in launch commands or automation. Only "
+                "SQL-body changes are detected (per `state:modified.sql` in dbt); full "
+                "`state:modified` semantics (config, macros, contract, etc.) require running "
+                "`dbt ls --state <path> --select state:modified` at CI time."
+            ),
+            examples=["{{ project_root }}/prod_state/manifest.json"],
+        ),
+    ] = None
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -362,6 +422,15 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             project=project,
             io_manager_key=None,
         )
+        # State-aware tagging: when state_manifest_path is set, tag each model spec
+        # with dbt/state=modified|unchanged|new based on checksum comparison against
+        # a prod manifest. Users then select changed models via `tag:dbt/state=modified`.
+        if self.state_manifest_path:
+            asset_specs = _apply_dbt_state_tags(
+                asset_specs=asset_specs,
+                current_manifest=validate_manifest(project.manifest_path),
+                state_manifest_path=Path(self.state_manifest_path),
+            )
         op_spec = self._get_op_spec(project)
 
         @dg.multi_asset(

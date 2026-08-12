@@ -813,6 +813,52 @@ def _dbt_freshness_spec_to_timedelta(
     return timedelta(**{kwarg: count})
 
 
+DAGSTER_DBT_STATE_TAG_KEY: Final[str] = "dbt/state"
+DBT_STATE_MODIFIED: Final[str] = "modified"
+DBT_STATE_UNCHANGED: Final[str] = "unchanged"
+DBT_STATE_NEW: Final[str] = "new"
+
+
+def compute_dbt_state_tags(
+    *,
+    current_manifest: Mapping[str, Any],
+    state_manifest: Mapping[str, Any],
+) -> Mapping[str, str]:
+    """Compare per-model ``checksum.checksum`` values between a current and state manifest.
+
+    Returns a mapping of ``unique_id -> "modified" | "unchanged" | "new"`` for every model
+    in the current manifest:
+
+    - ``modified``: model exists in both, checksums differ.
+    - ``unchanged``: model exists in both, checksums match.
+    - ``new``: model exists in current but not in state.
+
+    Only ``model`` resources are compared (seeds and snapshots are excluded because their
+    "modification" semantics differ — seeds are content-hashed against the CSV, snapshots
+    are strategy-configured). This mirrors what dbt's ``state:modified.sql`` sub-selector
+    does; it does NOT cover ``state:modified.config`` / ``state:modified.macros`` /
+    ``state:modified.contract`` / etc. Users who need full ``state:modified`` semantics
+    should use ``dbt ls --state <path> --select state:modified`` at CI time and pass the
+    selection to Dagster explicitly.
+    """
+    state_nodes = state_manifest.get("nodes") or {}
+    result: dict[str, str] = {}
+    for unique_id, node in (current_manifest.get("nodes") or {}).items():
+        if node.get("resource_type") != "model":
+            continue
+        current_checksum = (node.get("checksum") or {}).get("checksum")
+        state_node = state_nodes.get(unique_id)
+        if state_node is None:
+            result[unique_id] = DBT_STATE_NEW
+        else:
+            state_checksum = (state_node.get("checksum") or {}).get("checksum")
+            if current_checksum == state_checksum:
+                result[unique_id] = DBT_STATE_UNCHANGED
+            else:
+                result[unique_id] = DBT_STATE_MODIFIED
+    return result
+
+
 def _freshness_policy_from_meta_dagster(
     meta_freshness_policy: Any,
 ) -> FreshnessPolicy | None:

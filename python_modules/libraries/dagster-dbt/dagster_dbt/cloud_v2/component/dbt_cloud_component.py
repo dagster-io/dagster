@@ -233,6 +233,21 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         ),
     ] = Field(default_factory=DefsStateConfigArgs.local_filesystem)
 
+    state_manifest_path: Annotated[
+        str | None,
+        Resolver.default(
+            description=(
+                "Optional local path to a `manifest.json` (or a directory containing one) "
+                "representing dbt's known-good production state. When set, each dbt model spec "
+                "is tagged with `dbt/state=modified|unchanged|new` by comparing per-model "
+                "`checksum.checksum` values to the current manifest fetched from dbt Cloud. "
+                "Users can then select changed models with `tag:dbt/state=modified` in launch "
+                "commands or automation. Only SQL-body changes are detected."
+            ),
+            examples=["{{ project_root }}/prod_state/manifest.json"],
+        ),
+    ] = None
+
     @property
     def defs_state_config(self) -> DefsStateConfig:
         key = f"DbtCloudComponent[{self.workspace.unique_id}]"
@@ -324,15 +339,25 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         manifest = workspace_data.manifest
         res_ctx = context.resolution_context
 
+        validated_manifest_for_state = validate_manifest(manifest)
         asset_specs, check_specs = build_dbt_specs(
             translator=self.translator,
-            manifest=validate_manifest(manifest),
+            manifest=validated_manifest_for_state,
             select=self.select,
             exclude=self.exclude,
             selector=self.selector,
             project=None,
             io_manager_key=None,
         )
+        # State-aware tagging: same wiring as DbtProjectComponent.
+        if self.state_manifest_path:
+            from dagster_dbt.components.dbt_project.component import _apply_dbt_state_tags
+
+            asset_specs = _apply_dbt_state_tags(
+                asset_specs=asset_specs,
+                current_manifest=validated_manifest_for_state,
+                state_manifest_path=Path(self.state_manifest_path),
+            )
 
         op_spec = self._get_op_spec("dbt_cloud_assets")
 
