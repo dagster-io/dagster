@@ -38,6 +38,7 @@ from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
+    default_contract_metadata_from_dbt_resource_props,
     default_description_fn,
     default_freshness_policy_from_dbt_resource_props,
     default_group_from_dbt_resource_props,
@@ -90,6 +91,15 @@ class DagsterDbtTranslatorSettings(Resolvable):
             ``models[*].config.freshness.build_after``. Explicit
             ``meta.dagster.freshness_policy`` config wins over the ``sources.freshness``
             derivation when both are set.
+        enable_contract_metadata (bool): Whether to surface dbt model contract information
+            (``config.contract.enforced`` and column / model constraints) as spec metadata
+            on the corresponding Dagster asset. Defaults to False (opt-in). Contracts are
+            NOT emitted as Dagster asset checks because dbt enforces contracts during model
+            build (a contract violation fails the whole model materialization, so no data
+            lands), not as a separate post-materialization signal — that's a fundamentally
+            different failure mode from asset checks. Users who want per-column
+            verification should keep using explicit dbt tests, which ``dagster-dbt`` lifts
+            into per-column asset checks separately.
     """
 
     enable_asset_checks: bool = True
@@ -101,6 +111,7 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_dbt_views_as_virtual_assets: bool = False
     enable_source_assets: bool = False
     enable_source_freshness_policies: bool = False
+    enable_contract_metadata: bool = False
 
 
 class DagsterDbtTranslator:
@@ -491,7 +502,10 @@ class DagsterDbtTranslator:
                     def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
                         return {"custom": "metadata"}
         """
-        return default_metadata_from_dbt_resource_props(dbt_resource_props)
+        metadata = dict(default_metadata_from_dbt_resource_props(dbt_resource_props))
+        if self.settings.enable_contract_metadata:
+            metadata.update(default_contract_metadata_from_dbt_resource_props(dbt_resource_props))
+        return metadata
 
     @public
     def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:

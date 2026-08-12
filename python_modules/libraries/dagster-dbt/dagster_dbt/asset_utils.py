@@ -950,6 +950,61 @@ def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sq
     return "\n\n".join(filter(None, description_sections))
 
 
+DAGSTER_DBT_CONTRACT_ENFORCED_METADATA_KEY: Final[str] = "dagster_dbt/contract_enforced"
+DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY: Final[str] = "dagster_dbt/column_constraints"
+DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY: Final[str] = "dagster_dbt/model_constraints"
+
+
+def default_contract_metadata_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    """Surface dbt model contract information as spec metadata (not as asset checks).
+
+    Contracts are enforced by dbt during model build — a contract violation fails the
+    whole materialization, so there is no separate post-materialization signal. That
+    failure mode is fundamentally different from how Dagster asset checks work
+    (post-materialization assertions), so we surface contracts as metadata rather than
+    as checks. Users who want per-column post-materialization verification should keep
+    using explicit dbt tests, which ``dagster-dbt`` lifts into per-column asset checks.
+
+    Returns an empty mapping for non-model resources or models without an enforced
+    contract. When the model declares an enforced contract, three metadata keys are
+    added under the ``dagster_dbt/`` namespace:
+
+    - ``contract_enforced`` (bool): mirrors ``config.contract.enforced``.
+    - ``column_constraints`` (dict[str, list[str]]): per-column constraint types
+      declared in ``columns[*].constraints[*].type`` (e.g. ``not_null``, ``unique``,
+      ``primary_key``, ``foreign_key``, ``check``). Only columns with at least one
+      constraint appear in the mapping.
+    - ``model_constraints`` (list[Mapping]): model-level constraints from the top-level
+      ``constraints`` field on the model (rare — used for cross-column ``foreign_key``
+      and ``check`` constraints). Passed through as-is from the manifest.
+    """
+    if dbt_resource_props.get("resource_type") != "model":
+        return {}
+    contract = dbt_resource_props.get("config", {}).get("contract") or {}
+    if not contract.get("enforced"):
+        return {}
+
+    column_constraints: dict[str, list[str]] = {}
+    for column_name, column_info in (dbt_resource_props.get("columns") or {}).items():
+        constraint_types = [
+            constraint.get("type")
+            for constraint in (column_info.get("constraints") or [])
+            if constraint.get("type")
+        ]
+        if constraint_types:
+            column_constraints[column_name] = constraint_types
+
+    model_constraints = list(dbt_resource_props.get("constraints") or [])
+
+    return {
+        DAGSTER_DBT_CONTRACT_ENFORCED_METADATA_KEY: True,
+        DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY: column_constraints,
+        DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY: model_constraints,
+    }
+
+
 def default_asset_check_fn(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
