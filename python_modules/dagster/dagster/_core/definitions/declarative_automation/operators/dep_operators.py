@@ -265,7 +265,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
 
         return AutomationResult(
             context,
-            true_subset=true_subset,
+            true_subset=true_subset,  # ty: ignore[invalid-argument-type]
             child_results=dep_results,
             timing_metadata=self._merge_timing_metadata(dep_results),  # ty: ignore[invalid-argument-type]
         )
@@ -299,4 +299,4 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
             dep_results.append(dep_result)
             true_subset = true_subset.compute_intersection(dep_result.true_subset)
 
-        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)  # ty: ignore[invalid-argument-type]

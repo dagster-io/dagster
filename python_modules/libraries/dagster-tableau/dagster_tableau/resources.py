@@ -168,9 +168,11 @@ class BaseTableauClient:
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Sequence[str] | None
     ) -> Iterator[AssetObservation | Output]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
-        refreshed_workbook_ids = set()
+        refreshed_workbook_ids: set[str] = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
-            refreshed_workbook_ids.add(self.refresh_and_poll_workbook(refreshable_workbook_id))
+            refreshed_workbook_id = self.refresh_and_poll_workbook(refreshable_workbook_id)
+            if refreshed_workbook_id is not None:
+                refreshed_workbook_ids.add(refreshed_workbook_id)
 
         for spec in specs:
             view_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
@@ -199,11 +201,11 @@ class BaseTableauClient:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
         """
-        refreshed_data_source_ids = set()
+        refreshed_data_source_ids: set[str] = set()
         for refreshable_data_source_id in refreshable_data_source_ids or []:
-            refreshed_data_source_ids.add(
-                self.refresh_and_poll_data_source(refreshable_data_source_id)
-            )
+            refreshed_data_source_id = self.refresh_and_poll_data_source(refreshable_data_source_id)
+            if refreshed_data_source_id is not None:
+                refreshed_data_source_ids.add(refreshed_data_source_id)
 
         # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
         refreshed_workbook_ids = set()
@@ -910,11 +912,13 @@ class BaseTableauWorkspace(ConfigurableResource):
         ]
 
         with self.get_client() as client:
-            refreshed_data_source_ids = set()
+            refreshed_data_source_ids: set[str] = set()
             for refreshable_data_source_id in refreshable_data_source_ids:
-                refreshed_data_source_ids.add(
-                    client.refresh_and_poll_data_source(refreshable_data_source_id)
+                refreshed_data_source_id = client.refresh_and_poll_data_source(
+                    refreshable_data_source_id
                 )
+                if refreshed_data_source_id is not None:
+                    refreshed_data_source_ids.add(refreshed_data_source_id)
 
             data_source_specs = [
                 spec

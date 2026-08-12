@@ -560,14 +560,14 @@ def find_defs_or_component_yaml(path: Path) -> Path | None:
     )
 
 
-T = TypeVar("T", bound=ComponentDeclLoadContext)
+T_LoadContext = TypeVar("T_LoadContext", bound=ComponentDeclLoadContext)
 
 
 def context_with_injected_scope(
-    context: T,
+    context: T_LoadContext,
     component_cls: type[Component],
     template_vars_module: str | None,
-) -> T:
+) -> T_LoadContext:
     # Merge backward-compatible get_additional_scope with context-aware static template vars
 
     legacy_scope = component_cls.get_additional_scope()

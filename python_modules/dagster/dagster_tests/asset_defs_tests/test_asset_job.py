@@ -2258,10 +2258,7 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
         # assert exception context has the expected message and class
         assert check.not_none(error_info.cause).cls_name == expected_class.__name__
         if expected_message:
-            assert (
-                re.compile(expected_message).search(check.not_none(error_info.cause).message)
-                is not None
-            )
+            assert re.search(expected_message, check.not_none(error_info.cause).message) is not None
 
     else:
         dg.Definitions(assets=assets, jobs=[asset_job])

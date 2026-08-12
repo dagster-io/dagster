@@ -4,6 +4,7 @@ import hashlib
 import re
 import time
 from collections.abc import Mapping
+from typing import Any
 
 import kubernetes
 from dagster_k8s.client import DagsterKubernetesClient
@@ -210,7 +211,7 @@ def construct_code_location_deployment(
     user_defined_deployment_metadata = copy.deepcopy(dict(user_defined_config.deployment_metadata))
     user_defined_deployment_labels = user_defined_deployment_metadata.pop("labels", {})
 
-    container_config = copy.deepcopy(user_defined_config.container_config)
+    container_config: dict[str, Any] = copy.deepcopy(user_defined_config.container_config)
 
     user_defined_env_vars = container_config.pop("env", [])
     container_name = container_config.pop("name", "dagster")

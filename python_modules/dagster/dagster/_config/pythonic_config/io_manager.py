@@ -27,7 +27,7 @@ from dagster._utils.cached_method import cached_method
 TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
 
 
-class ConfigurableIOManagerFactoryResourceDefinition(
+class ConfigurableIOManagerFactoryResourceDefinition(  # ty: ignore[invalid-method-override]
     NestedResourcesResourceDefinition,
     IOManagerDefinition,
 ):
