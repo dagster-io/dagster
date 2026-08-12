@@ -36,7 +36,7 @@ plugins = [
 [dependency-groups]
 test = [
     "dagster-shared",
-    "pytest>=9.0.2",
+    "pytest>=9.1.1",
 ]
 
 [tool.uv.sources]
