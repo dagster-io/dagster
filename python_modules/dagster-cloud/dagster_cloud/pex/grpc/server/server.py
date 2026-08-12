@@ -13,7 +13,11 @@ from dagster._grpc.__generated__.dagster_api_pb2_grpc import (
     DagsterApiServicer,
     add_DagsterApiServicer_to_server,
 )
-from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT, DEFAULT_REPOSITORY_GRPC_TIMEOUT
+from dagster._grpc.client import (
+    DEFAULT_GRPC_TIMEOUT,
+    DEFAULT_REFRESH_COMPONENT_STATE_TIMEOUT,
+    DEFAULT_REPOSITORY_GRPC_TIMEOUT,
+)
 from dagster._grpc.server import server_termination_target
 from dagster._grpc.types import GetCurrentRunsResult, SensorExecutionArgs
 from dagster._grpc.utils import max_rx_bytes, max_send_bytes
@@ -292,6 +296,14 @@ class DagsterPexProxyApiServer(DagsterApiServicer):
                 )
             else:
                 raise
+
+    def RefreshComponentState(self, request, context):
+        return self._query(
+            "RefreshComponentState",
+            request,
+            context,
+            timeout=DEFAULT_REFRESH_COMPONENT_STATE_TIMEOUT,
+        )
 
     def ReloadCodeWithState(self, request, context):
         return self._query("ReloadCodeWithState", request, context)
