@@ -21,6 +21,7 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
+from dagster_dbt.asset_specs import build_dbt_source_asset_specs
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
@@ -378,7 +379,21 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             with _set_resolution_context(res_ctx):
                 yield from self.execute(context=context, dbt=DbtCliResource(project))
 
-        return dg.Definitions(assets=[_fn])
+        # dbt sources are emitted as bare AssetSpecs so that Definitions treats them as
+        # external observable assets (no op, no io_manager). When another integration
+        # declares the same AssetKey (Fivetran, Sling, a manual observable_source_asset),
+        # Dagster merges the two — dbt contributes freshness policy, table schema, kinds.
+        source_specs = (
+            build_dbt_source_asset_specs(
+                manifest=validate_manifest(project.manifest_path),
+                dagster_dbt_translator=validate_translator(self.translator),
+                project=project,
+            )
+            if self.translator.settings.enable_source_assets
+            else []
+        )
+
+        return dg.Definitions(assets=[_fn, *source_specs])
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         return resolve_cli_args(self.cli_args, context)

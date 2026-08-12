@@ -6,6 +6,7 @@ import textwrap
 from argparse import ArgumentParser
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
+from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final  # noqa: UP035
 
@@ -22,6 +23,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
+    FreshnessPolicy,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -782,6 +784,137 @@ def default_auto_materialize_policy_fn(
     elif auto_materialize_policy_config.get("type") == "lazy":
         return AutoMaterializePolicy.lazy()
     return None
+
+
+_DBT_FRESHNESS_PERIOD_TO_TIMEDELTA_KWARG: Mapping[str, str] = {
+    "minute": "minutes",
+    "hour": "hours",
+    "day": "days",
+}
+
+
+def _dbt_freshness_spec_to_timedelta(
+    freshness_spec: Mapping[str, Any] | None,
+) -> timedelta | None:
+    """Translate a dbt ``{count, period}`` freshness spec into a ``timedelta``.
+
+    Returns None when the spec is missing, incomplete, or uses a period we don't
+    recognize (dbt supports minute/hour/day).
+    """
+    if not freshness_spec:
+        return None
+    count = freshness_spec.get("count")
+    period = freshness_spec.get("period")
+    if count is None or period is None:
+        return None
+    kwarg = _DBT_FRESHNESS_PERIOD_TO_TIMEDELTA_KWARG.get(period)
+    if kwarg is None:
+        return None
+    return timedelta(**{kwarg: count})
+
+
+def _freshness_policy_from_meta_dagster(
+    meta_freshness_policy: Any,
+) -> FreshnessPolicy | None:
+    """Parse an explicit ``meta.dagster.freshness_policy`` block into a ``FreshnessPolicy``.
+
+    Two shapes are supported, mirroring :py:meth:`FreshnessPolicy.time_window` and
+    :py:meth:`FreshnessPolicy.cron`:
+
+    - ``{type: "time_window", fail_window_seconds: int, warn_window_seconds: int?}``
+    - ``{type: "cron", deadline_cron: str, lower_bound_delta_seconds: int, timezone: str?}``
+
+    Returns None for missing / malformed / unknown-type blocks — silent skip is the right
+    default because ``meta`` is arbitrary and we don't want a typo in dbt YAML to break
+    manifest parsing on the Dagster side.
+    """
+    if not isinstance(meta_freshness_policy, Mapping):
+        return None
+    policy_type = meta_freshness_policy.get("type")
+    if policy_type == "time_window":
+        fail_window_seconds = meta_freshness_policy.get("fail_window_seconds")
+        if not isinstance(fail_window_seconds, (int, float)):
+            return None
+        warn_window_seconds = meta_freshness_policy.get("warn_window_seconds")
+        warn_window = (
+            timedelta(seconds=warn_window_seconds)
+            if isinstance(warn_window_seconds, (int, float))
+            else None
+        )
+        return FreshnessPolicy.time_window(
+            fail_window=timedelta(seconds=fail_window_seconds),
+            warn_window=warn_window,
+        )
+    if policy_type == "cron":
+        deadline_cron = meta_freshness_policy.get("deadline_cron")
+        lower_bound_delta_seconds = meta_freshness_policy.get("lower_bound_delta_seconds")
+        if not isinstance(deadline_cron, str) or not isinstance(
+            lower_bound_delta_seconds, (int, float)
+        ):
+            return None
+        timezone = meta_freshness_policy.get("timezone", "UTC")
+        if not isinstance(timezone, str):
+            return None
+        return FreshnessPolicy.cron(
+            deadline_cron=deadline_cron,
+            lower_bound_delta=timedelta(seconds=lower_bound_delta_seconds),
+            timezone=timezone,
+        )
+    return None
+
+
+def default_freshness_policy_from_dbt_resource_props(
+    dbt_resource_props: Mapping[str, Any],
+) -> FreshnessPolicy | None:
+    """Derive a ``FreshnessPolicy`` from either explicit ``meta.dagster.freshness_policy``
+    config or dbt's native ``sources.freshness`` block.
+
+    Precedence:
+
+    1. ``meta.dagster.freshness_policy`` (any resource type) — explicit user config wins.
+       Two shapes supported: ``time_window`` and ``cron``. See
+       :py:func:`_freshness_policy_from_meta_dagster`. This is the escape hatch for
+       models (which have no dbt-native freshness config) and for users who want a
+       ``CronFreshnessPolicy`` instead of dbt's warn/error timedeltas.
+    2. ``sources.freshness.{warn_after, error_after}`` (sources only) — dbt-native
+       staleness config translated to a ``TimeWindowFreshnessPolicy`` where ``error_after``
+       becomes ``fail_window`` and ``warn_after`` becomes ``warn_window``.
+
+    Returns None when neither applies (non-source resources without meta config, sources
+    without freshness, or sources with only ``warn_after`` set — Dagster requires a
+    ``fail_window``).
+
+    If ``warn_after`` is greater than or equal to ``error_after`` (an invalid combination
+    for Dagster's ``TimeWindowFreshnessPolicy``), the warn window is dropped rather than
+    raising, so a partially misconfigured source still yields a usable fail-only policy.
+    """
+    # 1. Explicit meta.dagster.freshness_policy wins, for any resource type. This is the
+    #    escape hatch that lets users:
+    #    - attach freshness policies to models (which have no dbt-native freshness config)
+    #    - use a CronFreshnessPolicy where dbt only supports timedelta warn/error windows
+    #    - keep freshness config alongside the dbt project rather than in Dagster YAML
+    meta_dagster = dbt_resource_props.get("meta", {}).get("dagster", {})
+    meta_policy = _freshness_policy_from_meta_dagster(meta_dagster.get("freshness_policy"))
+    if meta_policy is not None:
+        return meta_policy
+
+    # 2. dbt-native sources.freshness (source-only).
+    if dbt_resource_props.get("resource_type") != "source":
+        return None
+
+    freshness_config = dbt_resource_props.get("freshness")
+    if not freshness_config:
+        return None
+
+    fail_window = _dbt_freshness_spec_to_timedelta(freshness_config.get("error_after"))
+    if fail_window is None:
+        return None
+
+    warn_window = _dbt_freshness_spec_to_timedelta(freshness_config.get("warn_after"))
+    if warn_window is not None and warn_window >= fail_window:
+        warn_window = None
+
+    return FreshnessPolicy.time_window(fail_window=fail_window, warn_window=warn_window)
 
 
 def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sql: bool = True):

@@ -12,6 +12,7 @@ from dagster import (
     AutoMaterializePolicy,
     AutomationCondition,
     DagsterInvalidDefinitionError,
+    FreshnessPolicy,
     MetadataValue,
     PartitionMapping,
 )
@@ -38,6 +39,7 @@ from dagster_dbt.asset_utils import (
     default_auto_materialize_policy_fn,
     default_code_version_fn,
     default_description_fn,
+    default_freshness_policy_from_dbt_resource_props,
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
     default_owners_from_dbt_resource_props,
@@ -70,6 +72,23 @@ class DagsterDbtTranslatorSettings(Resolvable):
         enable_dbt_views_as_virtual_assets (bool): Whether to treat dbt models with
             ``materialized: view`` as virtual assets. When enabled, view models will have
             ``is_virtual=True`` and ``"view"`` added to their kinds. Defaults to False.
+        enable_source_assets (bool): Whether dbt sources are emitted as their own external
+            (observable, non-materializable) :py:class:`dagster.AssetSpec` objects in
+            addition to being referenced as upstream deps of dbt models. Defaults to True.
+            When another integration (Fivetran, Sling, a manual ``AssetSpec``, etc.) declares
+            an asset with the same :py:class:`dagster.AssetKey`, Dagster merges the two into
+            one asset — dbt contributes its metadata (freshness policy, table schema, tags)
+            without conflicting with the upstream materializer.
+        enable_source_freshness_policies (bool): Whether to automatically derive a
+            :py:class:`dagster.FreshnessPolicy` on source assets from the source's
+            ``freshness`` block (``warn_after`` / ``error_after``) in ``sources.yml``.
+            Defaults to True. The derived policy is only visible in the Dagster UI when
+            ``enable_source_assets`` is also True (otherwise sources are dep-only and have
+            no spec to attach the policy to). Set to False to opt out of the derivation and
+            manage freshness policies manually (via a translator subclass or ``post_processing``).
+            Note that this flag only controls the *auto-derivation* from ``sources.freshness``.
+            Explicit ``meta.dagster.freshness_policy`` config in the dbt project is always
+            respected regardless of this setting.
     """
 
     enable_asset_checks: bool = True
@@ -79,6 +98,8 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_tests_as_checks: bool = False
     enable_source_metadata: bool = True
     enable_dbt_views_as_virtual_assets: bool = False
+    enable_source_assets: bool = True
+    enable_source_freshness_policies: bool = True
 
 
 class DagsterDbtTranslator:
@@ -262,6 +283,7 @@ class DagsterDbtTranslator:
             group_name=self.get_group_name(resource_props),
             code_version=self.get_code_version(resource_props),
             automation_condition=self.get_automation_condition(resource_props),
+            freshness_policy=self.get_freshness_policy(resource_props),
             owners=self.get_owners(owners_resource_props),
             tags=self.get_tags(resource_props),
             kinds=kinds,
@@ -718,6 +740,60 @@ class DagsterDbtTranslator:
         return (
             auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
         )
+
+    @public
+    @beta(emit_runtime_warning=False)
+    def get_freshness_policy(self, dbt_resource_props: Mapping[str, Any]) -> FreshnessPolicy | None:
+        """A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster :py:class:`dagster.FreshnessPolicy` for that resource.
+
+        By default, dbt sources with a ``freshness`` block in ``sources.yml`` yield a
+        :py:class:`dagster.TimeWindowFreshnessPolicy`, where ``error_after`` becomes the
+        ``fail_window`` and ``warn_after`` becomes the ``warn_window``. Non-source resources
+        and sources without a ``freshness`` block yield ``None``. This behavior is controlled
+        by the ``enable_source_freshness_policies`` setting on :py:class:`DagsterDbtTranslatorSettings`
+        and can be disabled by setting it to ``False``.
+
+        This method can be overridden to provide a custom :py:class:`FreshnessPolicy` for a dbt
+        resource, including deriving policies from custom ``meta`` config on models.
+
+        Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
+        a model, seed, snapshot or source in a given dbt project. You can learn more about dbt
+        resources and the properties available in this dictionary here:
+        https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[FreshnessPolicy]: A Dagster freshness policy.
+
+        Examples:
+            Attach a custom cron freshness policy to models tagged ``critical``:
+
+            .. code-block:: python
+
+                from datetime import timedelta
+                from typing import Any, Mapping
+
+                from dagster import FreshnessPolicy
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_freshness_policy(
+                        self, dbt_resource_props: Mapping[str, Any]
+                    ) -> FreshnessPolicy | None:
+                        if "critical" in dbt_resource_props.get("tags", []):
+                            return FreshnessPolicy.cron(
+                                deadline_cron="0 8 * * *",
+                                lower_bound_delta=timedelta(hours=1),
+                            )
+                        return super().get_freshness_policy(dbt_resource_props)
+        """
+        if not self.settings.enable_source_freshness_policies:
+            return None
+        return default_freshness_policy_from_dbt_resource_props(dbt_resource_props)
 
     def get_partitions_def(
         self, dbt_resource_props: Mapping[str, Any]

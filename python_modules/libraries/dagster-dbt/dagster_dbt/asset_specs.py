@@ -1,6 +1,9 @@
 from collections.abc import Sequence
 
-from dagster import AssetSpec
+from dagster import AssetKey, AssetSpec
+from dagster._core.definitions.assets.definition.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+)
 
 from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
@@ -56,5 +59,58 @@ def build_dbt_asset_specs(
         io_manager_key=None,
         project=project,
     )
+
+    return specs
+
+
+def build_dbt_source_asset_specs(
+    *,
+    manifest: DbtManifestParam,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    project: DbtProject | None = None,
+) -> Sequence[AssetSpec]:
+    """Build external (observable, non-materializable) ``AssetSpec`` objects for every dbt
+    source declared in the manifest.
+
+    Sources are emitted as bare ``AssetSpec`` instances so that passing them to
+    :py:class:`dagster.Definitions` yields observable external assets rather than
+    materializable ones. When another Dagster integration (Fivetran, Sling, a manual
+    ``AssetSpec``, etc.) declares an asset with the same :py:class:`dagster.AssetKey`,
+    Dagster merges the two — dbt's contribution (freshness policy, table schema, tags)
+    layers on top without conflicting with the upstream materializer.
+
+    Automatic derivations that flow through the translator (freshness policies from
+    ``sources.freshness``, table metadata, kinds, code references, etc.) apply to the
+    returned specs.
+
+    Multiple dbt sources that collapse to the same ``AssetKey`` (see the
+    ``enable_duplicate_source_asset_keys`` translator setting) are de-duplicated first-wins.
+
+    Args:
+        manifest: The contents of a ``manifest.json`` file or the path to one.
+        dagster_dbt_translator: Optional translator; defaults to :py:class:`DagsterDbtTranslator`.
+        project: Optional :py:class:`DbtProject` — needed for code references.
+
+    Returns:
+        Sequence[AssetSpec]: One ``AssetSpec`` per unique source ``AssetKey`` in the manifest.
+    """
+    manifest = validate_manifest(manifest)
+    translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
+
+    seen: set[AssetKey] = set()
+    specs: list[AssetSpec] = []
+    for source_unique_id in manifest.get("sources", {}):
+        spec = translator.get_asset_spec(manifest, source_unique_id, project)
+        if spec.key in seen:
+            continue
+        seen.add(spec.key)
+        # Tag as an auto-created stub so that any explicit user declaration at the same
+        # AssetKey (Fivetran, Sling, a manual observable_source_asset) takes precedence
+        # per Dagster's asset-node precedence order (materializable > observable > non-stub).
+        # dbt-derived metadata (freshness policy, table schema, kinds) still travels with the
+        # spec and merges into the winning declaration.
+        specs.append(
+            spec.merge_attributes(metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+        )
 
     return specs

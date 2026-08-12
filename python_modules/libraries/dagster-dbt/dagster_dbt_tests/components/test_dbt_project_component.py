@@ -880,7 +880,12 @@ def test_subclass_with_op_config_schema_and_custom_get_asset_spec(dbt_path: Path
 
 
 def test_upstream_source_metadata_flows_to_stub_asset() -> None:
-    """Test that source metadata is included on stub assets when enable_source_metadata is True."""
+    """Sources declared in ``sources.yml`` are emitted by ``DbtProjectComponent`` as observable
+    external ``AssetSpec`` objects tagged with ``SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET=True``,
+    carrying the source's ``dagster/table_name`` metadata. Downstream integrations that need to
+    represent the same upstream table can opt out of dbt-emitted source specs via
+    ``translation_settings.enable_source_assets: false`` and align AssetKeys directly.
+    """
     # Prepare the manifest for test_metadata_path
     project = DbtProject(test_metadata_path)
     project.preparer.prepare(project)
@@ -906,31 +911,51 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
 
     source_spec = specs_by_key[source_key]
 
-    # Should be marked as auto-created stub asset
+    # Emitted as an auto-created stub so user declarations at the same key win the precedence order.
     assert source_spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
 
-    # Should have the table_name metadata from the source definition that enables remapping
+    # Table name metadata from the source flows into the emitted spec so callers relying on
+    # `dagster/table_name` matching can locate the upstream table.
     table_name = "master_jaffle_shop.main.source_raw_customers"
     assert source_spec.metadata["dagster/table_name"] == table_name
 
-    # Now build defs with something matching that table name and verify key is remapped
-    upstream_spec = dg.AssetSpec(
-        key=AssetKey("foo_upstream_defined"), metadata={"dagster/table_name": table_name}
-    )
-    defs_combined = dg.Definitions.merge(defs, dg.Definitions(assets=[upstream_spec]))
-
-    all_specs_combined = list(defs_combined.resolve_all_asset_specs())
-    specs_by_key_combined = {spec.key: spec for spec in all_specs_combined}
-
-    # should have been remapped, so shouldn't show up here
-    assert AssetKey("raw_source_customers") not in specs_by_key_combined
-    stg_customers_spec = specs_by_key_combined[AssetKey("stg_customers")]
-
-    # dependency of stg_customers should have been remapped
+    # stg_customers's dep resolves to the emitted source spec.
+    stg_customers_spec = specs_by_key[AssetKey("stg_customers")]
     deps = list(stg_customers_spec.deps)
     assert len(deps) == 1
-    assert deps[0].asset_key == AssetKey("foo_upstream_defined")
+    assert deps[0].asset_key == AssetKey("raw_source_customers")
     assert deps[0].metadata["dagster/table_name"] == table_name
+
+
+def test_source_assets_can_be_disabled_via_translation_setting() -> None:
+    """Setting ``translation_settings.enable_source_assets: false`` on ``DbtProjectComponent``
+    suppresses the dbt-side source-spec emission. The source ``AssetKey`` still appears in the
+    graph because Dagster's own ``resolve_stub_assets_defs`` mechanism auto-creates a placeholder
+    for undefined dep keys, but without the dbt-derived enrichment (no ``FreshnessPolicy``).
+    """
+    project = DbtProject(test_metadata_path)
+    project.preparer.prepare(project)
+
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "project": str(test_metadata_path),
+            "select": "stg_customers",
+            "translation_settings": {
+                "enable_source_metadata": True,
+                "enable_source_assets": False,
+            },
+        },
+    )
+
+    all_specs = list(defs.resolve_all_asset_specs())
+    specs_by_key = {spec.key: spec for spec in all_specs}
+    source_spec = specs_by_key[AssetKey("raw_source_customers")]
+
+    # Dagster's stub-creation still marks the placeholder, but our dbt-side enrichment is absent —
+    # no freshness policy is attached because we didn't emit the source spec ourselves.
+    assert source_spec.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET) is True
+    assert source_spec.freshness_policy is None
 
 
 def test_include_metadata_insights_calls_with_insights(dbt_path: Path) -> None:
