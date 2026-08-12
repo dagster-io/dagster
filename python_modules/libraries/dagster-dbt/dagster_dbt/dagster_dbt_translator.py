@@ -747,15 +747,21 @@ class DagsterDbtTranslator:
         """A function that takes a dictionary representing properties of a dbt resource, and
         returns the Dagster :py:class:`dagster.FreshnessPolicy` for that resource.
 
-        By default, dbt sources with a ``freshness`` block in ``sources.yml`` yield a
-        :py:class:`dagster.TimeWindowFreshnessPolicy`, where ``error_after`` becomes the
-        ``fail_window`` and ``warn_after`` becomes the ``warn_window``. Non-source resources
-        and sources without a ``freshness`` block yield ``None``. This behavior is controlled
-        by the ``enable_source_freshness_policies`` setting on :py:class:`DagsterDbtTranslatorSettings`
-        and can be disabled by setting it to ``False``.
+        By default, three derivation paths are checked in order (see
+        :py:func:`dagster_dbt.asset_utils.default_freshness_policy_from_dbt_resource_props`):
+
+        1. ``meta.dagster.freshness_policy`` on any resource — explicit user override.
+        2. ``sources.freshness.{warn_after, error_after}`` on sources — dbt-native.
+        3. ``models[*].config.freshness.build_after`` on dbt 1.9+ models — dbt-native
+           rebuild-cadence gate translated to a ``TimeWindowFreshnessPolicy``.
+
+        This behavior is controlled by the ``enable_source_freshness_policies`` setting on
+        :py:class:`DagsterDbtTranslatorSettings` and can be disabled by setting it to ``False``
+        (which suppresses paths 2 and 3; the explicit ``meta.dagster.freshness_policy`` in
+        path 1 is always respected).
 
         This method can be overridden to provide a custom :py:class:`FreshnessPolicy` for a dbt
-        resource, including deriving policies from custom ``meta`` config on models.
+        resource, including composing with the dbt-derived policy via ``super()``.
 
         Note that a dbt resource is unrelated to Dagster's resource concept, and simply represents
         a model, seed, snapshot or source in a given dbt project. You can learn more about dbt

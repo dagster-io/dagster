@@ -274,3 +274,108 @@ class TestMetaDagsterFreshnessPolicy:
             "meta": {"dagster": {"freshness_policy": "0 8 * * *"}},
         }
         assert default_freshness_policy_from_dbt_resource_props(props) is None
+
+
+class TestModelBuildAfterFreshnessPolicy:
+    """Tests for the dbt 1.9+ ``models[*].config.freshness.build_after`` → ``FreshnessPolicy``
+    derivation.
+
+    dbt's ``build_after`` gates whether a model runs during ``dbt build``: models still
+    within their fresh window emit ``no-op`` and skip. We translate the same SLO to a
+    ``TimeWindowFreshnessPolicy`` so it surfaces in the Dagster UI as a freshness state.
+    """
+
+    def _model(self, build_after: Any) -> dict[str, Any]:
+        return {
+            "resource_type": "model",
+            "config": {"freshness": {"build_after": build_after}},
+        }
+
+    def test_build_after_hours(self) -> None:
+        policy = default_freshness_policy_from_dbt_resource_props(
+            self._model({"count": 6, "period": "hour"})
+        )
+        assert isinstance(policy, TimeWindowFreshnessPolicy)
+        assert policy.fail_window.to_timedelta() == timedelta(hours=6)
+        assert policy.warn_window is None
+
+    def test_build_after_days(self) -> None:
+        policy = default_freshness_policy_from_dbt_resource_props(
+            self._model({"count": 1, "period": "day"})
+        )
+        assert isinstance(policy, TimeWindowFreshnessPolicy)
+        assert policy.fail_window.to_timedelta() == timedelta(days=1)
+
+    def test_build_after_minutes(self) -> None:
+        policy = default_freshness_policy_from_dbt_resource_props(
+            self._model({"count": 30, "period": "minute"})
+        )
+        assert isinstance(policy, TimeWindowFreshnessPolicy)
+        assert policy.fail_window.to_timedelta() == timedelta(minutes=30)
+
+    def test_missing_build_after_returns_none(self) -> None:
+        # dbt 1.9+ freshness block without build_after — e.g. a stub freshness declaration.
+        assert (
+            default_freshness_policy_from_dbt_resource_props(
+                {"resource_type": "model", "config": {"freshness": {}}}
+            )
+            is None
+        )
+
+    def test_no_freshness_config_returns_none(self) -> None:
+        # Pre-1.9 dbt models have no config.freshness block at all.
+        assert (
+            default_freshness_policy_from_dbt_resource_props(
+                {"resource_type": "model", "config": {}}
+            )
+            is None
+        )
+
+    def test_no_config_returns_none(self) -> None:
+        # Defensive: manifest weirdness where config is missing entirely.
+        assert default_freshness_policy_from_dbt_resource_props({"resource_type": "model"}) is None
+
+    def test_unknown_period_returns_none(self) -> None:
+        assert (
+            default_freshness_policy_from_dbt_resource_props(
+                self._model({"count": 1, "period": "week"})
+            )
+            is None
+        )
+
+    def test_meta_dagster_overrides_build_after(self) -> None:
+        # meta.dagster.freshness_policy wins over dbt-native build_after — user gets full
+        # control when they need a CronFreshnessPolicy or a different window.
+        props = {
+            "resource_type": "model",
+            "config": {"freshness": {"build_after": {"count": 6, "period": "hour"}}},
+            "meta": {
+                "dagster": {
+                    "freshness_policy": {
+                        "type": "cron",
+                        "deadline_cron": "0 8 * * *",
+                        "lower_bound_delta_seconds": 3600,
+                    }
+                }
+            },
+        }
+        policy = default_freshness_policy_from_dbt_resource_props(props)
+        assert isinstance(policy, CronFreshnessPolicy)
+        assert policy.deadline_cron == "0 8 * * *"
+
+    def test_build_after_does_not_apply_to_sources(self) -> None:
+        # Sources use the sources.freshness.warn/error_after path, not config.freshness.build_after.
+        source_props = {
+            "resource_type": "source",
+            "config": {"freshness": {"build_after": {"count": 6, "period": "hour"}}},
+        }
+        assert default_freshness_policy_from_dbt_resource_props(source_props) is None
+
+    def test_build_after_does_not_apply_to_seeds_or_snapshots(self) -> None:
+        # Seeds and snapshots are not the target of build_after in dbt 1.9+.
+        for resource_type in ("seed", "snapshot"):
+            props = {
+                "resource_type": resource_type,
+                "config": {"freshness": {"build_after": {"count": 6, "period": "hour"}}},
+            }
+            assert default_freshness_policy_from_dbt_resource_props(props) is None
