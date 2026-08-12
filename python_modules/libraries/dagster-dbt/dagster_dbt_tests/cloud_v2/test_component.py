@@ -105,6 +105,61 @@ def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspac
     assert asset_def.node_def.name == "dbt_cloud_assets"
 
 
+def test_dbt_cloud_component_emits_exposure_assets(tmp_path, mock_workspace_data):
+    """Dbt Cloud manifests that declare exposures should get corresponding observable
+    external `AssetSpec` objects when `enable_exposure_assets=True`. Deps on referenced
+    models flow through so the graph shows a materialization -> consumption chain.
+    """
+    mock_workspace_data.manifest["exposures"] = {
+        "exposure.my_project.my_dash": {
+            "resource_type": "exposure",
+            "unique_id": "exposure.my_project.my_dash",
+            "name": "my_dash",
+            "package_name": "my_project",
+            "fqn": ["my_project", "my_dash"],
+            "type": "dashboard",
+            "description": "a critical dashboard",
+            "url": "https://tableau.example.com/my_dash",
+            "maturity": "high",
+            "owner": {"email": "team@example.com"},
+            "tags": ["priority"],
+            "meta": {},
+            "config": {},
+            "depends_on": {"nodes": ["model.my_project.my_model"]},
+        }
+    }
+    mock_workspace_data.manifest["child_map"]["exposure.my_project.my_dash"] = []
+    mock_workspace_data.manifest["parent_map"]["exposure.my_project.my_dash"] = [
+        "model.my_project.my_model"
+    ]
+
+    workspace = MagicMock(spec=DbtCloudWorkspace)
+    workspace.unique_id = "123-456"
+    workspace.project_id = 123
+    workspace.environment_id = 456
+    workspace.credentials = MagicMock(account_id=999)
+    workspace.fetch_workspace_data.return_value = mock_workspace_data
+    workspace.get_or_fetch_workspace_data.return_value = mock_workspace_data
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        translation_settings={"enable_exposure_assets": True},  # type: ignore
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    all_specs = list(defs.resolve_all_asset_specs())
+    specs_by_str = {spec.key.to_user_string(): spec for spec in all_specs}
+
+    assert "my_dash" in specs_by_str, list(specs_by_str)
+    exposure_spec = specs_by_str["my_dash"]
+    assert exposure_spec.kinds == {"dashboard"}
+    dep_keys = {dep.asset_key for dep in exposure_spec.deps}
+    assert dg.AssetKey("my_model") in dep_keys
+
+
 def test_dbt_cloud_component_emits_source_assets(tmp_path, mock_workspace_data):
     """Dbt Cloud manifests that declare sources should get corresponding observable
     external `AssetSpec` objects emitted alongside the model AssetsDefinition, so

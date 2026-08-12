@@ -21,7 +21,7 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
-from dagster_dbt.asset_specs import build_dbt_source_asset_specs
+from dagster_dbt.asset_specs import build_dbt_exposure_asset_specs, build_dbt_source_asset_specs
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
@@ -383,17 +383,31 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         # external observable assets (no op, no io_manager). When another integration
         # declares the same AssetKey (Fivetran, Sling, a manual observable_source_asset),
         # Dagster merges the two — dbt contributes freshness policy, table schema, kinds.
+        validated_manifest = validate_manifest(project.manifest_path)
+        validated_translator = validate_translator(self.translator)
         source_specs = (
             build_dbt_source_asset_specs(
-                manifest=validate_manifest(project.manifest_path),
-                dagster_dbt_translator=validate_translator(self.translator),
+                manifest=validated_manifest,
+                dagster_dbt_translator=validated_translator,
                 project=project,
             )
             if self.translator.settings.enable_source_assets
             else []
         )
+        # dbt exposures (dashboards, notebooks, ML models, applications, analyses) are
+        # emitted as observable external AssetSpecs with deps on the referenced upstream
+        # models, giving users a downstream relationship in the graph.
+        exposure_specs = (
+            build_dbt_exposure_asset_specs(
+                manifest=validated_manifest,
+                dagster_dbt_translator=validated_translator,
+                project=project,
+            )
+            if self.translator.settings.enable_exposure_assets
+            else []
+        )
 
-        return dg.Definitions(assets=[_fn, *source_specs])
+        return dg.Definitions(assets=[_fn, *source_specs, *exposure_specs])
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         return resolve_cli_args(self.cli_args, context)

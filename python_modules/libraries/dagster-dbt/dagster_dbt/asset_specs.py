@@ -1,19 +1,39 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-from dagster import AssetKey, AssetSpec
+from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._core.definitions.assets.definition.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
 )
+from dagster._utils.tags import is_valid_tag_key
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
     build_dbt_specs,
+    get_node,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
+
+DAGSTER_DBT_EXPOSURE_TYPE_METADATA_KEY = "dagster_dbt/exposure_type"
+DAGSTER_DBT_EXPOSURE_URL_METADATA_KEY = "dagster_dbt/exposure_url"
+DAGSTER_DBT_EXPOSURE_MATURITY_METADATA_KEY = "dagster_dbt/exposure_maturity"
+
+
+# dbt exposure types (https://docs.getdbt.com/reference/exposure-properties#type):
+# dashboard, notebook, analysis, ml, application. We map each to a kind that
+# Dagster's UI can render with a distinct icon.
+_DBT_EXPOSURE_TYPE_TO_KIND: Mapping[str, str] = {
+    "dashboard": "dashboard",
+    "notebook": "notebook",
+    "analysis": "analysis",
+    "ml": "ml",
+    "application": "application",
+}
 
 
 def build_dbt_asset_specs(
@@ -111,6 +131,124 @@ def build_dbt_source_asset_specs(
         # spec and merges into the winning declaration.
         specs.append(
             spec.merge_attributes(metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+        )
+
+    return specs
+
+
+def _dep_asset_key_for_exposure_upstream(
+    manifest: Mapping[str, Any],
+    translator: DagsterDbtTranslator,
+    upstream_unique_id: str,
+) -> AssetKey | None:
+    """Resolve the Dagster ``AssetKey`` for one entry in an exposure's ``depends_on.nodes``.
+
+    Exposures depend on models, sources, seeds, snapshots, and (rarely) metrics. Anything
+    the ``get_node`` lookup can find + that the translator produces a key for becomes a
+    dep. Missing / non-existent references are silently skipped rather than raising, since
+    dbt manifests occasionally carry stale references.
+    """
+    try:
+        upstream_props = get_node(manifest, upstream_unique_id)
+    except Exception:
+        return None
+    return translator.get_asset_key(upstream_props)
+
+
+def build_dbt_exposure_asset_specs(
+    *,
+    manifest: DbtManifestParam,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    project: DbtProject | None = None,
+) -> Sequence[AssetSpec]:
+    """Build observable external ``AssetSpec`` objects for every dbt exposure declared in
+    ``exposures.yml``.
+
+    Each exposure becomes a downstream node in the Dagster graph, with deps on the
+    referenced upstream models (from ``depends_on.nodes``). Exposures are NOT materialized
+    by Dagster — they are external artifacts (BI dashboards, notebooks, ML models,
+    applications) declared in dbt so users can trace "if this model breaks, which
+    dashboards are affected?" in the graph.
+
+    Kind is derived from ``exposure.type`` (dashboard / notebook / analysis / application
+    / ml) so the Dagster UI renders a distinct icon per exposure type.
+
+    Metadata surfaced (under the ``dagster_dbt/`` namespace):
+
+    - ``exposure_type`` (str): the raw ``exposure.type`` value from dbt.
+    - ``exposure_url`` (str): the ``exposure.url`` — link to the actual dashboard /
+      notebook so users can navigate from Dagster.
+    - ``exposure_maturity`` (str): ``low`` / ``medium`` / ``high`` per dbt's exposure
+      maturity taxonomy.
+    - ``unique_id`` (str): the dbt ``unique_id`` (e.g. ``exposure.my_project.dash``).
+
+    Owners are pulled from ``exposure.owner.email`` when present. Tags are copied from
+    ``exposure.tags``.
+
+    The ``AssetKey`` is derived via ``translator.get_asset_key`` (which honors
+    ``meta.dagster.asset_key`` on the exposure); by default this collapses to the raw
+    exposure name.
+
+    Args:
+        manifest: The contents of a ``manifest.json`` file or the path to one.
+        dagster_dbt_translator: Optional translator; defaults to :py:class:`DagsterDbtTranslator`.
+        project: Reserved for future use (code references); currently unused.
+
+    Returns:
+        Sequence[AssetSpec]: One ``AssetSpec`` per exposure in the manifest.
+    """
+    del project  # currently unused; kept in signature to match the source-spec helper
+    manifest = validate_manifest(manifest)
+    translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
+
+    specs: list[AssetSpec] = []
+    for exposure_unique_id, exposure_props in manifest.get("exposures", {}).items():
+        exposure_type = str(exposure_props.get("type") or "").lower()
+        kind = _DBT_EXPOSURE_TYPE_TO_KIND.get(exposure_type)
+        kinds = {kind} if kind else None
+
+        deps: list[AssetDep] = []
+        seen_dep_keys: set[AssetKey] = set()
+        for upstream_unique_id in exposure_props.get("depends_on", {}).get("nodes", []) or []:
+            upstream_key = _dep_asset_key_for_exposure_upstream(
+                manifest, translator, upstream_unique_id
+            )
+            if upstream_key is None or upstream_key in seen_dep_keys:
+                continue
+            seen_dep_keys.add(upstream_key)
+            deps.append(AssetDep(asset=upstream_key))
+
+        owner_config = exposure_props.get("owner") or {}
+        owner_email = owner_config.get("email")
+        owners = [owner_email] if isinstance(owner_email, str) and owner_email else None
+
+        tags = {
+            tag: ""
+            for tag in exposure_props.get("tags") or []
+            if isinstance(tag, str) and is_valid_tag_key(tag)
+        }
+
+        metadata: dict[str, Any] = {
+            DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: exposure_unique_id,
+            DAGSTER_DBT_EXPOSURE_TYPE_METADATA_KEY: exposure_type or "",
+        }
+        url = exposure_props.get("url")
+        if isinstance(url, str) and url:
+            metadata[DAGSTER_DBT_EXPOSURE_URL_METADATA_KEY] = url
+        maturity = exposure_props.get("maturity")
+        if isinstance(maturity, str) and maturity:
+            metadata[DAGSTER_DBT_EXPOSURE_MATURITY_METADATA_KEY] = maturity
+
+        specs.append(
+            AssetSpec(
+                key=translator.get_asset_key(exposure_props),
+                deps=deps,
+                description=exposure_props.get("description"),
+                metadata=metadata,
+                owners=owners,
+                tags=tags,
+                kinds=kinds,
+            )
         )
 
     return specs
