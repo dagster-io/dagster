@@ -105,6 +105,65 @@ def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspac
     assert asset_def.node_def.name == "dbt_cloud_assets"
 
 
+def test_dbt_cloud_component_emits_source_assets(tmp_path, mock_workspace_data):
+    """Dbt Cloud manifests that declare sources should get corresponding observable
+    external `AssetSpec` objects emitted alongside the model AssetsDefinition, so
+    freshness policies, table metadata, and kinds flow into the graph the same way
+    they do for `DbtProjectComponent`.
+    """
+    # Inject a source with freshness config into the mock manifest.
+    mock_workspace_data.manifest["sources"] = {
+        "source.my_project.jaffle_shop.raw_customers": {
+            "resource_type": "source",
+            "package_name": "my_project",
+            "unique_id": "source.my_project.jaffle_shop.raw_customers",
+            "source_name": "jaffle_shop",
+            "name": "raw_customers",
+            "fqn": ["my_project", "jaffle_shop", "raw_customers"],
+            "database": "db",
+            "schema": "raw",
+            "identifier": "raw_customers",
+            "freshness": {
+                "warn_after": {"count": 12, "period": "hour"},
+                "error_after": {"count": 24, "period": "hour"},
+            },
+            "loaded_at_field": "loaded_at",
+            "meta": {},
+            "tags": [],
+            "columns": {},
+            "config": {},
+            "depends_on": {"nodes": []},
+        }
+    }
+    mock_workspace_data.manifest["child_map"]["source.my_project.jaffle_shop.raw_customers"] = []
+    mock_workspace_data.manifest["parent_map"]["source.my_project.jaffle_shop.raw_customers"] = []
+
+    workspace = MagicMock(spec=DbtCloudWorkspace)
+    workspace.unique_id = "123-456"
+    workspace.project_id = 123
+    workspace.environment_id = 456
+    workspace.credentials = MagicMock(account_id=999)
+    workspace.fetch_workspace_data.return_value = mock_workspace_data
+    workspace.get_or_fetch_workspace_data.return_value = mock_workspace_data
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    all_specs = list(defs.resolve_all_asset_specs())
+    keys_by_str = {spec.key.to_user_string(): spec for spec in all_specs}
+
+    # Source spec emitted with the derived freshness policy from sources.freshness.
+    source_key = "jaffle_shop/raw_customers"
+    assert source_key in keys_by_str, list(keys_by_str)
+    source_spec = keys_by_str[source_key]
+    assert source_spec.freshness_policy is not None
+
+
 def test_dbt_cloud_component_execution(mock_workspace):
     """Test 2: Execution calls the workspace CLI correctly with configured args."""
     component = DbtCloudComponent(

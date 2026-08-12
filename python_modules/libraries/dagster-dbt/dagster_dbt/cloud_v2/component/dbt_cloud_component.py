@@ -22,6 +22,7 @@ from dagster.components.utils.translation import (
 from dagster_shared.serdes import deserialize_value, serialize_value
 from pydantic import Field
 
+from dagster_dbt.asset_specs import build_dbt_source_asset_specs
 from dagster_dbt.asset_utils import (
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
@@ -359,7 +360,21 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                 )
             )
 
-        return Definitions(assets=[_dbt_cloud_assets], sensors=sensors)
+        # Mirror DbtProjectComponent: emit dbt sources as observable external AssetSpecs
+        # so freshness policies, table metadata, kinds, etc. flow into the graph. dbt Cloud
+        # has no local DbtProject object, so pass project=None (code references derived
+        # from local file paths aren't meaningful for Cloud-loaded manifests anyway).
+        source_specs = (
+            build_dbt_source_asset_specs(
+                manifest=validate_manifest(manifest),
+                dagster_dbt_translator=self.translator,
+                project=None,
+            )
+            if self.translator.settings.enable_source_assets
+            else []
+        )
+
+        return Definitions(assets=[_dbt_cloud_assets, *source_specs], sensors=sensors)
 
     def execute(self, context: AssetExecutionContext) -> Iterator:
         invocation = self.workspace.cli(
