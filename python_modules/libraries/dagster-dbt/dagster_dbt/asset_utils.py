@@ -867,22 +867,32 @@ def default_freshness_policy_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
 ) -> FreshnessPolicy | None:
     """Derive a ``FreshnessPolicy`` from either explicit ``meta.dagster.freshness_policy``
-    config or dbt's native ``sources.freshness`` block.
+    config, dbt's native ``sources.freshness`` block, or dbt 1.9+ model
+    ``config.freshness.build_after``.
 
     Precedence:
 
     1. ``meta.dagster.freshness_policy`` (any resource type) — explicit user config wins.
        Two shapes supported: ``time_window`` and ``cron``. See
-       :py:func:`_freshness_policy_from_meta_dagster`. This is the escape hatch for
-       models (which have no dbt-native freshness config) and for users who want a
-       ``CronFreshnessPolicy`` instead of dbt's warn/error timedeltas.
+       :py:func:`_freshness_policy_from_meta_dagster`. This is the escape hatch for a
+       ``CronFreshnessPolicy`` or any other custom shape that dbt doesn't natively express.
     2. ``sources.freshness.{warn_after, error_after}`` (sources only) — dbt-native
        staleness config translated to a ``TimeWindowFreshnessPolicy`` where ``error_after``
        becomes ``fail_window`` and ``warn_after`` becomes ``warn_window``.
+    3. ``models[*].config.freshness.build_after`` (models only, dbt 1.9+) — dbt's per-model
+       rebuild cadence, translated to a ``TimeWindowFreshnessPolicy`` where ``build_after``
+       becomes ``fail_window``. In dbt, ``build_after`` gates whether a model runs during
+       ``dbt build`` — models still within their fresh window emit ``no-op`` and skip.
+       Attaching a Dagster ``FreshnessPolicy`` surfaces the same SLO in the UI; the model
+       stays PASS until ``build_after`` elapses, then FAIL until the next materialization.
+       Users who want Dagster to trigger the rebuild directly can attach
+       ``AutomationCondition.freshness_failed()`` (e.g. via a translator subclass); the
+       default is to let dbt's own scheduler (or a Dagster job wrapping ``dbt build``)
+       drive the trigger.
 
-    Returns None when neither applies (non-source resources without meta config, sources
-    without freshness, or sources with only ``warn_after`` set — Dagster requires a
-    ``fail_window``).
+    Returns None when none of the above apply — non-model / non-source resources without
+    meta config, sources without freshness, sources with only ``warn_after`` set (Dagster
+    requires a ``fail_window``), or models without ``build_after``.
 
     If ``warn_after`` is greater than or equal to ``error_after`` (an invalid combination
     for Dagster's ``TimeWindowFreshnessPolicy``), the warn window is dropped rather than
@@ -890,7 +900,7 @@ def default_freshness_policy_from_dbt_resource_props(
     """
     # 1. Explicit meta.dagster.freshness_policy wins, for any resource type. This is the
     #    escape hatch that lets users:
-    #    - attach freshness policies to models (which have no dbt-native freshness config)
+    #    - override the dbt-native derivation with a custom policy shape
     #    - use a CronFreshnessPolicy where dbt only supports timedelta warn/error windows
     #    - keep freshness config alongside the dbt project rather than in Dagster YAML
     meta_dagster = dbt_resource_props.get("meta", {}).get("dagster", {})
@@ -898,23 +908,33 @@ def default_freshness_policy_from_dbt_resource_props(
     if meta_policy is not None:
         return meta_policy
 
+    resource_type = dbt_resource_props.get("resource_type")
+
     # 2. dbt-native sources.freshness (source-only).
-    if dbt_resource_props.get("resource_type") != "source":
-        return None
+    if resource_type == "source":
+        freshness_config = dbt_resource_props.get("freshness")
+        if not freshness_config:
+            return None
 
-    freshness_config = dbt_resource_props.get("freshness")
-    if not freshness_config:
-        return None
+        fail_window = _dbt_freshness_spec_to_timedelta(freshness_config.get("error_after"))
+        if fail_window is None:
+            return None
 
-    fail_window = _dbt_freshness_spec_to_timedelta(freshness_config.get("error_after"))
-    if fail_window is None:
-        return None
+        warn_window = _dbt_freshness_spec_to_timedelta(freshness_config.get("warn_after"))
+        if warn_window is not None and warn_window >= fail_window:
+            warn_window = None
 
-    warn_window = _dbt_freshness_spec_to_timedelta(freshness_config.get("warn_after"))
-    if warn_window is not None and warn_window >= fail_window:
-        warn_window = None
+        return FreshnessPolicy.time_window(fail_window=fail_window, warn_window=warn_window)
 
-    return FreshnessPolicy.time_window(fail_window=fail_window, warn_window=warn_window)
+    # 3. dbt 1.9+ model config.freshness.build_after (model-only).
+    if resource_type == "model":
+        model_freshness = dbt_resource_props.get("config", {}).get("freshness") or {}
+        build_after = _dbt_freshness_spec_to_timedelta(model_freshness.get("build_after"))
+        if build_after is None:
+            return None
+        return FreshnessPolicy.time_window(fail_window=build_after)
+
+    return None
 
 
 def default_description_fn(dbt_resource_props: Mapping[str, Any], display_raw_sql: bool = True):
