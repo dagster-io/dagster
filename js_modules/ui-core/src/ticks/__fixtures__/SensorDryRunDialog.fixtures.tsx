@@ -15,9 +15,11 @@ import {
   buildSensor,
   buildSensorData,
   buildTickEvaluation,
+  buildUnauthorizedError,
 } from '../../graphql/builders';
 import {DynamicPartitionsRequestType, InstigationStatus, RunStatus} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
+import {buildCreatePartitionMutation} from '../../partitions/__fixtures__/CreatePartitionDialog.fixture';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
 import {SET_CURSOR_MUTATION} from '../../sensors/EditCursorDialog';
@@ -378,6 +380,54 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
     },
   },
 };
+
+export const SensorDryRunMutationWithDynamicPartitionRequest: MockedResponse<SensorDryRunMutation> =
+  {
+    request: {
+      query: EVALUATE_SENSOR_MUTATION,
+      variables: {
+        selectorData: {
+          sensorName: 'test',
+          repositoryLocationName: 'testLocation',
+          repositoryName: 'testName',
+        },
+        cursor: 'testCursortesting123',
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        sensorDryRun: buildDryRunInstigationTick({
+          evaluationResult: buildTickEvaluation({
+            cursor: 'a new cursor',
+            runRequests,
+            error: null,
+            dynamicPartitionsRequests: [
+              buildDynamicPartitionRequest({
+                partitionKeys: ['unauthorized_key'],
+                partitionsDefName: 'colors',
+                type: DynamicPartitionsRequestType.ADD_PARTITIONS,
+              }),
+            ],
+          }),
+        }),
+      },
+    },
+  };
+
+export const AddDynamicPartitionUnauthorizedMock = buildCreatePartitionMutation({
+  variables: {
+    partitionsDefName: 'colors',
+    partitionKey: 'unauthorized_key',
+    repositorySelector: {
+      repositoryLocationName: 'testLocation',
+      repositoryName: 'testName',
+    },
+  },
+  data: buildUnauthorizedError({
+    message: 'You do not have permission to create dynamic partitions.',
+  }),
+});
 
 export const SensorDryRunMutationDynamicPartitionsOnly: MockedResponse<SensorDryRunMutation> = {
   request: {

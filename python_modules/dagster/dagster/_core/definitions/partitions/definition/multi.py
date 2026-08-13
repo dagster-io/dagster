@@ -319,7 +319,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 key in partition_keys_by_dimension.get(dim, [])
                 for dim, key in multipartition_key.keys_by_dimension.items()
             ):
-                validated_partitions.add(partition_key)
+                validated_partitions.add(multipartition_key)
 
         return validated_partitions
 

@@ -39,6 +39,7 @@ from contextlib import contextmanager
 from dagster._core.definitions import JobDefinition
 from dagster._utils.error import DagsterError
 
+
 @contextmanager
 def my_function():
     job = JobDefinition(...)
@@ -51,6 +52,7 @@ def my_function():
 def my_function():
     from dagster._core.definitions import JobDefinition
     from dagster._utils.error import DagsterError
+
     job = JobDefinition(...)
 ```
 
@@ -68,6 +70,7 @@ if TYPE_CHECKING:
 def create_job():
     # Import here to avoid circular dependency
     from dagster._core.definitions import JobDefinition
+
     return JobDefinition(...)
 ```
 
@@ -154,12 +157,15 @@ def my_command():
 ```python
 _service: Optional[MyService] = None
 
+
 def get_service() -> Optional[MyService]:
     return _service
+
 
 def initialize_service():
     global _service
     _service = MyService()
+
 
 def some_function():
     service = get_service()  # Hidden dependency
@@ -170,6 +176,7 @@ def some_function():
 ```python
 def create_service() -> MyService:
     return MyService()
+
 
 def some_function(service: MyService):  # Explicit dependency
     service.do_something()
@@ -186,6 +193,7 @@ def some_function(service: MyService):  # Explicit dependency
 from typing import Literal
 
 DiagnosticsLevel = Literal["off", "error", "info", "debug"]
+
 
 def create_service(level: DiagnosticsLevel = "off") -> MyService:
     return MyService(level=level)
@@ -330,13 +338,18 @@ def _get_asset_value_with_fallback(context, asset_key, default_value):
     so we use exception handling to detect this case.
     """
     try:
-        return context.instance.get_latest_materialization_event(asset_key).asset_materialization.metadata
+        return context.instance.get_latest_materialization_event(
+            asset_key
+        ).asset_materialization.metadata
     except Exception:
         return default_value
 
+
 # BAD: Exception control flow exposed in main logic
 try:
-    metadata = context.instance.get_latest_materialization_event(asset_key).asset_materialization.metadata
+    metadata = context.instance.get_latest_materialization_event(
+        asset_key
+    ).asset_materialization.metadata
 except Exception:
     metadata = default_value
 ```
@@ -457,10 +470,12 @@ return parse_asset_key_from_string(key_str)
 # ✅ GOOD: Using click.echo for CLI output
 import click
 
+
 @click.command()
 def my_command():
     click.echo("Processing started...")
     click.echo(f"Found {count} items")
+
 
 # ❌ BAD: Using print in CLI code
 @click.command()

@@ -1,5 +1,6 @@
 import importlib
-from collections.abc import Callable
+import logging
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
@@ -48,6 +49,8 @@ from dagster.components.utils import get_path_from_module
 
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
+logger = logging.getLogger(__name__)
+
 T = TypeVar("T", bound=Component)
 TComponent = TypeVar("TComponent", bound=Component)
 
@@ -76,6 +79,10 @@ class ComponentTree(IHaveNew):
     defs_module: ModuleType
     project_root: Path
     terminate_autoloading_on_keyword_files: bool | None = None
+    # Project-config-derived code location name (see ``for_project``). Used as a fallback
+    # for app-managed component discovery when the loading harness does not report the
+    # authoritative location name on the ``DefinitionsLoadContext`` -- see
+    # ``_resolve_app_managed_location_name``.
     code_location_name: str | None = None
 
     @cached_property
@@ -213,6 +220,32 @@ class ComponentTree(IHaveNew):
     def load_root_component(self) -> Component:
         return self.load_structural_component_at_loc(ComponentRootLoc())
 
+    def _resolve_app_managed_location_name(
+        self, load_context: DefinitionsLoadContext
+    ) -> str | None:
+        """Resolves the code location name used for app-managed component discovery.
+
+        The name reported by the loading harness on the ``DefinitionsLoadContext`` (the
+        gRPC server's ``--location-name``, or the origin of an in-process load) is
+        authoritative: it is the name the rest of the system refers to this location by,
+        and in particular the name app-managed component state keys were written under.
+        The project-config-derived ``code_location_name`` on this tree is only consulted
+        when no harness-reported name is available (e.g. ``dg`` CLI invocations that load
+        the project outside of any workspace).
+        """
+        ambient_name = load_context.code_location_name
+        if ambient_name is not None:
+            if self.code_location_name is not None and self.code_location_name != ambient_name:
+                logger.warning(
+                    f"The code location name {self.code_location_name!r} configured on this"
+                    f" project does not match the name {ambient_name!r} this code location is"
+                    f" registered under. App-managed components will be discovered using"
+                    f" {ambient_name!r}. Update `code_location_name` under [tool.dg.project]"
+                    " (or remove it) to silence this warning."
+                )
+            return ambient_name
+        return self.code_location_name
+
     def find_root_decl(self) -> ComponentRootDecl:
         """Returns the unified root of the component tree.
 
@@ -224,9 +257,22 @@ class ComponentTree(IHaveNew):
         individual ``AppManagedComponentDecl`` children are cached per-id so
         unchanged components don't get rebuilt.
         """
+        from dagster.components.component.app_managed_state import APP_MANAGED_COMPONENTS_KEY_PREFIX
+
         decls: list[ComponentDecl] = [self._get_filesystem_decl()]
-        if self.code_location_name is not None:
-            decls.append(self._build_app_managed_definitions_decl(self.code_location_name))
+        load_context = DefinitionsLoadContext.get()
+        location_name = self._resolve_app_managed_location_name(load_context)
+        if location_name is not None:
+            decls.append(self._build_app_managed_definitions_decl(location_name))
+        elif load_context.state_keys_with_prefix(APP_MANAGED_COMPONENTS_KEY_PREFIX):
+            logger.warning(
+                "App-managed component state exists for this deployment, but no code location"
+                " name is available on this load, so no app-managed components will be loaded."
+                " This can happen when definitions are loaded through the deprecated"
+                " `load_defs` entry point -- load through `load_from_defs_folder` (or set"
+                " `code_location_name` under [tool.dg.project]) so app-managed components can"
+                " be associated with this location."
+            )
         return ComponentRootDecl(
             context=self.decl_load_context,
             loc=ComponentRootLoc(),
@@ -335,6 +381,13 @@ class ComponentTree(IHaveNew):
         else:
             return self.build_defs_at_path(loc)
 
+    def reload_with_state(self, changed_state_keys: Iterable[str]) -> Definitions:
+        """Invalidates the cached data for a set of state keys, then rebuilds the Definitions object."""
+        for key in changed_state_keys:
+            self.state_tracker.invalidate_by_defs_state_key(key)
+        self.state_tracker.invalidate_loc(ComponentRootLoc())
+        return self.build_defs()
+
     def find_decl_at_path(self, defs_path: ResolvableToComponentPath) -> ComponentDecl:
         """Loads a component declaration from the given path.
 
@@ -379,14 +432,12 @@ class ComponentTree(IHaveNew):
         self.state_tracker.mark_component_defs_state_key(loc, defs_state_key)
 
     @overload
-    def load_component(self, defs_path: Path | ComponentPath | str) -> Component: ...
+    def load_component(self, defs_path: ResolvableToComponentLoc) -> Component: ...
     @overload
-    def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: type[T]
-    ) -> T: ...
+    def load_component(self, defs_path: ResolvableToComponentLoc, expected_type: type[T]) -> T: ...
 
     def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: type[T] | None = None
+        self, defs_path: ResolvableToComponentLoc, expected_type: type[T] | None = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -486,12 +537,13 @@ class ComponentTree(IHaveNew):
         of_type: type[TComponent],
     ) -> list[TComponent]:
         """Get all components from this context that are instance of the specified type.
-        Avoids loading components that are not of the specified type.
+        Avoids loading components that are not of the specified type. Includes both
+        file-based (``ComponentPath``) and UI-defined (``UIDefinitionsLoc``) instances.
         """
         return [
-            check.inst(self.load_component(check.inst(loc, ComponentPath)), of_type)
+            check.inst(self.load_component(loc), of_type)
             for loc, decl in self._component_decl_tree().items()
-            if isinstance(loc, ComponentPath) and safe_is_subclass(decl.component_type, of_type)
+            if safe_is_subclass(decl.component_type, of_type)
         ]
 
     def _has_loaded_component_at_loc(self, loc: ResolvableToComponentLoc) -> bool:

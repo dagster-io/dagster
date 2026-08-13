@@ -504,6 +504,9 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
                 if kwargs.get("pex_tag")
                 else None
             ),
+            # Marks an image that was baked from a PEX build (BuildStrategy.pex_docker) so the
+            # server can identify PEX-origin deploys. Only present (True) for such images.
+            "pex_bundle": kwargs.get("pex_bundle"),
             "defs_state_info": kwargs.get("defs_state_info"),
         }
     )

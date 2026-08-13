@@ -377,6 +377,9 @@ python-version = "3.10"
 deprecated = "ignore"                  # Deprecation warnings across dependencies
 possibly-missing-attribute = "ignore"  # High false positive rate
 possibly-missing-import = "ignore"     # Often incorrect in complex imports
+# Misfires on dynamically-generated pydantic models (e.g. dagster's
+# Resolvable machinery), whose synthesized fields ty cannot see.
+pydantic-discarded-extra-argument = "ignore"
 # Suppress leftover `# type: ignore` / `# ty: ignore` directives that
 # no longer apply. Especially relevant for the data-platform and
 # internal envs after ty version bumps; no-op for master today.

@@ -1,6 +1,6 @@
 import pickle
 
-import dagster_shared.seven as seven
+from dagster_shared import seven
 
 import dagster._check as check
 from dagster._config import (

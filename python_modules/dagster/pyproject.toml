@@ -28,8 +28,8 @@ dependencies = [
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
     "grpcio>=1.66.2; python_version>='3.13'",
     "grpcio>=1.44.0; python_version<'3.13'",
-    "grpcio-health-checking>=1.66.2; python_version>='3.13'",
-    "grpcio-health-checking>=1.44.0; python_version<'3.13'",
+    "grpcio-health-checking>=1.66.2,<1.82; python_version>='3.13'",
+    "grpcio-health-checking>=1.44.0,<1.82; python_version<'3.13'",
     "protobuf>=3.20.0,<7; python_version<'3.11'",
     "protobuf>=4,<7; python_version>='3.11'",
     "python-dotenv",
@@ -105,7 +105,7 @@ test = [
     "rapidfuzz",
     "pytest-rerunfailures",
     "psutil",
-    "ruff==0.15.15",
+    "ruff==0.16.2",
 ]
 test-components = [
     "tomlkit",
@@ -136,10 +136,10 @@ pyright = [
     "types-toml",
 ]
 ruff = [
-    "ruff==0.15.15",
+    "ruff==0.16.2",
 ]
 ty = [
-    "ty==0.0.44",
+    "ty==0.0.69",
     ### Stub packages for type checking
     "pandas-stubs",  # version will be resolved against pandas
     "types-backports",  # version will be resolved against backports

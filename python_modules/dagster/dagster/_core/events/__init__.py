@@ -1773,6 +1773,10 @@ class AssetFailedToMaterializeData(
     def reason(self) -> AssetMaterializationFailureReason:
         return self.asset_materialization_failure.reason
 
+    @property
+    def will_retry(self) -> bool | None:
+        return self.asset_materialization_failure.will_retry
+
 
 @whitelist_for_serdes
 class StepMaterializationData(

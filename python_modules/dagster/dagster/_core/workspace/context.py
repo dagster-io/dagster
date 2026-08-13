@@ -19,6 +19,7 @@ from typing import (  # noqa: UP035
     Union,
 )
 
+from dagster_shared.serdes import deserialize_value
 from typing_extensions import Self
 
 import dagster._check as check
@@ -105,6 +106,8 @@ from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
+    from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
+
     from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 
 T = TypeVar("T")
@@ -382,6 +385,35 @@ class BaseWorkspaceRequestContext(LoadingContext):
         # code, and returns a new request context created from the updated process context
         self.process_context.reload_code_location(name)
         return self.process_context.create_request_context()
+
+    def reload_code_location_with_latest_defs_state(
+        self, name: str
+    ) -> "BaseWorkspaceRequestContext":
+        """Reloads a code location such that the reloaded location observes the latest
+        defs state versions. The default reload already loads the latest state versions,
+        so this is a plain reload; subclasses that pin defs state versions at load time
+        must override this to refresh the pins as part of the reload.
+        """
+        return self.reload_code_location(name)
+
+    def app_managed_component_write_allowed(self) -> bool:
+        """Whether a live-state app-managed component write is permitted for the
+        current deployment.
+
+        Defaults to ``True``: open source has no branch/production distinction and
+        the ``EDIT_APP_MANAGED_COMPONENTS`` permission already gates use. Dagster+
+        overrides this so that, once git-backed authoring is enabled, git is the
+        sole writer to production and live-state writes are allowed only on branch
+        deployments.
+        """
+        return True
+
+    def refresh_component_state(self, name: str, defs_state_keys: Sequence[str]) -> "DefsStateInfo":
+        """Refresh state for the given component keys at ``name`` and return the
+        resulting ``DefsStateInfo``. Only meaningful for gRPC-backed code
+        locations; concrete contexts may raise for other location types.
+        """
+        return self.process_context.refresh_component_state(name, defs_state_keys)
 
     def shutdown_code_location(self, name: str):
         self.process_context.shutdown_code_location(name)
@@ -876,6 +908,18 @@ class IWorkspaceProcessContext(ABC, Generic[TRequestContext]):
     def reload_code_location(self, name: str) -> None:
         pass
 
+    def refresh_component_state(self, name: str, defs_state_keys: Sequence[str]) -> "DefsStateInfo":
+        """Refresh external state for the given ``defs_state_keys`` at the code
+        location, and return the resulting ``DefsStateInfo``.
+
+        Only meaningful for gRPC-backed code locations; the default raises since
+        there is no in-process fallback (refresh has to happen wherever the
+        component instance lives).
+        """
+        raise NotImplementedError(
+            "refresh_component_state is only supported for gRPC-backed code locations."
+        )
+
     def shutdown_code_location(self, name: str) -> None:
         raise NotImplementedError
 
@@ -1200,6 +1244,28 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
             self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
+
+    def refresh_component_state(self, name: str, defs_state_keys: Sequence[str]) -> "DefsStateInfo":
+        from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
+
+        from dagster._utils.error import SerializableErrorInfo
+
+        entry = self._current_workspace.code_location_entries[name]
+        location = entry.code_location
+        if not isinstance(location, GrpcServerCodeLocation):
+            raise NotImplementedError(
+                f"refresh_component_state requires a gRPC code location, but '{name}' is a "
+                f"{type(location).__name__}."
+            )
+
+        reply = location.client.refresh_component_state(defs_state_keys=defs_state_keys)
+        if reply.serialized_error:
+            error = deserialize_value(reply.serialized_error, SerializableErrorInfo)
+            raise DagsterCodeLocationLoadError(
+                f"Failure refreshing component state for {name}: {error.message}",
+                load_error_infos=[error],
+            )
+        return deserialize_value(reply.serialized_defs_state_info, DefsStateInfo)
 
     def shutdown_code_location(self, name: str) -> None:
         with self._lock:

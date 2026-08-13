@@ -88,7 +88,7 @@ dask-worker scheduler:8786 --resources "GPU=2"
 and then when submitting tasks to the Dask cluster, specifying resource requirements in the Python API:
 
 ```python
-client.submit(task, resources={'GPU': 1})
+client.submit(task, resources={"GPU": 1})
 ```
 
 Dagster has simple support for Dask resource specification at the op level for ops that will be executed on Dask clusters. In your op definition, just add _tags_ as follows:

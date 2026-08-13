@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetKey, EntityKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -17,7 +17,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_datetime
@@ -51,7 +50,7 @@ class AutomationConditionEvaluator:
         evaluation_time: datetime.datetime | None = None,
         logger: logging.Logger = logging.getLogger("dagster.automation"),
     ):
-        self.entity_keys = entity_keys
+        self.entity_keys: AbstractSet[EntityKey] = entity_keys
         self.asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
                 effective_dt=evaluation_time or get_current_datetime(),
@@ -119,7 +118,9 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
+    def evaluate(
+        self,
+    ) -> tuple[Sequence[AutomationResult], Sequence[EntitySubset[EntityKey]]]:
         return asyncio.run(self.async_evaluate())
 
     async def async_evaluate(

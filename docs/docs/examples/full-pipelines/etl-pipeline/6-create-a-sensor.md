@@ -81,12 +81,12 @@ Now copy the following sensor code in the `sensors.py` file:
 
 ## Summary
 
-One new files have been added to the `etl_tutorial` module, `sensors.py`:
+One new file has been added to the `etl_tutorial` module, `sensors.py`:
 
 <CliInvocationExample path="docs_projects/project_etl_tutorial/tree/step-6.txt" />
 
 Sensors provide a fine grained way to build event driven systems. Combined with declarative automation, there are a number of ways to automate your pipelines.
 
-# Next steps
+## Next steps
 
 - Continue this tutorial to [visualize data](/examples/full-pipelines/etl-pipeline/visualize-data)

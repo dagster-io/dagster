@@ -6,6 +6,7 @@ import * as yaml from 'yaml';
 import {useQuery} from '../apollo-client';
 import {CODE_LOCATION_APP_MANAGED_COMPONENTS_QUERY} from './CodeLocationAppManagedComponentsQuery';
 import {ComponentSchemaForm} from './component-form';
+import {isFormDataValid} from './component-form/validate';
 import styles from './css/CodeLocationComponentInstancesSubtab.module.css';
 import {
   CodeLocationAppManagedComponentsQuery,
@@ -135,7 +136,14 @@ export const AppManagedComponentEditorBody = (props: AppManagedComponentEditorBo
   const [formValues, setFormValues] = useState<Record<string, any>>(() =>
     parseYamlObject(props.initialAttributes ?? ''),
   );
-  const [formIsValid, setFormIsValid] = useState<boolean>(true);
+  // Seed validity from the initial form data rather than assuming valid: RJSF
+  // only reports validity through ``onChange``, which never fires on mount, so
+  // an untouched form with unfilled required fields would otherwise read as
+  // valid and enable submit. With no schema, validity is driven by the YAML
+  // path instead (see ``isValid`` below), so default to true.
+  const [formIsValid, setFormIsValid] = useState<boolean>(() =>
+    dataSchema ? isFormDataValid(dataSchema, parseYamlObject(props.initialAttributes ?? '')) : true,
+  );
   const [yamlText, setYamlText] = useState<string>(() =>
     dataSchema ? '' : (props.initialAttributes ?? ''),
   );

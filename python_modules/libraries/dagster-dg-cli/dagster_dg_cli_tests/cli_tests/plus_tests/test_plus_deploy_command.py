@@ -24,6 +24,7 @@ from dagster_test.dg_utils.utils import (
 from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
     PYTHON_VERSION,
     mock_hybrid_response,
+    mock_serverless_k8s_response,
     mock_serverless_response,
 )
 
@@ -292,6 +293,37 @@ def test_plus_deploy_command_agent_type_from_graphql(
             pex_deps_cache_to=None,
             pex_base_image_tag=None,
             location_name=["foo-bar"],
+        )
+
+
+def test_plus_deploy_serverless_k8s_redirects_pex_to_docker(
+    logged_in_dg_cli_config, project: Path, runner
+):
+    """Serverless v2 (K8s) does not run PEX: a --build-strategy=python-executable build is
+    transparently redirected to the PEX-bundle Docker strategy, with a warning.
+    """
+    with mock_external_dagster_cloud_cli_command() as mocked_cloud_cli_commands:
+        mock_serverless_k8s_response()
+
+        result = runner.invoke(
+            "plus",
+            "deploy",
+            "--yes",
+            "--agent-type",
+            "serverless",
+            "--build-strategy",
+            "python-executable",
+        )
+        assert result.exit_code == 0, result.output + " : " + str(result.exception)
+        assert "Fast deploys (PEX) are not supported on Serverless (Kubernetes)" in result.output
+        # The warning must flag the fallback as temporary and point at the migration lever.
+        assert "temporary and will be removed" in result.output
+        assert "ENABLE_FAST_DEPLOYS=false" in result.output
+
+        mocked_cloud_cli_commands.build.assert_called_once()
+        assert (
+            mocked_cloud_cli_commands.build.call_args.kwargs["build_strategy"]
+            == BuildStrategy.pex_docker
         )
 
 

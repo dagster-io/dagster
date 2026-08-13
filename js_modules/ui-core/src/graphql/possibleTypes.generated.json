@@ -163,7 +163,9 @@
   "AssetHealthMaterializationMeta": [
     "AssetHealthMaterializationDegradedPartitionedMeta",
     "AssetHealthMaterializationHealthyPartitionedMeta",
-    "AssetHealthMaterializationDegradedNotPartitionedMeta"
+    "AssetHealthMaterializationDegradedNotPartitionedMeta",
+    "AssetHealthMaterializationWarningPartitionedMeta",
+    "AssetHealthMaterializationWarningNotPartitionedMeta"
   ],
   "AssetHealthCheckMeta": [
     "AssetHealthCheckDegradedMeta",
@@ -476,11 +478,20 @@
   "AppManagedComponentsOrError": ["AppManagedComponents", "PythonError"],
   "SetAppManagedComponentResult": [
     "SetAppManagedComponentSuccess",
+    "AppManagedComponentValidationError",
     "UnauthorizedError",
     "PythonError"
   ],
   "DeleteAppManagedComponentResult": [
     "DeleteAppManagedComponentSuccess",
+    "UnauthorizedError",
+    "PythonError"
+  ],
+  "ComponentsOrError": ["Components", "PythonError"],
+  "RefreshComponentStateResult": [
+    "RefreshComponentStateSuccess",
+    "RefreshComponentStateAccepted",
+    "RefreshComponentStateError",
     "UnauthorizedError",
     "PythonError"
   ],
@@ -516,7 +527,7 @@
     "PartitionedAssetConditionEvaluationNode",
     "SpecificPartitionAssetConditionEvaluationNode"
   ],
-  "EntityKey": ["AssetKey", "AssetCheckhandle"],
+  "EntityKey": ["AssetKey", "AssetCheckhandle", "AssetJobKey"],
   "AssetConditionEvaluationRecordsOrError": [
     "AssetConditionEvaluationRecords",
     "AutoMaterializeAssetEvaluationNeedsMigrationError"

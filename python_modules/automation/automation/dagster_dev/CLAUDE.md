@@ -19,11 +19,13 @@ def greet():
     """Greet someone with a customizable message."""
     pass
 
+
 # ✅ GOOD: build_assets.py
 @click.command(name="build-assets")
 def build_assets():
     """Build Dagster assets."""
     pass
+
 
 # ❌ BAD: example.py, utils.py, helper.py
 ```

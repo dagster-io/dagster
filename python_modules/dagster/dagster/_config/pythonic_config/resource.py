@@ -63,7 +63,7 @@ T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int
 
 
-class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
+class NestedResourcesResourceDefinition(ResourceDefinition, ABC):  # ty: ignore[invalid-method-override]
     @property
     @abstractmethod
     def nested_partial_resources(self) -> Mapping[str, "CoercibleToResource"]: ...

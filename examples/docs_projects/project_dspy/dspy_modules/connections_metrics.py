@@ -1,10 +1,10 @@
 """Simple evaluation metrics for Connections puzzle solving based on game results."""
 
-from typing import Any, Dict
+from typing import Any
 
 
 # start_evaluate_connections_performance
-def evaluate_connections_performance(puzzle, pred) -> Dict[str, Any]:
+def evaluate_connections_performance(puzzle, pred) -> dict[str, Any]:
     """Comprehensive evaluation of Connections puzzle performance based on game output."""
     try:
         # Extract performance metrics directly from prediction
@@ -188,7 +188,7 @@ def partial_credit_score(example, pred, trace=None) -> float:
 
 
 # start_detailed_puzzle_analysis
-def detailed_puzzle_analysis(results) -> Dict[str, Any]:
+def detailed_puzzle_analysis(results) -> dict[str, Any]:
     """Analyze puzzle solving results for patterns and insights."""
     if not results:
         return {"error": "No results provided"}

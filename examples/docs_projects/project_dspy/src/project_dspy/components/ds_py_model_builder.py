@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import dagster as dg
 import dspy  # ty: ignore[unresolved-import]
@@ -58,7 +58,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
         )
         def puzzle_data_asset(
             context: dg.AssetExecutionContext,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Load and split Connections puzzle data."""
 
             # Get absolute path to connections data
@@ -120,7 +120,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
         def baseline_model_asset(
             context: dg.AssetExecutionContext,
             dspy_resource: DSPyResource,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Create baseline DSPy Connections solver model."""
             # start_baseline_core
             # Configure DSPy
@@ -167,7 +167,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
         def baseline_performance_asset(
             context: dg.AssetExecutionContext,
             dspy_resource: DSPyResource,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Evaluate baseline model performance on Connections puzzles."""
 
             # Configure DSPy
@@ -253,7 +253,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
             def optimized_model_asset(
                 context: dg.AssetExecutionContext,
                 dspy_resource: DSPyResource,
-            ) -> Dict[str, Any]:
+            ) -> dict[str, Any]:
                 """Run DSPy optimization if performance is below threshold."""
 
                 # Configure DSPy
@@ -312,7 +312,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 optimizer = MIPROv2(
                     auto="light",  # Use light mode for faster optimization
                     metric=optimization_metric,
-                    teacher_settings=dict(lm=dspy.LM(f"gemini/{main_model}", **params)),
+                    teacher_settings={"lm": dspy.LM(f"gemini/{main_model}", **params)},
                     prompt_model=dspy.LM(f"gemini/{main_model}", **params),
                     num_threads=4,
                 )
@@ -359,7 +359,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
             def optimized_performance_asset(
                 context: dg.AssetExecutionContext,
                 dspy_resource: DSPyResource,
-            ) -> Dict[str, Any]:
+            ) -> dict[str, Any]:
                 """Evaluate optimized model performance."""
 
                 # Configure DSPy

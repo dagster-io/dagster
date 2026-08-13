@@ -407,7 +407,7 @@ def test_ci_deploy_docker(
     mocker, monkeypatch, deployment_name: str, initialized_runner: CliRunner
 ) -> None:
     monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "fake-token")
-    mocker.patch(
+    mock_get_registry_info = mocker.patch(
         "dagster_cloud_cli.commands.ci.utils.get_registry_info",
         return_value={"registry_url": "example.com/image-registry"},
     )
@@ -423,6 +423,12 @@ def test_ci_deploy_docker(
     initialized_runner.invoke(app, ["ci", "locations-deselect", "a", "d"])
     result = initialized_runner.invoke(app, ["ci", "build"])
     assert not result.exit_code, result.output
+
+    # registry info must be scoped to the target deployment (per-deployment Harbor tenant)
+    assert mock_get_registry_info.call_args_list
+    for call_args in mock_get_registry_info.call_args_list:
+        assert call_args.args[1] == deployment_name
+
     result = initialized_runner.invoke(app, ["ci", "deploy"])
     assert not result.exit_code, result.output
 

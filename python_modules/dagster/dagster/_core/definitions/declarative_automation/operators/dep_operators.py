@@ -190,9 +190,9 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
     ) -> AbstractSet[AssetKey]:
         dep_keys = (
-            set(asset_graph.get_non_virtual_ancestor_keys(key))
+            set(asset_graph.get_non_virtual_ancestor_keys(key))  # ty: ignore[invalid-argument-type]
             if self.resolves_virtual_deps
-            else set(asset_graph.get(key).parent_entity_keys)  # ty: ignore[no-matching-overload]
+            else {k for k in asset_graph.get(key).parent_entity_keys if isinstance(k, AssetKey)}
         )
         if self.allow_selection is not None:
             dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
@@ -265,7 +265,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
 
         return AutomationResult(
             context,
-            true_subset=true_subset,
+            true_subset=true_subset,  # ty: ignore[invalid-argument-type]
             child_results=dep_results,
             timing_metadata=self._merge_timing_metadata(dep_results),  # ty: ignore[invalid-argument-type]
         )
@@ -299,4 +299,4 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
             dep_results.append(dep_result)
             true_subset = true_subset.compute_intersection(dep_result.true_subset)
 
-        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)  # ty: ignore[invalid-argument-type]

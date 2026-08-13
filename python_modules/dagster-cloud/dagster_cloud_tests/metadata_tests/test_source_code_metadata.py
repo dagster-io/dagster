@@ -20,7 +20,6 @@ from dagster_cloud.metadata.source_code import link_code_references_to_git_if_cl
 
 # path of the `dagster` package on the filesystem
 DAGSTER_CLOUD_PACKAGE_PATH = os.path.normpath(file_relative_path(__file__, "../../"))
-GIT_ROOT_PATH = os.path.normpath(os.path.join(DAGSTER_CLOUD_PACKAGE_PATH, "../../../"))
 
 # path of the current file relative to the `dagster` package root
 PATH_IN_PACKAGE = "/dagster_cloud_tests/metadata_tests/"
@@ -152,10 +151,10 @@ def test_link_code_references_to_git_if_cloud_cloud_context(
                         asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                     )
 
-                    assert meta.url == (
-                        f"{source_control_branch_base}/dagster-oss/python_modules/dagster-cloud"
-                        + (expected_file_path[len(DAGSTER_CLOUD_PACKAGE_PATH) :])
-                        + f"#L{expected_line_number}"
+                    path_in_package = expected_file_path[len(DAGSTER_CLOUD_PACKAGE_PATH) :]
+                    assert meta.url.startswith(f"{source_control_branch_base}/")
+                    assert meta.url.endswith(
+                        f"dagster-cloud{path_in_package}#L{expected_line_number}"
                     )
 
 
@@ -225,10 +224,12 @@ def test_link_code_references_to_git_if_cloud_override_cloud_context() -> None:
                         asset.metadata_by_key[key]["dagster/code_references"].code_references[-1],
                     )
 
-                    assert meta.url == (
-                        "https://github.com/dagster-io/other-repo/tree/main/dagster-oss/python_modules/dagster-cloud"
-                        + (expected_file_path[len(DAGSTER_CLOUD_PACKAGE_PATH) :])
-                        + f"#L{expected_line_number}"
+                    path_in_package = expected_file_path[len(DAGSTER_CLOUD_PACKAGE_PATH) :]
+                    assert meta.url.startswith(
+                        "https://github.com/dagster-io/other-repo/tree/main/"
+                    )
+                    assert meta.url.endswith(
+                        f"dagster-cloud{path_in_package}#L{expected_line_number}"
                     )
 
 

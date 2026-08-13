@@ -57,7 +57,7 @@ class SpanMarker(Enum):
     END_SPAN = "END_SPAN"
 
 
-DaemonIterator: TypeAlias = Generator[None | SerializableErrorInfo | SpanMarker, None, None]
+DaemonIterator: TypeAlias = Generator[SerializableErrorInfo | SpanMarker | None, None, None]
 
 TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 

@@ -8,6 +8,10 @@ slug: '/guides/labs'
 
 The features in this section are under active development. You may encounter feature gaps, and the APIs may change.
 
+### Dagster+ MCP (Dagster+)
+
+Connect your AI agent of choice to the Dagster+ MCP server to query your Dagster+ deployment for information such as run logs, asset details, and Insights metrics. You can also take actions such as launching runs. For more information, see the [Dagster+ MCP docs](/guides/labs/dagster-mcp).
+
 ### Dagster+ AI (Dagster+)
 
 Dagster+ AI helps you detect, understand, and resolve pipeline failures — from chat-based summaries and proactive monitoring to AI-powered code fixes. For more information, see the [Dagster+ AI docs](/guides/labs/dagster-ai).

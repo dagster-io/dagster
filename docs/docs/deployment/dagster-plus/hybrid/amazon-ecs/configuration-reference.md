@@ -116,16 +116,14 @@ from dagster_aws.ecs import ecs_executor
 
 
 @dg.asset(op_tags={"ecs/cpu": "256", "ecs/memory": "512"})
-def light_asset():
-    ...
+def light_asset(): ...
 
 
 @dg.asset(
     deps=[light_asset],
     op_tags={"ecs/cpu": "4096", "ecs/memory": "16384"},
 )
-def heavy_asset():
-    ...
+def heavy_asset(): ...
 
 
 @dg.definitions
@@ -145,18 +143,20 @@ You can use job tags to customize the CPU and memory of every run for that job:
 ```python
 import dagster as dg
 
+
 @dg.asset
 def my_asset(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    "ecs/cpu": "256",
-    "ecs/memory": "512",
-  }
+    tags={
+        "ecs/cpu": "256",
+        "ecs/memory": "512",
+    }
 )
 def my_job():
-  my_asset()
+    my_asset()
 ```
 
 [Fargate tasks only support certain combinations of CPU and memory.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)

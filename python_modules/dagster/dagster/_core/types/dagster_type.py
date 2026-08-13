@@ -1,24 +1,17 @@
 import typing as t
 from abc import abstractmethod
+from collections.abc import Iterator as TypingIterator
+from collections.abc import Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from enum import Enum as PythonEnum
 from functools import partial
 from typing import (
-    AbstractSet as TypingAbstractSet,
-)
-from typing import (
     AnyStr,
-    Mapping,
-    Sequence,
-)
-from typing import (
-    Iterator as TypingIterator,
-)
-from typing import (
-    Type as TypingType,
+    get_args,
+    get_origin,
 )
 
 from dagster_shared.seven import is_subclass
-from typing_extensions import get_args, get_origin
 
 import dagster._check as check
 from dagster._annotations import public
@@ -214,7 +207,7 @@ class DagsterType:
 
     @public
     @property
-    def required_resource_keys(self) -> TypingAbstractSet[str]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         """AbstractSet[str]: Set of resource keys required by the type check function."""
         return self._required_resource_keys
 
@@ -290,7 +283,7 @@ class DagsterType:
         )
 
     def get_resource_requirements(self) -> TypingIterator[ResourceRequirement]:
-        for resource_key in sorted(list(self.required_resource_keys)):
+        for resource_key in sorted(self.required_resource_keys):
             yield TypeResourceRequirement(
                 key=resource_key, type_display_name=self.display_name
             )
@@ -332,7 +325,7 @@ class BuiltinScalarDagsterType(DagsterType):
     def __init__(
         self, name: str, type_check_fn: TypeCheckFn, typing_type: t.Type, **kwargs
     ):
-        super(BuiltinScalarDagsterType, self).__init__(
+        super().__init__(
             key=name,
             name=name,
             kind=DagsterTypeKind.SCALAR,
@@ -369,7 +362,7 @@ def _fail_if_not_of_type(
 
 class _Int(BuiltinScalarDagsterType):
     def __init__(self):
-        super(_Int, self).__init__(
+        super().__init__(
             name="Int",
             loader=BuiltinSchemas.INT_INPUT,
             type_check_fn=self.type_check_fn,
@@ -382,7 +375,7 @@ class _Int(BuiltinScalarDagsterType):
 
 class _String(BuiltinScalarDagsterType):
     def __init__(self):
-        super(_String, self).__init__(
+        super().__init__(
             name="String",
             loader=BuiltinSchemas.STRING_INPUT,
             type_check_fn=self.type_check_fn,
@@ -395,7 +388,7 @@ class _String(BuiltinScalarDagsterType):
 
 class _Float(BuiltinScalarDagsterType):
     def __init__(self):
-        super(_Float, self).__init__(
+        super().__init__(
             name="Float",
             loader=BuiltinSchemas.FLOAT_INPUT,
             type_check_fn=self.type_check_fn,
@@ -408,7 +401,7 @@ class _Float(BuiltinScalarDagsterType):
 
 class _Bool(BuiltinScalarDagsterType):
     def __init__(self):
-        super(_Bool, self).__init__(
+        super().__init__(
             name="Bool",
             loader=BuiltinSchemas.BOOL_INPUT,
             type_check_fn=self.type_check_fn,
@@ -428,7 +421,7 @@ class Anyish(DagsterType):
         is_builtin: bool = False,
         description: str | None = None,
     ):
-        super(Anyish, self).__init__(
+        super().__init__(
             key=key,
             name=name,
             kind=DagsterTypeKind.ANY,
@@ -455,7 +448,7 @@ class Anyish(DagsterType):
 
 class _Any(Anyish):
     def __init__(self):
-        super(_Any, self).__init__(
+        super().__init__(
             key="Any",
             name="Any",
             loader=BuiltinSchemas.ANY_INPUT,
@@ -478,7 +471,7 @@ def create_any_type(
 
 class _Nothing(DagsterType):
     def __init__(self):
-        super(_Nothing, self).__init__(
+        super().__init__(
             key="Nothing",
             name="Nothing",
             kind=DagsterTypeKind.NOTHING,
@@ -588,7 +581,7 @@ class PythonObjectDagsterType(DagsterType):
             typing_type = self.python_type
         name = check.opt_str_param(name, "name", self.type_str)
         key = check.opt_str_param(key, "key", name)
-        super(PythonObjectDagsterType, self).__init__(
+        super().__init__(
             key=key,
             name=name,
             type_check_fn=isinstance_type_check_fn(python_type, name, self.type_str),
@@ -639,7 +632,7 @@ class OptionalType(DagsterType):
 
         key = "Optional." + inner_type.key
         self.inner_type = inner_type
-        super(OptionalType, self).__init__(
+        super().__init__(
             key=key,
             name=None,
             kind=DagsterTypeKind.NULLABLE,
@@ -706,7 +699,7 @@ class ListType(DagsterType):
     def __init__(self, inner_type: DagsterType):
         key = "List." + inner_type.key
         self.inner_type = inner_type
-        super(ListType, self).__init__(
+        super().__init__(
             key=key,
             name=None,
             kind=DagsterTypeKind.LIST,
@@ -773,7 +766,7 @@ class Stringish(DagsterType):
     def __init__(self, key: str | None = None, name: str | None = None, **kwargs):
         name = check.opt_str_param(name, "name", type(self).__name__)
         key = check.opt_str_param(key, "key", name)
-        super(Stringish, self).__init__(
+        super().__init__(
             key=key,
             name=name,
             kind=DagsterTypeKind.SCALAR,
@@ -816,7 +809,7 @@ as_dagster_type are registered here so that we can remap the Python types to run
 
 @public
 def make_python_type_usable_as_dagster_type(
-    python_type: TypingType[t.Any], dagster_type: DagsterType
+    python_type: type[t.Any], dagster_type: DagsterType
 ) -> None:
     """Take any existing python type and map it to a dagster type (generally created with
     :py:class:`DagsterType <dagster.DagsterType>`) This can only be called once
@@ -863,7 +856,7 @@ class TypeHintInferredDagsterType(DagsterType):
     def __init__(self, python_type: t.Type):
         qualified_name = f"{python_type.__module__}.{python_type.__name__}"
         self.python_type = python_type
-        super(TypeHintInferredDagsterType, self).__init__(
+        super().__init__(
             key=f"_TypeHintInferred[{qualified_name}]",
             description=(
                 f"DagsterType created from a type hint for the Python type {qualified_name}"
@@ -990,7 +983,7 @@ def is_dynamic_output_annotation(dagster_type: object) -> bool:
             " the context of a List. If only one output is needed, use the Output API."
         )
 
-    if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:  # noqa: E721
+    if get_origin(dagster_type) == list and len(get_args(dagster_type)) == 1:
         list_inner_type = get_args(dagster_type)[0]
         return (
             list_inner_type == DynamicOutput
@@ -1052,10 +1045,8 @@ def construct_dagster_type_dictionary(
 
             if type_dict_by_name[dagster_type.unique_name] is not dagster_type:
                 raise DagsterInvalidDefinitionError(
-                    (
-                        f'You have created two dagster types with the same name "{dagster_type.display_name}". '
-                        "Dagster types have must have unique names."
-                    )
+                    f'You have created two dagster types with the same name "{dagster_type.display_name}". '
+                    "Dagster types have must have unique names."
                 )
 
         if isinstance(node_def, GraphDefinition):

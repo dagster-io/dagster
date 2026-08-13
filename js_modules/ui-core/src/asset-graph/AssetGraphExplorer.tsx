@@ -54,7 +54,6 @@ import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNa
 import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -136,7 +135,6 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
       key={props.explorerPath.pipelineName}
       assetGraphData={assetGraphData}
       fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
-      allAssetKeys={allAssetKeys}
       graphQueryItems={graphQueryItems}
       loading={graphDataLoading}
       {...props}
@@ -145,7 +143,6 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
 });
 
 type WithDataProps = Props & {
-  allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
@@ -164,7 +161,6 @@ const AssetGraphExplorerWithData = ({
   fullAssetGraphData,
   graphQueryItems,
   fetchOptions,
-  allAssetKeys,
   viewType,
   loading: dataLoading,
   setHideEdgesToNodesOutsideQuery,
@@ -926,7 +922,6 @@ const AssetGraphExplorerWithData = ({
         showSidebar ? (
           <AssetGraphExplorerSidebar
             viewType={viewType}
-            allAssetKeys={allAssetKeys}
             assetGraphData={assetGraphData}
             fullAssetGraphData={fullAssetGraphData}
             selectedNodes={selectedGraphNodes}
