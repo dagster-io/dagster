@@ -91,6 +91,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count", "insights"]
 
 
+@public
 @dataclass
 class DbtDeferConfig(dg.Resolvable):
     """Configuration for dbt's ``--defer``/``--state``/``--favor-state`` runtime options.
@@ -98,6 +99,19 @@ class DbtDeferConfig(dg.Resolvable):
     Slim CI pattern: dbt runs models that changed vs a state manifest, deferring ``ref()``
     resolution to the state's tables for unchanged upstream models. Skips rebuilding data
     that hasn't changed.
+
+    Also usable directly from ``@dbt_assets`` — construct one and call ``to_cli_args()``
+    to get the flag list to append to your dbt invocation:
+
+    .. code-block:: python
+
+        from dagster_dbt import DbtDeferConfig, DbtCliResource, dbt_assets
+
+        defer = DbtDeferConfig(state_path="/prod/state")
+
+        @dbt_assets(manifest=...)
+        def my_assets(context, dbt: DbtCliResource):
+            yield from dbt.cli(["build", *defer.to_cli_args()], context=context).stream()
 
     Args:
         state_path: Path to the state directory (containing ``manifest.json``) or the
@@ -129,14 +143,38 @@ def _resolve_state_manifest_path(path: Path) -> Path:
     return path
 
 
-def _apply_dbt_state_tags(
+@public
+def apply_dbt_state_tags(
     *,
     asset_specs: Sequence["dg.AssetSpec"],
     current_manifest: Mapping[str, Any],
     state_manifest_path: Path,
 ) -> list["dg.AssetSpec"]:
-    """Load the state manifest, compare per-model checksums with the current manifest,
-    and attach ``dbt/state=modified|unchanged|new`` tags to the corresponding specs.
+    """Load a state manifest and attach ``dbt/state=modified|unchanged|new`` tags to
+    the supplied asset specs, comparing per-model checksums against ``current_manifest``.
+
+    Useful directly from ``@dbt_assets`` for slim CI + state-aware selection:
+
+    .. code-block:: python
+
+        from dagster_dbt import apply_dbt_state_tags, build_dbt_asset_specs, dbt_assets
+
+        specs = build_dbt_asset_specs(manifest=current_manifest)
+        specs = apply_dbt_state_tags(
+            asset_specs=specs,
+            current_manifest=current_manifest,
+            state_manifest_path=Path("/prod/state/manifest.json"),
+        )
+        # Now specs carry `dbt/state=modified|unchanged|new` — use with dg.AssetSelection
+        # to build a "changed models only" job.
+
+    Args:
+        asset_specs: The current-manifest specs to tag.
+        current_manifest: The current run's dbt manifest.
+        state_manifest_path: Path to the state ``manifest.json`` (file or containing dir).
+
+    Returns:
+        A new list of tagged specs. Input specs are not mutated.
     """
     import json
 
@@ -509,7 +547,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         # with dbt/state=modified|unchanged|new based on checksum comparison against
         # a prod manifest. Users then select changed models via `tag:dbt/state=modified`.
         if self.state_manifest_path:
-            asset_specs = _apply_dbt_state_tags(
+            asset_specs = apply_dbt_state_tags(
                 asset_specs=asset_specs,
                 current_manifest=validate_manifest(project.manifest_path),
                 state_manifest_path=Path(self.state_manifest_path),

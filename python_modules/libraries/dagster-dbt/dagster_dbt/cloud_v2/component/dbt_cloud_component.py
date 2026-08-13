@@ -771,9 +771,9 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         )
         # State-aware tagging: same wiring as DbtProjectComponent.
         if self.state_manifest_path:
-            from dagster_dbt.components.dbt_project.component import _apply_dbt_state_tags
+            from dagster_dbt.components.dbt_project.component import apply_dbt_state_tags
 
-            asset_specs = _apply_dbt_state_tags(
+            asset_specs = apply_dbt_state_tags(
                 asset_specs=asset_specs,
                 current_manifest=validated_manifest_for_state,
                 state_manifest_path=Path(self.state_manifest_path),
