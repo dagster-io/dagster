@@ -206,6 +206,41 @@ export const buildEntityKey = (
       };
 };
 
+/**
+ * Collect the unique IDs of every node in the tree that has children, i.e. every node that can be
+ * expanded or collapsed. Used to drive the "expand all"/"collapse all" control.
+ */
+export const expandableUniqueIds = ({
+  evaluationNodes,
+  rootUniqueId,
+}: {
+  evaluationNodes: Evaluation[];
+  rootUniqueId: string;
+}) => {
+  const expandable: Set<string> = new Set();
+  const recordsById = Object.fromEntries(evaluationNodes.map((node) => [node.uniqueId, node]));
+
+  const visit = (evaluation: Evaluation) => {
+    if (!evaluation.childUniqueIds?.length || expandable.has(evaluation.uniqueId)) {
+      return;
+    }
+    expandable.add(evaluation.uniqueId);
+    evaluation.childUniqueIds.forEach((childId) => {
+      const child = recordsById[childId];
+      if (child) {
+        visit(child);
+      }
+    });
+  };
+
+  const rootEvaluation = recordsById[rootUniqueId];
+  if (rootEvaluation) {
+    visit(rootEvaluation);
+  }
+
+  return expandable;
+};
+
 export const defaultExpanded = ({
   evaluationNodes,
   rootUniqueId,

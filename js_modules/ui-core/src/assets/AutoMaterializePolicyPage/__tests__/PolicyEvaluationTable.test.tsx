@@ -193,4 +193,111 @@ describe('PolicyEvaluationTable', () => {
       expect(screen.getByRole('cell', {name: /parent condition/i})).toBeVisible();
     });
   });
+
+  describe('Expand/collapse all', () => {
+    // Skipped conditions (no true partitions, no candidates) are not expanded by default, so the
+    // tree starts fully collapsed.
+    const buildNestedNodes = () => [
+      buildAutomationConditionEvaluationNode({
+        startTimestamp: 0,
+        endTimestamp: 10,
+        uniqueId: 'a',
+        userLabel: 'root condition',
+        isPartitioned: false,
+        numTrue: 0,
+        numCandidates: 0,
+        childUniqueIds: ['b'],
+        operatorType: 'identity',
+      }),
+      buildAutomationConditionEvaluationNode({
+        startTimestamp: 0,
+        endTimestamp: 10,
+        uniqueId: 'b',
+        userLabel: 'middle condition',
+        isPartitioned: false,
+        numTrue: 0,
+        numCandidates: 0,
+        childUniqueIds: ['c'],
+        operatorType: 'and',
+      }),
+      buildAutomationConditionEvaluationNode({
+        startTimestamp: 0,
+        endTimestamp: 10,
+        uniqueId: 'c',
+        userLabel: 'leaf condition',
+        isPartitioned: false,
+        numTrue: 0,
+        numCandidates: 0,
+        operatorType: 'identity',
+      }),
+    ];
+
+    it('expands every condition group, then collapses them all', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <PolicyEvaluationTable
+          evaluationNodes={buildNestedNodes()}
+          assetKeyPath={['foo', 'bar']}
+          evaluationId="1"
+          rootUniqueId="a"
+          isLegacyEvaluation={false}
+          selectPartition={() => {}}
+        />,
+      );
+
+      const toggle = screen.getByRole('button', {name: /condition/i});
+
+      // Starts collapsed: only the root row is present.
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.getByRole('cell', {name: /root condition/i})).toBeVisible();
+      expect(screen.queryByRole('cell', {name: /middle condition/i})).toBeNull();
+
+      await user.click(toggle);
+
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByRole('cell', {name: /root condition/i})).toBeVisible();
+      expect(screen.getByRole('cell', {name: /middle condition/i})).toBeVisible();
+      expect(screen.getByRole('cell', {name: /leaf condition/i})).toBeVisible();
+
+      await user.click(toggle);
+
+      // Only the root row remains once everything is collapsed.
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.getByRole('cell', {name: /root condition/i})).toBeVisible();
+      expect(screen.queryByRole('cell', {name: /middle condition/i})).toBeNull();
+      expect(screen.queryByRole('cell', {name: /leaf condition/i})).toBeNull();
+    });
+
+    it('shows no toggle when there is nothing to expand', () => {
+      const nodes = [
+        buildAutomationConditionEvaluationNode({
+          startTimestamp: 0,
+          endTimestamp: 10,
+          uniqueId: 'a',
+          userLabel: 'only condition',
+          isPartitioned: false,
+          numTrue: 0,
+          numCandidates: 0,
+          childUniqueIds: [],
+          operatorType: 'identity',
+        }),
+      ];
+
+      render(
+        <PolicyEvaluationTable
+          evaluationNodes={nodes}
+          assetKeyPath={['foo', 'bar']}
+          evaluationId="1"
+          rootUniqueId="a"
+          isLegacyEvaluation={false}
+          selectPartition={() => {}}
+        />,
+      );
+
+      // The column header still reads "Condition", but is not a button.
+      expect(screen.getByRole('columnheader', {name: /condition/i})).toBeVisible();
+      expect(screen.queryByRole('button', {name: /condition/i})).toBeNull();
+    });
+  });
 });

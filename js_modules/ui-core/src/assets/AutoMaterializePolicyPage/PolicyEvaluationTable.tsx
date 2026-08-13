@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {useCallback, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useMemo, useState} from 'react';
 
 import {
   EvaluationConditionalLabel,
@@ -29,6 +29,7 @@ import {
   defaultExpanded,
   displayNameForEntityKey,
   entityKeyMatches,
+  expandableUniqueIds,
   flattenEvaluations,
   jobNameForEntityKey,
   statusForEvaluation,
@@ -108,6 +109,30 @@ export const PolicyEvaluationTable = (props: Props) => {
     });
   }, []);
 
+  const expandableRecords = useMemo(
+    () => expandableUniqueIds({evaluationNodes, rootUniqueId}),
+    [evaluationNodes, rootUniqueId],
+  );
+
+  const allExpanded = useMemo(
+    () =>
+      expandableRecords.size > 0 &&
+      Array.from(expandableRecords).every((uniqueId) => expandedRecords.has(uniqueId)),
+    [expandableRecords, expandedRecords],
+  );
+
+  const toggleAllExpanded = useCallback(() => {
+    setExpandedRecords(allExpanded ? new Set() : new Set(expandableRecords));
+  }, [allExpanded, expandableRecords]);
+
+  const conditionHeader = (
+    <ConditionHeader
+      allExpanded={allExpanded}
+      hasExpandableRecords={expandableRecords.size > 0}
+      toggleAllExpanded={toggleAllExpanded}
+    />
+  );
+
   if (!isLegacyEvaluation) {
     return (
       <NewPolicyEvaluationTable
@@ -118,6 +143,7 @@ export const PolicyEvaluationTable = (props: Props) => {
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
+        conditionHeader={conditionHeader}
         pushHistory={pushHistory}
         lastEvaluationsByEntityKey={lastEvaluationsByEntityKey}
       />
@@ -136,6 +162,7 @@ export const PolicyEvaluationTable = (props: Props) => {
         selectPartition={selectPartition}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
+        conditionHeader={conditionHeader}
       />
     );
   }
@@ -149,7 +176,44 @@ export const PolicyEvaluationTable = (props: Props) => {
       }
       toggleExpanded={toggleExpanded}
       expandedRecords={expandedRecords}
+      conditionHeader={conditionHeader}
     />
+  );
+};
+
+/**
+ * Header cell for the "Condition" column. When the tree has groups to toggle, the entire header
+ * label is a button that expands or collapses every condition group at once. The padding and icon
+ * size mirror `PolicyEvaluationCondition` so that the toggle lines up with the per-row disclosure
+ * arrows below it.
+ */
+const ConditionHeader = ({
+  allExpanded,
+  hasExpandableRecords,
+  toggleAllExpanded,
+}: {
+  allExpanded: boolean;
+  hasExpandableRecords: boolean;
+  toggleAllExpanded: () => void;
+}) => {
+  if (!hasExpandableRecords) {
+    return <Box padding={{vertical: 2, horizontal: 8}}>Condition</Box>;
+  }
+
+  return (
+    <Box padding={{vertical: 2, horizontal: 8}}>
+      <Tooltip content={allExpanded ? 'Collapse all' : 'Expand all'} placement="top">
+        <ButtonLink
+          aria-expanded={allExpanded}
+          className={styles.expandCollapseAll}
+          color={{link: Colors.textLight(), hover: Colors.textDefault()}}
+          onClick={toggleAllExpanded}
+        >
+          <Icon name={allExpanded ? 'unfold_less' : 'unfold_more'} size={20} color="currentColor" />
+          Condition
+        </ButtonLink>
+      </Tooltip>
+    </Box>
   );
 };
 
@@ -161,6 +225,7 @@ const NewPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  conditionHeader,
   pushHistory,
   lastEvaluationsByEntityKey,
 }: {
@@ -170,6 +235,7 @@ const NewPolicyEvaluationTable = ({
   evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
+  conditionHeader: ReactNode;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
   lastEvaluationsByEntityKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
@@ -205,7 +271,7 @@ const NewPolicyEvaluationTable = ({
     <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
-          <th>Condition</th>
+          <th>{conditionHeader}</th>
           <th>Result</th>
           {isPartitioned ? <th>Partitions evaluated</th> : null}
           <th>Duration</th>
@@ -376,9 +442,11 @@ const UnpartitionedPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  conditionHeader,
 }: {
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
+  conditionHeader: ReactNode;
   flattenedRecords:
     | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
     | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[];
@@ -391,7 +459,7 @@ const UnpartitionedPolicyEvaluationTable = ({
     <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
-          <th>Condition</th>
+          <th>{conditionHeader}</th>
           <th>Result</th>
           {isSpecificPartitionAssetConditionEvaluations ? null : <th>Duration</th>}
           <th>Details</th>
@@ -501,6 +569,7 @@ export const PartitionedPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  conditionHeader,
   selectPartition,
 }: {
   assetKeyPath: string[] | null;
@@ -509,6 +578,7 @@ export const PartitionedPolicyEvaluationTable = ({
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
+  conditionHeader: ReactNode;
   selectPartition: (partitionKey: string | null) => void;
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
@@ -516,7 +586,7 @@ export const PartitionedPolicyEvaluationTable = ({
     <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
-          <th>Condition</th>
+          <th>{conditionHeader}</th>
           <th>Partitions evaluated</th>
           <th>Result</th>
           <th>Duration</th>
