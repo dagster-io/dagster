@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.13.18 (core) / 0.29.18 (libraries)
+
+### New
+
+- Assets whose failed partitions are all awaiting an automatic retry now report a warning health status instead of degraded. The asset health popover and alert notifications indicate that a retry is pending.
+- [dagster-snowflake] `SnowflakeDbtProjectComponent` now supports configuring `defs_state`, so Dagster+ deployments can opt into versioned state storage.
+
+### Bugfixes
+
+- Fixed an issue where a config field typed as a discriminated union with a default value ignored that default.
+- [dagster-snowflake] Fixed an issue where the `SnowflakeDbtProjectComponent` observation sensor could report Dagster-triggered dbt runs as externally triggered.
+- [dagster-snowflake] Fixed an issue where `SnowflakeDbtProjectComponent` raised an error when dbt built models outside the selected subset of assets.
+
 ## 1.13.17 (core) / 0.29.17 (libraries)
 
 ### New
