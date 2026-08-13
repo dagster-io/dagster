@@ -1139,6 +1139,71 @@ def test_dbt_cloud_component_sensor_included_by_default(
     assert isinstance(sensors[0], SensorDefinition)
 
 
+def test_dbt_cloud_component_monitor_runs_defaults_off(mock_workspace):
+    """`monitor_runs` defaults to `False`, and `fail_fast` / `poll_interval` carry
+    sensible defaults. Backward compat: existing users get the same wait-for-completion
+    behavior as before Feature 6.5.
+    """
+    component = DbtCloudComponent(workspace=mock_workspace)
+    assert component.monitor_runs is False
+    assert component.fail_fast is False
+    assert component.poll_interval == 5
+
+
+def test_dbt_cloud_component_monitor_runs_from_yaml():
+    """`monitor_runs`, `fail_fast`, `poll_interval` are settable via YAML —
+    the primary UX for opting into mid-run monitoring.
+    """
+    body = {
+        **BASIC_DBT_CLOUD_COMPONENT_BODY,
+        "attributes": {
+            **BASIC_DBT_CLOUD_COMPONENT_BODY["attributes"],
+            "monitor_runs": True,
+            "fail_fast": True,
+            "poll_interval": 3,
+        },
+    }
+    with create_defs_folder_sandbox() as sandbox:
+        defs_path = sandbox.scaffold_component(
+            component_cls=DbtCloudComponent,
+            defs_yaml_contents=body,
+        )
+        with (
+            scoped_definitions_load_context(),
+            sandbox.load_component_and_build_defs(defs_path=defs_path) as (component, _defs),
+        ):
+            assert isinstance(component, DbtCloudComponent)
+            assert component.monitor_runs is True
+            assert component.fail_fast is True
+            assert component.poll_interval == 3
+
+
+def test_dbt_cloud_component_execute_forwards_monitor_flags(mock_workspace):
+    """`execute()` must forward `monitor_runs`/`fail_fast`/`poll_interval` to
+    `invocation.wait()` — otherwise the fields are declarative decor with no
+    runtime effect. Verified by capturing the call args on the mocked invocation.
+    """
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+        cli_args=["build"],
+        monitor_runs=True,
+        fail_fast=True,
+        poll_interval=2,
+    )
+    context = MagicMock()
+    context.has_partition_key = False
+    context.has_partition_key_range = False
+
+    dummy_resolution_context = ResolutionContext.default()
+    with _set_resolution_context(dummy_resolution_context):
+        list(component.execute(context))
+
+    wait_kwargs = mock_workspace.cli.return_value.wait.call_args.kwargs
+    assert wait_kwargs["monitor_runs"] is True
+    assert wait_kwargs["fail_fast"] is True
+    assert wait_kwargs["poll_interval"] == 2
+
+
 def test_dbt_cloud_component_from_yaml_with_sensor(mock_workspace_data):
     """Test that create_sensor can be set via YAML configuration."""
     body = {

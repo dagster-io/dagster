@@ -544,6 +544,44 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         ),
     ] = None
 
+    monitor_runs: Annotated[
+        bool,
+        Resolver.default(
+            description=(
+                "When True, emit AssetMaterializations / AssetCheckResults for each dbt "
+                "model / test as it completes mid-run — instead of waiting for the whole "
+                "Cloud run to finish. The component polls step debug logs "
+                "(`GET /steps/{id}/?include_related=debug_logs`) every `poll_interval` "
+                "seconds and parses per-model OK/ERROR status. Downstream `AutomationCondition` "
+                "subscriptions can react in seconds instead of minutes. Default `False` "
+                "preserves the OOTB wait-for-completion behavior for existing users."
+            ),
+        ),
+    ] = False
+
+    fail_fast: Annotated[
+        bool,
+        Resolver.default(
+            description=(
+                "When `monitor_runs=True`: on the first model/test failure, cancel the "
+                "Cloud run via `POST /runs/{id}/cancel/` and raise `Failure` after "
+                "yielding any partials. Default `False` keeps the run going so all "
+                "failures are captured (matches dbt's own `--fail-fast` off default)."
+            ),
+        ),
+    ] = False
+
+    poll_interval: Annotated[
+        int,
+        Resolver.default(
+            description=(
+                "Seconds between debug-log polls when `monitor_runs=True`. Default 5. "
+                "Lower = faster reaction to model completions but more API calls. dbt "
+                "Cloud rate-limits debug-log requests, so don't drop below 2."
+            ),
+        ),
+    ] = 5
+
     @property
     def defs_state_config(self) -> DefsStateConfig:
         key = f"DbtCloudComponent[{self.workspace.unique_id}]"
@@ -786,7 +824,11 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             dagster_dbt_translator=self.translator,
             context=context,
         )
-        yield from invocation.wait()
+        yield from invocation.wait(
+            monitor_runs=self.monitor_runs,
+            fail_fast=self.fail_fast,
+            poll_interval=self.poll_interval,
+        )
 
 
 class DbtCloudComponentTranslator(
