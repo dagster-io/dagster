@@ -701,3 +701,242 @@ def test_sorted_asset_events_handles_mixed_mats_and_checks():
     sorted_events = sorted_asset_events(events, repo_def)
     # Topological order: a's events come before b's; within a, timestamp ordering.
     assert [e.asset_key.to_user_string() for e in sorted_events] == ["a", "a", "b"]
+
+
+# ============================================================================
+# Mesh-aware filtering tests (Feature 6.7)
+# ============================================================================
+
+
+def test_is_external_package_event_filters_by_unique_id_package():
+    """Pure unit test on the filter predicate. Events whose dbt unique_id's package
+    (2nd dotted segment) is in `external_packages` are external; others aren't.
+    Events without a `unique_id` metadata (e.g., mirrored Cloud job asset mats) are
+    never treated as external.
+    """
+    from dagster import (
+        AssetKey as _AssetKey,
+        AssetMaterialization as _AssetMaterialization,
+        MetadataValue,
+    )
+    from dagster_dbt.cloud_v2.sensor_builder import _is_external_package_event
+
+    external = frozenset({"silver_project"})
+
+    upstream = _AssetMaterialization(
+        asset_key=_AssetKey(["stg_customers"]),
+        metadata={"unique_id": MetadataValue.text("model.silver_project.stg_customers")},
+    )
+    local = _AssetMaterialization(
+        asset_key=_AssetKey(["fct_orders"]),
+        metadata={"unique_id": MetadataValue.text("model.gold_project.fct_orders")},
+    )
+    no_uid = _AssetMaterialization(
+        asset_key=_AssetKey(["dbt_cloud_job", "Prod_Build"]),
+        metadata={"dbt_cloud_run_id": MetadataValue.int(1)},
+    )
+    empty_external = frozenset()
+
+    assert _is_external_package_event(upstream, external) is True
+    assert _is_external_package_event(local, external) is False
+    assert _is_external_package_event(no_uid, external) is False
+    # No external_packages configured -> nothing is external, even if uid matches.
+    assert _is_external_package_event(upstream, empty_external) is False
+
+
+def test_materializations_from_batch_iter_filters_external_package_events(monkeypatch):
+    """Full-integration: when `external_packages` is set, per-model events for
+    upstream mesh packages are dropped. Local project events flow through. Prevents
+    the double-materialization scenario where a gold project's Cloud run also
+    reports silver models — those silver models are the silver Cloud sensor's
+    responsibility.
+    """
+    from dagster import (
+        AssetKey as _AssetKey,
+        AssetMaterialization as _AssetMaterialization,
+        MetadataValue,
+    )
+    from dagster_dbt.cloud_v2 import sensor_builder as sb
+    from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudWorkspaceData
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    workspace_data = DbtCloudWorkspaceData(
+        project_id=1,
+        environment_id=1,
+        adhoc_job_ids=[],
+        manifest={
+            "metadata": {"dbt_schema_version": "1.0.0", "adapter_type": "postgres"},
+            "nodes": {},
+            "sources": {},
+            "metrics": {},
+            "semantic_models": {},
+            "exposures": {},
+            "child_map": {},
+            "parent_map": {},
+            "selectors": {},
+        },
+        jobs=[
+            {
+                "id": 500,
+                "account_id": 1,
+                "name": "Gold Build",
+                "project_id": 1,
+                "environment_id": 1,
+            }
+        ],
+    )
+
+    workspace = MagicMock()
+    workspace.project_id = 1
+    workspace.environment_id = 1
+    workspace.credentials = MagicMock(account_id=1)
+    workspace.get_or_fetch_workspace_data.return_value = workspace_data
+
+    client = MagicMock()
+    workspace.get_client.return_value = client
+
+    run_details = {
+        "id": 1,
+        "job_definition_id": 500,
+        "trigger_id": 0,
+        "account_id": 1,
+        "environment_id": 1,
+        "project_id": 1,
+        "status": DbtCloudJobRunStatusType.SUCCESS.value,
+        "href": "https://cloud.getdbt.com/runs/1",
+    }
+    client.get_runs_batch.side_effect = [([run_details], 1), ([], 1)]
+    client.list_run_artifacts.return_value = ["run_results.json"]
+    client.get_run_results_json.return_value = {
+        "metadata": {"env": {"DBT_CLOUD_RUN_ID": "1"}},
+        "results": [],
+    }
+    client.get_run_details.return_value = run_details
+
+    def fake_to_default_asset_events(
+        self, client, manifest, dagster_dbt_translator=None, context=None
+    ):
+        yield _AssetMaterialization(
+            asset_key=_AssetKey(["stg_customers"]),
+            metadata={"unique_id": MetadataValue.text("model.silver_project.stg_customers")},
+        )
+        yield _AssetMaterialization(
+            asset_key=_AssetKey(["fct_orders"]),
+            metadata={"unique_id": MetadataValue.text("model.gold_project.fct_orders")},
+        )
+
+    monkeypatch.setattr(
+        "dagster_dbt.cloud_v2.run_handler.DbtCloudJobRunResults.to_default_asset_events",
+        fake_to_default_asset_events,
+    )
+
+    context = MagicMock()
+    batches = list(
+        sb.materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            external_packages=["silver_project"],
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    events = [e for b in non_null for e in b.asset_events]
+    keys = {e.asset_key.to_user_string() for e in events}
+    # silver_project model dropped; gold_project model kept.
+    assert keys == {"fct_orders"}
+
+
+def test_materializations_from_batch_iter_external_packages_none_passes_all(monkeypatch):
+    """When `external_packages` is None or empty (Feature 5 not in use), no
+    filtering happens — same behavior as before Feature 6.7. Preserves backward
+    compat for non-mesh setups.
+    """
+    from dagster import (
+        AssetKey as _AssetKey,
+        AssetMaterialization as _AssetMaterialization,
+        MetadataValue,
+    )
+    from dagster_dbt.cloud_v2 import sensor_builder as sb
+    from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudWorkspaceData
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    workspace_data = DbtCloudWorkspaceData(
+        project_id=1,
+        environment_id=1,
+        adhoc_job_ids=[],
+        manifest={
+            "metadata": {"dbt_schema_version": "1.0.0", "adapter_type": "postgres"},
+            "nodes": {},
+            "sources": {},
+            "metrics": {},
+            "semantic_models": {},
+            "exposures": {},
+            "child_map": {},
+            "parent_map": {},
+            "selectors": {},
+        },
+        jobs=[
+            {
+                "id": 500,
+                "account_id": 1,
+                "name": "Build",
+                "project_id": 1,
+                "environment_id": 1,
+            }
+        ],
+    )
+    workspace = MagicMock()
+    workspace.project_id = 1
+    workspace.environment_id = 1
+    workspace.credentials = MagicMock(account_id=1)
+    workspace.get_or_fetch_workspace_data.return_value = workspace_data
+    client = MagicMock()
+    workspace.get_client.return_value = client
+
+    run_details = {
+        "id": 1,
+        "job_definition_id": 500,
+        "trigger_id": 0,
+        "account_id": 1,
+        "environment_id": 1,
+        "project_id": 1,
+        "status": DbtCloudJobRunStatusType.SUCCESS.value,
+        "href": "https://cloud.getdbt.com/runs/1",
+    }
+    client.get_runs_batch.side_effect = [([run_details], 1), ([], 1)]
+    client.list_run_artifacts.return_value = ["run_results.json"]
+    client.get_run_results_json.return_value = {
+        "metadata": {"env": {"DBT_CLOUD_RUN_ID": "1"}},
+        "results": [],
+    }
+    client.get_run_details.return_value = run_details
+
+    def fake_events(self, client, manifest, dagster_dbt_translator=None, context=None):
+        yield _AssetMaterialization(
+            asset_key=_AssetKey(["stg_customers"]),
+            metadata={"unique_id": MetadataValue.text("model.any_project.stg_customers")},
+        )
+
+    monkeypatch.setattr(
+        "dagster_dbt.cloud_v2.run_handler.DbtCloudJobRunResults.to_default_asset_events",
+        fake_events,
+    )
+
+    context = MagicMock()
+    batches = list(
+        sb.materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            external_packages=None,
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    events = [e for b in non_null for e in b.asset_events]
+    assert [e.asset_key.to_user_string() for e in events] == ["stg_customers"]

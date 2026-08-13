@@ -75,6 +75,36 @@ class DbtCloudPollingSensorCursor:
     offset: int | None = None
 
 
+def _is_external_package_event(
+    event: AssetMaterialization | AssetCheckEvaluation,
+    external_packages: frozenset[str],
+) -> bool:
+    """Return True if the dbt node behind this event belongs to an external mesh
+    package.
+
+    We key off the ``unique_id`` metadata (attached by ``to_default_asset_events``),
+    which is shaped ``<resource_type>.<package>.<name>`` — e.g.
+    ``model.silver_project.stg_customers``. Splitting on ``.`` and taking the second
+    segment is stable across resource types (model / test / source).
+
+    Events without a ``unique_id`` metadata value (like the mirrored dbt Cloud job
+    asset materializations added by Feature 6) are never treated as external —
+    they don't correspond to a dbt node.
+    """
+    if not external_packages:
+        return False
+    uid_meta = event.metadata.get("unique_id") if event.metadata else None
+    if uid_meta is None:
+        return False
+    uid = getattr(uid_meta, "value", None) or (uid_meta if isinstance(uid_meta, str) else None)
+    if not isinstance(uid, str):
+        return False
+    parts = uid.split(".")
+    if len(parts) < 2:
+        return False
+    return parts[1] in external_packages
+
+
 def materializations_from_batch_iter(
     context: SensorEvaluationContext,
     finished_at_lower_bound: float,
@@ -85,6 +115,7 @@ def materializations_from_batch_iter(
     emit_job_asset_materializations: bool = False,
     mirror_jobs_select: str | None = None,
     mirror_jobs_exclude: str | None = None,
+    external_packages: Sequence[str] | None = None,
 ) -> Iterator[BatchResult | None]:
     client = workspace.get_client()
     workspace_data = workspace.get_or_fetch_workspace_data()
@@ -110,6 +141,8 @@ def materializations_from_batch_iter(
         if mirror_jobs_exclude and matches_selection(cloud_job, mirror_jobs_exclude):
             return False
         return True
+
+    external_package_set: frozenset[str] = frozenset(external_packages or ())
 
     job_key_by_id: Mapping[int, AssetKey] = {}
     if emit_job_asset_materializations:
@@ -193,10 +226,17 @@ def materializations_from_batch_iter(
             # check evaluations power the asset-check UI so users see failing dbt
             # tests as red on the asset in Dagster — matching what an in-process
             # execution would emit.
+            #
+            # In mesh setups (`external_packages` non-empty), skip events whose dbt
+            # unique_id belongs to an upstream package. The upstream project's own
+            # DbtCloudComponent sensor is responsible for materializing those keys —
+            # if we emit them here too, we'd double-materialize (and conflict on
+            # ownership).
             batch_events: list[AssetMaterialization | AssetCheckEvaluation] = [
                 event
                 for event in events
                 if isinstance(event, (AssetMaterialization, AssetCheckEvaluation))
+                and not _is_external_package_event(event, external_package_set)
             ]
             batch_events.extend(job_asset_events)
             mat_count = sum(1 for e in batch_events if isinstance(e, AssetMaterialization))
@@ -264,6 +304,7 @@ def build_dbt_cloud_polling_sensor(
     emit_job_asset_materializations: bool = False,
     mirror_jobs_select: str | None = None,
     mirror_jobs_exclude: str | None = None,
+    external_packages: Sequence[str] | None = None,
 ) -> SensorDefinition:
     """The constructed sensor polls the dbt Cloud Workspace for activity, and inserts asset events into Dagster's event log.
 
@@ -326,6 +367,7 @@ def build_dbt_cloud_polling_sensor(
             emit_job_asset_materializations=emit_job_asset_materializations,
             mirror_jobs_select=mirror_jobs_select,
             mirror_jobs_exclude=mirror_jobs_exclude,
+            external_packages=external_packages,
         )
 
         all_asset_events: list[AssetMaterialization | AssetCheckEvaluation] = []

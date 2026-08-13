@@ -735,6 +735,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                     emit_job_asset_materializations=emit_job_materializations,
                     mirror_jobs_select=self.mirror_jobs_select,
                     mirror_jobs_exclude=self.mirror_jobs_exclude,
+                    external_packages=self.external_packages or None,
                 )
             )
 
