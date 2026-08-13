@@ -23,6 +23,7 @@ from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManage
 
 from dagster_dbt.asset_specs import (
     build_dbt_exposure_asset_specs,
+    build_dbt_external_package_asset_specs,
     build_dbt_semantic_layer_asset_specs,
     build_dbt_source_asset_specs,
 )
@@ -276,6 +277,22 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             examples=["{{ project_root }}/prod_state/manifest.json"],
         ),
     ] = None
+    external_packages: Annotated[
+        list[str],
+        Resolver.default(
+            description=(
+                "List of dbt package names whose models this project imports as a mesh "
+                "dependency. Models in these packages are auto-excluded from the current "
+                "project's materializable graph (so `dbt build` doesn't try to rebuild them) "
+                "and emitted as observable external stub `AssetSpec`s so downstream lineage "
+                "is preserved. When another Dagster code location declares the upstream "
+                "project (with the same `AssetKey`s), the auto-stub marker ensures the "
+                "upstream's real declaration wins per Dagster's precedence order and the "
+                "graph stitches together across code locations."
+            ),
+            examples=[["silver_project"], ["silver_project", "shared_reference"]],
+        ),
+    ] = field(default_factory=list)
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -417,11 +434,23 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
         res_ctx = context.resolution_context
 
+        # External mesh packages: auto-exclude their models from the materializable graph
+        # by appending `package:X` to the user's own `exclude` selection. The user's
+        # explicit `exclude` is preserved; we just add ours on top with a space separator.
+        effective_exclude = self.exclude or ""
+        if self.external_packages:
+            package_exclusions = " ".join(f"package:{pkg}" for pkg in self.external_packages)
+            effective_exclude = (
+                f"{effective_exclude} {package_exclusions}".strip()
+                if effective_exclude
+                else package_exclusions
+            )
+
         asset_specs, check_specs = build_dbt_specs(
             translator=validate_translator(self.translator),
             manifest=validate_manifest(project.manifest_path),
             select=self.select,
-            exclude=self.exclude,
+            exclude=effective_exclude,
             selector=self.selector,
             project=project,
             io_manager_key=None,
@@ -490,8 +519,25 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             if self.translator.settings.enable_semantic_layer_assets
             else []
         )
+        # dbt mesh: emit stub AssetSpecs for models in imported packages. Downstream
+        # models in this project still point at those keys, so lineage stays intact and
+        # the upstream Dagster code location's real declarations win precedence.
+        external_package_specs = build_dbt_external_package_asset_specs(
+            manifest=validated_manifest,
+            external_packages=self.external_packages,
+            dagster_dbt_translator=validated_translator,
+            project=project,
+        )
 
-        return dg.Definitions(assets=[_fn, *source_specs, *exposure_specs, *semantic_layer_specs])
+        return dg.Definitions(
+            assets=[
+                _fn,
+                *source_specs,
+                *exposure_specs,
+                *semantic_layer_specs,
+                *external_package_specs,
+            ]
+        )
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         return resolve_cli_args(self.cli_args, context)

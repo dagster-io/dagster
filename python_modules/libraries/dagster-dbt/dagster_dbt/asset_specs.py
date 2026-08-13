@@ -29,6 +29,8 @@ DAGSTER_DBT_SEMANTIC_MODEL_ENTITIES_METADATA_KEY = "dagster_dbt/entities"
 DAGSTER_DBT_METRIC_TYPE_METADATA_KEY = "dagster_dbt/metric_type"
 DAGSTER_DBT_METRIC_LABEL_METADATA_KEY = "dagster_dbt/metric_label"
 
+DAGSTER_DBT_EXTERNAL_PACKAGE_METADATA_KEY = "dagster_dbt/external_package"
+
 
 # dbt exposure types (https://docs.getdbt.com/reference/exposure-properties#type):
 # dashboard, notebook, analysis, ml, application. We map each to a kind that
@@ -370,4 +372,78 @@ def build_dbt_semantic_layer_asset_specs(
             )
         )
 
+    return specs
+
+
+def build_dbt_external_package_asset_specs(
+    *,
+    manifest: DbtManifestParam,
+    external_packages: Sequence[str],
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    project: DbtProject | None = None,
+) -> Sequence[AssetSpec]:
+    """Emit observable external stub ``AssetSpec`` objects for every dbt model whose
+    ``package_name`` matches one of ``external_packages`` (dbt mesh case).
+
+    Purpose: when a dbt project imports another dbt project as a package (dbt mesh), the
+    imported package's models appear in the manifest but the CURRENT project doesn't own
+    them — they're managed by a separate Dagster code location for the upstream project.
+    Emitting them as observable stub specs lets downstream models in this project's graph
+    show their upstream lineage, and lets the upstream project's Dagster code location
+    merge with these stubs (auto-stub marker ensures the upstream's non-stub declaration
+    wins per Dagster's asset-node precedence order).
+
+    Callers should typically ALSO exclude external-package models from their materializable
+    graph (via ``exclude: "package:X"`` on the component). The two work together:
+
+    - ``exclude`` prevents the model from becoming part of the ``@dbt_assets`` op (so
+      running the current project's dbt command doesn't try to rebuild the upstream).
+    - ``build_dbt_external_package_asset_specs`` emits the stub spec so downstream lineage
+      is still visible.
+
+    Metadata surfaced:
+
+    - ``dagster_dbt/unique_id``: the dbt unique_id of the model.
+    - ``dagster_dbt/external_package``: the package name that owns this model.
+    - ``dagster_dbt/table_name`` and column schema (via the shared translator metadata).
+
+    Args:
+        manifest: The contents of a ``manifest.json`` file or the path to one.
+        external_packages: List of dbt package names to emit external stub specs for.
+        dagster_dbt_translator: Optional translator; defaults to :py:class:`DagsterDbtTranslator`.
+        project: Optional :py:class:`DbtProject` (used for code references).
+
+    Returns:
+        Sequence[AssetSpec]: One ``AssetSpec`` per model whose ``package_name`` is in
+        ``external_packages``, deduplicated by ``AssetKey`` first-wins.
+    """
+    if not external_packages:
+        return []
+    manifest = validate_manifest(manifest)
+    translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
+    external_package_set = set(external_packages)
+
+    seen: set[AssetKey] = set()
+    specs: list[AssetSpec] = []
+    for unique_id, props in (manifest.get("nodes") or {}).items():
+        if props.get("resource_type") != "model":
+            continue
+        if props.get("package_name") not in external_package_set:
+            continue
+        # Use the translator for asset-key resolution so meta.dagster.asset_key on the
+        # upstream project's model still applies (essential for keys to match the upstream
+        # Dagster code location's declarations).
+        spec = translator.get_asset_spec(manifest, unique_id, project)
+        if spec.key in seen:
+            continue
+        seen.add(spec.key)
+        # Marker so the upstream Dagster location's non-stub declaration wins precedence.
+        specs.append(
+            spec.merge_attributes(
+                metadata={
+                    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True,
+                    DAGSTER_DBT_EXTERNAL_PACKAGE_METADATA_KEY: props.get("package_name"),
+                }
+            )
+        )
     return specs

@@ -24,6 +24,7 @@ from pydantic import Field
 
 from dagster_dbt.asset_specs import (
     build_dbt_exposure_asset_specs,
+    build_dbt_external_package_asset_specs,
     build_dbt_semantic_layer_asset_specs,
     build_dbt_source_asset_specs,
 )
@@ -251,6 +252,22 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             examples=["{{ project_root }}/prod_state/manifest.json"],
         ),
     ] = None
+    external_packages: Annotated[
+        list[str],
+        Resolver.default(
+            description=(
+                "List of dbt package names whose models this project imports as a mesh "
+                "dependency. Models in these packages are auto-excluded from the current "
+                "project's materializable graph (so `dbt build` doesn't try to rebuild them) "
+                "and emitted as observable external stub `AssetSpec`s so downstream lineage "
+                "is preserved. When another Dagster code location declares the upstream "
+                "project (with the same `AssetKey`s), the auto-stub marker ensures the "
+                "upstream's real declaration wins per Dagster's precedence order and the "
+                "graph stitches together across code locations."
+            ),
+            examples=[["silver_project"], ["silver_project", "shared_reference"]],
+        ),
+    ] = Field(default_factory=list)  # type: ignore
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -344,11 +361,20 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         res_ctx = context.resolution_context
 
         validated_manifest_for_state = validate_manifest(manifest)
+        # External mesh packages: auto-exclude their models from the materializable graph.
+        effective_exclude = self.exclude or ""
+        if self.external_packages:
+            package_exclusions = " ".join(f"package:{pkg}" for pkg in self.external_packages)
+            effective_exclude = (
+                f"{effective_exclude} {package_exclusions}".strip()
+                if effective_exclude
+                else package_exclusions
+            )
         asset_specs, check_specs = build_dbt_specs(
             translator=self.translator,
             manifest=validated_manifest_for_state,
             select=self.select,
-            exclude=self.exclude,
+            exclude=effective_exclude,
             selector=self.selector,
             project=None,
             io_manager_key=None,
@@ -423,6 +449,12 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             if self.translator.settings.enable_semantic_layer_assets
             else []
         )
+        external_package_specs = build_dbt_external_package_asset_specs(
+            manifest=validated_manifest,
+            external_packages=self.external_packages,
+            dagster_dbt_translator=self.translator,
+            project=None,
+        )
 
         return Definitions(
             assets=[
@@ -430,6 +462,7 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                 *source_specs,
                 *exposure_specs,
                 *semantic_layer_specs,
+                *external_package_specs,
             ],
             sensors=sensors,
         )
