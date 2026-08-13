@@ -35,6 +35,7 @@ from dagster_dbt.asset_utils import (
     build_dbt_specs,
     get_node,
 )
+from dagster_dbt.cloud_v2.job_selection import apply_selection
 from dagster_dbt.cloud_v2.resources import (
     DAGSTER_ADHOC_PREFIX,
     DbtCloudAdhocJobPoolMode,
@@ -169,27 +170,37 @@ def _build_mirrored_dbt_cloud_job(
 
 def _iter_mirrorable_cloud_jobs(
     workspace_data: "DbtCloudWorkspaceData",
+    include: str | None = None,
+    exclude: str | None = None,
 ) -> Iterator[DbtCloudJob]:
-    """Yield user-defined Cloud jobs (i.e. not Dagster's internal adhoc pool).
+    """Yield user-defined Cloud jobs after selection filtering.
 
-    Dagster creates ``DAGSTER_ADHOC_JOB__*`` jobs for its own CLI invocations; those
-    show up in ``workspace_data.jobs`` alongside user-defined jobs. Users don't want to
-    mirror them — they're an implementation detail. Filter by name prefix AND by the
-    stored ``adhoc_job_ids`` set (belt and suspenders in case an old-prefix job lingers).
+    Filters applied in order:
+
+    1. Drop Dagster's internal adhoc pool jobs (``DAGSTER_ADHOC_JOB__*``) and any ids
+       listed in ``workspace_data.adhoc_job_ids``. Implementation detail — never
+       user-facing.
+    2. Apply the dbt-style selection DSL: ``include`` (default = all) then ``exclude``
+       (default = none). See :mod:`dagster_dbt.cloud_v2.job_selection`.
     """
     adhoc_ids = set(workspace_data.adhoc_job_ids)
+    candidates: list[DbtCloudJob] = []
     for job_details in workspace_data.jobs:
         if (job_details.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX):
             continue
         if job_details.get("id") in adhoc_ids:
             continue
-        yield DbtCloudJob.from_job_details(job_details)
+        candidates.append(DbtCloudJob.from_job_details(job_details))
+    yield from apply_selection(candidates, include=include, exclude=exclude)
 
 
 def _build_dbt_cloud_job_asset_specs(
     workspace_data: "DbtCloudWorkspaceData",
+    include: str | None = None,
+    exclude: str | None = None,
 ) -> list["dg.AssetSpec"]:
-    """Emit one observable external ``AssetSpec`` per user-defined dbt Cloud job.
+    """Emit one observable external ``AssetSpec`` per user-defined dbt Cloud job that
+    matches the selection filter.
 
     Job assets participate in Dagster's automation-tick loop: users can attach
     ``AutomationCondition``s to react when a Cloud job runs, schedule the job via
@@ -209,7 +220,7 @@ def _build_dbt_cloud_job_asset_specs(
     """
     specs: list[dg.AssetSpec] = []
     seen: set[dg.AssetKey] = set()
-    for cloud_job in _iter_mirrorable_cloud_jobs(workspace_data):
+    for cloud_job in _iter_mirrorable_cloud_jobs(workspace_data, include=include, exclude=exclude):
         key = cloud_job.asset_key()
         if key in seen:
             continue
@@ -501,6 +512,37 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         ),
     ] = None
 
+    mirror_jobs_select: Annotated[
+        str | None,
+        Resolver.default(
+            description=(
+                "dbt-style selection string that limits which Cloud jobs are mirrored. "
+                "Space-separated selectors, union (OR) semantics. Supported forms:\n\n"
+                "- `type:<value>` — match `job_type` exactly "
+                "(`ci`, `merge`, `deploy`, `scheduled`, `other`).\n"
+                "- `name:<glob>` — fnmatch glob on the job name (case-sensitive).\n"
+                "- `id:<int>` — exact job id match.\n"
+                "- `<glob>` — bare token = shorthand for `name:<glob>`.\n\n"
+                "Default `None` = mirror every user-defined Cloud job. Applies uniformly "
+                "to emitted asset specs (`asset` mode), Dagster jobs (`job` mode), and "
+                "the polling sensor — so the sensor never emits materializations for "
+                "jobs the user chose not to mirror."
+            ),
+            examples=["type:deploy", "type:deploy type:merge", "name:Prod_*"],
+        ),
+    ] = None
+
+    mirror_jobs_exclude: Annotated[
+        str | None,
+        Resolver.default(
+            description=(
+                "dbt-style selection string that excludes matching Cloud jobs from "
+                "mirroring. Applied AFTER `mirror_jobs_select`; exclusion wins. Same "
+                "syntax as `mirror_jobs_select`."
+            ),
+            examples=["type:ci", "name:*_staging"],
+        ),
+    ] = None
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -653,6 +695,8 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                     workspace=self.workspace,
                     dagster_dbt_translator=self.translator,
                     emit_job_asset_materializations=emit_job_materializations,
+                    mirror_jobs_select=self.mirror_jobs_select,
+                    mirror_jobs_exclude=self.mirror_jobs_exclude,
                 )
             )
 
@@ -701,11 +745,23 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         # independently or together; see the field docstring for use-case guidance.
         emit_asset_specs = self.mirror_jobs in ("asset", "both")
         emit_jobs = self.mirror_jobs in ("job", "both")
-        job_specs = _build_dbt_cloud_job_asset_specs(workspace_data) if emit_asset_specs else []
+        job_specs = (
+            _build_dbt_cloud_job_asset_specs(
+                workspace_data,
+                include=self.mirror_jobs_select,
+                exclude=self.mirror_jobs_exclude,
+            )
+            if emit_asset_specs
+            else []
+        )
         mirrored_jobs = (
             [
                 _build_mirrored_dbt_cloud_job(self.workspace, cloud_job, self.job_trigger_defaults)
-                for cloud_job in _iter_mirrorable_cloud_jobs(workspace_data)
+                for cloud_job in _iter_mirrorable_cloud_jobs(
+                    workspace_data,
+                    include=self.mirror_jobs_select,
+                    exclude=self.mirror_jobs_exclude,
+                )
             ]
             if emit_jobs
             else []

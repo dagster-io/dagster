@@ -481,3 +481,127 @@ def test_asset_materialization_type_for_sensor_result_smoke():
     run = DbtCloudRun.from_run_details(_run_details(run_id=1, job_definition_id=1))
     mat = _job_asset_materialization_from_run(run=run, job_asset_key=AssetKey(["a"]))
     assert isinstance(mat, AssetMaterialization)
+
+
+# ============================================================================
+# Job selection tests (sensor honors mirror_jobs_select / mirror_jobs_exclude)
+# ============================================================================
+
+
+def test_materializations_from_batch_iter_selection_filters_job_key_map():
+    """When `mirror_jobs_select` excludes a Cloud job, the sensor MUST NOT emit a
+    job-asset materialization for it — otherwise we'd emit materializations on asset
+    keys the component never declared, which would be a phantom event.
+    """
+    workspace_data = _make_workspace_data_with_jobs(
+        user_jobs=[
+            {
+                "id": 900,
+                "account_id": 1,
+                "name": "Prod Build",
+                "project_id": 1,
+                "environment_id": 1,
+                "job_type": "deploy",
+            },
+            {
+                "id": 901,
+                "account_id": 1,
+                "name": "CI Build",
+                "project_id": 1,
+                "environment_id": 1,
+                "job_type": "ci",
+            },
+        ],
+        adhoc_ids=[],
+    )
+    workspace = _make_workspace_for_sensor(
+        workspace_data,
+        runs_batches=[
+            (
+                [
+                    _run_details(run_id=1, job_definition_id=900),
+                    _run_details(run_id=2, job_definition_id=901),
+                ],
+                2,
+            ),
+            ([], 2),
+        ],
+    )
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    context = MagicMock()
+    batches = list(
+        materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            emit_job_asset_materializations=True,
+            mirror_jobs_select="type:deploy",  # excludes the CI job
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    mats = [mat for b in non_null for mat in b.asset_events]
+    assert len(mats) == 1
+    assert mats[0].asset_key == AssetKey(["dbt_cloud_job", "Prod_Build"])
+
+
+def test_materializations_from_batch_iter_exclude_drops_matching_jobs():
+    """The sensor honors `mirror_jobs_exclude` — jobs matching exclude do NOT get
+    materializations even if include (default = all) would keep them.
+    """
+    workspace_data = _make_workspace_data_with_jobs(
+        user_jobs=[
+            {
+                "id": 900,
+                "account_id": 1,
+                "name": "Prod Build",
+                "project_id": 1,
+                "environment_id": 1,
+                "job_type": "deploy",
+            },
+            {
+                "id": 901,
+                "account_id": 1,
+                "name": "CI Build",
+                "project_id": 1,
+                "environment_id": 1,
+                "job_type": "ci",
+            },
+        ],
+        adhoc_ids=[],
+    )
+    workspace = _make_workspace_for_sensor(
+        workspace_data,
+        runs_batches=[
+            (
+                [
+                    _run_details(run_id=1, job_definition_id=900),
+                    _run_details(run_id=2, job_definition_id=901),
+                ],
+                2,
+            ),
+            ([], 2),
+        ],
+    )
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    context = MagicMock()
+    batches = list(
+        materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            emit_job_asset_materializations=True,
+            mirror_jobs_exclude="type:ci",
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    mats = [mat for b in non_null for mat in b.asset_events]
+    assert len(mats) == 1
+    assert mats[0].asset_key == AssetKey(["dbt_cloud_job", "Prod_Build"])

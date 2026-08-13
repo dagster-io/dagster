@@ -425,6 +425,183 @@ def test_dbt_cloud_component_mirror_jobs_deduplicates_colliding_sanitized_names(
     assert len(job_specs) == 1
 
 
+def _seed_diverse_mirror_jobs(mock_workspace_data):
+    """Populate the fixture with a spread of Cloud jobs across job_types + names,
+    used by the mirror_jobs_select / _exclude integration tests. Adhoc pool cleared
+    so nothing gets filtered by the internal-adhoc guard rather than the DSL.
+    """
+    mock_workspace_data.adhoc_job_ids.clear()
+    mock_workspace_data.jobs.clear()
+    mock_workspace_data.jobs.extend(
+        [
+            {
+                "id": 100,
+                "account_id": 1,
+                "project_id": 1,
+                "environment_id": 1,
+                "name": "Prod Deploy",
+                "job_type": "deploy",
+            },
+            {
+                "id": 101,
+                "account_id": 1,
+                "project_id": 1,
+                "environment_id": 1,
+                "name": "Prod Merge",
+                "job_type": "merge",
+            },
+            {
+                "id": 102,
+                "account_id": 1,
+                "project_id": 1,
+                "environment_id": 1,
+                "name": "PR Check",
+                "job_type": "ci",
+            },
+            {
+                "id": 103,
+                "account_id": 1,
+                "project_id": 1,
+                "environment_id": 1,
+                "name": "Nightly",
+                "job_type": "scheduled",
+            },
+        ]
+    )
+
+
+def test_dbt_cloud_component_mirror_jobs_select_filters_asset_specs(tmp_path, mock_workspace_data):
+    """``mirror_jobs_select`` (space-separated dbt-style selectors) limits which Cloud
+    jobs become asset specs. Union / OR semantics — a job matches if any selector
+    matches. Users can pick specific job types (e.g. ``type:deploy type:merge``) so
+    the Dagster graph only shows the production surfaces they care about.
+    """
+    _seed_diverse_mirror_jobs(mock_workspace_data)
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+        mirror_jobs_select="type:deploy type:merge",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    keys = sorted(spec.key.to_user_string() for spec in job_specs)
+    assert keys == ["dbt_cloud_job/Prod_Deploy", "dbt_cloud_job/Prod_Merge"]
+
+
+def test_dbt_cloud_component_mirror_jobs_exclude_drops_matching_jobs(tmp_path, mock_workspace_data):
+    """``mirror_jobs_exclude`` removes matching jobs even if include would keep them —
+    exclusion wins, matching dbt's ``--exclude`` semantics.
+    """
+    _seed_diverse_mirror_jobs(mock_workspace_data)
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+        mirror_jobs_exclude="type:ci",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    # Everything except the CI job (id=102 / "PR Check") shows up.
+    assert len(job_specs) == 3
+    assert not any(spec.metadata.get("dagster_dbt/cloud_job_id") == 102 for spec in job_specs)
+
+
+def test_dbt_cloud_component_mirror_jobs_select_filters_dagster_jobs_too(
+    tmp_path, mock_workspace_data
+):
+    """The selection filter applies uniformly to Dagster ``@job``s (``job`` mode) —
+    not just asset specs. Otherwise users would see ghost @jobs for Cloud jobs they
+    excluded from mirroring.
+    """
+    _seed_diverse_mirror_jobs(mock_workspace_data)
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="job",
+        mirror_jobs_select="type:deploy",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    assert [j.name for j in dagster_jobs] == ["Prod_Deploy"]
+
+
+def test_dbt_cloud_component_mirror_jobs_both_mode_selects_uniformly(tmp_path, mock_workspace_data):
+    """In ``both`` mode, the selection filter applies to BOTH surfaces so the asset
+    spec and Dagster @job for a given Cloud job either both exist or neither does.
+    This is what keeps the asset-key ↔ @job-name mapping consistent for downstream
+    ``@run_status_sensor`` wiring.
+    """
+    _seed_diverse_mirror_jobs(mock_workspace_data)
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="both",
+        mirror_jobs_select="id:100",  # only Prod Deploy
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    assert [spec.key.to_user_string() for spec in job_specs] == ["dbt_cloud_job/Prod_Deploy"]
+    assert [j.name for j in dagster_jobs] == ["Prod_Deploy"]
+
+
+def test_dbt_cloud_component_mirror_jobs_select_none_matches_everything(
+    tmp_path, mock_workspace_data
+):
+    """When ``mirror_jobs_select`` is ``None`` (default), every user-defined Cloud
+    job is mirrored — preserving the Feature 6 behavior for users who don't opt into
+    selection. Backward compatible.
+    """
+    _seed_diverse_mirror_jobs(mock_workspace_data)
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+    )
+    assert component.mirror_jobs_select is None
+    assert component.mirror_jobs_exclude is None
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    assert len(job_specs) == 4  # all four seeded jobs mirrored
+
+
 def test_dbt_cloud_component_mirror_jobs_job_op_merges_defaults_with_config(
     tmp_path, mock_workspace_data
 ):
@@ -601,11 +778,19 @@ def test_dbt_cloud_job_asset_key_helper():
         project_id=1,
         environment_id=1,
         name="My Cool Job!",
+        job_type="deploy",
     )
     assert job.sanitized_name() == "My_Cool_Job"
     assert job.asset_key() == AssetKey(["dbt_cloud_job", "My_Cool_Job"])
 
-    unnamed = DbtCloudJob(id=42, account_id=1, project_id=1, environment_id=1, name=None)
+    unnamed = DbtCloudJob(
+        id=42,
+        account_id=1,
+        project_id=1,
+        environment_id=1,
+        name=None,
+        job_type=None,
+    )
     assert unnamed.asset_key() == AssetKey(["dbt_cloud_job", "dbt_cloud_job_42"])
 
 

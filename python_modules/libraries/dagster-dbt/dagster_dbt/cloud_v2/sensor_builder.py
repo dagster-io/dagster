@@ -23,6 +23,7 @@ from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster_shared.serdes import whitelist_for_serdes
 
+from dagster_dbt.cloud_v2.job_selection import matches_selection
 from dagster_dbt.cloud_v2.resources import DAGSTER_ADHOC_PREFIX, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
@@ -82,6 +83,8 @@ def materializations_from_batch_iter(
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: DagsterDbtTranslator,
     emit_job_asset_materializations: bool = False,
+    mirror_jobs_select: str | None = None,
+    mirror_jobs_exclude: str | None = None,
 ) -> Iterator[BatchResult | None]:
     client = workspace.get_client()
     workspace_data = workspace.get_or_fetch_workspace_data()
@@ -97,18 +100,30 @@ def materializations_from_batch_iter(
     adhoc_job_ids.update(workspace_data.adhoc_job_ids)
 
     # Map each user-defined Cloud job id -> the AssetKey used when it's mirrored as
-    # an asset. Adhoc jobs are excluded (they have no user-facing asset spec). Used
-    # only when the caller opts into job-level materialization emission.
-    job_key_by_id: Mapping[int, AssetKey] = (
-        {
-            job_details["id"]: DbtCloudJob.from_job_details(job_details).asset_key()
-            for job_details in workspace_data.jobs
-            if job_details.get("id") not in adhoc_job_ids
-            and not (job_details.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX)
-        }
-        if emit_job_asset_materializations
-        else {}
-    )
+    # an asset. Adhoc jobs are excluded (they have no user-facing asset spec). We also
+    # apply the same mirror_jobs_select / mirror_jobs_exclude filter used by the
+    # component so the sensor never emits materializations for jobs the user chose not
+    # to mirror.
+    def _matches_filter(cloud_job: DbtCloudJob) -> bool:
+        if not matches_selection(cloud_job, mirror_jobs_select):
+            return False
+        if mirror_jobs_exclude and matches_selection(cloud_job, mirror_jobs_exclude):
+            return False
+        return True
+
+    job_key_by_id: Mapping[int, AssetKey] = {}
+    if emit_job_asset_materializations:
+        pairs: dict[int, AssetKey] = {}
+        for job_details in workspace_data.jobs:
+            if job_details.get("id") in adhoc_job_ids:
+                continue
+            if (job_details.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX):
+                continue
+            cloud_job = DbtCloudJob.from_job_details(job_details)
+            if not _matches_filter(cloud_job):
+                continue
+            pairs[cloud_job.id] = cloud_job.asset_key()
+        job_key_by_id = pairs
 
     total_processed_runs = 0
     while True:
@@ -223,6 +238,8 @@ def build_dbt_cloud_polling_sensor(
     minimum_interval_seconds: int = DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS,
     default_sensor_status: DefaultSensorStatus | None = None,
     emit_job_asset_materializations: bool = False,
+    mirror_jobs_select: str | None = None,
+    mirror_jobs_exclude: str | None = None,
 ) -> SensorDefinition:
     """The constructed sensor polls the dbt Cloud Workspace for activity, and inserts asset events into Dagster's event log.
 
@@ -283,6 +300,8 @@ def build_dbt_cloud_polling_sensor(
             workspace=workspace,
             dagster_dbt_translator=dagster_dbt_translator,
             emit_job_asset_materializations=emit_job_asset_materializations,
+            mirror_jobs_select=mirror_jobs_select,
+            mirror_jobs_exclude=mirror_jobs_exclude,
         )
 
         all_asset_events: list[AssetMaterialization] = []

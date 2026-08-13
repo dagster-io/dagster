@@ -67,6 +67,9 @@ class DbtCloudJob:
     project_id: int | None
     environment_id: int | None
     name: str | None
+    # dbt Cloud job type: "ci" | "merge" | "deploy" | "scheduled" | "other".
+    # Consumed by the mirror_jobs_select DSL (e.g. `type:ci`) to include/exclude jobs.
+    job_type: str | None
 
     @classmethod
     def from_job_details(cls, job_details: Mapping[str, Any]) -> "DbtCloudJob":
@@ -76,6 +79,7 @@ class DbtCloudJob:
             project_id=job_details.get("project_id"),
             environment_id=job_details.get("environment_id"),
             name=job_details.get("name"),
+            job_type=job_details.get("job_type"),
         )
 
     def sanitized_name(self) -> str:
