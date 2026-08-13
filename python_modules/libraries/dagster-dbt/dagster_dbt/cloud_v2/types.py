@@ -1,11 +1,14 @@
+import re
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any
 
-from dagster import Failure, MetadataValue
+from dagster import AssetKey, Failure, MetadataValue
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster_shared.record import as_dict
+
+DBT_CLOUD_JOB_ASSET_KEY_PREFIX = "dbt_cloud_job"
 
 
 @record
@@ -74,6 +77,20 @@ class DbtCloudJob:
             environment_id=job_details.get("environment_id"),
             name=job_details.get("name"),
         )
+
+    def sanitized_name(self) -> str:
+        """Return a name safe for use as an AssetKey segment or Dagster job name.
+
+        AssetKey segments and Dagster job names must match ``[A-Za-z0-9_]+``. dbt Cloud
+        allows spaces, dashes, and unicode in job names; strip everything else and fall
+        back to ``dbt_cloud_job_<id>`` if the sanitized result is empty.
+        """
+        sanitized = re.sub(r"[^A-Za-z0-9_]+", "_", (self.name or "").strip()).strip("_")
+        return sanitized or f"dbt_cloud_job_{self.id}"
+
+    def asset_key(self) -> AssetKey:
+        """AssetKey used when this Cloud job is mirrored as an observable external asset."""
+        return AssetKey([DBT_CLOUD_JOB_ASSET_KEY_PREFIX, self.sanitized_name()])
 
 
 class DbtCloudJobRunStatusType(int, Enum):

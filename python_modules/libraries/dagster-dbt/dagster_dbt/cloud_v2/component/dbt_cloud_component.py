@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias, cast
 
 import dagster as dg
 from dagster import AssetExecutionContext, Definitions, multi_asset
@@ -36,11 +36,13 @@ from dagster_dbt.asset_utils import (
     get_node,
 )
 from dagster_dbt.cloud_v2.resources import (
+    DAGSTER_ADHOC_PREFIX,
     DbtCloudAdhocJobPoolMode,
     DbtCloudCredentials,
     DbtCloudWorkspace,
 )
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
+from dagster_dbt.cloud_v2.types import DbtCloudJob
 from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
     _set_resolution_context,
@@ -50,6 +52,181 @@ from dagster_dbt.components.dbt_component_utils import (
 from dagster_dbt.components.dbt_project.component import DbtDeferConfig
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
+
+DAGSTER_DBT_CLOUD_JOB_ID_METADATA_KEY = "dagster_dbt/cloud_job_id"
+DAGSTER_DBT_CLOUD_JOB_NAME_METADATA_KEY = "dagster_dbt/cloud_job_name"
+
+MirrorJobsMode: TypeAlias = Literal["off", "asset", "job", "both"]
+
+
+class DbtCloudJobTriggerDefaults(dg.Model, dg.Resolvable):
+    """Component-level defaults sent as trigger overrides for every mirrored Cloud job.
+
+    Applies only when ``mirror_jobs`` includes ``"job"`` (i.e. ``"job"`` or ``"both"``).
+    Every field is optional — any unset field is not sent to dbt Cloud (the Cloud job's
+    configured value is used). Per-run ``DbtCloudJobTriggerConfig`` values (supplied at
+    launch time via the Dagster launchpad) override these defaults on a per-field basis.
+    """
+
+    cause: str | None = None
+    steps_override: list[str] | None = None
+    git_sha: str | None = None
+    git_branch: str | None = None
+    schema_override: str | None = None
+    dbt_version_override: str | None = None
+    threads_override: int | None = None
+    target_name_override: str | None = None
+    generate_docs_override: bool | None = None
+    timeout_seconds_override: int | None = None
+
+
+class DbtCloudJobTriggerConfig(dg.Config):
+    """Per-run overrides passed to ``trigger_job_run`` when launching a mirrored Cloud job.
+
+    Every field defaults to ``None`` — unset fields are not sent to dbt Cloud, so the
+    Cloud job's configured value (or the component-level default from
+    ``job_trigger_defaults``) is used. Users see the full override list in the Dagster
+    launchpad and can toggle each explicitly.
+    """
+
+    cause: str | None = None
+    steps_override: list[str] | None = None
+    git_sha: str | None = None
+    git_branch: str | None = None
+    schema_override: str | None = None
+    dbt_version_override: str | None = None
+    threads_override: int | None = None
+    target_name_override: str | None = None
+    generate_docs_override: bool | None = None
+    timeout_seconds_override: int | None = None
+
+
+def _build_mirrored_dbt_cloud_job(
+    workspace: DbtCloudWorkspace,
+    cloud_job: DbtCloudJob,
+    trigger_defaults: DbtCloudJobTriggerDefaults | None,
+):
+    """Return a Dagster ``@job`` that triggers ``cloud_job`` in dbt Cloud and waits.
+
+    Users can schedule this job (``ScheduleDefinition``), monitor it in the Dagster UI,
+    and wire ``@run_status_sensor``s to trigger downstream Dagster automation on job
+    completion — so treating jobs as first-class Dagster jobs does NOT preclude
+    downstream automation. One op wraps ``client.trigger_job_run(job_id)`` +
+    ``client.poll_run(run_id)``. On success the run details are attached as op output
+    metadata; on failure the op raises with the dbt Cloud run URL and status.
+
+    Trigger overrides (``steps_override``, ``git_sha``, etc.) come from two layers:
+    component-level ``trigger_defaults`` merged with per-run ``DbtCloudJobTriggerConfig``
+    supplied via Dagster's launchpad. Per-run values win field-by-field.
+    """
+    from dagster import Failure, MetadataValue, job, op
+
+    cloud_job_id = cloud_job.id
+    job_name = cloud_job.sanitized_name()
+    defaults_payload = (
+        trigger_defaults.model_dump(exclude_none=True) if trigger_defaults is not None else {}
+    )
+
+    @op(name=f"{job_name}_trigger")
+    def _trigger_op(context, config: DbtCloudJobTriggerConfig):
+        client = workspace.get_client()
+        # Per-run config wins field-by-field over component-level defaults; any field
+        # left unset (None) is not sent to Cloud so the Cloud job's own configured value
+        # is used.
+        merged = {**defaults_payload, **config.model_dump(exclude_none=True)}
+        run_data = client.trigger_job_run(job_id=cloud_job_id, **merged)
+        run_id = run_data["id"]
+        context.log.info(
+            f"Triggered dbt Cloud job {cloud_job_id} run={run_id} overrides={sorted(merged)}"
+        )
+        final = client.poll_run(run_id=run_id)
+        status = final.get("status")
+        # dbt Cloud status 10 == success. Fail loudly on anything else so Dagster's
+        # normal error surfaces (alerts, retries, run-log context) fire.
+        if status != 10:
+            raise Failure(
+                description=(
+                    f"dbt Cloud run {run_id} for job {cloud_job_id} finished with status={status!r}"
+                ),
+                metadata={
+                    "dbt_cloud_run_id": MetadataValue.int(run_id),
+                    "dbt_cloud_status": (
+                        MetadataValue.int(status)
+                        if isinstance(status, int)
+                        else MetadataValue.text(str(status))
+                    ),
+                    "href": MetadataValue.url(final.get("href", "")),
+                },
+            )
+        return {"run_id": run_id, "status": status}
+
+    @job(name=job_name, description=f"Mirrors dbt Cloud job {cloud_job_id} ({cloud_job.name!r}).")
+    def _mirrored_job():
+        _trigger_op()
+
+    return _mirrored_job
+
+
+def _iter_mirrorable_cloud_jobs(
+    workspace_data: "DbtCloudWorkspaceData",
+) -> Iterator[DbtCloudJob]:
+    """Yield user-defined Cloud jobs (i.e. not Dagster's internal adhoc pool).
+
+    Dagster creates ``DAGSTER_ADHOC_JOB__*`` jobs for its own CLI invocations; those
+    show up in ``workspace_data.jobs`` alongside user-defined jobs. Users don't want to
+    mirror them — they're an implementation detail. Filter by name prefix AND by the
+    stored ``adhoc_job_ids`` set (belt and suspenders in case an old-prefix job lingers).
+    """
+    adhoc_ids = set(workspace_data.adhoc_job_ids)
+    for job_details in workspace_data.jobs:
+        if (job_details.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX):
+            continue
+        if job_details.get("id") in adhoc_ids:
+            continue
+        yield DbtCloudJob.from_job_details(job_details)
+
+
+def _build_dbt_cloud_job_asset_specs(
+    workspace_data: "DbtCloudWorkspaceData",
+) -> list["dg.AssetSpec"]:
+    """Emit one observable external ``AssetSpec`` per user-defined dbt Cloud job.
+
+    Job assets participate in Dagster's automation-tick loop: users can attach
+    ``AutomationCondition``s to react when a Cloud job runs, schedule the job via
+    ``define_asset_job`` + ``ScheduleDefinition``, or key downstream Dagster assets off
+    the job's materializations. Kind is ``dbt_cloud_job`` so the UI renders a distinct
+    icon.
+
+    Job asset keys are derived from the Cloud job name (sanitized to valid segments) so
+    users can reference them stably even if dbt Cloud renames the job.
+
+    Adhoc jobs Dagster created for its own CLI pool are filtered out — they're an
+    implementation detail, not user-facing surface area.
+
+    Materialization events for these specs are emitted by the polling sensor when
+    ``emit_job_asset_materializations=True`` is passed, so downstream
+    ``AutomationCondition``s can react to real Cloud run completions.
+    """
+    specs: list[dg.AssetSpec] = []
+    seen: set[dg.AssetKey] = set()
+    for cloud_job in _iter_mirrorable_cloud_jobs(workspace_data):
+        key = cloud_job.asset_key()
+        if key in seen:
+            continue
+        seen.add(key)
+        specs.append(
+            dg.AssetSpec(
+                key=key,
+                kinds={"dbt_cloud_job"},
+                description=f"dbt Cloud job {cloud_job.id}: {cloud_job.name!r}",
+                metadata={
+                    DAGSTER_DBT_CLOUD_JOB_ID_METADATA_KEY: cloud_job.id,
+                    DAGSTER_DBT_CLOUD_JOB_NAME_METADATA_KEY: cloud_job.name or "",
+                },
+            )
+        )
+    return specs
+
 
 if TYPE_CHECKING:
     from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
@@ -283,6 +460,47 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             ],
         ),
     ] = None
+    mirror_jobs: Annotated[
+        MirrorJobsMode,
+        Resolver.default(
+            description=(
+                "How to surface each dbt Cloud job in Dagster. Defaults to `off` (no "
+                "mirroring — backward compatible). Values:\n\n"
+                "- `off` — Do not mirror.\n"
+                "- `asset` — Emit one observable external `AssetSpec` per Cloud job, "
+                "kind `dbt_cloud_job`. The component's polling sensor emits an "
+                "`AssetMaterialization` for the job asset whenever a Cloud run for that "
+                "job finishes (whether kicked off from dbt Cloud UI, a schedule, or "
+                "Dagster). Downstream Dagster assets can react via `AutomationCondition`.\n"
+                "- `job` — Emit one Dagster `@job` per Cloud job. Each wraps a single op "
+                "that triggers the Cloud job via `trigger_job_run` and polls until "
+                "completion. Users schedule via `ScheduleDefinition`, or wire "
+                "`@run_status_sensor` to trigger downstream automation when the job "
+                "finishes — so this mode is not a dead-end for automation.\n"
+                "- `both` — Emit BOTH the asset spec and the Dagster job for each Cloud "
+                "job. Users pick which surface they want per use case."
+            ),
+        ),
+    ] = "off"
+
+    job_trigger_defaults: Annotated[
+        DbtCloudJobTriggerDefaults | None,
+        Resolver.default(
+            description=(
+                "Component-level defaults sent as trigger overrides for every mirrored "
+                "Cloud @job (applies when `mirror_jobs` is `job` or `both`). Any field "
+                "left unset is not sent to dbt Cloud, so the Cloud job's configured "
+                "value is used. Per-run `DbtCloudJobTriggerConfig` values supplied at "
+                "launch time override these defaults on a per-field basis, giving users "
+                "explicit control over every override sent to Cloud."
+            ),
+            examples=[
+                {"cause": "Triggered by Dagster", "generate_docs_override": True},
+                {"threads_override": 8, "target_name_override": "prod"},
+            ],
+        ),
+    ] = None
+
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -425,11 +643,16 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                 yield from self.execute(context=context)
 
         sensors = []
+        # When mirroring jobs as assets, the sensor emits an AssetMaterialization for
+        # each job asset when its Cloud run finishes, so downstream AutomationConditions
+        # can react regardless of who triggered the run (Dagster, dbt Cloud UI, schedule).
+        emit_job_materializations = self.mirror_jobs in ("asset", "both")
         if self.create_sensor:
             sensors.append(
                 build_dbt_cloud_polling_sensor(
                     workspace=self.workspace,
                     dagster_dbt_translator=self.translator,
+                    emit_job_asset_materializations=emit_job_materializations,
                 )
             )
 
@@ -474,6 +697,20 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             project=None,
         )
 
+        # dbt Cloud jobs surfaced per `mirror_jobs` mode. Assets and jobs can be emitted
+        # independently or together; see the field docstring for use-case guidance.
+        emit_asset_specs = self.mirror_jobs in ("asset", "both")
+        emit_jobs = self.mirror_jobs in ("job", "both")
+        job_specs = _build_dbt_cloud_job_asset_specs(workspace_data) if emit_asset_specs else []
+        mirrored_jobs = (
+            [
+                _build_mirrored_dbt_cloud_job(self.workspace, cloud_job, self.job_trigger_defaults)
+                for cloud_job in _iter_mirrorable_cloud_jobs(workspace_data)
+            ]
+            if emit_jobs
+            else []
+        )
+
         return Definitions(
             assets=[
                 _dbt_cloud_assets,
@@ -481,8 +718,10 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                 *exposure_specs,
                 *semantic_layer_specs,
                 *external_package_specs,
+                *job_specs,
             ],
             sensors=sensors,
+            jobs=mirrored_jobs,
         )
 
     def execute(self, context: AssetExecutionContext) -> Iterator:

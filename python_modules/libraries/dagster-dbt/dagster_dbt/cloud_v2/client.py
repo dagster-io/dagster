@@ -218,27 +218,73 @@ class DbtCloudWorkspaceClient(DagsterModel):
         ).json()["data"]
 
     def trigger_job_run(
-        self, job_id: int, steps_override: Sequence[str] | None = None
+        self,
+        job_id: int,
+        cause: str | None = None,
+        steps_override: Sequence[str] | None = None,
+        git_sha: str | None = None,
+        git_branch: str | None = None,
+        schema_override: str | None = None,
+        dbt_version_override: str | None = None,
+        threads_override: int | None = None,
+        target_name_override: str | None = None,
+        generate_docs_override: bool | None = None,
+        timeout_seconds_override: int | None = None,
     ) -> Mapping[str, Any]:
         """Triggers a run for a given dbt Cloud Job.
 
+        All override arguments are optional. Any argument left ``None`` is not sent to
+        dbt Cloud — the Cloud job's configured value is used. Explicit values are sent
+        verbatim, giving callers precise control over what does and does not override.
+
         Args:
-            job_id (str): The dbt Cloud Job ID. You can retrieve this value from the
-                URL of the given job in the dbt Cloud UI.
-            steps_override (Optional[Sequence[str]]): A list of dbt commands
-                that overrides the dbt commands of the dbt Cloud job. If no list is passed,
-                the dbt commands of the job are not overridden.
+            job_id: The dbt Cloud Job ID. You can retrieve this value from the URL of
+                the given job in the dbt Cloud UI.
+            cause: Free-text reason attached to the run in dbt Cloud (defaults to
+                ``"Triggered by dagster."`` when ``None``).
+            steps_override: A list of dbt commands that overrides the dbt commands of
+                the dbt Cloud job. If ``None``, the dbt commands of the job are not
+                overridden.
+            git_sha: Override the git SHA the run will check out.
+            git_branch: Override the git branch the run will check out.
+            schema_override: Override the target schema.
+            dbt_version_override: Override the dbt version.
+            threads_override: Override the number of threads.
+            target_name_override: Override the target name.
+            generate_docs_override: Override whether docs are generated.
+            timeout_seconds_override: Override the run timeout in seconds.
 
         Returns:
-            List[Dict[str, Any]]: A List of parsed json data from the response to this request.
+            Dict[str, Any]: Parsed json data from the response to this request.
         """
+        data: dict[str, Any] = {
+            "cause": cause if cause is not None else DAGSTER_ADHOC_TRIGGER_CAUSE
+        }
+        # dbt Cloud rejects unknown/null overrides on some endpoint versions — only send
+        # keys the caller explicitly set.
+        if steps_override is not None:
+            data["steps_override"] = steps_override
+        if git_sha is not None:
+            data["git_sha"] = git_sha
+        if git_branch is not None:
+            data["git_branch"] = git_branch
+        if schema_override is not None:
+            data["schema_override"] = schema_override
+        if dbt_version_override is not None:
+            data["dbt_version_override"] = dbt_version_override
+        if threads_override is not None:
+            data["threads_override"] = threads_override
+        if target_name_override is not None:
+            data["target_name_override"] = target_name_override
+        if generate_docs_override is not None:
+            data["generate_docs_override"] = generate_docs_override
+        if timeout_seconds_override is not None:
+            data["timeout_seconds_override"] = timeout_seconds_override
         return self._make_request(
             method="post",
             endpoint=f"jobs/{job_id}/run",
             base_url=self.api_v2_url,
-            data={"steps_override": steps_override, "cause": DAGSTER_ADHOC_TRIGGER_CAUSE}
-            if steps_override
-            else {"cause": DAGSTER_ADHOC_TRIGGER_CAUSE},
+            data=data,
         ).json()["data"]
 
     def get_runs_batch(

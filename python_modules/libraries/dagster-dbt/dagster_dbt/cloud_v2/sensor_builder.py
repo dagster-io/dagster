@@ -1,4 +1,4 @@
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from datetime import timedelta
 
 from dagster import (
@@ -7,6 +7,7 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     DefaultSensorStatus,
+    MetadataValue,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
@@ -27,7 +28,7 @@ from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
     DbtCloudJobRunResults,
 )
-from dagster_dbt.cloud_v2.types import DbtCloudRun
+from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
@@ -40,6 +41,27 @@ class BatchResult:
     idx: int
     asset_events: Sequence[AssetMaterialization]
     all_asset_keys_materialized: set[AssetKey]
+
+
+def _job_asset_materialization_from_run(
+    run: DbtCloudRun,
+    job_asset_key: AssetKey,
+) -> AssetMaterialization:
+    """Emit a job-asset materialization for a finished Cloud run.
+
+    Attaches run id, status, and Cloud run URL so users can click through from the
+    Dagster materialization to the Cloud run page. Downstream ``AutomationCondition``s
+    (e.g. ``eager()``) will fire on this materialization regardless of who kicked off
+    the Cloud run — dbt Cloud UI, a Cloud schedule, or a Dagster-mirrored ``@job``.
+    """
+    metadata: dict[str, MetadataValue] = {
+        "dbt_cloud_run_id": MetadataValue.int(run.id),
+    }
+    if run.status is not None:
+        metadata["dbt_cloud_status"] = MetadataValue.text(run.status.name)
+    if run.url:
+        metadata["dbt_cloud_run_url"] = MetadataValue.url(run.url)
+    return AssetMaterialization(asset_key=job_asset_key, metadata=metadata)
 
 
 @whitelist_for_serdes
@@ -59,6 +81,7 @@ def materializations_from_batch_iter(
     offset: int,
     workspace: DbtCloudWorkspace,
     dagster_dbt_translator: DagsterDbtTranslator,
+    emit_job_asset_materializations: bool = False,
 ) -> Iterator[BatchResult | None]:
     client = workspace.get_client()
     workspace_data = workspace.get_or_fetch_workspace_data()
@@ -72,6 +95,20 @@ def materializations_from_batch_iter(
         if (job.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX)
     }
     adhoc_job_ids.update(workspace_data.adhoc_job_ids)
+
+    # Map each user-defined Cloud job id -> the AssetKey used when it's mirrored as
+    # an asset. Adhoc jobs are excluded (they have no user-facing asset spec). Used
+    # only when the caller opts into job-level materialization emission.
+    job_key_by_id: Mapping[int, AssetKey] = (
+        {
+            job_details["id"]: DbtCloudJob.from_job_details(job_details).asset_key()
+            for job_details in workspace_data.jobs
+            if job_details.get("id") not in adhoc_job_ids
+            and not (job_details.get("name") or "").startswith(DAGSTER_ADHOC_PREFIX)
+        }
+        if emit_job_asset_materializations
+        else {}
+    )
 
     total_processed_runs = 0
     while True:
@@ -95,14 +132,37 @@ def materializations_from_batch_iter(
             run = DbtCloudRun.from_run_details(run_details=run_details)
 
             if run.job_definition_id in adhoc_job_ids:
+                # Adhoc runs aren't user-facing Cloud jobs — always skip both
+                # per-model AND job-level materializations for them.
                 context.log.info(f"Run {run.id} was triggered by Dagster. Continuing.")
                 continue
+
+            # Job-level materialization for the mirrored Cloud job asset. Emitted
+            # regardless of trigger source (Cloud UI, Cloud schedule, Dagster @job)
+            # so downstream AutomationConditions can react uniformly.
+            job_asset_events: list[AssetMaterialization] = []
+            if emit_job_asset_materializations and run.job_definition_id in job_key_by_id:
+                job_asset_events.append(
+                    _job_asset_materialization_from_run(
+                        run=run, job_asset_key=job_key_by_id[run.job_definition_id]
+                    )
+                )
 
             run_artifacts = client.list_run_artifacts(run_id=run.id)
             if "run_results.json" not in run_artifacts:
                 context.log.info(
                     f"Run {run.id} does not have a run_results.json artifact. Continuing."
                 )
+                # Even without run_results.json we can still emit the job-level
+                # materialization since the run itself finished.
+                if job_asset_events:
+                    yield BatchResult(
+                        idx=i + latest_offset,
+                        asset_events=job_asset_events,
+                        all_asset_keys_materialized={mat.asset_key for mat in job_asset_events},
+                    )
+                else:
+                    yield None
                 continue
 
             run_results = DbtCloudJobRunResults.from_run_results_json(
@@ -115,6 +175,7 @@ def materializations_from_batch_iter(
             )
             # Currently, only materializations are tracked
             mats = [event for event in events if isinstance(event, AssetMaterialization)]
+            mats.extend(job_asset_events)
             context.log.info(f"Found {len(mats)} materializations for {run.id}")
 
             all_asset_keys_materialized = {mat.asset_key for mat in mats}
@@ -161,6 +222,7 @@ def build_dbt_cloud_polling_sensor(
     dagster_dbt_translator: DagsterDbtTranslator | None = None,
     minimum_interval_seconds: int = DEFAULT_DBT_CLOUD_SENSOR_INTERVAL_SECONDS,
     default_sensor_status: DefaultSensorStatus | None = None,
+    emit_job_asset_materializations: bool = False,
 ) -> SensorDefinition:
     """The constructed sensor polls the dbt Cloud Workspace for activity, and inserts asset events into Dagster's event log.
 
@@ -171,6 +233,11 @@ def build_dbt_cloud_polling_sensor(
             Defaults to :py:class:`DagsterDbtTranslator`.
         minimum_interval_seconds (int, optional): The minimum interval in seconds between sensor runs. Defaults to 30.
         default_sensor_status (Optional[DefaultSensorStatus], optional): The default status of the sensor.
+        emit_job_asset_materializations (bool, optional): When ``True``, emit an
+            :py:class:`AssetMaterialization` for each mirrored Cloud job asset when
+            its Cloud run finishes (regardless of whether the run was triggered from
+            Dagster, dbt Cloud UI, or a Cloud schedule). Used by
+            :py:class:`DbtCloudComponent` when ``mirror_jobs`` includes ``asset``.
 
     Returns:
         Definitions: A `SensorDefinitions` object.
@@ -215,6 +282,7 @@ def build_dbt_cloud_polling_sensor(
             offset=current_offset,
             workspace=workspace,
             dagster_dbt_translator=dagster_dbt_translator,
+            emit_job_asset_materializations=emit_job_asset_materializations,
         )
 
         all_asset_events: list[AssetMaterialization] = []

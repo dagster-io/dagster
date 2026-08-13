@@ -5,14 +5,17 @@ from unittest.mock import MagicMock, patch
 
 import dagster as dg
 import pytest
-from dagster import AssetsDefinition, SensorDefinition
+from dagster import AssetKey, AssetsDefinition, SensorDefinition
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.utils.defs_state import DefsStateConfigArgs
-from dagster_dbt.cloud_v2.component.dbt_cloud_component import DbtCloudComponent
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
-from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
+from dagster_dbt.cloud_v2.component.dbt_cloud_component import (
+    DbtCloudComponent,
+    DbtCloudJobTriggerDefaults,
+)
+from dagster_dbt.cloud_v2.resources import DAGSTER_ADHOC_PREFIX, DbtCloudWorkspace
+from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudWorkspaceData
 from dagster_dbt.components.dbt_component_utils import _set_resolution_context
 
 
@@ -80,6 +83,530 @@ def mock_workspace(mock_workspace_data):
     workspace.cli.return_value = mock_invocation
 
     return workspace
+
+
+def _mirror_workspace(mock_workspace_data):
+    """Helper: build a MagicMock workspace bound to `mock_workspace_data`."""
+    workspace = MagicMock(spec=DbtCloudWorkspace)
+    workspace.unique_id = "123-456"
+    workspace.project_id = 123
+    workspace.environment_id = 456
+    workspace.credentials = MagicMock(account_id=999)
+    workspace.fetch_workspace_data.return_value = mock_workspace_data
+    workspace.get_or_fetch_workspace_data.return_value = mock_workspace_data
+    return workspace
+
+
+def test_dbt_cloud_component_mirror_jobs_emits_asset_spec_per_cloud_job(
+    tmp_path, mock_workspace_data
+):
+    """When `mirror_jobs="asset"`, each user-defined dbt Cloud job becomes an
+    observable external ``AssetSpec`` with `dbt_cloud_job` kind. Dagster-managed adhoc
+    pool jobs are filtered out — they're an internal implementation detail, not
+    user-facing surface area. Downstream Dagster assets can attach
+    ``AutomationCondition``s to react when the job asset materializes.
+    """
+    # Two user-defined Cloud jobs alongside the (existing) adhoc pool job.
+    mock_workspace_data.jobs.append(
+        {
+            "id": 790,
+            "account_id": 111,
+            "name": "Nightly Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    mock_workspace_data.jobs.append(
+        {
+            "id": 791,
+            "account_id": 111,
+            "name": "Slim CI",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+
+    workspace = _mirror_workspace(mock_workspace_data)
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    all_specs = list(defs.resolve_all_asset_specs())
+    job_specs = [spec for spec in all_specs if spec.kinds and "dbt_cloud_job" in spec.kinds]
+    assert len(job_specs) == 2, [spec.key.to_user_string() for spec in job_specs]
+
+    # Keys are prefixed with `dbt_cloud_job` and use case-preserving sanitized names.
+    keys = {spec.key.to_user_string() for spec in job_specs}
+    assert "dbt_cloud_job/Nightly_Build" in keys
+    assert "dbt_cloud_job/Slim_CI" in keys
+    # Adhoc job (id 789) is filtered — not user-facing.
+    assert not any(spec.metadata.get("dagster_dbt/cloud_job_id") == 789 for spec in job_specs)
+
+    # Metadata carries the raw dbt Cloud job id and name for downstream navigation.
+    metadata_by_key = {spec.key.to_user_string(): spec.metadata for spec in job_specs}
+    assert metadata_by_key["dbt_cloud_job/Nightly_Build"]["dagster_dbt/cloud_job_id"] == 790
+    assert metadata_by_key["dbt_cloud_job/Nightly_Build"]["dagster_dbt/cloud_job_name"] == (
+        "Nightly Build"
+    )
+
+
+def test_dbt_cloud_component_mirror_jobs_filters_dagster_adhoc_pool_by_prefix(
+    tmp_path, mock_workspace_data
+):
+    """Belt-and-suspenders: even if a Dagster adhoc job's id isn't in `adhoc_job_ids`
+    (e.g., stale from a previous run), the `DAGSTER_ADHOC_JOB__` name prefix filter
+    still excludes it from mirroring.
+    """
+    mock_workspace_data.jobs.clear()
+    mock_workspace_data.jobs.extend(
+        [
+            {
+                "id": 900,
+                "account_id": 111,
+                "name": f"{DAGSTER_ADHOC_PREFIX}123__456__stale",
+                "environment_id": 456,
+                "project_id": 123,
+            },
+            {
+                "id": 901,
+                "account_id": 111,
+                "name": "Prod Build",
+                "environment_id": 456,
+                "project_id": 123,
+            },
+        ]
+    )
+    mock_workspace_data.adhoc_job_ids.clear()  # stale — the name prefix filter must save us
+
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="both",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    # Only the user-defined "Prod Build" job should mirror.
+    assert [spec.key.to_user_string() for spec in job_specs] == ["dbt_cloud_job/Prod_Build"]
+    assert [j.name for j in dagster_jobs] == ["Prod_Build"]
+
+
+def test_dbt_cloud_component_mirror_jobs_default_off(tmp_path, mock_workspace, mock_workspace_data):
+    """`mirror_jobs` defaults to ``"off"`` — no job asset specs and no mirrored @jobs
+    (strict backward compatibility for existing users on upgrade).
+    """
+    component = DbtCloudComponent(
+        workspace=mock_workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+    assert component.mirror_jobs == "off"
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    all_specs = list(defs.resolve_all_asset_specs())
+    job_specs = [spec for spec in all_specs if spec.kinds and "dbt_cloud_job" in spec.kinds]
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    assert job_specs == []
+    assert dagster_jobs == []
+
+
+def test_dbt_cloud_component_mirror_jobs_both_emits_asset_specs_and_dagster_jobs(
+    tmp_path, mock_workspace_data
+):
+    """`mirror_jobs="both"` emits BOTH the observable AssetSpec AND the Dagster ``@job``
+    per user-defined Cloud job. Users pick which surface they want per use case: assets
+    for downstream ``AutomationCondition`` chains, jobs for ``ScheduleDefinition`` or
+    ``@run_status_sensor`` wiring.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="both",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    assert len(job_specs) == 1
+    assert len(dagster_jobs) == 1
+    # Names line up so users can trace across surfaces.
+    assert job_specs[0].key.to_user_string() == "dbt_cloud_job/Prod_Build"
+    assert dagster_jobs[0].name == "Prod_Build"
+
+
+def test_dbt_cloud_component_mirror_jobs_job_mode(tmp_path, mock_workspace_data):
+    """`mirror_jobs="job"` emits Dagster ``@job``s without asset specs. Users pick this
+    when they want scheduling and run-status-sensor semantics but don't need the
+    Cloud job to appear as an asset.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="job",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    assert [j.name for j in dagster_jobs] == ["Prod_Build"]
+    assert job_specs == []
+
+
+def test_dbt_cloud_component_mirror_jobs_sanitizes_names(tmp_path, mock_workspace_data):
+    """Dbt Cloud job names with spaces / dashes / punctuation still produce valid
+    ``AssetKey`` segments (``[A-Za-z0-9_]+``). Empty names fall back to
+    ``dbt_cloud_job_<id>``. Case is preserved so users can trace back to the Cloud UI.
+    """
+    mock_workspace_data.jobs.clear()
+    mock_workspace_data.jobs.extend(
+        [
+            {
+                "id": 100,
+                "account_id": 111,
+                "name": "My  Job -- with_special!chars",
+                "environment_id": 456,
+                "project_id": 123,
+            },
+            {
+                "id": 101,
+                "account_id": 111,
+                "name": "",
+                "environment_id": 456,
+                "project_id": 123,
+            },
+        ]
+    )
+    mock_workspace_data.adhoc_job_ids.clear()
+
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_keys = {
+        spec.key.to_user_string()
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    }
+    assert "dbt_cloud_job/My_Job_with_special_chars" in job_keys
+    assert "dbt_cloud_job/dbt_cloud_job_101" in job_keys
+
+
+def test_dbt_cloud_component_mirror_jobs_asset_and_job_keys_align(tmp_path, mock_workspace_data):
+    """In `mirror_jobs="both"` mode, the AssetKey used for the job asset and the name
+    of the Dagster ``@job`` are derived from the same sanitization so users can trace
+    across surfaces. This is what lets the polling sensor emit a materialization for
+    the asset when the Dagster @job triggers the Cloud run.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="both",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    # The sanitized name is the same in both surfaces.
+    assert job_specs[0].key.path[-1] == dagster_jobs[0].name
+
+
+def test_dbt_cloud_component_mirror_jobs_deduplicates_colliding_sanitized_names(
+    tmp_path, mock_workspace_data
+):
+    """If two Cloud jobs' names sanitize to the same segment, only one asset spec is
+    emitted (later duplicates dropped). This prevents `DuplicateAssetKeyError` from
+    tanking the component's defs load in edge cases.
+    """
+    mock_workspace_data.jobs.clear()
+    mock_workspace_data.jobs.extend(
+        [
+            {
+                "id": 100,
+                "account_id": 111,
+                "name": "Prod Build",
+                "environment_id": 456,
+                "project_id": 123,
+            },
+            {
+                "id": 101,
+                "account_id": 111,
+                "name": "Prod  Build",  # sanitizes to same "Prod_Build"
+                "environment_id": 456,
+                "project_id": 123,
+            },
+        ]
+    )
+    mock_workspace_data.adhoc_job_ids.clear()
+
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        spec
+        for spec in defs.resolve_all_asset_specs()
+        if spec.kinds and "dbt_cloud_job" in spec.kinds
+    ]
+    assert len(job_specs) == 1
+
+
+def test_dbt_cloud_component_mirror_jobs_job_op_merges_defaults_with_config(
+    tmp_path, mock_workspace_data
+):
+    """The mirrored Dagster @job's trigger op merges component-level
+    ``job_trigger_defaults`` with per-run ``DbtCloudJobTriggerConfig``. Per-run values
+    win field-by-field; unset (None) fields are not sent to dbt Cloud so the Cloud
+    job's own configured value is used. This gives users explicit, transparent control
+    over every override sent to Cloud.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+
+    # Capture the exact kwargs sent to trigger_job_run so we can assert on the payload.
+    trigger_calls: list[dict[str, Any]] = []
+
+    def _capture_trigger(**kwargs):
+        trigger_calls.append(kwargs)
+        return {"id": 555}
+
+    workspace.get_client.return_value.trigger_job_run.side_effect = _capture_trigger
+    workspace.get_client.return_value.poll_run.return_value = {
+        "status": 10,
+        "href": "https://cloud.getdbt.com/runs/555",
+    }
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="job",
+        job_trigger_defaults=DbtCloudJobTriggerDefaults(
+            cause="Triggered by Dagster",
+            generate_docs_override=True,
+            threads_override=8,
+        ),
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    assert len(dagster_jobs) == 1
+
+    # Per-run config overrides `threads_override` and adds `git_branch`; other
+    # component-level defaults (cause, generate_docs_override) flow through.
+    run_config = {
+        "ops": {
+            "Prod_Build_trigger": {
+                "config": {
+                    "threads_override": 16,
+                    "git_branch": "feature/foo",
+                }
+            }
+        }
+    }
+    result = dagster_jobs[0].execute_in_process(run_config=run_config)
+    assert result.success
+    assert len(trigger_calls) == 1
+    kwargs = trigger_calls[0]
+    assert kwargs["job_id"] == 900
+    assert kwargs["cause"] == "Triggered by Dagster"  # default (no per-run override)
+    assert kwargs["generate_docs_override"] is True  # default
+    assert kwargs["threads_override"] == 16  # per-run wins over default of 8
+    assert kwargs["git_branch"] == "feature/foo"  # per-run only, no default
+    # Fields that were never set should NOT be in the payload — dbt Cloud uses its
+    # configured value for those (that's the "explicit flags" contract).
+    for absent in [
+        "steps_override",
+        "git_sha",
+        "schema_override",
+        "dbt_version_override",
+        "target_name_override",
+        "timeout_seconds_override",
+    ]:
+        assert absent not in kwargs, f"unset override leaked to payload: {absent}"
+
+
+def test_dbt_cloud_component_mirror_jobs_job_op_no_defaults_only_cause_sent(
+    tmp_path, mock_workspace_data
+):
+    """When no defaults and no per-run config are supplied, the trigger op sends
+    nothing except `job_id` — the Cloud job's own configured settings are used.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+    trigger_calls: list[dict[str, Any]] = []
+
+    def _capture_trigger(**kwargs):
+        trigger_calls.append(kwargs)
+        return {"id": 555}
+
+    workspace.get_client.return_value.trigger_job_run.side_effect = _capture_trigger
+    workspace.get_client.return_value.poll_run.return_value = {
+        "status": 10,
+        "href": "https://cloud.getdbt.com/runs/555",
+    }
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="job",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    result = dagster_jobs[0].execute_in_process()
+    assert result.success
+    assert trigger_calls == [{"job_id": 900}]
+
+
+def test_dbt_cloud_component_mirror_jobs_job_op_raises_failure_on_error_status(
+    tmp_path, mock_workspace_data
+):
+    """When a Cloud run finishes with a non-success status (10), the op raises a
+    Dagster `Failure` with metadata (run id, status, href) so users see the failure in
+    the Dagster run log AND get a click-through to the Cloud run page. Retries,
+    alerts, and downstream error propagation flow through normally.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+    workspace.get_client.return_value.trigger_job_run.return_value = {"id": 555}
+    workspace.get_client.return_value.poll_run.return_value = {
+        "status": 20,  # ERROR
+        "href": "https://cloud.getdbt.com/runs/555",
+    }
+
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="job",
+    )
+    state_path = tmp_path / "dbt_cloud_state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    dagster_jobs = list(defs.jobs) if defs.jobs else []
+    result = dagster_jobs[0].execute_in_process(raise_on_error=False)
+    assert not result.success
+
+
+def test_dbt_cloud_job_asset_key_helper():
+    """`DbtCloudJob.asset_key()` produces a stable, sanitized key so both the
+    component (asset spec) and the sensor (materialization emission) compute the
+    same key from the same Cloud job. This is what keeps them wired together.
+    """
+    job = DbtCloudJob(
+        id=42,
+        account_id=1,
+        project_id=1,
+        environment_id=1,
+        name="My Cool Job!",
+    )
+    assert job.sanitized_name() == "My_Cool_Job"
+    assert job.asset_key() == AssetKey(["dbt_cloud_job", "My_Cool_Job"])
+
+    unnamed = DbtCloudJob(id=42, account_id=1, project_id=1, environment_id=1, name=None)
+    assert unnamed.asset_key() == AssetKey(["dbt_cloud_job", "dbt_cloud_job_42"])
 
 
 def test_dbt_cloud_component_state_cycle(tmp_path, mock_workspace, mock_workspace_data):

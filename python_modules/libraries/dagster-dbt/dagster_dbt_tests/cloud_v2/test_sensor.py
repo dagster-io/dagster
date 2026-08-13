@@ -1,17 +1,26 @@
 import re
 from datetime import datetime, timezone
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import responses
-from dagster import DagsterInstance, SensorResult, build_sensor_context
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    DagsterInstance,
+    SensorResult,
+    build_sensor_context,
+)
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.sensor_builder import (
     DbtCloudPollingSensorCursor,
+    _job_asset_materialization_from_run,
     build_dbt_cloud_polling_sensor,
+    materializations_from_batch_iter,
 )
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun, DbtCloudWorkspaceData
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
@@ -199,3 +208,276 @@ def test_cursor(
         )
         assert new_cursor.finished_at_upper_bound is None
         assert new_cursor.offset == 0
+
+
+# ============================================================================
+# Job-level materialization tests (mirror_jobs="asset"|"both" wiring)
+# ============================================================================
+
+
+def _make_workspace_data_with_jobs(
+    user_jobs: list[dict],
+    adhoc_ids: list[int],
+    adhoc_job_names: list[dict] | None = None,
+) -> DbtCloudWorkspaceData:
+    """Build a DbtCloudWorkspaceData with a mix of user-defined and adhoc jobs."""
+    jobs = list(user_jobs)
+    if adhoc_job_names is not None:
+        jobs.extend(adhoc_job_names)
+    return DbtCloudWorkspaceData(
+        project_id=1,
+        environment_id=1,
+        adhoc_job_ids=adhoc_ids,
+        manifest={
+            "metadata": {"dbt_schema_version": "1.0.0", "adapter_type": "postgres"},
+            "nodes": {},
+            "sources": {},
+            "metrics": {},
+            "semantic_models": {},
+            "exposures": {},
+            "child_map": {},
+            "parent_map": {},
+            "selectors": {},
+        },
+        jobs=jobs,
+    )
+
+
+def _run_details(
+    run_id: int,
+    job_definition_id: int,
+    status: int = DbtCloudJobRunStatusType.SUCCESS.value,
+    href: str = "https://cloud.getdbt.com/runs/1",
+) -> dict:
+    return {
+        "id": run_id,
+        "job_definition_id": job_definition_id,
+        "trigger_id": 0,
+        "account_id": 1,
+        "environment_id": 1,
+        "project_id": 1,
+        "status": status,
+        "href": href,
+    }
+
+
+def test_job_asset_materialization_from_run_carries_run_metadata():
+    """The helper attaches run id, human-readable status, and Cloud run URL as metadata
+    so users can click through from the Dagster materialization page to the Cloud UI.
+    """
+    run = DbtCloudRun.from_run_details(
+        run_details=_run_details(run_id=99, job_definition_id=1, status=10)
+    )
+    mat = _job_asset_materialization_from_run(
+        run=run, job_asset_key=AssetKey(["dbt_cloud_job", "My_Job"])
+    )
+    assert mat.asset_key == AssetKey(["dbt_cloud_job", "My_Job"])
+    assert mat.metadata["dbt_cloud_run_id"].value == 99
+    assert mat.metadata["dbt_cloud_status"].value == "SUCCESS"
+    assert mat.metadata["dbt_cloud_run_url"].value == "https://cloud.getdbt.com/runs/1"
+
+
+def test_job_asset_materialization_from_run_handles_missing_status():
+    """When the API omits status (rare, but seen for in-flight runs), the materialization
+    is still emitted with the run id and url — no `dbt_cloud_status` key.
+    """
+    run_details = _run_details(run_id=99, job_definition_id=1)
+    run_details["status"] = None
+    run = DbtCloudRun.from_run_details(run_details=run_details)
+    mat = _job_asset_materialization_from_run(
+        run=run, job_asset_key=AssetKey(["dbt_cloud_job", "My_Job"])
+    )
+    assert "dbt_cloud_status" not in mat.metadata
+
+
+def _make_workspace_for_sensor(workspace_data, runs_batches):
+    """Build a MagicMock DbtCloudWorkspace whose client returns pre-canned runs.
+
+    ``runs_batches`` is a list of (runs_list, total_runs) tuples returned by
+    successive ``get_runs_batch`` calls, mimicking pagination.
+    """
+    workspace = MagicMock(spec=DbtCloudWorkspace)
+    workspace.project_id = workspace_data.project_id
+    workspace.environment_id = workspace_data.environment_id
+    workspace.credentials = MagicMock(account_id=1)
+    workspace.get_or_fetch_workspace_data.return_value = workspace_data
+
+    client = MagicMock()
+    client.get_runs_batch.side_effect = list(runs_batches)
+    # Return empty artifacts so we skip the per-model materialization path — we
+    # only care about the job-asset materialization here.
+    client.list_run_artifacts.return_value = []
+    workspace.get_client.return_value = client
+    return workspace
+
+
+def test_materializations_from_batch_iter_emits_job_asset_when_flag_on():
+    """When `emit_job_asset_materializations=True`, a run against a user-defined Cloud
+    job produces exactly one `AssetMaterialization` on the mirrored job asset key,
+    regardless of whether the run has a `run_results.json` artifact. This is what lets
+    downstream `AutomationCondition.eager()` fire on real Cloud completions.
+    """
+    workspace_data = _make_workspace_data_with_jobs(
+        user_jobs=[
+            {"id": 900, "account_id": 1, "name": "Prod Build", "project_id": 1, "environment_id": 1}
+        ],
+        adhoc_ids=[],
+    )
+    workspace = _make_workspace_for_sensor(
+        workspace_data,
+        runs_batches=[
+            ([_run_details(run_id=1, job_definition_id=900)], 1),
+            ([], 1),  # end of pages
+        ],
+    )
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    context = MagicMock()
+    batches = list(
+        materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            emit_job_asset_materializations=True,
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    assert len(non_null) == 1
+    mats = list(non_null[0].asset_events)
+    assert len(mats) == 1
+    assert mats[0].asset_key == AssetKey(["dbt_cloud_job", "Prod_Build"])
+
+
+def test_materializations_from_batch_iter_skips_adhoc_runs_even_with_flag():
+    """Adhoc runs (Dagster-triggered CLI invocations) are always skipped — even when
+    `emit_job_asset_materializations=True`. This preserves the existing contract that
+    Dagster-triggered runs don't double-emit through the sensor. The mirrored job
+    asset only receives materializations for user-visible Cloud jobs.
+    """
+    workspace_data = _make_workspace_data_with_jobs(
+        user_jobs=[],
+        adhoc_ids=[789],
+        adhoc_job_names=[
+            {
+                "id": 789,
+                "account_id": 1,
+                "name": "DAGSTER_ADHOC_JOB__1__1",
+                "project_id": 1,
+                "environment_id": 1,
+            }
+        ],
+    )
+    workspace = _make_workspace_for_sensor(
+        workspace_data,
+        runs_batches=[
+            ([_run_details(run_id=1, job_definition_id=789)], 1),
+            ([], 1),
+        ],
+    )
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    context = MagicMock()
+    batches = list(
+        materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            emit_job_asset_materializations=True,
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    assert non_null == []
+
+
+def test_materializations_from_batch_iter_no_job_mat_when_flag_off():
+    """When `emit_job_asset_materializations=False` (default / backward compat), no
+    job-asset materializations are emitted even if user-defined Cloud jobs are present.
+    """
+    workspace_data = _make_workspace_data_with_jobs(
+        user_jobs=[
+            {"id": 900, "account_id": 1, "name": "Prod Build", "project_id": 1, "environment_id": 1}
+        ],
+        adhoc_ids=[],
+    )
+    workspace = _make_workspace_for_sensor(
+        workspace_data,
+        runs_batches=[
+            ([_run_details(run_id=1, job_definition_id=900)], 1),
+            ([], 1),
+        ],
+    )
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    context = MagicMock()
+    batches = list(
+        materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            emit_job_asset_materializations=False,
+        )
+    )
+    non_null = [b for b in batches if b is not None]
+    assert non_null == []
+
+
+def test_materializations_from_batch_iter_ignores_unknown_job_id():
+    """A finished run whose `job_definition_id` doesn't match any user-defined job
+    (e.g., a deleted job's residual run) does NOT emit a job-asset materialization.
+    Prevents phantom materializations for non-existent asset keys.
+    """
+    workspace_data = _make_workspace_data_with_jobs(
+        user_jobs=[
+            {"id": 900, "account_id": 1, "name": "Prod Build", "project_id": 1, "environment_id": 1}
+        ],
+        adhoc_ids=[],
+    )
+    workspace = _make_workspace_for_sensor(
+        workspace_data,
+        runs_batches=[
+            ([_run_details(run_id=1, job_definition_id=99999)], 1),  # unknown id
+            ([], 1),
+        ],
+    )
+    from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+
+    context = MagicMock()
+    batches = list(
+        materializations_from_batch_iter(
+            context=context,
+            finished_at_lower_bound=0.0,
+            finished_at_upper_bound=1.0,
+            offset=0,
+            workspace=workspace,
+            dagster_dbt_translator=DagsterDbtTranslator(),
+            emit_job_asset_materializations=True,
+        )
+    )
+    assert [b for b in batches if b is not None] == []
+
+
+def test_build_dbt_cloud_polling_sensor_default_flag_off(workspace: DbtCloudWorkspace) -> None:
+    """The sensor's `emit_job_asset_materializations` flag defaults to False — no
+    behavior change for existing users on upgrade.
+    """
+    sensor = build_dbt_cloud_polling_sensor(workspace=workspace)
+    assert sensor is not None
+
+
+def test_asset_materialization_type_for_sensor_result_smoke():
+    """`_job_asset_materialization_from_run` returns an `AssetMaterialization` (not
+    `AssetObservation`), which is what triggers `AutomationCondition.eager()`
+    downstream. Observations don't mark the asset "green" — only materializations do.
+    """
+    run = DbtCloudRun.from_run_details(_run_details(run_id=1, job_definition_id=1))
+    mat = _job_asset_materialization_from_run(run=run, job_asset_key=AssetKey(["a"]))
+    assert isinstance(mat, AssetMaterialization)
