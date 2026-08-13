@@ -40,7 +40,7 @@ START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setti
 @record
 class BatchResult:
     idx: int
-    asset_events: Sequence[AssetMaterialization]
+    asset_events: Sequence[AssetMaterialization | AssetCheckEvaluation]
     all_asset_keys_materialized: set[AssetKey]
 
 
@@ -188,19 +188,34 @@ def materializations_from_batch_iter(
                 manifest=workspace_data.manifest,
                 dagster_dbt_translator=dagster_dbt_translator,
             )
-            # Currently, only materializations are tracked
-            mats = [event for event in events if isinstance(event, AssetMaterialization)]
-            mats.extend(job_asset_events)
-            context.log.info(f"Found {len(mats)} materializations for {run.id}")
+            # Keep both materializations (model results) and asset check evaluations
+            # (test results). Materializations power freshness / AutomationConditions;
+            # check evaluations power the asset-check UI so users see failing dbt
+            # tests as red on the asset in Dagster — matching what an in-process
+            # execution would emit.
+            batch_events: list[AssetMaterialization | AssetCheckEvaluation] = [
+                event
+                for event in events
+                if isinstance(event, (AssetMaterialization, AssetCheckEvaluation))
+            ]
+            batch_events.extend(job_asset_events)
+            mat_count = sum(1 for e in batch_events if isinstance(e, AssetMaterialization))
+            check_count = sum(1 for e in batch_events if isinstance(e, AssetCheckEvaluation))
+            context.log.info(
+                f"Found {mat_count} materializations and {check_count} check evaluations "
+                f"for {run.id}"
+            )
 
-            all_asset_keys_materialized = {mat.asset_key for mat in mats}
+            all_asset_keys_materialized = {
+                event.asset_key for event in batch_events if isinstance(event, AssetMaterialization)
+            }
             yield (
                 BatchResult(
                     idx=i + latest_offset,
-                    asset_events=mats,
+                    asset_events=batch_events,
                     all_asset_keys_materialized=all_asset_keys_materialized,
                 )
-                if mats
+                if batch_events
                 else None
             )
         total_processed_runs += len(runs)
@@ -218,15 +233,24 @@ def sorted_asset_events(
     asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
     repository_def: RepositoryDefinition,
 ) -> list[AssetMaterialization | AssetObservation | AssetCheckEvaluation]:
-    """Sort asset events by end date and toposort order."""
+    """Sort asset events by end date and toposort order.
+
+    Both materializations and check evaluations share `asset_key`, so we sort them
+    into the same topological order. An asset check evaluation whose asset key isn't
+    known to the repository (rare — happens when the underlying asset def lives in
+    another code location) is placed at the end so it still reaches the event log.
+    """
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
-    materializations_and_timestamps = [
-        (mat.metadata[COMPLETED_AT_TIMESTAMP_METADATA_KEY].value, mat) for mat in asset_events
+    topo_index = {ak: i for i, ak in enumerate(topo_aks)}
+    unknown_index = len(topo_aks)
+    events_with_ts = [
+        (event.metadata[COMPLETED_AT_TIMESTAMP_METADATA_KEY].value, event) for event in asset_events
     ]
     return [
-        sorted_event[1]
-        for sorted_event in sorted(
-            materializations_and_timestamps, key=lambda x: (topo_aks.index(x[1].asset_key), x[0])
+        event
+        for _, event in sorted(
+            events_with_ts,
+            key=lambda pair: (topo_index.get(pair[1].asset_key, unknown_index), pair[0]),
         )
     ]
 
@@ -304,7 +328,7 @@ def build_dbt_cloud_polling_sensor(
             mirror_jobs_exclude=mirror_jobs_exclude,
         )
 
-        all_asset_events: list[AssetMaterialization] = []
+        all_asset_events: list[AssetMaterialization | AssetCheckEvaluation] = []
         latest_offset = current_offset
         repository_def = check.not_none(context.repository_def)
         batch_result = None

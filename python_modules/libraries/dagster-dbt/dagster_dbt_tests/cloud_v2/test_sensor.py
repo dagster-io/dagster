@@ -45,12 +45,19 @@ def test_sensor_name(workspace: DbtCloudWorkspace) -> None:
 def test_asset_materializations(
     init_load_context: None, instance: DagsterInstance, all_api_mocks: responses.RequestsMock
 ) -> None:
-    """Test the asset materializations produced by a sensor."""
-    result, _ = build_and_invoke_sensor(
-        instance=instance,
-    )
-    assert len(result.asset_events) == 8
-    first_asset_mat = next(mat for mat in sorted(result.asset_events))
+    """Sensor emits AssetMaterializations for dbt models AND AssetCheckEvaluations
+    for dbt tests. Users can now see failing tests as red on the asset in Dagster
+    (matching what an in-process execution would surface), not just materializations.
+    """
+    from dagster import AssetCheckEvaluation as _AssetCheckEvaluation
+
+    result, _ = build_and_invoke_sensor(instance=instance)
+    mats = [e for e in result.asset_events if isinstance(e, AssetMaterialization)]
+    checks = [e for e in result.asset_events if isinstance(e, _AssetCheckEvaluation)]
+    assert len(mats) == 8, f"expected 8 mats, got {len(mats)}"
+    assert len(checks) > 0, "expected AssetCheckEvaluations for dbt tests too"
+
+    first_asset_mat = next(mat for mat in sorted(mats))
 
     expected_metadata_keys = {
         "dagster_dbt/completed_at_timestamp",
@@ -64,6 +71,12 @@ def test_asset_materializations(
     # Sanity check
     assert first_asset_mat.metadata["unique_id"].value == "model.jaffle_shop.customers"
     assert first_asset_mat.metadata["run_url"].value == TEST_RUN_URL
+
+    # Every check evaluation carries a status (pass/warn/fail) and the completed_at
+    # timestamp used by the sensor's toposort sorter.
+    for check in checks:
+        assert "dagster_dbt/completed_at_timestamp" in check.metadata
+        assert "status" in check.metadata
 
 
 def test_runs_triggered_by_dagster(
@@ -605,3 +618,86 @@ def test_materializations_from_batch_iter_exclude_drops_matching_jobs():
     mats = [mat for b in non_null for mat in b.asset_events]
     assert len(mats) == 1
     assert mats[0].asset_key == AssetKey(["dbt_cloud_job", "Prod_Build"])
+
+
+# ============================================================================
+# AssetCheckEvaluation emission tests (Feature 6.6)
+# ============================================================================
+
+
+def test_asset_check_evaluations_emitted_for_dbt_tests(
+    init_load_context: None, instance: DagsterInstance, all_api_mocks: responses.RequestsMock
+) -> None:
+    """Dbt test results in a Cloud run become `AssetCheckEvaluation` events in the
+    sensor payload — not just materializations. Users see failing tests as red on
+    the asset in Dagster (matching what a Core execution would produce) without
+    having to open the dbt Cloud UI to find failures.
+
+    Prior to Feature 6.6, the sensor discarded these — dbt tests were completely
+    invisible to Dagster's asset-check UI when running via dbt Cloud.
+    """
+    from dagster import AssetCheckEvaluation as _AssetCheckEvaluation
+
+    result, _ = build_and_invoke_sensor(instance=instance)
+    checks = [e for e in result.asset_events if isinstance(e, _AssetCheckEvaluation)]
+    # The mocked jaffle_shop run has dbt tests → we should see check evaluations.
+    assert len(checks) > 0
+    # `passed` is a bool: passing tests -> True, failing -> False.
+    passed = [c for c in checks if c.passed]
+    failed = [c for c in checks if not c.passed]
+    # Sanity: at least some checks either passed or failed.
+    assert len(passed) + len(failed) == len(checks)
+
+
+def test_sensor_check_evaluations_carry_status_and_check_name(
+    init_load_context: None, instance: DagsterInstance, all_api_mocks: responses.RequestsMock
+) -> None:
+    """Each `AssetCheckEvaluation` carries the dbt test's status (pass/warn/fail),
+    check_name, and completed_at metadata — enough for downstream alerting to link
+    back to the specific failing check.
+    """
+    from dagster import AssetCheckEvaluation as _AssetCheckEvaluation
+
+    result, _ = build_and_invoke_sensor(instance=instance)
+    checks = [e for e in result.asset_events if isinstance(e, _AssetCheckEvaluation)]
+    assert checks, "no check evaluations emitted"
+    for c in checks:
+        assert c.check_name, f"missing check_name on {c}"
+        assert c.asset_key is not None
+        assert c.metadata["status"].value in ("pass", "warn", "fail", "error")
+
+
+def test_sorted_asset_events_handles_mixed_mats_and_checks():
+    """`sorted_asset_events` must accept both AssetMaterializations and
+    AssetCheckEvaluations without crashing on the mixed sequence — the sensor
+    passes a mixed list to SensorResult.
+    """
+    from unittest.mock import MagicMock
+
+    from dagster import (
+        AssetCheckEvaluation as _AssetCheckEvaluation,
+        AssetKey as _AssetKey,
+        AssetMaterialization as _AssetMaterialization,
+        MetadataValue,
+    )
+    from dagster_dbt.cloud_v2.sensor_builder import sorted_asset_events
+
+    repo_def = MagicMock()
+    repo_def.asset_graph.toposorted_asset_keys = [_AssetKey(["a"]), _AssetKey(["b"])]
+
+    def _ts_meta(ts: float):
+        return {"dagster_dbt/completed_at_timestamp": MetadataValue.timestamp(ts)}
+
+    events = [
+        _AssetMaterialization(asset_key=_AssetKey(["b"]), metadata=_ts_meta(2.0)),
+        _AssetMaterialization(asset_key=_AssetKey(["a"]), metadata=_ts_meta(1.0)),
+        _AssetCheckEvaluation(
+            asset_key=_AssetKey(["a"]),
+            check_name="not_null_a",
+            passed=True,
+            metadata=_ts_meta(1.5),
+        ),
+    ]
+    sorted_events = sorted_asset_events(events, repo_def)
+    # Topological order: a's events come before b's; within a, timestamp ordering.
+    assert [e.asset_key.to_user_string() for e in sorted_events] == ["a", "a", "b"]
