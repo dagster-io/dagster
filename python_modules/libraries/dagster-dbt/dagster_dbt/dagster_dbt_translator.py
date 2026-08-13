@@ -74,7 +74,8 @@ class DagsterDbtTranslatorSettings(Resolvable):
             ``is_virtual=True`` and ``"view"`` added to their kinds. Defaults to False.
         enable_source_assets (bool): Whether dbt sources are emitted as their own external
             (observable, non-materializable) :py:class:`dagster.AssetSpec` objects in
-            addition to being referenced as upstream deps of dbt models. Defaults to True.
+            addition to being referenced as upstream deps of dbt models. Defaults to False
+            (opt-in for backward compatibility — existing users see no change on upgrade).
             When another integration (Fivetran, Sling, a manual ``AssetSpec``, etc.) declares
             an asset with the same :py:class:`dagster.AssetKey`, Dagster merges the two into
             one asset — dbt contributes its metadata (freshness policy, table schema, tags)
@@ -82,13 +83,13 @@ class DagsterDbtTranslatorSettings(Resolvable):
         enable_source_freshness_policies (bool): Whether to automatically derive a
             :py:class:`dagster.FreshnessPolicy` on source assets from the source's
             ``freshness`` block (``warn_after`` / ``error_after``) in ``sources.yml``.
-            Defaults to True. The derived policy is only visible in the Dagster UI when
-            ``enable_source_assets`` is also True (otherwise sources are dep-only and have
-            no spec to attach the policy to). Set to False to opt out of the derivation and
-            manage freshness policies manually (via a translator subclass or ``post_processing``).
-            Note that this flag only controls the *auto-derivation* from ``sources.freshness``.
-            Explicit ``meta.dagster.freshness_policy`` config in the dbt project is always
-            respected regardless of this setting.
+            Defaults to False (opt-in). The derived policy is only visible in the Dagster
+            UI when ``enable_source_assets`` is also True (otherwise sources are dep-only
+            and have no spec to attach the policy to). This flag also gates the derivation
+            of ``FreshnessPolicy`` from ``meta.dagster.freshness_policy`` and dbt 1.9+
+            ``models[*].config.freshness.build_after``. Explicit
+            ``meta.dagster.freshness_policy`` config wins over the ``sources.freshness``
+            derivation when both are set.
     """
 
     enable_asset_checks: bool = True
@@ -98,8 +99,8 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_tests_as_checks: bool = False
     enable_source_metadata: bool = True
     enable_dbt_views_as_virtual_assets: bool = False
-    enable_source_assets: bool = True
-    enable_source_freshness_policies: bool = True
+    enable_source_assets: bool = False
+    enable_source_freshness_policies: bool = False
 
 
 class DagsterDbtTranslator:

@@ -18,14 +18,32 @@ from dagster_dbt.asset_utils import default_freshness_policy_from_dbt_resource_p
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 
-def test_source_specs_include_freshness_policy_by_default(
+def test_source_specs_no_freshness_policy_by_default_backcompat(
     test_dbt_source_freshness_manifest: dict[str, Any],
 ) -> None:
-    """The fixture project declares warn_after=12h, error_after=24h on a source. Assert
-    ``build_dbt_source_asset_specs`` emits a spec for that source with the derived
-    ``TimeWindowFreshnessPolicy`` attached.
+    """Backward compatibility: the default translator does NOT derive freshness policies.
+    Existing users see no behavior change on upgrade — they must opt in with
+    ``enable_source_freshness_policies=True`` to get freshness policies on source assets.
     """
     source_specs = build_dbt_source_asset_specs(manifest=test_dbt_source_freshness_manifest)
+    assert source_specs, "fixture is expected to declare at least one source asset"
+    assert all(spec.freshness_policy is None for spec in source_specs)
+
+
+def test_source_specs_include_freshness_policy_when_enabled(
+    test_dbt_source_freshness_manifest: dict[str, Any],
+) -> None:
+    """The fixture project declares warn_after=12h, error_after=24h on a source. When
+    ``enable_source_freshness_policies=True`` is set, ``build_dbt_source_asset_specs``
+    emits a spec for that source with the derived ``TimeWindowFreshnessPolicy`` attached.
+    """
+    translator = DagsterDbtTranslator(
+        settings=DagsterDbtTranslatorSettings(enable_source_freshness_policies=True)
+    )
+    source_specs = build_dbt_source_asset_specs(
+        manifest=test_dbt_source_freshness_manifest,
+        dagster_dbt_translator=translator,
+    )
     assert source_specs, "fixture is expected to declare at least one source asset"
 
     for spec in source_specs:
@@ -40,8 +58,8 @@ def test_source_specs_include_freshness_policy_by_default(
 def test_source_freshness_policies_can_be_disabled_via_translator_setting(
     test_dbt_source_freshness_manifest: dict[str, Any],
 ) -> None:
-    """Setting ``enable_source_freshness_policies=False`` suppresses the derivation even
-    when the source spec is still emitted (so callers can manage freshness manually).
+    """Explicitly disabling ``enable_source_freshness_policies=False`` suppresses the
+    derivation (redundant with the default but useful to assert behavior).
     """
     translator = DagsterDbtTranslator(
         settings=DagsterDbtTranslatorSettings(enable_source_freshness_policies=False)

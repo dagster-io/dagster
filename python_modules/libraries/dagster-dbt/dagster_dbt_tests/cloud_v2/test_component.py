@@ -149,6 +149,11 @@ def test_dbt_cloud_component_emits_source_assets(tmp_path, mock_workspace_data):
     component = DbtCloudComponent(
         workspace=workspace,
         defs_state=DefsStateConfigArgs.local_filesystem(),
+        # Opt in — both defaults are False for backward compatibility.
+        translation_settings={  # type: ignore
+            "enable_source_assets": True,
+            "enable_source_freshness_policies": True,
+        },
     )
     state_path = tmp_path / "dbt_cloud_state.json"
     component.write_state_to_path(state_path)

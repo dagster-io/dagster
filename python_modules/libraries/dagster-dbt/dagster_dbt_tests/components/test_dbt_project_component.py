@@ -897,6 +897,7 @@ def test_upstream_source_metadata_flows_to_stub_asset() -> None:
             "select": "stg_customers",  # This model depends on source 'jaffle_shop.raw_customers'
             "translation_settings": {
                 "enable_source_metadata": True,
+                "enable_source_assets": True,  # opt-in; default is False for backcompat
             },
         },
     )
