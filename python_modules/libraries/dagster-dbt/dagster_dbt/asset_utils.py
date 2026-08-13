@@ -24,6 +24,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
     FreshnessPolicy,
+    MetadataValue,
     OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
@@ -1044,10 +1045,14 @@ def default_contract_metadata_from_dbt_resource_props(
 
     model_constraints = list(dbt_resource_props.get("constraints") or [])
 
+    # Wrap the structured constraint values as JSON metadata so Dagster's UI
+    # renders them as pretty-printed, collapsible blocks instead of stringified
+    # dict/list dumps. `contract_enforced` stays a bool — it renders naturally
+    # as True/False and is used for tag-based filtering.
     return {
         DAGSTER_DBT_CONTRACT_ENFORCED_METADATA_KEY: True,
-        DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY: column_constraints,
-        DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY: model_constraints,
+        DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY: MetadataValue.json(column_constraints),
+        DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY: MetadataValue.json(model_constraints),
     }
 
 

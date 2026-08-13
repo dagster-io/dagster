@@ -12,6 +12,7 @@ asset checks separately.
 
 from typing import Any
 
+from dagster import JsonMetadataValue
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY,
     DAGSTER_DBT_CONTRACT_ENFORCED_METADATA_KEY,
@@ -39,12 +40,17 @@ class TestDefaultContractMetadataFromDbtResourceProps:
         }
 
     def test_enforced_contract_produces_metadata(self) -> None:
+        # Constraint values are wrapped as JsonMetadataValue so Dagster's UI
+        # renders them as pretty-printed, collapsible JSON blocks. `.value`
+        # holds the structured dict/list.
         metadata = default_contract_metadata_from_dbt_resource_props(
             self._model(contract={"enforced": True})
         )
         assert metadata[DAGSTER_DBT_CONTRACT_ENFORCED_METADATA_KEY] is True
-        assert metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY] == {}
-        assert metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY] == []
+        assert isinstance(metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY], JsonMetadataValue)
+        assert metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY].value == {}
+        assert isinstance(metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY], JsonMetadataValue)
+        assert metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY].value == []
 
     def test_unenforced_contract_returns_empty(self) -> None:
         assert (
@@ -76,7 +82,7 @@ class TestDefaultContractMetadataFromDbtResourceProps:
                 },
             )
         )
-        column_constraints = metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY]
+        column_constraints = metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY].value
         assert column_constraints == {
             "id": ["not_null", "primary_key"],
             "email": ["not_null"],
@@ -91,7 +97,7 @@ class TestDefaultContractMetadataFromDbtResourceProps:
         metadata = default_contract_metadata_from_dbt_resource_props(
             self._model(contract={"enforced": True}, constraints=model_constraints_input)
         )
-        assert metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY] == model_constraints_input
+        assert metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY].value == model_constraints_input
 
     def test_constraint_without_type_ignored(self) -> None:
         # Guard against dbt YAML weirdness — a constraint dict without a ``type`` key
@@ -104,7 +110,7 @@ class TestDefaultContractMetadataFromDbtResourceProps:
                 },
             )
         )
-        assert metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY] == {"id": ["not_null"]}
+        assert metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY].value == {"id": ["not_null"]}
 
 
 class TestTranslatorContractMetadata:
@@ -140,8 +146,8 @@ class TestTranslatorContractMetadata:
         )
         metadata = translator.get_metadata(self._contracted_model_props())
         assert metadata[DAGSTER_DBT_CONTRACT_ENFORCED_METADATA_KEY] is True
-        assert metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY] == {"id": ["not_null"]}
-        assert metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY] == []
+        assert metadata[DAGSTER_DBT_COLUMN_CONSTRAINTS_METADATA_KEY].value == {"id": ["not_null"]}
+        assert metadata[DAGSTER_DBT_MODEL_CONSTRAINTS_METADATA_KEY].value == []
 
     def test_enabled_translator_preserves_default_metadata(self) -> None:
         translator = DagsterDbtTranslator(
