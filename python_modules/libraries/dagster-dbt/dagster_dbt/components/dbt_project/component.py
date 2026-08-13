@@ -91,6 +91,37 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
 DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count", "insights"]
 
 
+@dataclass
+class DbtDeferConfig(dg.Resolvable):
+    """Configuration for dbt's ``--defer``/``--state``/``--favor-state`` runtime options.
+
+    Slim CI pattern: dbt runs models that changed vs a state manifest, deferring ``ref()``
+    resolution to the state's tables for unchanged upstream models. Skips rebuilding data
+    that hasn't changed.
+
+    Args:
+        state_path: Path to the state directory (containing ``manifest.json``) or the
+            ``manifest.json`` file itself. Passed to dbt via ``--state <path>``.
+        defer: If True (default), pass ``--defer`` so missing / unbuilt models resolve
+            to the state's tables. Slim CI's core primitive.
+        favor_state: If True, pass ``--favor-state`` so dbt prefers the state's version
+            even when the current run has updated the table. Useful for cross-environment
+            reads. Defaults to False.
+    """
+
+    state_path: str
+    defer: bool = True
+    favor_state: bool = False
+
+    def to_cli_args(self) -> list[str]:
+        args: list[str] = ["--state", self.state_path]
+        if self.defer:
+            args.append("--defer")
+        if self.favor_state:
+            args.append("--favor-state")
+        return args
+
+
 def _resolve_state_manifest_path(path: Path) -> Path:
     """Accept either a directory containing ``manifest.json`` or a direct file path."""
     if path.is_dir():
@@ -293,6 +324,25 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             examples=[["silver_project"], ["silver_project", "shared_reference"]],
         ),
     ] = field(default_factory=list)
+    defer_config: Annotated[
+        DbtDeferConfig | None,
+        Resolver.default(
+            description=(
+                "Optional config that appends `--state <path>` (and optionally `--defer` "
+                "/ `--favor-state`) to every dbt CLI invocation for this component. Enables "
+                "the slim CI / defer-to-prod-state pattern without requiring users to edit "
+                "`cli_args` manually. Users still control the state path — Dagster does not "
+                "generate one. Composes with `state_manifest_path` (which is used at defs-load "
+                "time for `dbt/state` tagging); pointing both at the same manifest is the "
+                "common case."
+            ),
+            examples=[
+                {"state_path": "{{ project_root }}/prod_state"},
+                {"state_path": "{{ project_root }}/prod_state", "favor_state": True},
+                {"state_path": "{{ project_root }}/prod_state", "defer": False},
+            ],
+        ),
+    ] = None
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -540,7 +590,10 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
         )
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
-        return resolve_cli_args(self.cli_args, context)
+        args = resolve_cli_args(self.cli_args, context)
+        if self.defer_config is not None:
+            args.extend(self.defer_config.to_cli_args())
+        return args
 
     def _get_dbt_event_iterator(
         self, context: dg.AssetExecutionContext, dbt: DbtCliResource

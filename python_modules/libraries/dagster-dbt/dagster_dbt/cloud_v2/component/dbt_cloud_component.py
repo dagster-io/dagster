@@ -47,6 +47,7 @@ from dagster_dbt.components.dbt_component_utils import (
     build_op_spec,
     resolve_cli_args,
 )
+from dagster_dbt.components.dbt_project.component import DbtDeferConfig
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
 
@@ -268,6 +269,20 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             examples=[["silver_project"], ["silver_project", "shared_reference"]],
         ),
     ] = Field(default_factory=list)  # type: ignore
+    defer_config: Annotated[
+        DbtDeferConfig | None,
+        Resolver.default(
+            description=(
+                "Optional config that appends `--state <path>` (and optionally `--defer` "
+                "/ `--favor-state`) to every dbt CLI invocation for this component. Enables "
+                "the slim CI / defer-to-prod-state pattern without editing `cli_args` manually."
+            ),
+            examples=[
+                {"state_path": "{{ project_root }}/prod_state"},
+                {"state_path": "{{ project_root }}/prod_state", "favor_state": True},
+            ],
+        ),
+    ] = None
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -344,7 +359,10 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         )
 
     def get_cli_args(self, context: AssetExecutionContext) -> list[str]:
-        return resolve_cli_args(self.cli_args, context)
+        args = resolve_cli_args(self.cli_args, context)
+        if self.defer_config is not None:
+            args.extend(self.defer_config.to_cli_args())
+        return args
 
     def write_state_to_path(self, state_path: Path) -> None:
         workspace_data = self.workspace.fetch_workspace_data()
