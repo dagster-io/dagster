@@ -23,6 +23,12 @@ DAGSTER_DBT_EXPOSURE_TYPE_METADATA_KEY = "dagster_dbt/exposure_type"
 DAGSTER_DBT_EXPOSURE_URL_METADATA_KEY = "dagster_dbt/exposure_url"
 DAGSTER_DBT_EXPOSURE_MATURITY_METADATA_KEY = "dagster_dbt/exposure_maturity"
 
+DAGSTER_DBT_SEMANTIC_MODEL_MEASURES_METADATA_KEY = "dagster_dbt/measures"
+DAGSTER_DBT_SEMANTIC_MODEL_DIMENSIONS_METADATA_KEY = "dagster_dbt/dimensions"
+DAGSTER_DBT_SEMANTIC_MODEL_ENTITIES_METADATA_KEY = "dagster_dbt/entities"
+DAGSTER_DBT_METRIC_TYPE_METADATA_KEY = "dagster_dbt/metric_type"
+DAGSTER_DBT_METRIC_LABEL_METADATA_KEY = "dagster_dbt/metric_label"
+
 
 # dbt exposure types (https://docs.getdbt.com/reference/exposure-properties#type):
 # dashboard, notebook, analysis, ml, application. We map each to a kind that
@@ -248,6 +254,119 @@ def build_dbt_exposure_asset_specs(
                 owners=owners,
                 tags=tags,
                 kinds=kinds,
+            )
+        )
+
+    return specs
+
+
+def _semantic_layer_deps(
+    manifest: Mapping[str, Any],
+    translator: DagsterDbtTranslator,
+    props: Mapping[str, Any],
+) -> list[AssetDep]:
+    """Build AssetDep list from a semantic_model or metric's ``depends_on.nodes``."""
+    deps: list[AssetDep] = []
+    seen: set[AssetKey] = set()
+    for upstream_id in props.get("depends_on", {}).get("nodes", []) or []:
+        try:
+            upstream_props = get_node(manifest, upstream_id)
+        except Exception:
+            continue
+        upstream_key = translator.get_asset_key(upstream_props)
+        if upstream_key in seen:
+            continue
+        seen.add(upstream_key)
+        deps.append(AssetDep(asset=upstream_key))
+    return deps
+
+
+def build_dbt_semantic_layer_asset_specs(
+    *,
+    manifest: DbtManifestParam,
+    dagster_dbt_translator: DagsterDbtTranslator | None = None,
+    project: DbtProject | None = None,
+) -> Sequence[AssetSpec]:
+    """Build observable external ``AssetSpec`` objects for every dbt ``semantic_model`` and
+    ``metric`` declared in the manifest.
+
+    dbt's semantic layer represents entities, dimensions, measures, and metrics that sit
+    on top of models. Surfacing them as Dagster ``AssetSpec`` objects lets users:
+
+    - See semantic_models and metrics in the graph with their upstream lineage back to
+      the models they're built from.
+    - Query on them via ``kind:semantic_model`` / ``kind:metric`` asset selections.
+    - Layer freshness / owners / tags on top via ``post_processing:``.
+
+    Emitted specs are NOT materialized by Dagster — the semantic layer is queried
+    (typically via dbt Cloud's semantic layer API) rather than materialized. ``AssetSpec``
+    without an ``op`` behaves as an observable external asset.
+
+    Semantic models are keyed via ``translator.get_asset_key`` (which honors
+    ``meta.dagster.asset_key`` overrides). Metrics likewise.
+
+    Metadata surfaced (under the ``dagster_dbt/`` namespace):
+
+    - semantic_model specs: ``measures`` (list of measure names), ``dimensions`` (list of
+      dimension names), ``entities`` (list of entity names).
+    - metric specs: ``metric_type`` (``simple`` / ``ratio`` / ``cumulative`` / ``derived``),
+      ``metric_label`` (human-readable label from dbt).
+
+    Args:
+        manifest: The contents of a ``manifest.json`` file or the path to one.
+        dagster_dbt_translator: Optional translator; defaults to :py:class:`DagsterDbtTranslator`.
+        project: Reserved for future use; currently unused.
+
+    Returns:
+        Sequence[AssetSpec]: One ``AssetSpec`` per semantic_model and metric.
+    """
+    del project  # currently unused; kept in signature for parity with source/exposure helpers
+    manifest = validate_manifest(manifest)
+    translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
+
+    specs: list[AssetSpec] = []
+
+    for semantic_model_unique_id, props in (manifest.get("semantic_models") or {}).items():
+        deps = _semantic_layer_deps(manifest, translator, props)
+        measures = [m.get("name") for m in (props.get("measures") or []) if m.get("name")]
+        dimensions = [d.get("name") for d in (props.get("dimensions") or []) if d.get("name")]
+        entities = [e.get("name") for e in (props.get("entities") or []) if e.get("name")]
+
+        metadata: dict[str, Any] = {
+            DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: semantic_model_unique_id,
+            DAGSTER_DBT_SEMANTIC_MODEL_MEASURES_METADATA_KEY: measures,
+            DAGSTER_DBT_SEMANTIC_MODEL_DIMENSIONS_METADATA_KEY: dimensions,
+            DAGSTER_DBT_SEMANTIC_MODEL_ENTITIES_METADATA_KEY: entities,
+        }
+
+        specs.append(
+            AssetSpec(
+                key=translator.get_asset_key(props),
+                deps=deps,
+                description=props.get("description"),
+                metadata=metadata,
+                kinds={"semantic_model"},
+            )
+        )
+
+    for metric_unique_id, props in (manifest.get("metrics") or {}).items():
+        deps = _semantic_layer_deps(manifest, translator, props)
+        metric_type = str(props.get("type") or "").lower()
+        metadata = {
+            DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: metric_unique_id,
+            DAGSTER_DBT_METRIC_TYPE_METADATA_KEY: metric_type,
+        }
+        label = props.get("label")
+        if isinstance(label, str) and label:
+            metadata[DAGSTER_DBT_METRIC_LABEL_METADATA_KEY] = label
+
+        specs.append(
+            AssetSpec(
+                key=translator.get_asset_key(props),
+                deps=deps,
+                description=props.get("description"),
+                metadata=metadata,
+                kinds={"metric"},
             )
         )
 

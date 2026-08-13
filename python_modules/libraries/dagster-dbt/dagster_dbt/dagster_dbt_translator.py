@@ -108,6 +108,12 @@ class DagsterDbtTranslatorSettings(Resolvable):
             affected?" — without materializing anything. Exposure kind is derived from
             ``exposure.type`` (``dashboard`` / ``notebook`` / ``analysis`` / ``application``
             / ``ml``) so the UI can render a distinct icon.
+        enable_semantic_layer_assets (bool): Whether to emit dbt semantic layer resources
+            (``semantic_models`` and ``metrics``) as observable external
+            :py:class:`dagster.AssetSpec` objects. Defaults to False (opt-in). Semantic
+            models depend on the model they're built from; metrics depend on the semantic
+            models they aggregate. Kinds are set to ``semantic_model`` and ``metric``
+            respectively so the UI renders distinct icons.
     """
 
     enable_asset_checks: bool = True
@@ -121,6 +127,7 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_source_freshness_policies: bool = False
     enable_contract_metadata: bool = False
     enable_exposure_assets: bool = False
+    enable_semantic_layer_assets: bool = False
 
 
 class DagsterDbtTranslator:

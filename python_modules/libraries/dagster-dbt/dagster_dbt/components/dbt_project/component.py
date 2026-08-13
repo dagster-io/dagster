@@ -21,7 +21,11 @@ from dagster.components.utils.translation import (
 )
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
-from dagster_dbt.asset_specs import build_dbt_exposure_asset_specs, build_dbt_source_asset_specs
+from dagster_dbt.asset_specs import (
+    build_dbt_exposure_asset_specs,
+    build_dbt_semantic_layer_asset_specs,
+    build_dbt_source_asset_specs,
+)
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_STATE_TAG_KEY,
     DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
@@ -475,8 +479,19 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             if self.translator.settings.enable_exposure_assets
             else []
         )
+        # dbt semantic_models and metrics — observable external specs so users can trace
+        # semantic layer lineage back to the underlying models in the graph.
+        semantic_layer_specs = (
+            build_dbt_semantic_layer_asset_specs(
+                manifest=validated_manifest,
+                dagster_dbt_translator=validated_translator,
+                project=project,
+            )
+            if self.translator.settings.enable_semantic_layer_assets
+            else []
+        )
 
-        return dg.Definitions(assets=[_fn, *source_specs, *exposure_specs])
+        return dg.Definitions(assets=[_fn, *source_specs, *exposure_specs, *semantic_layer_specs])
 
     def get_cli_args(self, context: dg.AssetExecutionContext) -> list[str]:
         return resolve_cli_args(self.cli_args, context)
