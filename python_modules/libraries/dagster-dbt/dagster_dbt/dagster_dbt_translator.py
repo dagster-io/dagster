@@ -128,6 +128,18 @@ class DagsterDbtTranslatorSettings(Resolvable):
     enable_contract_metadata: bool = False
     enable_exposure_assets: bool = False
     enable_semantic_layer_assets: bool = False
+    # When True, adds the dbt config `materialized` value (`table`, `view`,
+    # `incremental`, `materialized_view`, `ephemeral`, `seed`, `snapshot`, ...) as
+    # a Dagster kind on each asset spec. Dagster's UI renders per-kind icons, so
+    # engineers can visually distinguish tables from views at a glance without
+    # reading metadata. Default False for backward compat — flipping this on
+    # adds a new kind tag which some downstream code may treat as significant.
+    enable_materialization_kinds: bool = False
+    # When True, keeps the raw SQL block in the asset description (current default).
+    # When False, descriptions include only the dbt-provided description (which
+    # already resolves doc blocks via `{{ doc() }}`) — cleaner in the UI when
+    # engineers already have access to the SQL via code references or dbt Explorer.
+    enable_raw_sql_in_description: bool = True
 
 
 class DagsterDbtTranslator:
@@ -301,6 +313,12 @@ class DagsterDbtTranslator:
         kinds = {"dbt", adapter_type or "dbt"}
         if is_virtual:
             kinds.add("view")
+        # Surface dbt's materialization strategy as a Dagster kind so the UI can
+        # render distinct icons for table / view / incremental / materialized_view /
+        # ephemeral / seed / snapshot. This is additive — existing users see their
+        # asset with an extra kind chip but no behavior change.
+        if self.settings.enable_materialization_kinds and materialization_type:
+            kinds.add(materialization_type)
 
         spec = AssetSpec(
             key=self.get_asset_key(resource_props),
@@ -486,7 +504,10 @@ class DagsterDbtTranslator:
                     def get_description(self, dbt_resource_props: Mapping[str, Any]) -> str:
                         return "custom description"
         """
-        return default_description_fn(dbt_resource_props)
+        return default_description_fn(
+            dbt_resource_props,
+            display_raw_sql=self.settings.enable_raw_sql_in_description,
+        )
 
     @public
     def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:

@@ -1327,3 +1327,184 @@ def test_dbt_cloud_component_subclass_get_asset_spec(tmp_path, mock_workspace, m
     assert isinstance(assets[0], AssetsDefinition)
     spec = next(iter(assets[0].specs))
     assert spec.tags.get("custom_tag") == "custom_value"
+
+
+# ============================================================================
+# Feature 7 polish: materialization kinds, Explorer URL, opt-out SQL desc
+# ============================================================================
+
+
+def test_dbt_cloud_component_materialization_kind_opt_in(tmp_path, mock_workspace_data):
+    """`enable_materialization_kinds=True` (opt-in) adds each model's materialization
+    strategy (`table`, `view`, `incremental`, ...) as a Dagster kind on its asset
+    spec. Dagster's UI renders per-kind icons so engineers can distinguish tables
+    vs views at a glance. Default is False for backward compatibility — flipping it
+    on adds a new kind tag that downstream tag-matching code may treat as significant.
+    """
+    mock_workspace_data.manifest["nodes"]["model.my_project.my_model"]["config"]["materialized"] = (
+        "table"
+    )
+
+    workspace = _mirror_workspace(mock_workspace_data)
+    # Default off — no materialization kind.
+    default_component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+    default_state = tmp_path / "default.json"
+    default_component.write_state_to_path(default_state)
+    default_defs = default_component.build_defs_from_state(MagicMock(), default_state)
+    default_model = next(
+        s for s in default_defs.resolve_all_asset_specs() if s.key.to_user_string() == "my_model"
+    )
+    assert "table" not in default_model.kinds
+
+    # Opt-in via translation_settings.
+    opt_in_component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        translation_settings={"enable_materialization_kinds": True},  # type: ignore
+    )
+    opt_in_state = tmp_path / "opt_in.json"
+    opt_in_component.write_state_to_path(opt_in_state)
+    opt_in_defs = opt_in_component.build_defs_from_state(MagicMock(), opt_in_state)
+    opt_in_model = next(
+        s for s in opt_in_defs.resolve_all_asset_specs() if s.key.to_user_string() == "my_model"
+    )
+    assert "table" in opt_in_model.kinds
+
+
+def test_dbt_cloud_component_explorer_url_default_on(tmp_path, mock_workspace_data):
+    """`enable_dbt_cloud_explorer_url` defaults to True — every dbt-backed spec gets
+    a `dbt_cloud_explorer_url` metadata field that links to the model in dbt Cloud
+    Explorer. Click-through is a killer feature for the Summit demo: users go from
+    Dagster asset → dbt Cloud compiled SQL + lineage in one click.
+    """
+    workspace = _mirror_workspace(mock_workspace_data)
+    workspace.credentials.access_url = "https://cloud.getdbt.com"
+    workspace.credentials.account_id = 111
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+    assert component.enable_dbt_cloud_explorer_url is True
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    specs = list(defs.resolve_all_asset_specs())
+    my_model = next(s for s in specs if s.key.to_user_string() == "my_model")
+    url_meta = my_model.metadata.get("dbt_cloud_explorer_url")
+    assert url_meta is not None
+    url_value = getattr(url_meta, "value", url_meta)
+    assert url_value.startswith("https://cloud.getdbt.com/explore/111/")
+    assert "environments/456/details/model.my_project.my_model" in url_value
+
+
+def test_dbt_cloud_component_explorer_url_can_be_disabled(tmp_path, mock_workspace_data):
+    """`enable_dbt_cloud_explorer_url=False` opts out. No explorer URL metadata is
+    added — matches previous behavior for users who don't want the click-through
+    or run against a self-hosted setup where URL construction wouldn't be valid.
+    """
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        enable_dbt_cloud_explorer_url=False,
+    )
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    specs = list(defs.resolve_all_asset_specs())
+    my_model = next(s for s in specs if s.key.to_user_string() == "my_model")
+    assert "dbt_cloud_explorer_url" not in my_model.metadata
+
+
+def test_dbt_cloud_component_explorer_url_skips_job_asset_specs(tmp_path, mock_workspace_data):
+    """Mirrored dbt Cloud job asset specs (Feature 6) don't have a `unique_id` —
+    they aren't dbt nodes. Explorer URL injection must skip them so we don't
+    fabricate a URL pointing at `/details/None`.
+    """
+    mock_workspace_data.jobs.append(
+        {
+            "id": 900,
+            "account_id": 111,
+            "name": "Prod Build",
+            "environment_id": 456,
+            "project_id": 123,
+        }
+    )
+    workspace = _mirror_workspace(mock_workspace_data)
+    component = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        mirror_jobs="asset",
+    )
+    state_path = tmp_path / "state.json"
+    component.write_state_to_path(state_path)
+
+    defs = component.build_defs_from_state(MagicMock(), state_path)
+    job_specs = [
+        s for s in defs.resolve_all_asset_specs() if s.kinds and "dbt_cloud_job" in s.kinds
+    ]
+    assert len(job_specs) == 1
+    # Job asset specs must NOT get an explorer URL — they're not dbt nodes.
+    assert "dbt_cloud_explorer_url" not in job_specs[0].metadata
+
+
+def test_dbt_cloud_component_raw_sql_in_description_opt_out(tmp_path, mock_workspace_data):
+    """`enable_raw_sql_in_description=False` on the translator strips the raw-SQL
+    section from asset descriptions. Cleaner UI for engineers who already see SQL
+    via code references or dbt Cloud Explorer. Default remains True (backward compat).
+    """
+    mock_workspace_data.manifest["nodes"]["model.my_project.my_model"]["raw_code"] = (
+        "SELECT * FROM raw_data"
+    )
+
+    workspace = _mirror_workspace(mock_workspace_data)
+    component_default = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+    )
+    state_path = tmp_path / "state.json"
+    component_default.write_state_to_path(state_path)
+    defs_default = component_default.build_defs_from_state(MagicMock(), state_path)
+    default_spec = next(
+        s for s in defs_default.resolve_all_asset_specs() if s.key.to_user_string() == "my_model"
+    )
+    assert "SELECT" in (default_spec.description or "")  # SQL included by default
+
+    # Opt-out path.
+    component_lean = DbtCloudComponent(
+        workspace=workspace,
+        defs_state=DefsStateConfigArgs.local_filesystem(),
+        translation_settings={"enable_raw_sql_in_description": False},  # type: ignore
+    )
+    lean_state_path = tmp_path / "lean_state.json"
+    component_lean.write_state_to_path(lean_state_path)
+    defs_lean = component_lean.build_defs_from_state(MagicMock(), lean_state_path)
+    lean_spec = next(
+        s for s in defs_lean.resolve_all_asset_specs() if s.key.to_user_string() == "my_model"
+    )
+    assert "SELECT" not in (lean_spec.description or "")
+
+
+def test_build_dbt_cloud_explorer_url_helper():
+    """Pure unit test on the URL helper: format, trailing slash trim, unique_id
+    inclusion. Locks in the URL shape so we don't accidentally break click-through
+    if someone changes the format in another PR.
+    """
+    from dagster_dbt.cloud_v2.component.dbt_cloud_component import build_dbt_cloud_explorer_url
+
+    url = build_dbt_cloud_explorer_url(
+        access_url="https://cloud.getdbt.com/",  # trailing slash on purpose
+        account_id=1,
+        project_id=2,
+        environment_id=3,
+        unique_id="model.pkg.my_model",
+    )
+    assert url == (
+        "https://cloud.getdbt.com/explore/1/projects/2/environments/3/details/model.pkg.my_model"
+    )
+    assert "//" not in url.replace("https://", "")  # no double slashes

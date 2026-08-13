@@ -29,6 +29,7 @@ from dagster_dbt.asset_specs import (
     build_dbt_source_asset_specs,
 )
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
@@ -56,8 +57,68 @@ from dagster_dbt.dbt_manifest import validate_manifest
 
 DAGSTER_DBT_CLOUD_JOB_ID_METADATA_KEY = "dagster_dbt/cloud_job_id"
 DAGSTER_DBT_CLOUD_JOB_NAME_METADATA_KEY = "dagster_dbt/cloud_job_name"
+DBT_CLOUD_EXPLORER_URL_METADATA_KEY = "dbt_cloud_explorer_url"
 
 MirrorJobsMode: TypeAlias = Literal["off", "asset", "job", "both"]
+
+
+def build_dbt_cloud_explorer_url(
+    access_url: str,
+    account_id: int,
+    project_id: int,
+    environment_id: int,
+    unique_id: str,
+) -> str:
+    """Return the dbt Cloud Explorer URL for a given dbt node.
+
+    Format: ``{access_url}/explore/{account_id}/projects/{project_id}/environments/
+    {environment_id}/details/{unique_id}``. Trims a trailing slash from access_url so
+    single-tenant Cloud (custom access URLs) doesn't produce ``//explore`` paths.
+    """
+    base = access_url.rstrip("/")
+    return (
+        f"{base}/explore/{account_id}/projects/{project_id}/environments/"
+        f"{environment_id}/details/{unique_id}"
+    )
+
+
+def _add_explorer_url_to_specs(
+    specs: "list[dg.AssetSpec]",
+    access_url: str,
+    account_id: int,
+    project_id: int,
+    environment_id: int,
+) -> "list[dg.AssetSpec]":
+    """Return a new list of specs with a dbt Cloud Explorer URL added as metadata to
+    each spec that has a ``dagster_dbt/unique_id``.
+
+    Users click through from the Dagster asset page to dbt Cloud Explorer to see the
+    node's compiled SQL, lineage, and column-level metadata. Non-dbt specs (e.g. job
+    asset specs from Feature 6) don't have a unique_id and get left alone.
+    """
+    updated: list[dg.AssetSpec] = []
+    for spec in specs:
+        uid_meta = spec.metadata.get(DAGSTER_DBT_UNIQUE_ID_METADATA_KEY)
+        if uid_meta is None:
+            updated.append(spec)
+            continue
+        unique_id = getattr(uid_meta, "value", uid_meta)
+        if not isinstance(unique_id, str):
+            updated.append(spec)
+            continue
+        url = build_dbt_cloud_explorer_url(
+            access_url=access_url,
+            account_id=account_id,
+            project_id=project_id,
+            environment_id=environment_id,
+            unique_id=unique_id,
+        )
+        updated.append(
+            spec.merge_attributes(
+                metadata={DBT_CLOUD_EXPLORER_URL_METADATA_KEY: dg.MetadataValue.url(url)}
+            )
+        )
+    return updated
 
 
 class DbtCloudJobTriggerDefaults(dg.Model, dg.Resolvable):
@@ -582,6 +643,19 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
         ),
     ] = 5
 
+    enable_dbt_cloud_explorer_url: Annotated[
+        bool,
+        Resolver.default(
+            description=(
+                "When True (default), attach a `dbt_cloud_explorer_url` metadata field "
+                "to each dbt asset spec — a direct click-through link from Dagster to "
+                "the model's page in dbt Cloud Explorer (compiled SQL, lineage, "
+                "column-level metadata). Backward compat: no side effects if you "
+                "explicitly set this to False."
+            ),
+        ),
+    ] = True
+
     @property
     def defs_state_config(self) -> DefsStateConfig:
         key = f"DbtCloudComponent[{self.workspace.unique_id}]"
@@ -705,6 +779,20 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
                 state_manifest_path=Path(self.state_manifest_path),
             )
 
+        # Attach dbt Cloud Explorer URL metadata (click-through from Dagster asset
+        # to the model's page in dbt Cloud). Applied uniformly to the multi_asset
+        # specs AND the observable external specs (sources, exposures, semantic
+        # layer, mesh externals) so every dbt-backed asset in the graph gets a
+        # click-through — not just materializable models.
+        if self.enable_dbt_cloud_explorer_url:
+            asset_specs = _add_explorer_url_to_specs(
+                specs=list(asset_specs),
+                access_url=self.workspace.credentials.access_url,
+                account_id=self.workspace.credentials.account_id,
+                project_id=self.workspace.project_id,
+                environment_id=self.workspace.environment_id,
+            )
+
         op_spec = self._get_op_spec("dbt_cloud_assets")
 
         @multi_asset(
@@ -779,6 +867,26 @@ class DbtCloudComponent(StateBackedComponent, dg.Resolvable, dg.Model):
             dagster_dbt_translator=self.translator,
             project=None,
         )
+
+        # Also attach Explorer URLs to the observable-external spec families —
+        # sources, exposures, semantic layer, mesh externals. Every dbt-backed
+        # asset in the graph should get a click-through, not just materializable
+        # models.
+        if self.enable_dbt_cloud_explorer_url:
+            explorer_kwargs = dict(
+                access_url=self.workspace.credentials.access_url,
+                account_id=self.workspace.credentials.account_id,
+                project_id=self.workspace.project_id,
+                environment_id=self.workspace.environment_id,
+            )
+            source_specs = _add_explorer_url_to_specs(list(source_specs), **explorer_kwargs)
+            exposure_specs = _add_explorer_url_to_specs(list(exposure_specs), **explorer_kwargs)
+            semantic_layer_specs = _add_explorer_url_to_specs(
+                list(semantic_layer_specs), **explorer_kwargs
+            )
+            external_package_specs = _add_explorer_url_to_specs(
+                list(external_package_specs), **explorer_kwargs
+            )
 
         # dbt Cloud jobs surfaced per `mirror_jobs` mode. Assets and jobs can be emitted
         # independently or together; see the field docstring for use-case guidance.
