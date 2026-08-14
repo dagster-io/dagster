@@ -35,7 +35,7 @@ from dagster_mssql.utils import (
     mssql_url_from_config,
     retry_mssql_connection_fn,
     retry_mssql_creation_fn,
-    retry_on_deadlock,
+    retry_transaction,
     warn_if_read_committed_snapshot_disabled,
 )
 
@@ -165,12 +165,12 @@ class MSSQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     # these two entry points because they own the transaction, which is the unit that has
     # to be rerun.
     def add_instigator_state(self, state):
-        return retry_on_deadlock(
+        return retry_transaction(
             lambda: super(MSSQLScheduleStorage, self).add_instigator_state(state)
         )
 
     def update_instigator_state(self, state):
-        return retry_on_deadlock(
+        return retry_transaction(
             lambda: super(MSSQLScheduleStorage, self).update_instigator_state(state)
         )
 
@@ -221,7 +221,7 @@ class MSSQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                     )
                 )
 
-        retry_on_deadlock(_write)
+        retry_transaction(_write)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = mssql_alembic_config(__file__)

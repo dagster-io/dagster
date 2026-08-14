@@ -337,7 +337,7 @@ def is_deadlock_victim(exc: BaseException) -> bool:
     return _DEADLOCK in error_numbers(exc)
 
 
-def retry_on_deadlock(
+def retry_transaction(
     fn: Callable[[], T],
     # Ten rather than five: an attempt costs almost nothing, and giving up drops a write
     # the caller has no way to know was lost. Five is measurably not enough under the
@@ -346,14 +346,25 @@ def retry_on_deadlock(
     retry_wait: float = 0.05,
     max_retry_wait: float = 2.0,
 ) -> T:
-    """Rerun `fn` if SQL Server chooses it as a deadlock victim.
+    """Rerun `fn` when the transaction it runs was lost for a reason that may not recur.
 
-    Dagster's upserts run under SERIALIZABLE (see ``merge.py``), where SQL Server protects
-    a key *range* rather than a row, so concurrent writers deadlock even on rows they do
-    not share. That is expected under concurrency rather than a sign of a bug, and SQL
-    Server says as much: "Rerun the transaction".
+    Two causes, both of which leave the transaction rolled back:
 
-    `fn` must run the whole transaction, since the victim's has already been rolled back.
+    * Deadlock. Dagster's upserts run under SERIALIZABLE (see ``merge.py``), where SQL
+      Server protects a key *range* rather than a row, so concurrent writers are chosen as
+      victims even on rows they do not share. SQL Server says what to do about it: "Rerun
+      the transaction".
+    * A transient failure part-way through, which on Azure SQL Database means a failover,
+      a reconfiguration or throttling. `retry_mssql_connection_fn` cannot help here: it
+      guards `engine.connect`, and by the time a statement is executing the connection is
+      already established.
+
+    `fn` must run the whole transaction rather than a single statement, because that is
+    the unit that was rolled back. It must also be safe to run twice -- which holds for a
+    single `conn.begin()` block, and does not for a method that opens two of them in
+    sequence. ``SqlEventLogStorage.store_event`` is the example: it inserts the event in
+    one transaction and the asset rows in another, so retrying the whole thing would
+    duplicate the event. That is why only the second half is wrapped.
     """
     check.callable_param(fn, "fn")
     check.int_param(retry_limit, "retry_limit")
@@ -365,18 +376,27 @@ def retry_on_deadlock(
         try:
             return fn()
         except (db_exc.DBAPIError, pyodbc.Error) as exc:
-            if not is_deadlock_victim(exc):
+            deadlock = is_deadlock_victim(exc)
+            if not deadlock and not is_transient_error(exc):
                 raise
             if retry_limit == 0:
-                raise DagsterMSSQLException(
-                    "too many retries after being chosen as the deadlock victim"
-                ) from exc
+                cause = "being chosen as the deadlock victim" if deadlock else "a transient error"
+                raise DagsterMSSQLException(f"too many retries after {cause}") from exc
             wait = _backoff(retry_wait, attempt, max_retry_wait)
-            logging.debug("Deadlock victim; rerunning the transaction in %.3fs", wait)
+            logging.debug(
+                "%s; rerunning the transaction in %.3fs",
+                "Deadlock victim" if deadlock else "Transient failure",
+                wait,
+            )
 
         time.sleep(wait)
         attempt += 1
         retry_limit -= 1
+
+
+# Retained under the old name: it only ever handled deadlocks, and now handles transient
+# failures too.
+retry_on_deadlock = retry_transaction
 
 
 # Databases already warned about, so that three storage classes sharing one database

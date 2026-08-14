@@ -34,7 +34,7 @@ from dagster_mssql.utils import (
     mssql_url_from_config,
     retry_mssql_connection_fn,
     retry_mssql_creation_fn,
-    retry_on_deadlock,
+    retry_transaction,
     warn_if_read_committed_snapshot_disabled,
 )
 
@@ -184,7 +184,7 @@ class MSSQLRunStorage(SqlRunStorage, ConfigurableClass):
         # Two daemons writing different heartbeat rows still deadlock: the table is small
         # enough that the optimizer scans it, and under the isolation the upsert needs that
         # scan range-locks rows this statement never touches.
-        retry_on_deadlock(_write)
+        retry_transaction(_write)
 
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
@@ -207,7 +207,7 @@ class MSSQLRunStorage(SqlRunStorage, ConfigurableClass):
                     )
                 )
 
-        retry_on_deadlock(_write)
+        retry_transaction(_write)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = mssql_alembic_config(__file__)

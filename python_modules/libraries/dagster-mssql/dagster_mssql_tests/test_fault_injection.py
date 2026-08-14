@@ -14,6 +14,8 @@ local SQL Server.
 
 import pyodbc
 import pytest
+import sqlalchemy as db
+import sqlalchemy.exc
 from dagster._core.utils import make_new_run_id
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._time import get_current_timestamp
@@ -86,6 +88,27 @@ def inject_connect_failures(storage, exc, times: int) -> Injector:
         return original(*args, **kwargs)
 
     engine.connect = flaky
+    return state
+
+
+def inject_statement_failures(storage, exc, times: int, matching: str = "MERGE") -> Injector:
+    """Fail `storage`'s next `times` executions of a statement containing `matching`.
+
+    Distinct from `inject_connect_failures` in the way that matters: the connection is
+    already open by the time this fires, so `retry_mssql_connection_fn` is out of the
+    picture and only a transaction-level retry can recover. That is the case
+    `inject_connect_failures` structurally cannot reach.
+    """
+    engine = storage._engine  # noqa: SLF001
+    state = Injector(exc, times)
+
+    @db.event.listens_for(engine, "before_cursor_execute")
+    def _fail(_conn, _cursor, statement, _params, _context, _executemany):
+        if matching in statement and state.remaining > 0:
+            state.remaining -= 1
+            state.attempts += 1
+            raise state.exc
+
     return state
 
 
@@ -187,3 +210,55 @@ def test_injected_errors_carry_a_parseable_errno():
 
     for errno, text in AZURE_TRANSIENT + AZURE_FATAL:
         assert errno in error_numbers(azure_error(errno, text))
+
+
+class TestMidTransactionFailuresRecover:
+    """Failures that land after the connection is open.
+
+    `retry_mssql_connection_fn` guards `engine.connect` only, so once a statement is
+    executing it offers nothing. Recovery here depends entirely on the transaction-level
+    retry rerunning the whole block. These were missed originally because the only
+    injection point available failed at connect time, where the connection-level retry
+    hides the gap.
+    """
+
+    @pytest.mark.parametrize(
+        "errno,text",
+        [(40197, "The service has encountered an error"), (40613, "not currently available")],
+        ids=["40197", "40613"],
+    )
+    def test_upsert_survives_a_mid_transaction_failure(self, storage, errno, text):
+        flaky = inject_statement_failures(storage, azure_error(errno, text), times=2)
+
+        storage.set_cursor_values({f"midflight_{errno}": "recovered"})
+
+        assert flaky.attempts == 2, "the failure was never injected"
+        assert storage.get_cursor_values({f"midflight_{errno}"}) == {
+            f"midflight_{errno}": "recovered"
+        }
+
+    def test_heartbeat_survives_a_mid_transaction_failure(self, storage):
+        flaky = inject_statement_failures(
+            storage, azure_error(40501, "The service is currently busy"), times=2
+        )
+
+        storage.add_daemon_heartbeat(
+            DaemonHeartbeat(
+                timestamp=get_current_timestamp(),
+                daemon_type="SENSOR",
+                daemon_id=make_new_run_id(),
+                errors=[],
+            )
+        )
+        assert flaky.attempts == 2
+        assert set(storage.get_daemon_heartbeats()) == {"SENSOR"}
+
+    def test_fatal_error_mid_transaction_still_surfaces_immediately(self, storage):
+        flaky = inject_statement_failures(
+            storage, azure_error(916, "not able to access the database"), times=10_000
+        )
+
+        with pytest.raises((pyodbc.Error, db.exc.DBAPIError)):
+            storage.set_cursor_values({"fatal_midflight": "no"})
+
+        assert flaky.attempts == 1, f"retried a fatal error {flaky.attempts} times"

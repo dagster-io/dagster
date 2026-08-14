@@ -36,7 +36,7 @@ from dagster_mssql.utils import (
     mssql_url_from_config,
     retry_mssql_connection_fn,
     retry_mssql_creation_fn,
-    retry_on_deadlock,
+    retry_transaction,
     warn_if_read_committed_snapshot_disabled,
 )
 
@@ -157,7 +157,7 @@ class MSSQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
 
-        retry_on_deadlock(
+        retry_transaction(
             lambda: super(MSSQLEventLogStorage, self).store_asset_event(event, event_id)
         )
 
@@ -165,7 +165,7 @@ class MSSQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # Concurrent writers are chosen as deadlock victims even when materializing
         # different assets, because the upsert holds a key-range lock. Measured, not
         # assumed: test_concurrency.py::TestAssetEvents::test_distinct_asset_keys.
-        retry_on_deadlock(
+        retry_transaction(
             lambda: super(MSSQLEventLogStorage, self)._store_asset_event_and_tags(event, event_id)
         )
 
