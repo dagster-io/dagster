@@ -565,7 +565,8 @@
   "ReportSensorTickAssetEventsResult": [
     "UnauthorizedError",
     "PythonError",
-    "ReportSensorTickAssetEventsSuccess"
+    "ReportSensorTickAssetEventsSuccess",
+    "ReportSensorTickAssetEventsPartialFailure"
   ],
   "ResumeBackfillResult": ["ResumeBackfillSuccess", "UnauthorizedError", "PythonError"],
   "CancelBackfillResult": ["CancelBackfillSuccess", "UnauthorizedError", "PythonError"],

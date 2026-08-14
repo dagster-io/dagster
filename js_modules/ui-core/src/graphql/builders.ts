@@ -4698,8 +4698,16 @@ type ReportRunlessAssetEventsSuccess = {
   assetKey: AssetKey;
 };
 
+type ReportSensorTickAssetEventsPartialFailure = {
+  __typename: 'ReportSensorTickAssetEventsPartialFailure';
+  error: PythonError;
+  remainingAssetEvents: Array<Scalars['String']['output']>;
+  reportedAssetKeys: Array<AssetKey>;
+};
+
 type ReportSensorTickAssetEventsResult =
   | PythonError
+  | ReportSensorTickAssetEventsPartialFailure
   | ReportSensorTickAssetEventsSuccess
   | UnauthorizedError;
 
@@ -14447,6 +14455,33 @@ export const buildReportRunlessAssetEventsSuccess = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildReportSensorTickAssetEventsPartialFailure = (
+  overrides?: Partial<ReportSensorTickAssetEventsPartialFailure>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'ReportSensorTickAssetEventsPartialFailure';
+} & ReportSensorTickAssetEventsPartialFailure => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportSensorTickAssetEventsPartialFailure');
+  return {
+    __typename: 'ReportSensorTickAssetEventsPartialFailure',
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    remainingAssetEvents:
+      overrides && overrides.hasOwnProperty('remainingAssetEvents')
+        ? overrides.remainingAssetEvents!
+        : [],
+    reportedAssetKeys:
+      overrides && overrides.hasOwnProperty('reportedAssetKeys')
+        ? overrides.reportedAssetKeys!
+        : [],
   };
 };
 

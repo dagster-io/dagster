@@ -125,6 +125,10 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const [error, setError] = useState<PythonErrorFragment | null>(null);
   const [sensorExecutionData, setSensorExecutionData] =
     useState<SensorDryRunInstigationTick | null>(null);
+  // Set after a partial failure reporting asset events (some events succeeded before one
+  // failed) to just the events that still need reporting, so a retry doesn't re-report
+  // -- and duplicate -- the ones that already succeeded. Reset on every new dry run.
+  const [pendingAssetEvents, setPendingAssetEvents] = useState<string[] | null>(null);
 
   const sensorSelector: SensorSelector = useMemo(
     () => ({
@@ -143,6 +147,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   );
   const dynamicPartitionRequests = sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
   const assetEvents = sensorExecutionData?.evaluationResult?.assetEvents;
+  const assetEventsToReport = pendingAssetEvents ?? assetEvents;
 
   const submitTest = useCallback(async () => {
     setSubmitting(true);
@@ -159,6 +164,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           setError(data.evaluationResult.error);
         } else {
           setSensorExecutionData(data);
+          setPendingAssetEvents(null);
         }
       } else if (data?.__typename === 'SensorNotFoundError') {
         showCustomAlert({
@@ -179,10 +185,33 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setSubmitting(false);
   }, [sensorDryRun, sensorSelector, cursor, name]);
 
-  const onCommitTickResult = useCallback(async () => {
-    if (assetEvents?.length) {
-      const {data} = await reportAssetEvents({variables: {assetEvents}});
+  // Returns whether the tick result was fully committed, so callers (e.g. onApply)
+  // know not to close the dialog on a failure -- otherwise a failed asset-event
+  // report or cursor update would look like it succeeded.
+  const onCommitTickResult = useCallback(async (): Promise<boolean> => {
+    if (assetEventsToReport?.length) {
+      const {data} = await reportAssetEvents({
+        variables: {assetEvents: assetEventsToReport},
+      });
       const reportResult = data?.reportSensorTickAssetEvents;
+      if (reportResult?.__typename === 'ReportSensorTickAssetEventsPartialFailure') {
+        // Only the events that weren't yet reported should be resent on retry.
+        setPendingAssetEvents(reportResult.remainingAssetEvents);
+        showCustomAlert({
+          title: 'Could not report all asset events',
+          body: (
+            <Box flex={{direction: 'column', gap: 8}}>
+              <div>
+                Reported {reportResult.reportedAssetKeys.length} of {assetEventsToReport.length}{' '}
+                asset events before a failure. Retrying will only report the remaining{' '}
+                {reportResult.remainingAssetEvents.length}.
+              </div>
+              <PythonErrorInfo error={reportResult.error} />
+            </Box>
+          ),
+        });
+        return false;
+      }
       if (reportResult?.__typename !== 'ReportSensorTickAssetEventsSuccess') {
         showCustomAlert({
           title: 'Could not report asset events',
@@ -193,7 +222,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
               'You do not have permission to report asset events for this code location.'
             ),
         });
-        return;
+        return false;
       }
     }
 
@@ -201,7 +230,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (!cursor) {
       showToast({message: 'Tick result committed', intent: 'success'});
       onClose();
-      return;
+      return true;
     }
     const {data} = await setCursorMutation({
       variables: {sensorSelector, cursor},
@@ -209,6 +238,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (data?.setSensorCursor.__typename === 'Sensor') {
       showToast({message: 'Cursor value updated', intent: 'success'});
       onClose();
+      return true;
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
       showToast({
@@ -236,9 +266,11 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           </Box>
         ),
       });
+      return false;
     }
+    return false;
   }, [
-    assetEvents,
+    assetEventsToReport,
     reportAssetEvents,
     sensorExecutionData?.evaluationResult?.cursor,
     sensorSelector,
@@ -358,7 +390,15 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
       }
-      onCommitTickResult(); // persist tick
+      // Runs (and dynamic partitions) are already applied at this point -- only close
+      // the dialog if the tick result (asset events, cursor) also committed, so a
+      // failure here doesn't look like a no-op success.
+      const committed = await onCommitTickResult();
+      setLaunching(false);
+      if (committed) {
+        onClose();
+      }
+      return;
     } catch (e) {
       console.error(e);
     }
@@ -392,6 +432,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           data-testid={testId('try-again')}
           onClick={() => {
             setSensorExecutionData(null);
+            setPendingAssetEvents(null);
             setError(null);
           }}
         >
@@ -716,6 +757,15 @@ export const REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION = gql`
       ... on ReportSensorTickAssetEventsSuccess {
         assetKeys {
           path
+        }
+      }
+      ... on ReportSensorTickAssetEventsPartialFailure {
+        reportedAssetKeys {
+          path
+        }
+        remainingAssetEvents
+        error {
+          ...PythonErrorFragment
         }
       }
       ...PythonErrorFragment

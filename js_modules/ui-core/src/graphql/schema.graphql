@@ -4437,9 +4437,16 @@ union ReportSensorTickAssetEventsResult =
   | UnauthorizedError
   | PythonError
   | ReportSensorTickAssetEventsSuccess
+  | ReportSensorTickAssetEventsPartialFailure
 
 type ReportSensorTickAssetEventsSuccess {
   assetKeys: [AssetKey!]!
+}
+
+type ReportSensorTickAssetEventsPartialFailure {
+  reportedAssetKeys: [AssetKey!]!
+  remainingAssetEvents: [String!]!
+  error: PythonError!
 }
 
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError

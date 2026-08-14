@@ -1,6 +1,7 @@
 import datetime
 import os
 import sys
+from unittest import mock
 
 import pytest
 from dagster import AssetKey, AssetMaterialization
@@ -455,6 +456,15 @@ mutation($assetEvents: [String!]!) {
         path
       }
     }
+    ... on ReportSensorTickAssetEventsPartialFailure {
+      reportedAssetKeys {
+        path
+      }
+      remainingAssetEvents
+      error {
+        message
+      }
+    }
     ... on PythonError {
       message
       stack
@@ -762,6 +772,66 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
         ).records
         assert len(records) == 1
         assert records[0].partition_key == "a_partition"
+
+    def test_report_sensor_tick_asset_events_partial_failure(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        from dagster._serdes import serialize_value
+
+        events = [
+            AssetMaterialization(asset_key=AssetKey("asset_one")),
+            AssetMaterialization(asset_key=AssetKey("asset_two")),
+            AssetMaterialization(asset_key=AssetKey("asset_three")),
+        ]
+        serialized_events = [serialize_value(event) for event in events]
+
+        real_report_runless_asset_event = graphql_context.instance.report_runless_asset_event
+        call_count = 0
+
+        def report_runless_asset_event_fails_on_second_call(asset_event):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise Exception("simulated storage failure")
+            return real_report_runless_asset_event(asset_event)
+
+        with mock.patch.object(
+            graphql_context.instance,
+            "report_runless_asset_event",
+            side_effect=report_runless_asset_event_fails_on_second_call,
+        ):
+            result = execute_dagster_graphql(
+                graphql_context,
+                REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+                variables={"assetEvents": serialized_events},
+            )
+
+        assert result.data
+        payload = result.data["reportSensorTickAssetEvents"]
+        assert payload["__typename"] == "ReportSensorTickAssetEventsPartialFailure"
+        assert payload["reportedAssetKeys"] == [{"path": ["asset_one"]}]
+        assert payload["remainingAssetEvents"] == serialized_events[1:]
+        assert "simulated storage failure" in payload["error"]["message"]
+
+        # the first event, reported before the simulated failure, was actually persisted
+        records = graphql_context.instance.fetch_materializations(
+            AssetKey("asset_one"), ascending=True, limit=2
+        ).records
+        assert len(records) == 1
+
+        # the second and third events were not persisted
+        assert (
+            graphql_context.instance.fetch_materializations(
+                AssetKey("asset_two"), ascending=True, limit=2
+            ).records
+            == []
+        )
+        assert (
+            graphql_context.instance.fetch_materializations(
+                AssetKey("asset_three"), ascending=True, limit=2
+            ).records
+            == []
+        )
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")

@@ -1060,6 +1060,21 @@ class GrapheneReportSensorTickAssetEventsSuccess(graphene.ObjectType):
         name = "ReportSensorTickAssetEventsSuccess"
 
 
+class GrapheneReportSensorTickAssetEventsPartialFailure(graphene.ObjectType):
+    """Output when only some of a sensor tick's asset events were successfully reported
+    before one failed. `remainingAssetEvents` is the serialized subset (including the one
+    that failed) that was not reported, so the client can retry with only that subset
+    instead of resending events that already succeeded.
+    """
+
+    reportedAssetKeys = non_null_list(GrapheneAssetKey)
+    remainingAssetEvents = non_null_list(graphene.String)
+    error = graphene.NonNull(GraphenePythonError)
+
+    class Meta:
+        name = "ReportSensorTickAssetEventsPartialFailure"
+
+
 class GrapheneReportSensorTickAssetEventsResult(graphene.Union):
     """The output from reporting a sensor tick's asset events."""
 
@@ -1068,6 +1083,7 @@ class GrapheneReportSensorTickAssetEventsResult(graphene.Union):
             GrapheneUnauthorizedError,
             GraphenePythonError,
             GrapheneReportSensorTickAssetEventsSuccess,
+            GrapheneReportSensorTickAssetEventsPartialFailure,
         )
         name = "ReportSensorTickAssetEventsResult"
 
@@ -1107,7 +1123,7 @@ class GrapheneReportSensorTickAssetEventsMutation(graphene.Mutation):
             graphene_info, asset_graph, asset_keys, Permissions.REPORT_RUNLESS_ASSET_EVENTS
         )
 
-        return report_sensor_tick_asset_events(graphene_info, events)
+        return report_sensor_tick_asset_events(graphene_info, assetEvents, events)
 
 
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):

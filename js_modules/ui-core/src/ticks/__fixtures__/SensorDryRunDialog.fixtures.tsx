@@ -11,6 +11,7 @@ import {
   buildPipelineSnapshot,
   buildPipelineTag,
   buildPythonError,
+  buildReportSensorTickAssetEventsPartialFailure,
   buildReportSensorTickAssetEventsSuccess,
   buildRun,
   buildRunRequest,
@@ -533,6 +534,104 @@ export const ReportSensorTickAssetEventsUnauthorizedMock: MockedResponse<ReportS
       data: {
         __typename: 'Mutation',
         reportSensorTickAssetEvents: buildUnauthorizedError(),
+      },
+    },
+  };
+
+export const SensorDryRunMutationRunRequestsAndAssetEvents: MockedResponse<SensorDryRunMutation> = {
+  request: {
+    query: EVALUATE_SENSOR_MUTATION,
+    variables: {
+      selectorData: {
+        sensorName: 'test',
+        repositoryLocationName: 'testLocation',
+        repositoryName: 'testName',
+      },
+      cursor: 'testCursortesting123',
+    },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      sensorDryRun: buildDryRunInstigationTick({
+        evaluationResult: buildTickEvaluation({
+          cursor: 'a new cursor',
+          runRequests,
+          error: null,
+          dynamicPartitionsRequests: [],
+          assetEvents: [serializedAssetMaterialization],
+        }),
+      }),
+    },
+  },
+};
+
+const serializedAssetMaterializationTwo =
+  '{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["dry_run_asset_two"]}, "partition": null}';
+
+export const SensorDryRunMutationTwoAssetEvents: MockedResponse<SensorDryRunMutation> = {
+  request: {
+    query: EVALUATE_SENSOR_MUTATION,
+    variables: {
+      selectorData: {
+        sensorName: 'test',
+        repositoryLocationName: 'testLocation',
+        repositoryName: 'testName',
+      },
+      cursor: 'testCursortesting123',
+    },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      sensorDryRun: buildDryRunInstigationTick({
+        evaluationResult: buildTickEvaluation({
+          cursor: 'a new cursor',
+          runRequests: [],
+          skipReason: null,
+          error: null,
+          dynamicPartitionsRequests: [],
+          assetEvents: [serializedAssetMaterialization, serializedAssetMaterializationTwo],
+        }),
+      }),
+    },
+  },
+};
+
+export const ReportSensorTickAssetEventsPartialFailureMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterialization, serializedAssetMaterializationTwo],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        reportSensorTickAssetEvents: buildReportSensorTickAssetEventsPartialFailure({
+          reportedAssetKeys: [buildAssetKey({path: ['dry_run_asset']})],
+          remainingAssetEvents: [serializedAssetMaterializationTwo],
+          error: buildPythonError({message: 'simulated storage failure'}),
+        }),
+      },
+    },
+  };
+
+export const ReportSensorTickAssetEventsRetryRemainderMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterializationTwo],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        reportSensorTickAssetEvents: buildReportSensorTickAssetEventsSuccess({
+          assetKeys: [buildAssetKey({path: ['dry_run_asset_two']})],
+        }),
       },
     },
   };

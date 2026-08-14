@@ -35,6 +35,7 @@ if TYPE_CHECKING:
         GrapheneUnsupportedOperationError,
     )
     from dagster_graphql.schema.roots.mutation import (
+        GrapheneReportSensorTickAssetEventsPartialFailure,
         GrapheneReportSensorTickAssetEventsSuccess,
         GrapheneTerminateRunPolicy,
     )
@@ -454,18 +455,39 @@ def report_asset_check_evaluation(
 
 def report_sensor_tick_asset_events(
     graphene_info: "ResolveInfo",
+    serialized_asset_events: Sequence[str],
     asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
-) -> "GrapheneReportSensorTickAssetEventsSuccess":
+) -> Union[
+    "GrapheneReportSensorTickAssetEventsSuccess",
+    "GrapheneReportSensorTickAssetEventsPartialFailure",
+]:
     """Reports a sensor tick's asset events as runless events, mirroring how the sensor
     daemon applies SensorExecutionData.asset_events for a live tick
     (see dagster._daemon.sensor._evaluate_sensor).
+
+    `instance.report_runless_asset_event` has no batch/transactional form, so a failure
+    partway through leaves the earlier events in this loop already persisted. If that
+    happens, returns which asset keys were already reported and which serialized events
+    (including the one that failed) still need to be, so the client can retry with just
+    that remainder instead of re-reporting -- and duplicating -- the ones that succeeded.
     """
-    from dagster_graphql.schema.roots.mutation import GrapheneReportSensorTickAssetEventsSuccess
+    from dagster_graphql.schema.errors import GraphenePythonError
+    from dagster_graphql.schema.roots.mutation import (
+        GrapheneReportSensorTickAssetEventsPartialFailure,
+        GrapheneReportSensorTickAssetEventsSuccess,
+    )
 
     instance = graphene_info.context.instance
-    for asset_event in asset_events:
-        instance.report_runless_asset_event(asset_event)
+    reported_asset_keys = []
+    for index, asset_event in enumerate(asset_events):
+        try:
+            instance.report_runless_asset_event(asset_event)
+        except Exception:
+            return GrapheneReportSensorTickAssetEventsPartialFailure(
+                reportedAssetKeys=list(set(reported_asset_keys)),
+                remainingAssetEvents=list(serialized_asset_events[index:]),
+                error=GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info())),
+            )
+        reported_asset_keys.append(asset_event.asset_key)
 
-    return GrapheneReportSensorTickAssetEventsSuccess(
-        assetKeys=list({asset_event.asset_key for asset_event in asset_events})
-    )
+    return GrapheneReportSensorTickAssetEventsSuccess(assetKeys=list(set(reported_asset_keys)))
