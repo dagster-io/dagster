@@ -260,7 +260,13 @@ class TestReadCommittedSnapshotWarning:
         finally:
             engine.dispose()
 
-    def test_warns_when_disabled(self, conn_string, caplog, monkeypatch):
+    def test_warns_when_disabled(self, conn_string, caplog, monkeypatch, self_provisioned):
+        if not self_provisioned:
+            # Toggling RCSI needs ALTER DATABASE from master, which Azure SQL Database
+            # rejects; there it is on by default and cannot be turned off, so there is no
+            # disabled state to observe.
+            pytest.skip("cannot reconfigure a server the suite does not provision")
+
         import dagster_mssql.utils as utils
 
         monkeypatch.setattr(utils, "_RCSI_WARNED", set())

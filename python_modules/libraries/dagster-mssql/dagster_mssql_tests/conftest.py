@@ -15,15 +15,38 @@ _SERVICES = {
     "2017": ("test-mssql-db-pinned", 1434, "MSSQL_TEST_PINNED_DB_HOST"),
 }
 
+# Point the suite at a server it does not manage, by giving a full SQLAlchemy URL. Azure
+# SQL Database is why this exists: there is no container for it, and the behaviour worth
+# testing there -- throttling, failover, reconfiguration -- comes from its control plane
+# rather than the engine, so no local SQL Server reproduces it.
+#
+# The database must already exist. Nothing is created, altered or dropped, because the
+# provisioning this suite normally does is not permitted on Azure SQL Database: database
+# scoped `ALTER DATABASE ... SET READ_COMMITTED_SNAPSHOT` is rejected there, where RCSI is
+# on by default and cannot be turned off.
+EXTERNAL_CONN_STRING = os.environ.get("MSSQL_TEST_CONN_STRING")
+
 BUILDKITE = bool(os.getenv("BUILDKITE"))
 
 
 @pytest.fixture(scope="session")
 def mssql_version():
+    if EXTERNAL_CONN_STRING:
+        return "external"
     version = os.environ.get("MSSQL_TEST_VERSION", "2022")
     if version not in _SERVICES:
         raise ValueError(f"MSSQL_TEST_VERSION={version!r} is not one of {sorted(_SERVICES)}")
     return version
+
+
+@pytest.fixture(scope="session")
+def self_provisioned(mssql_version):
+    """False when the server belongs to someone else and must not be reconfigured.
+
+    Tests that change database-level settings depend on this. Against a managed service
+    they would fail for reasons that say nothing about dagster.
+    """
+    return mssql_version != "external"
 
 
 @pytest.fixture(scope="session")
@@ -34,6 +57,10 @@ def hostname(conn_string):
 
 @pytest.fixture(scope="session")
 def conn_string(mssql_version):
+    if EXTERNAL_CONN_STRING:
+        yield EXTERNAL_CONN_STRING
+        return
+
     service, host_port, host_env = _SERVICES[mssql_version]
 
     # In buildkite each container is reachable by address on its own network, so the port
