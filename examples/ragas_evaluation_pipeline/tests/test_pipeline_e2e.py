@@ -114,7 +114,7 @@ def test_regression_compares_against_previous_materialization():
 
 
 def test_regression_skips_incompatible_checked_in_baseline_fallback():
-    """A reconfigured or RAGAS run must not compare against the deterministic baseline."""
+    """A reconfigured or RAGAS run must skip regression comparison instead of fabricating deltas."""
     with DagsterInstance.ephemeral() as instance:
         result = materialize(
             _eval_assets(),
@@ -126,4 +126,4 @@ def test_regression_skips_incompatible_checked_in_baseline_fallback():
         regression = cast("dict", result.output_for_node("regression_comparison_asset"))
         assert regression["baseline_source"] == "no_compatible_baseline"
         assert regression["baseline_run_id"] is None
-        assert all(delta == 0.0 for delta in regression["deltas"].values())
+        assert regression["deltas"] == {}

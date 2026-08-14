@@ -235,15 +235,18 @@ def regression_comparison_asset(
         baseline_source = "previous_materialization"
         baseline = previous
     else:
-        # A compatible prior run does not exist. Do not silently compare a
-        # reconfigured or RAGAS run against the deterministic checked-in baseline,
-        # because that creates false regressions/improvements.
+        # A compatible prior run does not exist. Do not fabricate deltas from an
+        # empty baseline, because a reconfigured or RAGAS run is not comparable to
+        # the deterministic checked-in reference. Skip the comparison entirely.
         baseline_source = "no_compatible_baseline"
         baseline = {"retrieval": {}, "generation": {}, "baseline_run_id": None}
 
     base = flatten_metrics(baseline)
     curr = flatten_metrics(combined_metric_results_asset)
-    deltas = {m: round(curr[m] - base.get(m, 0.0), 4) for m in curr}
+    if baseline_source == "no_compatible_baseline":
+        deltas = {}
+    else:
+        deltas = {m: round(curr[m] - base.get(m, 0.0), 4) for m in curr}
     result = {
         "baseline_source": baseline_source,
         "baseline_run_id": baseline.get("baseline_run_id"),
