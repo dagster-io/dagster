@@ -86,6 +86,7 @@ from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    IDEMPOTENCY_KEY_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
 from dagster._core.test_utils import create_run_for_test, freeze_time
@@ -6675,6 +6676,7 @@ class TestEventLogStorage:
                                 f"{INPUT_EVENT_POINTER_TAG_PREFIX}/foo": "1234",
                                 DATA_VERSION_IS_USER_PROVIDED_TAG: "test_data_version_is_user_provided",
                                 f"{MULTIDIMENSIONAL_PARTITION_PREFIX}foo": "test_multidimensional_partition",
+                                IDEMPOTENCY_KEY_TAG: "test_idempotency_key",
                             },
                         )
                     ),
@@ -6686,6 +6688,7 @@ class TestEventLogStorage:
             {
                 DATA_VERSION_TAG: "test_data_version",
                 f"{MULTIDIMENSIONAL_PARTITION_PREFIX}foo": "test_multidimensional_partition",
+                IDEMPOTENCY_KEY_TAG: "test_idempotency_key",
             }
         ]
 

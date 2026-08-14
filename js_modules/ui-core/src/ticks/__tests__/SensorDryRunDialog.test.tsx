@@ -35,6 +35,19 @@ jest.mock('../../app/CustomAlertProvider', () => ({
 
 const onCloseMock = jest.fn();
 
+// Asset-event idempotency keys are randomly generated (crypto.randomUUID()) so a retry
+// reuses a stable key even if the client never saw the previous response. Mock them to
+// deterministic, sequential values so fixtures can assert on exact mutation variables.
+let idempotencyKeyCounter = 0;
+beforeEach(() => {
+  idempotencyKeyCounter = 0;
+  // jsdom's `crypto` has no `randomUUID` to spy on, so define it directly.
+  globalThis.crypto.randomUUID = jest.fn(
+    () =>
+      `idempotency-key-${idempotencyKeyCounter++}` as `${string}-${string}-${string}-${string}-${string}`,
+  );
+});
+
 function Test({
   mocks,
   resolvers,

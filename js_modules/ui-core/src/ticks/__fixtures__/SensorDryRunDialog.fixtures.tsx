@@ -510,6 +510,7 @@ export const ReportSensorTickAssetEventsMutationMock: MockedResponse<ReportSenso
       query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
       variables: {
         assetEvents: [serializedAssetMaterialization],
+        idempotencyKeys: ['idempotency-key-0'],
       },
     },
     result: {
@@ -528,6 +529,7 @@ export const ReportSensorTickAssetEventsUnauthorizedMock: MockedResponse<ReportS
       query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
       variables: {
         assetEvents: [serializedAssetMaterialization],
+        idempotencyKeys: ['idempotency-key-0'],
       },
     },
     result: {
@@ -604,6 +606,7 @@ export const ReportSensorTickAssetEventsPartialFailureMock: MockedResponse<Repor
       query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
       variables: {
         assetEvents: [serializedAssetMaterialization, serializedAssetMaterializationTwo],
+        idempotencyKeys: ['idempotency-key-0', 'idempotency-key-1'],
       },
     },
     result: {
@@ -624,6 +627,7 @@ export const ReportSensorTickAssetEventsRetryRemainderMock: MockedResponse<Repor
       query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
       variables: {
         assetEvents: [serializedAssetMaterializationTwo],
+        idempotencyKeys: ['idempotency-key-1'],
       },
     },
     result: {

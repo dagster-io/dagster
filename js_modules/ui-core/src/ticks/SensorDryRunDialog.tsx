@@ -125,10 +125,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const [error, setError] = useState<PythonErrorFragment | null>(null);
   const [sensorExecutionData, setSensorExecutionData] =
     useState<SensorDryRunInstigationTick | null>(null);
-  // Set after a partial failure reporting asset events (some events succeeded before one
-  // failed) to just the events that still need reporting, so a retry doesn't re-report
-  // -- and duplicate -- the ones that already succeeded. Reset on every new dry run.
-  const [pendingAssetEvents, setPendingAssetEvents] = useState<string[] | null>(null);
+  // Each entry pairs a serialized asset event with a stable, randomly-generated
+  // idempotency key, generated once per dry run and kept for the lifetime of this
+  // preview so retries -- even a blind retry after losing the previous response --
+  // reuse the same key and the backend can recognize it was already reported.
+  // Narrowed to just the not-yet-reported entries after a partial failure, so a retry
+  // doesn't resend ones that already succeeded. Reset on every new dry run.
+  const [pendingAssetEvents, setPendingAssetEvents] = useState<Array<{
+    event: string;
+    idempotencyKey: string;
+  }> | null>(null);
 
   const sensorSelector: SensorSelector = useMemo(
     () => ({
@@ -147,7 +153,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   );
   const dynamicPartitionRequests = sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
   const assetEvents = sensorExecutionData?.evaluationResult?.assetEvents;
-  const assetEventsToReport = pendingAssetEvents ?? assetEvents;
+  const assetEventsToReport = pendingAssetEvents;
 
   const submitTest = useCallback(async () => {
     setSubmitting(true);
@@ -164,7 +170,12 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           setError(data.evaluationResult.error);
         } else {
           setSensorExecutionData(data);
-          setPendingAssetEvents(null);
+          const newAssetEvents = data.evaluationResult?.assetEvents;
+          setPendingAssetEvents(
+            newAssetEvents?.length
+              ? newAssetEvents.map((event) => ({event, idempotencyKey: crypto.randomUUID()}))
+              : null,
+          );
         }
       } else if (data?.__typename === 'SensorNotFoundError') {
         showCustomAlert({
@@ -191,12 +202,17 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const onCommitTickResult = useCallback(async (): Promise<boolean> => {
     if (assetEventsToReport?.length) {
       const {data} = await reportAssetEvents({
-        variables: {assetEvents: assetEventsToReport},
+        variables: {
+          assetEvents: assetEventsToReport.map((entry) => entry.event),
+          idempotencyKeys: assetEventsToReport.map((entry) => entry.idempotencyKey),
+        },
       });
       const reportResult = data?.reportSensorTickAssetEvents;
       if (reportResult?.__typename === 'ReportSensorTickAssetEventsPartialFailure') {
-        // Only the events that weren't yet reported should be resent on retry.
-        setPendingAssetEvents(reportResult.remainingAssetEvents);
+        // Only the events that weren't yet reported should be resent on retry -- keep
+        // their original idempotency keys so a further retry stays safe too.
+        const remaining = new Set(reportResult.remainingAssetEvents);
+        setPendingAssetEvents(assetEventsToReport.filter((entry) => remaining.has(entry.event)));
         showCustomAlert({
           title: 'Could not report all asset events',
           body: (
@@ -751,8 +767,11 @@ export const EVALUATE_SENSOR_MUTATION = gql`
 `;
 
 export const REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION = gql`
-  mutation ReportSensorTickAssetEventsMutation($assetEvents: [String!]!) {
-    reportSensorTickAssetEvents(assetEvents: $assetEvents) {
+  mutation ReportSensorTickAssetEventsMutation(
+    $assetEvents: [String!]!
+    $idempotencyKeys: [String!]!
+  ) {
+    reportSensorTickAssetEvents(assetEvents: $assetEvents, idempotencyKeys: $idempotencyKeys) {
       __typename
       ... on ReportSensorTickAssetEventsSuccess {
         assetKeys {

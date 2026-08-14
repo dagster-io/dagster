@@ -53,6 +53,11 @@ SCHEDULED_EXECUTION_TIME_TAG = f"{HIDDEN_TAG_PREFIX}scheduled_execution_time"
 
 RUN_KEY_TAG = f"{SYSTEM_TAG_PREFIX}run_key"
 
+# Attached to a runless asset event (AssetMaterialization/AssetObservation) reported via
+# report_runless_asset_event to let a caller safely retry a report after losing the
+# response (e.g. a dropped connection) without duplicating the event -- see #33974.
+IDEMPOTENCY_KEY_TAG = f"{HIDDEN_TAG_PREFIX}idempotency_key"
+
 PRIORITY_TAG = f"{SYSTEM_TAG_PREFIX}priority"
 
 DOCKER_IMAGE_TAG = f"{SYSTEM_TAG_PREFIX}image"

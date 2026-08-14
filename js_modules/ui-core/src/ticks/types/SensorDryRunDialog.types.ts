@@ -86,6 +86,7 @@ export type DynamicPartitionRequestFragment = {
 
 export type ReportSensorTickAssetEventsMutationVariables = Exact<{
   assetEvents: Array<string> | string;
+  idempotencyKeys: Array<string> | string;
 }>;
 
 export type ReportSensorTickAssetEventsMutation = {
@@ -125,4 +126,4 @@ export type ReportSensorTickAssetEventsMutation = {
 
 export const SensorDryRunMutationVersion = 'f7fb6e82a40377ce40403c137eff1f7efa15f950c9cf118c7f5d4596f968b0ef';
 
-export const ReportSensorTickAssetEventsMutationVersion = '6fcbb89f4000a892063600cf77990e21a340b27a25628c2c5cc1d18ba6840d73';
+export const ReportSensorTickAssetEventsMutationVersion = '4bedfb8944c25bb85ee26b47515770766ed39d6e18aa53ad12d96fcda5ee0d80';

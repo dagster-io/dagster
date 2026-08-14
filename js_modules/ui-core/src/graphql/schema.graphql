@@ -4312,7 +4312,10 @@ type Mutation {
   reportAssetCheckEvaluations(
     eventParams: ReportAssetCheckEvaluationsParams!
   ): ReportAssetCheckEvaluationResult!
-  reportSensorTickAssetEvents(assetEvents: [String!]!): ReportSensorTickAssetEventsResult!
+  reportSensorTickAssetEvents(
+    assetEvents: [String!]!
+    idempotencyKeys: [String!]!
+  ): ReportSensorTickAssetEventsResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!

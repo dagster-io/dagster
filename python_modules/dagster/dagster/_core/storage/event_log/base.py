@@ -41,7 +41,7 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._core.storage.tags import IDEMPOTENCY_KEY_TAG, MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -462,7 +462,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return {
             key
             for key in tag_keys
-            if key == DATA_VERSION_TAG or key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+            if key == DATA_VERSION_TAG
+            or key == IDEMPOTENCY_KEY_TAG
+            or key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
         }
 
     @abstractmethod

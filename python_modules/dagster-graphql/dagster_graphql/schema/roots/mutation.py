@@ -1098,13 +1098,27 @@ class GrapheneReportSensorTickAssetEventsMutation(graphene.Mutation):
 
     class Arguments:
         assetEvents = graphene.Argument(non_null_list(graphene.String))
+        # Parallel to assetEvents (same length, same order). A stable, caller-generated
+        # key per event so a retry -- even one where the client never saw the previous
+        # response -- doesn't duplicate an event that was already reported. See
+        # report_sensor_tick_asset_events for how this is used.
+        idempotencyKeys = graphene.Argument(non_null_list(graphene.String))
 
     class Meta:
         name = "ReportSensorTickAssetEventsMutation"
 
     @capture_error
     @require_permission_check(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
-    def mutate(self, graphene_info: ResolveInfo, assetEvents: Sequence[str]):
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        assetEvents: Sequence[str],
+        idempotencyKeys: Sequence[str],
+    ):
+        check.invariant(
+            len(assetEvents) == len(idempotencyKeys),
+            "assetEvents and idempotencyKeys must be the same length",
+        )
         events = []
         for serialized_event in assetEvents:
             event = deserialize_value(serialized_event)
@@ -1123,7 +1137,7 @@ class GrapheneReportSensorTickAssetEventsMutation(graphene.Mutation):
             graphene_info, asset_graph, asset_keys, Permissions.REPORT_RUNLESS_ASSET_EVENTS
         )
 
-        return report_sensor_tick_asset_events(graphene_info, assetEvents, events)
+        return report_sensor_tick_asset_events(graphene_info, assetEvents, idempotencyKeys, events)
 
 
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):

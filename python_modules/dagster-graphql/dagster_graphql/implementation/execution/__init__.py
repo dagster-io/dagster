@@ -453,9 +453,39 @@ def report_asset_check_evaluation(
     instance.report_runless_asset_event(evaluation)
 
 
+def _with_idempotency_tag(
+    asset_event: AssetMaterialization | AssetObservation, idempotency_key: str
+) -> AssetMaterialization | AssetObservation:
+    from dagster._core.storage.tags import IDEMPOTENCY_KEY_TAG
+
+    # Reconstruct through the public constructor (rather than _replace) so tags are
+    # re-validated, matching how the event was originally built.
+    return type(asset_event)(
+        asset_key=asset_event.asset_key,
+        description=asset_event.description,
+        metadata=asset_event.metadata,
+        partition=asset_event.partition,
+        tags={**(asset_event.tags or {}), IDEMPOTENCY_KEY_TAG: idempotency_key},
+    )
+
+
+def _already_reported(
+    instance: "DagsterInstance",
+    asset_event: AssetMaterialization | AssetObservation,
+    idempotency_key: str,
+) -> bool:
+    from dagster._core.storage.tags import IDEMPOTENCY_KEY_TAG
+
+    existing = instance.event_log_storage.get_event_tags_for_asset(
+        asset_event.asset_key, filter_tags={IDEMPOTENCY_KEY_TAG: idempotency_key}
+    )
+    return len(existing) > 0
+
+
 def report_sensor_tick_asset_events(
     graphene_info: "ResolveInfo",
     serialized_asset_events: Sequence[str],
+    idempotency_keys: Sequence[str],
     asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
 ) -> Union[
     "GrapheneReportSensorTickAssetEventsSuccess",
@@ -465,12 +495,26 @@ def report_sensor_tick_asset_events(
     daemon applies SensorExecutionData.asset_events for a live tick
     (see dagster._daemon.sensor._evaluate_sensor).
 
-    `instance.report_runless_asset_event` has no batch/transactional form, so a failure
-    partway through leaves the earlier events in this loop already persisted. If that
-    happens, returns which asset keys were already reported and which serialized events
-    (including the one that failed) still need to be, so the client can retry with just
-    that remainder instead of re-reporting -- and duplicating -- the ones that succeeded.
+    Two layers of retry safety, since `instance.report_runless_asset_event` has no
+    batch/transactional form:
+
+    - If a failure happens partway through the loop (and the client receives this
+      response), returns which asset keys were already reported and which serialized
+      events (including the one that failed) still need to be, so a retry only resends
+      that remainder instead of re-reporting -- and duplicating -- the ones that
+      succeeded.
+    - If the *response itself* is lost (e.g. a dropped connection) after some events
+      were already persisted, a blind retry of the full original batch would otherwise
+      also duplicate those. For AssetMaterialization/AssetObservation (which support
+      tags), each event is tagged with the caller-supplied `idempotency_key` before
+      being reported, and skipped if an event with that tag for that asset already
+      exists -- so retrying with the same keys is always safe regardless of whether the
+      client saw the previous response. AssetCheckEvaluation has no tags field, so it
+      isn't covered by this second layer; the first layer (above) is its only
+      protection.
     """
+    from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+
     from dagster_graphql.schema.errors import GraphenePythonError
     from dagster_graphql.schema.roots.mutation import (
         GrapheneReportSensorTickAssetEventsPartialFailure,
@@ -479,9 +523,15 @@ def report_sensor_tick_asset_events(
 
     instance = graphene_info.context.instance
     reported_asset_keys = []
-    for index, asset_event in enumerate(asset_events):
+    for index, (asset_event, idempotency_key) in enumerate(zip(asset_events, idempotency_keys)):
         try:
-            instance.report_runless_asset_event(asset_event)
+            event_to_report = asset_event
+            if isinstance(asset_event, (AssetMaterialization, AssetObservation)):
+                if _already_reported(instance, asset_event, idempotency_key):
+                    reported_asset_keys.append(asset_event.asset_key)
+                    continue
+                event_to_report = _with_idempotency_tag(asset_event, idempotency_key)
+            instance.report_runless_asset_event(event_to_report)
         except Exception:
             return GrapheneReportSensorTickAssetEventsPartialFailure(
                 reportedAssetKeys=list(set(reported_asset_keys)),

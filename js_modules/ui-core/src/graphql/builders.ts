@@ -3159,6 +3159,7 @@ type MutationReportRunlessAssetEventsArgs = {
 
 type MutationReportSensorTickAssetEventsArgs = {
   assetEvents: Array<Scalars['String']['input']>;
+  idempotencyKeys: Array<Scalars['String']['input']>;
 };
 
 type MutationResetScheduleArgs = {
