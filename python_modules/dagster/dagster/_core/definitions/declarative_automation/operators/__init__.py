@@ -14,6 +14,7 @@ from dagster._core.definitions.declarative_automation.operators.check_operators 
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     AllDepsCondition as AllDepsCondition,
     AnyDepsCondition as AnyDepsCondition,
+    AnyDepsRequiredButNonexistentCondition as AnyDepsRequiredButNonexistentCondition,
     BaseDepsAutomationCondition as BaseDepsAutomationCondition,
     DepsAutomationCondition as DepsAutomationCondition,
     EntityMatchesCondition as EntityMatchesCondition,

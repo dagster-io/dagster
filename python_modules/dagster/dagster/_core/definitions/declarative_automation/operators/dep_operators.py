@@ -316,3 +316,58 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
             true_subset = true_subset.compute_intersection(dep_result.true_subset)
 
         return AutomationResult(context, true_subset=true_subset, child_results=dep_results)  # ty: ignore[invalid-argument-type]
+
+
+@whitelist_for_serdes
+class AnyDepsRequiredButNonexistentCondition(BaseDepsAutomationCondition[T_EntityKey]):
+    """Condition which is true for any candidate partition which requires at least one parent
+    partition key which does not exist in that parent's PartitionsDefinition.
+
+    Unlike other dependency conditions, this condition has no inner operand: an inner condition
+    would need to be evaluated against parent partitions which, by definition, cannot be
+    represented in a subset of the parent's PartitionsDefinition.
+
+    Only direct parents are considered; `resolves_virtual_deps` has no effect on this condition.
+    For asset check targets, the direct parents are the checked asset and any additional deps.
+    """
+
+    @property
+    def base_name(self) -> str:
+        return "ANY_DEPS_REQUIRED_BUT_NONEXISTENT"
+
+    @property
+    def description(self) -> str:
+        return "required parent partitions do not exist"
+
+    async def evaluate(  # ty: ignore[invalid-method-override]
+        self, context: AutomationContext[T_EntityKey]
+    ) -> AutomationResult[T_EntityKey]:
+        true_subset = context.get_empty_subset()
+
+        if not context.candidate_subset.is_empty:
+            # always walk the direct parents of the target (for check keys, the checked asset
+            # and any additional deps): partition mappings are only defined along direct
+            # dependency edges, so resolves_virtual_deps is a no-op for this condition
+            dep_keys = self._apply_dep_selections(
+                {
+                    k
+                    for k in context.asset_graph.get(context.key).parent_entity_keys
+                    if isinstance(k, AssetKey)
+                },
+                context.asset_graph,
+            )
+            for dep_key in sorted(dep_keys):
+                if (
+                    not context.asset_graph.has(dep_key)
+                    or context.asset_graph.get(dep_key).partitions_def is None
+                ):
+                    continue
+                true_subset = true_subset.compute_union(
+                    context.asset_graph_view.compute_child_subset_with_required_but_nonexistent_parents(
+                        dep_key,
+                        context.candidate_subset,  # ty: ignore[invalid-argument-type]
+                    )
+                )
+            true_subset = context.candidate_subset.compute_intersection(true_subset)
+
+        return AutomationResult(context, true_subset=true_subset)
