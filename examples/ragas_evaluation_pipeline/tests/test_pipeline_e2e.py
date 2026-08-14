@@ -111,3 +111,19 @@ def test_regression_compares_against_previous_materialization():
         # The baseline it diffed against is the FIRST run, not the current one.
         assert regression["baseline_run_id"] == first.run_id
         assert regression["baseline_run_id"] != second.run_id
+
+
+def test_regression_skips_incompatible_checked_in_baseline_fallback():
+    """A reconfigured or RAGAS run must not compare against the deterministic baseline."""
+    with DagsterInstance.ephemeral() as instance:
+        result = materialize(
+            _eval_assets(),
+            resources={"runtime_metadata": RuntimeMetadataResource(scorer="ragas")},
+            instance=instance,
+        )
+        assert result.success
+
+        regression = cast("dict", result.output_for_node("regression_comparison_asset"))
+        assert regression["baseline_source"] == "no_compatible_baseline"
+        assert regression["baseline_run_id"] is None
+        assert all(delta == 0.0 for delta in regression["deltas"].values())

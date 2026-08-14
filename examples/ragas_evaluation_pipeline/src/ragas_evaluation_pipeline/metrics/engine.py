@@ -105,7 +105,7 @@ def _ragas_generation(
         raise RuntimeError(
             "scorer='ragas' could not import the RAGAS stack "
             f"({type(exc).__name__}: {exc}). "
-            "Install the optional extra with: pip install '.[ragas]' "
+            "Install the optional extra with: uv sync --extra ragas "
             "and see INSTALLED_PACKAGES.md for the known-good version set "
             "(ragas 0.4.3 needs the langchain 0.3.x generation, not 1.x)."
         ) from exc
