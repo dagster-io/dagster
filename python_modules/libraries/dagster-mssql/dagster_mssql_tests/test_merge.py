@@ -12,15 +12,44 @@ def _sql(statement) -> str:
 
 
 class TestMergeStatement:
-    def test_holdlock_is_present(self):
-        """Without HOLDLOCK two concurrent sessions can both miss the match and both
-        insert, which surfaces as a duplicate key violation or a deadlock. This is the
-        single most important property of the generated statement.
+    def test_holdlock_and_updlock_are_present(self):
+        """The single most important property of the generated statement.
+
+        Without HOLDLOCK two concurrent sessions can both miss the match and both insert,
+        which surfaces as a duplicate key violation. HOLDLOCK alone then leaves them both
+        holding a shared range lock and both trying to convert it to exclusive, which
+        deadlocks; UPDLOCK makes the probe take an update lock so the second session waits
+        instead. Neither hint works without the other.
         """
         statement = merge_statement(
             KeyValueStoreTable, match_on=["key"], values={"key": "k", "value": "v"}
         )
-        assert "WITH (HOLDLOCK)" in _sql(statement)
+        assert "WITH (HOLDLOCK, UPDLOCK)" in _sql(statement)
+
+    def test_rows_are_ordered_by_match_key(self):
+        """A multi-row MERGE takes its range locks in row order, so two callers passing
+        overlapping keys in different orders would deadlock. Ordering here removes that.
+        """
+        forward = _sql(
+            merge_statement(
+                KeyValueStoreTable,
+                match_on=["key"],
+                values=[{"key": k, "value": "v"} for k in ("a", "b", "c")],
+            )
+        )
+        reverse = merge_statement(
+            KeyValueStoreTable,
+            match_on=["key"],
+            values=[{"key": k, "value": "v"} for k in ("c", "b", "a")],
+        )
+        assert forward == _sql(reverse)
+        # and the bound values follow the same order, not just the SQL text
+        bound = reverse._bindparams  # noqa: SLF001
+        assert [b.value for b in bound.values() if b.key.startswith("src_")][::2] == [
+            "a",
+            "b",
+            "c",
+        ]
 
     def test_terminated_with_semicolon(self):
         # SQL Server requires MERGE to be terminated with a semicolon

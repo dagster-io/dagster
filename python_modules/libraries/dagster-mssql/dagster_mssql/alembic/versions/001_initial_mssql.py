@@ -5,8 +5,8 @@ Revises:
 Create Date: 2026-07-29 00:00:00.000000
 
 Deliberately a no-op, mirroring `017_initial_mssql.py`'s counterpart for MySQL in dagster
-core.  The three storage classes create their tables with `MetaData.create_all()` and then
-stamp this revision, so the schema is never built by migrating up from nothing.  This
+core. The three storage classes create their tables with `MetaData.create_all()` and then
+stamp this revision, so the schema is never built by migrating up from nothing. This
 revision exists to give the SQL Server tree a head to stamp, and to anchor the revisions
 that follow it.
 

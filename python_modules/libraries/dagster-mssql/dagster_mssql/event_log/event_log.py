@@ -36,6 +36,8 @@ from dagster_mssql.utils import (
     mssql_url_from_config,
     retry_mssql_connection_fn,
     retry_mssql_creation_fn,
+    retry_on_deadlock,
+    warn_if_read_committed_snapshot_disabled,
 )
 
 
@@ -80,6 +82,7 @@ class MSSQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             self.reindex_assets()
 
         self._mssql_version = self.get_server_version()
+        warn_if_read_committed_snapshot_disabled(self._engine)
         super().__init__()
 
     def _init_db(self) -> None:
@@ -154,8 +157,17 @@ class MSSQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         check.int_param(event_id, "event_id")
 
-        with self.index_transaction() as conn:
-            self._store_asset_event(conn, event, event_id)
+        retry_on_deadlock(
+            lambda: super(MSSQLEventLogStorage, self).store_asset_event(event, event_id)
+        )
+
+    def _store_asset_event_and_tags(self, event: EventLogEntry, event_id: int) -> None:
+        # Concurrent writers are chosen as deadlock victims even when materializing
+        # different assets, because the upsert holds a key-range lock. Measured, not
+        # assumed: test_concurrency.py::TestAssetEvents::test_distinct_asset_keys.
+        retry_on_deadlock(
+            lambda: super(MSSQLEventLogStorage, self)._store_asset_event_and_tags(event, event_id)
+        )
 
     def _store_asset_event(self, conn: Connection, event: EventLogEntry, event_id: int) -> None:
         # last_materialization_timestamp is updated upon observation, materialization, materialization_planned

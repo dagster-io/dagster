@@ -410,12 +410,23 @@ class SqlEventLogStorage(EventLogStorage):
                     "Cannot store asset event tags for null event id."
                 )
 
-            with self.index_transaction() as conn:
-                self._store_asset_event_tags(conn, [event], [event_id])
-                self._store_asset_event(conn, event, event_id)
+            self._store_asset_event_and_tags(event, event_id)
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
+
+    def _store_asset_event_and_tags(self, event: EventLogEntry, event_id: int) -> None:
+        """Write the asset key and tag rows for `event`, in a transaction of their own.
+
+        Separate from `store_event` because the transaction may need to be retried as a
+        whole, which a subclass cannot arrange from inside it. On SQL Server the upsert
+        into `asset_keys` runs at an isolation level where concurrent writers can be
+        chosen as deadlock victims even when they touch different assets, and the only
+        remedy is to rerun the transaction.
+        """
+        with self.index_transaction() as conn:
+            self._store_asset_event_tags(conn, [event], [event_id])
+            self._store_asset_event(conn, event, event_id)
 
     def get_records_for_run(
         self,

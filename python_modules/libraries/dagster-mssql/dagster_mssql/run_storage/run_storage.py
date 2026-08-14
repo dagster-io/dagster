@@ -34,6 +34,8 @@ from dagster_mssql.utils import (
     mssql_url_from_config,
     retry_mssql_connection_fn,
     retry_mssql_creation_fn,
+    retry_on_deadlock,
+    warn_if_read_committed_snapshot_disabled,
 )
 
 
@@ -79,6 +81,7 @@ class MSSQLRunStorage(SqlRunStorage, ConfigurableClass):
             InstanceInfo.create(self._engine)
 
         self._mssql_version = self.get_server_version()
+        warn_if_read_committed_snapshot_disabled(self._engine)
 
         super().__init__()
 
@@ -163,32 +166,48 @@ class MSSQLRunStorage(SqlRunStorage, ConfigurableClass):
             del self._index_migration_cache[migration_name]
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
-        with self.connect() as conn:
-            conn.execute(
-                merge_statement(
-                    DaemonHeartbeatsTable,
-                    match_on=["daemon_type"],
-                    values={
-                        "daemon_type": daemon_heartbeat.daemon_type,
-                        "timestamp": datetime_from_timestamp(daemon_heartbeat.timestamp),
-                        "daemon_id": daemon_heartbeat.daemon_id,
-                        "body": serialize_value(daemon_heartbeat),
-                    },
+        def _write() -> None:
+            with self.connect() as conn:
+                conn.execute(
+                    merge_statement(
+                        DaemonHeartbeatsTable,
+                        match_on=["daemon_type"],
+                        values={
+                            "daemon_type": daemon_heartbeat.daemon_type,
+                            "timestamp": datetime_from_timestamp(daemon_heartbeat.timestamp),
+                            "daemon_id": daemon_heartbeat.daemon_id,
+                            "body": serialize_value(daemon_heartbeat),
+                        },
+                    )
                 )
-            )
+
+        # Two daemons writing different heartbeat rows still deadlock: the table is small
+        # enough that the optimizer scans it, and under the isolation the upsert needs that
+        # scan range-locks rows this statement never touches.
+        retry_on_deadlock(_write)
 
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
-        with self.connect() as conn:
-            for key, value in pairs.items():
+        if not pairs:
+            return
+
+        def _write() -> None:
+            # One statement rather than one per key. A loop holds a range lock per key for
+            # the rest of the transaction, taken in whatever order the caller's mapping
+            # iterated, so two daemons writing the same cursors in different orders
+            # deadlock. merge_statement orders the rows it is given; a loop cannot benefit
+            # from that.
+            with self.connect() as conn:
                 conn.execute(
                     merge_statement(
                         KeyValueStoreTable,
                         match_on=["key"],
-                        values={"key": key, "value": value},
+                        values=[{"key": key, "value": value} for key, value in pairs.items()],
                     )
                 )
+
+        retry_on_deadlock(_write)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = mssql_alembic_config(__file__)

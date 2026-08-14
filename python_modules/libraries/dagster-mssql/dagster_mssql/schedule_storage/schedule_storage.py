@@ -35,6 +35,8 @@ from dagster_mssql.utils import (
     mssql_url_from_config,
     retry_mssql_connection_fn,
     retry_mssql_creation_fn,
+    retry_on_deadlock,
+    warn_if_read_committed_snapshot_disabled,
 )
 
 
@@ -73,6 +75,7 @@ class MSSQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             retry_mssql_creation_fn(self._init_db)
 
         self._mssql_version = self.get_server_version()
+        warn_if_read_committed_snapshot_disabled(self._engine)
 
         super().__init__()
 
@@ -157,6 +160,20 @@ class MSSQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             alembic_config = mssql_alembic_config(__file__)
             run_alembic_upgrade(alembic_config, conn)
 
+    # The daemon writes instigator state on every tick from however many processes are
+    # running, and the upsert's key-range lock makes deadlocks routine. The retry goes on
+    # these two entry points because they own the transaction, which is the unit that has
+    # to be rerun.
+    def add_instigator_state(self, state):
+        return retry_on_deadlock(
+            lambda: super(MSSQLScheduleStorage, self).add_instigator_state(state)
+        )
+
+    def update_instigator_state(self, state):
+        return retry_on_deadlock(
+            lambda: super(MSSQLScheduleStorage, self).update_instigator_state(state)
+        )
+
     def _add_or_update_instigators_table(self, conn: Connection, state) -> None:
         conn.execute(
             merge_statement(
@@ -186,22 +203,25 @@ class MSSQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if not asset_evaluations:
             return
 
-        with self.connect() as conn:
-            conn.execute(
-                merge_statement(
-                    AssetDaemonAssetEvaluationsTable,
-                    match_on=["evaluation_id", "asset_key"],
-                    values=[
-                        {
-                            "evaluation_id": evaluation_id,
-                            "asset_key": evaluation.key.to_db_string(),
-                            "asset_evaluation_body": serialize_value(evaluation),
-                            "num_requested": evaluation.num_requested,
-                        }
-                        for evaluation in asset_evaluations
-                    ],
+        def _write() -> None:
+            with self.connect() as conn:
+                conn.execute(
+                    merge_statement(
+                        AssetDaemonAssetEvaluationsTable,
+                        match_on=["evaluation_id", "asset_key"],
+                        values=[
+                            {
+                                "evaluation_id": evaluation_id,
+                                "asset_key": evaluation.key.to_db_string(),
+                                "asset_evaluation_body": serialize_value(evaluation),
+                                "num_requested": evaluation.num_requested,
+                            }
+                            for evaluation in asset_evaluations
+                        ],
+                    )
                 )
-            )
+
+        retry_on_deadlock(_write)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = mssql_alembic_config(__file__)
