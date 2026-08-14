@@ -208,6 +208,7 @@ def combined_metric_results_asset(
 def regression_comparison_asset(
     context: AssetExecutionContext,
     combined_metric_results_asset: dict,
+    evaluation_dataset_asset: dict,
     runtime_metadata: RuntimeMetadataResource,
 ) -> dict:
     """Diff the current run against the PREVIOUS materialized evaluation result.
@@ -219,7 +220,9 @@ def regression_comparison_asset(
     recorded in ``baseline_source`` so the comparison is self-explaining.
     """
     # Extract evaluation identity (actual stored values) to ensure regression baseline
-    # has compatible config. Get the tags that were just stored by combined_metric_results.
+    # has compatible config. Include the dataset/corpus identity as well as scorer
+    # and index lineage so changes to the underlying inputs are not treated as
+    # comparable runs.
     stored_tags = runtime_metadata.as_tags()
     evaluation_identity = {
         "scorer": stored_tags["scorer"],
@@ -227,6 +230,9 @@ def regression_comparison_asset(
         "embedding_model": stored_tags["embedding_model"],
         "prompt_version": stored_tags["prompt_version"],
         "index_version": stored_tags["index_version"],
+        "dataset_id": evaluation_dataset_asset["dataset_id"],
+        "dataset_semver": evaluation_dataset_asset["dataset_semver"],
+        "corpus_hash": evaluation_dataset_asset["_corpus_hash"],
     }
     previous = load_previous_metrics(
         context.instance, context.run.run_id, evaluation_identity=evaluation_identity
