@@ -215,14 +215,19 @@ mssql_extra_cmds = [
     f"pushd {oss_path('python_modules/libraries/dagster-mssql/dagster_mssql_tests/')}",
     "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
     *network_buildkite_container("mssql"),
+    *network_buildkite_container("mssql_2019"),
     *network_buildkite_container("mssql_pinned"),
     *connect_sibling_docker_container("mssql", "test-mssql-db", "MSSQL_TEST_DB_HOST"),
+    *connect_sibling_docker_container(
+        "mssql_2019", "test-mssql-db-2019", "MSSQL_TEST_2019_DB_HOST"
+    ),
     *connect_sibling_docker_container(
         "mssql_pinned", "test-mssql-db-pinned", "MSSQL_TEST_PINNED_DB_HOST"
     ),
     # sqlservr takes appreciably longer to accept connections than mysqld, and
     # `docker compose up -d` returns long before it is ready.
     wait_for_mssql_container("test-mssql-db"),
+    wait_for_mssql_container("test-mssql-db-2019"),
     wait_for_mssql_container("test-mssql-db-pinned"),
     "popd",
 ]
@@ -1027,7 +1032,11 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-mssql"),
             pytest_extra_cmds=mssql_extra_cmds,
             pytest_tox_factors=[
+                # 2022 carries the bulk of the suite; the older majors run unsplit, since
+                # what they cover is version-specific behaviour rather than volume.
                 ToxFactor("storage_tests", splits=2),
+                ToxFactor("storage_tests_2019"),
+                ToxFactor("storage_tests_2017"),
             ],
             force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
             resources=ResourceRequests(
