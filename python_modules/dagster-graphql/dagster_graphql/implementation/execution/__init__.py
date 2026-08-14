@@ -469,19 +469,6 @@ def _with_idempotency_tag(
     )
 
 
-def _already_reported(
-    instance: "DagsterInstance",
-    asset_event: AssetMaterialization | AssetObservation,
-    idempotency_key: str,
-) -> bool:
-    from dagster._core.storage.tags import IDEMPOTENCY_KEY_TAG
-
-    existing = instance.event_log_storage.get_event_tags_for_asset(
-        asset_event.asset_key, filter_tags={IDEMPOTENCY_KEY_TAG: idempotency_key}
-    )
-    return len(existing) > 0
-
-
 def report_sensor_tick_asset_events(
     graphene_info: "ResolveInfo",
     serialized_asset_events: Sequence[str],
@@ -506,12 +493,13 @@ def report_sensor_tick_asset_events(
     - If the *response itself* is lost (e.g. a dropped connection) after some events
       were already persisted, a blind retry of the full original batch would otherwise
       also duplicate those. For AssetMaterialization/AssetObservation (which support
-      tags), each event is tagged with the caller-supplied `idempotency_key` before
-      being reported, and skipped if an event with that tag for that asset already
-      exists -- so retrying with the same keys is always safe regardless of whether the
-      client saw the previous response. AssetCheckEvaluation has no tags field, so it
-      isn't covered by this second layer; the first layer (above) is its only
-      protection.
+      tags), each event's caller-supplied `idempotency_key` is atomically claimed via
+      `EventLogStorage.claim_idempotency_key` (backed by a unique DB constraint) before
+      the event is tagged and reported, so retrying with the same keys is always safe --
+      including under concurrent/overlapping retries, not just sequential ones -- and the
+      claim is released if reporting the event then fails, so a genuine failure doesn't
+      block a future retry. AssetCheckEvaluation has no tags field, so it isn't covered by
+      this second layer; the first layer (above) is its only protection.
     """
     from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 
@@ -527,11 +515,21 @@ def report_sensor_tick_asset_events(
         try:
             event_to_report = asset_event
             if isinstance(asset_event, (AssetMaterialization, AssetObservation)):
-                if _already_reported(instance, asset_event, idempotency_key):
+                if not instance.event_log_storage.claim_idempotency_key(
+                    asset_event.asset_key, idempotency_key
+                ):
                     reported_asset_keys.append(asset_event.asset_key)
                     continue
                 event_to_report = _with_idempotency_tag(asset_event, idempotency_key)
-            instance.report_runless_asset_event(event_to_report)
+                try:
+                    instance.report_runless_asset_event(event_to_report)
+                except Exception:
+                    instance.event_log_storage.release_idempotency_key(
+                        asset_event.asset_key, idempotency_key
+                    )
+                    raise
+            else:
+                instance.report_runless_asset_event(event_to_report)
         except Exception:
             return GrapheneReportSensorTickAssetEventsPartialFailure(
                 reportedAssetKeys=list(set(reported_asset_keys)),

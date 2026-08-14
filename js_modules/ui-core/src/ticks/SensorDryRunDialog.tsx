@@ -211,8 +211,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       if (reportResult?.__typename === 'ReportSensorTickAssetEventsPartialFailure') {
         // Only the events that weren't yet reported should be resent on retry -- keep
         // their original idempotency keys so a further retry stays safe too.
-        const remaining = new Set(reportResult.remainingAssetEvents);
-        setPendingAssetEvents(assetEventsToReport.filter((entry) => remaining.has(entry.event)));
+        // remainingAssetEvents is always a contiguous suffix of the submitted batch, so
+        // slice by position rather than matching serialized content: two events in the
+        // batch can serialize to the same string, which content-based matching can't
+        // tell apart.
+        const remainingCount = reportResult.remainingAssetEvents.length;
+        setPendingAssetEvents(
+          assetEventsToReport.slice(assetEventsToReport.length - remainingCount),
+        );
         showCustomAlert({
           title: 'Could not report all asset events',
           body: (
@@ -399,7 +405,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         const firstPartitionError = partitionErrors[0];
         if (firstPartitionError) {
           showCustomAlert({title: firstPartitionError.title, body: firstPartitionError.body});
-          setLaunching(false);
           return;
         }
       }
@@ -410,17 +415,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       // the dialog if the tick result (asset events, cursor) also committed, so a
       // failure here doesn't look like a no-op success.
       const committed = await onCommitTickResult();
-      setLaunching(false);
       if (committed) {
         onClose();
       }
-      return;
     } catch (e) {
       console.error(e);
+    } finally {
+      setLaunching(false);
     }
-
-    setLaunching(false);
-    onClose();
   }, [
     canApply,
     canEditDynamicPartitions,

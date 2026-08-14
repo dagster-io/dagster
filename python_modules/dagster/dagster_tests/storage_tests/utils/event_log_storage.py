@@ -6692,6 +6692,46 @@ class TestEventLogStorage:
             }
         ]
 
+    def test_claim_idempotency_key(self, storage: EventLogStorage):
+        asset_key = dg.AssetKey("test_asset")
+        other_asset_key = dg.AssetKey("other_asset")
+
+        assert storage.claim_idempotency_key(asset_key, "key-one") is True
+        # Same asset + same key: already claimed.
+        assert storage.claim_idempotency_key(asset_key, "key-one") is False
+        # Same asset, different key: not yet claimed.
+        assert storage.claim_idempotency_key(asset_key, "key-two") is True
+        # Different asset, same key: not yet claimed -- the claim is scoped per asset.
+        assert storage.claim_idempotency_key(other_asset_key, "key-one") is True
+
+    def test_release_idempotency_key(self, storage: EventLogStorage):
+        asset_key = dg.AssetKey("test_asset")
+
+        assert storage.claim_idempotency_key(asset_key, "key-one") is True
+        assert storage.claim_idempotency_key(asset_key, "key-one") is False
+
+        storage.release_idempotency_key(asset_key, "key-one")
+
+        # Released -- a retry with the same key can claim it again.
+        assert storage.claim_idempotency_key(asset_key, "key-one") is True
+
+    def test_claim_idempotency_key_concurrent(self, storage: EventLogStorage):
+        asset_key = dg.AssetKey("test_asset")
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            results = list(
+                executor.map(
+                    lambda _: storage.claim_idempotency_key(asset_key, "shared-key"),
+                    range(10),
+                    timeout=30,
+                )
+            )
+
+        # Exactly one concurrent caller should win the claim, regardless of scheduling --
+        # this is the guarantee a non-atomic read-then-write check can't make.
+        assert results.count(True) == 1
+        assert results.count(False) == 9
+
     def test_previous_observation_data_versions(self, storage, instance):
         asset_key = dg.AssetKey(["one"])
         partitions = ["1", "2", "3"]

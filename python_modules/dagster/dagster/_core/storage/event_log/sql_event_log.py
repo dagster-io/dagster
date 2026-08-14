@@ -80,6 +80,7 @@ from dagster._core.storage.event_log.migration import (
 )
 from dagster._core.storage.event_log.schema import (
     AssetCheckExecutionsTable,
+    AssetEventIdempotencyKeysTable,
     AssetEventTagsTable,
     AssetKeyTable,
     ConcurrencyLimitsTable,
@@ -1767,6 +1768,40 @@ class SqlEventLogStorage(EventLogStorage):
             tags_by_event_id[event_id][key] = value
 
         return list(tags_by_event_id.values())
+
+    def claim_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> bool:
+        # Falls back to the (non-atomic) base implementation for OSS users who have not yet
+        # run `dagster instance migrate` to create this table.
+        if not self.has_table(AssetEventIdempotencyKeysTable.name):
+            return super().claim_idempotency_key(asset_key, idempotency_key)
+
+        insert_statement = AssetEventIdempotencyKeysTable.insert().values(
+            asset_key=asset_key.to_string(),
+            idempotency_key=idempotency_key,
+        )
+        try:
+            # The IntegrityError must propagate out of the transaction context (rather than
+            # being caught inside it) so the failed transaction gets rolled back instead of
+            # committed -- some backends (e.g. Postgres) reject a commit of an already-failed
+            # transaction.
+            with self.index_transaction() as conn:
+                conn.execute(insert_statement)
+        except db_exc.IntegrityError:
+            return False
+        return True
+
+    def release_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> None:
+        if not self.has_table(AssetEventIdempotencyKeysTable.name):
+            return super().release_idempotency_key(asset_key, idempotency_key)
+
+        delete_statement = AssetEventIdempotencyKeysTable.delete().where(
+            db.and_(
+                AssetEventIdempotencyKeysTable.c.asset_key == asset_key.to_string(),
+                AssetEventIdempotencyKeysTable.c.idempotency_key == idempotency_key,
+            )
+        )
+        with self.index_transaction() as conn:
+            conn.execute(delete_statement)
 
     def _asset_materialization_from_json_column(self, json_str: str) -> AssetMaterialization | None:
         if not json_str:

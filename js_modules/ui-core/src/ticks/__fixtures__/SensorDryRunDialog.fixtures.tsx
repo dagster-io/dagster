@@ -540,6 +540,20 @@ export const ReportSensorTickAssetEventsUnauthorizedMock: MockedResponse<ReportS
     },
   };
 
+// A network-level rejection (as opposed to a typed GraphQL failure result), to exercise
+// the case where onCommitTickResult's await throws instead of resolving.
+export const ReportSensorTickAssetEventsNetworkErrorMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterialization],
+        idempotencyKeys: ['idempotency-key-0'],
+      },
+    },
+    error: new Error('simulated network error'),
+  };
+
 export const SensorDryRunMutationRunRequestsAndAssetEvents: MockedResponse<SensorDryRunMutation> = {
   request: {
     query: EVALUATE_SENSOR_MUTATION,
@@ -635,6 +649,78 @@ export const ReportSensorTickAssetEventsRetryRemainderMock: MockedResponse<Repor
         __typename: 'Mutation',
         reportSensorTickAssetEvents: buildReportSensorTickAssetEventsSuccess({
           assetKeys: [buildAssetKey({path: ['dry_run_asset_two']})],
+        }),
+      },
+    },
+  };
+
+// Two asset events that serialize to byte-identical content, to exercise remainder
+// matching after a partial failure -- matching by content (instead of position) would
+// incorrectly keep both entries pending even though only the second is unreported.
+export const SensorDryRunMutationTwoIdenticalAssetEvents: MockedResponse<SensorDryRunMutation> = {
+  request: {
+    query: EVALUATE_SENSOR_MUTATION,
+    variables: {
+      selectorData: {
+        sensorName: 'test',
+        repositoryLocationName: 'testLocation',
+        repositoryName: 'testName',
+      },
+      cursor: 'testCursortesting123',
+    },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      sensorDryRun: buildDryRunInstigationTick({
+        evaluationResult: buildTickEvaluation({
+          cursor: 'a new cursor',
+          runRequests: [],
+          skipReason: null,
+          error: null,
+          dynamicPartitionsRequests: [],
+          assetEvents: [serializedAssetMaterialization, serializedAssetMaterialization],
+        }),
+      }),
+    },
+  },
+};
+
+export const ReportSensorTickAssetEventsIdenticalPartialFailureMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterialization, serializedAssetMaterialization],
+        idempotencyKeys: ['idempotency-key-0', 'idempotency-key-1'],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        reportSensorTickAssetEvents: buildReportSensorTickAssetEventsPartialFailure({
+          reportedAssetKeys: [buildAssetKey({path: ['dry_run_asset']})],
+          remainingAssetEvents: [serializedAssetMaterialization],
+          error: buildPythonError({message: 'simulated storage failure'}),
+        }),
+      },
+    },
+  };
+
+export const ReportSensorTickAssetEventsIdenticalRetryRemainderMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterialization],
+        idempotencyKeys: ['idempotency-key-1'],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        reportSensorTickAssetEvents: buildReportSensorTickAssetEventsSuccess({
+          assetKeys: [buildAssetKey({path: ['dry_run_asset']})],
         }),
       },
     },

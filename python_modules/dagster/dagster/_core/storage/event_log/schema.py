@@ -88,6 +88,23 @@ AssetEventTagsTable = db.Table(
     db.Column("event_timestamp", db.types.TIMESTAMP),
 )
 
+# Backs claim_idempotency_key: the (asset_key, idempotency_key) unique index below is what
+# makes the claim atomic, so a caller-supplied idempotency key can only ever be claimed once
+# even under concurrent requests -- unlike a read-then-write check against AssetEventTagsTable.
+AssetEventIdempotencyKeysTable = db.Table(
+    "asset_event_idempotency_keys",
+    SqlEventLogStorageMetadata,
+    db.Column(
+        "id",
+        db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
+        primary_key=True,
+        autoincrement=True,
+    ),
+    db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, nullable=False),
+    db.Column("idempotency_key", MySQLCompatabilityTypes.UniqueText, nullable=False),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+)
+
 
 DynamicPartitionsTable = db.Table(
     "dynamic_partitions",
@@ -229,6 +246,13 @@ db.Index(
 db.Index(
     "idx_asset_event_tags_event_id",
     AssetEventTagsTable.c.event_id,
+)
+db.Index(
+    "idx_asset_event_idempotency_keys_unique",
+    AssetEventIdempotencyKeysTable.c.asset_key,
+    AssetEventIdempotencyKeysTable.c.idempotency_key,
+    unique=True,
+    mysql_length={"asset_key": 64, "idempotency_key": 64},
 )
 db.Index(
     "idx_events_by_run_id",
