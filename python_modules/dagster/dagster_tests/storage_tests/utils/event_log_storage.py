@@ -6732,6 +6732,39 @@ class TestEventLogStorage:
         assert results.count(True) == 1
         assert results.count(False) == 9
 
+    def test_claim_idempotency_key_reclaims_expired_claim(self, storage: EventLogStorage):
+        from dagster._core.storage.event_log.schema import AssetEventIdempotencyKeysTable
+        from dagster._core.storage.event_log.sql_event_log import (
+            IDEMPOTENCY_KEY_CLAIM_TIMEOUT_SECONDS,
+        )
+
+        # LegacyEventLogStorage doesn't delegate has_table/index_transaction -- reach
+        # through to the underlying SQL storage for those.
+        wrapped_storage = getattr(storage, "_storage", None)
+        sql_storage = wrapped_storage.event_log_storage if wrapped_storage is not None else storage
+        if not isinstance(sql_storage, SqlEventLogStorage) or not sql_storage.has_table(
+            AssetEventIdempotencyKeysTable.name
+        ):
+            pytest.skip("storage does not support atomic idempotency key claims")
+
+        asset_key = dg.AssetKey("test_asset")
+        assert storage.claim_idempotency_key(asset_key, "key-one") is True
+
+        # Backdate the claim to simulate one orphaned by a process that died before
+        # persisting the corresponding event, without waiting out the real timeout.
+        stale_timestamp = datetime.datetime.utcnow() - datetime.timedelta(
+            seconds=IDEMPOTENCY_KEY_CLAIM_TIMEOUT_SECONDS + 1
+        )
+        with sql_storage.index_transaction() as conn:
+            conn.execute(
+                AssetEventIdempotencyKeysTable.update()
+                .where(AssetEventIdempotencyKeysTable.c.asset_key == asset_key.to_string())
+                .values(create_timestamp=stale_timestamp)
+            )
+
+        # Expired -- a retry can reclaim it instead of being blocked forever.
+        assert storage.claim_idempotency_key(asset_key, "key-one") is True
+
     def test_previous_observation_data_versions(self, storage, instance):
         asset_key = dg.AssetKey(["one"])
         partitions = ["1", "2", "3"]
