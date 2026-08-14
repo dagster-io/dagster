@@ -677,6 +677,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def release_idempotency_key(self, asset_key: "AssetKey", idempotency_key: str) -> None:
         return self._storage.event_log_storage.release_idempotency_key(asset_key, idempotency_key)
 
+    def confirm_idempotency_key(self, asset_key: "AssetKey", idempotency_key: str) -> None:
+        return self._storage.event_log_storage.confirm_idempotency_key(asset_key, idempotency_key)
+
     def can_read_asset_status_cache(self) -> bool:
         return self._storage.event_log_storage.can_read_asset_status_cache()
 

@@ -496,10 +496,14 @@ def report_sensor_tick_asset_events(
       tags), each event's caller-supplied `idempotency_key` is atomically claimed via
       `EventLogStorage.claim_idempotency_key` (backed by a unique DB constraint) before
       the event is tagged and reported, so retrying with the same keys is always safe --
-      including under concurrent/overlapping retries, not just sequential ones -- and the
-      claim is released if reporting the event then fails, so a genuine failure doesn't
-      block a future retry. AssetCheckEvaluation has no tags field, so it isn't covered by
-      this second layer; the first layer (above) is its only protection.
+      including under concurrent/overlapping retries, not just sequential ones. The claim
+      is released if reporting the event then fails, so a genuine failure doesn't block a
+      future retry; it's confirmed via `confirm_idempotency_key` if reporting succeeds, so
+      a claim orphaned by the process dying between the two can still be reclaimed by a
+      later retry after a timeout, without a *confirmed* claim ever being mistaken for an
+      orphan and reclaimed -- which would duplicate the event it backs. AssetCheckEvaluation
+      has no tags field, so it isn't covered by this second layer; the first layer (above)
+      is its only protection.
     """
     from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 
@@ -528,6 +532,9 @@ def report_sensor_tick_asset_events(
                         asset_event.asset_key, idempotency_key
                     )
                     raise
+                instance.event_log_storage.confirm_idempotency_key(
+                    asset_event.asset_key, idempotency_key
+                )
             else:
                 instance.report_runless_asset_event(event_to_report)
         except Exception:

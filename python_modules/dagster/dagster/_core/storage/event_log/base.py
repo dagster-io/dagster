@@ -497,6 +497,14 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         base implementation, since its claim doesn't reserve anything up front.
         """
 
+    def confirm_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> None:
+        """Marks a claim made by `claim_idempotency_key` as backed by a successfully
+        persisted event, so it's never mistaken for an orphaned claim and reclaimed later --
+        which would duplicate that event. Callers must call this immediately after the
+        event report that followed the claim succeeds. No-op in the base implementation,
+        which does not implement claim expiry.
+        """
+
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey) -> None:
         """Remove asset index history from event log for given asset_key."""

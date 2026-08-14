@@ -103,6 +103,10 @@ AssetEventIdempotencyKeysTable = db.Table(
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, nullable=False),
     db.Column("idempotency_key", MySQLCompatabilityTypes.UniqueText, nullable=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    # False from the moment the claim is won until the corresponding event is confirmed
+    # persisted. Only unconfirmed claims are eligible for reclaim after the timeout -- a
+    # confirmed claim means the event exists, so reclaiming it would duplicate that event.
+    db.Column("is_confirmed", db.Boolean, nullable=False, default=False, server_default=db.false()),
 )
 
 

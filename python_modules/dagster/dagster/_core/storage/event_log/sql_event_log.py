@@ -1805,15 +1805,18 @@ class SqlEventLogStorage(EventLogStorage):
 
         # The key is already claimed. If the process that won it died before reporting the
         # corresponding event, that claim is orphaned and would otherwise block this key
-        # forever -- so a sufficiently old claim can be reclaimed instead. The WHERE clause
-        # makes this reclaim itself atomic: if two callers race to reclaim the same expired
-        # claim, only one UPDATE actually matches a still-expired row and affects it.
+        # forever -- so a sufficiently old, still-unconfirmed claim can be reclaimed
+        # instead. A *confirmed* claim -- meaning the event was actually persisted -- is
+        # never reclaimed regardless of age; doing so would duplicate that event. The WHERE
+        # clause makes this reclaim itself atomic: if two callers race to reclaim the same
+        # expired claim, only one UPDATE actually matches a still-expired row and affects it.
         reclaim_statement = (
             AssetEventIdempotencyKeysTable.update()
             .where(
                 db.and_(
                     AssetEventIdempotencyKeysTable.c.asset_key == asset_key_str,
                     AssetEventIdempotencyKeysTable.c.idempotency_key == idempotency_key,
+                    AssetEventIdempotencyKeysTable.c.is_confirmed == False,  # noqa: E712
                     AssetEventIdempotencyKeysTable.c.create_timestamp
                     < now - timedelta(seconds=IDEMPOTENCY_KEY_CLAIM_TIMEOUT_SECONDS),
                 )
@@ -1823,6 +1826,23 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_transaction() as conn:
             result = conn.execute(reclaim_statement)
             return result.rowcount == 1
+
+    def confirm_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> None:
+        if not self.has_table(AssetEventIdempotencyKeysTable.name):
+            return super().confirm_idempotency_key(asset_key, idempotency_key)
+
+        update_statement = (
+            AssetEventIdempotencyKeysTable.update()
+            .where(
+                db.and_(
+                    AssetEventIdempotencyKeysTable.c.asset_key == asset_key.to_string(),
+                    AssetEventIdempotencyKeysTable.c.idempotency_key == idempotency_key,
+                )
+            )
+            .values(is_confirmed=True)
+        )
+        with self.index_transaction() as conn:
+            conn.execute(update_statement)
 
     def release_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> None:
         if not self.has_table(AssetEventIdempotencyKeysTable.name):

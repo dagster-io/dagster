@@ -35,6 +35,9 @@ def upgrade():
             db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, nullable=False),
             db.Column("idempotency_key", MySQLCompatabilityTypes.UniqueText, nullable=False),
             db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+            db.Column(
+                "is_confirmed", db.Boolean, nullable=False, default=False, server_default=db.false()
+            ),
         )
 
     if not has_index(TABLE_NAME, UNIQUE_INDEX_NAME):
