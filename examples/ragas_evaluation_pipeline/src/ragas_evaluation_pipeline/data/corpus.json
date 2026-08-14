@@ -1,0 +1,27 @@
+[
+  {
+    "id": "doc1",
+    "title": "Eiffel Tower",
+    "text": "The Eiffel Tower is located in Paris, France. It was completed in 1889 and stands 330 meters tall."
+  },
+  {
+    "id": "doc2",
+    "title": "Great Wall of China",
+    "text": "The Great Wall of China is over 13000 miles long. Construction began more than 2000 years ago to protect against invasions."
+  },
+  {
+    "id": "doc3",
+    "title": "Mount Everest",
+    "text": "Mount Everest is the highest mountain above sea level at 8849 meters. It lies in the Himalayas on the border of Nepal and China."
+  },
+  {
+    "id": "doc4",
+    "title": "Louvre Museum",
+    "text": "The Louvre Museum in Paris is the most visited museum in the world. It houses the Mona Lisa painting."
+  },
+  {
+    "id": "doc5",
+    "title": "K2",
+    "text": "K2 is the second highest mountain on Earth at 8611 meters. It is located in the Karakoram range."
+  }
+]
