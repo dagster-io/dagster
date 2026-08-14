@@ -54,13 +54,7 @@ different reasons and need different debugging workflows.
 Requirements: Python 3.11+
 
 ```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\Activate.ps1
-# macOS/Linux
-# source .venv/bin/activate
-
-pip install -e ".[dev]"
+uv sync --dev
 dagster dev -m ragas_evaluation_pipeline.definitions
 ```
 
@@ -91,7 +85,7 @@ pytest -q
 Enable RAGAS mode:
 
 ```bash
-pip install -e ".[ragas]"
+uv sync --dev --extra ragas
 ```
 
 Set environment variables:

@@ -25,13 +25,19 @@ def load_baseline() -> dict:
     return json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
 
 
-def load_previous_metrics(instance, current_run_id: str | None) -> dict | None:
+def load_previous_metrics(
+    instance, current_run_id: str | None, evaluation_identity: dict | None = None
+) -> dict | None:
     """Return the previous run's combined metrics from the instance event log.
 
     Reads back the ``retrieval``/``generation`` JSON metadata attached to the most
     recent ``combined_metric_results_asset`` materialization that did **not** come
     from the current run (the current run's own materialization already exists in
     the log by the time the regression asset runs, so it must be skipped).
+
+    If ``evaluation_identity`` is provided (a dict of scorer, model_name, etc.),
+    only accepts prior materializations that match those values, ensuring
+    regression comparisons are not confounded by configuration changes.
 
     Returns a dict shaped like the baseline file
     (``{"retrieval": {...}, "generation": {...}, "baseline_run_id": ...}``) or
@@ -52,6 +58,18 @@ def load_previous_metrics(instance, current_run_id: str | None) -> dict | None:
         metadata = materialization.metadata
         if "retrieval" not in metadata or "generation" not in metadata:
             continue
+        # Validate evaluation identity (scorer, model_name, etc.) if provided.
+        if evaluation_identity:
+            skip = False
+            for key, expected in evaluation_identity.items():
+                actual = metadata.get(key)
+                if actual is not None:
+                    actual = getattr(actual, "value", actual)  # unwrap MetadataValue
+                if str(actual) != str(expected):
+                    skip = True
+                    break
+            if skip:
+                continue  # configuration mismatch — skip this baseline
         try:
             return {
                 "retrieval": dict(metadata["retrieval"].value),

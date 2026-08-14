@@ -10,7 +10,8 @@ _CURRENT = INDEX_VERSION_PATH.read_text(encoding="utf-8").strip()
 def test_sensor_fires_when_no_cursor():
     result = index_refresh_sensor(build_sensor_context())
     assert isinstance(result, RunRequest)
-    assert result.run_key == _CURRENT
+    assert result.run_key is not None and _CURRENT in result.run_key
+    assert result.tags.get("index_version") == _CURRENT
 
 
 def test_sensor_skips_when_cursor_matches_current_index():
@@ -21,4 +22,5 @@ def test_sensor_skips_when_cursor_matches_current_index():
 def test_sensor_fires_when_cursor_is_stale():
     result = index_refresh_sensor(build_sensor_context(cursor="idx-OUTDATED"))
     assert isinstance(result, RunRequest)
-    assert result.run_key == _CURRENT
+    assert result.run_key is not None and _CURRENT in result.run_key
+    assert result.tags.get("index_version") == _CURRENT

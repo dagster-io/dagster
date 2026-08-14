@@ -206,7 +206,9 @@ def combined_metric_results_asset(
 # --- #7 regression --------------------------------------------------------
 @asset
 def regression_comparison_asset(
-    context: AssetExecutionContext, combined_metric_results_asset: dict
+    context: AssetExecutionContext,
+    combined_metric_results_asset: dict,
+    runtime_metadata: RuntimeMetadataResource,
 ) -> dict:
     """Diff the current run against the PREVIOUS materialized evaluation result.
 
@@ -216,7 +218,19 @@ def regression_comparison_asset(
     prior materialization (first run / fresh CI checkout). The chosen source is
     recorded in ``baseline_source`` so the comparison is self-explaining.
     """
-    previous = load_previous_metrics(context.instance, context.run.run_id)
+    # Extract evaluation identity (actual stored values) to ensure regression baseline
+    # has compatible config. Get the tags that were just stored by combined_metric_results.
+    stored_tags = runtime_metadata.as_tags()
+    evaluation_identity = {
+        "scorer": stored_tags["scorer"],
+        "model_name": stored_tags["model_name"],
+        "embedding_model": stored_tags["embedding_model"],
+        "prompt_version": stored_tags["prompt_version"],
+        "index_version": stored_tags["index_version"],
+    }
+    previous = load_previous_metrics(
+        context.instance, context.run.run_id, evaluation_identity=evaluation_identity
+    )
     if previous is not None:
         baseline_source = "previous_materialization"
         baseline = previous

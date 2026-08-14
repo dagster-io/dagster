@@ -7,6 +7,8 @@ version signal. Edit index_version.txt while `dagster dev` is running and the
 sensor fires a new evaluation.
 """
 
+from datetime import datetime
+
 from dagster import RunRequest, SkipReason, sensor
 
 from ragas_evaluation_pipeline.config import INDEX_VERSION_PATH
@@ -19,4 +21,6 @@ def index_refresh_sensor(context):
     if context.cursor == current:
         return SkipReason(f"index version unchanged ({current})")
     context.update_cursor(current)
-    return RunRequest(run_key=current, tags={"index_version": current})
+    # Use a timestamp-based run key to avoid deduplication if index version reverts.
+    run_key = f"index_refresh_{current}_{datetime.now().isoformat()}"
+    return RunRequest(run_key=run_key, tags={"index_version": current})
