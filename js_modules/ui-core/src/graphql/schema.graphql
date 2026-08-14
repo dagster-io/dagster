@@ -2938,6 +2938,7 @@ type TickEvaluation {
   skipReason: String
   error: PythonError
   cursor: String
+  assetEvents: [String!]
 }
 
 type DynamicPartitionRequest {
@@ -4311,6 +4312,7 @@ type Mutation {
   reportAssetCheckEvaluations(
     eventParams: ReportAssetCheckEvaluationsParams!
   ): ReportAssetCheckEvaluationResult!
+  reportSensorTickAssetEvents(assetEvents: [String!]!): ReportSensorTickAssetEventsResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
   reexecutePartitionBackfill(reexecutionParams: ReexecutionParams): LaunchBackfillResult!
@@ -4429,6 +4431,15 @@ input ReportAssetCheckEvaluationsParams {
   serializedMetadata: String
   partitionKeys: [String]
   description: String
+}
+
+union ReportSensorTickAssetEventsResult =
+  | UnauthorizedError
+  | PythonError
+  | ReportSensorTickAssetEventsSuccess
+
+type ReportSensorTickAssetEventsSuccess {
+  assetKeys: [AssetKey!]!
 }
 
 union ResumeBackfillResult = ResumeBackfillSuccess | UnauthorizedError | PythonError

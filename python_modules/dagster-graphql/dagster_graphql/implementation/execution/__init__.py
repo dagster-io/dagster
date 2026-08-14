@@ -34,7 +34,10 @@ if TYPE_CHECKING:
         GrapheneUnauthorizedError,
         GrapheneUnsupportedOperationError,
     )
-    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
+    from dagster_graphql.schema.roots.mutation import (
+        GrapheneReportSensorTickAssetEventsSuccess,
+        GrapheneTerminateRunPolicy,
+    )
 
 
 from dagster_graphql.implementation.execution.backfill import (
@@ -447,3 +450,22 @@ def report_asset_check_evaluation(
         description=description,
     )
     instance.report_runless_asset_event(evaluation)
+
+
+def report_sensor_tick_asset_events(
+    graphene_info: "ResolveInfo",
+    asset_events: Sequence[AssetMaterialization | AssetObservation | AssetCheckEvaluation],
+) -> "GrapheneReportSensorTickAssetEventsSuccess":
+    """Reports a sensor tick's asset events as runless events, mirroring how the sensor
+    daemon applies SensorExecutionData.asset_events for a live tick
+    (see dagster._daemon.sensor._evaluate_sensor).
+    """
+    from dagster_graphql.schema.roots.mutation import GrapheneReportSensorTickAssetEventsSuccess
+
+    instance = graphene_info.context.instance
+    for asset_event in asset_events:
+        instance.report_runless_asset_event(asset_event)
+
+    return GrapheneReportSensorTickAssetEventsSuccess(
+        assetKeys=list({asset_event.asset_key for asset_event in asset_events})
+    )

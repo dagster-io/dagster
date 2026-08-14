@@ -1209,6 +1209,16 @@ def define_sensors():
         )
 
     @sensor(job_name="no_config_job")
+    def asset_events_sensor(_):
+        yield SensorResult(
+            asset_events=[
+                AssetMaterialization(
+                    asset_key=AssetKey("dry_run_asset_events_asset"), partition="a_partition"
+                ),
+            ],
+        )
+
+    @sensor(job_name="no_config_job")
     def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
@@ -1292,6 +1302,7 @@ def define_sensors():
         once_no_config_sensor,
         never_no_config_sensor,
         dynamic_partition_requesting_sensor,
+        asset_events_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
         running_in_code_sensor,

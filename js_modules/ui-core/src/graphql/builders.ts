@@ -3039,6 +3039,7 @@ type Mutation = {
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportAssetCheckEvaluations: ReportAssetCheckEvaluationResult;
   reportRunlessAssetEvents: ReportRunlessAssetEventsResult;
+  reportSensorTickAssetEvents: ReportSensorTickAssetEventsResult;
   resetSchedule: ScheduleMutationResult;
   resetSensor: SensorOrError;
   resumePartitionBackfill: ResumeBackfillResult;
@@ -3154,6 +3155,10 @@ type MutationReportAssetCheckEvaluationsArgs = {
 
 type MutationReportRunlessAssetEventsArgs = {
   eventParams: ReportRunlessAssetEventsParams;
+};
+
+type MutationReportSensorTickAssetEventsArgs = {
+  assetEvents: Array<Scalars['String']['input']>;
 };
 
 type MutationResetScheduleArgs = {
@@ -4693,6 +4698,16 @@ type ReportRunlessAssetEventsSuccess = {
   assetKey: AssetKey;
 };
 
+type ReportSensorTickAssetEventsResult =
+  | PythonError
+  | ReportSensorTickAssetEventsSuccess
+  | UnauthorizedError;
+
+type ReportSensorTickAssetEventsSuccess = {
+  __typename: 'ReportSensorTickAssetEventsSuccess';
+  assetKeys: Array<AssetKey>;
+};
+
 type RepositoriesOrError = PythonError | RepositoryConnection | RepositoryNotFoundError;
 
 type Repository = {
@@ -6119,6 +6134,7 @@ type TextRuleEvaluationData = {
 
 type TickEvaluation = {
   __typename: 'TickEvaluation';
+  assetEvents: Maybe<Array<Scalars['String']['output']>>;
   cursor: Maybe<Scalars['String']['output']>;
   dynamicPartitionsRequests: Maybe<Array<DynamicPartitionRequest>>;
   error: Maybe<PythonError>;
@@ -11935,6 +11951,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
           ? ({} as PythonError)
           : buildPythonError({}, relationshipsToOmit),
+    reportSensorTickAssetEvents:
+      overrides && overrides.hasOwnProperty('reportSensorTickAssetEvents')
+        ? overrides.reportSensorTickAssetEvents!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
     resetSchedule:
       overrides && overrides.hasOwnProperty('resetSchedule')
         ? overrides.resetSchedule!
@@ -14425,6 +14447,18 @@ export const buildReportRunlessAssetEventsSuccess = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildReportSensorTickAssetEventsSuccess = (
+  overrides?: Partial<ReportSensorTickAssetEventsSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'ReportSensorTickAssetEventsSuccess'} & ReportSensorTickAssetEventsSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('ReportSensorTickAssetEventsSuccess');
+  return {
+    __typename: 'ReportSensorTickAssetEventsSuccess',
+    assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
   };
 };
 
@@ -17121,6 +17155,7 @@ export const buildTickEvaluation = (
   relationshipsToOmit.add('TickEvaluation');
   return {
     __typename: 'TickEvaluation',
+    assetEvents: overrides && overrides.hasOwnProperty('assetEvents') ? overrides.assetEvents! : [],
     cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'strues',
     dynamicPartitionsRequests:
       overrides && overrides.hasOwnProperty('dynamicPartitionsRequests')

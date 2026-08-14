@@ -1,6 +1,7 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
+  buildAssetKey,
   buildDryRunInstigationTick,
   buildDynamicPartitionRequest,
   buildErrorChainLink,
@@ -10,6 +11,7 @@ import {
   buildPipelineSnapshot,
   buildPipelineTag,
   buildPythonError,
+  buildReportSensorTickAssetEventsSuccess,
   buildRun,
   buildRunRequest,
   buildSensor,
@@ -24,8 +26,14 @@ import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
 import {SET_CURSOR_MUTATION} from '../../sensors/EditCursorDialog';
 import {SetSensorCursorMutation} from '../../sensors/types/EditCursorDialog.types';
-import {EVALUATE_SENSOR_MUTATION} from '../SensorDryRunDialog';
-import {SensorDryRunMutation} from '../types/SensorDryRunDialog.types';
+import {
+  EVALUATE_SENSOR_MUTATION,
+  REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+} from '../SensorDryRunDialog';
+import {
+  ReportSensorTickAssetEventsMutation,
+  SensorDryRunMutation,
+} from '../types/SensorDryRunDialog.types';
 
 export const runRequests: ReturnType<typeof buildRunRequest>[] = [
   buildRunRequest({
@@ -462,6 +470,72 @@ export const SensorDryRunMutationDynamicPartitionsOnly: MockedResponse<SensorDry
     },
   },
 };
+
+const serializedAssetMaterialization =
+  '{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["dry_run_asset"]}, "partition": null}';
+
+export const SensorDryRunMutationAssetEventsOnly: MockedResponse<SensorDryRunMutation> = {
+  request: {
+    query: EVALUATE_SENSOR_MUTATION,
+    variables: {
+      selectorData: {
+        sensorName: 'test',
+        repositoryLocationName: 'testLocation',
+        repositoryName: 'testName',
+      },
+      cursor: 'testCursortesting123',
+    },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      sensorDryRun: buildDryRunInstigationTick({
+        evaluationResult: buildTickEvaluation({
+          cursor: 'a new cursor',
+          runRequests: [],
+          skipReason: null,
+          error: null,
+          dynamicPartitionsRequests: [],
+          assetEvents: [serializedAssetMaterialization],
+        }),
+      }),
+    },
+  },
+};
+
+export const ReportSensorTickAssetEventsMutationMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterialization],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        reportSensorTickAssetEvents: buildReportSensorTickAssetEventsSuccess({
+          assetKeys: [buildAssetKey({path: ['dry_run_asset']})],
+        }),
+      },
+    },
+  };
+
+export const ReportSensorTickAssetEventsUnauthorizedMock: MockedResponse<ReportSensorTickAssetEventsMutation> =
+  {
+    request: {
+      query: REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+      variables: {
+        assetEvents: [serializedAssetMaterialization],
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        reportSensorTickAssetEvents: buildUnauthorizedError(),
+      },
+    },
+  };
 
 export const SensorLaunchAllMutation1JobWithUndefinedJobName: MockedResponse<LaunchMultipleRunsMutation> =
   {

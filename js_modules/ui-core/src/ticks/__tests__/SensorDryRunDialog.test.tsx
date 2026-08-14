@@ -266,6 +266,70 @@ describe('SensorDryRunTest', () => {
     expect(onCloseMock).not.toHaveBeenCalled();
   });
 
+  it('reports asset events and shows "Commit tick result" (not Skipped) when the sensor only returns asset events', async () => {
+    const user = userEvent.setup();
+    render(
+      <Test
+        mocks={[
+          Mocks.SensorDryRunMutationAssetEventsOnly,
+          Mocks.ReportSensorTickAssetEventsMutationMock,
+          Mocks.PersistCursorValueMock,
+        ]}
+      />,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByText(/1\sasset\sevent\b/g)).toBeVisible();
+      expect(screen.queryByText('Skipped')).toBe(null);
+      // Commit-only button (no run requests / dynamic partitions to apply).
+      expect(screen.getByTestId('commit-tick-result')).toBeVisible();
+    });
+
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    // ReportSensorTickAssetEventsMutationMock and PersistCursorValueMock both need to
+    // be matched for this to resolve -- an unmatched request fails the test.
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+  });
+
+  it('shows an error and does not persist the cursor when reporting asset events fails', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        mocks={[
+          Mocks.SensorDryRunMutationAssetEventsOnly,
+          Mocks.ReportSensorTickAssetEventsUnauthorizedMock,
+          // No PersistCursorValueMock -- an unmatched request fails the test.
+        ]}
+      />,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByTestId('commit-tick-result')).toBeVisible();
+    });
+
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Could not report asset events',
+        body: 'You do not have permission to report asset events for this code location.',
+      });
+    });
+
+    expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
     const user = userEvent.setup();
     const pushSpy = jest.fn();

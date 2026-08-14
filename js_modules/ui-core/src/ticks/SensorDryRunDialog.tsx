@@ -25,6 +25,8 @@ import {gql, useMutation} from '../apollo-client';
 import styles from './css/SensorDryRunDialog.module.css';
 import {RunRequestFragment} from './types/RunRequestFragment.types';
 import {
+  ReportSensorTickAssetEventsMutation,
+  ReportSensorTickAssetEventsMutationVariables,
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
@@ -111,6 +113,10 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     DeleteDynamicPartitionsMutation,
     DeleteDynamicPartitionsMutationVariables
   >(DELETE_DYNAMIC_PARTITIONS_MUTATION);
+  const [reportAssetEvents] = useMutation<
+    ReportSensorTickAssetEventsMutation,
+    ReportSensorTickAssetEventsMutationVariables
+  >(REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION);
 
   const [cursor, setCursor] = useState(currentCursor);
 
@@ -136,6 +142,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     [sensorSelector, sensorExecutionData, jobName],
   );
   const dynamicPartitionRequests = sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
+  const assetEvents = sensorExecutionData?.evaluationResult?.assetEvents;
 
   const submitTest = useCallback(async () => {
     setSubmitting(true);
@@ -173,6 +180,23 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   }, [sensorDryRun, sensorSelector, cursor, name]);
 
   const onCommitTickResult = useCallback(async () => {
+    if (assetEvents?.length) {
+      const {data} = await reportAssetEvents({variables: {assetEvents}});
+      const reportResult = data?.reportSensorTickAssetEvents;
+      if (reportResult?.__typename !== 'ReportSensorTickAssetEventsSuccess') {
+        showCustomAlert({
+          title: 'Could not report asset events',
+          body:
+            reportResult?.__typename === 'PythonError' ? (
+              <PythonErrorInfo error={reportResult} />
+            ) : (
+              'You do not have permission to report asset events for this code location.'
+            ),
+        });
+        return;
+      }
+    }
+
     const cursor = sensorExecutionData?.evaluationResult?.cursor;
     if (!cursor) {
       showToast({message: 'Tick result committed', intent: 'success'});
@@ -213,7 +237,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         ),
       });
     }
-  }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation, onClose]);
+  }, [
+    assetEvents,
+    reportAssetEvents,
+    sensorExecutionData?.evaluationResult?.cursor,
+    sensorSelector,
+    setCursorMutation,
+    onClose,
+  ]);
 
   const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
 
@@ -381,7 +412,10 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
       const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
-      const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
+      // Only run requests / dynamic partitions go through the "Apply requests" flow --
+      // asset events are always reported directly by onCommitTickResult, so they don't
+      // affect which button is shown.
+      const hasApplicableRequests = numRunRequests > 0 || hasDynamicPartitionRequests;
 
       if (error) {
         return (
@@ -389,7 +423,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
             <Button onClick={onClose}>Close</Button>
           </Box>
         );
-      } else if (didSkip) {
+      } else if (!hasApplicableRequests) {
         return (
           <Box flex={{direction: 'row', gap: 8}}>
             <Button onClick={onClose}>Close</Button>
@@ -476,7 +510,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       const dynamicPartitionRequests =
         sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
       const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
-      const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
+      const numAssetEvents = assetEvents?.length || 0;
+      const didSkip =
+        !error && numRunRequests === 0 && !hasDynamicPartitionRequests && numAssetEvents === 0;
       return (
         <Box flex={{direction: 'column'}}>
           <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
@@ -485,13 +521,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
               <div>
                 {error ? (
                   <Tag intent="danger">Failed</Tag>
-                ) : numRunRequests || hasDynamicPartitionRequests ? (
+                ) : numRunRequests || hasDynamicPartitionRequests || numAssetEvents ? (
                   <Tag intent="success">
                     {[
                       numRunRequests
                         ? `${numRunRequests} run ${numRunRequests === 1 ? 'request' : 'requests'}`
                         : null,
                       hasDynamicPartitionRequests ? 'dynamic partition requests' : null,
+                      numAssetEvents
+                        ? `${numAssetEvents} asset ${numAssetEvents === 1 ? 'event' : 'events'}`
+                        : null,
                     ]
                       .filter(Boolean)
                       .join(', ')}
@@ -564,6 +603,17 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
               <DynamicPartitionRequests requests={dynamicPartitionRequests} />
             </Box>
           ) : null}
+          {numAssetEvents ? (
+            <Box padding={{horizontal: 20, top: 16}} flex={{direction: 'column', gap: 8}}>
+              <Heading size={14} weight={600}>
+                Asset events ({numAssetEvents})
+              </Heading>
+              <div>
+                {numAssetEvents} materialization{numAssetEvents === 1 ? '' : 's'}, observations, or
+                asset check evaluations will be reported when the tick result is committed.
+              </div>
+            </Box>
+          ) : null}
         </Box>
       );
     }
@@ -604,7 +654,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         </Box>
       );
     }
-  }, [sensorExecutionData, error, submitting, launching, jobName, repoAddress, cursor]);
+  }, [
+    sensorExecutionData,
+    error,
+    submitting,
+    launching,
+    jobName,
+    repoAddress,
+    cursor,
+    assetEvents,
+  ]);
 
   return (
     <>
@@ -633,6 +692,7 @@ export const EVALUATE_SENSOR_MUTATION = gql`
           dynamicPartitionsRequests {
             ...DynamicPartitionRequestFragment
           }
+          assetEvents
         }
       }
       ...PythonErrorFragment
@@ -646,6 +706,22 @@ export const EVALUATE_SENSOR_MUTATION = gql`
   }
 
   ${RUN_REQUEST_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION = gql`
+  mutation ReportSensorTickAssetEventsMutation($assetEvents: [String!]!) {
+    reportSensorTickAssetEvents(assetEvents: $assetEvents) {
+      __typename
+      ... on ReportSensorTickAssetEventsSuccess {
+        assetKeys {
+          path
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
 `;
 

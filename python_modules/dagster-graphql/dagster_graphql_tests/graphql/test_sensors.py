@@ -3,6 +3,7 @@ import os
 import sys
 
 import pytest
+from dagster import AssetKey, AssetMaterialization
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
@@ -22,6 +23,7 @@ from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
+from dagster._serdes import deserialize_value
 from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
@@ -434,10 +436,28 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
           partitionsDefName
           type
         }
+        assetEvents
       }
     }
     ... on SensorNotFoundError {
       sensorName
+    }
+  }
+}
+"""
+
+REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION = """
+mutation($assetEvents: [String!]!) {
+  reportSensorTickAssetEvents(assetEvents: $assetEvents) {
+    __typename
+    ... on ReportSensorTickAssetEventsSuccess {
+      assetKeys {
+        path
+      }
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }
@@ -692,6 +712,56 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
             evaluation_result["dynamicPartitionsRequests"][1]["type"]
             == GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
         )
+
+    def test_dry_run_with_asset_events(self, graphql_context: WorkspaceRequestContext):
+        instigator_selector = infer_sensor_selector(graphql_context, "asset_events_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": None},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        assert evaluation_result["error"] is None
+        asset_events = [deserialize_value(e) for e in evaluation_result["assetEvents"]]
+        assert len(asset_events) == 1
+        assert isinstance(asset_events[0], AssetMaterialization)
+        assert asset_events[0].asset_key == AssetKey("dry_run_asset_events_asset")
+        assert asset_events[0].partition == "a_partition"
+
+    def test_report_sensor_tick_asset_events(self, graphql_context: WorkspaceRequestContext):
+        assert graphql_context.instance.all_asset_keys() == []
+
+        instigator_selector = infer_sensor_selector(graphql_context, "asset_events_sensor")
+        dry_run_result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": None},
+        )
+        asset_events = dry_run_result.data["sensorDryRun"]["evaluationResult"]["assetEvents"]
+        assert len(asset_events) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+            variables={"assetEvents": asset_events},
+        )
+
+        assert result.data
+        assert (
+            result.data["reportSensorTickAssetEvents"]["__typename"]
+            == "ReportSensorTickAssetEventsSuccess"
+        )
+        assert result.data["reportSensorTickAssetEvents"]["assetKeys"] == [
+            {"path": ["dry_run_asset_events_asset"]}
+        ]
+
+        records = graphql_context.instance.fetch_materializations(
+            AssetKey("dry_run_asset_events_asset"), ascending=True, limit=2
+        ).records
+        assert len(records) == 1
+        assert records[0].partition_key == "a_partition"
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
