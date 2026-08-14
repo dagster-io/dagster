@@ -110,8 +110,10 @@ class EntityMatchesCondition(
 
 
 @record
-class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
-    operand: AutomationCondition
+class BaseDepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
+    """Base class for conditions which are evaluated against the dependencies of a target,
+    supporting `.allow()` / `.ignore()` scoping of which dependencies are considered.
+    """
 
     # Should be AssetSelection, but this causes circular reference issues
     allow_selection: Any | None = None
@@ -139,10 +141,6 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return name
 
     @property
-    def children(self) -> Sequence[AutomationCondition]:
-        return [self.operand]
-
-    @property
     def requires_cursor(self) -> bool:
         return False
 
@@ -158,7 +156,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return non_secure_md5_hash_str("".join(parts).encode())
 
     @public
-    def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
+    def allow(self, selection: "AssetSelection") -> Self:
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
         """
@@ -171,7 +169,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(self, allow_selection=allow_selection)
 
     @public
-    def ignore(self, selection: "AssetSelection") -> "DepsAutomationCondition":
+    def ignore(self, selection: "AssetSelection") -> Self:
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
         """
@@ -183,8 +181,17 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
         return copy(self, ignore_selection=ignore_selection)
 
-    def resolve_through_virtual(self, value: bool = True) -> "DepsAutomationCondition":
+    def resolve_through_virtual(self, value: bool = True) -> Self:
         return copy(self, resolves_virtual_deps=value)
+
+    def _apply_dep_selections(
+        self, dep_keys: AbstractSet[AssetKey], asset_graph: BaseAssetGraph[BaseAssetNode]
+    ) -> AbstractSet[AssetKey]:
+        if self.allow_selection is not None:
+            dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
+        if self.ignore_selection is not None:
+            dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
+        return dep_keys
 
     def _get_dep_keys(
         self, key: T_EntityKey, asset_graph: BaseAssetGraph[BaseAssetNode]
@@ -194,11 +201,20 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
             if self.resolves_virtual_deps
             else {k for k in asset_graph.get(key).parent_entity_keys if isinstance(k, AssetKey)}
         )
-        if self.allow_selection is not None:
-            dep_keys &= self.allow_selection.resolve(asset_graph, allow_missing=True)
-        if self.ignore_selection is not None:
-            dep_keys -= self.ignore_selection.resolve(asset_graph, allow_missing=True)
-        return dep_keys
+        return self._apply_dep_selections(dep_keys, asset_graph)
+
+
+@record
+class DepsAutomationCondition(BaseDepsAutomationCondition[T_EntityKey]):
+    """Base class for dependency conditions which evaluate an inner operand condition against
+    each dependency of the target.
+    """
+
+    operand: AutomationCondition
+
+    @property
+    def children(self) -> Sequence[AutomationCondition]:
+        return [self.operand]
 
     def _merge_timing_metadata(
         self,
