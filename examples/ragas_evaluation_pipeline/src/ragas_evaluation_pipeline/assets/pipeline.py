@@ -234,16 +234,27 @@ def regression_comparison_asset(
     if previous is not None:
         baseline_source = "previous_materialization"
         baseline = previous
+    elif (
+        stored_tags["scorer"] == "deterministic"
+        and stored_tags["model_name"] == "simulated-extractive-qa"
+        and stored_tags["embedding_model"] == "keyword-overlap-v0"
+        and stored_tags["prompt_version"] == "prompt-v1"
+        and stored_tags["index_version"] == "idx-2026-06-01"
+    ):
+        # The default deterministic evaluation is the only configuration that is
+        # compatible with the checked-in reference baseline.
+        baseline_source = "checked_in_baseline"
+        baseline = load_baseline()
     else:
-        # A compatible prior run does not exist. Do not fabricate deltas from an
-        # empty baseline, because a reconfigured or RAGAS run is not comparable to
-        # the deterministic checked-in reference. Skip the comparison entirely.
+        # A compatible prior run does not exist, and this configuration is not the
+        # deterministic reference mode. Skip regression comparison rather than
+        # fabricating deltas against an empty or incompatible baseline.
         baseline_source = "no_compatible_baseline"
         baseline = {"retrieval": {}, "generation": {}, "baseline_run_id": None}
 
     base = flatten_metrics(baseline)
     curr = flatten_metrics(combined_metric_results_asset)
-    if baseline_source == "no_compatible_baseline":
+    if baseline_source in {"no_compatible_baseline"}:
         deltas = {}
     else:
         deltas = {m: round(curr[m] - base.get(m, 0.0), 4) for m in curr}
