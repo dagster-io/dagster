@@ -1,3 +1,5 @@
+import hashlib
+import json
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import InitVar, dataclass
@@ -44,6 +46,10 @@ logger = get_dagster_logger()
 # may be used to indicate an empty value in a log message
 _EMPTY_VALUES = {"", "None", None}
 
+# Compiled SQL by unique id for the most recently read invocation manifest, alongside a digest of the
+# manifest contents it was parsed from. See `_get_compiled_code_by_unique_id`.
+_compiled_code_cache: tuple[str, Mapping[str, str]] | None = None
+
 
 class EventHistoryMetadata(NamedTuple):
     columns: dict[str, dict[str, Any]]
@@ -57,6 +63,82 @@ class CheckProperties(TypedDict):
     check_name: str
     severity: AssetCheckSeverity
     metadata: Mapping[str, Any]
+
+
+def _get_compiled_code_by_unique_id(manifest_path: Path) -> Mapping[str, str]:
+    """Compiled SQL by unique id, read from a manifest that a dbt invocation wrote to disk.
+
+    The parsed mapping is cached so that the manifest is parsed once rather than once per node, keyed
+    on a digest of the manifest's contents. Content is the key rather than the file's mtime and size,
+    because those do not identify content: invocations that pin `target_path` write the same path
+    more than once, and a rewrite that keeps the file the same size is indistinguishable by `stat` on
+    a filesystem whose timestamp granularity is coarser than the gap between the two writes.
+
+    The file is read exactly once, and both the digest and the parsed mapping are derived from those
+    same bytes. Reading it twice — once to digest, once to parse — would leave a window in which a
+    rewrite could cache the new manifest's SQL under the previous manifest's digest, so any later
+    invocation whose manifest hashed to that digest would be served the wrong SQL.
+
+    Only one manifest is retained, since a given invocation reads a single one. Concurrent callers
+    may each parse before either stores its result, which is harmless: every entry is consistent with
+    its own key, and rebinding the cache is atomic.
+    """
+    global _compiled_code_cache  # noqa: PLW0603
+
+    manifest_bytes = manifest_path.read_bytes()
+    manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+
+    cached_entry = _compiled_code_cache
+    if cached_entry and cached_entry[0] == manifest_digest:
+        return cached_entry[1]
+
+    manifest = json.loads(manifest_bytes)
+    compiled_code_by_unique_id = {
+        unique_id: dbt_resource_props["compiled_code"]
+        for unique_id, dbt_resource_props in manifest.get("nodes", {}).items()
+        if dbt_resource_props.get("compiled_code")
+    }
+    _compiled_code_cache = (manifest_digest, compiled_code_by_unique_id)
+
+    return compiled_code_by_unique_id
+
+
+def _get_compiled_sql(dbt_resource_props: Mapping[str, Any], target_path: Path) -> str | None:
+    """Resolve the compiled SQL for a dbt node, or None if it cannot be found.
+
+    dbt writes compiled SQL to `target/compiled/` for most node types, but intentionally skips
+    snapshots and seeds (see `Compiler._write_node`). For a snapshot, the compiled query is only
+    recorded as `compiled_code` in the manifest. The `target/run/` file exists, but it wraps the
+    query in materialization DDL (`create table ... as ...`, or a `merge` on subsequent runs),
+    which is not a query sqlglot can trace column lineage through.
+
+    Sources are consulted in order of how faithfully they describe the SQL that this invocation
+    actually ran. The `target/compiled/` file and the manifest under `target_path` are both written
+    by this invocation, so they reflect its project state, vars and target. The manifest that
+    Dagster is configured with is only a last resort: it is usually parse-only, since `dbt parse`
+    does not compile and leaves `compiled_code` null, and when it does carry compiled code that
+    code may predate the invocation. Note that dbt writes the invocation manifest once the
+    invocation finishes, so it is not yet available for a node whose metadata is fetched while dbt
+    is still running.
+    """
+    node_sql_path = target_path.joinpath(
+        "compiled",
+        dbt_resource_props["package_name"],
+        dbt_resource_props["original_file_path"].replace("\\", "/"),
+    )
+    if node_sql_path.exists():
+        return node_sql_path.read_text()
+
+    manifest_path = target_path.joinpath("manifest.json")
+    if manifest_path.exists():
+        compiled_code = _get_compiled_code_by_unique_id(manifest_path).get(
+            dbt_resource_props["unique_id"]
+        )
+
+        if compiled_code:
+            return compiled_code
+
+    return dbt_resource_props.get("compiled_code")
 
 
 def _build_column_lineage_metadata(
@@ -120,16 +202,20 @@ def _build_column_lineage_metadata(
             dialect=sql_dialect,
         )
 
-    package_name = dbt_resource_props["package_name"]
-    node_sql_path = target_path.joinpath(
-        "compiled",
-        package_name,
-        dbt_resource_props["original_file_path"].replace("\\", "/"),
-    )
+    node_sql = _get_compiled_sql(dbt_resource_props, target_path)
+    if not node_sql:
+        logger.warning(
+            "Compiled SQL could not be found for the dbt resource"
+            f" `{dbt_resource_props['original_file_path']}`."
+            " Column lineage metadata will not be included in the event."
+        )
+
+        return {}
+
     optimized_node_ast = cast(
         "exp.Query",
         optimize(
-            parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
+            parse_one(sql=node_sql, dialect=sql_dialect),
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
         ),
