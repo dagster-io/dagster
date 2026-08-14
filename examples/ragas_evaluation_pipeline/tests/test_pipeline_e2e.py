@@ -114,11 +114,11 @@ def test_regression_compares_against_previous_materialization():
 
 
 def test_regression_skips_incompatible_checked_in_baseline_fallback():
-    """A reconfigured or RAGAS run must skip regression comparison instead of fabricating deltas."""
+    """A reconfigured run must skip comparison instead of fabricating deltas."""
     with DagsterInstance.ephemeral() as instance:
         result = materialize(
             _eval_assets(),
-            resources={"runtime_metadata": RuntimeMetadataResource(scorer="ragas")},
+            resources={"runtime_metadata": RuntimeMetadataResource(scorer="reconfigured")},
             instance=instance,
         )
         assert result.success

@@ -237,20 +237,19 @@ def regression_comparison_asset(
     previous = load_previous_metrics(
         context.instance, context.run.run_id, evaluation_identity=evaluation_identity
     )
+    checked_in_baseline = load_baseline()
+    baseline_matches = all(
+        str(checked_in_baseline.get(key)) == str(value)
+        for key, value in evaluation_identity.items()
+    )
     if previous is not None:
         baseline_source = "previous_materialization"
         baseline = previous
-    elif (
-        stored_tags["scorer"] == "deterministic"
-        and stored_tags["model_name"] == "simulated-extractive-qa"
-        and stored_tags["embedding_model"] == "keyword-overlap-v0"
-        and stored_tags["prompt_version"] == "prompt-v1"
-        and stored_tags["index_version"] == "idx-2026-06-01"
-    ):
-        # The default deterministic evaluation is the only configuration that is
-        # compatible with the checked-in reference baseline.
+    elif baseline_matches:
+        # Use the checked-in reference only when every evaluation identity field
+        # matches, including dataset and corpus inputs.
         baseline_source = "checked_in_baseline"
-        baseline = load_baseline()
+        baseline = checked_in_baseline
     else:
         # A compatible prior run does not exist, and this configuration is not the
         # deterministic reference mode. Skip regression comparison rather than
