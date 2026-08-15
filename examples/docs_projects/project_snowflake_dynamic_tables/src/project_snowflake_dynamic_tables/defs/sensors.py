@@ -11,6 +11,7 @@ _TABLES: list[tuple[str, str]] = [
 @dg.sensor(
     name="dynamic_table_freshness_sensor",
     minimum_interval_seconds=60,
+    asset_selection=dg.AssetSelection.assets("executive_dashboard_report"),
 )
 def dynamic_table_freshness_sensor(
     context: dg.SensorEvaluationContext,
@@ -36,6 +37,7 @@ def dynamic_table_freshness_sensor(
             )
             rows = cursor.fetchall()
     except Exception as exc:
+        # Network/IO failure is the one place LBYL doesn't apply — skip this tick.
         return dg.SkipReason(f"Snowflake query failed: {exc}")
 
     if not rows:
@@ -43,6 +45,7 @@ def dynamic_table_freshness_sensor(
 
     name_to_key = {sf_name: dagster_key for dagster_key, sf_name in _TABLES}
 
+    # Always record refresh state as observations on the virtual assets.
     observations = [
         dg.AssetObservation(
             asset_key=dg.AssetKey(name_to_key[row[0].upper()]),
@@ -56,7 +59,35 @@ def dynamic_table_freshness_sensor(
         if row[0].upper() in name_to_key
     ]
 
-    return dg.SensorResult(asset_events=observations, skip_reason="Freshness metadata updated.")
+    # Snowflake owns the refresh; the dashboard must run only AFTER a refresh lands.
+    # Trigger off the actual `last_completed_refresh` timestamps, never off source change.
+    name_to_refresh = {row[0].upper(): row[2] for row in rows if row[0].upper() in name_to_key}
+    clv_refresh = name_to_refresh.get("CUSTOMER_LIFETIME_VALUE")
+    rollup_refresh = name_to_refresh.get("DAILY_REVENUE_ROLLUP")
+
+    # Cold-start gate (LBYL): a NULL last_completed_refresh means the table has no
+    # committed data yet. Firing now would read an empty table and go green on nothing.
+    if clv_refresh is None or rollup_refresh is None:
+        return dg.SensorResult(
+            asset_events=observations,
+            skip_reason="Waiting for both dynamic tables to complete a first refresh.",
+            cursor=context.cursor,
+        )
+
+    # Composite run key: fire on EITHER table advancing, dedupe identical combined state.
+    refresh_state = f"{clv_refresh}-{rollup_refresh}"
+    if refresh_state == context.cursor:
+        return dg.SensorResult(
+            asset_events=observations,
+            skip_reason="No dynamic table refresh since last tick.",
+            cursor=context.cursor,
+        )
+
+    return dg.SensorResult(
+        run_requests=[dg.RunRequest(run_key=refresh_state)],
+        asset_events=observations,
+        cursor=refresh_state,
+    )
 
 
 # end_freshness_sensor

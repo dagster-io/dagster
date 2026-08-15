@@ -212,6 +212,7 @@ class BulkActionsFilter(BaseModel):
     statuses: Optional[list[BulkActionStatus]] = None
     created_before: Optional[float] = Field(alias="createdBefore", default=None)
     created_after: Optional[float] = Field(alias="createdAfter", default=None)
+    selector_id: Optional[str] = Field(alias="selectorId", default=None)
 
 
 class GraphSelector(BaseModel):
@@ -229,6 +230,10 @@ class AssetGroupSelector(BaseModel):
 class AssetBackfillPreviewParams(BaseModel):
     partition_names: list[str] = Field(alias="partitionNames")
     asset_selection: list["AssetKeyInput"] = Field(alias="assetSelection")
+
+
+class AssetJobKeyInput(BaseModel):
+    job_name: str = Field(alias="jobName")
 
 
 class SecretScopesInput(BaseModel):

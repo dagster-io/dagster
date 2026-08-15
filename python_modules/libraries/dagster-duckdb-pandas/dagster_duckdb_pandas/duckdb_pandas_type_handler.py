@@ -40,15 +40,20 @@ class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ):
         """Stores the pandas DataFrame in duckdb."""
-        connection.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
-            " obj;"
-        )
-        if not connection.fetchall():
-            # table was not created, therefore already exists. Insert the data
-            connection.execute(
-                f"insert into {table_slice.schema}.{table_slice.table} select * from obj"
+        if obj.empty:
+            context.log.warning(
+                "Skipping DuckDB write for empty DataFrame. An empty table will not be created."
             )
+        else:
+            connection.execute(
+                f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+                " obj;"
+            )
+            if not connection.fetchall():
+                # table was not created, therefore already exists. Insert the data
+                connection.execute(
+                    f"insert into {table_slice.schema}.{table_slice.table} select * from obj"
+                )
 
         context.add_output_metadata(
             {

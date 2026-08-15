@@ -63,6 +63,28 @@ These errors typically occur in Hybrid deployments where network egress traverse
 - **Port/IP exhaustion:** High traffic through NAT gateways can exhaust available ports
 - **Proxy connection limits:** Corporate proxies may impose connection duration limits
 
+#### Reproducing connectivity issues \{#reproducing-connectivity-issues}
+
+To confirm that you are hitting a network connectivity issue — and to check whether a fix has had an effect — you can run the following script directly on your agent pod. It opens a number of concurrent connections to the Dagster+ API and issues a simple GraphQL query on each, surfacing the same read timeouts and connection resets you would otherwise see intermittently in agent logs.
+
+Run the script from a shell on the agent pod (for example, `kubectl exec` into the agent container). The pod already has `DAGSTER_HOME` set and a configured `dagster.yaml`, so the script connects to the same Dagster+ deployment over the same network path your agent uses. Adjust `NUM_TRIALS` and `CONCURRENCY` as needed to reproduce the issue, then re-run it after applying a fix (such as the TCP keepalive settings below) to confirm the errors no longer occur.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/hybrid/test_connection.py"
+  title="test_connection.py"
+/>
+
+To narrow down whether the problem is specific to your agent's network path (rather than the Dagster+ API itself), you can also run the script locally — for example, from your laptop or a VM in a different network — and compare the results. Point a local `dagster.yaml` at the same deployment, set `DAGSTER_HOME` to that directory, and run the script the same way:
+
+```bash
+export DAGSTER_HOME=~/dagster_home
+python test_connection.py
+```
+
+For instructions on creating a local `dagster.yaml`, see [Step 2 of the local agent guide](/deployment/dagster-plus/hybrid/local#step-2-configure-the-local-agent).
+
+If the errors reproduce from the agent pod but not from a different network location, the issue is likely in the agent's egress path (NAT gateway, proxy, or firewall) rather than in Dagster+.
+
 #### Enable TCP keepalive \{#tcp-keepalive}
 
 You can configure TCP keepalive settings to prevent NAT gateways and proxies from dropping idle connections. For Kubernetes agents, add the following to your Helm `values.yaml`:

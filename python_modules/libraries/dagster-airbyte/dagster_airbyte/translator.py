@@ -177,24 +177,24 @@ class AirbyteWorkspaceData:
         for connection in self.connections_by_id.values():
             destination = self.destinations_by_id[connection.destination_id]
 
-            for stream in connection.streams.values():
-                if stream.selected:
-                    data.append(
-                        AirbyteConnectionTableProps(
-                            table_name=get_airbyte_connection_table_name(
-                                stream_prefix=connection.stream_prefix,
-                                stream_name=stream.name,
-                            ),
-                            stream_prefix=connection.stream_prefix,
-                            stream_name=stream.name,
-                            json_schema=stream.json_schema,
-                            connection_id=connection.id,
-                            connection_name=connection.name,
-                            destination_type=destination.type,
-                            database=destination.database,
-                            schema=destination.schema,
-                        )
-                    )
+            data.extend(
+                AirbyteConnectionTableProps(
+                    table_name=get_airbyte_connection_table_name(
+                        stream_prefix=connection.stream_prefix,
+                        stream_name=stream.name,
+                    ),
+                    stream_prefix=connection.stream_prefix,
+                    stream_name=stream.name,
+                    json_schema=stream.json_schema,
+                    connection_id=connection.id,
+                    connection_name=connection.name,
+                    destination_type=destination.type,
+                    database=destination.database,
+                    schema=destination.schema,
+                )
+                for stream in connection.streams.values()
+                if stream.selected
+            )
 
         return data
 

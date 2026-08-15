@@ -11,7 +11,11 @@ from dagster.components.core.component_tree import (
     LegacyAutoloadingComponentTree,
 )
 from dagster.components.core.decl import ComponentDecl, DefsFolderDecl, PythonFileDecl, YamlFileDecl
-from dagster.components.core.defs_module import ComponentPath, CompositeYamlComponent
+from dagster.components.core.defs_module import (
+    ComponentPath,
+    ComponentRootComponent,
+    CompositeYamlComponent,
+)
 from dagster_shared import check
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -24,7 +28,9 @@ from dagster_tests.components_tests.utils import create_project_from_components
 def assert_tree_node_structure_matches(
     tree: ComponentTree, structure: dict[str | ComponentPath, type[ComponentDecl]]
 ):
-    nodes_by_path = dict(tree.find_root_decl().iterate_path_component_decl_pairs())
+    all_pairs = dict(tree.find_root_decl().iterate_loc_component_decl_pairs())
+    # Filter to filesystem-backed nodes only (ComponentPath locs)
+    nodes_by_path = {loc: decl for loc, decl in all_pairs.items() if isinstance(loc, ComponentPath)}
     unrepresented_paths = set(nodes_by_path.keys())
 
     for path, expected_type in structure.items():
@@ -62,7 +68,7 @@ def assert_tree_node_structure_matches(
 def test_definitions_component_with_explicit_file_relative_imports(
     component_tree: ComponentTree,
 ) -> None:
-    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert isinstance(component_tree.find_root_decl().decls[0], DefsFolderDecl)
     assert_tree_node_structure_matches(
         component_tree,
         {
@@ -86,7 +92,7 @@ def test_definitions_component_with_explicit_file_relative_imports(
 def test_definitions_component_with_explicit_file_relative_imports_init(
     component_tree: ComponentTree,
 ) -> None:
-    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert isinstance(component_tree.find_root_decl().decls[0], DefsFolderDecl)
     assert_tree_node_structure_matches(
         component_tree,
         {
@@ -110,7 +116,7 @@ def test_definitions_component_with_explicit_file_relative_imports_init(
 def test_definitions_component_with_explicit_file_relative_imports_complex(
     component_tree: ComponentTree,
 ) -> None:
-    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert isinstance(component_tree.find_root_decl().decls[0], DefsFolderDecl)
     assert_tree_node_structure_matches(
         component_tree,
         {
@@ -228,7 +234,7 @@ def test_autoload_definitions_object(component_tree: ComponentTree) -> None:
 
 @pytest.mark.parametrize("component_tree", ["definitions/definitions_at_levels"], indirect=True)
 def test_autoload_definitions_nested(component_tree: ComponentTree) -> None:
-    assert isinstance(component_tree.find_root_decl(), DefsFolderDecl)
+    assert isinstance(component_tree.find_root_decl().decls[0], DefsFolderDecl)
     assert_tree_node_structure_matches(
         component_tree,
         {
@@ -317,7 +323,7 @@ def test_ignored_empty_dir():
             defs_module=module, project_root=project_root
         )
 
-        check.inst(tree.find_root_decl(), YamlFileDecl)
+        check.inst(tree.find_root_decl().decls[0], YamlFileDecl)
         assert_tree_node_structure_matches(
             tree,
             {
@@ -344,7 +350,8 @@ def test_ignored_empty_dir():
             },
         )
 
-        defs_root_yaml = check.inst(tree.load_root_component(), CompositeYamlComponent)
+        root = check.inst(tree.load_root_component(), ComponentRootComponent)
+        defs_root_yaml = check.inst(root.components[0], CompositeYamlComponent)
         defs_root = check.inst(defs_root_yaml.components[0], dg.DefsFolderComponent)
         for comp in defs_root.iterate_components():
             if isinstance(comp, dg.DefsFolderComponent):

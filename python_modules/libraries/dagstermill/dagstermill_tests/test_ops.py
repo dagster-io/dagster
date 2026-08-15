@@ -294,7 +294,9 @@ def test_hello_world_reexecution():
             next(x for x in result.all_events if x.event_type_value == "ASSET_MATERIALIZATION")
         )
 
-        with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
+        with tempfile.NamedTemporaryFile(
+            "w+", encoding="utf-8", suffix=".py"
+        ) as reexecution_notebook_file:
             reexecution_notebook_file.write(
                 "from dagster import job\n"
                 "from dagstermill.factory import define_dagstermill_op\n\n\n"

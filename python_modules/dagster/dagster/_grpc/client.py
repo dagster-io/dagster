@@ -49,6 +49,12 @@ DEFAULT_SCHEDULE_GRPC_TIMEOUT = default_schedule_grpc_timeout()
 DEFAULT_SENSOR_GRPC_TIMEOUT = default_sensor_grpc_timeout()
 DEFAULT_REPOSITORY_GRPC_TIMEOUT = default_repository_grpc_timeout()
 
+# Refreshing component state can hit external APIs (e.g. dbt manifests, Airbyte),
+# so it gets a much higher timeout than the standard request timeout. Any server
+# that proxies this call has to allow at least as long, or it will time out the
+# inner hop before the caller gives up.
+DEFAULT_REFRESH_COMPONENT_STATE_TIMEOUT = 300
+
 
 def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) -> None:
     while True:
@@ -426,6 +432,30 @@ class DagsterGrpcClient:
 
     def reload_code(self, timeout: int) -> dagster_api_pb2.ReloadCodeReply:
         return self._query("ReloadCode", dagster_api_pb2.ReloadCodeRequest, timeout=timeout)
+
+    def refresh_component_state(
+        self,
+        defs_state_keys: Sequence[str],
+        timeout: int = DEFAULT_REFRESH_COMPONENT_STATE_TIMEOUT,
+    ) -> dagster_api_pb2.RefreshComponentStateReply:
+        return self._query(
+            "RefreshComponentState",
+            dagster_api_pb2.RefreshComponentStateRequest,
+            defs_state_keys=list(defs_state_keys),
+            timeout=timeout,
+        )
+
+    def reload_code_with_state(
+        self,
+        serialized_defs_state_info: str,
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+    ) -> dagster_api_pb2.ReloadCodeWithStateReply:
+        return self._query(
+            "ReloadCodeWithState",
+            dagster_api_pb2.ReloadCodeWithStateRequest,
+            serialized_defs_state_info=serialized_defs_state_info,
+            timeout=timeout,
+        )
 
     def external_repository(
         self,

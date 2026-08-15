@@ -135,6 +135,69 @@ Because dbt processes one `batch_size` interval at a time, your `PartitionsDefin
 
 The `start_date` of the `PartitionsDefinition` should match the model's `begin` config so Dagster backfills align with dbt's batch history.
 
+## Blue/green deployments with clone-then-swap
+
+A `dbt build` that fails partway through can leave consumers reading a half-built table. A blue/green deployment isolates the tables from in-progress runs by keeping two parallel schemas — `green` (live, what consumers query) and `blue` (staging) — and promoting `blue` into `green` only after the whole run, including models and tests, finishes cleanly.
+
+In Dagster, the dbt project materializes as assets and its dbt tests surface as asset checks. The green tables behind your assets update only when a materialization fully succeeds — a failed run leaves green tables exactly as consumers last saw them.
+
+You orchestrate the run with a <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DbtProjectComponent" /> that invokes `dbt build`. Because `build` runs models and tests in a single invocation, one Dagster run covers the entire promotion, and the blue/green logic stays inside the dbt project:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/blue_green/defs.yaml"
+  title="my_project/defs/dbt/defs.yaml"
+  language="yaml"
+/>
+
+The flow has three stages, configured through `dbt_project.yml`:
+
+1. **Clone green to blue** in an `on-run-start` hook, so the run begins from the current published state.
+2. **Build into blue** — models are configured to materialize into the `blue` schema.
+3. **Promote blue to green** in an `on-run-end` hook, but only if the whole run was clean.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/blue_green/dbt_project.yml"
+  title="dbt_project.yml"
+  language="yaml"
+/>
+
+The clone is dispatched on adapter type. On Snowflake, the clone is a metadata-only operation that's effectively free even for TB-scale tables (see [zero-copy clone](https://docs.snowflake.com/en/sql-reference/sql/create-clone)):
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/blue_green/clone_green_to_blue.sql"
+  title="macros/clone_green_to_blue.sql"
+  language="sql"
+/>
+
+Promotion of each mart is an atomic [`ALTER TABLE ... SWAP WITH`](https://docs.snowflake.com/en/sql-reference/sql/alter-table). On Snowflake, this is a metadata rename, so consumers see only the old or the new table, never a partial write:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/blue_green/swap_blue_to_green.sql"
+  title="macros/swap_blue_to_green.sql"
+  language="sql"
+/>
+
+### Why `on-run-end` and not a per-model `post-hook`
+
+This is the critical detail. dbt's `post-hook` fires after a model's SQL completes but before the tests dbt scheduled on that model. Promoting in a `post-hook` means a bad model is already swapped into `green` by the time its `unique` / `not_null` tests fail, which is exactly the failure the blue/green flow is meant to prevent.
+
+`on-run-end` is the first hook point where every model and every test has finished and the `results` array is populated with each node's status. The orchestrator macro walks `results`, aborts the whole promotion if any node has a status other than `success` or `pass`, and otherwise swaps every mart:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/blue_green/swap_all_marts_if_clean.sql"
+  title="macros/swap_all_marts_if_clean.sql"
+  language="sql"
+/>
+
+dbt invokes `on-run-end` whenever the run finishes, including when models or tests failed. Failures live in the `results` array, not as raised exceptions. It is skipped only on catastrophic errors (parse failure, `on-run-start` raising, the process being killed), in which case nothing was published anyway, and `green` stays untouched.
+
+From Dagster's side, this reduces to a single contract: `green` advances only when the run's materialization — every model and every asset check — comes back clean. The clone and swap macros log a line per schema and per mart, so you can follow each promotion in the run's compute logs.
+
+### Trade-offs
+
+- **All-or-nothing promotion.** One failed test means no mart promotes, even ones whose own tests passed. The usual remedy is "fix the broken model and re-run." Walking `results` to promote only the marts that are clean and not downstream of any failure is possible but considerably more complex.
+- **No cross-table consistency during the swap window.** The hook swaps marts one statement at a time, so there's a brief window where some marts are promoted and others aren't. Consumers reading multiple marts in that window can see mixed old/new. To close it fully, have consumers query a view that points at one of two green slots and flip the view in a single statement at the end.
+
 ## Organizing dbt assets into groups
 
 By default, all dbt assets land in a single `dbt` group. To split them into meaningful groups, subclass <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator" /> and override `get_group_name`. Common grouping strategies:

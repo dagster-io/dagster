@@ -79,7 +79,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
     return DbtProjectArgsManager(args)
 
 
-DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count", "insights"]
 
 
 @public
@@ -310,7 +310,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+        return DagsterDbtTranslator.get_asset_spec(self.translator, manifest, unique_id, project)
 
     def get_asset_check_spec(
         self,
@@ -391,6 +391,8 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             iterator = iterator.fetch_column_metadata()
         if "row_count" in self.include_metadata:
             iterator = iterator.fetch_row_counts()
+        if "insights" in self.include_metadata:
+            iterator = iterator.with_insights()
         return iterator
 
     @public

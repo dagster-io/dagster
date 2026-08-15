@@ -190,6 +190,8 @@ class MetadataValue(ABC, Generic[T_Packable]):
         :py:class:`MarkdownMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events.
 
+        Args:
+            data (str): The markdown for a metadata entry.
 
         Example:
             .. code-block:: python
@@ -203,8 +205,6 @@ class MetadataValue(ABC, Generic[T_Packable]):
                         },
                     )
 
-        Args:
-            md_str (str): The markdown for a metadata entry.
         """
         return MarkdownMetadataValue(data)
 
@@ -214,6 +214,9 @@ class MetadataValue(ABC, Generic[T_Packable]):
         """Static constructor for a metadata value wrapping a python artifact as
         :py:class:`PythonArtifactMetadataValue`. Can be used as the value type for the
         `metadata` parameter for supported events.
+
+        Args:
+            python_artifact (Callable): The python class or function for a metadata entry.
 
         Example:
             .. code-block:: python
@@ -228,8 +231,6 @@ class MetadataValue(ABC, Generic[T_Packable]):
                         }
                     )
 
-        Args:
-            value (Callable): The python class or function for a metadata entry.
         """
         check.callable_param(python_artifact, "python_artifact")
         return PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__)  # ty: ignore[unresolved-attribute]
@@ -593,6 +594,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
     @public
     @property
     def path(self) -> str:
+        """str: The wrapped path."""
         return self.fspath
 
 
@@ -624,6 +626,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
     @public
     @property
     def path(self) -> str:
+        """str: The wrapped path to the notebook as a string."""
         return self.fspath
 
 
@@ -964,6 +967,7 @@ class TableColumnLineageMetadataValue(
     @public
     @property
     def column_lineage(self) -> TableColumnLineage:
+        """TableColumnLineage: The wrapped column lineage."""
         return self.lineage
 
 

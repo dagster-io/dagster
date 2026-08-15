@@ -19,6 +19,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/salesforce.py",
     f"{snippets_folder}/sftp.py",
     f"{snippets_folder}/sharepoint.py",
+    f"{snippets_folder}/hf_datasets/dataset_pipeline_example.py",
     # FIXME: need to enable the following once we have a way to run their init/compile script in CI
     f"{snippets_folder}/dbt.py",
     f"{snippets_folder}/sdf.py",
@@ -58,15 +59,6 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/gemini.py",
     f"{snippets_folder}/weaviate.py",
     f"{snippets_folder}/qdrant.py",
-    # migrated from original `docs_snippets/` directory
-    f"{snippets_folder}/airflow/migrate_repo.py",
-    f"{snippets_folder}/airflow/migrate_repo_connections.py",
-    f"{snippets_folder}/airflow/operator.py",
-    f"{snippets_folder}/airlift/equivalents/airflow_hook.py",
-    f"{snippets_folder}/airlift/equivalents/airflow_task.py",
-    f"{snippets_folder}/airlift/equivalents/dagster_partition.py",
-    f"{snippets_folder}/airlift/equivalents/dagster_resource.py",
-    f"{snippets_folder}/airlift/equivalents/factory_asset.py",
     f"{snippets_folder}/airlift/operator_migration/kubernetes_pod_operator.py",
     f"{snippets_folder}/airlift/operator_migration/pyop_asset_shared.py",
     f"{snippets_folder}/airlift/operator_migration/python_operator.py",

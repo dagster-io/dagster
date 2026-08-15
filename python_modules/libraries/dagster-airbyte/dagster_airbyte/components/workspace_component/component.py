@@ -387,7 +387,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
     async def write_state_to_path(self, state_path: Path) -> None:
         state = self.workspace.fetch_airbyte_workspace_data()
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Path | None

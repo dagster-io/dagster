@@ -72,7 +72,7 @@ def test_write_openai_file_produces_valid_jsonl(tmp_path):
     file_path = str(tmp_path / "output.jsonl")
     records = [{"key": "val1"}, {"key": "val2"}]
     write_openai_file(file_path, records)
-    with open(file_path) as f:
+    with open(file_path, encoding="utf-8") as f:
         lines = [line.strip() for line in f.readlines() if line.strip()]
     assert len(lines) == 2
     for line in lines:

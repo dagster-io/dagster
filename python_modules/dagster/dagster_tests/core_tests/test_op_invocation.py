@@ -411,9 +411,7 @@ def test_async_gen_invocation():
     context = dg.build_op_context()
 
     async def get_results():
-        res = []
-        async for output in aio_gen(context):
-            res.append(output)
+        res = [output async for output in aio_gen(context)]
         return res
 
     results = asyncio.run(get_results())
@@ -525,9 +523,7 @@ def test_optional_output_yielded_async():
         yield dg.Output(2, output_name="2")
 
     async def get_results():
-        res = []
-        async for output in op_multiple_outputs_not_sent():
-            res.append(output)
+        res = [output async for output in op_multiple_outputs_not_sent()]
         return res
 
     output = asyncio.run(get_results())[0]
@@ -593,9 +589,7 @@ def test_missing_required_output_generator_async():
         wrap_op_in_graph_and_execute(op_multiple_outputs_not_sent)
 
     async def get_results():
-        res = []
-        async for output in op_multiple_outputs_not_sent():
-            res.append(output)
+        res = [output async for output in op_multiple_outputs_not_sent()]
         return res
 
     with pytest.raises(
@@ -885,9 +879,7 @@ def test_dynamic_output_async_gen():
         yield dg.Output(value="foo", output_name="b")
 
     async def get_results():
-        res = []
-        async for output in aio_gen():
-            res.append(output)
+        res = [output async for output in aio_gen()]
         return res
 
     a1, a2, b = asyncio.run(get_results())
@@ -1432,9 +1424,7 @@ def test_context_bound_state_async_generator():
     ctx = dg.build_op_context()
 
     async def get_results():
-        res = []
-        async for output in async_generator(ctx):
-            res.append(output)
+        res = [output async for output in async_generator(ctx)]
         return res
 
     result = asyncio.run(get_results())
@@ -1525,9 +1515,7 @@ def test_context_bound_state_with_error_async_generator():
     ctx = dg.build_op_context()
 
     async def get_results():
-        res = []
-        async for output in async_generator(ctx):
-            res.append(output)
+        res = [output async for output in async_generator(ctx)]
         return res
 
     with pytest.raises(dg.Failure):

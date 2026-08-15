@@ -11,6 +11,7 @@ authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
     "buildkite-shared",
+    "dagster-shared",
     "PyYAML",
     "tomli",
     "packaging>=20.9",
@@ -36,3 +37,4 @@ test = [
 
 [tool.uv.sources]
 buildkite-shared = { path = "../buildkite-shared", editable = true }
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }

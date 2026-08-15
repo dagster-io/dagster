@@ -90,19 +90,21 @@ You can also use job tags to customize the CPU, memory, or ephemeral storage of 
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    "ecs/cpu": "256",
-    "ecs/memory": "512",
-    "ecs/ephemeral_storage": "40",
-  }
+    tags={
+        "ecs/cpu": "256",
+        "ecs/memory": "512",
+        "ecs/ephemeral_storage": "40",
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 If these tags are set, they will override any defaults set on the run launcher.
@@ -141,23 +143,25 @@ You can also use the `ecs/run_task_kwargs` tag to customize the ECS task of ever
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    "ecs/run_task_kwargs": {
-      "capacityProviderStrategy": [
-        {
-          "capacityProvider": "FARGATE_SPOT",
+    tags={
+        "ecs/run_task_kwargs": {
+            "capacityProviderStrategy": [
+                {
+                    "capacityProvider": "FARGATE_SPOT",
+                },
+            ],
         },
-      ],
-    },
-  }
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) for the full set of available arguments to `run_task`. Additionally, note that:
@@ -176,19 +180,21 @@ Use the `ecs/task_overrides` tag to set task-level overrides. For example:
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags={
-    "ecs/task_overrides": {
-      "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
-    },
-  }
+    tags={
+        "ecs/task_overrides": {
+            "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
+        },
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 #### Container overrides
@@ -198,21 +204,23 @@ Use the `ecs/container_overrides` tag to set container-level overrides. For exam
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags={
-    "ecs/container_overrides": {
-      "resourceRequirements": [
-        {"type": "GPU", "value": "1"},
-      ],
-    },
-  }
+    tags={
+        "ecs/container_overrides": {
+            "resourceRequirements": [
+                {"type": "GPU", "value": "1"},
+            ],
+        },
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 :::note
@@ -235,13 +243,11 @@ from dagster_aws.ecs import ecs_executor
 
 
 @dg.asset
-def raw_data():
-    ...
+def raw_data(): ...
 
 
 @dg.asset(deps=[raw_data])
-def processed_data():
-    ...
+def processed_data(): ...
 
 
 @dg.definitions
@@ -289,16 +295,14 @@ from dagster_aws.ecs import ecs_executor
 
 
 @dg.asset(op_tags={"ecs/cpu": "256", "ecs/memory": "512"})
-def light_asset():
-    ...
+def light_asset(): ...
 
 
 @dg.asset(
     deps=[light_asset],
     op_tags={"ecs/cpu": "4096", "ecs/memory": "16384", "ecs/ephemeral_storage": "40"},
 )
-def heavy_asset():
-    ...
+def heavy_asset(): ...
 
 
 @dg.definitions

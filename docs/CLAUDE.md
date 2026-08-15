@@ -22,6 +22,7 @@ This directory contains the Dagster documentation site which is built with
 ## Linting and formatting
 
 - Run `yarn format` to apply Prettier formatting to docs files.
+- Run `uv run scripts/check-frontmatter.py` to validate page metadata.
 
 ## Generated content
 

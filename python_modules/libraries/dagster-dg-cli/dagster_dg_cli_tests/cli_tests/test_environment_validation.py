@@ -47,7 +47,6 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
-    CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "registry-modules")),
     CommandSpec(("utils", "inspect-component"), DEFAULT_COMPONENT_TYPE),
@@ -105,8 +104,6 @@ def test_all_commands_represented_in_env_check_tests() -> None:
     ids=lambda spec: "-".join(spec.command),
 )
 def test_no_local_venv_failure(spec: CommandSpec) -> None:
-    if spec.command == ("docs", "serve"):
-        pytest.skip("docs serve command hangs on this test")
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)

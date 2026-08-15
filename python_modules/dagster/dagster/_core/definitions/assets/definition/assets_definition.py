@@ -11,7 +11,7 @@ from dagster_shared.record import replace
 import dagster._check as check
 from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster._core.definitions.assets.definition.asset_graph_computation import (
     AssetGraphComputation,
@@ -501,8 +501,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
-            owners_by_key (Optional[Mapping[AssetKey, Sequence[str]]]): Defines
-                owners to be associated with each of the asset keys for this node.
+            owners_by_output_name (Optional[Mapping[str, Sequence[str]]]): Defines the owners to be
+                associated with each of the output assets for this node. Keys are names of the
+                outputs, and values are sequences of owner strings (user emails or team names).
 
         """
         return AssetsDefinition._from_node(
@@ -956,7 +957,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @cached_property
-    def entity_keys_by_output_name(self) -> Mapping[str, EntityKey]:
+    def entity_keys_by_output_name(self) -> Mapping[str, AssetOrCheckKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -966,11 +967,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     @cached_property
-    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+    def output_names_by_entity_key(self) -> Mapping[AssetOrCheckKey, str]:
         return reverse_dict(self.entity_keys_by_output_name)
 
     @property
-    def asset_and_check_keys(self) -> AbstractSet[EntityKey]:
+    def asset_and_check_keys(self) -> AbstractSet[AssetOrCheckKey]:
         return set(self.keys).union(self.check_keys)
 
     @cached_property
@@ -1960,7 +1961,7 @@ def get_partition_mappings_from_deps(
     return partition_mappings
 
 
-def unique_id_from_asset_and_check_keys(entity_keys: Iterable["EntityKey"]) -> str:
+def unique_id_from_asset_and_check_keys(entity_keys: Iterable["AssetOrCheckKey"]) -> str:
     """Generate a unique ID from the provided asset keys.
 
     This is useful for generating op names that don't have collisions.

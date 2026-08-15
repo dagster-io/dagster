@@ -15,7 +15,6 @@ from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import HIDDEN_TAG_PREFIX, RUN_WORKER_ID_TAG
 
-import dagster_aws
 import dagster_aws.ecs.tasks
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 from dagster_aws.ecs.launcher import (

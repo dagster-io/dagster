@@ -31,6 +31,10 @@ from dagster_graphql.implementation.external import (
     fetch_workspace,
     get_remote_job_or_raise,
 )
+from dagster_graphql.implementation.fetch_app_managed_components import (
+    get_app_managed_components_for_location,
+    get_components_for_location,
+)
 from dagster_graphql.implementation.fetch_asset_checks import fetch_asset_check_executions
 from dagster_graphql.implementation.fetch_asset_condition_evaluations import (
     fetch_asset_condition_evaluation_record_for_partition,
@@ -51,6 +55,7 @@ from dagster_graphql.implementation.fetch_auto_materialize_asset_evaluations imp
     fetch_auto_materialize_asset_evaluations_for_evaluation_id,
 )
 from dagster_graphql.implementation.fetch_backfills import get_backfill, get_backfills
+from dagster_graphql.implementation.fetch_component_types import get_component_types_for_location
 from dagster_graphql.implementation.fetch_env_vars import get_utilized_env_vars_or_error
 from dagster_graphql.implementation.fetch_instigators import (
     get_instigation_states_by_repository_id,
@@ -97,6 +102,10 @@ from dagster_graphql.implementation.utils import (
     graph_selector_from_graphql,
     pipeline_selector_from_graphql,
 )
+from dagster_graphql.schema.app_managed_components import (
+    GrapheneAppManagedComponentsOrError,
+    GrapheneComponentsOrError,
+)
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
@@ -117,6 +126,7 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
 )
+from dagster_graphql.schema.component_types import GrapheneComponentTypesOrError
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 from dagster_graphql.schema.external import (
@@ -132,6 +142,7 @@ from dagster_graphql.schema.inputs import (
     GrapheneAssetBackfillPreviewParams,
     GrapheneAssetCheckHandleInput,
     GrapheneAssetGroupSelector,
+    GrapheneAssetJobKeyInput,
     GrapheneAssetKeyInput,
     GrapheneBulkActionsFilter,
     GrapheneGraphSelector,
@@ -594,6 +605,7 @@ class GrapheneQuery(graphene.ObjectType):
     truePartitionsForAutomationConditionEvaluationNode = graphene.Field(
         non_null_list(graphene.String),
         assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        assetJobKey=graphene.Argument(GrapheneAssetJobKeyInput, required=False),
         evaluationId=graphene.Argument(graphene.NonNull(graphene.ID)),
         nodeUniqueId=graphene.Argument(graphene.String),
         description="Retrieve the partition keys which were true for a specific automation condition evaluation node.",
@@ -617,8 +629,9 @@ class GrapheneQuery(graphene.ObjectType):
 
     assetConditionEvaluationRecordsOrError = graphene.Field(
         GrapheneAssetConditionEvaluationRecordsOrError,
-        assetKey=graphene.Argument(GrapheneAssetKeyInput),
+        assetKey=graphene.Argument(GrapheneAssetKeyInput, required=False),
         assetCheckKey=graphene.Argument(GrapheneAssetCheckHandleInput, required=False),
+        assetJobKey=graphene.Argument(GrapheneAssetJobKeyInput, required=False),
         limit=graphene.Argument(graphene.NonNull(graphene.Int)),
         cursor=graphene.Argument(graphene.String),
         description="Retrieve the condition evaluation records for an asset.",
@@ -662,6 +675,35 @@ class GrapheneQuery(graphene.ObjectType):
     latestDefsStateInfo = graphene.Field(
         GrapheneDefsStateInfo,
         description="Retrieve the latest available DefsStateInfo for the current workspace.",
+    )
+
+    appManagedComponentsForLocationOrError = graphene.Field(
+        graphene.NonNull(GrapheneAppManagedComponentsOrError),
+        locationName=graphene.NonNull(graphene.String),
+        description=(
+            "Retrieve all app-managed components stored for a given code location. The"
+            " returned list is sourced from the instance's defs state storage and is"
+            " independent of whether the location is currently loaded."
+        ),
+    )
+
+    componentsForLocationOrError = graphene.Field(
+        graphene.NonNull(GrapheneComponentsOrError),
+        locationName=graphene.NonNull(graphene.String),
+        description=(
+            "Retrieve every component instance in a code location's component tree —"
+            " both file-based and UI-defined. The location must be loaded."
+        ),
+    )
+
+    componentTypesForLocationOrError = graphene.Field(
+        graphene.NonNull(GrapheneComponentTypesOrError),
+        locationName=graphene.NonNull(graphene.String),
+        description=(
+            "Retrieve the JSON schemas and metadata for every Component class"
+            " installed in a given code location. Reads from the location's"
+            " repository metadata, so the location must be loaded."
+        ),
     )
 
     @capture_error
@@ -1304,14 +1346,15 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetConditionEvaluationRecordsOrError(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput | None,
         limit: int,
+        assetKey: GrapheneAssetKeyInput | None = None,
         cursor: str | None = None,
         assetCheckKey: GrapheneAssetCheckHandleInput | None = None,
+        assetJobKey: GrapheneAssetJobKeyInput | None = None,
     ):
         return fetch_asset_condition_evaluation_records_for_asset_key(
             graphene_info=graphene_info,
-            graphene_entity_key=check.not_none(assetKey or assetCheckKey),
+            graphene_entity_key=check.not_none(assetKey or assetCheckKey or assetJobKey),
             cursor=cursor,
             limit=limit,
         )
@@ -1319,13 +1362,14 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_truePartitionsForAutomationConditionEvaluationNode(
         self,
         graphene_info: ResolveInfo,
-        assetKey: GrapheneAssetKeyInput | None,
         evaluationId: str,
         nodeUniqueId: str,
+        assetKey: GrapheneAssetKeyInput | None = None,
+        assetJobKey: GrapheneAssetJobKeyInput | None = None,
     ):
         return fetch_true_partitions_for_evaluation_node(
             graphene_info=graphene_info,
-            graphene_entity_key=check.not_none(assetKey),
+            graphene_entity_key=check.not_none(assetKey or assetJobKey),
             evaluation_id=int(evaluationId),
             node_unique_id=nodeUniqueId,
         )
@@ -1407,3 +1451,19 @@ class GrapheneQuery(graphene.ObjectType):
             defs_state_storage.get_latest_defs_state_info() if defs_state_storage else None
         )
         return GrapheneDefsStateInfo(latest_info) if latest_info else None
+
+    @capture_error
+    def resolve_appManagedComponentsForLocationOrError(
+        self, graphene_info: ResolveInfo, locationName: str
+    ):
+        return get_app_managed_components_for_location(graphene_info, locationName)
+
+    @capture_error
+    def resolve_componentsForLocationOrError(self, graphene_info: ResolveInfo, locationName: str):
+        return get_components_for_location(graphene_info, locationName)
+
+    @capture_error
+    def resolve_componentTypesForLocationOrError(
+        self, graphene_info: ResolveInfo, locationName: str
+    ):
+        return get_component_types_for_location(graphene_info, locationName)

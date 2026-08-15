@@ -6,7 +6,7 @@ import {AssetKey} from './types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 
-type Check = {name: string; assetKey: AssetKey};
+export type Check = {name: string; assetKey: AssetKey};
 
 export const sortItemAssetKey = (a: AssetKey, b: AssetKey) => {
   return COMMON_COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b));

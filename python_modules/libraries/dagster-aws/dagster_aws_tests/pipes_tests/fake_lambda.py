@@ -73,10 +73,10 @@ class FakeLambdaClient:
             out_path = os.path.join(tempdir, "out.json")
             log_path = os.path.join(tempdir, "logs")
 
-            with open(in_path, "w") as f:
+            with open(in_path, "w", encoding="utf-8") as f:
                 f.write(kwargs["Payload"])
 
-            with open(log_path, "w") as log_file:
+            with open(log_path, "w", encoding="utf-8") as log_file:
                 result = subprocess.run(
                     [
                         sys.executable,
@@ -102,7 +102,7 @@ class FakeLambdaClient:
                 response["FunctionError"] = "Unhandled"
 
             elif result.returncode != 0:
-                with open(log_path) as f:
+                with open(log_path, encoding="utf-8") as f:
                     print(f.read())  # noqa: T201
                 result.check_returncode()
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     assert len(sys.argv) == 4, "python fake_lambda.py <fn_name> <in_path> <out_path>"
     _, fn_name, in_path, out_path = sys.argv
 
-    event = json.load(open(in_path))
+    event = json.load(open(in_path, encoding="utf-8"))
     fn = getattr(LambdaFunctions, fn_name)
 
     val = None
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         }
         return_code = 42
 
-    with open(out_path, "w") as f:
+    with open(out_path, "w", encoding="utf-8") as f:
         json.dump(val, f)
 
     sys.exit(return_code)

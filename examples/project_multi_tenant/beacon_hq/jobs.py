@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dagster as dg
 
-
 beacon_reporting_inputs_job = dg.define_asset_job(
     name="beacon_reporting_inputs_job",
     selection=dg.AssetSelection.assets(

@@ -2,7 +2,6 @@ from contextlib import ExitStack
 
 import dagster as dg
 import pytest
-import yaml
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import GrpcServerCodeLocationOrigin
@@ -10,6 +9,7 @@ from dagster._core.test_utils import environ
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
 from dagster_shared import seven
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ load_from:
                 """
 
             origins = location_origins_from_config(
-                yaml.safe_load(workspace_yaml),
+                safe_load_yaml(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 dg.file_relative_path(__file__, "not_a_real.yaml"),
             )
@@ -96,7 +96,7 @@ def test_grpc_server_env_vars():
     """
 
         origins = location_origins_from_config(
-            yaml.safe_load(valid_yaml),
+            safe_load_yaml(valid_yaml),
             dg.file_relative_path(__file__, "not_a_real.yaml"),
         )
 
@@ -131,7 +131,7 @@ load_from:
     ssl: true
 """
         origins = location_origins_from_config(
-            yaml.safe_load(ssl_yaml),
+            safe_load_yaml(ssl_yaml),
             # fake out as if it were loaded by a yaml file in this directory
             dg.file_relative_path(__file__, "not_a_real.yaml"),
         )
@@ -186,7 +186,7 @@ load_from:
                 """
 
             origins = location_origins_from_config(
-                yaml.safe_load(workspace_yaml),
+                safe_load_yaml(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 dg.file_relative_path(__file__, "not_a_real.yaml"),
             )
@@ -226,7 +226,7 @@ load_from:
 
     with pytest.raises(CheckError, match="must supply either a socket or a port"):
         location_origins_from_config(
-            yaml.safe_load(workspace_yaml),
+            safe_load_yaml(workspace_yaml),
             # fake out as if it were loaded by a yaml file in this directory
             dg.file_relative_path(__file__, "not_a_real.yaml"),
         )

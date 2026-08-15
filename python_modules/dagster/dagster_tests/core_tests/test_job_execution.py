@@ -557,9 +557,7 @@ def test_job_wrapping_types():
         if not value:
             return value
 
-        output = []
-        for item in value:
-            output.append(None if item is None else item + item)
+        output = [None if item is None else item + item for item in value]
         return output
 
     @job

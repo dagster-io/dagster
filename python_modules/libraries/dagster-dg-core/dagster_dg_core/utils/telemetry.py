@@ -24,14 +24,14 @@ def _get_project_telemetry_metadata(start_path: Path | None = None) -> dict[str,
 
     Walks up from start_path (or cwd if not provided) to find the nearest .dg/telemetry.yaml file.
     """
-    import yaml
+    from dagster_shared.yaml_utils import safe_load_yaml
 
     project_telemetry_data = {}
     path = start_path or Path.cwd()
     while path != path.parent:
         telemetry_file = path / ".dg" / "telemetry.yaml"
         if telemetry_file.exists():
-            data = yaml.safe_load(telemetry_file.read_text())
+            data = safe_load_yaml(telemetry_file.read_text())
             if data and isinstance(data, dict):
                 if "project_id" in data:
                     project_telemetry_data["project_id"] = str(data["project_id"])

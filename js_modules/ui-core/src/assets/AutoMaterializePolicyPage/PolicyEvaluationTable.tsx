@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
-import {useCallback, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useMemo, useState} from 'react';
 
 import {
   EvaluationConditionalLabel,
@@ -24,10 +24,14 @@ import styles from './css/PolicyEvaluationTable.module.css';
 import {
   Evaluation,
   FlattenedConditionEvaluation,
+  assetCheckNameForEntityKey,
+  assetKeyForEntityKey,
   defaultExpanded,
   displayNameForEntityKey,
   entityKeyMatches,
+  expandableUniqueIds,
   flattenEvaluations,
+  jobNameForEntityKey,
   statusForEvaluation,
   tokenForEntityKey,
 } from './flattenEvaluations';
@@ -52,6 +56,7 @@ import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.
 interface Props {
   assetKeyPath: string[] | null;
   assetCheckName?: string;
+  jobName?: string;
   evaluationNodes: Evaluation[];
   evaluationId: string;
   rootUniqueId: string;
@@ -65,6 +70,7 @@ export const PolicyEvaluationTable = (props: Props) => {
   const {
     assetKeyPath,
     assetCheckName,
+    jobName,
     evaluationNodes,
     evaluationId,
     rootUniqueId,
@@ -103,15 +109,41 @@ export const PolicyEvaluationTable = (props: Props) => {
     });
   }, []);
 
+  const expandableRecords = useMemo(
+    () => expandableUniqueIds({evaluationNodes, rootUniqueId}),
+    [evaluationNodes, rootUniqueId],
+  );
+
+  const allExpanded = useMemo(
+    () =>
+      expandableRecords.size > 0 &&
+      Array.from(expandableRecords).every((uniqueId) => expandedRecords.has(uniqueId)),
+    [expandableRecords, expandedRecords],
+  );
+
+  const toggleAllExpanded = useCallback(() => {
+    setExpandedRecords(allExpanded ? new Set() : new Set(expandableRecords));
+  }, [allExpanded, expandableRecords]);
+
+  const conditionHeader = (
+    <ConditionHeader
+      allExpanded={allExpanded}
+      hasExpandableRecords={expandableRecords.size > 0}
+      toggleAllExpanded={toggleAllExpanded}
+    />
+  );
+
   if (!isLegacyEvaluation) {
     return (
       <NewPolicyEvaluationTable
         assetKeyPath={assetKeyPath}
         assetCheckName={assetCheckName}
+        jobName={jobName}
         evaluationId={evaluationId}
         flattenedRecords={flattened as FlattenedConditionEvaluation<NewEvaluationNodeFragment>[]}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
+        conditionHeader={conditionHeader}
         pushHistory={pushHistory}
         lastEvaluationsByEntityKey={lastEvaluationsByEntityKey}
       />
@@ -130,6 +162,7 @@ export const PolicyEvaluationTable = (props: Props) => {
         selectPartition={selectPartition}
         toggleExpanded={toggleExpanded}
         expandedRecords={expandedRecords}
+        conditionHeader={conditionHeader}
       />
     );
   }
@@ -143,25 +176,66 @@ export const PolicyEvaluationTable = (props: Props) => {
       }
       toggleExpanded={toggleExpanded}
       expandedRecords={expandedRecords}
+      conditionHeader={conditionHeader}
     />
+  );
+};
+
+/**
+ * Header cell for the "Condition" column. When the tree has groups to toggle, the entire header
+ * label is a button that expands or collapses every condition group at once. The padding and icon
+ * size mirror `PolicyEvaluationCondition` so that the toggle lines up with the per-row disclosure
+ * arrows below it.
+ */
+const ConditionHeader = ({
+  allExpanded,
+  hasExpandableRecords,
+  toggleAllExpanded,
+}: {
+  allExpanded: boolean;
+  hasExpandableRecords: boolean;
+  toggleAllExpanded: () => void;
+}) => {
+  if (!hasExpandableRecords) {
+    return <Box padding={{vertical: 2, horizontal: 8}}>Condition</Box>;
+  }
+
+  return (
+    <Box padding={{vertical: 2, horizontal: 8}}>
+      <Tooltip content={allExpanded ? 'Collapse all' : 'Expand all'} placement="top">
+        <ButtonLink
+          aria-expanded={allExpanded}
+          className={styles.expandCollapseAll}
+          color={{link: Colors.textLight(), hover: Colors.textDefault()}}
+          onClick={toggleAllExpanded}
+        >
+          <Icon name={allExpanded ? 'unfold_less' : 'unfold_more'} size={20} color="currentColor" />
+          Condition
+        </ButtonLink>
+      </Tooltip>
+    </Box>
   );
 };
 
 const NewPolicyEvaluationTable = ({
   assetKeyPath: rootAssetKeyPath,
   assetCheckName: rootAssetCheckName,
+  jobName: rootJobName,
   evaluationId,
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  conditionHeader,
   pushHistory,
   lastEvaluationsByEntityKey,
 }: {
   assetKeyPath: string[] | null;
   assetCheckName?: string;
+  jobName?: string;
   evaluationId: string;
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
+  conditionHeader: ReactNode;
   flattenedRecords: FlattenedConditionEvaluation<NewEvaluationNodeFragment>[];
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
   lastEvaluationsByEntityKey?: {[assetKeyToken: string]: AssetLastEvaluationFragment};
@@ -169,6 +243,13 @@ const NewPolicyEvaluationTable = ({
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
   const isPartitioned = !!flattenedRecords[0]?.evaluation.isPartitioned;
   const rootEntityKey = useMemo(() => {
+    if (rootJobName) {
+      const entityKey: EntityKey = {
+        __typename: 'AssetJobKey',
+        jobName: rootJobName,
+      };
+      return entityKey;
+    }
     if (!rootAssetKeyPath) {
       return null;
     }
@@ -184,13 +265,13 @@ const NewPolicyEvaluationTable = ({
         }
       : rootAssetKey;
     return entityKey;
-  }, [rootAssetKeyPath, rootAssetCheckName]);
+  }, [rootAssetKeyPath, rootAssetCheckName, rootJobName]);
 
   return (
     <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
-          <th>Condition</th>
+          <th>{conditionHeader}</th>
           <th>Result</th>
           {isPartitioned ? <th>Partitions evaluated</th> : null}
           <th>Duration</th>
@@ -206,12 +287,8 @@ const NewPolicyEvaluationTable = ({
             startTimestamp = evaluation.startTimestamp;
           }
 
-          const assetKey =
-            entityKey && entityKey.__typename === 'AssetCheckhandle'
-              ? entityKey.assetKey
-              : entityKey;
-          const checkName =
-            entityKey && entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined;
+          const assetKey = entityKey ? assetKeyForEntityKey(entityKey) : null;
+          const checkName = entityKey ? assetCheckNameForEntityKey(entityKey) : undefined;
           const entityDisplayName = entityKey ? displayNameForEntityKey(entityKey) : '';
           const lastEvaluationForEntityKey =
             entityKey &&
@@ -235,9 +312,9 @@ const NewPolicyEvaluationTable = ({
                 onClick={(e) => {
                   e?.stopPropagation();
                   pushHistory({
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    assetKeyPath: assetKey!.path,
+                    assetKeyPath: assetKey?.path,
                     assetCheckName: checkName,
+                    jobName: entityKey ? jobNameForEntityKey(entityKey) : undefined,
                     evaluationID: lastEvaluationForEntityKey.evaluationId,
                   });
                 }}
@@ -293,7 +370,7 @@ const NewPolicyEvaluationTable = ({
                   hasChildren={evaluation.childUniqueIds.length > 0}
                 />
               </td>
-              {isPartitioned && rootAssetKeyPath ? (
+              {isPartitioned && (rootAssetKeyPath || rootJobName) ? (
                 <td style={{width: 0}}>
                   <Box
                     flex={{direction: 'row', alignItems: 'center', gap: 2}}
@@ -307,6 +384,7 @@ const NewPolicyEvaluationTable = ({
                           : `${numberFormatter.format(numTrue ?? 0)} partitions`)
                       }
                       assetKeyPath={rootAssetKeyPath}
+                      jobName={rootJobName}
                       evaluationId={evaluationId}
                       nodeUniqueId={evaluation.uniqueId}
                       numTrue={numTrue ?? 0}
@@ -364,9 +442,11 @@ const UnpartitionedPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  conditionHeader,
 }: {
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
+  conditionHeader: ReactNode;
   flattenedRecords:
     | FlattenedConditionEvaluation<UnpartitionedAssetConditionEvaluationNodeFragment>[]
     | FlattenedConditionEvaluation<SpecificPartitionAssetConditionEvaluationNodeFragment>[];
@@ -379,7 +459,7 @@ const UnpartitionedPolicyEvaluationTable = ({
     <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
-          <th>Condition</th>
+          <th>{conditionHeader}</th>
           <th>Result</th>
           {isSpecificPartitionAssetConditionEvaluations ? null : <th>Duration</th>}
           <th>Details</th>
@@ -489,6 +569,7 @@ export const PartitionedPolicyEvaluationTable = ({
   flattenedRecords,
   expandedRecords,
   toggleExpanded,
+  conditionHeader,
   selectPartition,
 }: {
   assetKeyPath: string[] | null;
@@ -497,6 +578,7 @@ export const PartitionedPolicyEvaluationTable = ({
   flattenedRecords: FlattenedConditionEvaluation<PartitionedAssetConditionEvaluationNodeFragment>[];
   expandedRecords: Set<string>;
   toggleExpanded: (id: string) => void;
+  conditionHeader: ReactNode;
   selectPartition: (partitionKey: string | null) => void;
 }) => {
   const [hoveredKey, setHoveredKey] = useState<number | null>(null);
@@ -504,7 +586,7 @@ export const PartitionedPolicyEvaluationTable = ({
     <Table className={styles.veryCompactTable}>
       <thead>
         <tr>
-          <th>Condition</th>
+          <th>{conditionHeader}</th>
           <th>Partitions evaluated</th>
           <th>Result</th>
           <th>Duration</th>

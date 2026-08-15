@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
-import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 from typer import Argument, Typer
 
 from dagster_cloud_cli import gql, ui
@@ -34,7 +34,7 @@ def set_from_filecommand(
 ):
     """Set the Dagster Cloud deployment settings from a YAML file."""
     with open(file_path, encoding="utf8") as f:
-        settings = {"settings": yaml.safe_load(f) or {}}
+        settings = {"settings": safe_load_yaml(f) or {}}
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
         gql.set_deployment_settings(client, settings)
 

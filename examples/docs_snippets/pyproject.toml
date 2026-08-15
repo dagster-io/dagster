@@ -41,7 +41,8 @@ full = [
     "slack_sdk",
     "syrupy",
     "xgboost",
-    "apache-airflow<3.0.0",
+    "apache-airflow<3.0.0; python_version < '3.12'",
+    "apache-airflow>=3.2; python_version >= '3.12'",
     "pytest-httpserver",
 ]
 
@@ -121,6 +122,7 @@ test = [
     "opentelemetry-sdk",
     "pytest_httpserver",
     # Community integrations
+    "dagster-elasticsearch @ git+https://github.com/dagster-io/community-integrations.git#subdirectory=libraries/dagster-elasticsearch",
     "dagster-iceberg @ git+https://github.com/dagster-io/community-integrations.git#subdirectory=libraries/dagster-iceberg",
 ]
 test-docs-snapshot = [

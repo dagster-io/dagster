@@ -1,4 +1,4 @@
-// Generated from /home/user/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {ErrorNode, ParseTreeListener, ParserRuleContext, TerminalNode} from 'antlr4ng';
 
@@ -22,6 +22,7 @@ import {TagAttributeExprContext} from './AssetSelectionParser.js';
 import {OwnerAttributeExprContext} from './AssetSelectionParser.js';
 import {GroupAttributeExprContext} from './AssetSelectionParser.js';
 import {KindAttributeExprContext} from './AssetSelectionParser.js';
+import {IsAttributeExprContext} from './AssetSelectionParser.js';
 import {StatusAttributeExprContext} from './AssetSelectionParser.js';
 import {ColumnAttributeExprContext} from './AssetSelectionParser.js';
 import {TableNameAttributeExprContext} from './AssetSelectionParser.js';
@@ -273,6 +274,18 @@ export class AssetSelectionListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitKindAttributeExpr?: (ctx: KindAttributeExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `IsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterIsAttributeExpr?: (ctx: IsAttributeExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `IsAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitIsAttributeExpr?: (ctx: IsAttributeExprContext) => void;
   /**
    * Enter a parse tree produced by the `StatusAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.

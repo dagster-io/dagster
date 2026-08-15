@@ -1,4 +1,4 @@
-import {Box, Page, PageHeader, Subtitle1} from '@dagster-io/ui-components';
+import {Box, Heading, Page, PageHeader} from '@dagster-io/ui-components';
 import {Redirect} from 'react-router-dom';
 
 import {GlobalAutomaterializationContent} from './GlobalAutomaterializationContent';
@@ -30,7 +30,13 @@ const GlobalAutomaterializationRoot = () => {
   useDocumentTitle('Automation | Auto-materialize');
   return (
     <Page>
-      <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
+      <PageHeader
+        title={
+          <Heading size={16} weight={600}>
+            Automation
+          </Heading>
+        }
+      />
       <Box padding={{horizontal: 24}} border="bottom">
         <AutomationTabs tab="global-amp" />
       </Box>

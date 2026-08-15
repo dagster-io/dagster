@@ -1,10 +1,22 @@
 import inspect
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import UnionType
-from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Final,
+    Literal,
+    Optional,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record, record
@@ -18,7 +30,11 @@ from dagster._annotations import public
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.errors import ResolutionException
+from dagster.components.resolved.form_config import UNSET_DEFAULT_SENTINEL
 from dagster.components.resolved.model import Model, Resolver
+
+if TYPE_CHECKING:
+    from dagster.components.resolved.form_config import ComponentFormConfig
 
 
 class _TypeContainer(Enum):
@@ -113,6 +129,21 @@ class Resolvable:
         return derive_model_type(cls)
 
     @classmethod
+    def get_form_config(cls) -> "ComponentFormConfig | None":
+        """Return form metadata for this class to drive the app-managed components editor.
+
+        Override on a :class:`Resolvable` subclass to mark it app-managed
+        and set its display label::
+
+            @classmethod
+            def get_form_config(cls) -> ComponentFormConfig:
+                return ComponentFormConfig(label="My Component", editable=True)
+
+        Returns ``None`` (the default) to opt out of the UI editor entirely.
+        """
+        return None
+
+    @classmethod
     def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
         return cls(**resolve_fields(model, cls, context))
 
@@ -158,23 +189,48 @@ class Resolvable:
 
 # marker type for skipping kwargs and triggering defaults
 # must be a string to make sure it is json serializable
-_Unset: Final[str] = "__DAGSTER_UNSET_DEFAULT__"
+_Unset: Final[str] = UNSET_DEFAULT_SENTINEL
+
+
+def _humanize_class_name(name: str) -> str:
+    """``SnowflakeDestination`` -> ``Snowflake Destination``; keeps acronym runs
+    (``CSVAsset`` -> ``CSV Asset``).
+    """
+    words = re.findall(r"[A-Z]+(?=[A-Z][a-z0-9])|[A-Z][a-z0-9]*|[a-z0-9]+", name)
+    return " ".join(words) if words else name
 
 
 def derive_model_type(
     target_type: type[Resolvable],
 ) -> type[BaseModel]:
+    from dagster.components.resolved.form_config import APP_ID_SOURCE
+
     if target_type not in _DERIVED_MODEL_REGISTRY:
+        form_config = target_type.get_form_config()
+        schema_extra = form_config.to_component_json_schema_extra() if form_config else {}
         model_name = f"{target_type.__name__}Model"
 
         model_fields: dict[
             str, Any
         ] = {}  # use Any to appease type checker when **-ing in to create_model
+        id_source_field: str | None = None
 
         for name, annotation_info in _get_annotations(target_type).items():
             field_resolver = _get_resolver(annotation_info.type, name)
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation_info.type
+            if (field_resolver.json_schema_extra or {}).get(APP_ID_SOURCE) is True:
+                if annotation_info.has_default:
+                    raise ResolutionException(
+                        f"{target_type.__name__}.{name}: ComponentFormConfig(id_source=True) is "
+                        "only valid on required fields, but this field has a default value."
+                    )
+                if id_source_field is not None:
+                    raise ResolutionException(
+                        f"{target_type.__name__} marks both {id_source_field!r} and {name!r} as "
+                        "id_source; at most one field per component may set id_source=True."
+                    )
+                id_source_field = name
 
             field_infos = []
             if annotation_info.field_info:
@@ -200,13 +256,19 @@ def derive_model_type(
                         default=default_value,
                         description=field_resolver.description,
                         examples=field_resolver.examples,
+                        json_schema_extra=field_resolver.json_schema_extra,
                     ),
                 )
-            elif field_resolver.description or field_resolver.examples:
+            elif (
+                field_resolver.description
+                or field_resolver.examples
+                or field_resolver.json_schema_extra
+            ):
                 field_infos.append(
                     Field(
                         description=field_resolver.description,
                         examples=field_resolver.examples,
+                        json_schema_extra=field_resolver.json_schema_extra,
                     )
                 )
 
@@ -220,11 +282,24 @@ def derive_model_type(
             )
 
         try:
-            _DERIVED_MODEL_REGISTRY[target_type] = create_model(
+            derived = create_model(
                 model_name,
                 __base__=Model,
                 **model_fields,
             )
+            # The component-type JSON is serialized with sort_keys=True on its
+            # way to the UI, so field declaration order must be carried
+            # explicitly. ``ui:order`` is lifted into the RJSF uiSchema by
+            # ``split_form_schema`` and honored natively by the form renderer.
+            # The humanized title replaces the derived class name (e.g.
+            # "SnowflakeDestinationModel") anywhere the schema is shown as a
+            # label — most visibly in union variant pickers.
+            derived.model_config["json_schema_extra"] = {
+                "title": _humanize_class_name(target_type.__name__),
+                "ui:order": list(model_fields.keys()),
+                **schema_extra,
+            }
+            _DERIVED_MODEL_REGISTRY[target_type] = derived
         except PydanticSchemaGenerationError as e:
             raise ResolutionException(f"Unable to derive Model for {target_type}") from e
 

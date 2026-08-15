@@ -4,7 +4,6 @@ from collections.abc import Mapping
 from typing import Any, TypeVar
 
 import dagster._check as check
-import kubernetes
 import kubernetes.client.models
 from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient

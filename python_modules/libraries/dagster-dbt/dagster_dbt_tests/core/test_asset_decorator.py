@@ -1356,6 +1356,84 @@ def test_dbt_enable_source_metadata_with_multiple_assets_defs(
     }
 
 
+def with_renamed_dbt_project(manifest: dict[str, Any], new_project: str) -> dict[str, Any]:
+    """Copy a manifest as if its sources belonged to a different dbt project.
+
+    The source AssetKeys are unchanged (they derive from source name + table) but each source
+    unique_id embeds the new project name, mirroring a single source referenced by two distinct
+    dbt projects.
+    """
+    renamed = copy.deepcopy(manifest)
+    old_project = renamed["metadata"]["project_name"]
+    unique_id_remap: dict[str, str] = {}
+
+    renamed_sources: dict[str, Any] = {}
+    for unique_id, source_props in renamed["sources"].items():
+        new_unique_id = unique_id.replace(f"source.{old_project}.", f"source.{new_project}.", 1)
+        unique_id_remap[unique_id] = new_unique_id
+        source_props["unique_id"] = new_unique_id
+        source_props["package_name"] = new_project
+        renamed_sources[new_unique_id] = source_props
+    renamed["sources"] = renamed_sources
+
+    for node_props in renamed["nodes"].values():
+        depends_on = node_props.get("depends_on", {}).get("nodes")
+        if depends_on:
+            node_props["depends_on"]["nodes"] = [
+                unique_id_remap.get(dep, dep) for dep in depends_on
+            ]
+
+    # dbt's node selector resolves the graph from parent_map/child_map, so remap those too.
+    for graph_key in ("parent_map", "child_map"):
+        graph = renamed.get(graph_key)
+        if graph:
+            renamed[graph_key] = {
+                unique_id_remap.get(node, node): [unique_id_remap.get(edge, edge) for edge in edges]
+                for node, edges in graph.items()
+            }
+
+    renamed["metadata"]["project_name"] = new_project
+    renamed["metadata"]["project_id"] = f"project_id_{new_project}"
+    return renamed
+
+
+def test_dbt_enable_source_metadata_across_distinct_manifests(
+    test_asset_checks_manifest: dict[str, Any],
+) -> None:
+    # A single source can be referenced by models built from two different dbt projects (e.g. one
+    # feeding a model and another feeding a snapshot). Each project's manifest gives that source a
+    # different unique_id and project_id, since the project identity is embedded in them. Such
+    # dbt-namespaced dep metadata must be omitted from source deps so the two projects produce
+    # identical metadata and the shared stub asset resolves instead of raising a conflict.
+    manifest_a = test_asset_checks_manifest
+    manifest_b = with_renamed_dbt_project(manifest_a, "other_project")
+
+    @dbt_assets(manifest=manifest_a, select="stg_customers")
+    def project_a_assets(): ...
+
+    @dbt_assets(manifest=manifest_b, select="stg_customers_again")
+    def project_b_assets(): ...
+
+    # Resolves without raising "Conflicting metadata found on AssetDeps".
+    asset_graph = Definitions(
+        assets=[project_a_assets, project_b_assets],
+    ).resolve_asset_graph()
+
+    raw_customers_key = AssetKey(["jaffle_shop", "raw_customers"])
+    assert {AssetKey(["stg_customers"]), AssetKey(["stg_customers_again"])} <= set(
+        asset_graph.get(raw_customers_key).child_keys
+    )
+
+    # Value-stable source metadata survives on the deps; dbt-namespaced metadata (which differs
+    # per project) does not.
+    for assets_def in (project_a_assets, project_b_assets):
+        for spec in assets_def.specs:
+            for dep in spec.deps:
+                if dep.asset_key == raw_customers_key:
+                    assert "dagster/table_name" in dep.metadata
+                    assert not any(key.startswith("dagster_dbt/") for key in dep.metadata)
+
+
 def test_dbt_enable_source_metadata_dedupes_collapsed_sources(
     test_duplicate_source_asset_key_manifest: dict[str, Any],
 ) -> None:

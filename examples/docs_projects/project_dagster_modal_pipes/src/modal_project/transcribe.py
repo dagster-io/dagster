@@ -240,7 +240,7 @@ def transcribe_episode(
     }
 
     logger.info(f"Writing openai/whisper transcription to {result_path}")
-    with open(result_path, "w") as f:
+    with open(result_path, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=4)
 
 

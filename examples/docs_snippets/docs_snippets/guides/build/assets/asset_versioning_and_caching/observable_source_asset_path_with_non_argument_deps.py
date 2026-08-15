@@ -14,13 +14,13 @@ FILE_PATH = dg.file_relative_path(__file__, "input_number.txt")
 
 @dg.observable_source_asset
 def input_number():
-    with open(FILE_PATH) as ff:
+    with open(FILE_PATH, encoding="utf-8") as ff:
         return dg.DataVersion(sha256_digest_from_str(ff.read()))
 
 
 @dg.asset(code_version="v6", deps=[input_number])
 def versioned_number():
-    with open(FILE_PATH) as ff:
+    with open(FILE_PATH, encoding="utf-8") as ff:
         value = int(ff.read())
         return dg.Output(value, data_version=dg.DataVersion(str(value)))
 

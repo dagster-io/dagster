@@ -90,7 +90,6 @@ def get_s3_keys(
         bucket (str): s3 bucket
         prefix (str): s3 object prefix
         since_key (Optional[str]): retrieve objects after the modified date of this key
-        since_last_modified (Optional[str]): retrieve objects after this timestamp
         s3_session (Optional[boto3.Client]): s3 client
 
     Returns:

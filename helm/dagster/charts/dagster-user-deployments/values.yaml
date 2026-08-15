@@ -58,6 +58,9 @@ deployments:
       - "/example_project/example_repo/repo.py"
     port: 3030
 
+    # Number of replicas of the user code gRPC server Deployment.
+    replicaCount: 1
+
     # Whether or not to include configuration specified for this user code deployment in the pods
     # launched for runs from that deployment
     includeConfigInLaunchedRuns:

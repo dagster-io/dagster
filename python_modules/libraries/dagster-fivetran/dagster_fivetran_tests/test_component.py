@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
-import yaml
 from dagster import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -23,6 +22,7 @@ from dagster_fivetran.components.workspace_component.component import FivetranAc
 from dagster_fivetran.resources import FivetranWorkspace
 from dagster_fivetran.translator import FivetranConnector
 from dagster_shared.merger import deep_merge_dicts
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_fivetran_tests.conftest import (
     EXTRA_TEST_CONNECTOR_ID,
@@ -340,7 +340,7 @@ def test_scaffold_component_with_params(scaffold_params: dict):
         assert defs_yaml_path.exists()
         assert {
             k: v
-            for k, v in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+            for k, v in safe_load_yaml(defs_yaml_path.read_text())["attributes"][
                 "workspace"
             ].items()
             if v is not None

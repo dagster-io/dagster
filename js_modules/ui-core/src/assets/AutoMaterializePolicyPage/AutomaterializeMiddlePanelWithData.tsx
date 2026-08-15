@@ -1,12 +1,4 @@
-import {
-  Box,
-  Colors,
-  NonIdealState,
-  Popover,
-  Subheading,
-  Subtitle2,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, NonIdealState, Popover, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {StatusDot} from './AutomaterializeLeftPanel';
@@ -121,24 +113,32 @@ export const AutomaterializeMiddlePanelWithData = ({
         border="bottom"
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subheading>Result</Subheading>
+        <Heading size={14} weight={600}>
+          Result
+        </Heading>
       </Box>
       {selectedEvaluation ? (
         <Box padding={{horizontal: 24, vertical: 12}}>
           <Box border="bottom" padding={{vertical: 12}} margin={{bottom: 12}}>
             <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24}}>
               <Box flex={{direction: 'column', gap: 5}}>
-                <Subtitle2>Evaluation result</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Evaluation result
+                </Heading>
                 <div>{statusTag}</div>
               </Box>
               {selectedEvaluation?.timestamp ? (
                 <Box flex={{direction: 'column', gap: 5}}>
-                  <Subtitle2>Timestamp</Subtitle2>
+                  <Heading size={14} weight={600}>
+                    Timestamp
+                  </Heading>
                   <Timestamp timestamp={{unix: selectedEvaluation?.timestamp}} />
                 </Box>
               ) : null}
               <Box flex={{direction: 'column', gap: 5}}>
-                <Subtitle2>Duration</Subtitle2>
+                <Heading size={14} weight={600}>
+                  Duration
+                </Heading>
                 <div>
                   {selectedEvaluation?.startTimestamp && selectedEvaluation?.endTimestamp
                     ? formatElapsedTimeWithMsec(
@@ -151,7 +151,9 @@ export const AutomaterializeMiddlePanelWithData = ({
             </div>
           </Box>
           <Box border="bottom" padding={{vertical: 12}} margin={{top: 12}}>
-            <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
+            <Heading size={14} weight={600}>
+              Runs launched ({selectedEvaluation.runIds.length})
+            </Heading>
           </Box>
           {runsFilter ? (
             <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false} />
@@ -165,7 +167,9 @@ export const AutomaterializeMiddlePanelWithData = ({
             </Box>
           )}
           <Box border="bottom" padding={{vertical: 12}}>
-            <Subtitle2>Policy evaluation</Subtitle2>
+            <Heading size={14} weight={600}>
+              Policy evaluation
+            </Heading>
           </Box>
           {definition?.partitionDefinition && selectedEvaluation.isLegacy ? (
             <Box padding={{vertical: 12}} flex={{justifyContent: 'flex-end'}}>

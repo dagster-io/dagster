@@ -31,7 +31,7 @@ GET_LATEST_DEFS_STATE_INFO_QUERY = """
 """
 
 SET_LATEST_VERSION_MUTATION = """
-    mutation setLatestDefsStateVersion($key: String!, $version: String!) {
+    mutation setLatestDefsStateVersion($key: String!, $version: String) {
         setLatestDefsStateVersion(key: $key, version: $version) {
             ok
         }
@@ -136,9 +136,6 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
     def _execute_query(self, query, variables=None):
         return self.graphql_client.execute_arbitrary(query, variables=variables)
 
-    def _get_artifact_key(self, key: str, version: str) -> str:
-        return f"__state__/{self._sanitize_key(key)}/{version}"
-
     def download_state_to_path(self, key: str, version: str, path: Path) -> None:
         download_artifact(
             url=self.url,
@@ -165,7 +162,7 @@ class DagsterPlusCliDefsStateStorage(DefsStateStorage[T_DagsterInstance], Config
         latest_info = res["latestDefsStateInfo"]
         return DefsStateInfo.from_graphql(latest_info) if latest_info else None
 
-    def set_latest_version(self, key: str, version: str) -> None:
+    def set_latest_version(self, key: str, version: str | None) -> None:
         result = self._execute_query(
             SET_LATEST_VERSION_MUTATION, variables={"key": key, "version": version}
         )

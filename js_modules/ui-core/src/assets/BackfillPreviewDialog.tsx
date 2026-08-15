@@ -1,4 +1,17 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Spinner} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Colors,
+  Container,
+  Dialog,
+  DialogFooter,
+  HeaderCell,
+  HeaderRow,
+  Inner,
+  Row,
+  RowCell,
+  Spinner,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
@@ -18,7 +31,6 @@ import {
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
 import {testId} from '../testing/testId';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 interface BackfillPreviewDialogProps {
   isOpen: boolean;
@@ -78,7 +90,7 @@ export const BackfillPreviewDialog = ({
         data-testid={testId('backfill-preview-modal-content')}
       >
         <BackfillPreviewTableHeader />
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const {assetKey, partitionDefinition, backfillPolicy} = assets[index]!;
@@ -86,7 +98,7 @@ export const BackfillPreviewDialog = ({
             const partitions = partitionsByAssetToken[token];
 
             return (
-              <Row key={token} $height={size} $start={start}>
+              <Row key={token} height={size} start={start}>
                 <Box
                   className={styles.rowGrid}
                   border={index < assets.length - 1 ? 'bottom' : undefined}

@@ -1,4 +1,4 @@
-import {Box, Icon, Subheading} from '@dagster-io/ui-components';
+import {Box, Heading, Icon} from '@dagster-io/ui-components';
 import {Dispatch, SetStateAction} from 'react';
 
 import {DimensionRangeWizard} from './DimensionRangeWizard';
@@ -40,7 +40,9 @@ export const DimensionRangeWizards = ({
           {range.dimension.name !== 'default' ? (
             <Box flex={{alignItems: 'center', gap: 8}} padding={{vertical: 4}}>
               <Icon name="partition" />
-              <Subheading>{range.dimension.name}</Subheading>
+              <Heading size={14} weight={600}>
+                {range.dimension.name}
+              </Heading>
             </Box>
           ) : null}
           <DimensionRangeWizard

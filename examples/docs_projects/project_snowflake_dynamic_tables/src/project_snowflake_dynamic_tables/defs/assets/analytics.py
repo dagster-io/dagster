@@ -6,7 +6,10 @@ from dagster_snowflake import SnowflakeResource
 @dg.asset(
     group_name="analytics",
     deps=["customer_lifetime_value", "daily_revenue_rollup"],
-    automation_condition=dg.AutomationCondition.eager().resolve_through_virtual(),
+    # No automation_condition: the dashboard is triggered by the freshness sensor,
+    # which fires a RunRequest only AFTER a dynamic table's refresh actually lands.
+    # An eager condition (even resolve_through_virtual) would fire on SOURCE change,
+    # before Snowflake refreshes the table — reading stale data. See sensors.py.
     kinds={"snowflake", "python"},
 )
 def executive_dashboard_report(

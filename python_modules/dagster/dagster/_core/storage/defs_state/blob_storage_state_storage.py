@@ -82,10 +82,14 @@ class UPathDefsStateStorage(DefsStateStorage, ConfigurableClass):
         remote_path.write_bytes(path.read_bytes())
         self.set_latest_version(key, version)
 
-    def set_latest_version(self, key: str, version: str) -> None:
+    def set_latest_version(self, key: str, version: str | None) -> None:
         # use the run storage's kvs to store the latest version pointer
         current_info = self.get_latest_defs_state_info()
-        new_info = DefsStateInfo.add_version(current_info, key, version)
+        new_info = (
+            DefsStateInfo.remove_key(current_info, key)
+            if version is None
+            else DefsStateInfo.add_version(current_info, key, version)
+        )
         self._instance.run_storage.set_cursor_values(
             {DEFS_STATE_INFO_CURSOR_KEY: serialize_value(new_info)}
         )

@@ -1,4 +1,4 @@
-import {Box, NonIdealState, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -40,7 +40,11 @@ export const GraphRoot = (props: Props) => {
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
       <PageHeader
-        title={<Subtitle1>{title}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {title}
+          </Heading>
+        }
         tags={
           <Tag icon="schema">
             Graph in <RepositoryLink repoAddress={repoAddress} />

@@ -2,7 +2,6 @@ import {
   Alert,
   Box,
   Button,
-  Caption,
   Colors,
   Dialog,
   DialogBody,
@@ -12,12 +11,11 @@ import {
   Menu,
   MenuItem,
   MetadataTableWIP,
-  Mono,
   NonIdealState,
   Popover,
   SpinnerWithText,
-  Subheading,
   Table,
+  Text,
   TextInput,
   Tooltip,
   showToast,
@@ -105,7 +103,7 @@ export const InstanceConcurrencyKeyInfo = ({
               flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
               border="bottom"
             >
-              <Heading>
+              <Heading size={20} weight={500}>
                 <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
                   <div>
                     <Link to="/deployment/concurrency">Pools</Link>
@@ -136,7 +134,9 @@ export const InstanceConcurrencyKeyInfo = ({
               </Box>
             </Box>
             <Box padding={{vertical: 16, horizontal: 24}}>
-              <Subheading>Pool info</Subheading>
+              <Heading size={14} weight={600}>
+                Pool info
+              </Heading>
             </Box>
             {!hasRunQueue && granularity !== 'op' ? (
               <Box margin={{horizontal: 20, bottom: 20}}>
@@ -145,10 +145,20 @@ export const InstanceConcurrencyKeyInfo = ({
                   title="Run granularity for pools not supported"
                   description={
                     <>
-                      The pool granularity is set to <Mono>run</Mono>, but run-level concurrency is
-                      not supported with this run coordinator. To enable run granularity for pools,
-                      configure your instance to use the default <Mono>QueuedRunCoordinator</Mono>{' '}
-                      in your <Mono>dagster.yaml</Mono>. See the{' '}
+                      The pool granularity is set to{' '}
+                      <Text size={14} family="mono">
+                        run
+                      </Text>
+                      , but run-level concurrency is not supported with this run coordinator. To
+                      enable run granularity for pools, configure your instance to use the default{' '}
+                      <Text size={14} family="mono">
+                        QueuedRunCoordinator
+                      </Text>{' '}
+                      in your{' '}
+                      <Text size={14} family="mono">
+                        dagster.yaml
+                      </Text>
+                      . See the{' '}
                       <a
                         target="_blank"
                         rel="noreferrer"
@@ -184,7 +194,9 @@ export const InstanceConcurrencyKeyInfo = ({
                             )}
                           </div>
                           {concurrencyLimit.usingDefaultLimit ? (
-                            <Caption color={Colors.textLighter()}>(default)</Caption>
+                            <Text size={12} color="textLighter">
+                              (default)
+                            </Text>
                           ) : null}
                         </Box>
                         {!readOnly && (
@@ -204,7 +216,9 @@ export const InstanceConcurrencyKeyInfo = ({
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress steps</Subheading>
+                  <Heading size={14} weight={600}>
+                    In progress steps
+                  </Heading>
                 </Box>
                 <Box style={{marginLeft: -1}}>
                   <PendingStepsTable
@@ -217,7 +231,9 @@ export const InstanceConcurrencyKeyInfo = ({
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>Queued runs</Subheading>
+                  <Heading size={14} weight={600}>
+                    Queued runs
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
@@ -227,14 +243,18 @@ export const InstanceConcurrencyKeyInfo = ({
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress</Subheading>
+                  <Heading size={14} weight={600}>
+                    In progress
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={inProgressStatuses} />
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>Queued</Subheading>
+                  <Heading size={14} weight={600}>
+                    Queued
+                  </Heading>
                 </Box>
                 <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
@@ -325,7 +345,10 @@ const EditConcurrencyLimitDialog = ({
       isOpen={open}
       title={
         <span>
-          Edit <Mono>{concurrencyKey}</Mono>
+          Edit{' '}
+          <Text size={14} family="mono">
+            {concurrencyKey}
+          </Text>
         </span>
       }
       onClose={onClose}
@@ -396,7 +419,10 @@ const DeleteConcurrencyLimitDialog = ({
 
   const title = (
     <>
-      Delete <Mono>{concurrencyKey}</Mono>
+      Delete{' '}
+      <Text size={14} family="mono">
+        {concurrencyKey}
+      </Text>
     </>
   );
   return (
@@ -613,7 +639,9 @@ const PendingStepRow = ({
           <Link to={`/runs/${step.runId}`}>
             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
               <RunStatusDot status={runStatus} size={10} />
-              <Mono>{titleForRun({id: step.runId})}</Mono>
+              <Text size={14} family="mono">
+                {titleForRun({id: step.runId})}
+              </Text>
               {failedStatuses.has(runStatus) ? (
                 <Tooltip
                   placement="top"
@@ -625,11 +653,15 @@ const PendingStepRow = ({
             </Box>
           </Link>
         ) : (
-          <Mono>{titleForRun({id: step.runId})}</Mono>
+          <Text size={14} family="mono">
+            {titleForRun({id: step.runId})}
+          </Text>
         )}
       </td>
       <td>
-        <Mono>{step.stepKey}</Mono>
+        <Text size={14} family="mono">
+          {step.stepKey}
+        </Text>
       </td>
       <td>
         {step.assignedTimestamp ? (

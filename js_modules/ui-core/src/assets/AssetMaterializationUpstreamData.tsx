@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Icon, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -157,7 +157,11 @@ export const AssetMaterializationUpstreamData = ({
   });
 
   if (!timestamp) {
-    return <Caption color={Colors.textLight()}>None</Caption>;
+    return (
+      <Text size={12} color="textLight">
+        None
+      </Text>
+    );
   }
 
   const data =

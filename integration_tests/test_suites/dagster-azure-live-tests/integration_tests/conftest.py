@@ -161,7 +161,7 @@ def setup_azure_env_file(
     }
     # this creates a file and writes the additional env vars to it
     file_path = Path(azure_tmp_dir) / "env_vars"
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         for key, value in additional_env_vars.items():
             f.write(f"{key}={value}\n")
 

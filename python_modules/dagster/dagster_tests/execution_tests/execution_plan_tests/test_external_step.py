@@ -598,12 +598,14 @@ def test_interrupt_step_launcher():
                     run_config=sleepy_run_config,
                 )
 
-                for event in execute_run_iterator(
-                    dg.reconstructable(define_sleepy_job),
-                    dagster_run,
-                    instance=instance,
-                ):
-                    event_types.append(event.event_type)
+                event_types.extend(
+                    event.event_type
+                    for event in execute_run_iterator(
+                        dg.reconstructable(define_sleepy_job),
+                        dagster_run,
+                        instance=instance,
+                    )
+                )
 
             assert DagsterEventType.STEP_FAILURE in event_types
             assert DagsterEventType.PIPELINE_FAILURE in event_types

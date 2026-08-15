@@ -1,23 +1,14 @@
 import os
-from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Iterable, Mapping, Sequence
 from glob import glob
 from pathlib import Path
-from typing import TypeAlias
 
 from buildkite_shared.context import BuildkiteContext
-from buildkite_shared.packages import get_python_package_step_skip_reason
+from buildkite_shared.packages import PackageSpec, build_steps_from_package_specs
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
-from buildkite_shared.step_builders.group_step_builder import (
-    GroupLeafStepConfiguration,
-    GroupStepBuilder,
-)
-from buildkite_shared.step_builders.step_builder import (
-    StepConfiguration,
-    TopLevelStepConfiguration,
-    is_command_step,
-)
+from buildkite_shared.step_builders.step_builder import StepConfiguration
+from buildkite_shared.tox import ToxFactor
 from buildkite_shared.utils import (
     connect_sibling_docker_container,
     network_buildkite_container,
@@ -25,21 +16,7 @@ from buildkite_shared.utils import (
 )
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
-from dagster_buildkite.steps.tox import ToxFactor, build_tox_step
 from dagster_buildkite.utils import wait_for_mysql_container
-
-_CORE_PACKAGES = [
-    oss_path("python_modules/dagster"),
-    oss_path("python_modules/dagit"),
-    oss_path("python_modules/dagster-graphql"),
-    oss_path("js_modules"),
-]
-
-_INFRASTRUCTURE_PACKAGES = [
-    oss_path(".buildkite/dagster-buildkite"),
-    oss_path("python_modules/automation"),
-    oss_path("python_modules/dagster-test"),
-]
 
 _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
 _DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
@@ -48,264 +25,17 @@ _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
 
 _GRAPHQL_GRPC_RESOURCES = ResourceRequests(cpu="2000m", memory="4Gi")
 
-
-def _infer_package_type(directory: str | Path) -> str:
-    directory = Path(directory)
-    if directory in _CORE_PACKAGES:
-        return "core"
-    elif oss_path("examples") in directory.parents or directory == oss_path("examples"):
-        return "example"
-    elif oss_path("python_modules/libraries") in directory.parents:
-        return "extension"
-    elif directory in _INFRASTRUCTURE_PACKAGES or oss_path("integration_tests") in (
-        directory,
-        *directory.parents,
-    ):
-        return "infrastructure"
-    else:
-        return "unknown"
-
-
-# The list of all available emojis is here:
-#   https://github.com/buildkite/emojis#emoji-reference
-_PACKAGE_TYPE_TO_EMOJI_MAP: Mapping[str, str] = {
-    "core": ":dagster:",
-    "example": ":large_blue_diamond:",
-    "extension": ":electric_plug:",
-    "infrastructure": ":gear:",
-    "unknown": ":grey_question:",
-}
-
-PytestExtraCommandsFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, ToxFactor | None], list[str]
-]
-PytestDependenciesFunction: TypeAlias = Callable[
-    [AvailablePythonVersion, ToxFactor | None], list[str]
-]
-UnsupportedVersionsFunction: TypeAlias = Callable[[ToxFactor | None], list[AvailablePythonVersion]]
-
-
-@dataclass
-class PackageSpec:
-    """Main spec for testing Dagster Python packages using tox.
-
-    Args:
-        directory (str): Python directory to test, relative to the repository root. Should contain a
-            tox.ini file.
-        name (str, optional): Used in the buildkite label. Defaults to None
-            (uses the package name as the label).
-        package_type (str, optional): Used to determine the emoji attached to the buildkite label.
-            Possible values are "core", "example", "extension", and "infrastructure". By default it
-            is inferred from the location of the passed directory.
-        unsupported_python_versions (list[AvailablePythonVersion], optional): Python versions that
-            are not supported by this package. The versions for which pytest will be run are
-            the versions determined for the commit minus this list. If this result is empty, then
-            the lowest supported version will be tested. Defaults to None (all versions are supported).
-        pytest_extra_cmds (Callable[str, list[str]], optional): Optional specification of
-            commands to run before the main pytest invocation through tox. Can be either a list of
-            commands or a function. Function form takes two arguments, the python version being
-            tested and the tox factor (if any), and returns a list of shell commands to execute.
-            Defaults to None (no additional commands).
-        pytest_step_dependencies (Callable[str, list[str]], optional): Optional specification of
-            Buildkite dependencies (e.g. on test image build step) for pytest steps. Can be either a
-            list of commands or a function. Function form takes two arguments, the python version
-            being tested and the tox factor (if any), and returns a list of Buildkite step names.
-            Defaults to None (no additional commands).
-        pytest_tox_factors: (list[ToxFactor], optional): list of additional tox environment factors to
-            use when iterating pytest tox environments. A separate pytest step is generated for each
-            element of the product of versions tested and these factors. For example, if we are
-            testing Python 3.7 and 3.8 and pass factors `[ToxFactor("pytest"), ToxFactor("integration")]`,
-            then four steps will be generated corresponding to environments "py37-pytest", "py37-integration",
-            "py38-pytest", "py38-integration". Defaults to None.
-        env_vars (list[str], optional): Additional environment variables to pass through to each
-            test environment. These must also be listed in the target toxfile under `passenv`.
-            Defaults to None.
-        tox_file (str, optional): The tox file to use. Defaults to {directory}/tox.ini.
-        timeout_in_minutes (int, optional): Fail after this many minutes.
-        queue (BuildkiteQueue, optional): Schedule steps to this queue.
-        run_pytest (bool, optional): Whether to run pytest. Enabled by default.
-        splits (int, optional): Number of splits to use when no tox factors are defined.
-            This allows parallelizing tests even when no specific tox factors are specified. Defaults to 1.
-    """
-
-    directory: str | Path
-    name: str | None = None
-    package_type: str | None = None
-    unsupported_python_versions: (
-        list[AvailablePythonVersion] | UnsupportedVersionsFunction | None
-    ) = None
-    pytest_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
-    pytest_step_dependencies: list[str] | PytestDependenciesFunction | None = None
-    pytest_tox_factors: list[ToxFactor] | None = None
-    env_vars: list[str] | None = None
-    tox_file: str | None = None
-    timeout_in_minutes: int | None = None
-    queue: BuildkiteQueue | None = None
-    resources: ResourceRequests | None = None
-    run_pytest: bool = True
-    splits: int = 1
-    force_run_fn: Callable[[BuildkiteContext], bool] | None = None
-    skip_run_fn: Callable[[BuildkiteContext], str | None] | None = None
-    ecr_passthru: bool = False
-
-    def __post_init__(self):
-        if not self.name:
-            self.name = os.path.basename(self.directory)
-
-        if not self.package_type:
-            self.package_type = _infer_package_type(self.directory)
-
-        self._should_skip = None
-        self._skip_reason = None
-
-    def build_steps(self, ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
-        base_name = self.name or os.path.basename(self.directory)
-        steps: list[GroupLeafStepConfiguration] = []
-
-        if self.run_pytest:
-            default_python_versions = AvailablePythonVersion.get_pytest_defaults(ctx)
-
-            tox_factors: Sequence[ToxFactor | None] = (
-                self.pytest_tox_factors if self.pytest_tox_factors else [None]
-            )
-
-            for other_factor in tox_factors:
-                if callable(self.unsupported_python_versions):
-                    unsupported_python_versions = self.unsupported_python_versions(other_factor)
-                else:
-                    unsupported_python_versions = self.unsupported_python_versions or []
-
-                supported_python_versions = [
-                    v
-                    for v in AvailablePythonVersion.get_all()
-                    if v not in unsupported_python_versions
-                ]
-
-                pytest_python_versions = [
-                    AvailablePythonVersion(v)
-                    for v in sorted(
-                        set(e.value for e in default_python_versions)
-                        - set(e.value for e in unsupported_python_versions)
-                    )
-                ]
-                # Use highest supported python version if no defaults_match
-                if len(pytest_python_versions) == 0:
-                    pytest_python_versions = [supported_python_versions[-1]]
-
-                for py_version in pytest_python_versions:
-                    version_factor = AvailablePythonVersion.to_tox_factor(py_version)
-                    if other_factor is None:
-                        tox_env = version_factor
-                        splits = self.splits
-                    else:
-                        tox_env = f"{version_factor}-{other_factor.factor}"
-                        splits = other_factor.splits
-
-                    if isinstance(self.pytest_extra_cmds, list):
-                        base_extra_commands_pre = self.pytest_extra_cmds
-                    elif callable(self.pytest_extra_cmds):
-                        base_extra_commands_pre = self.pytest_extra_cmds(py_version, other_factor)
-                    else:
-                        base_extra_commands_pre = []
-
-                    skip_reason_str = self.get_skip_reason(ctx)
-                    dependencies = []
-                    if not skip_reason_str:
-                        if isinstance(self.pytest_step_dependencies, list):
-                            dependencies = self.pytest_step_dependencies
-                        elif callable(self.pytest_step_dependencies):
-                            dependencies = self.pytest_step_dependencies(py_version, other_factor)
-
-                    factor_pytest_args = (
-                        list(other_factor.pytest_args)
-                        if other_factor and other_factor.pytest_args
-                        else []
-                    )
-                    label_suffix = (
-                        f" {other_factor.label_suffix}"
-                        if other_factor and other_factor.label_suffix
-                        else ""
-                    )
-
-                    # Generate multiple steps if splits > 1
-                    for split_index in range(1, splits + 1):
-                        if splits > 1:
-                            split_label = f"{base_name}{label_suffix} ({split_index}/{splits})"
-                            pytest_args = [
-                                f"--split {split_index}/{splits}",
-                                *factor_pytest_args,
-                            ]
-                            extra_commands_pre = base_extra_commands_pre
-                        else:
-                            split_label = f"{base_name}{label_suffix}"
-                            pytest_args = factor_pytest_args or None
-                            extra_commands_pre = base_extra_commands_pre
-
-                        steps.append(
-                            build_tox_step(
-                                self.directory,
-                                tox_env,
-                                base_label=split_label,
-                                command_type="pytest",
-                                python_version=py_version,
-                                env_vars=self.env_vars,
-                                extra_commands_pre=extra_commands_pre,
-                                dependencies=dependencies,
-                                tox_file=self.tox_file,
-                                timeout_in_minutes=self.timeout_in_minutes,
-                                queue=(
-                                    other_factor.queue
-                                    if other_factor and other_factor.queue
-                                    else self.queue
-                                ),
-                                skip_reason=skip_reason_str,
-                                pytest_args=pytest_args,
-                                concurrency=other_factor.concurrency if other_factor else None,
-                                concurrency_group=(
-                                    other_factor.concurrency_group if other_factor else None
-                                ),
-                                resources=(
-                                    other_factor.resources
-                                    if other_factor and other_factor.resources
-                                    else self.resources
-                                ),
-                                soft_fail=other_factor.soft_fail if other_factor else False,
-                                ecr_passthru=self.ecr_passthru,
-                            )
-                        )
-
-        emoji = _PACKAGE_TYPE_TO_EMOJI_MAP[self.package_type]  # type: ignore[index]
-        if len(steps) >= 2:
-            return [
-                GroupStepBuilder(
-                    base_name,
-                    [emoji],
-                    steps=steps,
-                ).build()
-            ]
-        elif len(steps) == 1:
-            only_step = steps[0]
-            if not is_command_step(only_step):
-                raise ValueError("Expected only step to be a CommandStep")
-            return [only_step]
-        else:
-            return []
-
-    def get_skip_reason(self, ctx: BuildkiteContext) -> str | None:
-        """Provides a message if this package's steps should be skipped on this run, and no message if the package's steps should be run."""
-        # If self._should_skip is not None, then the result is cached on self._skip_reason and we can return it.
-        if self._should_skip is not None:
-            if self._should_skip is True:
-                assert self._skip_reason is not None, (
-                    "Expected skip reason to be set if self._should_skip is True."
-                )
-            return self._skip_reason
-
-        self._skip_reason = get_python_package_step_skip_reason(
-            self.directory, force_run_fn=self.force_run_fn, skip_run_fn=self.skip_run_fn, ctx=ctx
-        )
-        self._should_skip = self._skip_reason is not None
-        return self._skip_reason
+# clickhouse-server in dind via testcontainers. Default 2Gi dind limit OOMs the
+# server under load. cpu bumped 1000m->2000m: at 1000m the clickhouse-server boot
+# starves the dind daemon, so testcontainers' container bring-up intermittently
+# blows docker-py's 60s read timeout (UnixHTTPConnectionPool ... read timeout=60)
+# and the session fixture errors. Pairs with the /var/lib/docker emptyDir mount.
+_CLICKHOUSE_TESTCONTAINERS_RESOURCES = ResourceRequests(
+    cpu="2000m",
+    memory="1Gi",
+    docker_memory="2Gi",
+    docker_memory_limit="4Gi",
+)
 
 
 def build_example_packages_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
@@ -344,25 +74,6 @@ def build_library_packages_steps(ctx: BuildkiteContext) -> list[StepConfiguratio
     return build_steps_from_package_specs(
         custom_packages + library_packages_with_standard_config, ctx
     )
-
-
-def build_steps_from_package_specs(
-    package_specs: list[PackageSpec],
-    ctx: BuildkiteContext,
-) -> list[StepConfiguration]:
-    steps: list[StepConfiguration] = []
-    all_packages = sorted(
-        package_specs,
-        key=lambda p: f"{_PACKAGE_TYPE_ORDER.index(p.package_type)} {p.name}",  # type: ignore[arg-type]
-    )
-
-    for pkg in all_packages:
-        steps += pkg.build_steps(ctx)
-
-    return steps
-
-
-_PACKAGE_TYPE_ORDER = ["core", "extension", "example", "infrastructure", "unknown"]
 
 
 # Find packages under a root subdirectory that are not configured above.
@@ -671,13 +382,18 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("examples/use_case_repository"),
             pytest_tox_factors=[ToxFactor("source")],
         ),
-        # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
-        # beefier instance
+        # Federation tutorial spins up two host-process airflow instances + dagster;
+        # 2 vCPU / 4 Gi starves the airflow standalones (SQLite lock contention).
         PackageSpec(
             oss_path("examples/airlift-federation-tutorial"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            # Two airflow standalone stacks + dagster share one pod. 2 vCPU starved
+            # the SQLite writers under load (scheduler died with "database is
+            # locked", failing test_load_metrics); 4 vCPU matches the old c5.xlarge
+            # DOCKER-queue sizing this package ran on before #24950.
+            resources=ResourceRequests(cpu="4000m", memory="6Gi"),
             unsupported_python_versions=[
                 # airflow
                 AvailablePythonVersion.V3_12,
@@ -801,7 +517,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 # AssetDaemonScenarios; the slowest scenario submits 73 partitioned run
                 # requests through the synchronous run coordinator in one tick and brushes
                 # the 240s pytest-timeout fallback on the EKS default 1000m budget.
-                # Bumping per-step CPU + migrating off the MEDIUM (EC2) queue.
                 ToxFactor(
                     "declarative_automation_tests",
                     splits=2,
@@ -1203,7 +918,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1211,7 +927,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1219,7 +936,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-polars"),
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
             ],
@@ -1280,6 +998,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[
                 ToxFactor("kubernetes_12"),
                 ToxFactor("kubernetes_35"),
+                ToxFactor("kubernetes_36"),
             ],
             pytest_extra_cmds=k8s_extra_cmds,
         ),
@@ -1372,6 +1091,8 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
         ),
         PackageSpec(
+            # Each split runs a host-process airflow + dagster pair; mirror the
+            # federation tutorial's sizing (minus one airflow instance).
             oss_path("python_modules/libraries/dagster-airlift/kitchen-sink"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             unsupported_python_versions=[
@@ -1380,7 +1101,11 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.DOCKER,
+            queue=BuildkiteQueue.KUBERNETES_EKS,
+            # One airflow standalone stack + dagster per split carries the same
+            # SQLite-lock risk as the federation tutorial, so match its 4 vCPU
+            # sizing (#24950).
+            resources=ResourceRequests(cpu="4000m", memory="4Gi"),
             splits=2,
         ),
         # Runs against live dbt cloud instance, we only want to run on commits and on the

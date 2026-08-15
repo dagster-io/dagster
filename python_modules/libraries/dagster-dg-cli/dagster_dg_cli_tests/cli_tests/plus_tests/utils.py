@@ -121,6 +121,26 @@ def mock_serverless_response():
     )
 
 
+def mock_serverless_k8s_response():
+    """Serverless v2 (K8s) org: the running agent is a ServerlessK8sUserCodeLauncher."""
+    mock_gql_response(
+        query=gql.DEPLOYMENT_INFO_QUERY,
+        json_data={
+            "data": {
+                "currentDeployment": {"agentType": "SERVERLESS"},
+                "agents": [
+                    {
+                        "status": "RUNNING",
+                        "metadata": [
+                            {"key": "type", "value": json.dumps("ServerlessK8sUserCodeLauncher")}
+                        ],
+                    },
+                ],
+            }
+        },
+    )
+
+
 def mock_hybrid_response(agent_class="K8sUserCodeLauncher"):
     mock_gql_response(
         query=gql.DEPLOYMENT_INFO_QUERY,

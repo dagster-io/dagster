@@ -2,7 +2,7 @@
 
 from typing import Any
 
-import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -73,4 +73,4 @@ class ProcessedDagsterCloudConfig(BaseModel, extra="forbid"):
 
 
 def load_dagster_cloud_yaml(text) -> DagsterCloudYaml:
-    return DagsterCloudYaml.model_validate(yaml.safe_load(text))
+    return DagsterCloudYaml.model_validate(safe_load_yaml(text))

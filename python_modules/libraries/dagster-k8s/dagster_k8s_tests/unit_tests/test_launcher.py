@@ -1,7 +1,6 @@
 from datetime import datetime
 from unittest import mock
 
-import kubernetes
 import kubernetes.client.rest
 import pytest
 from dagster import DagsterRunStatus, job, reconstructable

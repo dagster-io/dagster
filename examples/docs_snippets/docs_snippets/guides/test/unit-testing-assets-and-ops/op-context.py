@@ -4,7 +4,7 @@ import dagster as dg
 
 @dg.op
 def load_file(context: dg.OpExecutionContext) -> str:
-    with open(f"path_{context.partition_key}.txt") as file:
+    with open(f"path_{context.partition_key}.txt", encoding="utf-8") as file:
         return file.read()
 
 

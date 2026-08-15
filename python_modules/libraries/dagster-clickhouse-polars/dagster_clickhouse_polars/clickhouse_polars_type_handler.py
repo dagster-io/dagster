@@ -89,8 +89,10 @@ class ClickhousePolarsTypeHandler(DbTypeHandler[pl.DataFrame]):
     ) -> pl.DataFrame:
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return pl.DataFrame()
+        query, params = ClickhouseDbClient.get_select_statement_and_params(table_slice)
         pdf = connection.query_dataframe(
-            ClickhouseDbClient.get_select_statement(table_slice),
+            query,
+            params=params,
             settings={"use_numpy": True},
         )
         return pl.from_pandas(pdf)

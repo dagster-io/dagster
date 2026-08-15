@@ -29,7 +29,7 @@ import dagster as dg
 
 @dg.asset
 def code_location_1_asset():
-    with open("/tmp/data/code_location_1_asset.json", "w+") as f:
+    with open("/tmp/data/code_location_1_asset.json", "w+", encoding="utf-8") as f:
         json.dump(5, f)
 
 
@@ -44,10 +44,10 @@ import dagster as dg
 
 @dg.asset(deps=["code_location_1_asset"])
 def code_location_2_asset():
-    with open("/tmp/data/code_location_1_asset.json") as f:
+    with open("/tmp/data/code_location_1_asset.json", encoding="utf-8") as f:
         x = json.load(f)
 
-    with open("/tmp/data/code_location_2_asset.json", "w+") as f:
+    with open("/tmp/data/code_location_2_asset.json", "w+", encoding="utf-8") as f:
         json.dump(x + 6, f)
 
 

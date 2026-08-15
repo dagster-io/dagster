@@ -7,6 +7,7 @@ tags: [community-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census
 pypi: https://pypi.org/project/dagster-census/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/census.svg
   community: true
 partnerlink: https://www.getcensus.com/

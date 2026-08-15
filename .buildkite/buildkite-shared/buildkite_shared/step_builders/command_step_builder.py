@@ -31,6 +31,7 @@ class ResourceRequests:
         docker_memory: str = "1Gi",
         docker_memory_limit: str = "2Gi",
         ephemeral_storage: str | None = None,
+        docker_storage_size: str | None = None,
     ) -> None:
         self._cpu = cpu
         self._memory = memory
@@ -38,6 +39,7 @@ class ResourceRequests:
         self._docker_memory = docker_memory
         self._docker_memory_limit = docker_memory_limit
         self._ephemeral_storage = ephemeral_storage
+        self._docker_storage_size = docker_storage_size
 
     @property
     def cpu(self) -> str:
@@ -63,13 +65,18 @@ class ResourceRequests:
     def ephemeral_storage(self) -> str | None:
         return self._ephemeral_storage
 
+    @property
+    def docker_storage_size(self) -> str | None:
+        # Size of a dedicated emptyDir to mount at /var/lib/docker inside the
+        # dind sidecar. EBS-backed (not tmpfs) so it doesn't compete with the
+        # dind container's memory cgroup. Counts against the pod's
+        # ephemeral_storage, which must be sized to cover it plus the agent's
+        # checkout / build artifacts.
+        return self._docker_storage_size
+
 
 class BuildkiteQueue(StrEnum):
-    KUBERNETES_GKE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_GKE", "kubernetes-gke")
     KUBERNETES_EKS = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
-    DOCKER = os.getenv("BUILDKITE_DOCKER_QUEUE", "buildkite-docker-october22")
-    MEDIUM = os.getenv("BUILDKITE_MEDIUM_QUEUE", "buildkite-medium-october22")
-    WINDOWS = os.getenv("BUILDKITE_WINDOWS_QUEUE", "buildkite-windows-october22")
 
     @classmethod
     def contains(cls, value: str) -> bool:
@@ -378,10 +385,6 @@ class CommandStepBuilder:
                 "BUILDKITE_BUILD_URL",
                 "BUILDKITE_ORGANIZATION_SLUG",
                 "BUILDKITE_PIPELINE_SLUG",
-                "BUILDKITE_ANALYTICS_TOKEN",
-                "BUILDKITE_TEST_QUARANTINE_TOKEN",
-                "BUILDKITE_TEST_SUITE_SLUG",
-                # Buildkite uses this to tag tests in Test Engine
                 "BUILDKITE_BRANCH",
                 "BUILDKITE_COMMIT",
                 "BUILDKITE_MESSAGE",
@@ -465,6 +468,52 @@ class CommandStepBuilder:
                     "--registry-mirror=http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000"
                 )
 
+            dind_volume_mounts = [
+                {
+                    "mountPath": "/var/run",
+                    "name": "docker-sock",
+                },
+                # Shared /tmp with the test container so docker bind
+                # mounts of paths like `tempfile.TemporaryDirectory()`
+                # resolve to the same files dockerd sees. On EC2 the
+                # docker plugin mounted the host's /tmp into the test
+                # container and dockerd ran on the host, so /tmp was
+                # implicitly shared. On EKS the dind sidecar has its
+                # own /tmp by default, breaking that assumption.
+                {
+                    "mountPath": "/tmp",
+                    "name": "shared-tmp",
+                },
+            ]
+            docker_storage_size = self._resources.docker_storage_size if self._resources else None
+            if docker_storage_size:
+                # See ResourceRequests.docker_storage_size for rationale.
+                dind_volume_mounts.append(
+                    {
+                        "mountPath": "/var/lib/docker",
+                        "name": "dind-storage",
+                    }
+                )
+            else:
+                # Dedicated pod-private emptyDir for dockerd's image
+                # store and container state. Without this, /var/lib/docker
+                # falls through to the dind container's writable layer on
+                # the node's overlay filesystem, which is shared with every
+                # other pod on the node — so heavy snapshot/layer ops
+                # serialize at the kernel FS layer and dockerd holds its
+                # internal locks across that serialization. The observed
+                # symptom is 60s `UnixHTTPConnectionPool` ReadTimeouts on
+                # `containers.create` calls during dagster-docker tests
+                # (see #24902 / #24936 escalation ladder). Isolating
+                # /var/lib/docker to a per-pod mount eliminates the
+                # filesystem-layer overlay overhead and the cross-pod
+                # contention at that surface.
+                dind_volume_mounts.append(
+                    {
+                        "mountPath": "/var/lib/docker",
+                        "name": "docker-data",
+                    }
+                )
             sidecars.append(
                 {
                     "image": docker_image,
@@ -494,23 +543,7 @@ class CommandStepBuilder:
                             "value": "",
                         },
                     ],
-                    "volumeMounts": [
-                        {
-                            "mountPath": "/var/run",
-                            "name": "docker-sock",
-                        },
-                        # Shared /tmp with the test container so docker bind
-                        # mounts of paths like `tempfile.TemporaryDirectory()`
-                        # resolve to the same files dockerd sees. On EC2 the
-                        # docker plugin mounted the host's /tmp into the test
-                        # container and dockerd ran on the host, so /tmp was
-                        # implicitly shared. On EKS the dind sidecar has its
-                        # own /tmp by default, breaking that assumption.
-                        {
-                            "mountPath": "/tmp",
-                            "name": "shared-tmp",
-                        },
-                    ],
+                    "volumeMounts": dind_volume_mounts,
                     "securityContext": {
                         "privileged": True,
                         "allowPrivilegeEscalation": True,
@@ -546,6 +579,19 @@ class CommandStepBuilder:
                     "emptyDir": {},
                 }
             )
+            self._k8s_volumes.append(
+                {
+                    "name": "docker-data",
+                    # 10Gi cap bounds the dind sidecar's footprint on the
+                    # node's ephemeral storage. The test-project image is
+                    # ~2-3Gi and per-test scratch space is small, so 10Gi is
+                    # comfortable headroom. If a job ever blows through, the
+                    # eviction blast radius is just that pod.
+                    "emptyDir": {
+                        "sizeLimit": "10Gi",
+                    },
+                }
+            )
             self._k8s_volume_mounts.append(
                 {
                     "mountPath": "/var/run/",
@@ -558,6 +604,13 @@ class CommandStepBuilder:
                     "name": "shared-tmp",
                 },
             )
+            if docker_storage_size:
+                self._k8s_volumes.append(
+                    {
+                        "name": "dind-storage",
+                        "emptyDir": {"sizeLimit": docker_storage_size},
+                    }
+                )
 
         return {
             "gitEnvFrom": [{"secretRef": {"name": "git-ssh-credentials"}}],
@@ -585,33 +638,6 @@ class CommandStepBuilder:
                                 "name": "NODE_NAME",
                                 "valueFrom": {"fieldRef": {"fieldPath": "spec.nodeName"}},
                             },
-                            {
-                                "name": "INTERNAL_BUILDKITE_TEST_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "INTERNAL_BUILDKITE_TEST_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
-                            {
-                                "name": "INTERNAL_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "INTERNAL_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
-                            {
-                                "name": "DOGFOOD_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                "valueFrom": {
-                                    "secretKeyRef": {
-                                        "name": "buildkite-dagster-secrets",
-                                        "key": "DOGFOOD_BUILDKITE_STEP_ANALYTICS_TOKEN",
-                                    }
-                                },
-                            },
                         ],
                         "envFrom": [
                             {"secretRef": {"name": "buildkite-dagster-secrets"}},
@@ -632,16 +658,13 @@ class CommandStepBuilder:
 
     def build(self) -> CommandStepConfiguration:
         assert "agents" in self._step
-        on_k8s = self._step["agents"]["queue"] in (
-            BuildkiteQueue.KUBERNETES_GKE,
-            BuildkiteQueue.KUBERNETES_EKS,
-        )
+        on_k8s = self._step["agents"]["queue"] == BuildkiteQueue.KUBERNETES_EKS
         # Note: `self._requires_docker` is k8s-only. On non-k8s queues docker is
         # provided by the host agent regardless of the flag, so we don't gate.
 
         if not on_k8s and self._k8s_secrets:
             raise Exception(
-                "Specified a kubernetes secret on a non-kubernetes queue. Please call .on_queue(BuildkiteQueue.KUBERNETES_GKE) or .on_queue(BuildkiteQueue.KUBERNETES_EKS) if you want to run on k8s"
+                "Specified a kubernetes secret on a non-kubernetes queue. Please call .on_queue(BuildkiteQueue.KUBERNETES_EKS) if you want to run on k8s"
             )
 
         if on_k8s:

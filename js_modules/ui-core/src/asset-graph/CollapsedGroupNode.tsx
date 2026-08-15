@@ -2,10 +2,10 @@ import {
   Box,
   Colors,
   FontFamily,
+  Heading,
   Icon,
   Menu,
   MenuItem,
-  Subtitle,
   Tag,
   Tooltip,
   ifPlural,
@@ -17,7 +17,7 @@ import React, {useContext} from 'react';
 import {AssetDescription, NameTooltipCSS} from './AssetNode';
 import {StatusCase} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {GraphNode} from './Utils';
+import {GraphNode, groupIdLeafName} from './Utils';
 import cgStyles from './css/CollapsedGroupNode.module.css';
 import {GroupLayout} from './layout';
 import {groupAssetsByStatus} from './util';
@@ -36,7 +36,8 @@ import {numberFormatter} from '../ui/formatters';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group: GroupLayout}) => {
-  const name = group.groupName;
+  // Surrounding ancestor cluster boxes already communicate the rest of the path.
+  const name = groupIdLeafName(group.id);
   const nameWidth = group.bounds.width - 36; // padding and icon
   const maxLengthAtFontSize = (fontSize: number) => Math.floor(nameWidth / (fontSize * 0.53));
   const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
@@ -411,9 +412,9 @@ const DegradedStatusTooltip = ({
     <>
       {degraded ? (
         <Box border="bottom" padding={{bottom: 4}} margin={{bottom: 4}}>
-          <Subtitle>
+          <Heading size={14} weight={500}>
             {numberFormatter.format(degraded)} degraded asset{ifPlural(degraded, '', 's')}
-          </Subtitle>
+          </Heading>
         </Box>
       ) : null}
       {checksFailed ? (

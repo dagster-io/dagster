@@ -365,3 +365,34 @@ def test_report_asset_observation_apis_consistent(
             )
 
     # expect test to cover PipesContext.report_asset_observation once added
+
+
+def test_report_asset_materialization_endpoint_read_only_forbidden(
+    instance: DagsterInstance, read_only_test_client: TestClient
+):
+    asset_key = "read_only_mat_asset"
+    response = read_only_test_client.post(f"/report_asset_materialization/{asset_key}")
+    assert response.status_code == 401
+    assert response.json() == {"error": "Not authorized to report runless asset events."}
+    assert instance.get_latest_materialization_event(AssetKey(asset_key)) is None
+
+
+def test_report_asset_check_endpoint_read_only_forbidden(
+    instance: DagsterInstance, read_only_test_client: TestClient
+):
+    asset_key = "read_only_check_asset"
+    response = read_only_test_client.post(
+        f"/report_asset_check/{asset_key}",
+        json={"check_name": "my_check", "passed": True},
+    )
+    assert response.status_code == 401
+    assert response.json() == {"error": "Not authorized to report runless asset events."}
+
+
+def test_report_asset_observation_endpoint_read_only_forbidden(
+    instance: DagsterInstance, read_only_test_client: TestClient
+):
+    asset_key = "read_only_obs_asset"
+    response = read_only_test_client.post(f"/report_asset_observation/{asset_key}")
+    assert response.status_code == 401
+    assert response.json() == {"error": "Not authorized to report runless asset events."}

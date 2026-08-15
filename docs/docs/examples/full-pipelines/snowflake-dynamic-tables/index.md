@@ -14,8 +14,8 @@ In this example, you'll build a pipeline with Dagster that:
 
 - Represents [Snowflake Dynamic Tables](https://docs.snowflake.com/en/user-guide/dynamic-tables-intro) as `AssetSpec(is_virtual=True)` — unexecutable in Dagster, refreshed automatically by Snowflake
 - Preserves full asset lineage through virtual assets to real upstream sources
-- Uses `AutomationCondition.eager().resolve_through_virtual()` so a downstream asset re-runs whenever source data changes, even though its direct upstreams are virtual
-- Monitors Dynamic Table freshness with a sensor that emits `AssetObservation` events
+- Monitors Dynamic Table refresh state with a sensor that emits `AssetObservation` events and asset checks that report a pass/fail health signal
+- Triggers a downstream asset from that same sensor — firing a run only _after_ a Dynamic Table's refresh actually lands, so the downstream never reads stale data
 
 ## Prerequisites
 

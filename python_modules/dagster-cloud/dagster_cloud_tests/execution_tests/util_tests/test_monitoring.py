@@ -4,8 +4,13 @@ from unittest import mock
 
 from dagster import DagsterRun, DagsterRunStatus
 from dagster._core.launcher import CheckRunHealthResult, WorkerStatus
+from dagster._serdes import deserialize_value, serialize_value
+from dagster._utils.typed_dict import init_optional_typeddict
 from dagster_cloud.execution.cloud_run_launcher.process import CloudProcessRunLauncher
 from dagster_cloud.execution.monitoring import (
+    CloudCodeServerHeartbeat,
+    CloudCodeServerStatus,
+    CloudCodeServerUtilizationMetrics,
     CloudRunWorkerStatus,
     run_worker_monitoring_thread_iteration,
 )
@@ -42,6 +47,29 @@ def test_cloud_run_worker_status_with_very_long_message():
     assert status.run_id == "my-run"
     assert status.status_type == WorkerStatus.RUNNING
     assert status.message == "".join(["A" for i in range(1000)])
+
+
+def test_cloud_code_server_utilization_metrics_server_id_absent_by_default():
+    heartbeat = CloudCodeServerHeartbeat(
+        location_name="foo",
+        server_status=CloudCodeServerStatus.RUNNING,
+    )
+    assert "utilization_metrics" not in heartbeat.metadata
+
+
+def test_cloud_code_server_utilization_metrics_server_id_round_trips():
+    utilization_metrics = init_optional_typeddict(CloudCodeServerUtilizationMetrics)
+    utilization_metrics["server_id"] = "b3a9c2f0-1d45-4e9a-aaaa-bbbbbbbbbbbb"
+    heartbeat = CloudCodeServerHeartbeat(
+        location_name="foo",
+        server_status=CloudCodeServerStatus.RUNNING,
+        metadata={"utilization_metrics": utilization_metrics},
+    )
+    round_tripped = deserialize_value(serialize_value(heartbeat), CloudCodeServerHeartbeat)
+    assert (
+        round_tripped.metadata["utilization_metrics"].get("server_id")
+        == "b3a9c2f0-1d45-4e9a-aaaa-bbbbbbbbbbbb"
+    )
 
 
 def test_thread_error(agent_instance, caplog):

@@ -3,12 +3,11 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 import boto3.session
-import botocore.client
 
 from dagster_aws.utils import ResourceWithBoto3Configuration, construct_boto_client_retry_config
 
 if TYPE_CHECKING:
-    import botocore
+    import botocore.client
 
 
 class RDSResource(ResourceWithBoto3Configuration):

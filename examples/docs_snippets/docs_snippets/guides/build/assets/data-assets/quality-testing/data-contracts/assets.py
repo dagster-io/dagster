@@ -49,7 +49,9 @@ def validate_shipments_data_contract(
     """Check that the shipments asset matches the data contract schema."""
     # Read the data contract YAML file
     try:
-        with open(dg.file_relative_path(__file__, "shipments_contract.yaml")) as file:
+        with open(
+            dg.file_relative_path(__file__, "shipments_contract.yaml"), encoding="utf-8"
+        ) as file:
             contract = yaml.safe_load(file)
     except FileNotFoundError:
         return dg.AssetCheckResult(
@@ -90,18 +92,16 @@ def validate_shipments_data_contract(
 
     # Compare schemas
     mismatches = []
-    missing_columns = []
-    extra_columns = []
 
     # Check for missing columns in actual schema
-    for col_name in expected_schema:
-        if col_name not in actual_schema:
-            missing_columns.append(col_name)
+    missing_columns = [
+        col_name for col_name in expected_schema if col_name not in actual_schema
+    ]
 
     # Check for extra columns in actual schema
-    for col_name in actual_schema:
-        if col_name not in expected_schema:
-            extra_columns.append(col_name)
+    extra_columns = [
+        col_name for col_name in actual_schema if col_name not in expected_schema
+    ]
 
     # Check for type mismatches
     for col_name in expected_schema:

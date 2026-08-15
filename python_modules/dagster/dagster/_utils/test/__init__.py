@@ -153,16 +153,15 @@ def wrap_op_in_graph(
     check.opt_mapping_param(tags, "tags", key_type=str)
 
     if do_input_mapping:
-        input_mappings = []
-        for input_name in op_def.ins.keys():
-            # create an input mapping to the inner node with the same name.
-            input_mappings.append(
-                InputMapping(
-                    graph_input_name=input_name,
-                    mapped_node_name=op_def.name,
-                    mapped_node_input_name=input_name,
-                )
+        # create an input mapping to the inner node with the same name.
+        input_mappings = [
+            InputMapping(
+                graph_input_name=input_name,
+                mapped_node_name=op_def.name,
+                mapped_node_input_name=input_name,
             )
+            for input_name in op_def.ins.keys()
+        ]
     else:
         input_mappings = None
 

@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Box} from './Box';
 import {Button} from './Button';
 import {Popover} from './Popover';
-import {Subheading} from './Text';
+import {Heading} from './Typography';
 import styles from './css/ProductTour.module.css';
 
 export enum ProductTourPosition {
@@ -95,7 +95,9 @@ export const ProductTour = ({
           >
             <Box flex={{direction: 'column', gap: 8}}>
               {media}
-              <Subheading style={{fontSize: '16px'}}>{title}</Subheading>
+              <Heading size={16} weight={600}>
+                {title}
+              </Heading>
             </Box>
             <div>{description}</div>
             {actionsJsx}

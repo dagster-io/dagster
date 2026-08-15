@@ -76,8 +76,10 @@ class ClickhousePandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     ) -> pd.DataFrame:
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return pd.DataFrame()
+        query, params = ClickhouseDbClient.get_select_statement_and_params(table_slice)
         return connection.query_dataframe(
-            ClickhouseDbClient.get_select_statement(table_slice),
+            query,
+            params=params,
             settings={"use_numpy": True},
         )
 

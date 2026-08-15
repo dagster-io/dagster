@@ -37,8 +37,8 @@ def downstream(
 
 # after_downstream_marker
 
-from dagster_aws.pipes import PipesS3MessageReader  # noqa: E402
-from dagster_aws.s3 import S3PickleIOManager, S3Resource  # noqa: E402
+from dagster_aws.pipes import PipesS3MessageReader
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
 
 definitions = dg.Definitions(
     assets=[upstream, downstream],

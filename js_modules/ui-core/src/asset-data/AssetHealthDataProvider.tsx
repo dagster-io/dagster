@@ -277,6 +277,8 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
         ...AssetHealthMaterializationDegradedPartitionedMetaFragment
         ...AssetHealthMaterializationHealthyPartitionedMetaFragment
         ...AssetHealthMaterializationDegradedNotPartitionedMetaFragment
+        ...AssetHealthMaterializationWarningPartitionedMetaFragment
+        ...AssetHealthMaterializationWarningNotPartitionedMetaFragment
       }
       assetChecksStatus
       assetChecksStatusMetadata {
@@ -305,6 +307,18 @@ export const ASSETS_HEALTH_INFO_QUERY = gql`
   }
 
   fragment AssetHealthMaterializationDegradedNotPartitionedMetaFragment on AssetHealthMaterializationDegradedNotPartitionedMeta {
+    failedRunId
+  }
+
+  fragment AssetHealthMaterializationWarningPartitionedMetaFragment on AssetHealthMaterializationWarningPartitionedMeta {
+    numUpForRetryPartitions
+    numMissingPartitions
+    totalNumPartitions
+    latestRunId
+    latestFailedRunId
+  }
+
+  fragment AssetHealthMaterializationWarningNotPartitionedMetaFragment on AssetHealthMaterializationWarningNotPartitionedMeta {
     failedRunId
   }
 

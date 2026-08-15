@@ -923,10 +923,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if t.get("lastStatus") in RUNNING_STATUSES:
             return CheckRunHealthResult(WorkerStatus.RUNNING, run_worker_id=run_worker_id)
         elif t.get("lastStatus") in STOPPED_STATUSES:
-            failed_containers = []
-            for c in t.get("containers"):
-                if c.get("exitCode") != 0:
-                    failed_containers.append(c)
+            failed_containers = [c for c in t.get("containers") if c.get("exitCode") != 0]
             if len(failed_containers) > 0:
                 failure_text = ""
 

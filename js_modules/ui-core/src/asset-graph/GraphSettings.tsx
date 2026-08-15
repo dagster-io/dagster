@@ -1,4 +1,4 @@
-import {Body, Box, Button, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Icon, Menu, MenuItem, Popover, Text, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {KeyboardTag} from './KeyboardTag';
@@ -362,7 +362,7 @@ export const ToggleShowStubAssetsMenuItem = () => {
       onClick={() => setShowStubAssets(!showStubAssets)}
       text={
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Body>{showStubAssets ? 'Hide' : 'Show'} stub assets </Body>
+          <Text size={14}>{showStubAssets ? 'Hide' : 'Show'} stub assets </Text>
           <div style={{marginLeft: 8}}>
             <Tooltip content="Stub assets are placeholder assets that Dagster automatically creates to represent dependencies that aren't defined in your current code location. ">
               <Icon name="info" />

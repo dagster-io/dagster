@@ -9,7 +9,6 @@ from itertools import chain, cycle
 from unittest import mock
 
 import boto3
-import botocore
 import botocore.exceptions
 import pytest
 from botocore.stub import ANY, Stubber

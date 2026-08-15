@@ -6,8 +6,8 @@ import {
   DialogBody,
   DialogFooter,
   Icon,
-  Mono,
   Spinner,
+  Text,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -99,7 +99,9 @@ export const CreatePartitionDialog = ({
         content={
           <div>
             The following substrings are not allowed:{' '}
-            <Mono>[{INVALID_PARTITION_SUBSTRINGS_READABLE.join(',')}]</Mono>
+            <Text size={14} family="mono">
+              [{INVALID_PARTITION_SUBSTRINGS_READABLE.join(',')}]
+            </Text>
           </div>
         }
         placement="top"
@@ -178,7 +180,10 @@ export const CreatePartitionDialog = ({
             {dynamicPartitionsDefinitionName ? (
               <>
                 {' '}
-                for <Mono>{dynamicPartitionsDefinitionName}</Mono>
+                for{' '}
+                <Text size={14} family="mono">
+                  {dynamicPartitionsDefinitionName}
+                </Text>
               </>
             ) : (
               ''

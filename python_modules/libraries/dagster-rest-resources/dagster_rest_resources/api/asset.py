@@ -182,19 +182,19 @@ class DgApiAssetApi:
                 case "AssetConnection":
                     if not mat_result.nodes:  # ty: ignore[unresolved-attribute]
                         raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
-                    for mat in mat_result.nodes[0].asset_materializations:  # ty: ignore[unresolved-attribute]
-                        events.append(
-                            DgApiAssetEvent(
-                                timestamp=mat.timestamp,
-                                run_id=mat.run_id,
-                                event_type="ASSET_MATERIALIZATION",
-                                partition=mat.partition,
-                                tags=[{"key": t.key, "value": t.value} for t in mat.tags],
-                                metadata_entries=[
-                                    self._metadata_entry_to_dict(e) for e in mat.metadata_entries
-                                ],
-                            )
+                    events.extend(
+                        DgApiAssetEvent(
+                            timestamp=mat.timestamp,
+                            run_id=mat.run_id,
+                            event_type="ASSET_MATERIALIZATION",
+                            partition=mat.partition,
+                            tags=[{"key": t.key, "value": t.value} for t in mat.tags],
+                            metadata_entries=[
+                                self._metadata_entry_to_dict(e) for e in mat.metadata_entries
+                            ],
                         )
+                        for mat in mat_result.nodes[0].asset_materializations  # ty: ignore[unresolved-attribute]
+                    )
                 case "PythonError":
                     raise DagsterPlusGraphqlError(
                         f"Error fetching asset events: {mat_result.message}"  # ty: ignore[unresolved-attribute]
@@ -214,19 +214,19 @@ class DgApiAssetApi:
                 case "AssetConnection":
                     if not obs_result.nodes:  # ty: ignore[unresolved-attribute]
                         raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
-                    for obs in obs_result.nodes[0].asset_observations:  # ty: ignore[unresolved-attribute]
-                        events.append(
-                            DgApiAssetEvent(
-                                timestamp=obs.timestamp,
-                                run_id=obs.run_id,
-                                event_type="ASSET_OBSERVATION",
-                                partition=obs.partition,
-                                tags=[{"key": t.key, "value": t.value} for t in obs.tags],
-                                metadata_entries=[
-                                    self._metadata_entry_to_dict(e) for e in obs.metadata_entries
-                                ],
-                            )
+                    events.extend(
+                        DgApiAssetEvent(
+                            timestamp=obs.timestamp,
+                            run_id=obs.run_id,
+                            event_type="ASSET_OBSERVATION",
+                            partition=obs.partition,
+                            tags=[{"key": t.key, "value": t.value} for t in obs.tags],
+                            metadata_entries=[
+                                self._metadata_entry_to_dict(e) for e in obs.metadata_entries
+                            ],
                         )
+                        for obs in obs_result.nodes[0].asset_observations  # ty: ignore[unresolved-attribute]
+                    )
                 case "PythonError":
                     raise DagsterPlusGraphqlError(
                         f"Error fetching asset events: {obs_result.message}"  # ty: ignore[unresolved-attribute]

@@ -194,7 +194,7 @@ def update_pr(
     # Load context if provided
     context = None
     if from_context:
-        with open(from_context) as f:
+        with open(from_context, encoding="utf-8") as f:
             context = json.load(f)
 
     # Step 0: Auto-prepare if requested

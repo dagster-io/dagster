@@ -44,7 +44,11 @@ class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
 def define_cluster_provider_fixture(additional_kind_images=None):
     @pytest.fixture(scope="session")
     def _cluster_provider(request):
-        from dagster_k8s_test_infra.kind import kind_cluster, kind_load_images
+        from dagster_k8s_test_infra.kind import (
+            _docker_pull_with_retry,
+            kind_cluster,
+            kind_load_images,
+        )
 
         if IS_BUILDKITE:
             print("Installing ECR credentials...")
@@ -68,8 +72,15 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             should_cleanup = True if IS_BUILDKITE else not request.config.getoption("--no-cleanup")
 
             with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
-                if not IS_BUILDKITE:
-                    docker_image = get_test_project_docker_image()
+                docker_image = get_test_project_docker_image()
+                if IS_BUILDKITE:
+                    # The test-project image is built and pushed by an upstream step;
+                    # pull it into the dind sidecar's docker daemon so `kind load
+                    # docker-image` can copy it onto the kind node. With this preload
+                    # plus imagePullPolicy=IfNotPresent, kubelet never has to fetch
+                    # from ECR at test time (a 4-min round trip under the EKS queue).
+                    _docker_pull_with_retry(docker_image)
+                else:
                     try:
                         client = docker.from_env()
                         client.images.get(docker_image)
@@ -79,11 +90,23 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                         )
                     except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)
-                    kind_load_images(
-                        cluster_name=cluster_config.name,
-                        local_dagster_test_image=docker_image,
-                        additional_images=additional_kind_images,
-                    )
+                # Preload the supporting images (postgres / rabbitmq /
+                # localstack / busybox) into the kind node's containerd via
+                # `crictl pull` (see `_kind_node_crictl_pull_with_retry`). The
+                # lazy path -- letting kubelet pull through the same CRI mirror
+                # chain at test-pod schedule time -- occasionally returns
+                # corrupted layers (`failed commit on ref ... unexpected commit
+                # digest`), which fails every helm-postgres-dependent test in
+                # the run because the dagster-k8s client treats ErrImagePull as
+                # terminal (`client.py:768`). Moving the pull to fixture-init
+                # lets us retry the corruption case loudly with backoff, and
+                # `imagePullPolicy=IfNotPresent` then keeps kubelet off the
+                # network entirely at test time.
+                kind_load_images(
+                    cluster_name=cluster_config.name,
+                    local_dagster_test_image=docker_image,
+                    additional_images=additional_kind_images,
+                )
                 yield cluster_config
 
         # Use cluster from kubeconfig

@@ -1,0 +1,8 @@
+.code {
+  background-color: var(--color-background-blue);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-ligatures: none;
+  padding: 2px 4px;
+}

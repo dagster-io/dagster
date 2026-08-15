@@ -116,7 +116,7 @@ class StateBackedComponent(Component):
         loaded_component = super().load(attributes, context)
         context.component_tree.mark_component_defs_state_key(
             defs_state_key=loaded_component.defs_state_config.key,
-            component_path=context.component_path,
+            loc=context.component_loc,
         )
         return loaded_component
 
@@ -242,7 +242,7 @@ class StateBackedComponent(Component):
         """
 
     @abstractmethod
-    def write_state_to_path(self, state_path: Path) -> None | Awaitable[None]:
+    def write_state_to_path(self, state_path: Path) -> Awaitable[None] | None:
         """Fetches and writes required state to a local file. This method can be
         implemented as either sync or async.
 

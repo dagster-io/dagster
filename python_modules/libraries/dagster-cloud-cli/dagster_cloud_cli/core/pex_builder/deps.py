@@ -141,6 +141,15 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
     return local_package_paths, deps_lines
 
 
+# TEMP (protobuf<7 compat): grpcio-health-checking 1.82.0 ships grpc_health/v1/health_pb2
+# generated with protobuf-7 gencode, which the protobuf runtime-version guard rejects against
+# the protobuf<7 runtime that dagster pins — the code server then crashes on import. The deps
+# pex resolves from PyPI, so it pulls 1.82.0 regardless of what the resolved dagster's metadata
+# says; force it here so every serverless build is compatible. Remove once dagster's protobuf<7
+# cap is lifted.
+_EXTRA_BUILD_CONSTRAINTS = ["grpcio-health-checking<1.82"]
+
+
 def get_deps_requirements(
     code_directory, python_version: version.Version
 ) -> tuple[LocalPackages, DepsRequirements]:
@@ -150,8 +159,15 @@ def get_deps_requirements(
 
     local_package_paths, deps_lines = collect_requirements(code_directory, python_interpreter)
 
+    # Skip the extra constraints when the project uses hash-pinned requirements: pip's
+    # --require-hashes mode rejects any unhashed requirement, and a hash-pinned project is
+    # already fully version-locked (immune to the upstream drift these constraints guard against).
+    extra_constraints = (
+        [] if any("--hash" in line for line in deps_lines) else _EXTRA_BUILD_CONSTRAINTS
+    )
+
     deps_requirements_text = "\n".join(
-        sorted(set(deps_lines)) + [""]
+        sorted(set(deps_lines) | set(extra_constraints)) + [""]
     )  # empty string adds trailing newline
 
     ui.print(f"List of local packages: {local_package_paths}")
@@ -419,19 +435,15 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
     except Exception as e:
         raise ValueError(f"Error parsing pyproject.toml: {e}")
 
-    lines = []
-
     # Handle dependencies in [project] section (PEP 621)
     project_section = pyproject_data.get("project", {})
     dependencies = project_section.get("dependencies", [])
-    for dep in dependencies:
-        lines.append(str(dep))
+    lines = [str(dep) for dep in dependencies]
 
     # Handle optional dependencies in [project.optional-dependencies]
     optional_deps = project_section.get("optional-dependencies", {})
     for group_deps in optional_deps.values():
-        for dep in group_deps:
-            lines.append(str(dep))
+        lines.extend(str(dep) for dep in group_deps)
 
     # Handle legacy [tool.poetry.dependencies] for Poetry projects
     poetry_section = pyproject_data.get("tool", {}).get("poetry", {})

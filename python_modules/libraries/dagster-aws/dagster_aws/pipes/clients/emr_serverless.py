@@ -58,6 +58,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         message_reader: PipesMessageReader | None = None,
         forward_termination: bool = True,
         poll_interval: float = 5.0,
+        dashboard_refresh_interval: float | None = 3300.0,
     ):
         self._client: EMRServerlessClient = cast(
             "EMRServerlessClient", client or boto3.client("emr-serverless")
@@ -66,6 +67,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
         self.poll_interval = poll_interval
+        self.dashboard_refresh_interval = check.opt_numeric_param(
+            dashboard_refresh_interval, "dashboard_refresh_interval"
+        )
 
     @property
     def client(self) -> "EMRServerlessClient":
@@ -95,8 +99,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
         Args:
             context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
-            params (dict): Parameters for the ``start_job_run`` boto3 AWS EMR Serverless client call.
-                See `Boto3 EMR Serverless API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr-serverless/client/start_job_run.html>`_
+            start_job_run_params (dict): Parameters for the start_job_run boto3 AWS EMR Serverless client call.
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:
@@ -183,6 +186,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
 
         running_dashboard_url = None
         completed_dashboard_url = None
+        last_dashboard_fetch_time = None
 
         while response := self.client.get_job_run(
             applicationId=start_response["applicationId"],
@@ -190,11 +194,19 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         ):
             state: JobRunStateType = response["jobRun"]["state"]
 
-            # get dashboard url when it's ready (but only once)
-            if state == "RUNNING" and running_dashboard_url is None:
+            # get dashboard url when it's ready, and refresh it according to dashboard_refresh_interval (default 55 minutes)
+            if state == "RUNNING" and (
+                running_dashboard_url is None
+                or (
+                    self.dashboard_refresh_interval is not None
+                    and last_dashboard_fetch_time is not None
+                    and time.time() - last_dashboard_fetch_time >= self.dashboard_refresh_interval
+                )
+            ):
                 running_dashboard_url = self.client.get_dashboard_for_job_run(
                     applicationId=application_id, jobRunId=job_run_id
                 )
+                last_dashboard_fetch_time = time.time()
                 context.log.info(
                     f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {running_dashboard_url}"
                 )
