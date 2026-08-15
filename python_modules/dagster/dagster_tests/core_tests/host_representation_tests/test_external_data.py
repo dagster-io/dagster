@@ -203,15 +203,37 @@ def test_asset_missing_group_name():
 def test_asset_invalid_group_name():
     with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @dg.asset(group_name="group/with/slashes")
-        def asset2():
+        @dg.asset(group_name="group.with.dots")
+        def asset3():
             return 1
 
     with pytest.raises(dg.DagsterInvalidDefinitionError):
 
-        @dg.asset(group_name="group.with.dots")
-        def asset3():
+        @dg.asset(group_name="/leading_slash")
+        def asset4():
             return 1
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+
+        @dg.asset(group_name="trailing_slash/")
+        def asset5():
+            return 1
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+
+        @dg.asset(group_name="double//slash")
+        def asset6():
+            return 1
+
+
+def test_asset_hierarchical_group_name():
+    @dg.asset(group_name="marketing/foo/bar")
+    def asset1():
+        return 1
+
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(dg.Definitions(assets=[asset1]))
+
+    assert asset_node_snaps[0].group_name == "marketing/foo/bar"
 
 
 def test_two_asset_job():

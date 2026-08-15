@@ -57,13 +57,21 @@ In addition to these IP addresses, the following URLs also need to be allowed eg
 
 <Tabs groupId="region">
     <TabItem value="us-region" label="US region">
-        - `cloud-prod-object-snapshots.s3.amazonaws.com`
-        - `cloud-prod-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
+        - `cloud-prod-object-snapshots.s3.amazonaws.com` and `cloud-prod-object-snapshots.s3.us-west-2.amazonaws.com`
+        - `cloud-prod-compute-logs.s3.amazonaws.com` and `cloud-prod-compute-logs.s3.us-west-2.amazonaws.com` \*
         - `<organization-name>.agent.dagster.cloud`
     </TabItem>
     <TabItem value="eu-region" label="EU region">
-        - `cloud-prod-eu-object-snapshots.s3.amazonaws.com`
-        - `cloud-prod-eu-compute-logs.s3.amazonaws.com` - Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
+        - `cloud-prod-eu-object-snapshots.s3.amazonaws.com` and `cloud-prod-eu-object-snapshots.s3.eu-north-1.amazonaws.com`
+        - `cloud-prod-eu-compute-logs.s3.amazonaws.com` and `cloud-prod-eu-compute-logs.s3.eu-north-1.amazonaws.com` \*
         - `<organization-name>.agent.eu.dagster.cloud`
     </TabItem>
 </Tabs>
+
+\* Only required if compute logs are being sent to Dagster+'s control plane. Not needed if you've configured compute logs to be sent to your own blob storage. See [Managing compute logs and error messages](/deployment/dagster-plus/management/managing-compute-logs-and-error-messages) for more details.
+
+:::note
+
+By default, the S3 URLs that Dagster+ generates for your agent use the legacy global S3 hostname (for example, `cloud-prod-object-snapshots.s3.amazonaws.com`). If your network requires regional S3 hostnames (for example, `cloud-prod-object-snapshots.s3.us-west-2.amazonaws.com`), such as when routing S3 traffic through an [AWS PrivateLink interface endpoint for S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html) that doesn't support legacy global endpoints, [contact the Dagster team](https://dagster.io/contact) to have your organization switched to regional-style URLs. If you allowlist hostnames, we recommend allowlisting both forms.
+
+:::

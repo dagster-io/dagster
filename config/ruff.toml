@@ -26,7 +26,7 @@ target-version = "py310"
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.15.14"
+required-version = "0.16.2"
 
 [lint]
 
@@ -131,6 +131,11 @@ select = [
   # (pyflakes) pyflakes rules
   "F",
 
+  # (unspecified-encoding) Flag `open()` and related calls in text mode without an explicit
+  # `encoding=`. Preview-status rule; must be listed by exact code under
+  # explicit-preview-rules=true. Locale-default text decoding is non-portable.
+  "PLW1514",
+
   # (isort) detect improperly sorted imports
   "I001",
 
@@ -188,6 +193,8 @@ builtins-ignorelist = ["id"]
 [lint.flake8-tidy-imports.banned-api]
 
 "__future__.annotations".msg = "Directly quote annotations instead."
+"yaml.safe_load".msg = "Use dagster_shared.yaml_utils.safe_load_yaml — preserves date-like strings as strings (GH-6465)."
+"yaml.load".msg = "Use dagster_shared.yaml_utils.safe_load_yaml — yaml.load parses date-like strings as datetime objects (GH-6465)."
 
 [lint.pydocstyle]
 

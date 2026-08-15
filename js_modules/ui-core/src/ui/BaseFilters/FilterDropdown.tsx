@@ -2,10 +2,13 @@ import {
   Box,
   Button,
   Colors,
+  Container,
   Icon,
+  Inner,
   Menu,
   MenuItem,
   Popover,
+  Row,
   Spinner,
   TextInput,
 } from '@dagster-io/ui-components';
@@ -20,7 +23,6 @@ import {FilterObject} from './useFilter';
 import {ShortcutHandler} from '../../app/ShortcutHandler';
 import {useSetStateUpdateCallback} from '../../hooks/useSetStateUpdateCallback';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface FilterDropdownProps {
   filters: FilterObject[];
@@ -268,10 +270,10 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
                 width: selectedFilter?.menuWidth || 'auto',
               }}
             >
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {items.map(({index, size, start}) => {
                   return (
-                    <Row $height={size} $start={start} key={index}>
+                    <Row height={size} start={start} key={index}>
                       {allResultsJsx[index]}
                     </Row>
                   );

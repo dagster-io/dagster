@@ -49,7 +49,7 @@ class DefsPathSandbox:
         try:
             shutil.copy2(defs_path, temp_path)
 
-            defs_path.write_text(yaml.safe_dump(component_body))
+            defs_path.write_text(yaml.safe_dump(component_body), encoding="utf-8")
 
             yield
 

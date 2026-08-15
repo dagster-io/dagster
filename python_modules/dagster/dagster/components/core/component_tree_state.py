@@ -97,7 +97,7 @@ class ComponentTreeStateTracker:
         cascading to all dependents.
 
         This is the primary mechanism for hot-reload: when external state changes
-        (e.g. UI definitions or state-backed component data), the caller invalidates
+        (e.g. app-managed components or state-backed component data), the caller invalidates
         by state key and the dependency graph ensures all affected components rebuild.
         """
         loc = self._component_defs_state_key_dict.get(defs_state_key)

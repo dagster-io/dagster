@@ -2,9 +2,9 @@ import {
   Box,
   FontFamily,
   Icon,
-  Mono,
   SpinnerWithText,
   Table,
+  Text,
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
@@ -151,10 +151,14 @@ export const CodeLocationOverviewRoot = (props: Props) => {
               {libraryVersions.map((version) => (
                 <tr key={version.name}>
                   <td style={{width: RIGHT_COLUMN_WIDTH}}>
-                    <Mono>{version.name}</Mono>
+                    <Text size={14} family="mono">
+                      {version.name}
+                    </Text>
                   </td>
                   <td>
-                    <Mono>{version.version}</Mono>
+                    <Text size={14} family="mono">
+                      {version.version}
+                    </Text>
                   </td>
                 </tr>
               ))}

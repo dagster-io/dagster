@@ -447,6 +447,16 @@ class DagsterUserCodeUnreachableError(DagsterError):
     """Dagster was unable to reach a user code server to fetch information about user code."""
 
 
+class DagsterUserCodeUnreachableTimeoutError(DagsterUserCodeUnreachableError):
+    """Raised when a call to user code was successfully dispatched but did not produce a response
+    within the caller's poll window. The work may still be running server-side; the caller has
+    simply given up waiting.
+
+    Distinct from the parent so callers can branch on "still running, just slow" vs. "agent /
+    transport actually unreachable".
+    """
+
+
 class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
     was communicating with.

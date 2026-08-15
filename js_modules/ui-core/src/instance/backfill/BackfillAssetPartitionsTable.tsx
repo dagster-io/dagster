@@ -1,4 +1,17 @@
-import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  Container,
+  HeaderCell,
+  HeaderRow,
+  Inner,
+  MiddleTruncate,
+  NonIdealState,
+  Row,
+  RowCell,
+  Tag,
+  Text,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -16,7 +29,6 @@ import {
 } from '../../runs/RunStatuses';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
 
 const TEMPLATE_COLUMNS = '60% repeat(4, 1fr)';
@@ -58,7 +70,7 @@ export const BackfillAssetPartitionsTable = ({
   return (
     <Container ref={parentRef}>
       <VirtualizedBackfillPartitionsHeader backfill={backfill} />
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => (
           <VirtualizedBackfillPartitionsRow
             key={key}
@@ -168,8 +180,8 @@ export const VirtualizedBackfillPartitionsRow = ({
 
   return (
     <Row
-      $height={height}
-      $start={start}
+      height={height}
+      start={start}
       data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
     >
       <Box className={styles.rowGrid} border="bottom">
@@ -267,7 +279,7 @@ export function StatusBar({
   const pctFailed = (100 * failed) / targeted;
   const pctInProgress = (100 * inProgress) / targeted;
 
-  const pctFinal = Math.ceil(pctSucceeded + pctFailed);
+  const pctFinal = Math.floor(pctSucceeded + pctFailed);
 
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
@@ -287,7 +299,7 @@ export function StatusBar({
         <div style={{background: Colors.accentRed()}} />
         <div style={{background: Colors.accentBlue()}} />
       </div>
-      <Caption color={Colors.textLight()}>{`${pctFinal}% completed`}</Caption>
+      <Text size={12} color="textLight">{`${pctFinal}% completed`}</Text>
     </Box>
   );
 }

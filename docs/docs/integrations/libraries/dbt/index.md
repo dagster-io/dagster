@@ -7,6 +7,7 @@ tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
 pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/dbt/dbt.svg
 partnerlink: https://www.getdbt.com/
 canonicalUrl: '/integrations/libraries/dbt'
@@ -350,6 +351,37 @@ attributes:
 ```
 
 This passes the specified arguments to the dbt CLI when generating the manifest, instead of the default `["parse", "--quiet"]`. Using `compile` is useful when you want to leverage `node.compiled_code` in translations or custom subclasses, for example to include the compiled SQL in asset descriptions.
+
+## Step 11: Enable Dagster+ Insights
+
+If you are using [Dagster+](/deployment/dagster-plus) with a Snowflake or BigQuery warehouse, you can associate dbt query costs with the produced asset materializations in the [Insights](/guides/observe/insights) dashboard. Add `insights` to the `include_metadata` list:
+
+```yaml
+# defs.yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: '{{ project_root }}/path/to/dbt_project'
+  include_metadata:
+    - insights
+```
+
+This can be combined with other metadata options:
+
+```yaml
+attributes:
+  project: '{{ project_root }}/path/to/dbt_project'
+  include_metadata:
+    - column_metadata
+    - row_count
+    - insights
+```
+
+:::note
+
+Insights requires `dagster-cloud` to be installed and an `InsightsSnowflakeResource` or `InsightsBigQueryResource` to be configured. For full setup instructions, see the [Snowflake Insights](/guides/observe/insights/snowflake) or [BigQuery Insights](/guides/observe/insights/google-bigquery) guides.
+
+:::
 
 ## Advanced configuration (subclassing)
 

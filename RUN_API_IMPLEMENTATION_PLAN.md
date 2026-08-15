@@ -45,8 +45,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
 
+
 class RunStatus(str, Enum):
     """Run execution status."""
+
     QUEUED = "QUEUED"
     STARTING = "STARTING"
     STARTED = "STARTED"
@@ -55,8 +57,10 @@ class RunStatus(str, Enum):
     CANCELING = "CANCELING"
     CANCELED = "CANCELED"
 
+
 class Run(BaseModel):
     """Single run metadata model."""
+
     id: str
     status: RunStatus
     created_at: str  # ISO 8601 timestamp
@@ -78,16 +82,20 @@ from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
 
+
 class RunEventLevel(str, Enum):
     """Event severity levels."""
+
     CRITICAL = "CRITICAL"
     ERROR = "ERROR"
     WARNING = "WARNING"
     INFO = "INFO"
     DEBUG = "DEBUG"
 
+
 class RunEvent(BaseModel):
     """Single run event model."""
+
     run_id: str
     message: str
     timestamp: str  # ISO 8601 timestamp
@@ -98,8 +106,10 @@ class RunEvent(BaseModel):
     class Config:
         from_attributes = True
 
+
 class RunEventList(BaseModel):
     """Paginated run events response."""
+
     items: List[RunEvent]
     total: int
     cursor: Optional[str] = None
@@ -119,7 +129,11 @@ class RunEventList(BaseModel):
 from typing import Dict, Any
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
-from dagster_dg_cli.cli.api.shared import DgApiError, get_graphql_error_mappings, get_default_error_mapping
+from dagster_dg_cli.cli.api.shared import (
+    DgApiError,
+    get_graphql_error_mappings,
+    get_default_error_mapping,
+)
 
 RUN_METADATA_QUERY = """
 query DgApiRunMetadataQuery($runId: ID!) {
@@ -145,6 +159,7 @@ query DgApiRunMetadataQuery($runId: ID!) {
 }
 """
 
+
 def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> Dict[str, Any]:
     """Get run metadata via GraphQL."""
     variables = {"runId": run_id}
@@ -153,9 +168,7 @@ def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> Dict[str, Any]:
     run_result = result.get("runOrError")
     if not run_result:
         raise DgApiError(
-            message="Empty response from GraphQL API",
-            code="INTERNAL_ERROR",
-            status_code=500
+            message="Empty response from GraphQL API", code="INTERNAL_ERROR", status_code=500
         )
 
     typename = run_result.get("__typename")
@@ -165,21 +178,13 @@ def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> Dict[str, Any]:
     if typename in error_mappings:
         mapping = error_mappings[typename]
         error_msg = run_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(
-            message=error_msg,
-            code=mapping.code,
-            status_code=mapping.status_code
-        )
+        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
 
     if typename != "Run":
         # Unmapped error type
         mapping = get_default_error_mapping()
         error_msg = run_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(
-            message=error_msg,
-            code=mapping.code,
-            status_code=mapping.status_code
-        )
+        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
 
     return run_result
 ```
@@ -192,7 +197,11 @@ def get_run_via_graphql(client: IGraphQLClient, run_id: str) -> Dict[str, Any]:
 from typing import Dict, Any, List, Optional
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
-from dagster_dg_cli.cli.api.shared import DgApiError, get_graphql_error_mappings, get_default_error_mapping
+from dagster_dg_cli.cli.api.shared import (
+    DgApiError,
+    get_graphql_error_mappings,
+    get_default_error_mapping,
+)
 
 # Exact GraphQL query from specification
 RUN_EVENTS_QUERY = """
@@ -225,6 +234,7 @@ query CliRunEventsQuery($runId: ID!, $limit: Int, $afterCursor: String) {
 }
 """
 
+
 def _filter_events_by_type(events: List[Dict], event_type: Optional[str]) -> List[Dict]:
     """Client-side filtering logic for event types."""
     if not event_type:
@@ -241,6 +251,7 @@ def _filter_events_by_type(events: List[Dict], event_type: Optional[str]) -> Lis
 
     return filtered
 
+
 def _filter_events_by_step(events: List[Dict], step_key: Optional[str]) -> List[Dict]:
     """Client-side filtering logic for step keys."""
     if not step_key:
@@ -254,13 +265,14 @@ def _filter_events_by_step(events: List[Dict], step_key: Optional[str]) -> List[
 
     return filtered
 
+
 def get_run_events_via_graphql(
     client: IGraphQLClient,
     run_id: str,
     limit: int = 100,
     after_cursor: Optional[str] = None,
     event_type: Optional[str] = None,
-    step_key: Optional[str] = None
+    step_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Get run events via GraphQL with client-side filtering."""
     variables = {"runId": run_id, "limit": limit}
@@ -272,9 +284,7 @@ def get_run_events_via_graphql(
     logs_result = result.get("logsForRun")
     if not logs_result:
         raise DgApiError(
-            message="Empty response from GraphQL API",
-            code="INTERNAL_ERROR",
-            status_code=500
+            message="Empty response from GraphQL API", code="INTERNAL_ERROR", status_code=500
         )
 
     typename = logs_result.get("__typename")
@@ -284,21 +294,13 @@ def get_run_events_via_graphql(
     if typename in error_mappings:
         mapping = error_mappings[typename]
         error_msg = logs_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(
-            message=error_msg,
-            code=mapping.code,
-            status_code=mapping.status_code
-        )
+        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
 
     if typename != "EventConnection":
         # Unmapped error type
         mapping = get_default_error_mapping()
         error_msg = logs_result.get("message", f"Unknown error: {typename}")
-        raise DgApiError(
-            message=error_msg,
-            code=mapping.code,
-            status_code=mapping.status_code
-        )
+        raise DgApiError(message=error_msg, code=mapping.code, status_code=mapping.status_code)
 
     # Extract and filter events
     events_data = logs_result.get("events", [])
@@ -313,7 +315,7 @@ def get_run_events_via_graphql(
     return {
         "events": events_data,
         "cursor": logs_result.get("cursor"),
-        "hasMore": logs_result.get("hasMore", False)
+        "hasMore": logs_result.get("hasMore", False),
     }
 ```
 
@@ -328,6 +330,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 from dagster_dg_cli.api_layer.schemas.run import Run
 from dagster_dg_cli.api_layer.graphql_adapter.run import get_run_via_graphql
+
 
 class DgApiRunApi:
     """API for run metadata operations."""
@@ -347,7 +350,7 @@ class DgApiRunApi:
             started_at=run_data.get("startTime"),
             ended_at=run_data.get("endTime"),
             pipeline_name=run_data.get("pipelineName"),
-            mode=run_data.get("mode")
+            mode=run_data.get("mode"),
         )
 ```
 
@@ -362,6 +365,7 @@ from dagster_dg_cli.utils.plus.gql_client import IGraphQLClient
 from dagster_dg_cli.api_layer.schemas.run_event import RunEvent, RunEventList, RunEventLevel
 from dagster_dg_cli.api_layer.graphql_adapter.run_event import get_run_events_via_graphql
 
+
 class DgApiRunEventApi:
     """API for run events operations."""
 
@@ -375,7 +379,7 @@ class DgApiRunEventApi:
         event_type: Optional[str] = None,
         step_key: Optional[str] = None,
         limit: int = 100,
-        after_cursor: Optional[str] = None
+        after_cursor: Optional[str] = None,
     ) -> RunEventList:
         """Get run events with filtering options."""
         events_data = get_run_events_via_graphql(
@@ -384,7 +388,7 @@ class DgApiRunEventApi:
             limit=limit,
             after_cursor=after_cursor,
             event_type=event_type,
-            step_key=step_key
+            step_key=step_key,
         )
 
         # Convert to Pydantic models
@@ -404,7 +408,7 @@ class DgApiRunEventApi:
             items=events,
             total=len(events),
             cursor=events_data.get("cursor"),
-            has_more=events_data.get("hasMore", False)
+            has_more=events_data.get("hasMore", False),
         )
 ```
 
@@ -421,10 +425,12 @@ from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.shared import get_config_or_error, format_error_for_output
 from dagster_dg_cli.api_layer.api.run import DgApiRunApi
 
+
 @click.group(name="run")
 def run_group():
     """Manage runs."""
     pass
+
 
 @run_group.command("get")
 @click.argument("run_id")
@@ -471,6 +477,7 @@ from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.shared import get_config_or_error, format_error_for_output
 from dagster_dg_cli.api_layer.api.run_event import DgApiRunEventApi
 
+
 def format_run_events_table(events, run_id: str) -> str:
     """Format run events as human-readable table."""
     if not events.items:
@@ -496,28 +503,34 @@ def format_run_events_table(events, run_id: str) -> str:
     lines.extend(["", f"Total events: {events.total}"])
     return "\n".join(lines)
 
+
 def format_run_events_json(events, run_id: str) -> str:
     """Format run events as JSON."""
-    return json.dumps({
-        "run_id": run_id,
-        "events": [
-            {
-                "runId": event.run_id,
-                "message": event.message,
-                "timestamp": event.timestamp,
-                "level": event.level,
-                "stepKey": event.step_key,
-                "eventType": event.event_type
-            }
-            for event in events.items
-        ],
-        "count": events.total
-    }, indent=2)
+    return json.dumps(
+        {
+            "run_id": run_id,
+            "events": [
+                {
+                    "runId": event.run_id,
+                    "message": event.message,
+                    "timestamp": event.timestamp,
+                    "level": event.level,
+                    "stepKey": event.step_key,
+                    "eventType": event.event_type,
+                }
+                for event in events.items
+            ],
+            "count": events.total,
+        },
+        indent=2,
+    )
+
 
 @click.group(name="run-events")
 def run_events_group():
     """Manage run events."""
     pass
+
 
 @run_events_group.command("get")
 @click.argument("run_id")
@@ -527,12 +540,7 @@ def run_events_group():
 @click.option("--json", "output_json", is_flag=True, help="Output in JSON format")
 @click.pass_context
 def get_run_events(
-    ctx: click.Context,
-    run_id: str,
-    event_type: str,
-    step_key: str,
-    limit: int,
-    output_json: bool
+    ctx: click.Context, run_id: str, event_type: str, step_key: str, limit: int, output_json: bool
 ):
     """Get run events with filtering options."""
     try:
@@ -541,10 +549,7 @@ def get_run_events(
         api = DgApiRunEventApi(config, client)
 
         events = api.get_events(
-            run_id=run_id,
-            event_type=event_type,
-            step_key=step_key,
-            limit=limit
+            run_id=run_id, event_type=event_type, step_key=step_key, limit=limit
         )
 
         if output_json:
@@ -554,10 +559,7 @@ def get_run_events(
 
     except Exception as e:
         if output_json:
-            error_output = json.dumps({
-                "error": str(e),
-                "run_id": run_id
-            })
+            error_output = json.dumps({"error": str(e), "run_id": run_id})
             click.echo(error_output, err=True)
         else:
             click.echo(f"Error querying Dagster Plus API: {e}", err=True)
@@ -581,6 +583,7 @@ from dagster_dg_cli.cli.api.asset import asset_group
 from dagster_dg_cli.cli.api.deployment import deployment_group
 from dagster_dg_cli.cli.api.run import run_group
 from dagster_dg_cli.cli.api.run_event import run_events_group
+
 
 @click.group(
     name="api",
@@ -606,6 +609,7 @@ Add the run event formatters to the existing formatters file:
 from dagster_dg_cli.api_layer.schemas.run import Run
 from dagster_dg_cli.api_layer.schemas.run_event import RunEventList
 
+
 def format_run(run: Run, as_json: bool) -> str:
     """Format single run for output."""
     if as_json:
@@ -627,6 +631,7 @@ def format_run(run: Run, as_json: bool) -> str:
         lines.append(f"Mode: {run.mode}")
 
     return "\n".join(lines)
+
 
 def format_run_events(events: RunEventList, run_id: str, as_json: bool) -> str:
     """Format run events for output."""
@@ -689,8 +694,8 @@ events_run_not_found:
 
 ### Test Execution
 
-1. **Record GraphQL responses**: `dagster-dev dg-api-record run --recording success_get_run`
-2. **Record event responses**: `dagster-dev dg-api-record run-events --recording success_get_events`
+1. **Record GraphQL responses**: `python dagster_dg_cli_tests/cli_tests/api_tests/_record.py run --recording success_get_run`
+2. **Record event responses**: `python dagster_dg_cli_tests/cli_tests/api_tests/_record.py run-events --recording success_get_events`
 3. **Generate snapshots**: `pytest api_tests/run_tests/ --snapshot-update`
 4. **Update compliance tests**: Add new API classes to `test_rest_compliance.py`
 

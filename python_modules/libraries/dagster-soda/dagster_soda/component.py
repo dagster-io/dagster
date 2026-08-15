@@ -5,7 +5,6 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-import yaml
 from dagster import (
     AssetCheckResult,
     AssetCheckSpec,
@@ -19,6 +18,7 @@ from dagster._core.definitions.asset_checks.asset_checks_definition import Asset
 from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 from dagster.components.scaffold.scaffold import scaffold_with
+from dagster_shared.yaml_utils import safe_load_yaml
 from pydantic import Field
 from soda.scan import Scan
 
@@ -56,8 +56,8 @@ def _add_sodacl_file(scan: Any, checks_path: str) -> None:
 
 def _parse_check_identifiers_from_yaml(yaml_path: Path, dataset: str) -> list[str]:
     """Extract individual check identifiers for a dataset from a SodaCL YAML file."""
-    content = yaml_path.read_text()
-    parsed = yaml.safe_load(content) or {}
+    content = yaml_path.read_text(encoding="utf-8")
+    parsed = safe_load_yaml(content) or {}
     key = f"{SODACL_CHECKS_FOR_PREFIX}{dataset}"
     if key not in parsed:
         return []
@@ -221,8 +221,8 @@ class SodaScanComponent(Component, Model, Resolvable):
     def _parse_datasets_from_yaml(self, yaml_path: Path) -> list[str]:
         """Extract dataset names from a SodaCL YAML file."""
         datasets: list[str] = []
-        content = yaml_path.read_text()
-        parsed = yaml.safe_load(content) or {}
+        content = yaml_path.read_text(encoding="utf-8")
+        parsed = safe_load_yaml(content) or {}
 
         for key in parsed.keys():
             if isinstance(key, str) and key.startswith(SODACL_CHECKS_FOR_PREFIX):

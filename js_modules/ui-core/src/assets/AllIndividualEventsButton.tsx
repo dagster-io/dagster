@@ -5,8 +5,8 @@ import {
   Dialog,
   DialogFooter,
   Icon,
-  Mono,
   Table,
+  Text,
 } from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
@@ -144,7 +144,9 @@ const MetadataEntriesRow = React.memo(({group, hasLineage}: MetadataEntriesRowPr
                           <span>
                             {`${obs.stepKey} in `}
                             <Link to={`/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
-                              <Mono>{titleForRun({id: obs.runId})}</Mono>
+                              <Text size={14} family="mono">
+                                {titleForRun({id: obs.runId})}
+                              </Text>
                             </Link>
                             {` (${dayjs(Number(obs.timestamp)).from(
                               Number(timestamp),
@@ -274,7 +276,9 @@ const EventGroupRow = React.memo((props: EventGroupRowProps) => {
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <RunStatusWithStats runId={run.id} status={run.status} />
           <Link to={`/runs/${run.id}?timestamp=${timestamp}`}>
-            <Mono>{titleForRun(run)}</Mono>
+            <Text size={14} family="mono">
+              {titleForRun(run)}
+            </Text>
           </Link>
         </Box>
       </td>

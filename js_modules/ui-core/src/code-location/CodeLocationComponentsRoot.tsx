@@ -1,4 +1,6 @@
-import {Box, Button, ButtonGroup, Icon} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
+import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
+import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useContext, useState} from 'react';
@@ -19,6 +21,11 @@ export type ComponentsSubTab = 'instances' | 'library';
 export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
   const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
+
+  const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
+  // Git-backed authoring needs a connected repo to open the PR against; without
+  // one the author action is disabled with a nudge to connect an integration.
+  const gitProviderConnected = useGitProviderConnected();
 
   const params = useParams<{
     packageName?: string;
@@ -42,6 +49,12 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
       return <Redirect to="/deployment/locations" />;
     }
     return <div />;
+  }
+
+  // When the Instances surface is gated off, send the user to Library so the
+  // page still has something to render.
+  if (subTab === 'instances' && !componentInstanceUIEnabled) {
+    return <Redirect to={workspacePathFromAddress(repoAddress, '/components/library')} />;
   }
 
   const renderSubTab = () => {
@@ -82,29 +95,39 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
           locationEntry={locationEntry}
         />
       </Box>
-      <Box
-        padding={{horizontal: 24, vertical: 12}}
-        border="bottom"
-        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-      >
-        <ButtonGroup<ComponentsSubTab>
-          activeItems={new Set([subTab])}
-          buttons={[
-            {id: 'library', label: 'Library'},
-            {id: 'instances', label: 'Instances'},
-          ]}
-          onClick={onSubTabClick}
-        />
-        {subTab === 'instances' ? (
-          <Button
-            intent="primary"
-            icon={<Icon name="add_circle" />}
-            onClick={() => setIsAddOpen(true)}
-          >
-            Add
-          </Button>
-        ) : null}
-      </Box>
+      {componentInstanceUIEnabled ? (
+        <Box
+          padding={{horizontal: 24, vertical: 12}}
+          border="bottom"
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        >
+          <ButtonGroup<ComponentsSubTab>
+            activeItems={new Set([subTab])}
+            buttons={[
+              {id: 'library', label: 'Library'},
+              {id: 'instances', label: 'Instances'},
+            ]}
+            onClick={onSubTabClick}
+          />
+          {subTab === 'instances' ? (
+            gitProviderConnected ? (
+              <Button
+                intent="primary"
+                icon={<Icon name="add_circle" />}
+                onClick={() => setIsAddOpen(true)}
+              >
+                Add
+              </Button>
+            ) : (
+              <Tooltip content="Connect a git integration to author components.">
+                <Button intent="primary" icon={<Icon name="add_circle" />} disabled>
+                  Add
+                </Button>
+              </Tooltip>
+            )
+          ) : null}
+        </Box>
+      ) : null}
       <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'auto'}}>
         {renderSubTab()}
       </Box>

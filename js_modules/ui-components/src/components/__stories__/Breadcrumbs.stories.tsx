@@ -4,7 +4,7 @@ import {BreadcrumbProps, Breadcrumbs} from '../Breadcrumbs';
 import {Colors} from '../Color';
 import {MiddleTruncate} from '../MiddleTruncate';
 import {Slider} from '../Slider';
-import {Heading} from '../Text';
+import {Heading} from '../Typography';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -26,7 +26,11 @@ export const WithCurrentRenderer = () => {
   return (
     <Breadcrumbs
       items={simpleBreadcrumbs}
-      currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
+      currentBreadcrumbRenderer={({text}) => (
+        <Heading size={20} weight={500}>
+          {text}
+        </Heading>
+      )}
     />
   );
 };
@@ -82,7 +86,7 @@ export const OverflowWithCustomRenderers = () => {
         <Breadcrumbs
           items={deepBreadcrumbs}
           currentBreadcrumbRenderer={({text}) => (
-            <Heading style={{maxWidth: 200, overflow: 'hidden'}}>
+            <Heading size={20} weight={500} style={{maxWidth: 200, overflow: 'hidden'}}>
               {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
             </Heading>
           )}
@@ -116,6 +120,13 @@ export const TwoItems = () => {
 export const SingleItem = () => {
   const items: BreadcrumbProps[] = [{text: 'Only Item'}];
   return (
-    <Breadcrumbs items={items} currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>} />
+    <Breadcrumbs
+      items={items}
+      currentBreadcrumbRenderer={({text}) => (
+        <Heading size={20} weight={500}>
+          {text}
+        </Heading>
+      )}
+    />
   );
 };

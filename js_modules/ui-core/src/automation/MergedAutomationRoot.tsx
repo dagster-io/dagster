@@ -1,13 +1,12 @@
 import {
-  Body2,
   Box,
-  Caption,
   Colors,
+  Heading,
   Icon,
   NonIdealState,
   PageHeader,
   SpinnerWithText,
-  Subtitle1,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
@@ -173,7 +172,7 @@ export const MergedAutomationRoot = () => {
             icon="search"
             title="No automations"
             description={
-              <Body2>
+              <Text size={14}>
                 There are no automations in this deployment.{' '}
                 <a
                   href="https://docs.dagster.io/concepts/automation"
@@ -185,7 +184,7 @@ export const MergedAutomationRoot = () => {
                     <Icon name="open_in_new" color={Colors.linkDefault()} />
                   </Box>
                 </a>
-              </Body2>
+              </Text>
             }
           />
         </Box>
@@ -203,7 +202,7 @@ export const MergedAutomationRoot = () => {
               size="small"
               label={
                 <Box margin={{left: 4}} style={{marginTop: '-1px'}}>
-                  <Caption>Select all</Caption>
+                  <Text size={12}>Select all</Text>
                 </Box>
               }
             />
@@ -222,7 +221,13 @@ export const MergedAutomationRoot = () => {
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <PageHeader title={<Subtitle1>Automation</Subtitle1>} />
+      <PageHeader
+        title={
+          <Heading size={16} weight={600}>
+            Automation
+          </Heading>
+        }
+      />
       {automaterializeSensorsFlagState === 'has-global-amp' ? (
         <Box padding={{horizontal: 24}} border="bottom">
           <AutomationTabs tab="schedules-and-sensors" />

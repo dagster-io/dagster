@@ -3,13 +3,13 @@ from contextlib import ExitStack
 
 import dagster as dg
 import pytest
-import yaml
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,
     location_origins_from_config,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @pytest.fixture
@@ -138,7 +138,7 @@ def test_multi_location_origins(config_source):
     fake_executable = "/var/fake/executable"
 
     origins = location_origins_from_config(
-        yaml.safe_load(config_source(fake_executable)),
+        safe_load_yaml(config_source(fake_executable)),
         dg.file_relative_path(__file__, "not_a_real.yaml"),
     )
 
@@ -183,7 +183,7 @@ def test_multi_location_origins(config_source):
 @pytest.mark.parametrize("config_source", [_get_multi_location_workspace_yaml])
 def test_grpc_multi_location_workspace(config_source):
     origins = location_origins_from_config(
-        yaml.safe_load(config_source(sys.executable)),
+        safe_load_yaml(config_source(sys.executable)),
         # fake out as if it were loaded by a yaml file in this directory
         dg.file_relative_path(__file__, "not_a_real.yaml"),
     )

@@ -253,6 +253,7 @@ class DagsterLookerApiTranslator:
 
     @public
     def get_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
+        """Returns the :py:class:`AssetSpec` representing a given Looker structure."""
         if looker_structure.structure_type == LookerStructureType.VIEW:
             return self.get_view_asset_spec(looker_structure)
         if looker_structure.structure_type == LookerStructureType.EXPLORE:

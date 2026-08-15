@@ -31,11 +31,6 @@ export const batchRunsForTimeline = <R extends RunWithTime>(config: Config<R>) =
   const {runs, start, end, width, minChunkWidth, minMultipleWidth} = config;
   const rangeLength = end - start;
 
-  const now = Date.now();
-
-  // Give a pixel of breathing room for the "now" position.
-  const nowLeft = ((now - start) / (end - start)) * width + 1;
-
   // Sort all runs by start time (via `left` value), ascending. Then iterate through
   // them, batching them together.
   const batches: RunBatch<R>[] = runs
@@ -67,7 +62,7 @@ export const batchRunsForTimeline = <R extends RunWithTime>(config: Config<R>) =
     const current = batches.shift();
     const next = batches[0];
     if (current) {
-      if (next && canBatch(current, next, minMultipleWidth, nowLeft)) {
+      if (next && canBatch(current, next, minMultipleWidth)) {
         // Remove `next`, consolidate it with `current`, and unshift it back on.
         // This way, we keep looking for batches to consolidate with.
         batches.shift();
@@ -104,24 +99,13 @@ const canBatch = (
   current: RunBatch<RunWithTime>,
   next: RunBatch<RunWithTime>,
   minMultipleWidth: number,
-  nowLeft: number,
 ) => {
   const currentStart = current.left;
   const currentEnd = current.left + Math.max(current.width, minMultipleWidth);
   const nextStart = next.left;
   const nextEnd = next.left + Math.max(next.width, minMultipleWidth);
 
-  const minStart = Math.min(current.left, next.left);
-  const maxEnd = Math.max(
-    current.left + Math.max(current.width, minMultipleWidth),
-    next.left + Math.max(next.width, minMultipleWidth),
-  );
-
   // If the batches overlap with each other but do NOT visually overlap with the "now"
   // time marker, they can be batched.
-  return (
-    overlap({start: currentStart, end: currentEnd}, {start: nextStart, end: nextEnd}) &&
-    // ...and they do not combine to cross over the "now" marker
-    (minStart > nowLeft || maxEnd < nowLeft)
-  );
+  return overlap({start: currentStart, end: currentEnd}, {start: nextStart, end: nextEnd});
 };

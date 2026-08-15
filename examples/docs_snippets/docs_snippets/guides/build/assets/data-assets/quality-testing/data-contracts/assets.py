@@ -49,7 +49,9 @@ def validate_shipments_data_contract(
     """Check that the shipments asset matches the data contract schema."""
     # Read the data contract YAML file
     try:
-        with open(dg.file_relative_path(__file__, "shipments_contract.yaml")) as file:
+        with open(
+            dg.file_relative_path(__file__, "shipments_contract.yaml"), encoding="utf-8"
+        ) as file:
             contract = yaml.safe_load(file)
     except FileNotFoundError:
         return dg.AssetCheckResult(

@@ -11,10 +11,14 @@ export const CODE_LOCATION_COMPONENT_TYPES_QUERY = gql`
           namespace
           example
           schema
+          formSchema {
+            dataSchema
+            uiSchema
+          }
           description
           owners
           tags
-          isUiEditable
+          isAppManaged
         }
       }
       ... on RepositoryLocationNotFound {

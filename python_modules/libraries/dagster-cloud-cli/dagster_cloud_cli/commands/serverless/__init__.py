@@ -104,7 +104,13 @@ def build_command(
             base_image = None
 
         retval = docker_utils.build_image(
-            source_directory, image, ecr_info, env_vars, base_image, use_editable_dagster=False
+            source_directory,
+            image,
+            ecr_info,
+            env_vars,
+            base_image,
+            use_editable_dagster=False,
+            build_args=[],
         )
         if retval == 0:
             ui.print(f"Built image {registry}:{image}")
@@ -233,6 +239,7 @@ def deploy_command(
             base_image,
             use_editable_dagster=False,
             location_name=repo_location,
+            build_args=[],
         )
         if retval != 0:
             return
@@ -401,7 +408,7 @@ def build_python_dependencies(
     except pex_builder.deps.DepsBuildFailure as err:
         errors = [
             "Could not build dependencies for this project.",
-            f"Dependencies:\n {' '.join(open(requirements_path).readlines())}",
+            f"Dependencies:\n {' '.join(open(requirements_path, encoding='utf-8').readlines())}",
             err.format_error(),
         ]
         raise ui.error("\n".join(errors))

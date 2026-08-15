@@ -39,6 +39,14 @@ class ToxFactor:
     # Overrides the PackageSpec-level image when set. Useful for packages that
     # mostly run on one image but have one tox env that needs a different one.
     image: ToxImage | None = None
+    # When False, pytest-split's `--durations-path` arg is omitted in normal
+    # (non-refresh) mode and shards fall back to count-based balancing. Use for
+    # suites whose recorded `.test_durations` data is known to mislead the
+    # splitter — typically when fixture/setup cost dominates over per-test body
+    # time (e.g. k8s integration tests where the kind-cluster setup is paid
+    # once per shard but invisible to pytest's per-test timing). Refresh mode
+    # still writes the file unconditionally.
+    use_durations: bool = True
 
 
 def build_tox_step(

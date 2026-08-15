@@ -1,11 +1,11 @@
 import {
-  Body2,
   Box,
   Button,
   Dialog,
   DialogBody,
   DialogFooter,
   Spinner,
+  Text,
 } from '@dagster-io/ui-components';
 import {memo, useCallback, useMemo, useState} from 'react';
 
@@ -94,10 +94,10 @@ export const DeleteDynamicPartitionsDialogInner = memo(
         return (
           <Box flex={{direction: 'column'}}>
             {result.__typename === 'DeleteDynamicPartitionsSuccess' ? (
-              <Body2>
+              <Text size={14}>
                 The selected partitions of <strong>{partitionsDefName}</strong> and associated
                 materializations have been deleted.
-              </Body2>
+              </Text>
             ) : (
               <PythonErrorInfo error={result} />
             )}
@@ -113,10 +113,10 @@ export const DeleteDynamicPartitionsDialogInner = memo(
       }
       return (
         <Box flex={{direction: 'column', gap: 6}}>
-          <Body2>
+          <Text size={14}>
             Select partition keys of the <strong>{partitionsDefName}</strong> partition definition
             to delete.
-          </Body2>
+          </Text>
           {health && dynamicHealth ? (
             <OrdinalPartitionSelector
               allPartitions={dynamicHealth?.partitionKeys}
@@ -128,11 +128,11 @@ export const DeleteDynamicPartitionsDialogInner = memo(
           ) : (
             <Spinner purpose="section" />
           )}
-          <Body2 style={{marginTop: 10}}>
+          <Text size={14} style={{marginTop: 10}}>
             Deleting partitions impacts all assets that share this partition definition.
             Materialization events for these partitions will be wiped.{' '}
             <strong>This action cannot be undone.</strong>
-          </Body2>
+          </Text>
         </Box>
       );
     }, [deleting, dynamicHealth, health, partitionsDefName, result, selectedPartitions]);

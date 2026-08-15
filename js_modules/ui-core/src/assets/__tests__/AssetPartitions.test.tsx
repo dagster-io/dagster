@@ -226,6 +226,41 @@ describe('AssetPartitions', () => {
     expect(await screen.findByTestId('asset-partition-row-WV-index-0')).toBeVisible();
   });
 
+  it('should reset the focused partition when the selected range no longer includes it', async () => {
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
+    });
+
+    // Narrow the range to a window that contains the partition we're about to focus.
+    const partitionInput = screen.getByTestId('dimension-range-input');
+    await userEvent.clear(partitionInput);
+    await userEvent.type(partitionInput, '{[}2022-11-28-20:00...2022-12-05-01:00{]}');
+    await userEvent.tab();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-selected')).toHaveTextContent('150 Partitions');
+    });
+
+    // Focus a partition that is inside the current range.
+    await userEvent.click(await screen.findByText('2022-11-28-20:00'));
+    await waitFor(() => {
+      expect(screen.getByTestId('focused-partition')).toHaveTextContent('2022-11-28-20:00');
+    });
+
+    // Change the range to a window that no longer includes the focused partition.
+    await userEvent.clear(partitionInput);
+    await userEvent.type(partitionInput, '{[}2022-06-01-01:00...2022-06-01-05:00{]}');
+    await userEvent.tab();
+
+    // The focus should reset to the first partition in the new range instead of
+    // continuing to display the now-out-of-range partition (and its run).
+    await waitFor(() => {
+      expect(screen.getByTestId('focused-partition')).toHaveTextContent('2022-06-01-05:00');
+    });
+  });
+
   it('should set the focused partition when you click a list element', async () => {
     render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_static']}} />);
     const listItem = await screen.findByText(/nc/i);

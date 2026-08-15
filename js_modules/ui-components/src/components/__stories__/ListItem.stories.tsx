@@ -8,8 +8,8 @@ import {Icon} from '../Icon';
 import {ListItem} from '../ListItem';
 import {Menu, MenuItem} from '../Menu';
 import {Popover} from '../Popover';
-import {Caption} from '../Text';
 import {Tooltip} from '../Tooltip';
+import {Text} from '../Typography';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -306,10 +306,10 @@ export const JobList = () => {
             </Box>
             <Box flex={{direction: 'column', gap: 4}}>
               <div>multi-line</div>
-              <Caption>
+              <Text size={12}>
                 This is a description of this job, with maybe some metadata like the status or
                 something.
-              </Caption>
+              </Text>
             </Box>
           </Box>
         }

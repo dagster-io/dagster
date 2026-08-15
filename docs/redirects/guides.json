@@ -1216,7 +1216,12 @@
   },
   {
     "source": "/guides/labs/compass-ai-assistant",
-    "destination": "/guides/labs/dagster-ai-agent",
+    "destination": "/guides/labs/dagster-ai",
+    "permanent": true
+  },
+  {
+    "source": "/guides/labs/dagster-ai-agent",
+    "destination": "/guides/labs/dagster-ai",
     "permanent": true
   }
 ]

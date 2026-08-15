@@ -380,7 +380,7 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
 
     def get_log_keys_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], io_type: ComputeIOType
-    ) -> Sequence[Sequence[str]]:
+    ) -> Sequence[list[str]]:
         directory = self._resolve_path_for_namespace(log_key_prefix)
         blobs = self._container_client.list_blobs(name_starts_with="/".join(directory))
         results = []

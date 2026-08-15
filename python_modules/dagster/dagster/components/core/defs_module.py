@@ -226,29 +226,27 @@ class ComponentPath(ComponentLoc):
 
 
 @record
-class UIDefinitionsLoc(ComponentLoc):
+class AppManagedDefinitionsLoc(ComponentLoc):
     """Location for the UI-definitions subtree.
 
     With ``instance_key=None`` this identifies the aggregate container
-    (``UIDefinitionsDecl``) — analogous to ``YamlFileDecl``'s loc for a
+    (``AppManagedDefinitionsDecl``) — analogous to ``YamlFileDecl``'s loc for a
     yaml file containing several components. With an ``instance_key``
-    set it identifies a single UI-defined component, analogous to a
+    set it identifies a single app-managed component, analogous to a
     yaml document's loc.
     """
 
     instance_key: str | None = None
 
-    def without_instance_key(self) -> "UIDefinitionsLoc":
-        return UIDefinitionsLoc()
+    def without_instance_key(self) -> "AppManagedDefinitionsLoc":
+        return AppManagedDefinitionsLoc()
 
     def get_display_key(self, root_path: Path) -> str:
-        if self.instance_key is not None:
-            return f"<ui>/{self.instance_key}"
-        return "<ui>"
+        return self.instance_key or "APP_ROOT"
 
 
-class UIDefinitionsComponent(Component):
-    """Aggregate component for UI-defined components at a code location.
+class AppManagedDefinitionsComponent(Component):
+    """Aggregate component for app-managed components at a code location.
 
     Functionally minimal — its ``build_defs`` just merges children's defs,
     same as ``ComponentRootComponent`` does at the next level up. The
@@ -460,7 +458,9 @@ EXPLICITLY_IGNORED_GLOB_PATTERNS = [
 ]
 
 
-def find_components_from_context(context: ComponentLoadContext) -> Mapping[Path, Component]:
+def find_components_from_context(
+    context: ComponentLoadContext,
+) -> Mapping[Path, Component]:
     found = {}
     for subpath in sorted(context.path.iterdir()):
         relative_subpath = subpath.relative_to(context.path)
@@ -493,7 +493,8 @@ class PythonFileComponent(Component):
             list(find_objects_in_module_of_types(module, Definitions)), Definitions
         )
         lazy_def_objects = check.is_list(
-            list(find_objects_in_module_of_types(module, LazyDefinitions)), LazyDefinitions
+            list(find_objects_in_module_of_types(module, LazyDefinitions)),
+            LazyDefinitions,
         )
 
         if lazy_def_objects and def_objects:
@@ -559,14 +560,14 @@ def find_defs_or_component_yaml(path: Path) -> Path | None:
     )
 
 
-T = TypeVar("T", bound=ComponentDeclLoadContext)
+T_LoadContext = TypeVar("T_LoadContext", bound=ComponentDeclLoadContext)
 
 
 def context_with_injected_scope(
-    context: T,
+    context: T_LoadContext,
     component_cls: type[Component],
     template_vars_module: str | None,
-) -> T:
+) -> T_LoadContext:
     # Merge backward-compatible get_additional_scope with context-aware static template vars
 
     legacy_scope = component_cls.get_additional_scope()

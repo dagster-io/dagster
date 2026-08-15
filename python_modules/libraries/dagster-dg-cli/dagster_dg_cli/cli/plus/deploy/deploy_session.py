@@ -15,7 +15,11 @@ from dagster_dg_core.context import DgContext
 from dagster_dg_core.utils.git import get_local_branch_name
 
 from dagster_dg_cli.cli.plus.build import create_deploy_dockerfile, get_dockerfile_path
-from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
+from dagster_dg_cli.cli.plus.constants import (
+    DgPlusAgentPlatform,
+    DgPlusAgentType,
+    DgPlusDeploymentType,
+)
 from dagster_dg_cli.cli.utils import create_temp_dagster_cloud_yaml_file
 
 if TYPE_CHECKING:
@@ -174,6 +178,23 @@ def init_deploy_session(
     )
 
 
+def should_redirect_pex_to_docker(
+    agent_type: DgPlusAgentType,
+    agent_platform: DgPlusAgentPlatform,
+    build_strategy: "BuildStrategy",
+) -> bool:
+    """A PEX build targeting Serverless v2 (Kubernetes) is redirected to a Docker build, since v2
+    does not run PEX.
+    """
+    from dagster_cloud_cli.commands.ci import BuildStrategy
+
+    return (
+        agent_type == DgPlusAgentType.SERVERLESS
+        and agent_platform == DgPlusAgentPlatform.K8S
+        and build_strategy == BuildStrategy.pex
+    )
+
+
 def build_artifact(
     dg_context: DgContext,
     agent_type: DgPlusAgentType,
@@ -183,6 +204,8 @@ def build_artifact(
     use_editable_dagster: bool,
     python_version: str | None,
     location_names: tuple[str],
+    *,
+    agent_platform: DgPlusAgentPlatform,
 ):
     from dagster_cloud_cli.commands.ci import BuildStrategy
 
@@ -195,6 +218,17 @@ def build_artifact(
             "Build strategy 'python-executable' is not supported for Hybrid agents. "
             "Hybrid agents require 'docker' build strategy."
         )
+
+    # Serverless v2 (Kubernetes) does not run PEX; transparently bake the PEX build into a Docker
+    # image instead so existing fast-deploy customers migrate without changing their build.
+    if should_redirect_pex_to_docker(agent_type, agent_platform, build_strategy):
+        click.secho(
+            "Fast deploys (PEX) are not supported on Serverless (Kubernetes) — baking your build "
+            "into a Docker image instead (no action needed). This fallback is temporary and will be "
+            "removed; migrate with `ENABLE_FAST_DEPLOYS=false` (or `--build-strategy=docker`).",
+            fg="yellow",
+        )
+        build_strategy = BuildStrategy.pex_docker
 
     requested_location_names = set(location_names)
 

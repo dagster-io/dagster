@@ -17,6 +17,7 @@ from dagster._core.remote_representation.code_location import is_implicit_asset_
 from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
+    JobRefSnap,
     PartitionExecutionErrorSnap,
     PresetSnap,
 )
@@ -43,7 +44,7 @@ from dagster_graphql.implementation.events import (
     get_graphene_events_from_records_connection,
     iterate_metadata_entries,
 )
-from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id
+from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run
 from dagster_graphql.implementation.fetch_assets import get_assets_for_run
 from dagster_graphql.implementation.fetch_pipelines import get_job_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_runs, get_stats, get_step_stats
@@ -59,6 +60,7 @@ from dagster_graphql.implementation.utils import (
     has_permission_for_run,
 )
 from dagster_graphql.schema.asset_health import GrapheneAssetHealth
+from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.dagster_types import (
     GrapheneDagsterType,
     GrapheneDagsterTypeOrError,
@@ -617,8 +619,24 @@ class GrapheneRun(graphene.ObjectType):
     pipelineName = graphene.NonNull(graphene.String)
     jobName = graphene.NonNull(graphene.String)
     solidSelection = graphene.List(graphene.NonNull(graphene.String))
-    assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
-    assetCheckSelection = graphene.List(graphene.NonNull(GrapheneAssetCheckHandle))
+    assetSelection = graphene.Field(
+        graphene.List(graphene.NonNull(GrapheneAssetKey)),
+        limit=graphene.Argument(
+            graphene.Int,
+            description="Truncate the returned selection to at most this many asset keys. "
+            "Use assetSelectionCount for the untruncated total.",
+        ),
+    )
+    assetSelectionCount = graphene.NonNull(graphene.Int)
+    assetCheckSelection = graphene.Field(
+        graphene.List(graphene.NonNull(GrapheneAssetCheckHandle)),
+        limit=graphene.Argument(
+            graphene.Int,
+            description="Truncate the returned selection to at most this many asset checks. "
+            "Use assetCheckSelectionCount for the untruncated total.",
+        ),
+    )
+    assetCheckSelectionCount = graphene.NonNull(graphene.Int)
     resolvedOpSelection = graphene.List(graphene.NonNull(graphene.String))
     stats = graphene.NonNull(GrapheneRunStatsSnapshotOrError)
     stepStats = non_null_list(GrapheneRunStepStats)
@@ -711,15 +729,32 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_solidSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.op_selection
 
-    def resolve_assetSelection(self, _graphene_info: ResolveInfo):
-        return self.dagster_run.asset_selection
+    def resolve_assetSelection(self, _graphene_info: ResolveInfo, limit=None):
+        asset_selection = self.dagster_run.asset_selection
+        if asset_selection is None or limit is None:
+            return asset_selection
+        # asset_selection is an unordered set; sort before truncating so the preview is stable
+        # across refreshes and matches the head of the full (client-sorted) list.
+        return sorted(asset_selection, key=lambda asset_key: asset_key.path)[:limit]
 
-    def resolve_assetCheckSelection(self, _graphene_info: ResolveInfo):
-        return (
-            [GrapheneAssetCheckHandle(handle) for handle in self.dagster_run.asset_check_selection]
-            if self.dagster_run.asset_check_selection is not None
-            else None
-        )
+    def resolve_assetSelectionCount(self, _graphene_info: ResolveInfo):
+        return len(self.dagster_run.asset_selection or [])
+
+    def resolve_assetCheckSelection(self, _graphene_info: ResolveInfo, limit=None):
+        asset_check_selection = self.dagster_run.asset_check_selection
+        if asset_check_selection is None:
+            return None
+        if limit is not None:
+            # asset_check_selection is an unordered set; sort before truncating so the preview is
+            # stable across refreshes and matches the head of the full (client-sorted) list.
+            asset_check_selection = sorted(
+                asset_check_selection,
+                key=lambda handle: (handle.asset_key.path, handle.name),
+            )[:limit]
+        return [GrapheneAssetCheckHandle(handle) for handle in asset_check_selection]
+
+    def resolve_assetCheckSelectionCount(self, _graphene_info: ResolveInfo):
+        return len(self.dagster_run.asset_check_selection or [])
 
     def resolve_resolvedOpSelection(self, _graphene_info: ResolveInfo):
         return self.dagster_run.resolved_op_selection
@@ -812,7 +847,7 @@ class GrapheneRun(graphene.ObjectType):
         return get_assets_for_run(graphene_info, self.dagster_run)
 
     def resolve_assetChecks(self, graphene_info: ResolveInfo):
-        return get_asset_checks_for_run_id(graphene_info, self.run_id)
+        return get_asset_checks_for_run(graphene_info, self.dagster_run)
 
     def resolve_assetMaterializations(self, graphene_info: ResolveInfo):
         # convenience field added for users querying directly via GraphQL
@@ -1226,6 +1261,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     hasLaunchExecutionPermission = graphene.NonNull(graphene.Boolean)
     hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
     nodeNames = non_null_list(graphene.String)
+    automationCondition = graphene.Field(GrapheneAutomationCondition)
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -1248,6 +1284,27 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def resolve_nodeNames(self, _graphene_info: ResolveInfo):
         return self._remote_job.node_names
+
+    def resolve_automationCondition(self, graphene_info: ResolveInfo):
+        if self._batch_loader:
+            repository = self._batch_loader.repository
+        else:
+            code_location = graphene_info.context.get_code_location(
+                self._remote_job.repository_handle.location_name
+            )
+            repository = code_location.get_repository(
+                self._remote_job.repository_handle.repository_name
+            )
+        if not repository.has_job(self._remote_job.name):
+            return None
+        job_entry = repository.get_job_map_entry(self._remote_job.name)
+        if isinstance(job_entry, JobRefSnap):
+            automation_condition = job_entry.automation_condition
+        else:
+            automation_condition = job_entry.job.automation_condition
+        if automation_condition is not None:
+            return GrapheneAutomationCondition(automation_condition.get_snapshot())
+        return None
 
     def resolve_presets(self, _graphene_info: ResolveInfo):
         return [

@@ -208,7 +208,10 @@ def evaluate_automation_conditions(
             for key in asset_selection.resolve(asset_graph)
             | asset_selection.resolve_checks(asset_graph)
             if asset_graph.get(key).automation_condition is not None
-        },
+        }
+        # asset selections cannot express job keys, so conditioned jobs are added
+        # directly from the graph
+        | asset_graph.automatable_asset_job_keys,
         evaluation_time=evaluation_time,
         emit_backfills=False,
         logger=logging.getLogger("dagster.automation_condition_tester"),

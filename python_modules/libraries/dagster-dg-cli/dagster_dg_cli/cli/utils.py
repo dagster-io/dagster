@@ -379,7 +379,7 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
     )
 
     dagster_cloud_yaml_path = Path(statedir) / "dagster_cloud.yaml"
-    with open(dagster_cloud_yaml_path, "w+") as temp_dagster_cloud_yaml_file:
+    with open(dagster_cloud_yaml_path, "w+", encoding="utf-8") as temp_dagster_cloud_yaml_file:
         entries = []
         if dg_context.is_project:
             entries.append(_dagster_cloud_entry_for_project(dg_context, None))

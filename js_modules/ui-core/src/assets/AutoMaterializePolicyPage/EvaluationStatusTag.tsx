@@ -6,7 +6,8 @@ import {PartitionSubsetList} from './PartitionSubsetList';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 
 interface Props {
-  assetKey: AssetKey;
+  assetKey: AssetKey | null;
+  jobName?: string;
   isPartitioned: boolean;
   selectedEvaluation: AssetConditionEvaluationRecordFragment;
   selectPartition: (partitionKey: string | null) => void;
@@ -14,6 +15,7 @@ interface Props {
 
 export const EvaluationStatusTag = ({
   assetKey,
+  jobName,
   isPartitioned,
   selectedEvaluation,
   selectPartition,
@@ -25,7 +27,7 @@ export const EvaluationStatusTag = ({
   );
   const rootUniqueId = evaluation?.rootUniqueId;
 
-  const assetKeyPath = assetKey.path || [];
+  const assetKeyPath = assetKey?.path ?? null;
   const numRequested = selectedEvaluation?.numRequested;
 
   const numTrue =
@@ -46,6 +48,7 @@ export const EvaluationStatusTag = ({
               <PartitionSubsetList
                 description="Requested partitions"
                 assetKeyPath={assetKeyPath}
+                jobName={jobName}
                 evaluationId={selectedEvaluation.evaluationId}
                 nodeUniqueId={rootUniqueId}
                 selectPartition={selectPartition}

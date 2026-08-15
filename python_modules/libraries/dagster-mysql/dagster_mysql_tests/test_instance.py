@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 import pytest
 import sqlalchemy as db
 import sqlalchemy.exc
-import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
@@ -12,6 +11,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
 from dagster_mysql.utils import mysql_isolation_level
+from dagster_shared.yaml_utils import safe_load_yaml
 from sqlalchemy.pool import NullPool
 
 
@@ -76,7 +76,7 @@ def test_connection_leak(conn_string):
     copies = [
         DagsterInstance.from_ref(
             InstanceRef.from_dir(
-                tempdir.name, overrides=yaml.safe_load(full_mysql_config(hostname, port))
+                tempdir.name, overrides=safe_load_yaml(full_mysql_config(hostname, port))
             )
         )
         for _ in range(num_instances)
@@ -116,11 +116,11 @@ def test_load_instance(conn_string):
         stamp_alembic_rev(alembic_config, conn, rev=None)  # ty: ignore[invalid-argument-type]
 
     # Now load from scratch, verify it loads without errors
-    with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))):
+    with instance_for_test(overrides=safe_load_yaml(full_mysql_config(hostname, port))):
         pass
 
     # Now load from scratch, using unified storage config
-    with instance_for_test(overrides=yaml.safe_load(unified_mysql_config(hostname, port))):
+    with instance_for_test(overrides=safe_load_yaml(unified_mysql_config(hostname, port))):
         pass
 
 
@@ -130,7 +130,7 @@ def test_statement_timeouts(conn_string):
     hostname = parse_result.hostname
     port = parse_result.port
 
-    with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))) as instance:
+    with instance_for_test(overrides=safe_load_yaml(full_mysql_config(hostname, port))) as instance:
         instance.optimize_for_webserver(
             statement_timeout=500, pool_recycle=-1, max_overflow=20
         )  # 500ms

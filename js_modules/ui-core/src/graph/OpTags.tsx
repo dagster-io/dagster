@@ -72,6 +72,7 @@ import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
 import evidence from './kindtag-images/tool-evidence.svg';
 import exasol from './kindtag-images/tool-exasol-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
+import fabric from './kindtag-images/tool-fabric-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
 import flink from './kindtag-images/tool-flink-color.svg';
@@ -132,6 +133,7 @@ import noteable from './kindtag-images/tool-noteable-color.svg';
 import notion from './kindtag-images/tool-notion-color.svg';
 import numpy from './kindtag-images/tool-numpy-color.svg';
 import omni from './kindtag-images/tool-omni-color.svg';
+import onelake from './kindtag-images/tool-onelake-color.svg';
 import openai from './kindtag-images/tool-openai-color.svg';
 import openmetadata from './kindtag-images/tool-openmetadata-color.svg';
 import optuna from './kindtag-images/tool-optuna-color.svg';
@@ -185,6 +187,7 @@ import shell from './kindtag-images/tool-shell-color.svg';
 import shopify from './kindtag-images/tool-shopify-color.svg';
 import slack from './kindtag-images/tool-slack-color.svg';
 import sling from './kindtag-images/tool-sling-color.svg';
+import slurm from './kindtag-images/tool-slurm-color.png';
 import snowflake from './kindtag-images/tool-snowflake-color.svg';
 import soda from './kindtag-images/tool-soda-color.svg';
 import spanner from './kindtag-images/tool-spanner-color.svg';
@@ -311,6 +314,7 @@ export type KnownTagType =
   | 'exasol'
   | 'excel'
   | 'expand'
+  | 'fabric'
   | 'facebook'
   | 'file'
   | 'fivetran'
@@ -381,6 +385,7 @@ export type KnownTagType =
   | 'notion'
   | 'numpy'
   | 'omni'
+  | 'onelake'
   | 'openai'
   | 'openmetadata'
   | 'optuna'
@@ -442,6 +447,7 @@ export type KnownTagType =
   | 'silver'
   | 'slack'
   | 'sling'
+  | 'slurm'
   | 'snowflake'
   | 'snowpark'
   | 'soda'
@@ -549,6 +555,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: slack,
     content: 'Slack',
   },
+  slurm: {
+    icon: slurm,
+    content: 'SLURM',
+  },
   pytorch: {
     icon: pytorch,
     content: 'PyTorch',
@@ -624,6 +634,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   omni: {
     icon: omni,
     content: 'Omni',
+  },
+  onelake: {
+    icon: onelake,
+    content: 'OneLake',
   },
   datadog: {
     icon: datadog,
@@ -864,6 +878,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   excel: {
     icon: excel,
     content: 'Excel',
+  },
+  fabric: {
+    icon: fabric,
+    content: 'Fabric',
   },
   ray: {
     icon: ray,

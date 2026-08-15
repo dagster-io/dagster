@@ -24,6 +24,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._serdes import ConfigurableClassData
 from dagster_cloud_cli.core.graphql_client import (
+    PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
     RETRY_STATUS_CODES,
     create_agent_graphql_client,
     create_agent_http_client,
@@ -118,6 +119,7 @@ class DagsterCloudAgentInstance(DagsterCloudInstance):
         self._user_code_launcher = None
         self._graphql_requests_session: Session | None = None
         self._rest_requests_session: Session | None = None
+        self._presigned_url_put_requests_session: Session | None = None
         self._graphql_client = None
         self._http_client = None
 
@@ -296,6 +298,25 @@ class DagsterCloudAgentInstance(DagsterCloudInstance):
                 )
             )
         return self._rest_requests_session
+
+    @property
+    def requests_managed_retries_session_for_presigned_url_puts(self):
+        """A requests session for PUTs to S3 presigned URLs."""
+        if self._presigned_url_put_requests_session is None:
+            self._presigned_url_put_requests_session = self._exit_stack.enter_context(
+                create_graphql_requests_session(
+                    adapter_kwargs=dict(
+                        max_retries=Retry(
+                            total=self.dagster_cloud_api_retries,
+                            backoff_factor=self._dagster_cloud_api_config["backoff_factor"],
+                            status_forcelist=PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+                            allowed_methods=["PUT"],
+                        ),
+                        socket_options=self._socket_options(),
+                    )
+                )
+            )
+        return self._presigned_url_put_requests_session
 
     @property
     def graphql_client(self):

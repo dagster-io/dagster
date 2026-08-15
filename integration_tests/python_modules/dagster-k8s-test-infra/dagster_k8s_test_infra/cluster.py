@@ -90,19 +90,22 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                         )
                     except docker.errors.ImageNotFound:
                         build_and_tag_test_image(docker_image)
-                # On Buildkite, the supporting images (postgres / rabbitmq /
-                # redis / localstack) come through the kind-registry pull-
-                # through cache configured in create_kind_cluster -- kubelet
-                # inside kind pulls them via the docker.io mirror endpoint,
-                # never hitting docker.io directly. kind_load only needs to
-                # preload the test-project image, which lives in private ECR
-                # (the mirror only covers docker.io). Locally, additional_
-                # kind_images still gets preloaded to avoid devs paying the
-                # mirror's cold-cache pull on every test run.
+                # Preload the supporting images (postgres / rabbitmq /
+                # localstack / busybox) into the kind node's containerd via
+                # `crictl pull` (see `_kind_node_crictl_pull_with_retry`). The
+                # lazy path -- letting kubelet pull through the same CRI mirror
+                # chain at test-pod schedule time -- occasionally returns
+                # corrupted layers (`failed commit on ref ... unexpected commit
+                # digest`), which fails every helm-postgres-dependent test in
+                # the run because the dagster-k8s client treats ErrImagePull as
+                # terminal (`client.py:768`). Moving the pull to fixture-init
+                # lets us retry the corruption case loudly with backoff, and
+                # `imagePullPolicy=IfNotPresent` then keeps kubelet off the
+                # network entirely at test time.
                 kind_load_images(
                     cluster_name=cluster_config.name,
                     local_dagster_test_image=docker_image,
-                    additional_images=None if IS_BUILDKITE else additional_kind_images,
+                    additional_images=additional_kind_images,
                 )
                 yield cluster_config
 

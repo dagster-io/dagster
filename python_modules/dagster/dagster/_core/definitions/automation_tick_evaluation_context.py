@@ -10,10 +10,16 @@ import dagster._check as check
 from dagster import PartitionKeyRange
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetJobKey,
+    AssetOrCheckKey,
+    EntityKey,
+)
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -30,6 +36,7 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import use_partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -55,13 +62,22 @@ class AutomationTickEvaluationContext:
         emit_backfills: bool,
         default_condition: AutomationCondition | None = None,
         evaluation_time: datetime.datetime | None = None,
+        asset_job_keys: AbstractSet[AssetJobKey] | None = None,
     ):
-        resolved_entity_keys = {
+        resolved_entity_keys: set[EntityKey] = {
             entity_key
             for entity_key in (
                 asset_selection.resolve(asset_graph) | asset_selection.resolve_checks(asset_graph)
             )
             if default_condition or asset_graph.get(entity_key).automation_condition is not None
+        }
+        # asset selections cannot express job keys, so conditioned jobs are added
+        # directly from the graph
+        resolved_entity_keys |= {
+            key
+            for key in (asset_job_keys or set())
+            # default_condition does not extend to jobs
+            if asset_graph.has(key) and asset_graph.get(key).automation_condition is not None
         }
         self._total_keys = len(resolved_entity_keys)
         self._evaluation_id = evaluation_id
@@ -221,7 +237,9 @@ class AutomationTickEvaluationContext:
         )
 
 
-_PartitionsDefKeyMapping = dict[tuple[PartitionsDefinition | None, str | None], set[EntityKey]]
+_PartitionsDefKeyMapping = dict[
+    tuple[PartitionsDefinition | None, str | None], set[AssetOrCheckKey]
+]
 
 
 def _get_mapping_from_entity_subsets(
@@ -232,9 +250,8 @@ def _get_mapping_from_entity_subsets(
     entity_subsets_by_key = {es.key: es for es in entity_subsets}
     for key in entity_subsets_by_key:
         if isinstance(key, AssetCheckKey) and key.asset_key in entity_subsets_by_key:
-            # all asset checks are currently unpartitioned, so ensure that they get grouped
-            # into a run with the asset they check if that asset is being requested this
-            # tick
+            # group a check into the same run as the asset it checks when that asset is also
+            # being requested this tick, using the asset's partitioning
             partitions_def = asset_graph.get(key.asset_key).partitions_def
             subset = entity_subsets_by_key[key.asset_key]
         else:
@@ -242,8 +259,18 @@ def _get_mapping_from_entity_subsets(
             subset = entity_subsets_by_key[key]
 
         if partitions_def:
-            for asset_partition in subset.expensively_compute_asset_partitions():
-                mapping[partitions_def, asset_partition.partition_key].add(key)
+            # a subset keyed on an asset check (a partitioned check requested without its
+            # asset) cannot be expanded into AssetKeyPartitionKeys, but the mapping only needs
+            # the partition keys, which can be read off any entity subset
+            if isinstance(subset.key, AssetKey):
+                partition_keys = {
+                    asset_partition.partition_key
+                    for asset_partition in subset.expensively_compute_asset_partitions()
+                }
+            else:
+                partition_keys = subset.expensively_compute_partition_keys()
+            for partition_key in partition_keys:
+                mapping[partitions_def, partition_key].add(key)
         else:
             mapping[partitions_def, None].add(key)
 
@@ -251,20 +278,20 @@ def _get_mapping_from_entity_subsets(
 
 
 def _build_backfill_request(
-    entity_subsets: Sequence[EntitySubset[EntityKey]],
+    entity_subsets: Sequence[EntitySubset[AssetOrCheckKey]],
     asset_graph: BaseAssetGraph,
     run_tags: Mapping[str, str] | None,
-) -> tuple[RunRequest | None, Sequence[EntitySubset[EntityKey]]]:
+) -> tuple[RunRequest | None, Sequence[EntitySubset[AssetOrCheckKey]]]:
     """Determines a set of entity subsets that can be executed using a backfill.
     If any entity subset has size greater than 1, then it and all assets connected
     to it will be grouped into the backfill. Returns the corresponding backfill
     run request, and all entity subsets not handled in this process.
     """
     entity_subsets_by_key = {es.key: es for es in entity_subsets}
-    visited: set[EntityKey] = set()
+    visited: set[AssetOrCheckKey] = set()
     backfill_subsets: list[EntitySubset[AssetKey]] = []
 
-    def _flood_fill_asset_subsets(k: EntityKey):
+    def _flood_fill_asset_subsets(k: AssetOrCheckKey):
         if k in visited or k not in entity_subsets_by_key:
             return []
         visited.add(k)
@@ -310,6 +337,44 @@ def _build_backfill_request(
     return backfill_request, list(entity_subsets_by_key.values())
 
 
+def _build_job_run_requests(
+    asset_job_subsets: Sequence[EntitySubset[AssetJobKey]],
+    asset_graph: BaseAssetGraph,
+    run_tags: Mapping[str, str] | None,
+) -> Sequence[RunRequest]:
+    """Builds RunRequests for job entities whose automation conditions fired this tick.
+
+    Unlike asset run requests, which list the specific assets and checks to execute, a
+    job run request launches the whole job by name: job_name is set and there is no
+    asset selection.
+
+    An unpartitioned job launches as a single run. A partitioned job launches as one
+    run per requested partition, each tagged with its partition key.
+    """
+    run_requests = []
+    for subset in asset_job_subsets:
+        if subset.is_empty:
+            continue
+        partitions_def = asset_graph.get(subset.key).partitions_def
+        if partitions_def is None:
+            run_requests.append(
+                RunRequest(job_name=subset.key.job_name, tags=dict(run_tags) if run_tags else {})
+            )
+        else:
+            run_requests.extend(
+                RunRequest(
+                    job_name=subset.key.job_name,
+                    partition_key=partition_key,
+                    tags={
+                        **(run_tags or {}),
+                        **partitions_def.get_tags_for_partition_key(partition_key),
+                    },
+                )
+                for partition_key in sorted(subset.expensively_compute_partition_keys())
+            )
+    return sorted(run_requests, key=lambda rr: (rr.job_name or "", rr.partition_key or ""))
+
+
 def build_run_requests(
     entity_subsets: Sequence[EntitySubset],
     asset_graph: BaseAssetGraph,
@@ -319,22 +384,73 @@ def build_run_requests(
     """For a single asset in a given tick, the asset will only be part of a run or a backfill, not both.
     If the asset is targetd by a backfill, there will only be one backfill that targets the asset.
     """
+    # job entity subsets become whole-job run requests; everything downstream of this
+    # split (backfills, partition mapping) deals only in assets and checks
+    asset_job_subsets = [es for es in entity_subsets if isinstance(es.key, AssetJobKey)]
+    asset_and_check_subsets = [es for es in entity_subsets if not isinstance(es.key, AssetJobKey)]
+    job_run_requests = _build_job_run_requests(asset_job_subsets, asset_graph, run_tags)
+
     if emit_backfills:
-        backfill_run_request, entity_subsets = _build_backfill_request(
-            entity_subsets, asset_graph, run_tags
+        backfill_run_request, asset_and_check_subsets = _build_backfill_request(
+            asset_and_check_subsets, asset_graph, run_tags
         )
     else:
         backfill_run_request = None
 
     run_requests = _build_run_requests_from_partitions_def_mapping(
-        _get_mapping_from_entity_subsets(entity_subsets, asset_graph),
+        _get_mapping_from_entity_subsets(asset_and_check_subsets, asset_graph),
         asset_graph,
         run_tags,
     )
     if backfill_run_request:
         run_requests = [backfill_run_request, *run_requests]
 
-    return run_requests
+    return [*job_run_requests, *run_requests]
+
+
+def _any_check_uses_automation_condition(
+    asset_graph: BaseAssetGraph, asset_keys: AbstractSet[AssetKey]
+) -> bool:
+    return any(
+        asset_graph.get(check_key).automation_condition is not None
+        for check_key in asset_graph.get_check_keys_for_assets(asset_keys)
+    )
+
+
+def _ride_along_check_keys_for_assets(
+    asset_graph: BaseAssetGraph, asset_keys: AbstractSet[AssetKey]
+) -> AbstractSet[AssetCheckKey]:
+    """The checks that ride along by default with a set of assets sharing a single repository.
+
+    These are the checks that target the selected assets, restricted to those that:
+
+    - do NOT own an automation condition: a check with its own automation condition is scheduled
+      independently by declarative automation, so it only runs when its own condition fires (i.e.
+      when it is explicitly requested), not whenever its asset is materialized; and
+    - are defined in the same repository as the assets: a check can target an asset that lives in
+      a different code location, but such a check is not part of this repository's implicit asset
+      job, so it cannot be grouped into the run (otherwise downstream the run fails to build an
+      execution plan for it).
+    """
+    candidate_check_keys = {
+        check_key
+        for check_key in asset_graph.get_check_keys_for_assets(asset_keys)
+        if asset_graph.get(check_key).automation_condition is None
+    }
+    if not asset_keys or not isinstance(asset_graph, RemoteWorkspaceAssetGraph):
+        # A non-workspace graph only ever spans a single repository, so every candidate check
+        # is necessarily defined alongside the assets.
+        return candidate_check_keys
+
+    def repo_selector(entity_key: AssetOrCheckKey) -> RepositorySelector:
+        return asset_graph.get_repository_handle(entity_key).to_selector()
+
+    # All assets in `asset_keys` share a repository (the mapping is split per-repository before
+    # this is called), so any of them identifies the target repository.
+    target_repo = repo_selector(next(iter(asset_keys)))
+    return {
+        check_key for check_key in candidate_check_keys if repo_selector(check_key) == target_repo
+    }
 
 
 def _build_run_requests_from_partitions_def_mapping(
@@ -352,19 +468,28 @@ def _build_run_requests_from_partitions_def_mapping(
             tags.update({**partitions_def.get_tags_for_partition_key(partition_key)})
 
         for entity_keys_for_repo in asset_graph.split_entity_keys_by_repository(entity_keys):
-            asset_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
+            asset_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetKey)]
+            requested_check_keys = [k for k in entity_keys_for_repo if isinstance(k, AssetCheckKey)]
+            if _any_check_uses_automation_condition(asset_graph, set(asset_keys)):
+                ride_along_check_keys = _ride_along_check_keys_for_assets(
+                    asset_graph, set(asset_keys)
+                )
+                resolved_asset_check_keys = list({*requested_check_keys, *ride_along_check_keys})
+            else:
+                # Reached when no check on these assets uses DA:
+                # pass the explicitly-requested checks, or `None` to let the code server expand to
+                # all of the assets' checks at execution time.
+                resolved_asset_check_keys = requested_check_keys or None
             run_requests.append(
                 # Do not call run_request.with_resolved_tags_and_config as the partition key is
                 # valid and there is no config.
                 # Calling with_resolved_tags_and_config is costly in asset reconciliation as it
                 # checks for valid partition keys.
                 RunRequest(
-                    asset_selection=[k for k in entity_keys_for_repo if isinstance(k, AssetKey)],
+                    asset_selection=asset_keys,
                     partition_key=partition_key,
                     tags=tags,
-                    # if selecting no asset_check_keys, just pass in `None` to allow required
-                    # checks to be included
-                    asset_check_keys=asset_check_keys or None,
+                    asset_check_keys=resolved_asset_check_keys,
                 )
             )
 
@@ -425,12 +550,16 @@ def build_run_requests_with_backfill_policies(
             )
         elif backfill_policy is None:
             # just use the normal single-partition behavior
-            entity_keys = cast("set[EntityKey]", asset_keys)
+            entity_keys = cast("set[AssetOrCheckKey]", asset_keys)
             mapping: _PartitionsDefKeyMapping = {
                 (partitions_def, pk): entity_keys for pk in (partition_keys or [None])
             }
             run_requests.extend(
-                _build_run_requests_from_partitions_def_mapping(mapping, asset_graph, run_tags={})
+                _build_run_requests_from_partitions_def_mapping(
+                    mapping,
+                    asset_graph,
+                    run_tags={},
+                )
             )
         else:
             run_requests.extend(

@@ -15,7 +15,9 @@ def test():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         partition_key = "strawberry"
         os.mkdir(os.path.join(tmpdir_path, DIR))
-        open(os.path.join(tmpdir_path, DIR, partition_key), "a").close()
+        open(
+            os.path.join(tmpdir_path, DIR, partition_key), "a", encoding="utf-8"
+        ).close()
 
         mockenv = mock.patch.dict(
             os.environ, {"MY_DIRECTORY": os.path.join(os.path.join(tmpdir_path, DIR))}

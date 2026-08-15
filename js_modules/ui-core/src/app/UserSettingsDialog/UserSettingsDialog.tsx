@@ -7,8 +7,8 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
-  Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {FeatureFlag} from '@shared/FeatureFlags';
@@ -144,7 +144,9 @@ const UserSettingsDialogContent = ({onClose, visibleFlags}: DialogContentProps) 
         </Box>
         <Box padding={{vertical: 16}} border="top">
           <Box padding={{bottom: 8}}>
-            <Subheading>Experimental features</Subheading>
+            <Heading size={14} weight={600}>
+              Experimental features
+            </Heading>
           </Box>
           {experimentalSettings}
         </Box>

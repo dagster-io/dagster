@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from datetime import timedelta
-from typing import Any, Mapping, Optional
+from typing import Any
 
 import dagster as dg
 from dagster_databricks import DatabricksClient
@@ -19,10 +20,10 @@ class AssetDefinition(dg.Model):
     key: str = Field(
         ..., description="Asset key (can include slashes for multi-part keys)"
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Description of what this asset contains"
     )
-    group_name: Optional[str] = Field(
+    group_name: str | None = Field(
         default=None, description="Asset group for organization"
     )
     deps: list[str] = Field(
@@ -39,7 +40,7 @@ class DatabricksJobOrchestrator(dg.Component, dg.Model, dg.Resolvable):
     """
 
     job_id: int = Field(..., description="The Databricks job ID to execute")
-    job_parameters: Optional[Mapping[str, Any]] = Field(
+    job_parameters: Mapping[str, Any] | None = Field(
         default=None, description="Parameters to pass to the Databricks job"
     )
     workspace_config: WorkspaceConfig = Field(

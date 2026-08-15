@@ -1,13 +1,15 @@
 import {
   Box,
   Colors,
+  Container,
   Icon,
+  Inner,
   MiddleTruncate,
-  Mono,
   Popover,
   Row,
   Spinner,
   Tag,
+  Text,
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -31,7 +33,6 @@ import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJob
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {AnchorButton} from '../ui/AnchorButton';
-import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
@@ -188,7 +189,7 @@ export const RunTimeline = (props: Props) => {
       {repoOrder.length ? (
         <div style={{overflow: 'hidden', position: 'relative'}}>
           <Container ref={parentRef}>
-            <Inner $totalHeight={totalHeight}>
+            <Inner totalHeight={totalHeight}>
               {items.map(({index, key, size, start}) => {
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const row: RowType = flattened[index]!;
@@ -757,7 +758,7 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
       </Box>
       <div style={{height, overflowY: 'hidden'}}>
         <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
+          <Inner totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const run = batch.runs[index]!;
@@ -781,12 +782,12 @@ export const RunHoverContent = (props: RunHoverContentProps) => {
                       {run.status === 'SCHEDULED' ? (
                         <TimestampDisplay timestamp={run.startTime / 1000} />
                       ) : (
-                        <Mono>
+                        <Text size={14} family="mono">
                           <TimeElapsed
                             startUnix={run.startTime / 1000}
                             endUnix={run.endTime / 1000}
                           />
-                        </Mono>
+                        </Text>
                       )}
                     </div>
                   </Box>

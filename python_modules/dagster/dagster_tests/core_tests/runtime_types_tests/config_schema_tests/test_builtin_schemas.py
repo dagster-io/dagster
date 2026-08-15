@@ -144,7 +144,7 @@ def single_output_env(solid_name, output_spec):
 
 def test_int_input_schema_json():
     with get_temp_file_name() as tmp_file:
-        with open(tmp_file, "w") as ff:
+        with open(tmp_file, "w", encoding="utf-8") as ff:
             ff.write('{"value": 2}')
 
         source_result = _execute_job_with_subset(
@@ -290,7 +290,7 @@ def test_value_none_string_input_schema_failure():
 
 def test_string_input_schema_json():
     with get_temp_file_name() as tmp_file:
-        with open(tmp_file, "w") as ff:
+        with open(tmp_file, "w", encoding="utf-8") as ff:
             ff.write('{"value": "foo"}')
 
         source_result = _execute_job_with_subset(

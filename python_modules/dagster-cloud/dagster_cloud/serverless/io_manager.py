@@ -2,17 +2,27 @@ import datetime
 import io
 import os
 import pickle
-from typing import Any
+from typing import TYPE_CHECKING, Any
+from urllib.parse import quote
 
-import boto3
 import dagster._check as check
 import requests
 from dagster import InputContext, OutputContext, UPathIOManager, io_manager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._vendored.dateutil import parser
+from dagster_cloud_cli.core.graphql_client import (
+    DEFAULT_BACKOFF_FACTOR,
+    DEFAULT_RETRIES,
+    PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+)
 from dagster_cloud_cli.core.headers.auth import DagsterCloudInstanceScope
 from dagster_cloud_cli.core.headers.impl import get_dagster_cloud_api_headers
+from requests.adapters import HTTPAdapter
 from upath import UPath
+from urllib3.util.retry import Retry
+
+if TYPE_CHECKING:
+    import boto3
 
 ECS_AGENT_IP = "169.254.170.2"
 
@@ -29,7 +39,11 @@ class PickledObjectServerlessIOManager(UPathIOManager):
         base_path = UPath(s3_prefix) if s3_prefix else None
         super().__init__(base_path=base_path)
 
-    def _refresh_boto_session(self) -> tuple[boto3.Session, datetime.datetime]:
+    def _refresh_boto_session(self) -> tuple["boto3.Session", datetime.datetime]:
+        # boto3 is lazy-imported so this module can load in environments where
+        # only the presigned-URL IO manager path is used and boto3 is not installed.
+        import boto3
+
         # We have to do this whacky way to get credentials to ensure that we get iam role
         # we assigned to the task. If we used the default boto behavior, it could get overriden
         # when users set AWS env vars.
@@ -95,11 +109,22 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
     obtained from the Dagster+ API on each operation.
     """
 
-    def __init__(self, api_url: str, api_token: str, timeout: int):
+    def __init__(self, api_url: str, api_token: str, timeout: int, deployment_name: str | None):
         self._api_url = api_url
         self._api_token = api_token
+        self._deployment_name = deployment_name
         self._timeout = timeout
         self._session = requests.Session()
+        put_retry_adapter = HTTPAdapter(
+            max_retries=Retry(
+                total=DEFAULT_RETRIES,
+                backoff_factor=DEFAULT_BACKOFF_FACTOR,
+                status_forcelist=PRESIGNED_URL_PUT_RETRY_STATUS_CODES,
+                allowed_methods=["PUT"],
+            )
+        )
+        self._session.mount("https://", put_retry_adapter)
+        self._session.mount("http://", put_retry_adapter)
         super().__init__(base_path=UPath("."))
 
     def _get_presigned_url(self, key: str, method: str) -> str:
@@ -108,8 +133,9 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
             headers=get_dagster_cloud_api_headers(
                 self._api_token,
                 DagsterCloudInstanceScope.DEPLOYMENT,
+                deployment_name=self._deployment_name,
             ),
-            params={"key": key, "method": method},
+            params={"key": quote(key, safe="/"), "method": method},
             timeout=self._timeout,
         )
         resp.raise_for_status()
@@ -159,6 +185,7 @@ def _build_serverless_io_manager(init_context):
             api_url=init_context.instance.dagster_cloud_url,
             api_token=init_context.instance.dagster_cloud_agent_token,
             timeout=init_context.instance.dagster_cloud_api_timeout,
+            deployment_name=init_context.instance.deployment_name,
         )
 
     bucket = os.getenv("DAGSTER_CLOUD_SERVERLESS_STORAGE_S3_BUCKET")

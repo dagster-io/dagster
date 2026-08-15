@@ -1,14 +1,4 @@
-import {
-  Box,
-  Caption,
-  Colors,
-  Icon,
-  IconName,
-  Mono,
-  Tag,
-  TextInput,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, Tag, Text, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {createContext, useContext, useState} from 'react';
 
@@ -94,9 +84,9 @@ export const TableSchema = ({
           placeholder="Filter columns"
         />
         {schemaLoadTimestamp && (
-          <Caption color={Colors.textLighter()}>
+          <Text size={12} color="textLighter">
             Updated <Timestamp timestamp={{ms: schemaLoadTimestamp}} />
-          </Caption>
+          </Text>
         )}
       </Box>
       {multiColumnConstraints.length > 0 && (
@@ -123,7 +113,9 @@ export const TableSchema = ({
             {rows.map((column) => (
               <tr key={column.name}>
                 <td>
-                  <Mono>{column.name}</Mono>
+                  <Text size={14} family="mono">
+                    {column.name}
+                  </Text>
                   {column.tags && (
                     <Box flex={{gap: 4, wrap: 'wrap'}} margin={{top: 4}}>
                       {column.tags.map((tag, i) => (
@@ -151,7 +143,9 @@ export const TableSchema = ({
             {rows.length === 0 && (
               <tr>
                 <td colSpan={4}>
-                  <Caption color={Colors.textLight()}>No table schema columns</Caption>
+                  <Text size={12} color="textLight">
+                    No table schema columns
+                  </Text>
                 </td>
               </tr>
             )}

@@ -70,7 +70,7 @@ class PipesFileContextInjector(PipesContextInjector):
             PipesParams: A dict of parameters that can be used by the external process to locate and
             load the injected context data.
         """
-        with open(self._path, "w") as input_stream:
+        with open(self._path, "w", encoding="utf-8") as input_stream:
             json.dump(context_data, input_stream)
         try:
             yield {PipesDefaultContextLoader.FILE_PATH_KEY: self._path}
@@ -173,7 +173,7 @@ class PipesFileMessageReader(PipesMessageReader):
         is_session_closed = Event()
         thread = None
         try:
-            open(self._path, "w").close()  # create file
+            open(self._path, "w", encoding="utf-8").close()  # create file
             thread = Thread(
                 target=self._reader_thread,
                 args=(handler, is_session_closed),

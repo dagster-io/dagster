@@ -1,4 +1,4 @@
-import {Box, Button, Colors, Dialog, DialogFooter, Mono, Table} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Dialog, DialogFooter, Table, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -113,7 +113,9 @@ export const AssetCheckHistoricalEventsButton = ({
                           />
                         )}
                         <Link to={`/runs/${execution.runId}?timestamp=${execution.timestamp}`}>
-                          <Mono>{titleForRun({id: execution.runId})}</Mono>
+                          <Text size={14} family="mono">
+                            {titleForRun({id: execution.runId})}
+                          </Text>
                         </Link>
                       </Box>
                     </td>

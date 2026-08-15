@@ -8,7 +8,7 @@ import {Icon} from '../Icon';
 import {MiddleTruncate} from '../MiddleTruncate';
 import {Slider} from '../Slider';
 import {Tag} from '../Tag';
-import {Heading, Title} from '../Text';
+import {Heading} from '../Typography';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -113,6 +113,26 @@ export const FlexboxContainerUsage = () => {
         </Box>
       ))}
     </Box>
+  );
+};
+
+export const CustomFontProperties = () => {
+  return (
+    <span>
+      This text should not be truncating:
+      <br />
+      <Box
+        flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+        style={{
+          maxWidth: 120,
+          letterSpacing: '-0.05rem',
+          wordSpacing: '-0.05rem',
+          textRendering: 'geometricPrecision',
+        }}
+      >
+        <MiddleTruncate text="anthropic cost report" />
+      </Box>
+    </span>
   );
 };
 
@@ -249,7 +269,7 @@ export const BreadcrumbsScenario = () => {
     {text: 'asset1', href: '#'},
   ];
   return (
-    <Title>
+    <Heading size={32} weight={600}>
       <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '500px'}}>
         <Breadcrumbs
           items={breadcrumbs}
@@ -265,10 +285,12 @@ export const BreadcrumbsScenario = () => {
           )}
         />
       </Box>
-    </Title>
+    </Heading>
   );
 };
 
 const TruncatedHeading = ({children}: {children: React.ReactNode}) => (
-  <Heading style={{maxWidth: 200, overflow: 'hidden'}}>{children}</Heading>
+  <Heading size={20} weight={500} style={{maxWidth: 200, overflow: 'hidden'}}>
+    {children}
+  </Heading>
 );

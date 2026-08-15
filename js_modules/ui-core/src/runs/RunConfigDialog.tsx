@@ -1,4 +1,4 @@
-import {Box, Button, Dialog, DialogFooter, Icon, Subheading} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogFooter, Heading, Icon} from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 
 import {RunTags, tagsAsYamlString} from './RunTags';
@@ -50,7 +50,9 @@ export const RunConfigDialog = (props: Props) => {
         <Box flex={{direction: 'column', gap: 20}} style={{flex: 1, overflow: 'hidden'}}>
           {hasTags ? (
             <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-              <Subheading>Tags</Subheading>
+              <Heading size={14} weight={600}>
+                Tags
+              </Heading>
               <div>
                 <RunTags tags={tags} mode={isJob ? null : mode} />
               </div>
@@ -59,7 +61,9 @@ export const RunConfigDialog = (props: Props) => {
           <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'hidden'}}>
             {hasTags ? (
               <Box border="bottom" padding={{left: 24, bottom: 16}}>
-                <Subheading>Config</Subheading>
+                <Heading size={14} weight={600}>
+                  Config
+                </Heading>
               </Box>
             ) : null}
             <div className={styles.codeMirrorContainer}>

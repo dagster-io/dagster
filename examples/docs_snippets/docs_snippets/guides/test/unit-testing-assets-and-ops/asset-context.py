@@ -4,7 +4,7 @@ import dagster as dg
 
 @dg.asset(partitions_def=dg.DailyPartitionsDefinition("2024-01-01"))
 def loaded_file(context: dg.AssetExecutionContext) -> str:
-    with open(f"path_{context.partition_key}.txt") as file:
+    with open(f"path_{context.partition_key}.txt", encoding="utf-8") as file:
         return file.read()
 
 

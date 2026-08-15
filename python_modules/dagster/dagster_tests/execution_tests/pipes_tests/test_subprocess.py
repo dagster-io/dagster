@@ -370,9 +370,9 @@ def retry_script_fn_success():
 
 @dg.op(retry_policy=dg.RetryPolicy(max_retries=3))
 def retry_foo(context: OpExecutionContext, pipes_subprocess_client: PipesSubprocessClient):
-    should_fail = Path(os.environ["SHOULD_FAIL_FILE"]).read_text() == "true"
+    should_fail = Path(os.environ["SHOULD_FAIL_FILE"]).read_text(encoding="utf-8") == "true"
     with temp_script(retry_script_fn if should_fail else retry_script_fn_success) as script_path:
-        Path(os.environ["SHOULD_FAIL_FILE"]).write_text("false")
+        Path(os.environ["SHOULD_FAIL_FILE"]).write_text("false", encoding="utf-8")
         cmd = [_PYTHON_EXECUTABLE, script_path]
         return pipes_subprocess_client.run(command=cmd, context=context).get_results()
 
@@ -776,7 +776,7 @@ def _execute_job(spin_timeout, subproc_log_path):
         with open_dagster_pipes() as pipes:
             timeout = pipes.get_extra("timeout")
             log_path = pipes.get_extra("log_path")
-            with open(log_path, "w") as f:
+            with open(log_path, "w", encoding="utf-8") as f:
                 f.write(f"{os.getpid()}")
                 f.flush()
                 start = time.time()

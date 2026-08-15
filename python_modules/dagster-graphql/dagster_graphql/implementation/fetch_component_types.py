@@ -6,6 +6,7 @@ from dagster.components.core.load_defs import get_plugin_component_jsons_for_cod
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.component_types import (
+        GrapheneComponentFormSchema,
         GrapheneComponentTypeInfo,
         GrapheneComponentTypes,
     )
@@ -35,13 +36,30 @@ def _parse_schema(schema_field: Any) -> Any:
     return schema_field
 
 
-def _is_ui_editable(schema: Any) -> bool:
+def _is_app_managed(schema: Any) -> bool:
     """Whether this component supports the UI add/edit/delete workflow.
 
     Opt-in via ``ComponentFormConfig(editable=True)`` on the component class,
-    which serializes to ``x-ui-editable: true`` on the schema.
+    which serializes to ``x-app-managed: true`` on the schema.
     """
-    return bool(isinstance(schema, dict) and schema.get("x-ui-editable"))
+    return bool(isinstance(schema, dict) and schema.get("x-app-managed"))
+
+
+def _to_form_schema(schema: Any) -> "GrapheneComponentFormSchema | None":
+    """Split the raw schema into the RJSF (dataSchema, uiSchema) pair.
+
+    Done server-side so the frontend never reverse-engineers Dagster's schema
+    conventions; ``split_form_schema`` is the decode side of the same conventions
+    the Python model layer emits. Returns ``None`` when there is no schema.
+    """
+    from dagster.components.resolved.form_schema import split_form_schema
+
+    from dagster_graphql.schema.component_types import GrapheneComponentFormSchema
+
+    if not isinstance(schema, dict):
+        return None
+    data_schema, ui_schema = split_form_schema(schema)
+    return GrapheneComponentFormSchema(dataSchema=data_schema, uiSchema=ui_schema)
 
 
 def _to_component_type_info(
@@ -55,10 +73,12 @@ def _to_component_type_info(
         namespace=namespace_name,
         example=component_json.get("example") or "",
         schema=schema,
+        formSchema=_to_form_schema(schema),
         description=component_json.get("description"),
         owners=component_json.get("owners"),
         tags=component_json.get("tags"),
-        isUiEditable=_is_ui_editable(schema),
+        produces=component_json.get("produces"),
+        isAppManaged=_is_app_managed(schema),
     )
 
 

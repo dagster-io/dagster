@@ -1,10 +1,9 @@
-import {Box, Icon} from '@dagster-io/ui-components';
+import {Box, Container, Icon, Inner, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
 import styles from './css/VirtualizedAssetPartitionListForDialog.module.css';
 import {COMMON_COLLATOR} from '../../app/Util';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props<A> {
   assetKeysByPartition: Record<string, A[]>;
@@ -73,12 +72,12 @@ export function VirtualizedAssetPartitionListForDialog<A>({
 
   return (
     <Container ref={container} style={{padding: '8px 24px'}}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row = allRows[index]!;
           return (
-            <Row $height={size} $start={start} key={key}>
+            <Row height={size} start={start} key={key}>
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center'}}

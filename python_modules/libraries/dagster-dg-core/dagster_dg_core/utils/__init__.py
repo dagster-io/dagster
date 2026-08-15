@@ -225,9 +225,9 @@ def set_option_help_output_group(param: click.Parameter, group: str) -> None:
 def modify_toml(path: Path) -> Iterator["tomlkit.TOMLDocument"]:
     import tomlkit
 
-    toml = tomlkit.parse(path.read_text())
+    toml = tomlkit.parse(path.read_text(encoding="utf-8"))
     yield toml
-    path.write_text(tomlkit.dumps(toml))
+    path.write_text(tomlkit.dumps(toml), encoding="utf-8")
 
 
 @contextlib.contextmanager
@@ -244,7 +244,7 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
 
     toml_dict = load_toml_as_dict(path)
     yield toml_dict
-    path.write_text(tomlkit.dumps(toml_dict))
+    path.write_text(tomlkit.dumps(toml_dict), encoding="utf-8")
 
 
 def hash_directory_metadata(
@@ -409,7 +409,7 @@ class DgClickHelpMixin:
         rich_format_help(obj=self, ctx=context, markup_mode="rich")
 
 
-class DgClickCommand(DgClickHelpMixin, click.Command):
+class DgClickCommand(DgClickHelpMixin, click.Command):  # ty: ignore[invalid-method-override]
     def __init__(self, *args, unlaunched: bool = False, **kwargs):
         """DgClickCommand with conditional hiding for unlaunched features.
 
@@ -422,7 +422,7 @@ class DgClickCommand(DgClickHelpMixin, click.Command):
         super().__init__(*args, **kwargs)
 
 
-class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):  # ty: ignore[invalid-method-override]
     def __init__(self, *args, unlaunched: bool = False, **kwargs):
         """DgClickGroup with conditional hiding for unlaunched features.
 
@@ -515,7 +515,7 @@ TomlDoc: TypeAlias = Union["tomlkit.TOMLDocument", dict[str, Any]]
 def load_toml_as_dict(path: Path) -> dict[str, Any]:
     import tomlkit
 
-    return tomlkit.parse(path.read_text()).unwrap()
+    return tomlkit.parse(path.read_text(encoding="utf-8")).unwrap()
 
 
 def get_toml_node(

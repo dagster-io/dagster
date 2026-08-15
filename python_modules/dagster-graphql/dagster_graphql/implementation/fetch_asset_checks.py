@@ -10,7 +10,7 @@ from dagster._core.definitions.partitions.definition import (
 )
 from dagster._core.definitions.partitions.subset import PartitionsSubset, TimeWindowPartitionsSubset
 from dagster._core.event_api import PartitionKeyFilter
-from dagster._core.events import ASSET_CHECK_EVENTS, DagsterEventType
+from dagster._core.events import DagsterEventType
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
 from dagster._core.remote_representation.handle import RepositoryHandle
@@ -20,7 +20,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckInstanceSupport,
 )
 from dagster._core.storage.asset_check_state import AssetCheckState
-from dagster._core.storage.dagster_run import RunRecord
+from dagster._core.storage.dagster_run import DagsterRun, RunRecord
 from packaging import version
 
 from dagster_graphql.implementation.partition_status_utils import (
@@ -106,30 +106,33 @@ def fetch_asset_check_executions(
     return [GrapheneAssetCheckExecution(check_record) for check_record in check_records]
 
 
-def get_asset_checks_for_run_id(
-    graphene_info: "ResolveInfo", run_id: str
+def get_asset_checks_for_run(
+    graphene_info: "ResolveInfo", run: DagsterRun
 ) -> Sequence["GrapheneAssetCheckHandle"]:
     from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle
 
-    check.str_param(run_id, "run_id")
-
-    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_CHECK_EVENTS)
-
-    asset_check_keys = set(
-        [
-            record.get_dagster_event().asset_check_evaluation_data.asset_check_key
-            for record in records
-            if record.is_dagster_event
-            and record.get_dagster_event().event_type == DagsterEventType.ASSET_CHECK_EVALUATION
-        ]
-        + [
-            record.get_dagster_event().asset_check_planned_data.asset_check_key
-            for record in records
-            if record.is_dagster_event
-            and record.get_dagster_event().event_type
-            == DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED
-        ]
+    # Scan the event log for asset check evaluations that actually occurred during the run. A run can
+    # emit evaluations for checks that were not planned beforehand, so these must come from the
+    # events rather than the execution plan.
+    records = graphene_info.context.instance.all_logs(
+        run.run_id, of_type=DagsterEventType.ASSET_CHECK_EVALUATION
     )
+    asset_check_keys = {
+        record.get_dagster_event().asset_check_evaluation_data.asset_check_key
+        for record in records
+        if record.is_dagster_event
+    }
+
+    # Add the checks the run planned to execute from the execution plan snapshot. This records the
+    # planned check keys on its step outputs, so we avoid scanning the event log for planned events,
+    # and it is correct when the run's `asset_check_selection` is None (meaning "every check on the
+    # targeted assets") - the plan has those expanded to concrete keys.
+    if run.execution_plan_snapshot_id:
+        execution_plan_snapshot = graphene_info.context.instance.get_execution_plan_snapshot(
+            run.execution_plan_snapshot_id
+        )
+        asset_check_keys.update(execution_plan_snapshot.asset_check_keys)
+
     return [
         GrapheneAssetCheckHandle(handle=asset_check_key)
         for asset_check_key in sorted(

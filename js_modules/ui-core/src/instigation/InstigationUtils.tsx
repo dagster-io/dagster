@@ -1,4 +1,4 @@
-import {Box, Colors, Mono} from '@dagster-io/ui-components';
+import {Box, Colors, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -28,7 +28,9 @@ export const RunStatusLink = ({run}: {run: RunStatusFragment}) => (
   <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
     <RunStatusIndicator status={run.status} />
     <Link to={`/runs/${run.id}`} target="_blank" rel="noreferrer">
-      <Mono>{titleForRun({id: run.id})}</Mono>
+      <Text size={14} family="mono">
+        {titleForRun({id: run.id})}
+      </Text>
     </Link>
   </Box>
 );
@@ -78,6 +80,25 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
   ${TICK_TAG_FRAGMENT}
 `;
 
+/**
+ * Label for what an automation tick requested. Automation ticks can request asset
+ * materializations, whole-job runs (for jobs with automation conditions), or both.
+ */
+export const labelForRequestedMaterializationsAndJobRuns = (
+  materializationCount: number,
+  jobRunCount: number,
+): string => {
+  const materializationPart =
+    materializationCount === 1 ? '1 materialization' : `${materializationCount} materializations`;
+  const jobRunPart = jobRunCount === 1 ? '1 job run' : `${jobRunCount} job runs`;
+  if (jobRunCount > 0) {
+    return materializationCount > 0
+      ? `${materializationPart}, ${jobRunPart} requested`
+      : `${jobRunPart} requested`;
+  }
+  return `${materializationPart} requested`;
+};
+
 export const DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT = gql`
   fragment DynamicPartitionsRequestResultFragment on DynamicPartitionsRequestResult {
     partitionsDefName
@@ -98,6 +119,7 @@ export const HISTORY_TICK_FRAGMENT = gql`
     instigationType
     skipReason
     requestedAssetMaterializationCount
+    requestedJobRunCount
     runIds
     runs {
       id

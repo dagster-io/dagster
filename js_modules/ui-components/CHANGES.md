@@ -1,3 +1,25 @@
+# 1.5.0 (June 29, 2026)
+
+- Replace Blueprint `Select`, `Suggest`, `Radio`, `RadioGroup`, `Breadcrumbs`, `HTMLTable`, `Spinner`, `Popover` (click), and `TagInput` with custom/Radix implementations
+- Remove `styled-components` dependency from `ui-components` and `ui-core`
+- Complete CSS Modules migration: convert all remaining styled-components to CSS Modules, eliminate `createGlobalStyle`
+- New typography system: add `Text`, `Heading`, and `Code` components; replace `Body`, `Caption`, `Mono` with `Text`
+- Add `RadioTags` component for tag-based radio group selection
+- Add virtualized item list to `Select` component
+- Allow `DialogHeader` to render additional right content
+- Allow preserving original icon color for `Button` icons
+- Increase popover padding from 4px to 8px
+- Fix `MiddleTruncate` letter spacing, canvas text-measurement perf regression, and offscreen canvas reuse
+- Fix partition filter input unresponsive in custom partition selection
+- Fix deployment settings YAML editor to warn on unknown keys
+- Fix deployment switcher button text color in light mode
+- Fix extra scrollbars in asset overview and asset sidebar
+- Fix `--font-family-monospace` to `--font-mono` CSS variable name
+- Add `notifications_off` icon
+- Add icon names to Storybook
+- Reduce `any` type usage across JS modules
+- Remove `showSharedToaster` from `DomUtils`
+
 # 1.4.2 (February 27, 2026)
 
 - Upgrade Rollup v2 to v4 and update all @rollup/ plugins to latest versions

@@ -179,14 +179,14 @@ def _assert_matches_or_update_snippet(
     snippet_output_file.parent.mkdir(parents=True, exist_ok=True)
 
     if update_snippets:
-        snippet_output_file.write_text(f"{contents.rstrip()}\n")
+        snippet_output_file.write_text(f"{contents.rstrip()}\n", encoding="utf-8")
         print(f"Updated snippet at {snippet_path}")  # noqa: T201
     else:
         if not snippet_output_file.exists():
             raise Exception(f"Snippet at {snippet_path} does not exist")
 
         contents = contents.rstrip()
-        snippet_contents = snippet_output_file.read_text().rstrip()
+        snippet_contents = snippet_output_file.read_text(encoding="utf-8").rstrip()
         if not comparison_fn(contents, snippet_contents):
             print(f"Snapshot mismatch {snippet_path}")  # noqa: T201
             print("\nActual file:")  # noqa: T201

@@ -46,7 +46,7 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         if state_path is None:
             value = "initial"
         else:
-            with open(state_path) as f:
+            with open(state_path, encoding="utf-8") as f:
                 state = json.load(f)
             value = state["value"]
 
@@ -60,7 +60,7 @@ class MyStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         return dg.Definitions(assets=[the_asset])
 
     async def write_state_to_path(self, state_path: Path):
-        with open(state_path, "w") as f:
+        with open(state_path, "w", encoding="utf-8") as f:
             json.dump({"value": f"bar_{random.randint(1000, 9999)}"}, f)
 
     def _get_state_refresh_defs(self, context: dg.ComponentLoadContext) -> dg.Definitions:

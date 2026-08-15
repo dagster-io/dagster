@@ -212,9 +212,15 @@ def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _: ToxFactor | Non
 
 
 def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfiguration]:
+    # `use_durations=False` on the split k8s factors: pytest-split's
+    # `.test_durations` data records only test-body time, which for k8s
+    # integration tests is dominated by kind-cluster fixture setup that pytest
+    # can't see. Empirically, balancing against that data made shards
+    # significantly more imbalanced than count-based grouping — see the
+    # post-merge regression on builds 155444 / 155446.
     pytest_tox_factors = [
-        ToxFactor("-default", splits=2),
-        ToxFactor("-subchart", splits=2),
+        ToxFactor("-default", splits=2, use_durations=False),
+        ToxFactor("-subchart", splits=2, use_durations=False),
         ToxFactor("-default_monitoring"),
         ToxFactor("-subchart_monitoring"),
     ]

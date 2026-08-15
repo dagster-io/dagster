@@ -10,7 +10,7 @@ description = ""
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
-    "dagster-shared",
+    "dagster-shared==1!0+dev",
     "packaging>=20.9",
     "questionary",
     "requests",
@@ -45,4 +45,4 @@ test = [
 ]
 
 [tool.uv.sources]
-dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }

@@ -1,8 +1,24 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type StartThisScheduleMutationVariables = Types.Exact<{
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type InstigationType = 'AUTO_MATERIALIZE' | 'SCHEDULE' | 'SENSOR';
+
+export type ScheduleSelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+  scheduleName: string;
+};
+
+export type StartThisScheduleMutationVariables = Exact<{
   scheduleSelector: Types.ScheduleSelector;
 }>;
 
@@ -35,8 +51,8 @@ export type StartThisScheduleMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type StopScheduleMutationVariables = Types.Exact<{
-  id: Types.Scalars['String']['input'];
+export type StopScheduleMutationVariables = Exact<{
+  id: string;
 }>;
 
 export type StopScheduleMutation = {
@@ -65,7 +81,7 @@ export type StopScheduleMutation = {
     | {__typename: 'UnauthorizedError'; message: string};
 };
 
-export type ResetScheduleMutationVariables = Types.Exact<{
+export type ResetScheduleMutationVariables = Exact<{
   scheduleSelector: Types.ScheduleSelector;
 }>;
 

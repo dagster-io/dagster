@@ -47,9 +47,7 @@ airbyte_resource = AirbyteResource(
     password=dg.EnvVar("AIRBYTE_PASSWORD"),
 )
 
-airbyte_assets = load_assets_from_airbyte_instance(
-    airbyte=airbyte_resource
-)
+airbyte_assets = load_assets_from_airbyte_instance(airbyte=airbyte_resource)
 
 defs = dg.Definitions(
     assets=[airbyte_assets],
@@ -100,9 +98,7 @@ airbyte_cloud_resource = AirbyteCloudResource(
     client_secret=dg.EnvVar("AIRBYTE_CLIENT_SECRET"),
 )
 
-airbyte_assets = load_assets_from_airbyte_instance(
-    airbyte=airbyte_cloud_resource
-)
+airbyte_assets = load_assets_from_airbyte_instance(airbyte=airbyte_cloud_resource)
 
 defs = dg.Definitions(
     assets=[airbyte_assets],

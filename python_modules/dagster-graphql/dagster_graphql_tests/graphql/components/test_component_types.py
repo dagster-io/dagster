@@ -26,10 +26,15 @@ query GetComponentTypes($locationName: String!) {
         namespace
         example
         schema
+        formSchema {
+          dataSchema
+          uiSchema
+        }
         description
         owners
         tags
-        isUiEditable
+        produces
+        isAppManaged
       }
     }
     ... on RepositoryLocationNotFound {
@@ -117,13 +122,30 @@ def test_returns_component_types_with_schemas():
         assert "asset_key" in properties
         assert "value" in properties
 
+        # The server splits the raw schema into the RJSF (dataSchema, uiSchema)
+        # pair so the frontend doesn't reverse-engineer Dagster's conventions.
+        form_schema = simple["formSchema"]
+        assert isinstance(form_schema, dict)
+        data_schema = form_schema["dataSchema"]
+        ui_schema = form_schema["uiSchema"]
+        assert isinstance(data_schema, dict)
+        assert isinstance(ui_schema, dict)
+        # The data schema carries the same fields, with no Dagster sentinels or
+        # inline ui:* keys leaking through.
+        assert "asset_key" in (data_schema.get("properties") or {})
+        assert "__DAGSTER_UNSET_DEFAULT__" not in repr(data_schema)
+        assert "ui:" not in repr(data_schema)
+
         # Owners/tags from the component spec round-trip through.
         assert simple["owners"] == ["john@dagster.io", "jane@dagster.io"]
         assert simple["tags"] == ["a", "b", "c"]
+        # produces is wired through; SimpleAssetComponent declares none, so it
+        # serializes as an empty list (the field is populated end-to-end).
+        assert simple["produces"] == []
         assert simple["description"]  # present
         # SimpleAssetComponent.get_form_config() returns ComponentFormConfig(editable=True),
-        # so its schema carries x-ui-editable: true and the field surfaces here.
-        assert simple["isUiEditable"] is True
+        # so its schema carries x-app-managed: true and the field surfaces here.
+        assert simple["isAppManaged"] is True
         # Namespace + example come from the same metadata blob the docs
         # tab used to read directly.
         assert simple["namespace"] == "dagster_test"

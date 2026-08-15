@@ -1,12 +1,14 @@
 import {
   Box,
   ButtonLink,
-  Caption,
   Checkbox,
   Colors,
+  HeaderCell,
+  HeaderRow,
   Icon,
-  Mono,
+  RowCell,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -28,7 +30,6 @@ import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.typ
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
-import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 export const RunsFeedRow = ({
@@ -110,7 +111,9 @@ export const RunsFeedRow = ({
           >
             <Box flex={{gap: 4, alignItems: 'center'}}>
               <Icon name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'} />
-              <Mono>{titleForRun(entry)}</Mono>
+              <Text size={14} family="mono">
+                {titleForRun(entry)}
+              </Text>
             </Box>
           </Link>
           <Box
@@ -129,14 +132,14 @@ export const RunsFeedRow = ({
             />
 
             {entry.runStatus === RunStatus.QUEUED ? (
-              <Caption>
+              <Text size={12}>
                 <ButtonLink
                   onClick={() => onShowDialog({type: 'queue-criteria', entry})}
                   color={Colors.textLight()}
                 >
                   View queue criteria
                 </ButtonLink>
-              </Caption>
+              </Text>
             ) : null}
           </Box>
         </Box>
@@ -145,7 +148,7 @@ export const RunsFeedRow = ({
         {entry.__typename === 'Run' ? (
           <RunTargetLink
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
+            run={{...entry, pipelineName: entry.jobName!}}
             repoAddress={repoAddress}
             extraTags={
               partitionTag

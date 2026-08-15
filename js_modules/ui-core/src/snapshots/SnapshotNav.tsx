@@ -1,4 +1,4 @@
-import {FontFamily, PageHeader, Subtitle1, Tabs, Tag} from '@dagster-io/ui-components';
+import {Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {gql, useQuery} from '../apollo-client';
@@ -74,9 +74,9 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   return (
     <PageHeader
       title={
-        <Subtitle1 style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+        <Heading size={16} weight={600} family="mono">
           {explorerPath.snapshotId?.slice(0, 8)}
-        </Subtitle1>
+        </Heading>
       }
       tags={
         <>

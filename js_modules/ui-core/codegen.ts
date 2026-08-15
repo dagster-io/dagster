@@ -4,6 +4,14 @@ const config: CodegenConfig = {
   schema: './src/graphql/schema.graphql',
   documents: ['src/**/*.tsx'],
   ignoreNoDocuments: true, // for better experience with the watcher
+  config: {
+    scalars: {
+      ID: 'string',
+      GenericScalar: 'any',
+      JsonSchema: 'any',
+      RunConfigData: 'any',
+    },
+  },
   hooks: {
     afterAllFileWrite: ['prettier --write'],
   },
@@ -53,6 +61,11 @@ const config: CodegenConfig = {
             listElementCount: 0,
             terminateCircularRelationships: true,
             useImplementingTypes: true,
+            scalars: {
+              GenericScalar: 'JSON.stringify({})',
+              JsonSchema: 'JSON.stringify({})',
+              RunConfigData: 'JSON.stringify({})',
+            },
           },
         },
       ],
@@ -67,9 +80,6 @@ const config: CodegenConfig = {
       config: {
         dedupeOperationSuffix: true,
         nonOptionalTypename: true,
-        avoidOptionals: {
-          field: true,
-        },
       },
       plugins: [
         'typescript-operations',

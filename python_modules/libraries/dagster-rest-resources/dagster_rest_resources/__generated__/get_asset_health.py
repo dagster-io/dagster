@@ -69,6 +69,8 @@ class GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealth(BaseModel):
                 "GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationDegradedPartitionedMeta",
                 "GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationHealthyPartitionedMeta",
                 "GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationDegradedNotPartitionedMeta",
+                "GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationWarningPartitionedMeta",
+                "GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationWarningNotPartitionedMeta",
             ],
             Field(discriminator="typename__"),
         ]
@@ -118,6 +120,22 @@ class GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationS
         alias="__typename"
     )
     failed_run_id: Optional[str] = Field(alias="failedRunId")
+
+
+class GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationWarningPartitionedMeta(
+    BaseModel
+):
+    typename__: Literal["AssetHealthMaterializationWarningPartitionedMeta"] = Field(
+        alias="__typename"
+    )
+
+
+class GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthMaterializationStatusMetadataAssetHealthMaterializationWarningNotPartitionedMeta(
+    BaseModel
+):
+    typename__: Literal["AssetHealthMaterializationWarningNotPartitionedMeta"] = Field(
+        alias="__typename"
+    )
 
 
 class GetAssetHealthAssetsOrErrorAssetConnectionNodesAssetHealthAssetChecksStatusMetadataAssetHealthCheckDegradedMeta(

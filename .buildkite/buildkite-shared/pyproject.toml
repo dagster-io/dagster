@@ -10,6 +10,7 @@ description = "Shared tools for buildkite automation"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
+    "dagster-shared",
     "packaging",
     "typing_extensions>=4.10",
 ]
@@ -23,3 +24,4 @@ test = [
 ]
 
 [tool.uv.sources]
+dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }

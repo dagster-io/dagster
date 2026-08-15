@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from typer.models import OptionInfo
 
-import yaml
 from click import Context
 from dagster_shared.merger import deep_merge_dicts
 from dagster_shared.plus.config import (
@@ -17,6 +16,7 @@ from dagster_shared.plus.config import (
     get_dg_config_path,
 )
 from dagster_shared.utils import remove_none_recursively
+from dagster_shared.yaml_utils import safe_load_yaml
 from typer import Option
 
 from dagster_cloud_cli import gql, ui
@@ -443,7 +443,7 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
     location_doc_from_file = {}
     if location_file:
         with open(location_file, encoding="utf8") as f:
-            location_doc_from_file = yaml.safe_load(f.read())
+            location_doc_from_file = safe_load_yaml(f.read())
 
     if not location_file and not name:
         raise ui.error(
@@ -504,6 +504,9 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
                 if kwargs.get("pex_tag")
                 else None
             ),
+            # Marks an image that was baked from a PEX build (BuildStrategy.pex_docker) so the
+            # server can identify PEX-origin deploys. Only present (True) for such images.
+            "pex_bundle": kwargs.get("pex_bundle"),
             "defs_state_info": kwargs.get("defs_state_info"),
         }
     )

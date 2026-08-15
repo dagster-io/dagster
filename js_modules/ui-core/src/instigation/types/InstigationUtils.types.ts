@@ -1,6 +1,29 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type DynamicPartitionsRequestType = 'ADD_PARTITIONS' | 'DELETE_PARTITIONS';
+
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type InstigationTickStatus = 'FAILURE' | 'SKIPPED' | 'STARTED' | 'SUCCESS';
+
+export type InstigationType = 'AUTO_MATERIALIZE' | 'SCHEDULE' | 'SENSOR';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
 
 export type RunStatusFragment = {__typename: 'Run'; id: string; status: Types.RunStatus};
 
@@ -70,6 +93,7 @@ export type HistoryTickFragment = {
   instigationType: Types.InstigationType;
   skipReason: string | null;
   requestedAssetMaterializationCount: number;
+  requestedJobRunCount: number;
   runIds: Array<string>;
   originRunIds: Array<string>;
   logKey: Array<string> | null;

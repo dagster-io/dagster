@@ -1,7 +1,7 @@
 .PHONY: rerecord test clean
 
 rerecord:
-	dagster-dev dg-api-record asset-check
+	python ../_record.py asset-check
 
 test:
 	pytest . -v

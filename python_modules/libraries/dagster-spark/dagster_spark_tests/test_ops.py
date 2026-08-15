@@ -1,8 +1,8 @@
 import os
 
 import pytest
-import yaml
 from dagster import job
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_spark import create_spark_op, spark_resource
 
 CONFIG = """
@@ -56,7 +56,7 @@ def test_multiple_spark_jobs():
         if fname.startswith("spark-examples"):
             jar_path = os.path.join(base_path, fname)
 
-    result = job_def.execute_in_process(yaml.safe_load(CONFIG.format(jar_path=jar_path)))
+    result = job_def.execute_in_process(safe_load_yaml(CONFIG.format(jar_path=jar_path)))
     assert result.success
 
 
@@ -74,5 +74,5 @@ def test_multiple_spark_job_jobs():
         if fname.startswith("spark-examples"):
             jar_path = os.path.join(base_path, fname)
 
-    result = my_job.execute_in_process(run_config=yaml.safe_load(CONFIG.format(jar_path=jar_path)))
+    result = my_job.execute_in_process(run_config=safe_load_yaml(CONFIG.format(jar_path=jar_path)))
     assert result.success

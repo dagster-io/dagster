@@ -1486,6 +1486,40 @@ class TestRunStorage:
         storage.add_backfill(two)
         self.get_backfills_and_assert_expected_count(storage, multi_filters, 2)
 
+    def test_backfill_selector_id_filtering(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        other_origin = self.fake_partition_set_origin("other_partition_set")
+        assert origin.get_selector_id() != other_origin.get_selector_id()
+
+        one = PartitionBackfill(
+            "one",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        two = PartitionBackfill(
+            "two",
+            partition_set_origin=other_origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(one)
+        storage.add_backfill(two)
+
+        one_filter = BulkActionsFilter(selector_id=origin.get_selector_id())
+        matching = self.get_backfills_and_assert_expected_count(storage, one_filter, 1)
+        assert matching[0].backfill_id == "one"
+
+        other_filter = BulkActionsFilter(selector_id=other_origin.get_selector_id())
+        matching = self.get_backfills_and_assert_expected_count(storage, other_filter, 1)
+        assert matching[0].backfill_id == "two"
+
     def test_backfill_created_time_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()

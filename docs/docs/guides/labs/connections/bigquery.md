@@ -161,6 +161,8 @@ Use filtering to control which projects, datasets, tables, and views are synced.
 
 ## Connection freshness
 
+import ConnectionFreshnessCadence from '@site/docs/partials/\_ConnectionFreshnessCadence.md';
+
 Once a BigQuery Connection is created, Dagster automatically tracks changes to your BigQuery tables and emits a materialization on the corresponding Connection asset each time the underlying table is updated in BigQuery. As a result, your Connection assets reflect the most recent state of the BigQuery tables without needing to define a sensor or schedule.
 
 ### Prerequisites
@@ -173,6 +175,10 @@ The roles granted in [Grant required permissions](#step-12-grant-required-permis
 - **BigQuery Job User** on the extractor project — provides `bigquery.jobs.create`, which is required to run the polling query.
 
 Tables must live in a region included in [`region_qualifiers`](#optional-configure-region-qualifiers) (defaults to `region-us` and `region-eu`); changes in regions not listed there will not be detected.
+
+### Configuring the cadence
+
+<ConnectionFreshnessCadence />
 
 ### Triggering downstream assets
 

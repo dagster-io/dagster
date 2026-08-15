@@ -1,4 +1,4 @@
-import {Box, Button, Checkbox, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
+import {Box, Button, Checkbox, Heading, Icon, Tooltip} from '@dagster-io/ui-components';
 import React, {useContext} from 'react';
 
 import {SHORTCUTS_STORAGE_KEY} from '../../../app/ShortcutHandler';
@@ -78,7 +78,9 @@ export const UserPreferences = ({
   return (
     <>
       <Box padding={{bottom: 4}}>
-        <Subheading>Preferences</Subheading>
+        <Heading size={14} weight={600}>
+          Preferences
+        </Heading>
       </Box>
       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Timezone</div>

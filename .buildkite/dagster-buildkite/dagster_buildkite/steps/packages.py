@@ -383,7 +383,7 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             pytest_tox_factors=[ToxFactor("source")],
         ),
         # Federation tutorial spins up two host-process airflow instances + dagster;
-        # needs a beefier main container than MEDIUM's c5a.large (2 vCPU / 4 Gi) provides.
+        # 2 vCPU / 4 Gi starves the airflow standalones (SQLite lock contention).
         PackageSpec(
             oss_path("examples/airlift-federation-tutorial"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
@@ -517,7 +517,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 # AssetDaemonScenarios; the slowest scenario submits 73 partitioned run
                 # requests through the synchronous run coordinator in one tick and brushes
                 # the 240s pytest-timeout fallback on the EKS default 1000m budget.
-                # Bumping per-step CPU + migrating off the MEDIUM (EC2) queue.
                 ToxFactor(
                     "declarative_automation_tests",
                     splits=2,
@@ -1105,7 +1104,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             queue=BuildkiteQueue.KUBERNETES_EKS,
             # One airflow standalone stack + dagster per split carries the same
             # SQLite-lock risk as the federation tutorial, so match its 4 vCPU
-            # sizing rather than MEDIUM's 2 vCPU (#24950).
+            # sizing (#24950).
             resources=ResourceRequests(cpu="4000m", memory="4Gi"),
             splits=2,
         ),
