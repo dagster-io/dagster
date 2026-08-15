@@ -1,19 +1,28 @@
 import shutil
+import subprocess
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, patch
 
 import dagster as dg
 import pytest
 from dagster._core.definitions.definitions_load_context import DefinitionsLoadType
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_dbt import DbtProjectComponent
-from dagster_dbt.dbt_project_manager import RemoteGitDbtProjectManager
+from dagster_dbt.dbt_project_manager import (
+    _GIT_CLONE_TIMEOUT_SECONDS,
+    RemoteGitDbtProjectManager,
+    _shallow_clone,
+)
+
+_SHALLOW_CLONE = "dagster_dbt.dbt_project_manager._shallow_clone"
+_SUBPROCESS_RUN = "dagster_dbt.dbt_project_manager.subprocess.run"
 
 # Path to the jaffle shop test project
 STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "dbt_project_location"
@@ -32,16 +41,15 @@ def dbt_project_dir() -> Iterator[Path]:
 def mock_git_clone(dbt_project_dir: Path):
     """Create a mock function that simulates git clone by copying the prepared project."""
 
-    def _clone_from(repo_url: str, to_path: Path, depth: int = 1):
-        # we expect to_path to be an empty directory
-        assert to_path.exists()
-        assert to_path.is_dir()
-        assert not any(to_path.iterdir())
+    def _clone(repo_url: str, dest: Path, **_kwargs):
+        # we expect dest to be an empty directory
+        assert dest.exists()
+        assert dest.is_dir()
+        assert not any(dest.iterdir())
         # Instead of actually cloning, copy our prepared test project
-        shutil.copytree(dbt_project_dir, to_path, dirs_exist_ok=True)
-        return MagicMock()
+        shutil.copytree(dbt_project_dir, dest, dirs_exist_ok=True)
 
-    return _clone_from
+    return _clone
 
 
 def test_remote_dbt_project_dev_mode_calls_fetch(dbt_project_dir: Path) -> None:
@@ -51,7 +59,7 @@ def test_remote_dbt_project_dev_mode_calls_fetch(dbt_project_dir: Path) -> None:
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("git.Repo.clone_from") as mock_clone,
+        patch(_SHALLOW_CLONE) as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -101,7 +109,7 @@ def test_remote_dbt_project_reconstruction_mode_no_fetch(dbt_project_dir: Path) 
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("git.Repo.clone_from") as mock_clone,
+        patch(_SHALLOW_CLONE) as mock_clone,
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
 
@@ -178,7 +186,7 @@ def test_remote_dbt_project_with_profile_and_repo_relative_path(
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("git.Repo.clone_from") as mock_clone,
+        patch(_SHALLOW_CLONE) as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -221,7 +229,7 @@ def test_remote_dbt_project_with_token(dbt_project_dir: Path) -> None:
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("git.Repo.clone_from") as mock_clone,
+        patch(_SHALLOW_CLONE) as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -254,7 +262,7 @@ def test_remote_dbt_project_with_token(dbt_project_dir: Path) -> None:
             assert len(specs) > 0
 
             # fetch should have been called
-            mock_clone.assert_called_once_with(repo_url_with_token, ANY, depth=1)
+            mock_clone.assert_called_once_with(repo_url_with_token, ANY, display_url=repo_url)
 
 
 @pytest.mark.parametrize("project_path", [None, "."])
@@ -267,7 +275,7 @@ def test_scaffold_component_with_git_url_params(
     with (
         instance_for_test(),
         create_defs_folder_sandbox() as sandbox,
-        patch("git.Repo.clone_from") as mock_clone,
+        patch(_SHALLOW_CLONE) as mock_clone,
         environ({"DAGSTER_IS_DEV_CLI": "1"}),
     ):
         mock_clone.side_effect = mock_git_clone(dbt_project_dir)
@@ -288,3 +296,71 @@ def test_scaffold_component_with_git_url_params(
             assert isinstance(component.project, RemoteGitDbtProjectManager)
             assert component.project.repo_url == repo_url
             # Component instantiated successfully - no error means the scaffolder created valid YAML
+
+
+def _assert_shallow_clone_argv(mock_run, repo_url: str, dest: Path) -> None:
+    assert mock_run.call_args.args[0] == [
+        "git",
+        "clone",
+        "--depth",
+        "1",
+        "--",
+        repo_url,
+        str(dest),
+    ]
+
+
+def test_shallow_clone_invokes_git_cli(tmp_path: Path) -> None:
+    dest = tmp_path / "project"
+    dest.mkdir()
+    repo_url = "https://github.com/fake/repo.git"
+    completed = subprocess.CompletedProcess(
+        args=["git", "clone", "--depth", "1", "--", repo_url, str(dest)],
+        returncode=0,
+        stdout="",
+        stderr="",
+    )
+
+    with patch(_SUBPROCESS_RUN, return_value=completed) as mock_run:
+        _shallow_clone(repo_url, dest)
+
+    _assert_shallow_clone_argv(mock_run, repo_url, dest)
+    assert mock_run.call_args.kwargs["stdin"] is subprocess.DEVNULL
+    assert mock_run.call_args.kwargs["timeout"] == _GIT_CLONE_TIMEOUT_SECONDS
+    assert mock_run.call_args.kwargs["env"]["GIT_TERMINAL_PROMPT"] == "0"
+
+
+def test_shallow_clone_missing_executable(tmp_path: Path) -> None:
+    dest = tmp_path / "project"
+    dest.mkdir()
+    repo_url = "https://github.com/fake/repo.git"
+
+    with patch(
+        _SUBPROCESS_RUN, side_effect=FileNotFoundError(2, "No such file or directory", "git")
+    ) as mock_run:
+        with pytest.raises(DagsterInvalidDefinitionError, match="git executable not found"):
+            _shallow_clone(repo_url, dest)
+
+    _assert_shallow_clone_argv(mock_run, repo_url, dest)
+
+
+def test_shallow_clone_nonzero_exit(tmp_path: Path) -> None:
+    dest = tmp_path / "project"
+    dest.mkdir()
+    repo_url = "https://secret_token@github.com/fake/repo.git"
+    display_url = "https://github.com/fake/repo.git"
+    failed = subprocess.CompletedProcess(
+        args=["git", "clone", "--depth", "1", "--", repo_url, str(dest)],
+        returncode=128,
+        stdout="",
+        stderr=f"fatal: repository '{repo_url}/' not found",
+    )
+
+    with patch(_SUBPROCESS_RUN, return_value=failed) as mock_run:
+        with pytest.raises(DagsterInvalidDefinitionError, match="Failed to clone") as exc_info:
+            _shallow_clone(repo_url, dest, display_url=display_url)
+
+    _assert_shallow_clone_argv(mock_run, repo_url, dest)
+    message = str(exc_info.value)
+    assert "secret_token" not in message
+    assert display_url in message
