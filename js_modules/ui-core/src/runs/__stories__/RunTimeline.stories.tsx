@@ -38,6 +38,17 @@ export const OneRow = () => {
   return <RunTimeline rows={rows} rangeMs={[sixHoursAgo, now]} />;
 };
 
+export const NarrowTwentyFourHourRange = () => {
+  const twentyFourHoursAgo = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, []);
+  const oneHourFromNow = useMemo(() => Date.now() + 60 * 60 * 1000, []);
+
+  return (
+    <div style={{width: 700}}>
+      <RunTimeline rows={[]} rangeMs={[twentyFourHoursAgo, oneHourFromNow]} />
+    </div>
+  );
+};
+
 export const RowWithOverlappingRuns = () => {
   const sixHoursAgo = useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
   const now = useMemo(() => Date.now(), []);
