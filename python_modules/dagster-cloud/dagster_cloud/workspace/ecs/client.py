@@ -578,7 +578,16 @@ class Client:
         params["networkConfiguration"] = self.network_configuration
 
         if service_registry_arn:
-            params["serviceRegistries"] = [{"registryArn": service_registry_arn}]
+            if self._service_discovery_role_arn:
+                # ecs:CreateService rejects serviceRegistries when the Cloud Map service is in
+                # another account ("does not support registering services into shared AWS Cloud
+                # Map namespaces"). Only reachable when service_discovery_role_arn is set, i.e.
+                # only for cross-account setups - same-account keeps the native path below.
+                # Instances are registered manually instead - see
+                # _register_service_discovery_instances.
+                pass
+            else:
+                params["serviceRegistries"] = [{"registryArn": service_registry_arn}]
 
         if tags and self.taggable:
             params["tags"] = [
@@ -588,9 +597,9 @@ class Client:
 
         arn = self.ecs.create_service(**params).get("service").get("serviceArn")
 
-        return Service(client=self, arn=arn)
+        return Service(client=self, arn=arn, service_registry_arn=service_registry_arn)
 
-    async def wait_for_new_service(self, service, container_name, logger=None) -> str:
+    async def wait_for_new_service(self, service, container_name, port=None, logger=None) -> str:
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
         service_name = service.name
         start_time = time.time()
@@ -601,7 +610,11 @@ class Client:
             )
             if response.get("services"):
                 running_tasks = await self.check_service_has_running_tasks(
-                    service_name, container_name, logger=logger
+                    service_name,
+                    container_name,
+                    service_registry_arn=service.service_discovery_arn,
+                    port=port,
+                    logger=logger,
                 )
                 return running_tasks[0]
 
@@ -652,7 +665,7 @@ class Client:
             self._raise_failed_task(task, container_name, logger)
 
     async def check_service_has_running_tasks(
-        self, service_name, container_name, logger=None
+        self, service_name, container_name, service_registry_arn=None, port=None, logger=None
     ) -> list[str]:
         # return the ARN of the task if it starts
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
@@ -724,6 +737,13 @@ class Client:
                             self._raise_failed_task(task, container_name, logger)
 
                 if all_tasks_running:
+                    if service_registry_arn and self._service_discovery_role_arn:
+                        self._register_service_discovery_instances(
+                            tasks=tasks,
+                            service_registry_arn=service_registry_arn,
+                            port=port,
+                            logger=logger,
+                        )
                     return tasks_to_track
 
             await asyncio.sleep(20)
@@ -747,6 +767,141 @@ class Client:
             f"Timed out waiting for a running task for service: {service_name}."
             f" {service_events_str}"
         )
+
+    def _wait_for_service_discovery_operation(self, operation_id, action_description):
+        status = ""
+        while status != "SUCCESS":
+            operation = self.service_discovery.get_operation(OperationId=operation_id)["Operation"]
+            status = operation["Status"]
+            if status == "FAIL":
+                raise Exception(f"Failed to {action_description}: {operation.get('ErrorMessage')}")
+            if status != "SUCCESS":
+                time.sleep(2)
+
+    @staticmethod
+    def _get_task_private_ip(task):
+        attachment_details = (task.get("attachments") or [{}])[0].get("details") or []
+        return next(
+            (
+                detail.get("value")
+                for detail in attachment_details
+                if detail.get("name") == "privateIPv4Address"
+            ),
+            None,
+        )
+
+    def _register_service_discovery_instances(
+        self, tasks, service_registry_arn, port=None, logger=None
+    ):
+        """Registers each running task's IP with Cloud Map directly, via self.service_discovery.
+
+        Only covers tasks passed in here at initial startup - see reconcile_service_discovery
+        for the periodic pass that catches tasks ECS swaps in later (e.g. after a health check
+        failure). delete_service's teardown path is unaffected either way.
+        """
+        logger = logger or logging.getLogger("dagster_cloud.EcsClient")
+        service_id = service_registry_arn.split("/")[-1]
+
+        for task in tasks:
+            task_arn = task["taskArn"]
+            private_ip = self._get_task_private_ip(task)
+            if not private_ip:
+                logger.warning(
+                    f"Could not find a private IP for task {task_arn} - not registering it with"
+                    " service discovery."
+                )
+                continue
+
+            instance_id = task_arn.split("/")[-1]
+            attributes = {"AWS_INSTANCE_IPV4": private_ip}
+            if port:
+                attributes["AWS_INSTANCE_PORT"] = str(port)
+
+            logger.info(
+                f"Registering {instance_id} ({private_ip}) with service discovery service"
+                f" {service_id}..."
+            )
+            resp = self.service_discovery.register_instance(
+                ServiceId=service_id,
+                InstanceId=instance_id,
+                Attributes=attributes,
+            )
+            self._wait_for_service_discovery_operation(
+                resp["OperationId"], f"register {instance_id} with service discovery"
+            )
+
+    def _deregister_service_discovery_instance(self, service_id, instance_id, logger=None):
+        logger = logger or logging.getLogger("dagster_cloud.EcsClient")
+        logger.info(
+            f"Deregistering {instance_id} from service discovery service {service_id} - its task"
+            " is no longer running."
+        )
+        resp = self.service_discovery.deregister_instance(
+            ServiceId=service_id, InstanceId=instance_id
+        )
+        self._wait_for_service_discovery_operation(
+            resp["OperationId"], f"deregister {instance_id} from service discovery"
+        )
+
+    def reconcile_service_discovery_instances(self, service, port=None, logger=None):
+        """Cross-account-only periodic reconciliation: re-derives the set of instances that
+        *should* be registered for `service` from ECS's own live task list, and registers any
+        that are missing (e.g. a replacement task ECS started after a health check failure) or
+        deregisters any that are stale (the task they pointed at is gone). Closes the gap left by
+        _register_service_discovery_instances only covering tasks seen at initial startup.
+
+        No-ops for same-account services (self._service_discovery_role_arn is None) - those stay
+        on ECS's native serviceRegistries path, which already handles this automatically.
+        """
+        logger = logger or logging.getLogger("dagster_cloud.EcsClient")
+
+        if not self._service_discovery_role_arn:
+            return
+
+        service_registry_arn = service.service_discovery_arn
+        if not service_registry_arn:
+            return
+
+        service_id = service_registry_arn.split("/")[-1]
+
+        live_task_arns = self.ecs.list_tasks(
+            cluster=self.cluster_name,
+            serviceName=service.name,
+            desiredStatus="RUNNING",
+        ).get("taskArns", [])
+        live_tasks = (
+            self.ecs.describe_tasks(cluster=self.cluster_name, tasks=live_task_arns).get(
+                "tasks", []
+            )
+            if live_task_arns
+            else []
+        )
+        live_instance_ids = {task["taskArn"].split("/")[-1] for task in live_tasks}
+
+        registered_instances = (
+            self.service_discovery.get_paginator("list_instances")
+            .paginate(ServiceId=service_id)
+            .build_full_result()["Instances"]
+        )
+        registered_instance_ids = {instance["Id"] for instance in registered_instances}
+
+        tasks_to_register = [
+            task
+            for task in live_tasks
+            if task["taskArn"].split("/")[-1] not in registered_instance_ids
+        ]
+        if tasks_to_register:
+            self._register_service_discovery_instances(
+                tasks=tasks_to_register,
+                service_registry_arn=service_registry_arn,
+                port=port,
+                logger=logger,
+            )
+
+        for stale_instance_id in registered_instance_ids - live_instance_ids:
+            self._deregister_service_discovery_instance(
+                service_id, stale_instance_id, logger=logger
+            )
 
     def _check_for_stopped_tasks(self, service_name):
         stopped = self.ecs.list_tasks(
@@ -804,6 +959,23 @@ class Client:
             for service in page["Services"]:
                 if service["Name"] == service_name:
                     return service["Id"]
+
+    def _get_service_discovery_arn(self, service_name):
+        paginator = self.service_discovery.get_paginator("list_services")
+        for page in paginator.paginate(
+            Filters=[
+                {
+                    "Name": "NAMESPACE_ID",
+                    "Values": [
+                        self.service_discovery_namespace_id,
+                    ],
+                    "Condition": "EQ",
+                },
+            ],
+        ):
+            for service in page["Services"]:
+                if service["Name"] == service_name:
+                    return service.get("Arn")
 
     def _infer_assign_public_ip(self):
         # https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-networking.html
