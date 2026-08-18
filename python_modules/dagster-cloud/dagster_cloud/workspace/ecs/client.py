@@ -864,18 +864,24 @@ class Client:
 
         service_id = service_registry_arn.split("/")[-1]
 
-        live_task_arns = self.ecs.list_tasks(
-            cluster=self.cluster_name,
-            serviceName=service.name,
-            desiredStatus="RUNNING",
-        ).get("taskArns", [])
-        live_tasks = (
-            self.ecs.describe_tasks(cluster=self.cluster_name, tasks=live_task_arns).get(
-                "tasks", []
+        live_task_arns = (
+            self.ecs.get_paginator("list_tasks")
+            .paginate(
+                cluster=self.cluster_name,
+                serviceName=service.name,
+                desiredStatus="RUNNING",
             )
-            if live_task_arns
-            else []
+            .build_full_result()["taskArns"]
         )
+        # describe_tasks rejects more than 100 task ARNs per call - list_tasks alone can return
+        # more than that for a large service, so this has to be chunked regardless of list_tasks
+        # already being paginated above.
+        live_tasks = []
+        for i in range(0, len(live_task_arns), 100):
+            batch = live_task_arns[i : i + 100]
+            live_tasks.extend(
+                self.ecs.describe_tasks(cluster=self.cluster_name, tasks=batch).get("tasks", [])
+            )
         live_instance_ids = {task["taskArn"].split("/")[-1] for task in live_tasks}
 
         registered_instances = (
