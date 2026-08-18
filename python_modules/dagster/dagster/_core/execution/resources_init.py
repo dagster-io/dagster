@@ -145,6 +145,10 @@ def get_resource_origins_mapping(job_def: JobDefinition) -> Mapping[str, Abstrac
 
     resource_dependencies = resolve_resource_dependencies(job_def.resource_defs)
     for resource_key, op_names in list(origins.items()):
+        # A required key absent from resource_defs is only rejected at execution, not job
+        # construction, so skip it here rather than raising a KeyError from get_dependencies.
+        if resource_key not in resource_dependencies:
+            continue
         for dep_key in get_dependencies(resource_key, resource_dependencies):
             if dep_key != resource_key:
                 origins[dep_key].update(op_names)

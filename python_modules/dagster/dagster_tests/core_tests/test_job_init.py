@@ -171,6 +171,24 @@ def test_get_resource_origins_mapping():
     assert "io_manager" not in mapping
 
 
+def test_get_resource_origins_mapping_tolerates_unsatisfied_resource_key():
+    """An op may reference a resource key not present in resource_defs (only rejected at
+    execution, not construction). Building the origins mapping should not raise on such a job.
+    """
+
+    @dg.op(required_resource_keys={"missing"})
+    def needs_missing(_):
+        pass
+
+    @dg.job
+    def bad_job():
+        needs_missing()
+
+    mapping = get_resource_origins_mapping(bad_job)
+
+    assert mapping["missing"] == {"needs_missing"}
+
+
 def gen_two_op_resource_job():
     """A job where each op requires a different resource."""
 
