@@ -278,6 +278,71 @@ def test_reconcile_service_discovery_instances_same_account_noop(client):
         mock_list_tasks.assert_not_called()
 
 
+def test_reconcile_service_discovery_instances_paginates_list_tasks(client):
+    """list_tasks must be fully paginated - a service with enough tasks to span multiple pages
+    must not have tasks on later pages treated as dead and deregistered from Cloud Map.
+    """
+    client._service_discovery_role_arn = "arn:aws:iam::123456789012:role/cross-account-sd"
+    client._sd_session_expires = None
+    StubService = namedtuple("StubService", "name service_discovery_arn")
+    service = StubService(
+        name="my_service",
+        service_discovery_arn="arn:aws:servicediscovery:us-east-1:123456789012:service/srv-fake",
+    )
+
+    page_1_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/page-1-task"
+    page_2_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/page-2-task"
+
+    def _fake_task(task_arn, ip):
+        return {
+            "taskArn": task_arn,
+            "attachments": [{"details": [{"name": "privateIPv4Address", "value": ip}]}],
+        }
+
+    all_tasks_by_arn = {
+        page_1_task_arn: _fake_task(page_1_task_arn, "10.0.0.1"),
+        page_2_task_arn: _fake_task(page_2_task_arn, "10.0.0.2"),
+    }
+
+    def _fake_describe_tasks(cluster, tasks):
+        # Respects the requested `tasks` ARNs, unlike a static return_value would - otherwise a
+        # pagination bug in list_tasks (only seeing page 1) would go unnoticed here too, since
+        # describe_tasks would silently hand back page 2's task anyway.
+        return {"tasks": [all_tasks_by_arn[task_arn] for task_arn in tasks]}
+
+    with (
+        mock.patch.object(
+            client.ecs,
+            "list_tasks",
+            # boto3's ECS ListTasks paginator token is "nextToken" (lowercase) - this must match
+            # exactly or the paginator silently treats the response as a single page regardless
+            # of whether the code under test is fixed or still buggy.
+            side_effect=[
+                {"taskArns": [page_1_task_arn], "nextToken": "next-page"},
+                {"taskArns": [page_2_task_arn]},
+            ],
+        ),
+        mock.patch.object(
+            client.ecs,
+            "describe_tasks",
+            side_effect=_fake_describe_tasks,
+        ),
+        # Both tasks are already registered - a pagination bug that only sees the first page
+        # would treat "page-2-task" as dead and incorrectly deregister it.
+        mock.patch.object(
+            client.service_discovery,
+            "list_instances",
+            return_value={"Instances": [{"Id": "page-1-task"}, {"Id": "page-2-task"}]},
+        ),
+        mock.patch.object(client.service_discovery, "register_instance") as mock_register,
+        mock.patch.object(client.service_discovery, "deregister_instance") as mock_deregister,
+    ):
+        client.reconcile_service_discovery_instances(service)
+
+        mock_register.assert_not_called()
+        mock_deregister.assert_not_called()
+
+
 def test_ecs_service_error():
     with pytest.raises(EcsServiceError) as ex:
         raise EcsServiceError(
