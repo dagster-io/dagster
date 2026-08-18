@@ -343,6 +343,52 @@ def test_reconcile_service_discovery_instances_paginates_list_tasks(client):
         mock_deregister.assert_not_called()
 
 
+def test_reconcile_service_discovery_instances_tolerates_describe_tasks_failures(client):
+    """DescribeTasks is eventually consistent - a task list_tasks just confirmed RUNNING can come
+    back in `failures` instead of `tasks` (e.g. "MISSING"). That must not be treated as
+    confirmation the task is dead, or a live code server gets deregistered from Cloud Map.
+    """
+    client._service_discovery_role_arn = "arn:aws:iam::123456789012:role/cross-account-sd"
+    client._sd_session_expires = None
+    StubService = namedtuple("StubService", "name service_discovery_arn")
+    service = StubService(
+        name="my_service",
+        service_discovery_arn="arn:aws:servicediscovery:us-east-1:123456789012:service/srv-fake",
+    )
+
+    live_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/live-task-id"
+
+    with (
+        mock.patch.object(
+            client.ecs, "list_tasks", return_value={"taskArns": [live_task_arn]}
+        ),
+        # describe_tasks fails to describe this task even though list_tasks just confirmed it's
+        # RUNNING - a real, documented eventual-consistency behavior of the ECS API.
+        mock.patch.object(
+            client.ecs,
+            "describe_tasks",
+            return_value={
+                "tasks": [],
+                "failures": [{"arn": live_task_arn, "reason": "MISSING"}],
+            },
+        ),
+        # Already registered - must NOT be deregistered just because describe_tasks failed on it.
+        mock.patch.object(
+            client.service_discovery,
+            "list_instances",
+            return_value={"Instances": [{"Id": "live-task-id"}]},
+        ),
+        mock.patch.object(client.service_discovery, "register_instance") as mock_register,
+        mock.patch.object(client.service_discovery, "deregister_instance") as mock_deregister,
+    ):
+        client.reconcile_service_discovery_instances(service)
+
+        # Can't register it either - describe_tasks never gave us its IP - but that's a much
+        # smaller problem than incorrectly deregistering a live instance would be.
+        mock_register.assert_not_called()
+        mock_deregister.assert_not_called()
+
+
 def test_ecs_service_error():
     with pytest.raises(EcsServiceError) as ex:
         raise EcsServiceError(

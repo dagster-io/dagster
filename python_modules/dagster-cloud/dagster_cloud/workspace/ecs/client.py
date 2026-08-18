@@ -877,12 +877,22 @@ class Client:
         # more than that for a large service, so this has to be chunked regardless of list_tasks
         # already being paginated above.
         live_tasks = []
+        # DescribeTasks is eventually consistent: a task list_tasks just confirmed RUNNING can
+        # still come back in `failures` here (e.g. "MISSING") rather than `tasks`. Treating that
+        # as "confirmed dead" would deregister a live server; treat it as "assume still alive"
+        # instead - a stale-but-harmless instance left registered a bit longer is far cheaper than
+        # incorrectly dropping a healthy one from DNS.
+        unresolved_instance_ids = set()
         for i in range(0, len(live_task_arns), 100):
             batch = live_task_arns[i : i + 100]
-            live_tasks.extend(
-                self.ecs.describe_tasks(cluster=self.cluster_name, tasks=batch).get("tasks", [])
+            response = self.ecs.describe_tasks(cluster=self.cluster_name, tasks=batch)
+            live_tasks.extend(response.get("tasks", []))
+            unresolved_instance_ids.update(
+                failure["arn"].split("/")[-1] for failure in response.get("failures", [])
             )
-        live_instance_ids = {task["taskArn"].split("/")[-1] for task in live_tasks}
+        live_instance_ids = {
+            task["taskArn"].split("/")[-1] for task in live_tasks
+        } | unresolved_instance_ids
 
         registered_instances = (
             self.service_discovery.get_paginator("list_instances")
