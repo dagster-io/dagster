@@ -3684,6 +3684,18 @@
                     "default": null,
                     "title": "Dbpoolmaxoverflow"
                 },
+                "timeoutKeepAlive": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Timeoutkeepalive"
+                },
                 "logLevel": {
                     "anyOf": [
                         {
