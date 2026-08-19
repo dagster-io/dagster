@@ -526,3 +526,93 @@ def test_set_blocked_when_write_not_allowed(monkeypatch):
     assert "production" in cast("str", result.message).lower()
     # Never reached the write / reload path.
     graphene_info.context.reload_code_location_with_latest_defs_state.assert_not_called()
+
+
+def _set_component_bypassing_gates(monkeypatch, graphene_info, component_id="comp1"):
+    """Drive ``set_app_managed_component`` past the OSS permission/validation gates
+    so the write→refresh path runs against the mocked context.
+    """
+    import dagster_graphql.implementation.fetch_app_managed_components as fetch_mod
+
+    monkeypatch.setattr(fetch_mod, "assert_permission_for_location", lambda *a, **k: None)
+    monkeypatch.setattr(fetch_mod, "_validate_app_managed_attributes", lambda *a, **k: [])
+    graphene_info.context.app_managed_component_write_allowed.return_value = True
+
+    return fetch_mod.set_app_managed_component(
+        graphene_info, LOCATION_NAME, component_id, "dagster.SomeComponent", "name: x\n"
+    )
+
+
+def test_set_prefers_surgical_refresh(monkeypatch):
+    """An edit to an existing component refreshes state in place via the
+    fast-reload substrate, then reloads the location so the host snapshot picks
+    up the rebuilt definitions — not the heavier reload-with-latest-pins path.
+    """
+    from dagster.components.component.app_managed_state import get_app_managed_component_state_key
+
+    graphene_info = Mock()
+
+    _set_component_bypassing_gates(monkeypatch, graphene_info)
+
+    graphene_info.context.refresh_component_state.assert_called_once_with(
+        LOCATION_NAME, [get_app_managed_component_state_key(LOCATION_NAME, "comp1")]
+    )
+    # Host snapshot resynced via a plain reload; the pin-advancing reload is only
+    # the fallback for adds / non-gRPC locations.
+    graphene_info.context.reload_code_location.assert_called_once_with(LOCATION_NAME)
+    graphene_info.context.reload_code_location_with_latest_defs_state.assert_not_called()
+
+
+def test_set_falls_back_to_reload_on_refresh_error(monkeypatch):
+    """A newly-added component isn't in the running tree (refresh raises), or the
+    agent lacks fast-reload support — fall back to a full reload.
+    """
+    from dagster._core.errors import DagsterError
+
+    graphene_info = Mock()
+    graphene_info.context.refresh_component_state.side_effect = DagsterError(
+        "No matching state-backed components found for keys"
+    )
+
+    _set_component_bypassing_gates(monkeypatch, graphene_info)
+
+    graphene_info.context.reload_code_location_with_latest_defs_state.assert_called_once_with(
+        LOCATION_NAME
+    )
+    # The fallback replaces the plain host resync, not adds to it.
+    graphene_info.context.reload_code_location.assert_not_called()
+
+
+def test_set_falls_back_to_reload_when_refresh_unsupported(monkeypatch):
+    """Non-gRPC (OSS) code locations raise ``NotImplementedError`` from
+    ``refresh_component_state`` — they have no fast-reload path, so fall back to a
+    full reload rather than letting the error escape.
+    """
+    graphene_info = Mock()
+    graphene_info.context.refresh_component_state.side_effect = NotImplementedError(
+        "refresh_component_state is only supported for gRPC-backed code locations."
+    )
+
+    _set_component_bypassing_gates(monkeypatch, graphene_info)
+
+    graphene_info.context.reload_code_location_with_latest_defs_state.assert_called_once_with(
+        LOCATION_NAME
+    )
+    graphene_info.context.reload_code_location.assert_not_called()
+
+
+def test_set_leaves_accepted_refresh_to_converge(monkeypatch):
+    """A refresh that is still running (sync-wait timeout) is left to converge on
+    the server rather than forcing a redundant reload.
+    """
+    from dagster._core.errors import DagsterUserCodeUnreachableTimeoutError
+
+    graphene_info = Mock()
+    graphene_info.context.refresh_component_state.side_effect = (
+        DagsterUserCodeUnreachableTimeoutError("still running")
+    )
+
+    _set_component_bypassing_gates(monkeypatch, graphene_info)
+
+    graphene_info.context.reload_code_location_with_latest_defs_state.assert_not_called()
+    graphene_info.context.reload_code_location.assert_not_called()

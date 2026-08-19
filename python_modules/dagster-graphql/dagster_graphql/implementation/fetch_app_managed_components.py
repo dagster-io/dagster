@@ -12,6 +12,7 @@ from dagster.components.component.app_managed_state import (
     AppManagedComponentEntry,
     delete_app_managed_component_entry,
     get_app_managed_component_ids,
+    get_app_managed_component_state_key,
     read_app_managed_component_entry,
     write_app_managed_component_entry,
 )
@@ -239,10 +240,40 @@ def set_app_managed_component(
     storage = _require_storage(graphene_info)
     entry = AppManagedComponentEntry(component_type=component_type, attributes=attributes)
     write_app_managed_component_entry(storage, location_name, component_id, entry)
-    graphene_info.context.reload_code_location_with_latest_defs_state(location_name)
+    _apply_app_managed_component_write(graphene_info, location_name, component_id)
     return GrapheneSetAppManagedComponentSuccess(
         component=_to_graphene_component(component_id, entry)
     )
+
+
+def _apply_app_managed_component_write(
+    graphene_info: "ResolveInfo", location_name: str, component_id: str
+) -> None:
+    """Make the running location and host snapshot reflect a just-written component entry.
+
+    Three outcomes:
+
+    - Refreshed: the component is already in the running tree (an edit), so the
+      server re-fetches its state in place via the fast-reload substrate; we then
+      reload the location so the host snapshot picks up the rebuilt definitions.
+    - Full reload: the component isn't in the running tree yet (a new add), or the
+      location isn't gRPC-backed and has no fast-reload path; fall back to a full
+      reload with the latest defs-state pins, rebuilding the tree so it includes
+      the just-written entry (and still avoiding an image rebuild).
+    - Still running: the refresh didn't reply within the sync-wait window; leave
+      it to converge on the server rather than forcing a redundant reload.
+    """
+    state_key = get_app_managed_component_state_key(location_name, component_id)
+    try:
+        graphene_info.context.refresh_component_state(location_name, [state_key])
+    except DagsterUserCodeUnreachableTimeoutError:
+        return
+    except (DagsterError, NotImplementedError):
+        graphene_info.context.reload_code_location_with_latest_defs_state(location_name)
+        return
+    # Surgical refresh updated the running server in place; reload so the host
+    # snapshot reflects the rebuilt definitions.
+    graphene_info.context.reload_code_location(location_name)
 
 
 def delete_app_managed_component(
