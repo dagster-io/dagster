@@ -30,18 +30,27 @@ def key_from_str(key_str):
         key_str (str): A string containing the private key data.
 
     Returns:
-        paramiko.RSAKey: An RSA key object created from the provided string.
+        paramiko.PKey: A private key object created from the provided string.
+            Supports RSA, Ed25519, ECDSA, and other key types supported by paramiko.
 
     Raises:
         ValueError: If the key string is invalid or cannot be parsed.
     """
     check.str_param(key_str, "key_str")
 
-    # py2 StringIO doesn't support with
-    key_file = StringIO(key_str)
-    result = paramiko.RSAKey.from_private_key(key_file)
-    key_file.close()
-    return result
+    for key_class in (paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey):
+        try:
+            key_file = StringIO(key_str)
+            result = key_class.from_private_key(key_file)
+            key_file.close()
+            return result
+        except paramiko.PasswordRequiredException:
+            raise
+        except Exception:
+            continue
+    raise ValueError(
+        "Unable to parse private key string: unsupported key type or invalid key data."
+    )
 
 
 @beta
@@ -124,7 +133,7 @@ class SSHResource(ConfigurableResource):
 
     _logger: logging.Logger | None = PrivateAttr(default=None)
     _host_proxy: paramiko.ProxyCommand | None = PrivateAttr(default=None)
-    _key_obj: paramiko.RSAKey | None = PrivateAttr(default=None)
+    _key_obj: paramiko.PKey | None = PrivateAttr(default=None)
 
     def set_logger(self, logger: logging.Logger) -> None:
         self._logger = logger
@@ -133,7 +142,7 @@ class SSHResource(ConfigurableResource):
         self._logger = context.log
         self._host_proxy = None
 
-        # Create RSAKey object from private key string
+        # Create PKey object from private key string, supporting all key types
         self._key_obj = key_from_str(self.key_string) if self.key_string is not None else None
 
         # Auto detecting username values from system
