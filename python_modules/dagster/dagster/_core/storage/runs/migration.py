@@ -433,7 +433,7 @@ def migrate_backfill_end_timestamp(storage: RunStorage, print_fn: PrintFn | None
 
 def get_end_timestamp_for_backfill(run_storage: RunStorage, backfill: PartitionBackfill) -> float:
     assert backfill.status in BULK_ACTION_TERMINAL_STATUSES
-    filters = RunsFilter.for_backfill(backfill.backfill_id)
+    filters = RunsFilter(backfill_id=backfill.backfill_id)
     run_records = run_storage.get_run_records(filters=filters)
     if len(run_records) == 0:
         # backfill was moved to a terminal state before any runs were launched. We cannot

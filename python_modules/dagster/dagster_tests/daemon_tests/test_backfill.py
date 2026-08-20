@@ -52,6 +52,7 @@ from dagster._core.storage.tags import (
     BACKFILL_TAGS,
     MAX_RETRIES_TAG,
     PARTITION_NAME_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -865,7 +866,7 @@ def test_failure_backfill(
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 6
-    from_failure_filter = dg.RunsFilter(tags={BACKFILL_ID_TAG: "fromfailure"})
+    from_failure_filter = dg.RunsFilter(backfill_id="fromfailure")
     assert instance.get_runs_count(filters=from_failure_filter) == 3
 
     runs = instance.get_runs(filters=from_failure_filter)
@@ -951,6 +952,121 @@ def test_job_backfill_status(
     assert backfill.backfill_end_timestamp is not None
 
 
+def test_job_backfill_status_with_successful_retry(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    # Regression: when a backfill run fails and is then successfully retried (e.g. via
+    # the auto-reexecution daemon with `run_retries.enabled=true`), the original FAILURE
+    # run keeps its status forever. The backfill must still resolve to COMPLETED_SUCCESS
+    # because every partition ultimately succeeded.
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill_id = "retry_success"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+
+    # Partition "one" failed on the first attempt and was then successfully retried.
+    failed_run = create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.FAILURE,
+        tags={
+            **DagsterRun.tags_for_backfill_id(backfill_id),
+            PARTITION_NAME_TAG: "one",
+        },
+    )
+    create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.SUCCESS,
+        tags={
+            **DagsterRun.tags_for_backfill_id(backfill_id),
+            PARTITION_NAME_TAG: "one",
+        },
+        root_run_id=failed_run.run_id,
+        parent_run_id=failed_run.run_id,
+    )
+    # Partitions "two" and "three" succeeded on the first attempt.
+    for partition in ("two", "three"):
+        create_run_for_test(
+            instance=instance,
+            status=DagsterRunStatus.SUCCESS,
+            tags={
+                **DagsterRun.tags_for_backfill_id(backfill_id),
+                PARTITION_NAME_TAG: partition,
+            },
+        )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
+
+
+def test_job_backfill_status_waits_for_pending_retry(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    # Regression: when a backfill run fails and the auto-reexecution daemon has marked it
+    # with WILL_RETRY_TAG=true but hasn't yet created the retry run, the backfill must stay
+    # REQUESTED. Marking COMPLETED_FAILED here would race the retry daemon and the retry
+    # run would be orphaned outside the backfill's terminal state.
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill_id = "retry_pending"
+    instance.add_backfill(
+        PartitionBackfill(
+            backfill_id=backfill_id,
+            partition_set_origin=partition_set.get_remote_origin(),
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["one", "two", "three"],
+            from_failure=False,
+            reexecution_steps=None,
+            tags=None,
+            backfill_timestamp=get_current_timestamp(),
+        )
+    )
+
+    # Partition "one" failed and is flagged for retry, but the retry run has not been
+    # created yet (no AUTO_RETRY_RUN_ID_TAG). This is the exact window the race exploits.
+    create_run_for_test(
+        instance=instance,
+        status=DagsterRunStatus.FAILURE,
+        tags={
+            **DagsterRun.tags_for_backfill_id(backfill_id),
+            PARTITION_NAME_TAG: "one",
+            WILL_RETRY_TAG: "true",
+        },
+    )
+    for partition in ("two", "three"):
+        create_run_for_test(
+            instance=instance,
+            status=DagsterRunStatus.SUCCESS,
+            tags={
+                **DagsterRun.tags_for_backfill_id(backfill_id),
+                PARTITION_NAME_TAG: partition,
+            },
+        )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.backfill_end_timestamp is None
+
+
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
 def test_partial_backfill(
     instance: DagsterInstance,
@@ -1023,7 +1139,7 @@ def test_partial_backfill(
     wait_for_all_runs_to_start(instance)
 
     assert instance.get_runs_count() == 5
-    partial_filter = dg.RunsFilter(tags={BACKFILL_ID_TAG: "partial"})
+    partial_filter = dg.RunsFilter(backfill_id="partial")
     assert instance.get_runs_count(filters=partial_filter) == 3
     runs = instance.get_runs(filters=partial_filter)
     three, two, one = runs
@@ -4321,7 +4437,7 @@ def test_run_retry_not_part_of_completed_backfill(
     assert backfill.backfill_end_timestamp is not None
 
     assert retried_run.run_id not in [
-        r.run_id for r in instance.get_runs(filters=RunsFilter.for_backfill(backfill_id))
+        r.run_id for r in instance.get_runs(filters=RunsFilter(backfill_id=backfill_id))
     ]
 
 
