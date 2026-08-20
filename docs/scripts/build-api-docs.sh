@@ -10,12 +10,11 @@
 set -e
 
 uv_install() {
-  if command -v uv &>/dev/null; then
-    echo "uv is already installed in this environment..."
-  else
-      curl -LsSf https://astral.sh/uv/install.sh | sh
-      source "$HOME/.local/bin/env"
-  fi
+  # Always install a current uv rather than trusting one already on the PATH.
+  # Vercel's build image rotates and has shipped uv versions that cannot
+  # resolve CPython downloads.
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  source "$HOME/.local/bin/env"
 }
 
 uv_activate_venv() {
