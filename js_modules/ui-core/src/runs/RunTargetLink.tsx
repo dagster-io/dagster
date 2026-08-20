@@ -4,6 +4,7 @@ import * as React from 'react';
 import {AssetCheckTagCollection, AssetKeyTagCollection} from './AssetTagCollections';
 import {RUN_FEED_TARGET_ASSET_SELECTION_QUERY} from './RunTargetLinkQuery';
 import {useLazyQuery} from '../apollo-client';
+import styles from './css/RunTargetLink.module.css';
 import {
   RunFeedTargetAssetSelectionQuery,
   RunFeedTargetAssetSelectionQueryVariables,
@@ -62,7 +63,7 @@ export const RunTargetLink = ({run, repoAddress, extraTags}: Props) => {
 
   if (previewAssetKeys) {
     return (
-      <Box flex={{direction: 'column', gap: 4}}>
+      <Box className={styles.target} flex={{direction: 'column', gap: 4}}>
         <AssetKeyTagCollection
           assetKeys={previewAssetKeys}
           useTags
@@ -89,14 +90,16 @@ export const RunTargetLink = ({run, repoAddress, extraTags}: Props) => {
     );
   }
   return (
-    <PipelineTag
-      isJob
-      showIcon
-      pipelineName={run.pipelineName}
-      pipelineHrefContext={repoAddress || 'repo-unknown'}
-      // The Target column is resizable, so let the column width decide how much of the
-      // job name is shown instead of cutting it at a fixed character count.
-      truncationThreshold={0}
-    />
+    <div className={styles.target}>
+      <PipelineTag
+        isJob
+        showIcon
+        pipelineName={run.pipelineName}
+        pipelineHrefContext={repoAddress || 'repo-unknown'}
+        // The Target column is resizable, so let the column width decide how much of the
+        // job name is shown instead of cutting it at a fixed character count.
+        truncationThreshold={0}
+      />
+    </div>
   );
 };

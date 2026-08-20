@@ -20,6 +20,7 @@ import {RunsQueryRefetchContext} from './RunUtils';
 import {
   RunsFeedColumnsMenu,
   RunsFeedColumnsProvider,
+  buildTableOverflowStyle,
   useRunsFeedColumnsState,
 } from './RunsFeedColumns';
 import {RunsFeedError} from './RunsFeedError';
@@ -170,6 +171,10 @@ export const RunsFeedTable = ({
     </Box>
   );
 
+  const wrapperStyle = buildTableOverflowStyle({scroll, minWidth: columns.minWidth});
+  // The empty state renders no Container, so it always needs the wrapper's scrollport.
+  const emptyStateStyle = buildTableOverflowStyle({scroll: false, minWidth: columns.minWidth});
+
   function content() {
     const header = (
       <RunsFeedTableHeader
@@ -186,7 +191,7 @@ export const RunsFeedTable = ({
     if (entries.length === 0 && !loading) {
       const anyFilter = !!Object.keys(filter || {}).length;
       return (
-        <div style={{overflow: 'hidden'}}>
+        <div style={emptyStateStyle}>
           {header}
           {emptyState ? (
             <div style={{minHeight: 82}}>{emptyState()}</div>
@@ -198,13 +203,7 @@ export const RunsFeedTable = ({
     }
 
     return (
-      <div
-        style={
-          scroll
-            ? {overflow: 'hidden', display: 'flex', flexDirection: 'column'}
-            : {overflow: 'hidden'}
-        }
-      >
+      <div style={wrapperStyle}>
         <BackfillPartitionsRequestedDialog
           backfillId={dialog?.type === 'partitions' ? dialog.backfillId : undefined}
           onClose={() => setDialog(null)}

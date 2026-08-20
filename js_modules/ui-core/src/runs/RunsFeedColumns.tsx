@@ -133,6 +133,23 @@ export const buildMinWidth = (
   );
 };
 
+/**
+ * Pixel widths let the table exceed its container, so something has to provide the
+ * horizontal scrollport. With `scroll` the table's own Container does. Without it (the
+ * schedule/sensor/tick tables) and in the empty state (which renders no Container at
+ * all), the wrapper must, or widened columns are clipped and unreachable.
+ */
+export const buildTableOverflowStyle = ({
+  scroll,
+  minWidth,
+}: {
+  scroll: boolean;
+  minWidth: number | undefined;
+}): React.CSSProperties =>
+  scroll
+    ? {overflow: 'hidden', display: 'flex', flexDirection: 'column'}
+    : {overflowX: minWidth === undefined ? 'hidden' : 'auto', overflowY: 'hidden'};
+
 interface RunsFeedColumnsState {
   columns: RunsFeedColumnConfig[];
   visibleColumns: RunsFeedColumnConfig[];

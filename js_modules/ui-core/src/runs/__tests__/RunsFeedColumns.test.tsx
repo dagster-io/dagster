@@ -8,6 +8,7 @@ import {
   RunsFeedColumnsMenu,
   RunsFeedColumnsProvider,
   buildMinWidth,
+  buildTableOverflowStyle,
   buildTemplateColumns,
   useRunsFeedColumnsState,
   validateRunsFeedColumnSettings,
@@ -53,6 +54,32 @@ describe('buildMinWidth', () => {
 
   it('ignores hidden columns', () => {
     expect(buildMinWidth(columnsFor('id'), {id: 800})).toBe(60 + 132 + 800);
+  });
+});
+
+describe('buildTableOverflowStyle', () => {
+  it('leaves the scrolling table to its own Container', () => {
+    expect(buildTableOverflowStyle({scroll: true, minWidth: 1400})).toEqual({
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+    });
+  });
+
+  it('clips a non-scrolling table only while it is still proportional', () => {
+    expect(buildTableOverflowStyle({scroll: false, minWidth: undefined})).toEqual({
+      overflowX: 'hidden',
+      overflowY: 'hidden',
+    });
+  });
+
+  it('gives a non-scrolling table a horizontal scrollport once columns have pixel widths', () => {
+    // Without this, resized columns in the schedule/sensor/tick tables are clipped by the
+    // wrapper with no way to scroll to them.
+    expect(buildTableOverflowStyle({scroll: false, minWidth: 1400})).toEqual({
+      overflowX: 'auto',
+      overflowY: 'hidden',
+    });
   });
 });
 
