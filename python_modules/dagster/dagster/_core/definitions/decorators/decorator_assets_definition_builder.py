@@ -251,6 +251,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     execution_type: AssetExecutionType | None
     pool: str | None
     allow_arbitrary_check_specs: bool = False
+    pool_slots: int | None = None
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -574,6 +575,7 @@ class DecoratorAssetsDefinitionBuilder:
             retry_policy=self.args.retry_policy,
             code_version=self.args.code_version,
             pool=self.args.pool,
+            pool_slots=self.args.pool_slots,
         )(self.fn)
 
     def create_assets_definition(self) -> AssetsDefinition:
