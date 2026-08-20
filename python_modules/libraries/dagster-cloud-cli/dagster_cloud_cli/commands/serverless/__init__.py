@@ -27,7 +27,7 @@ _BUILD_OPTIONS = {
         Option(
             None,
             "--source-directory",
-            "-d",
+            "-s",
             exists=False,
             help="Source directory to build for the image.",
         ),
