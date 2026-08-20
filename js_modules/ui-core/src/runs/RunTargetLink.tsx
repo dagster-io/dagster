@@ -94,6 +94,9 @@ export const RunTargetLink = ({run, repoAddress, extraTags}: Props) => {
       showIcon
       pipelineName={run.pipelineName}
       pipelineHrefContext={repoAddress || 'repo-unknown'}
+      // The Target column is resizable, so let the column width decide how much of the
+      // job name is shown instead of cutting it at a fixed character count.
+      truncationThreshold={0}
     />
   );
 };

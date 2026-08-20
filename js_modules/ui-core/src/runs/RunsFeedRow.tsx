@@ -21,6 +21,7 @@ import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
+import {ColumnResizeHandle, RunsFeedColumnKey, useRunsFeedColumns} from './RunsFeedColumns';
 import {RunsFeedDialogState} from './RunsFeedTable';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
@@ -51,6 +52,8 @@ export const RunsFeedRow = ({
   hideCreatedBy?: boolean;
   hideTags?: string[];
 }) => {
+  const {visibleColumns, templateColumns, minWidth} = useRunsFeedColumns();
+
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
       const {checked} = e.target;
@@ -89,17 +92,8 @@ export const RunsFeedRow = ({
   const partitionTag =
     entry.__typename === 'Run' ? entry.tags.find((t) => t.key === DagsterTag.Partition) : null;
 
-  return (
-    <Box
-      className={styles.rowGrid}
-      border="bottom"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <RowCell>
-        <Checkbox checked={!!checked} onChange={onChange} />
-      </RowCell>
-
+  const cells: Record<RunsFeedColumnKey, React.ReactNode> = {
+    id: (
       <RowCell>
         <Box flex={{direction: 'column', gap: 5}}>
           <Link
@@ -144,6 +138,8 @@ export const RunsFeedRow = ({
           </Box>
         </Box>
       </RowCell>
+    ),
+    target: (
       <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
         {entry.__typename === 'Run' ? (
           <RunTargetLink
@@ -165,9 +161,13 @@ export const RunsFeedRow = ({
           />
         )}
       </RowCell>
+    ),
+    launchedBy: (
       <RowCell>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} repoAddress={repoAddress} />
       </RowCell>
+    ),
+    status: (
       <RowCell>
         <div>
           {entry.__typename === 'PartitionBackfill' ? (
@@ -177,6 +177,8 @@ export const RunsFeedRow = ({
           )}
         </div>
       </RowCell>
+    ),
+    createdAt: (
       <RowCell style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
         {isReexecution ? (
@@ -185,9 +187,30 @@ export const RunsFeedRow = ({
           </div>
         ) : null}
       </RowCell>
+    ),
+    duration: (
       <RowCell>
         <RunStateSummary run={runTime} />
       </RowCell>
+    ),
+  };
+
+  return (
+    <Box
+      className={styles.rowGrid}
+      style={{gridTemplateColumns: templateColumns, minWidth}}
+      border="bottom"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <RowCell>
+        <Checkbox checked={!!checked} onChange={onChange} />
+      </RowCell>
+
+      {visibleColumns.map((column) => (
+        <React.Fragment key={column.key}>{cells[column.key]}</React.Fragment>
+      ))}
+
       <RowCell>
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
@@ -203,21 +226,20 @@ export const RunsFeedRow = ({
   );
 };
 
-const TEMPLATE_COLUMNS =
-  '60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px';
-
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
+  const {visibleColumns, templateColumns, minWidth} = useRunsFeedColumns();
+
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderRow templateColumns={templateColumns} minWidth={minWidth} sticky>
       <HeaderCell>
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>
-      <HeaderCell>ID</HeaderCell>
-      <HeaderCell>Target</HeaderCell>
-      <HeaderCell>Launched by</HeaderCell>
-      <HeaderCell>Status</HeaderCell>
-      <HeaderCell>Created at</HeaderCell>
-      <HeaderCell>Duration</HeaderCell>
+      {visibleColumns.map((column) => (
+        <HeaderCell key={column.key} style={{position: 'relative'}}>
+          {column.label}
+          <ColumnResizeHandle columnKey={column.key} />
+        </HeaderCell>
+      ))}
       <HeaderCell></HeaderCell>
     </HeaderRow>
   );

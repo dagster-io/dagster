@@ -17,6 +17,11 @@ import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
+import {
+  RunsFeedColumnsMenu,
+  RunsFeedColumnsProvider,
+  useRunsFeedColumnsState,
+} from './RunsFeedColumns';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
 import {RunFilterToken} from './RunsFilterInput';
@@ -68,6 +73,7 @@ export const RunsFeedTable = ({
   scroll = true,
 }: RunsFeedTableProps) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
+  const columns = useRunsFeedColumnsState();
 
   const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
@@ -115,6 +121,7 @@ export const RunsFeedTable = ({
       >
         {actionBarComponents ?? <span />}
         <Box flex={{gap: 12, alignItems: 'center'}} style={{marginRight: 8}}>
+          <RunsFeedColumnsMenu />
           <CursorHistoryControls
             style={{marginTop: 0}}
             hasPrevCursor={paginationProps.hasPrevCursor}
@@ -215,7 +222,7 @@ export const RunsFeedTable = ({
               <SpinnerWithText label="Loading runs…" />
             </Box>
           )}
-          <Inner totalHeight={totalHeight}>
+          <Inner totalHeight={totalHeight} minWidth={columns.minWidth}>
             {items.map(({index, size, start, key}) => {
               const entry = entries[index];
               if (!entry) {
@@ -245,17 +252,19 @@ export const RunsFeedTable = ({
   }
 
   return (
-    <Box
-      flex={{direction: 'column'}}
-      padding={{vertical: 12}}
-      style={scroll ? {height: '100%', minHeight: 0} : {}}
-    >
-      <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 12}}>
-        {actionBar}
+    <RunsFeedColumnsProvider value={columns}>
+      <Box
+        flex={{direction: 'column'}}
+        padding={{vertical: 12}}
+        style={scroll ? {height: '100%', minHeight: 0} : {}}
+      >
+        <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 12}}>
+          {actionBar}
+        </Box>
+        <IndeterminateLoadingBar $loading={loading} />
+        {content()}
       </Box>
-      <IndeterminateLoadingBar $loading={loading} />
-      {content()}
-    </Box>
+    </RunsFeedColumnsProvider>
   );
 };
 
