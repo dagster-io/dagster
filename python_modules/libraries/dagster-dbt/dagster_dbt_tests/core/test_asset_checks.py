@@ -946,3 +946,76 @@ def test_dbt_source_tests_checks_enabled(
         if eval_result.asset_key == AssetKey(["jaffle_shop", "raw_customers"])
     ]
     assert len(asset_check_results) == expected_num_source_test_execs
+
+
+def test_disabled_model_override_resolution() -> None:
+    """Test that get_asset_check_key_for_test handles disabled models (package overrides).
+
+    When a dbt package model is overridden by a project model, the package model is disabled.
+    Tests attached to the package model should resolve to the active project override.
+    """
+    from dagster import AssetSpec
+    from dagster_dbt.asset_utils import get_asset_check_key_for_test, get_node
+
+    # Create a minimal manifest with a disabled package model and an active project override
+    manifest = {
+        "nodes": {
+            # Active project model that overrides the package model
+            "model.my_project.my_model": {
+                "unique_id": "model.my_project.my_model",
+                "name": "my_model",
+                "resource_type": "model",
+                "package_name": "my_project",
+            },
+            # Another model as a second dependency to prevent singular test inference
+            "model.my_project.other_model": {
+                "unique_id": "model.my_project.other_model",
+                "name": "other_model",
+                "resource_type": "model",
+                "package_name": "my_project",
+            },
+            # Generic test that references the disabled package model via attached_node
+            "test.my_package.test_my_model": {
+                "unique_id": "test.my_package.test_my_model",
+                "name": "test_my_model",
+                "resource_type": "test",
+                "attached_node": "model.my_package.my_model",  # Points to disabled model
+                "depends_on": {
+                    # Multiple dependencies so singular test logic doesn't override attached_node
+                    "nodes": ["model.my_project.my_model", "model.my_project.other_model"]
+                },
+            },
+        },
+        "sources": {},
+        "disabled": [
+            # The disabled package model (not in nodes)
+            {
+                "unique_id": "model.my_package.my_model",
+                "name": "my_model",
+                "resource_type": "model",
+                "package_name": "my_package",
+            }
+        ],
+    }
+
+    # Create a translator that uses the real get_resource_props (which calls get_node)
+    class MockTranslator(DagsterDbtTranslator):
+        def get_asset_spec(self, manifest, unique_id, project):
+            node = get_node(manifest, unique_id)
+            return AssetSpec(key=AssetKey([node["name"]]))
+
+    translator = MockTranslator(settings=DagsterDbtTranslatorSettings(enable_asset_checks=True))
+
+    # Without the fix, this should fail because get_node() can't find the disabled model
+    # With the fix, it should succeed by finding the active override
+    result = get_asset_check_key_for_test(
+        manifest=manifest,
+        dagster_dbt_translator=translator,
+        test_unique_id="test.my_package.test_my_model",
+        project=None,
+    )
+
+    # Verify that it found the active model and created the correct check key
+    assert result is not None
+    assert result.asset_key == AssetKey(["my_model"])
+    assert result.name == "test_my_model"
