@@ -806,13 +806,22 @@ class AssetGraphView(LoadingContext):
             return from_subset.compute_difference(materialized_subset)
         else:
             # more expensive call
+            queryable_asset_partitions = from_subset.expensively_compute_asset_partitions()
+            queryable_subset = self.get_asset_subset_from_asset_partitions(
+                key=key, asset_partitions=queryable_asset_partitions
+            )
             missing_asset_partitions = {
                 ap
-                for ap in from_subset.expensively_compute_asset_partitions()
+                for ap in queryable_asset_partitions
                 if not self._queryer.asset_partition_has_materialization_or_observation(ap)
             }
-            return self.get_asset_subset_from_asset_partitions(
+            missing_queryable_subset = self.get_asset_subset_from_asset_partitions(
                 key=key, asset_partitions=missing_asset_partitions
+            )
+            # Some subset representations cannot enumerate keys outside the partition definition's
+            # bounds. Those keys cannot have a materialization or observation, so they are missing.
+            return missing_queryable_subset.compute_union(
+                from_subset.compute_difference(queryable_subset)
             )
 
     @cached_method
