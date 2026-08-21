@@ -22,13 +22,6 @@
   gap: 8px;
 }
 
-/* Fixed sizing for the cloud nav logo, which shares this stylesheet. Remove
-   when app-cloud adopts the attribute-sized brand components. */
-.logoContainer svg {
-  width: 160px;
-  height: 40px;
-}
-
 .brandLogo svg {
   width: auto;
   height: auto;
