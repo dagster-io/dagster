@@ -2272,6 +2272,12 @@ class SqlEventLogStorage(EventLogStorage):
                     ConcurrencySlotsTable.c.concurrency_key,
                 )
             ).fetchall()
+            if not rows:
+                # All slots are soft-deleted, so there is nothing to reconcile. Passing an empty
+                # list to insert().values() emits `INSERT INTO concurrency_limits () VALUES ()`,
+                # which inserts a row with a NULL concurrency_key and violates the NOT NULL
+                # constraint. See https://github.com/sqlalchemy/sqlalchemy/issues/9645.
+                return
             conn.execute(
                 ConcurrencyLimitsTable.insert().values(
                     [
