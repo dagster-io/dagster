@@ -13,7 +13,7 @@ dependencies = [
     "dagster==1!0+dev",
     # Follow the version support constraints for dbt Core:
     # https://docs.getdbt.com/docs/dbt-versions/core
-    "dbt-core>=1.7,<1.12",
+    "dbt-core>=1.7,<1.13",
     "gitpython",
     "Jinja2",
     "networkx",
@@ -94,6 +94,9 @@ test-dbt110 = [
 test-dbt111 = [
     "dbt-core==1.11.*",
 ]
+test-dbt112 = [
+    "dbt-core==1.12.*",
+]
 
 [tool.uv]
 conflicts = [
@@ -103,6 +106,7 @@ conflicts = [
         {group = "test-dbt19"},
         {group = "test-dbt110"},
         {group = "test-dbt111"},
+        {group = "test-dbt112"},
     ],
 ]
 # Explicitly enumerate the Python environments uv should resolve for.
