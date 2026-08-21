@@ -4534,6 +4534,7 @@ export type SidebarRootContainerFragment_PipelineSnapshot = {
   __typename: 'PipelineSnapshot';
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  groupName: string;
   externalJobSource: string | null;
   id: string;
   name: string;

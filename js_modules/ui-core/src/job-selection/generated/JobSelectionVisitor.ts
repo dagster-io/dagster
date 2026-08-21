@@ -11,6 +11,7 @@ import {OrExpressionContext} from './JobSelectionParser.js';
 import {AttributeExpressionContext} from './JobSelectionParser.js';
 import {ParenthesizedExpressionContext} from './JobSelectionParser.js';
 import {NameExprContext} from './JobSelectionParser.js';
+import {GroupExprContext} from './JobSelectionParser.js';
 import {CodeLocationExprContext} from './JobSelectionParser.js';
 import {ValueContext} from './JobSelectionParser.js';
 import {KeyValueContext} from './JobSelectionParser.js';
@@ -85,6 +86,13 @@ export class JobSelectionVisitor<Result> extends AbstractParseTreeVisitor<Result
    * @return the visitor result
    */
   visitNameExpr?: (ctx: NameExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `GroupExpr`
+   * labeled alternative in `JobSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitGroupExpr?: (ctx: GroupExprContext) => Result;
   /**
    * Visit a parse tree produced by the `CodeLocationExpr`
    * labeled alternative in `JobSelectionParser.attributeExpr`.
