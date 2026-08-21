@@ -19,7 +19,14 @@ uv_install() {
 
 uv_activate_venv() {
   export UV_PYTHON_DOWNLOADS=automatic
-  uv python install 3.11
+  # Vercel's build image ships its own uv setup; log which uv runs and any
+  # UV_* configuration it injects, then neutralize overrides that can point
+  # Python downloads at an incomplete mirror.
+  command -v uv
+  uv --version
+  env | grep -i '^UV' || true
+  unset UV_PYTHON_INSTALL_MIRROR UV_PYTHON_DOWNLOADS_JSON_URL UV_NO_MANAGED_PYTHON UV_PYTHON_PREFERENCE
+  uv python install 3.11 --no-config
   uv venv --python 3.11 --clear
   source .venv/bin/activate
   uv pip install tox
