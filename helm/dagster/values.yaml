@@ -95,6 +95,11 @@ dagsterWebserver:
   # The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.
   dbPoolMaxOverflow: ~
 
+  # The number of seconds an idle keep-alive connection is held open, defaults to 5 if not
+  # set. Raise this above the idle timeout of any reverse proxy in front of the webserver,
+  # so that the proxy closes idle connections first.
+  timeoutKeepAlive: ~
+
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
 

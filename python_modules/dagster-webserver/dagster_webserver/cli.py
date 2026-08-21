@@ -44,6 +44,7 @@ DEFAULT_WEBSERVER_PORT = 3000
 DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
 DEFAULT_POOL_RECYCLE = 3600  # 1 hr
 DEFAULT_POOL_MAX_OVERFLOW = 20
+DEFAULT_TIMEOUT_KEEP_ALIVE = 5  # 5 sec, uvicorn's own default
 
 
 @click.command(
@@ -133,6 +134,17 @@ DEFAULT_POOL_MAX_OVERFLOW = 20
     show_default=True,
 )
 @click.option(
+    "--timeout-keep-alive",
+    help=(
+        "The number of seconds to hold an idle keep-alive connection open before closing it."
+        " Raise this above the idle timeout of any reverse proxy sitting in front of the"
+        " webserver, so that the proxy closes idle connections first."
+    ),
+    default=DEFAULT_TIMEOUT_KEEP_ALIVE,
+    type=click.INT,
+    show_default=True,
+)
+@click.option(
     "--read-only",
     help=(
         "Start server in read-only mode, where all mutations such as launching runs and "
@@ -208,6 +220,7 @@ def dagster_webserver(
     db_statement_timeout: int,
     db_pool_recycle: int,
     db_pool_max_overflow: int,
+    timeout_keep_alive: int,
     read_only: bool,
     suppress_warnings: bool,
     uvicorn_log_level: str,
@@ -265,6 +278,7 @@ def dagster_webserver(
                 path_prefix,
                 uvicorn_log_level,
                 live_data_poll_rate,
+                timeout_keep_alive,
             )
 
 
@@ -288,6 +302,7 @@ def host_dagster_ui_with_workspace_process_context(
     path_prefix: str,
     log_level: str,
     live_data_poll_rate: int | None = None,
+    timeout_keep_alive: int = DEFAULT_TIMEOUT_KEEP_ALIVE,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", IWorkspaceProcessContext
@@ -296,6 +311,7 @@ def host_dagster_ui_with_workspace_process_context(
     check.opt_int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
     check.opt_int_param(live_data_poll_rate, "live_data_poll_rate")
+    check.int_param(timeout_keep_alive, "timeout_keep_alive")
 
     logger = logging.getLogger(WEBSERVER_LOGGER_NAME)
 
@@ -320,6 +336,7 @@ def host_dagster_ui_with_workspace_process_context(
             host=host,
             port=port,
             log_level=log_level,
+            timeout_keep_alive=timeout_keep_alive,
         )
 
 
