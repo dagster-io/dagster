@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.13.19 (core) / 0.29.19 (libraries)
+
+### New
+
+- [ui] Added an expand/collapse all toggle to the automation condition evaluation table.
+
+### Bugfixes
+
+- [ui] Fixed an issue where the sensor dry run "Apply requests & commit tick result" action could launch runs even when creating or deleting dynamic partitions failed due to insufficient permissions.
+
 ## 1.13.18 (core) / 0.29.18 (libraries)
 
 ### New
