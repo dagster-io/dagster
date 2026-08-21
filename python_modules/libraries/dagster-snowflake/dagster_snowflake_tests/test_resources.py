@@ -131,6 +131,26 @@ def test_pydantic_snowflake_resource(snowflake_connect):
 
 
 @mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
+def test_snowflake_resource_closes_connection_on_error(snowflake_connect):
+    resource = SnowflakeResource(
+        account="foo",
+        user="bar",
+        private_key=TEST_PRIVATE_KEY,
+        database="TESTDB",
+        schema="TESTSCHEMA",
+        warehouse="TINY_WAREHOUSE",
+    )
+
+    with pytest.raises(RuntimeError, match="query failed"):
+        with resource.get_connection() as _:
+            raise RuntimeError("query failed")
+
+    mock_conn = snowflake_connect.return_value
+    mock_conn.close.assert_called_once()
+    mock_conn.commit.assert_not_called()
+
+
+@mock.patch("snowflake.connector.connect", new_callable=create_mock_connector)
 def test_snowflake_resource_from_envvars(snowflake_connect):
     @op(required_resource_keys={"snowflake"})
     def snowflake_op(context):
