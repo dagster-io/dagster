@@ -1,6 +1,14 @@
 from collections import OrderedDict
+from unittest import mock
 
+import pytest
+from dagster import AssetKey
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
+from dagster_graphql.implementation.execution.dynamic_partitions import (
+    wipe_materializations_for_deleted_partitions,
+)
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
@@ -142,8 +150,8 @@ mutation($partitionsDefName: String!, $partitionKey: String!, $repositorySelecto
 
 
 DELETE_DYNAMIC_PARTITIONS_MUTATION = """
-mutation($partitionsDefName: String!, $partitionKeys: [String!]!, $repositorySelector: RepositorySelector!) {
-    deleteDynamicPartitions(partitionsDefName: $partitionsDefName, partitionKeys: $partitionKeys, repositorySelector: $repositorySelector) {
+mutation($partitionsDefName: String!, $partitionKeys: [String!]!, $repositorySelector: RepositorySelector!, $wipeMaterializations: Boolean) {
+    deleteDynamicPartitions(partitionsDefName: $partitionsDefName, partitionKeys: $partitionKeys, repositorySelector: $repositorySelector, wipeMaterializations: $wipeMaterializations) {
         __typename
         ... on DeleteDynamicPartitionsSuccess {
             partitionsDefName
@@ -153,6 +161,9 @@ mutation($partitionsDefName: String!, $partitionKeys: [String!]!, $repositorySel
             stack
         }
         ... on UnauthorizedError {
+            message
+        }
+        ... on UnsupportedOperationError {
             message
         }
     }
@@ -505,6 +516,130 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
 
         assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"baz"}
 
+    def test_delete_dynamic_partitions_wipe_materializations(self, graphql_context):
+        graphql_context.instance.add_dynamic_partitions("foo", ["bar", "biz", "baz"])
+
+        repository_selector = infer_repository_selector(graphql_context)
+        with mock.patch.object(
+            graphql_context.instance, "wipe_asset_partitions"
+        ) as mock_wipe_asset_partitions:
+            result = execute_dagster_graphql(
+                graphql_context,
+                DELETE_DYNAMIC_PARTITIONS_MUTATION,
+                variables={
+                    "partitionsDefName": "foo",
+                    "partitionKeys": ["bar", "biz"],
+                    "repositorySelector": repository_selector,
+                    "wipeMaterializations": True,
+                },
+            )
+        assert not result.errors
+        assert (
+            result.data["deleteDynamicPartitions"]["__typename"] == "DeleteDynamicPartitionsSuccess"
+        ), str(result.data)
+
+        # the wipe fans out to every asset partitioned by the dynamic partitions def
+        wiped = {
+            (call.args[0], tuple(call.args[1]))
+            for call in mock_wipe_asset_partitions.call_args_list
+        }
+        assert wiped == {
+            (AssetKey("upstream_dynamic_partitioned_asset"), ("bar", "biz")),
+            (AssetKey("downstream_dynamic_partitioned_asset"), ("bar", "biz")),
+        }
+        assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"baz"}
+
+    def test_delete_dynamic_partitions_wipe_unsupported_storage(self, graphql_context):
+        graphql_context.instance.add_dynamic_partitions("foo", ["bar", "baz"])
+
+        repository_selector = infer_repository_selector(graphql_context)
+        with mock.patch.object(
+            graphql_context.instance,
+            "wipe_asset_partitions",
+            side_effect=NotImplementedError,
+        ):
+            result = execute_dagster_graphql(
+                graphql_context,
+                DELETE_DYNAMIC_PARTITIONS_MUTATION,
+                variables={
+                    "partitionsDefName": "foo",
+                    "partitionKeys": ["bar"],
+                    "repositorySelector": repository_selector,
+                    "wipeMaterializations": True,
+                },
+            )
+        assert not result.errors
+        assert (
+            result.data["deleteDynamicPartitions"]["__typename"] == "UnsupportedOperationError"
+        ), str(result.data)
+
+        # the partitions were not deleted
+        assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"bar", "baz"}
+
+    def test_delete_dynamic_partitions_wipe_multipartitioned_assets_unsupported(
+        self, graphql_context
+    ):
+        graphql_context.instance.add_dynamic_partitions("dynamic", ["one", "two"])
+
+        repository_selector = infer_repository_selector(graphql_context)
+        with mock.patch.object(
+            graphql_context.instance, "wipe_asset_partitions"
+        ) as mock_wipe_asset_partitions:
+            result = execute_dagster_graphql(
+                graphql_context,
+                DELETE_DYNAMIC_PARTITIONS_MUTATION,
+                variables={
+                    "partitionsDefName": "dynamic",
+                    "partitionKeys": ["one"],
+                    "repositorySelector": repository_selector,
+                    "wipeMaterializations": True,
+                },
+            )
+        assert not result.errors
+        assert (
+            result.data["deleteDynamicPartitions"]["__typename"] == "UnsupportedOperationError"
+        ), str(result.data)
+        assert (
+            "dimension of multi-partitioned assets"
+            in result.data["deleteDynamicPartitions"]["message"]
+        )
+
+        # neither the wipe nor the deletion happened
+        mock_wipe_asset_partitions.assert_not_called()
+        assert set(graphql_context.instance.get_dynamic_partitions("dynamic")) == {"one", "two"}
+
+    def test_delete_dynamic_partitions_wipe_without_wipe_permission(self, graphql_context):
+        graphql_context.instance.add_dynamic_partitions("foo", ["bar", "baz"])
+
+        repository_selector = infer_repository_selector(graphql_context)
+        with (
+            mock.patch(
+                "dagster_graphql.implementation.execution.dynamic_partitions.assert_permission_for_asset_graph",
+                side_effect=UserFacingGraphQLError(GrapheneUnauthorizedError()),
+            ),
+            mock.patch.object(
+                graphql_context.instance, "wipe_asset_partitions"
+            ) as mock_wipe_asset_partitions,
+        ):
+            result = execute_dagster_graphql(
+                graphql_context,
+                DELETE_DYNAMIC_PARTITIONS_MUTATION,
+                variables={
+                    "partitionsDefName": "foo",
+                    "partitionKeys": ["bar"],
+                    "repositorySelector": repository_selector,
+                    "wipeMaterializations": True,
+                },
+            )
+        assert not result.errors
+        assert result.data["deleteDynamicPartitions"]["__typename"] == "UnauthorizedError", str(
+            result.data
+        )
+
+        # neither the wipe nor the deletion happened
+        mock_wipe_asset_partitions.assert_not_called()
+        assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"bar", "baz"}
+
     def test_nonexistent_dynamic_partitions_def_throws_error(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
         result = execute_dagster_graphql(
@@ -542,3 +677,102 @@ class TestDynamicPartitionReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert result.data["addDynamicPartition"]["__typename"] == "UnauthorizedError"
+
+
+def _mock_graphene_info():
+    graphene_info = mock.MagicMock()
+    graphene_info.context.instance.wipe_asset_partitions = mock.MagicMock()
+    return graphene_info
+
+
+class TestWipeMaterializationsForDeletedPartitions:
+    def test_wipes_every_directly_partitioned_asset(self):
+        graphene_info = _mock_graphene_info()
+        direct_asset_keys = [AssetKey("asset_one"), AssetKey("asset_two")]
+
+        with mock.patch(
+            "dagster_graphql.implementation.execution.dynamic_partitions.assert_permission_for_asset_graph"
+        ) as mock_assert_permission:
+            wipe_materializations_for_deleted_partitions(
+                graphene_info,
+                partitions_def_name="foo",
+                partition_keys=["bar", "baz"],
+                direct_asset_keys=direct_asset_keys,
+                multi_asset_keys=[],
+            )
+
+        assert graphene_info.context.instance.wipe_asset_partitions.call_args_list == [
+            mock.call(AssetKey("asset_one"), ["bar", "baz"]),
+            mock.call(AssetKey("asset_two"), ["bar", "baz"]),
+        ]
+        # the permission check covers every affected asset
+        assert mock_assert_permission.call_args.args[2] == direct_asset_keys
+
+    def test_multipartitioned_assets_unsupported(self):
+        graphene_info = _mock_graphene_info()
+
+        with (
+            mock.patch(
+                "dagster_graphql.implementation.execution.dynamic_partitions.assert_permission_for_asset_graph"
+            ) as mock_assert_permission,
+            pytest.raises(UserFacingGraphQLError) as exc_info,
+        ):
+            wipe_materializations_for_deleted_partitions(
+                graphene_info,
+                partitions_def_name="foo",
+                partition_keys=["bar"],
+                direct_asset_keys=[AssetKey("asset_one")],
+                multi_asset_keys=[AssetKey("multi_asset")],
+            )
+
+        assert exc_info.value.error.__class__.__name__ == "GrapheneUnsupportedOperationError"
+        assert "multi_asset" in exc_info.value.error.message
+        graphene_info.context.instance.wipe_asset_partitions.assert_not_called()
+        # multi-partitioned assets are included in the permission check even though
+        # wiping them is rejected, so the next branch only swaps the rejection
+        assert mock_assert_permission.call_args.args[2] == [
+            AssetKey("asset_one"),
+            AssetKey("multi_asset"),
+        ]
+
+    def test_unsupported_storage(self):
+        graphene_info = _mock_graphene_info()
+        graphene_info.context.instance.wipe_asset_partitions.side_effect = NotImplementedError
+
+        with (
+            mock.patch(
+                "dagster_graphql.implementation.execution.dynamic_partitions.assert_permission_for_asset_graph"
+            ),
+            pytest.raises(UserFacingGraphQLError) as exc_info,
+        ):
+            wipe_materializations_for_deleted_partitions(
+                graphene_info,
+                partitions_def_name="foo",
+                partition_keys=["bar"],
+                direct_asset_keys=[AssetKey("asset_one")],
+                multi_asset_keys=[],
+            )
+
+        assert exc_info.value.error.__class__.__name__ == "GrapheneUnsupportedOperationError"
+        assert "not supported by this event log storage" in exc_info.value.error.message
+
+    def test_permission_failure_prevents_wipe(self):
+        graphene_info = _mock_graphene_info()
+
+        with (
+            mock.patch(
+                "dagster_graphql.implementation.execution.dynamic_partitions.assert_permission_for_asset_graph",
+                side_effect=UserFacingGraphQLError(GrapheneUnauthorizedError()),
+            ),
+            pytest.raises(UserFacingGraphQLError) as exc_info,
+        ):
+            wipe_materializations_for_deleted_partitions(
+                graphene_info,
+                partitions_def_name="foo",
+                partition_keys=["bar"],
+                direct_asset_keys=[AssetKey("asset_one")],
+                multi_asset_keys=[],
+            )
+
+        assert exc_info.value.error.__class__.__name__ == "GrapheneUnauthorizedError"
+        graphene_info.context.instance.wipe_asset_partitions.assert_not_called()

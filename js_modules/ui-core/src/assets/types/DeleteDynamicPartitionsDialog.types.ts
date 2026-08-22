@@ -33,9 +33,10 @@ export type DeleteDynamicPartitionsMutation = {
           error: {__typename: 'PythonError'; message: string; stack: Array<string>};
         }>;
       }
-    | {__typename: 'UnauthorizedError'; message: string};
+    | {__typename: 'UnauthorizedError'; message: string}
+    | {__typename: 'UnsupportedOperationError'; message: string};
 };
 
-export const DeleteDynamicPartitionsMutationVersion = 'dc34ce729a12d80db6cabbb4ed9093ee29b9c4e2c6843074b13b67b454b61471';
+export const DeleteDynamicPartitionsMutationVersion = '7c6250469e198683a2ddd58e56b23d84dead4b2bfab3b1ea87ca53d412005f0a';
 
 export const DeleteVersion = '3c61c79b99122910e754a8863e80dc5ed479a0c23cc1a9d9878d91e603fc0dfe';

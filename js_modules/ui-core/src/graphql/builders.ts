@@ -1423,7 +1423,8 @@ type DeleteAppManagedComponentSuccess = {
 type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
   | PythonError
-  | UnauthorizedError;
+  | UnauthorizedError
+  | UnsupportedOperationError;
 
 type DeleteDynamicPartitionsSuccess = {
   __typename: 'DeleteDynamicPartitionsSuccess';
@@ -3083,6 +3084,7 @@ type MutationDeleteDynamicPartitionsArgs = {
   partitionKeys: Array<Scalars['String']['input']>;
   partitionsDefName: Scalars['String']['input'];
   repositorySelector: RepositorySelector;
+  wipeMaterializations?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 type MutationDeletePipelineRunArgs = {

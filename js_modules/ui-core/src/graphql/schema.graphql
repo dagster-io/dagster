@@ -4331,6 +4331,7 @@ type Mutation {
     partitionKeys: [String!]!
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
+    wipeMaterializations: Boolean
   ): DeleteDynamicPartitionsResult!
   setAppManagedComponent(
     attributes: String!
@@ -4464,6 +4465,7 @@ union DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
   | UnauthorizedError
   | PythonError
+  | UnsupportedOperationError
 
 type DeleteDynamicPartitionsSuccess {
   partitionsDefName: String!

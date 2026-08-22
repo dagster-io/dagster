@@ -180,6 +180,10 @@ export const DELETE_DYNAMIC_PARTITIONS_MUTATION = gql`
         message
         __typename
       }
+      ... on UnsupportedOperationError {
+        message
+        __typename
+      }
       ...PythonErrorFragment
     }
   }
