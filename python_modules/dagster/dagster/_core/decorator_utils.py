@@ -17,6 +17,7 @@ from typing import (  # noqa: UP035
     cast,
     get_type_hints as typing_get_type_hints,
 )
+from weakref import finalize
 
 from typing_extensions import ParamSpec
 
@@ -63,11 +64,48 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
     )
 
 
+# ``inspect.signature`` and ``typing.get_type_hints`` are pure functions of a callable, but each is
+# individually expensive and is invoked many times on the same function while a single
+# @op/@asset/@asset_check definition is built.
+#
+# Memoize the result per callable. Entries are keyed by object identity. Callables that cannot be
+# weak-referenced are not cached.
+#
+# This assumes a callable's signature and annotations are not mutated between asset builds.
+_function_params_cache: dict[int, tuple[Parameter, ...]] = {}
+_type_hints_cache: dict[int, Mapping[str, Any]] = {}
+
+
+def _cached_by_identity(
+    cache: dict[int, T],
+    fn: Callable[..., Any],
+    compute: Callable[[Callable[..., Any]], T],
+) -> T:
+    key = id(fn)
+    if key in cache:
+        return cache[key]
+    value = compute(fn)
+    try:
+        finalize(fn, cache.pop, key, None)
+    except TypeError:  # fn is not weak-referenceable, do not cache
+        return value
+    cache[key] = value
+    return value
+
+
+def _compute_function_params(fn: Callable[..., Any]) -> tuple[Parameter, ...]:
+    return tuple(signature(fn).parameters.values())
+
+
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
-    return list(signature(fn).parameters.values())
+    return _cached_by_identity(_function_params_cache, fn, _compute_function_params)
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
+    return _cached_by_identity(_type_hints_cache, fn, _compute_type_hints)
+
+
+def _compute_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     if isinstance(fn, functools.partial):
         target = fn.func
     elif inspect.isfunction(fn):
