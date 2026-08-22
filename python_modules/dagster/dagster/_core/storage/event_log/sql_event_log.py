@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
-from functools import cached_property
+from functools import cache, cached_property
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -227,6 +227,7 @@ class SqlEventLogStorage(EventLogStorage):
             "partition": partition,
         }
 
+    @cache
     def has_asset_key_col(self, column_name: str) -> bool:
         with self.index_connection() as conn:
             return self._has_asset_key_col_on_connection(conn, column_name)
@@ -3423,8 +3424,8 @@ class SqlEventLogStorage(EventLogStorage):
             )
         return infos
 
-    @property
-    def supports_asset_checks(self):
+    @cached_property
+    def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(AssetCheckExecutionsTable.name)
 
     def get_latest_planned_materialization_info(
