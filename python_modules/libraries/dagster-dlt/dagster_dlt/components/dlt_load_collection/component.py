@@ -39,7 +39,7 @@ from dagster.components.utils.translation import (
 from dlt import Pipeline
 from dlt.extract.source import DltSource
 
-from dagster_dlt.asset_decorator import dlt_assets
+from dagster_dlt.asset_decorator import build_dlt_asset_specs
 from dagster_dlt.components.dlt_load_collection.scaffolder import DltLoadCollectionScaffolder
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
@@ -125,6 +125,17 @@ class DltLoadCollectionComponent(Component, Resolvable):
     def _base_translator(self) -> DagsterDltTranslator:
         return DagsterDltTranslator()
 
+    @property
+    def op_config_schema(self) -> Optional[type[dg.Config]]:
+        """Returns the config schema for the op.
+
+        Override this method to provide a custom config schema for the dlt assets op.
+
+        Returns:
+            Optional[type[dg.Config]]: The config schema class, or None for no config.
+        """
+        return None
+
     @public
     def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
         """Generates an AssetSpec for a given dlt resource.
@@ -166,13 +177,22 @@ class DltLoadCollectionComponent(Component, Resolvable):
         for load in self.loads:
             translator = DltComponentTranslator(self, load)
 
-            @dlt_assets(
+            # Build asset specs using the same logic as @dlt_assets decorator
+            specs = build_dlt_asset_specs(
                 dlt_source=load.source,
                 dlt_pipeline=load.pipeline,
-                name=f"dlt_assets_{load.source.name}_{load.pipeline.dataset_name}",
                 dagster_dlt_translator=translator,
                 partitions_def=load.partitions_def,
                 backfill_policy=load.backfill_policy,
+            )
+
+            @dg.multi_asset(
+                name=f"dlt_assets_{load.source.name}_{load.pipeline.dataset_name}",
+                specs=specs,
+                can_subset=True,
+                config_schema=self.op_config_schema.to_fields_dict()
+                if self.op_config_schema
+                else None,
             )
             def dlt_assets_def(context: AssetExecutionContext):
                 yield from self.execute(context, self.dlt_pipeline_resource)
