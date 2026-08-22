@@ -6,6 +6,7 @@ import pytest
 from dagster import DagsterEventType
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.types.dagster_type import ListType, resolve_dagster_type
+from typing import Generic, TypeVar
 
 
 class BarObj:
@@ -657,3 +658,10 @@ def test_tuple_inner_types_not_mutable():
     assert isinstance(inner_types[0], ListType)
     assert inner_types[0].inner_type == inner_types[1]
     assert len(inner_types) == 2
+
+
+
+def test_generic_annotation_resolves_to_origin():
+    T = TypeVar("T")
+    class Foo(Generic[T]): ...
+    assert resolve_dagster_type(Foo[int]) == resolve_dagster_type(Foo) # expect matching class, disregarding arguments
