@@ -30,6 +30,7 @@ import styles from './css/RunTimeline.module.css';
 import {getTimeLabelStride} from './getTimeLabelStride';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {COMMON_COLLATOR} from '../app/Util';
+import {TimeContext} from '../app/time/TimeContext';
 import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -54,6 +55,12 @@ const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
+// Includes 16px horizontal padding. With 12px Geist Mono, measured localized labels
+// reach 42.4/52px for h23 and 66.4/88px for h12; round each up to the next 8px step.
+const MIN_TIME_LABEL_SPACING = {
+  hour: {dayPeriod: 72, twentyFourHour: 48},
+  minute: {dayPeriod: 96, twentyFourHour: 56},
+};
 
 export const CONSTANTS = {
   ROW_HEIGHT,
@@ -387,7 +394,18 @@ export const TimeDividers = (props: TimeDividersProps) => {
   const {interval, rangeMs, width, annotations, height, now: _now} = props;
   const [start, end] = rangeMs;
   const formatDateTime = useFormatDateTime();
-  const timeLabelStride = getTimeLabelStride({interval, rangeMs, width});
+  const {
+    hourCycle: [storedHourCycle],
+  } = React.useContext(TimeContext);
+  const resolvedHourCycle =
+    storedHourCycle === 'Automatic'
+      ? Intl.DateTimeFormat(navigator.language, {hour: 'numeric'}).resolvedOptions().hourCycle
+      : storedHourCycle;
+  const clockFormat =
+    resolvedHourCycle === 'h23' || resolvedHourCycle === 'h24' ? 'twentyFourHour' : 'dayPeriod';
+  const labelFormat = interval < ONE_HOUR_MSEC ? 'minute' : 'hour';
+  const minLabelSpacing = MIN_TIME_LABEL_SPACING[labelFormat][clockFormat];
+  const timeLabelStride = getTimeLabelStride({interval, minLabelSpacing, rangeMs, width});
 
   // Create a cursor date at midnight in the user's timezone, to be used when
   // generating date and time markers.
