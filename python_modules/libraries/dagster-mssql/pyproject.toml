@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dagster-mssql"
+version = "1!0+dev"
+description = "A Dagster integration for Microsoft SQL Server"
+authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
+license = "Apache-2.0"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "dagster==1!0+dev",
+    # 5.0 is the first release with wheels for Python 3.10+ across the platforms dagster
+    # supports, and the first to build against ODBC Driver 18 by default.
+    "pyodbc>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-mssql"
+
+[dependency-groups]
+test = [
+    "dagster[test]",
+    "dagster-test",
+    "dagster-pipes",
+    "dagster-shared",
+]
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }

@@ -16,7 +16,7 @@ from buildkite_shared.utils import (
 )
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn
-from dagster_buildkite.utils import wait_for_mysql_container
+from dagster_buildkite.utils import wait_for_mssql_container, wait_for_mysql_container
 
 _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111"]
 _DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
@@ -206,6 +206,29 @@ mysql_extra_cmds = [
     wait_for_mysql_container("test-mysql-db"),
     wait_for_mysql_container("test-mysql-db-pinned", port=3307),
     wait_for_mysql_container("test-mysql-db-pinned-backcompat", port=3308),
+    "popd",
+]
+
+
+mssql_extra_cmds = [
+    "export MSSQL_TEST_PASSWORD='Dagster!Passw0rd'",
+    f"pushd {oss_path('python_modules/libraries/dagster-mssql/dagster_mssql_tests/')}",
+    "docker compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+    *network_buildkite_container("mssql"),
+    *network_buildkite_container("mssql_2019"),
+    *network_buildkite_container("mssql_pinned"),
+    *connect_sibling_docker_container("mssql", "test-mssql-db", "MSSQL_TEST_DB_HOST"),
+    *connect_sibling_docker_container(
+        "mssql_2019", "test-mssql-db-2019", "MSSQL_TEST_2019_DB_HOST"
+    ),
+    *connect_sibling_docker_container(
+        "mssql_pinned", "test-mssql-db-pinned", "MSSQL_TEST_PINNED_DB_HOST"
+    ),
+    # sqlservr takes appreciably longer to accept connections than mysqld, and
+    # `docker compose up -d` returns long before it is ready.
+    wait_for_mssql_container("test-mssql-db"),
+    wait_for_mssql_container("test-mssql-db-2019"),
+    wait_for_mssql_container("test-mssql-db-pinned"),
     "popd",
 ]
 
@@ -1001,6 +1024,27 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("kubernetes_36"),
             ],
             pytest_extra_cmds=k8s_extra_cmds,
+        ),
+        PackageSpec(
+            # Two sibling SQL Server containers. Each sqlservr reserves ~2GB before it
+            # will start at all -- roughly four times what mysqld needs -- so the dind
+            # memory limit is the binding constraint here.
+            oss_path("python_modules/libraries/dagster-mssql"),
+            pytest_extra_cmds=mssql_extra_cmds,
+            pytest_tox_factors=[
+                # 2022 carries the bulk of the suite; the older majors run unsplit, since
+                # what they cover is version-specific behaviour rather than volume.
+                ToxFactor("storage_tests", splits=2),
+                ToxFactor("storage_tests_2019"),
+                ToxFactor("storage_tests_2017"),
+            ],
+            force_run_fn=BuildkiteContext.has_storage_test_fixture_changes,
+            resources=ResourceRequests(
+                cpu="1000m",
+                memory="1Gi",
+                docker_memory="5Gi",
+                docker_memory_limit="6Gi",
+            ),
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-mlflow"),

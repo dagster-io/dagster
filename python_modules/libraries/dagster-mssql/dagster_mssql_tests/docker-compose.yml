@@ -1,0 +1,60 @@
+# These are the services and networks that are referenced when running SQL Server tests.
+# They should be referenced in both the standard conftest.py as well as the MSSQL section
+# in the buildkite steps/packages.py file.
+#
+# One service per supported major version. `conftest.py` picks between them with
+# MSSQL_TEST_VERSION, which defaults to 2022; see `_SERVICES` there.
+services:
+  # The default test instance. Developer edition is free for non-production use and is
+  # functionally equivalent to Enterprise.
+  test-mssql-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: test-mssql-db
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dagster!Passw0rd"
+      MSSQL_PID: "Developer"
+      # Left on the default collation on purpose. Dagster's text columns are NVARCHAR on
+      # SQL Server so that storage does not depend on the database codepage; running the
+      # suite under the default collation is what proves that.
+    networks:
+      - mssql
+
+  test-mssql-db-2019:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: test-mssql-db-2019
+    ports:
+      - "1435:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dagster!Passw0rd"
+      MSSQL_PID: "Developer"
+    networks:
+      - mssql_2019
+
+  # The oldest supported version. 2017 predates UTF-8 collations entirely, so it is what
+  # would surface any reliance on them, and it ships sqlcmd at a different path.
+  test-mssql-db-pinned:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: test-mssql-db-pinned
+    ports:
+      - "1434:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Dagster!Passw0rd"
+      MSSQL_PID: "Developer"
+    networks:
+      - mssql_pinned
+
+networks:
+  mssql:
+    driver: bridge
+    name: mssql
+  mssql_2019:
+    driver: bridge
+    name: mssql_2019
+  mssql_pinned:
+    driver: bridge
+    name: mssql_pinned

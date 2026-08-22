@@ -1,7 +1,12 @@
 import sqlalchemy as db
 from sqlalchemy.dialects import sqlite
 
-from dagster._core.storage.sql import MySQLCompatabilityTypes, get_sql_current_timestamp
+from dagster._core.storage.sql import (
+    MSSQL_INDEX_KEY_LENGTH,
+    MySQLCompatabilityTypes,
+    get_sql_current_timestamp,
+    mssql_text,
+)
 
 RunStorageSqlMetadata = db.MetaData()
 
@@ -20,14 +25,14 @@ RunsTable = db.Table(
         db.String(255),
         db.ForeignKey("snapshots.snapshot_id", name="fk_runs_snapshot_id_snapshots_snapshot_id"),
     ),
-    db.Column("pipeline_name", db.Text),
+    db.Column("pipeline_name", mssql_text(255)),
     db.Column(
-        "mode", db.Text
+        "mode", mssql_text()
     ),  # The mode column may be filled with garbage data. In 0.13.0, it is no longer populated.
     db.Column("status", db.String(63)),
-    db.Column("run_body", db.Text),
-    db.Column("partition", db.Text),
-    db.Column("partition_set", db.Text),
+    db.Column("run_body", mssql_text()),
+    db.Column("partition", mssql_text(128)),
+    db.Column("partition_set", mssql_text(128)),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     # Added start/end_time in #6038 (12/2021), MySQL fix added in #6451 (2/2022)
@@ -73,8 +78,8 @@ RunTagsTable = db.Table(
         autoincrement=True,
     ),
     db.Column("run_id", None, db.ForeignKey("runs.run_id", ondelete="CASCADE")),
-    db.Column("key", db.Text),
-    db.Column("value", db.Text),
+    db.Column("key", mssql_text(MSSQL_INDEX_KEY_LENGTH)),
+    db.Column("value", mssql_text(MSSQL_INDEX_KEY_LENGTH)),
 )
 
 SnapshotsTable = db.Table(
@@ -103,7 +108,7 @@ DaemonHeartbeatsTable = db.Table(
     db.Column("daemon_type", db.String(255), unique=True, nullable=False),
     db.Column("daemon_id", db.String(255)),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
-    db.Column("body", db.Text),  # serialized DaemonHeartbeat
+    db.Column("body", mssql_text()),  # serialized DaemonHeartbeat
 )
 
 BulkActionsTable = db.Table(
@@ -120,8 +125,8 @@ BulkActionsTable = db.Table(
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
     db.Column("body", MySQLCompatabilityTypes.LongText),
     db.Column("action_type", db.String(32)),
-    db.Column("selector_id", db.Text),
-    db.Column("job_name", db.Text, nullable=True),
+    db.Column("selector_id", mssql_text(128)),
+    db.Column("job_name", mssql_text(), nullable=True),
 )
 
 BackfillTagsTable = db.Table(
@@ -134,8 +139,9 @@ BackfillTagsTable = db.Table(
         autoincrement=True,
     ),
     db.Column("backfill_id", db.String(255)),
-    db.Column("key", db.Text),
-    db.Column("value", db.Text),
+    # unbounded, unlike run_tags: no index covers these, so they need no length limit
+    db.Column("key", mssql_text()),
+    db.Column("value", mssql_text()),
 )
 
 InstanceInfo = db.Table(
@@ -147,7 +153,7 @@ InstanceInfo = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("run_storage_id", db.Text),
+    db.Column("run_storage_id", mssql_text()),
 )
 
 KeyValueStoreTable = db.Table(
@@ -159,8 +165,8 @@ KeyValueStoreTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("key", db.Text, nullable=False),
-    db.Column("value", db.Text),
+    db.Column("key", mssql_text(255), nullable=False),
+    db.Column("value", mssql_text()),
 )
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
