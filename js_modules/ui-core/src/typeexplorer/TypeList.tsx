@@ -2,9 +2,9 @@ import {Box, Colors} from '@dagster-io/ui-components';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
 import {gql} from '../apollo-client';
+import styles from './css/TypeList.module.css';
 import {TypeListFragment} from './types/TypeList.types';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
-import styles from './css/TypeList.module.css';
 
 interface ITypeListProps {
   isGraph: boolean;

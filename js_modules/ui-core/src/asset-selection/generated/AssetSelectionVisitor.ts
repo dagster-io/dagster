@@ -1,4 +1,4 @@
-// Generated from /Users/maximearmstrong/Documents/Repositories/dagster-io/internal/dagster-oss/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
+// Generated from /Users/robert.espinoza/Projects/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.13.1
 
 import {AbstractParseTreeVisitor} from 'antlr4ng';
 
@@ -34,6 +34,7 @@ import {AutomationTypeAttributeExprContext} from './AssetSelectionParser.js';
 import {SensorAttributeExprContext} from './AssetSelectionParser.js';
 import {ScheduleAttributeExprContext} from './AssetSelectionParser.js';
 import {JobAttributeExprContext} from './AssetSelectionParser.js';
+import {NotMaterializedInHoursExprContext} from './AssetSelectionParser.js';
 import {ValueContext} from './AssetSelectionParser.js';
 import {KeyValueContext} from './AssetSelectionParser.js';
 
@@ -265,6 +266,13 @@ export class AssetSelectionVisitor<Result> extends AbstractParseTreeVisitor<Resu
    * @return the visitor result
    */
   visitJobAttributeExpr?: (ctx: JobAttributeExprContext) => Result;
+  /**
+   * Visit a parse tree produced by the `NotMaterializedInHoursExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitNotMaterializedInHoursExpr?: (ctx: NotMaterializedInHoursExprContext) => Result;
   /**
    * Visit a parse tree produced by `AssetSelectionParser.value`.
    * @param ctx the parse tree

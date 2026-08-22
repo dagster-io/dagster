@@ -43,7 +43,8 @@ attributeExpr:
 	| AUTOMATION_TYPE COLON value			# AutomationTypeAttributeExpr
 	| SENSOR COLON value					# SensorAttributeExpr
 	| SCHEDULE COLON value					# ScheduleAttributeExpr
-	| JOB COLON value						# JobAttributeExpr;
+	| JOB COLON value						# JobAttributeExpr
+	| NOT_MATERIALIZED_IN_HOURS COLON DIGITS	# NotMaterializedInHoursExpr;
 
 // Define EQUAL token for tag:value=value syntax
 EQUAL: '=';
@@ -93,6 +94,10 @@ JOB: 'job';
 // Function names
 SINKS: 'sinks';
 ROOTS: 'roots';
+
+// Declared last among keyword tokens to avoid renumbering existing tokens, but it must
+// still precede UNQUOTED_STRING/UNQUOTED_WILDCARD_STRING so it wins the lexer match.
+NOT_MATERIALIZED_IN_HOURS: 'not_materialized_in_hours';
 
 // String tokens
 QUOTED_STRING: '"' (~["\\\r\n])* '"';

@@ -2,10 +2,10 @@ import {Box, Tag, Tooltip} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {DagsterRepoOption} from './WorkspaceContext/util';
+import styles from './css/RepositoryCountTags.module.css';
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import styles from './css/RepositoryCountTags.module.css';
 
 export const RepositoryCountTags = ({
   repo,

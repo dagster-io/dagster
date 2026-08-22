@@ -18,6 +18,7 @@ import {
   KeyExprContext,
   KindAttributeExprContext,
   NotExpressionContext,
+  NotMaterializedInHoursExprContext,
   OrExpressionContext,
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
@@ -309,6 +310,17 @@ export class AntlrAssetSelectionVisitor
         .map((key) => this.allAssetsByKey.get(tokenForAssetKey(key)))
         .filter((item): item is AssetGraphQueryItem => item !== undefined),
     );
+  }
+
+  // `not_materialized_in_hours:N` selects assets with no successful materialization
+  // ("refresh") within the last N hours, including assets that have never materialized.
+  // Materialization recency does not live on the asset graph node -- it is fetched out
+  // of band (see useAssetGraphSupplementaryData, which reads latestMaterializationTimestamp
+  // from asset health data) and supplied via supplementaryData keyed by the hours value,
+  // exactly like `status:`.
+  visitNotMaterializedInHoursExpr(ctx: NotMaterializedInHoursExprContext) {
+    const hours = ctx.DIGITS().getText();
+    return this._supplementaryDataLookup('not_materialized_in_hours', hours);
   }
 
   visitPartitionsAttributeExpr(ctx: PartitionsAttributeExprContext) {

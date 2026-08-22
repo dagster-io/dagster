@@ -7,7 +7,7 @@ import {
 import {renderHook, waitFor} from '@testing-library/react';
 import React from 'react';
 
-import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
+import {useAssetsHealthDataWithoutGateCheck} from '../../asset-data/AssetHealthDataProvider';
 import {
   Filter,
   parseExpression,
@@ -37,7 +37,7 @@ jest.mock('../Utils', () => ({
 }));
 
 jest.mock('../../asset-data/AssetHealthDataProvider', () => ({
-  useAssetsHealthData: jest.fn(),
+  useAssetsHealthDataWithoutGateCheck: jest.fn(),
 }));
 
 jest.mock('../../assets/useAllAssets', () => ({
@@ -52,8 +52,8 @@ jest.mock('../../hooks/useStableReferenceByHash', () => ({
   useStableReferenceByHash: jest.fn((data) => data),
 }));
 
-const mockUseAssetsHealthData = useAssetsHealthData as jest.MockedFunction<
-  typeof useAssetsHealthData
+const mockUseAssetsHealthData = useAssetsHealthDataWithoutGateCheck as jest.MockedFunction<
+  typeof useAssetsHealthDataWithoutGateCheck
 >;
 const mockUseAllAssets = useAllAssets as jest.MockedFunction<typeof useAllAssets>;
 const mockParseExpression = parseExpression as jest.MockedFunction<typeof parseExpression>;
@@ -114,7 +114,7 @@ describe('useAssetGraphSupplementaryData', () => {
       mockParseExpression.mockReturnValue([{field: 'status', value: 'HEALTHY'}]);
       mockUseAssetsHealthData.mockReturnValue({
         liveDataByNode: {},
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       renderHook(() => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes), {
         wrapper: TestWrapper,
@@ -132,7 +132,7 @@ describe('useAssetGraphSupplementaryData', () => {
       mockParseExpression.mockReturnValue([{field: 'key', value: 'asset1'} as unknown as Filter]);
       mockUseAssetsHealthData.mockReturnValue({
         liveDataByNode: {},
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       renderHook(() => useAssetGraphSupplementaryData('key:asset1', mockNodes), {
         wrapper: TestWrapper,
@@ -152,7 +152,7 @@ describe('useAssetGraphSupplementaryData', () => {
       });
       mockUseAssetsHealthData.mockReturnValue({
         liveDataByNode: {},
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       renderHook(() => useAssetGraphSupplementaryData('invalid:expression', mockNodes), {
         wrapper: TestWrapper,
@@ -187,7 +187,7 @@ describe('useAssetGraphSupplementaryData', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes.slice(0, 1)),
@@ -231,7 +231,7 @@ describe('useAssetGraphSupplementaryData', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:UNKNOWN', mockNodes.slice(0, 1)),
@@ -264,6 +264,98 @@ describe('useAssetGraphSupplementaryData', () => {
     });
   });
 
+  describe('not_materialized_in_hours filtering', () => {
+    const mockAssetKey3 = buildAssetKey({path: ['asset3']});
+
+    const threeNodes: WorkspaceAssetNode[] = [
+      {assetKey: mockAssetKey1} as WorkspaceAssetNode,
+      {assetKey: mockAssetKey2} as WorkspaceAssetNode,
+      {assetKey: mockAssetKey3} as WorkspaceAssetNode,
+    ];
+
+    it('buckets assets whose last materialization predates the cutoff (or never materialized)', async () => {
+      mockParseExpression.mockReturnValue([
+        {field: 'not_materialized_in_hours', value: '24'},
+      ] as unknown as Filter[]);
+
+      const HOUR_MS = 60 * 60 * 1000;
+      const nowMs = Date.now();
+
+      // asset1: materialized 1 hour ago -> recent, should NOT be selected.
+      // asset2: materialized 100 hours ago -> stale, should be selected.
+      // asset3: never materialized (null) -> should be selected.
+      mockUseAssetsHealthData.mockReturnValue({
+        liveDataByNode: {
+          [JSON.stringify(mockAssetKey1.path)]: buildAsset({
+            key: mockAssetKey1,
+            latestMaterializationTimestamp: nowMs - 1 * HOUR_MS,
+          }),
+          [JSON.stringify(mockAssetKey2.path)]: buildAsset({
+            key: mockAssetKey2,
+            latestMaterializationTimestamp: nowMs - 100 * HOUR_MS,
+          }),
+          [JSON.stringify(mockAssetKey3.path)]: buildAsset({
+            key: mockAssetKey3,
+            latestMaterializationTimestamp: null,
+          }),
+        },
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
+
+      const {result} = renderHook(
+        () => useAssetGraphSupplementaryData('not_materialized_in_hours:24', threeNodes),
+        {wrapper: TestWrapper},
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const bucketKey = getSupplementaryDataKey({
+        field: 'not_materialized_in_hours',
+        value: '24',
+      });
+      const bucket = result.current.data?.[bucketKey];
+      expect(bucket).toBeDefined();
+      expect(bucket).not.toContainEqual(mockAssetKey1);
+      expect(bucket).toContainEqual(mockAssetKey2);
+      expect(bucket).toContainEqual(mockAssetKey3);
+    });
+
+    it('produces a separate bucket per distinct window', async () => {
+      mockParseExpression.mockReturnValue([
+        {field: 'not_materialized_in_hours', value: '1'},
+        {field: 'not_materialized_in_hours', value: '24'},
+      ] as unknown as Filter[]);
+
+      const HOUR_MS = 60 * 60 * 1000;
+      const nowMs = Date.now();
+
+      // asset1 materialized 5 hours ago: stale for the 1h window, fresh for the 24h window.
+      mockUseAssetsHealthData.mockReturnValue({
+        liveDataByNode: {
+          [JSON.stringify(mockAssetKey1.path)]: buildAsset({
+            key: mockAssetKey1,
+            latestMaterializationTimestamp: nowMs - 5 * HOUR_MS,
+          }),
+        },
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
+
+      const {result} = renderHook(
+        () => useAssetGraphSupplementaryData('not_materialized_in_hours:1', mockNodes.slice(0, 1)),
+        {wrapper: TestWrapper},
+      );
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const oneHourKey = getSupplementaryDataKey({field: 'not_materialized_in_hours', value: '1'});
+      const dayKey = getSupplementaryDataKey({field: 'not_materialized_in_hours', value: '24'});
+      expect(result.current.data?.[oneHourKey]).toContainEqual(mockAssetKey1);
+      expect(result.current.data?.[dayKey]).not.toContainEqual(mockAssetKey1);
+    });
+  });
+
   describe('loading states', () => {
     it('should return loading true when health data is incomplete', () => {
       mockUseAssetsHealthData.mockReturnValue({
@@ -274,7 +366,7 @@ describe('useAssetGraphSupplementaryData', () => {
             assetHealth: {assetHealth: AssetHealthStatus.HEALTHY},
           },
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes),
@@ -297,7 +389,7 @@ describe('useAssetGraphSupplementaryData', () => {
             assetHealth: {assetHealth: AssetHealthStatus.DEGRADED},
           },
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes),
@@ -371,7 +463,7 @@ describe('getMaterializationStatus', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const mockNodes = [
         {
@@ -463,7 +555,7 @@ describe('getFreshnessStatus', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const mockNodes = [
         {
@@ -873,7 +965,7 @@ describe('getCheckStatus', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as unknown as ReturnType<typeof useAssetsHealthData>);
+      } as unknown as ReturnType<typeof useAssetsHealthDataWithoutGateCheck>);
 
       const mockNodes = [
         {
