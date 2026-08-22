@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
@@ -18,8 +18,8 @@ from dagster._core.utils import exhaust_iterator_and_yield_results_with_exceptio
 from dagster._utils import pushd
 from typing_extensions import TypeVar
 
-from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props
-from dagster_dbt.compat import DBT_PYTHON_VERSION
+from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props, get_node
+from dagster_dbt.compat import DBT_PYTHON_VERSION, FUNCTION_NODE_TYPE
 from dagster_dbt.core.dbt_cli_event import EventHistoryMetadata, _build_column_lineage_metadata
 
 if TYPE_CHECKING:
@@ -41,9 +41,11 @@ T = TypeVar("T", bound=DbtDagsterEventType)
 
 def _get_dbt_resource_props_from_event(
     invocation: "DbtCliInvocation", event: DbtDagsterEventType
-) -> dict[str, Any]:
+) -> Mapping[str, Any]:
     unique_id = cast("TextMetadataValue", event.metadata["unique_id"]).text
-    return check.not_none(invocation.manifest["nodes"].get(unique_id))
+    # note that dbt functions (UDFs) are not in `manifest["nodes"]`, so we can't index into it
+    # directly here
+    return get_node(invocation.manifest, check.not_none(unique_id))
 
 
 def _fetch_column_metadata(
@@ -64,6 +66,10 @@ def _fetch_column_metadata(
     adapter = check.not_none(invocation.adapter)
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+
+    # dbt functions (UDFs) are not relations, so they have no columns to fetch
+    if dbt_resource_props["resource_type"] == FUNCTION_NODE_TYPE:
+        return {}
 
     with (
         pushd(str(invocation.project_dir)),
@@ -109,6 +115,11 @@ def _fetch_column_metadata(
                     dbt_parent_resource_props = invocation.manifest["nodes"].get(
                         parent_unique_id
                     ) or invocation.manifest["sources"].get(parent_unique_id)
+
+                    # parents which are not relations, such as dbt functions (UDFs), have no
+                    # columns to contribute to the lineage of this node
+                    if dbt_parent_resource_props is None:
+                        continue
 
                     parent_name, parent_columns = invocation._get_columns_from_dbt_resource_props(  # noqa: SLF001
                         adapter=adapter, dbt_resource_props=dbt_parent_resource_props
@@ -158,6 +169,11 @@ def _fetch_row_count_metadata(
     adapter = check.not_none(invocation.adapter)
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+
+    # dbt functions (UDFs) are not relations, so there are no rows to count
+    if dbt_resource_props["resource_type"] == FUNCTION_NODE_TYPE:
+        return None
+
     is_view = dbt_resource_props["config"]["materialized"] == "view"
 
     # Avoid counting rows for views, since they may include complex SQL queries
