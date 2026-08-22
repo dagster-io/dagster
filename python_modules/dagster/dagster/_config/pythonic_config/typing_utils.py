@@ -204,8 +204,14 @@ class TypecheckAllowPartialResourceInitParams:
         self._assigned_name = name
 
     def __get__(self: Self, obj: Any, owner: Any) -> Self:
-        # no-op implementation (only used to affect type signature)
-        return cast("Self", getattr(obj, self._assigned_name))
+        if obj is None:
+            return self  # type: ignore  # class-level access returns descriptor
+        # Access obj.__dict__ directly to avoid re-invoking this descriptor
+        # (since this is a data descriptor, getattr would recurse infinitely)
+        try:
+            return cast("Self", obj.__dict__[self._assigned_name])
+        except KeyError:
+            raise AttributeError(self._assigned_name) from None
 
     # The annotation her has been temporarily changed from:
     #     value: Union[Self, "PartialResource[Self]"]
@@ -219,5 +225,5 @@ class TypecheckAllowPartialResourceInitParams:
     # reverted when the bug is fixed or another solution that surface as type
     # errors for mypy users is found.
     def __set__(self, obj: object | None, value: Union[Any, "PartialResource[Any]"]) -> None:
-        # no-op implementation (only used to affect type signature)
-        setattr(obj, self._assigned_name, value)
+        # Write directly to obj.__dict__ to avoid re-invoking this descriptor
+        obj.__dict__[self._assigned_name] = value  # type: ignore[union-attr]
