@@ -57,9 +57,11 @@ def get_conn_string(
         userinfo = quote(username)
     uri = f"{scheme}://{userinfo}@{hostname}:{port}/{db_name}"
 
-    if params:
-        query_string = f"{urlencode(params, quote_via=quote)}"
-        uri = f"{uri}?{query_string}"
+    params = dict(params) if isinstance(params, Mapping) else {}
+    params.setdefault("fallback_application_name", "dagster")
+    params.setdefault("connect_timeout", 15)
+    query_string = f"{urlencode(params, quote_via=quote)}"
+    uri = f"{uri}?{query_string}"
 
     return uri
 
