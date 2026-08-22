@@ -1211,7 +1211,6 @@ version = "1!0+dev"
 source = { editable = "." }
 dependencies = [
     { name = "dagster" },
-    { name = "google-auth" },
     { name = "kubernetes", version = "12.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-12' or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36')" },
     { name = "kubernetes", version = "35.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-35' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36')" },
     { name = "kubernetes", version = "36.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
@@ -1245,7 +1244,6 @@ test-kubernetes-36 = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../../dagster" },
-    { name = "google-auth", specifier = "!=2.23.1" },
     { name = "kubernetes", specifier = "<37" },
 ]
 
