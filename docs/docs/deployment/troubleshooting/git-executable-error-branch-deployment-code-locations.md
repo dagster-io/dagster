@@ -1,12 +1,12 @@
 ---
 title: Deployment fails with bad git executable error in branch deployment code locations
 sidebar_position: 1100
-description: Resolve "Bad git executable" DagsterImportError that affects dagster-dbt in branch deployment code locations.
+description: Resolve "Bad git executable" DagsterImportError that affects older dagster-dbt versions in branch deployment code locations.
 ---
 
 ## Problem description
 
-Users experience deployment failures with the `dagster-dbt` integration when deploying branch-deployment code locations due to a missing or improperly configured git executable.
+Users on older `dagster-dbt` versions experience deployment failures when deploying branch-deployment code locations due to a missing or improperly configured git executable.
 
 ## Symptoms
 
@@ -17,26 +17,19 @@ Users experience deployment failures with the `dagster-dbt` integration when dep
 
 ## Root cause
 
-This is a known issue in Dagster where the git executable is not properly available in the deployment environment. The `dagster-dbt` integration requires git to be accessible, but the deployment environment may not have git installed or properly configured in the `PATH`.
+Older `dagster-dbt` versions imported GitPython at module load time. GitPython probes for a git executable during import and raises if git is missing or not on `PATH`.
+
+Current `dagster-dbt` no longer depends on GitPython. It invokes the git CLI only when cloning a remote dbt project (for example, a `DbtProjectComponent` configured with `repo_url`). Importing `dagster-dbt` no longer requires git.
 
 ## Solution
 
-Pin your Dagster version to avoid the problematic version until the fix is released.
+Upgrade `dagster-dbt` to a version that no longer depends on GitPython. Importing the library will no longer fail when git is absent.
 
-### Step-by-step resolution
+If you load a remote dbt project from git, the git CLI must still be installed and on `PATH` in that environment. The clone is given 30 minutes by default; set `DAGSTER_DBT_GIT_CLONE_TIMEOUT_SECONDS` if a large repository or a slow link needs longer.
 
-1. Identify your current Dagster version and pin to a stable version in your `requirements.txt` or `pyproject.toml`:
+### Workaround for older versions
 
-   ```text
-   dagster==1.8.x  # Replace x with the last working version
-   ```
-
-2. Redeploy your code location with the pinned version.
-3. Verify the deployment completes successfully without git executable errors.
-
-### Alternative solutions
-
-If pinning the version doesn't work, you can try setting the `GIT_PYTHON_REFRESH` environment variable to suppress the error:
+If you cannot upgrade yet, set the `GIT_PYTHON_REFRESH` environment variable to suppress GitPython's import-time check:
 
 ```bash
 export GIT_PYTHON_REFRESH=quiet
@@ -44,8 +37,8 @@ export GIT_PYTHON_REFRESH=quiet
 
 ## Prevention
 
-Monitor Dagster release notes for updates on this issue and upgrade to newer versions once the fix is available. Consider testing deployments in a staging environment before promoting to production.
+Keep `dagster-dbt` current. When using a remote git dbt project, install git in the deployment image and confirm it is on `PATH`.
 
 ## Related documentation
 
-- [GitHub PR with fix](https://github.com/dagster-io/dagster/pull/32756)
+- [GitHub PR that deferred the GitPython import](https://github.com/dagster-io/dagster/pull/32756)

@@ -1,11 +1,14 @@
 import os
+import re
 import shutil
+import subprocess
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 from urllib.parse import quote, urlparse, urlunparse
 
+import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.model import Resolver
@@ -14,6 +17,50 @@ from dagster_dbt.dbt_project import DbtProject
 
 if TYPE_CHECKING:
     from dagster_dbt.components.dbt_project.component import DbtProjectArgs
+
+# GitPython imposed no clone timeout, so the default here has to be generous enough that a large
+# shallow clone on a slow link does not start failing on upgrade. Overridable for the rest.
+_GIT_CLONE_TIMEOUT_SECONDS = int(os.getenv("DAGSTER_DBT_GIT_CLONE_TIMEOUT_SECONDS", "1800"))
+_URL_USERINFO = re.compile(r"(https?://)[^/\s'\"@]+@")
+
+
+def _redact_userinfo(text: str) -> str:
+    """Strip URL userinfo so clone tokens are not interpolated into errors."""
+    return _URL_USERINFO.sub(r"\1", text)
+
+
+def _shallow_clone(repo_url: str, dest: Path, *, display_url: str | None = None) -> None:
+    """Shallow-clone ``repo_url`` into ``dest`` using the git CLI."""
+    repo_url = check.str_param(repo_url, "repo_url")
+    dest = check.inst_param(dest, "dest", Path)
+    label = _redact_userinfo(display_url if display_url is not None else repo_url)
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    try:
+        completed = subprocess.run(
+            ["git", "clone", "--depth", "1", "--", repo_url, str(dest)],
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdin=subprocess.DEVNULL,
+            timeout=_GIT_CLONE_TIMEOUT_SECONDS,
+            env=env,
+        )
+    except FileNotFoundError as err:
+        raise DagsterInvalidDefinitionError(
+            "git executable not found on PATH. Install git to clone remote dbt projects."
+        ) from err
+    except subprocess.TimeoutExpired:
+        # Do not chain TimeoutExpired: its argv includes the clone URL with credentials.
+        raise DagsterInvalidDefinitionError(
+            f"Timed out cloning git repository {label} into {dest}."
+        ) from None
+    if completed.returncode != 0:
+        raise DagsterInvalidDefinitionError(
+            f"Failed to clone git repository {label} into {dest}. "
+            f"git exited with code {completed.returncode}: {_redact_userinfo(completed.stderr)}"
+        )
 
 
 def _ignore_nested_dest(dest: Path):
@@ -170,10 +217,11 @@ class RemoteGitDbtProjectManager(DbtProjectManager, Resolvable):
             return urlunparse(parts._replace(netloc=f"{token}@{parts.netloc}"))
 
     def sync(self, state_path: Path) -> None:
-        # defer git import to avoid side-effects on import
-        from git import Repo
-
-        Repo.clone_from(self._get_clone_url(), self._local_project_dir(state_path), depth=1)
+        _shallow_clone(
+            self._get_clone_url(),
+            self._local_project_dir(state_path),
+            display_url=self.repo_url,
+        )
         project = self.get_project(state_path)
         project.preparer.prepare(project)
 
