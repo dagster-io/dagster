@@ -10,7 +10,6 @@ from typing import Any, Callable, ContextManager, NamedTuple, cast  # noqa: UP03
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
-from dagster_shared.serdes import deserialize_values
 from dagster_shared.seven import JSONDecodeError
 from sqlalchemy.engine import Connection
 
@@ -913,7 +912,14 @@ class SqlRunStorage(RunStorage):
         return table
 
     def _backfills_query(self, filters: BulkActionsFilter | None = None):
-        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
+        query = db_select(
+            [
+                BulkActionsTable.c.id,
+                BulkActionsTable.c.key,
+                BulkActionsTable.c.body,
+                BulkActionsTable.c.timestamp,
+            ]
+        )
         if filters and filters.tags:
             if not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
                 # if the migration was run, we added the query for tags filtering in _add_backfill_filters_to_table
@@ -1008,6 +1014,22 @@ class SqlRunStorage(RunStorage):
 
         return [backfill for backfill in backfills if _matches_backfill(backfill, tags)]
 
+    def _deserialize_backfill_rows(
+        self, rows: Sequence[Mapping[str, Any]]
+    ) -> Sequence[PartitionBackfill]:
+        backfills = []
+        for row in rows:
+            try:
+                backfills.append(deserialize_value(row["body"], PartitionBackfill))
+            except Exception:
+                logging.getLogger("dagster").warning(
+                    "Skipping backfill %s because it could not be deserialized.",
+                    row["key"],
+                    exc_info=True,
+                )
+
+        return backfills
+
     def get_backfills(
         self,
         filters: BulkActionsFilter | None = None,
@@ -1016,7 +1038,6 @@ class SqlRunStorage(RunStorage):
         status: BulkActionStatus | None = None,
     ) -> Sequence[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
-        query = db_select([BulkActionsTable.c.body, BulkActionsTable.c.timestamp])
         if status and filters:
             raise DagsterInvariantViolationError(
                 "Cannot provide status and filters to get_backfills. Please use filters rather than status."
@@ -1027,41 +1048,56 @@ class SqlRunStorage(RunStorage):
 
         table = self._add_backfill_filters_to_table(BulkActionsTable, filters)
         query = self._backfills_query(filters=filters).select_from(table)
-        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor, limit=limit)
+        query = self._add_cursor_limit_to_backfills_query(query, cursor=cursor)
         query = query.order_by(BulkActionsTable.c.id.desc())
-        rows = self.fetchall(query)
-        backfill_candidates = deserialize_values((row["body"] for row in rows), PartitionBackfill)
 
-        if filters and filters.tags and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
-            # if we are still using the run tags table to get backfills by tag, we need to do an additional check.
-            # runs can have more tags than the backfill that launched them. Since we filtered tags by
-            # querying for runs with those tags, we need to do an additional check that the backfills
-            # also have the requested tags
-            backfill_candidates = self._apply_backfill_tags_filter_to_results(
-                backfill_candidates, filters.tags
+        def _filter_backfill_candidates(
+            backfill_candidates: Sequence[PartitionBackfill],
+        ) -> Sequence[PartitionBackfill]:
+            if not (filters and filters.tags and not self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS)):
+                return backfill_candidates
+            # If we are still using the run tags table to get backfills by tag, we need to do an
+            # additional check. Runs can have more tags than the backfill that launched them. Since
+            # we filtered tags by querying for runs with those tags, verify that the backfills also
+            # have the requested tags.
+            return self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
+
+        if not limit:
+            rows = self.fetchall(query)
+            backfill_candidates = self._deserialize_backfill_rows(rows)
+            return _filter_backfill_candidates(backfill_candidates)
+
+        backfill_candidates = []
+        last_row_id = None
+        while len(backfill_candidates) < limit:
+            page_query = query
+            if last_row_id is not None:
+                page_query = page_query.where(BulkActionsTable.c.id < last_row_id)
+            rows = self.fetchall(page_query.limit(limit - len(backfill_candidates)))
+            if not rows:
+                break
+
+            last_row_id = rows[-1]["id"]
+            backfill_candidates = list(
+                _filter_backfill_candidates(
+                    [*backfill_candidates, *self._deserialize_backfill_rows(rows)]
+                )
             )
         return backfill_candidates
 
     def get_backfills_count(self, filters: BulkActionsFilter | None = None) -> int:
         check.opt_inst_param(filters, "filters", BulkActionsFilter)
+        query = self._backfills_query(filters=filters)
+        rows = self.fetchall(query)
+        backfill_candidates = self._deserialize_backfill_rows(rows)
         if filters and filters.tags:
             # runs can have more tags than the backfill that launched them. Since we filtered tags by
             # querying for runs with those tags, we need to do an additional check that the backfills
             # also have the requested tags. This requires fetching the backfills from the db and filtering them
-            query = self._backfills_query(filters=filters)
-            rows = self.fetchall(query)
-            backfill_candidates = deserialize_values(
-                (row["body"] for row in rows), PartitionBackfill
+            backfill_candidates = self._apply_backfill_tags_filter_to_results(
+                backfill_candidates, filters.tags
             )
-            return len(
-                self._apply_backfill_tags_filter_to_results(backfill_candidates, filters.tags)
-            )
-
-        subquery = db_subquery(self._backfills_query(filters=filters))
-        query = db_select([db.func.count().label("count")]).select_from(subquery)
-        row = self.fetchone(query)
-        count = row["count"] if row else 0
-        return count
+        return len(backfill_candidates)
 
     def get_backfill(self, backfill_id: str) -> PartitionBackfill | None:
         check.str_param(backfill_id, "backfill_id")
