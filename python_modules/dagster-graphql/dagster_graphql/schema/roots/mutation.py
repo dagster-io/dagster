@@ -3,19 +3,27 @@ from collections.abc import Sequence
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions.asset_checks.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.events import AssetKey, AssetPartitionWipeRange
+from dagster._core.definitions.events import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    AssetPartitionWipeRange,
+)
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.selector import JobSelector
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
+from dagster._serdes import deserialize_value
 
 from dagster_graphql.implementation.execution import (
     delete_pipeline_run,
     report_asset_check_evaluation,
     report_runless_asset_events,
+    report_sensor_tick_asset_events,
     terminate_pipeline_execution,
     terminate_pipeline_execution_for_runs,
     wipe_assets,
@@ -1043,6 +1051,95 @@ class GrapheneReportAssetCheckEvaluationsMutation(graphene.Mutation):
         return GrapheneReportAssetCheckEvaluationsSuccess(assetKey=asset_key, checkName=check_name)
 
 
+class GrapheneReportSensorTickAssetEventsSuccess(graphene.ObjectType):
+    """Output indicating that a sensor tick's asset events were reported."""
+
+    assetKeys = non_null_list(GrapheneAssetKey)
+
+    class Meta:
+        name = "ReportSensorTickAssetEventsSuccess"
+
+
+class GrapheneReportSensorTickAssetEventsPartialFailure(graphene.ObjectType):
+    """Output when only some of a sensor tick's asset events were successfully reported
+    before one failed. `remainingAssetEvents` is the serialized subset (including the one
+    that failed) that was not reported, so the client can retry with only that subset
+    instead of resending events that already succeeded.
+    """
+
+    reportedAssetKeys = non_null_list(GrapheneAssetKey)
+    remainingAssetEvents = non_null_list(graphene.String)
+    error = graphene.NonNull(GraphenePythonError)
+
+    class Meta:
+        name = "ReportSensorTickAssetEventsPartialFailure"
+
+
+class GrapheneReportSensorTickAssetEventsResult(graphene.Union):
+    """The output from reporting a sensor tick's asset events."""
+
+    class Meta:
+        types = (
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+            GrapheneReportSensorTickAssetEventsSuccess,
+            GrapheneReportSensorTickAssetEventsPartialFailure,
+        )
+        name = "ReportSensorTickAssetEventsResult"
+
+
+class GrapheneReportSensorTickAssetEventsMutation(graphene.Mutation):
+    """Reports the asset materializations, observations, and asset check evaluations
+    returned by a sensor evaluation (as previewed via sensorDryRun) as runless events,
+    mirroring what the sensor daemon does for a live tick.
+    """
+
+    Output = graphene.NonNull(GrapheneReportSensorTickAssetEventsResult)
+
+    class Arguments:
+        assetEvents = graphene.Argument(non_null_list(graphene.String))
+        # Parallel to assetEvents (same length, same order). A stable, caller-generated
+        # key per event so a retry -- even one where the client never saw the previous
+        # response -- doesn't duplicate an event that was already reported. See
+        # report_sensor_tick_asset_events for how this is used.
+        idempotencyKeys = graphene.Argument(non_null_list(graphene.String))
+
+    class Meta:
+        name = "ReportSensorTickAssetEventsMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.REPORT_RUNLESS_ASSET_EVENTS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        assetEvents: Sequence[str],
+        idempotencyKeys: Sequence[str],
+    ):
+        check.invariant(
+            len(assetEvents) == len(idempotencyKeys),
+            "assetEvents and idempotencyKeys must be the same length",
+        )
+        events = []
+        for serialized_event in assetEvents:
+            event = deserialize_value(serialized_event)
+            check.inst(
+                event,
+                (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
+                f"Expected an AssetMaterialization, AssetObservation, or AssetCheckEvaluation, "
+                f"got {type(event)}",
+            )
+            events.append(event)
+
+        asset_keys = list({event.asset_key for event in events})
+
+        asset_graph = graphene_info.context.asset_graph
+        assert_permission_for_asset_graph(
+            graphene_info, asset_graph, asset_keys, Permissions.REPORT_RUNLESS_ASSET_EVENTS
+        )
+
+        return report_sensor_tick_asset_events(graphene_info, assetEvents, idempotencyKeys, events)
+
+
 class GrapheneLogTelemetrySuccess(graphene.ObjectType):
     """Output indicating that telemetry was logged."""
 
@@ -1234,6 +1331,7 @@ class GrapheneMutation(graphene.ObjectType):
     wipeAssets = GrapheneAssetWipeMutation.Field()
     reportRunlessAssetEvents = GrapheneReportRunlessAssetEventsMutation.Field()
     reportAssetCheckEvaluations = GrapheneReportAssetCheckEvaluationsMutation.Field()
+    reportSensorTickAssetEvents = GrapheneReportSensorTickAssetEventsMutation.Field()
     launchPartitionBackfill = GrapheneLaunchBackfillMutation.Field()
     resumePartitionBackfill = GrapheneResumeBackfillMutation.Field()
     reexecutePartitionBackfill = GrapheneReexecuteBackfillMutation.Field()
