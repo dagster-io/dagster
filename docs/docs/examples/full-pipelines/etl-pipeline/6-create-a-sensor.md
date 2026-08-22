@@ -61,8 +61,8 @@ Now copy the following sensor code in the `sensors.py` file:
 2. Navigate to the Automation page.
 3. Turn on the `adhoc_request_sensor`.
 4. Click on the `adhoc_request_sensor` details.
-
 {/* TODO: Screenshot */}
+   You should see the sensor details view with recent ticks and the run history panel.
 
 5. Create a `data/requests` directory in `dagster_tutorial`. Then include a `request.json` file:
 
@@ -76,8 +76,8 @@ Now copy the following sensor code in the `sensors.py` file:
 ```
 
 6. Click on the green tick to see the run for this request.
-
 {/* TODO: Screenshot */}
+   The run should appear in the runs list, and the tick details will show the run ID.
 
 ## Summary
 
