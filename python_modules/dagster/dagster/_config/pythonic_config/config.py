@@ -33,6 +33,7 @@ from dagster._config.pythonic_config.typing_utils import BaseConfigMeta
 from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
+    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
@@ -197,6 +198,27 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field.alias if field.alias else field_key: (field_key, field)
             for field_key, field in model_fields(self.__class__).items()
         }
+
+        # Reject kwargs that don't correspond to any declared field. Pydantic's
+        # default extra="ignore" would silently drop them, hiding typos until
+        # the missing attribute surfaced at runtime. PermissiveConfig opts in to
+        # the open-ended behavior via extra="allow".
+        if model_config(self.__class__).get("extra") != "allow":
+            undeclared = [
+                config_key
+                for config_key in config_dict
+                if config_key not in field_info_by_config_key
+            ]
+            if undeclared:
+                declared = sorted(field_info_by_config_key)
+                raise DagsterInvalidConfigError(
+                    f"Received unexpected config entries {sorted(undeclared)!r} for "
+                    f"'{self.__class__.__name__}'. Expected: {declared!r}. "
+                    "Use 'PermissiveConfig' if open-ended inputs are intentional.",
+                    [],
+                    config_dict,
+                )
+
         for config_key, value in config_dict.items():
             field_info = field_info_by_config_key.get(config_key)
             field = None
