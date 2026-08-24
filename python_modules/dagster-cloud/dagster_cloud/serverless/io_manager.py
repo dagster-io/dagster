@@ -148,7 +148,9 @@ class ServerlessPresignedURLIOManager(UPathIOManager):
         if resp.status_code == 404:
             raise FileNotFoundError(
                 f"Could not find the input for '{context.name}'."
-                " The upstream output may not have been materialized yet."
+                " The upstream output may not have been materialized yet, or it may have"
+                " expired: outputs not associated with an asset are retained for a limited"
+                " period after the run that produced them."
             )
         resp.raise_for_status()
         return pickle.loads(resp.content)
