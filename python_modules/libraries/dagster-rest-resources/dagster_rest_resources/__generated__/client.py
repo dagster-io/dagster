@@ -688,17 +688,20 @@ class Client(BaseClient):
         return GetAssetPartitionStatus.model_validate(data)
 
     def list_asset_checks(
-        self, asset_key: "AssetKeyInput", **kwargs: Any
+        self,
+        asset_key: "AssetKeyInput",
+        limit: Union[Optional[int], "UnsetType"] = UNSET,
+        **kwargs: Any
     ) -> "ListAssetChecks":
         from .list_asset_checks import ListAssetChecks
 
         query = gql(
             """
-            query ListAssetChecks($assetKey: AssetKeyInput!) {
+            query ListAssetChecks($assetKey: AssetKeyInput!, $limit: Int) {
               assetNodeOrError(assetKey: $assetKey) {
                 __typename
                 ... on AssetNode {
-                  assetChecksOrError {
+                  assetChecksOrError(limit: $limit) {
                     __typename
                     ... on AssetChecks {
                       checks {
@@ -730,7 +733,7 @@ class Client(BaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"assetKey": asset_key}
+        variables: dict[str, object] = {"assetKey": asset_key, "limit": limit}
         response = self.execute(
             query=query, operation_name="ListAssetChecks", variables=variables, **kwargs
         )

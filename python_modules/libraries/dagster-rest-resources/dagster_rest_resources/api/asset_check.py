@@ -17,9 +17,10 @@ from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 class DgApiAssetCheckApi:
     _client: IGraphQLClient
 
-    def list_asset_checks(self, asset_key: str) -> DgApiAssetCheckList:
+    def list_asset_checks(self, asset_key: str, limit: int = 10) -> DgApiAssetCheckList:
         node_result = self._client.list_asset_checks(
-            asset_key=AssetKeyInput(path=asset_key.split("/"))
+            asset_key=AssetKeyInput(path=asset_key.split("/")),
+            limit=limit,
         ).asset_node_or_error
 
         match node_result.typename__:
