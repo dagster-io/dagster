@@ -8,32 +8,36 @@ from pydantic import Field
 from .base_model import BaseModel
 
 
-class ListAlertPolicies(BaseModel):
+class ListAlertPoliciesAsDocument(BaseModel):
     alert_policies_as_document_or_error: Optional[
         Annotated[
             Union[
-                "ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument",
-                "ListAlertPoliciesAlertPoliciesAsDocumentOrErrorPythonError",
-                "ListAlertPoliciesAlertPoliciesAsDocumentOrErrorUnauthorizedError",
+                "ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument",
+                "ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorPythonError",
+                "ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorUnauthorizedError",
             ],
             Field(discriminator="typename__"),
         ]
     ] = Field(alias="alertPoliciesAsDocumentOrError")
 
 
-class ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(BaseModel):
+class ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
+    BaseModel
+):
     typename__: Literal["AlertPoliciesAsDocument"] = Field(alias="__typename")
     document: Optional[Any]
 
 
-class ListAlertPoliciesAlertPoliciesAsDocumentOrErrorPythonError(BaseModel):
+class ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorPythonError(BaseModel):
     typename__: Literal["PythonError"] = Field(alias="__typename")
     message: str
 
 
-class ListAlertPoliciesAlertPoliciesAsDocumentOrErrorUnauthorizedError(BaseModel):
+class ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorUnauthorizedError(
+    BaseModel
+):
     typename__: Literal["UnauthorizedError"] = Field(alias="__typename")
     message: str
 
 
-ListAlertPolicies.model_rebuild()
+ListAlertPoliciesAsDocument.model_rebuild()

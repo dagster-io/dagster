@@ -1,11 +1,11 @@
 from unittest.mock import Mock
 
 import pytest
-from dagster_rest_resources.__generated__.list_alert_policies import (
-    ListAlertPolicies,
-    ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument,
-    ListAlertPoliciesAlertPoliciesAsDocumentOrErrorPythonError,
-    ListAlertPoliciesAlertPoliciesAsDocumentOrErrorUnauthorizedError,
+from dagster_rest_resources.__generated__.list_alert_policies_as_document import (
+    ListAlertPoliciesAsDocument,
+    ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument,
+    ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorPythonError,
+    ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorUnauthorizedError,
 )
 from dagster_rest_resources.__generated__.reconcile_alert_policies import (
     ReconcileAlertPolicies,
@@ -31,58 +31,58 @@ class TestListAlertPolicies:
     def test_returns_alert_policies(self):
         document = {"alert_policies": [{"test_k": "test_v", "test_k_list": ["test_v_list"]}]}
         client = Mock(spec=IGraphQLClient)
-        client.list_alert_policies.return_value = ListAlertPolicies(
-            alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
+        client.list_alert_policies_as_document.return_value = ListAlertPoliciesAsDocument(
+            alertPoliciesAsDocumentOrError=ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
                 __typename="AlertPoliciesAsDocument",
                 document=document,
             )
         )
-        result = DgApiAlertPolicyApi(client).list_alert_policies()
+        result = DgApiAlertPolicyApi(client).list_alert_policies_as_document()
 
         assert result == DgApiAlertPolicyDocument(items=document["alert_policies"])
 
     def test_returns_empty_when_document_has_no_alert_policies(self):
         client = Mock(spec=IGraphQLClient)
-        client.list_alert_policies.return_value = ListAlertPolicies(
-            alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
+        client.list_alert_policies_as_document.return_value = ListAlertPoliciesAsDocument(
+            alertPoliciesAsDocumentOrError=ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorAlertPoliciesAsDocument(
                 __typename="AlertPoliciesAsDocument",
                 document={},
             )
         )
-        result = DgApiAlertPolicyApi(client).list_alert_policies()
+        result = DgApiAlertPolicyApi(client).list_alert_policies_as_document()
 
         assert result == DgApiAlertPolicyDocument(items=[])
 
     def test_none_raises(self):
         client = Mock(spec=IGraphQLClient)
-        client.list_alert_policies.return_value = ListAlertPolicies(
+        client.list_alert_policies_as_document.return_value = ListAlertPoliciesAsDocument(
             alertPoliciesAsDocumentOrError=None
         )
 
         with pytest.raises(
             DagsterPlusGraphqlError, match="No alert policies data in GraphQL response"
         ):
-            DgApiAlertPolicyApi(client).list_alert_policies()
+            DgApiAlertPolicyApi(client).list_alert_policies_as_document()
 
     def test_unauthorized_error_raises(self):
         client = Mock(spec=IGraphQLClient)
-        client.list_alert_policies.return_value = ListAlertPolicies(
-            alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorUnauthorizedError(
+        client.list_alert_policies_as_document.return_value = ListAlertPoliciesAsDocument(
+            alertPoliciesAsDocumentOrError=ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorUnauthorizedError(
                 __typename="UnauthorizedError", message=""
             )
         )
         with pytest.raises(DagsterPlusUnauthorizedError, match="Error fetching alert policies"):
-            DgApiAlertPolicyApi(client).list_alert_policies()
+            DgApiAlertPolicyApi(client).list_alert_policies_as_document()
 
     def test_python_error_raises(self):
         client = Mock(spec=IGraphQLClient)
-        client.list_alert_policies.return_value = ListAlertPolicies(
-            alertPoliciesAsDocumentOrError=ListAlertPoliciesAlertPoliciesAsDocumentOrErrorPythonError(
+        client.list_alert_policies_as_document.return_value = ListAlertPoliciesAsDocument(
+            alertPoliciesAsDocumentOrError=ListAlertPoliciesAsDocumentAlertPoliciesAsDocumentOrErrorPythonError(
                 __typename="PythonError", message=""
             )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching alert policies"):
-            DgApiAlertPolicyApi(client).list_alert_policies()
+            DgApiAlertPolicyApi(client).list_alert_policies_as_document()
 
 
 class TestActionSyncAlertPolicies:

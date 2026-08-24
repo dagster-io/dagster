@@ -1,4 +1,4 @@
-query ListAlertPolicies {
+query ListAlertPoliciesAsDocument {
   alertPoliciesAsDocumentOrError {
     __typename
     ... on AlertPoliciesAsDocument {

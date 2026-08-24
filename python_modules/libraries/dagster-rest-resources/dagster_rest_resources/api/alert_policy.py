@@ -18,8 +18,8 @@ from dagster_rest_resources.schemas.exception import (
 class DgApiAlertPolicyApi:
     _client: IGraphQLClient
 
-    def list_alert_policies(self) -> DgApiAlertPolicyDocument:
-        result = self._client.list_alert_policies().alert_policies_as_document_or_error
+    def list_alert_policies_as_document(self) -> DgApiAlertPolicyDocument:
+        result = self._client.list_alert_policies_as_document().alert_policies_as_document_or_error
         if result is None:
             raise DagsterPlusGraphqlError("No alert policies data in GraphQL response")
 

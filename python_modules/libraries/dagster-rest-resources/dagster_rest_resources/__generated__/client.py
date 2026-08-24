@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     )
     from .launch_run import LaunchRun
     from .list_agents import ListAgents
-    from .list_alert_policies import ListAlertPolicies
+    from .list_alert_policies_as_document import ListAlertPoliciesAsDocument
     from .list_asset_check_executions import ListAssetCheckExecutions
     from .list_asset_checks import ListAssetChecks
     from .list_asset_records import ListAssetRecords
@@ -104,12 +104,14 @@ class Client(BaseClient):
         data = self.get_data(response)
         return ListAgents.model_validate(data)
 
-    def list_alert_policies(self, **kwargs: Any) -> "ListAlertPolicies":
-        from .list_alert_policies import ListAlertPolicies
+    def list_alert_policies_as_document(
+        self, **kwargs: Any
+    ) -> "ListAlertPoliciesAsDocument":
+        from .list_alert_policies_as_document import ListAlertPoliciesAsDocument
 
         query = gql(
             """
-            query ListAlertPolicies {
+            query ListAlertPoliciesAsDocument {
               alertPoliciesAsDocumentOrError {
                 __typename
                 ... on AlertPoliciesAsDocument {
@@ -128,12 +130,12 @@ class Client(BaseClient):
         variables: dict[str, object] = {}
         response = self.execute(
             query=query,
-            operation_name="ListAlertPolicies",
+            operation_name="ListAlertPoliciesAsDocument",
             variables=variables,
             **kwargs
         )
         data = self.get_data(response)
-        return ListAlertPolicies.model_validate(data)
+        return ListAlertPoliciesAsDocument.model_validate(data)
 
     def reconcile_alert_policies(
         self, document: Any, **kwargs: Any
