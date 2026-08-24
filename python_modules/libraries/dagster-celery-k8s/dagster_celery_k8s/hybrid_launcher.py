@@ -1,3 +1,5 @@
+# isort: skip_file
+
 import hashlib
 import json
 import os
@@ -6,7 +8,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from dagster import DagsterInstance, Field, Permissive, StringSource, _check as check
-from dagster._core.launcher import CheckRunHealthResult, LaunchRunContext, ResumeRunContext, RunLauncher  # fmt: skip
+from dagster._core.launcher import CheckRunHealthResult, LaunchRunContext, ResumeRunContext, RunLauncher, WorkerStatus  # fmt: skip
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -311,7 +313,10 @@ class HybridCeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if run is None:
             return False
 
-        if self._should_handle_as_celery_run(run):
+        if self._is_celery_routed_run(run):
+            if not self._has_celery_task_id(run):
+                return False
+
             return self._get_celery_launcher_for_existing_run(run).terminate(run_id)
 
         return self._k8s_launcher.terminate(run_id)
@@ -322,7 +327,13 @@ class HybridCeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     @override
     def check_run_worker_health(self, run: DagsterRun) -> CheckRunHealthResult:
-        if self._should_handle_as_celery_run(run):
+        if self._is_celery_routed_run(run):
+            if not self._has_celery_task_id(run):
+                return CheckRunHealthResult(
+                    WorkerStatus.NOT_FOUND,
+                    "Celery task has not been submitted for this run.",
+                )
+
             return self._get_celery_launcher_for_existing_run(run).check_run_worker_health(run)
 
         return self._k8s_launcher.check_run_worker_health(run)
@@ -333,7 +344,13 @@ class HybridCeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         run: DagsterRun,
         include_container_logs: bool | None = True,
     ) -> str | None:
-        if self._should_handle_as_celery_run(run):
+        if self._is_celery_routed_run(run):
+            if not self._has_celery_task_id(run):
+                return (
+                    f"Run {run.run_id} is routed to Celery, but no Celery task ID has been "
+                    "persisted. Task submission has not completed or has failed."
+                )
+
             return self._get_celery_launcher_for_existing_run(run).get_run_worker_debug_info(
                 run,
                 include_container_logs=include_container_logs,
@@ -355,7 +372,7 @@ class HybridCeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.dagster_run
 
-        if self._should_handle_as_celery_run(run):
+        if self._is_celery_routed_run(run):
             code_location = self._resolve_code_location(run)
             version = self._resolve_version(run, code_location)
             queue = run.tags.get(self.resolved_queue_tag_key)
@@ -443,8 +460,16 @@ class HybridCeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             "default_queue": default_queue,
         }
 
-    def _should_handle_as_celery_run(self, run: DagsterRun) -> bool:
-        return self._should_launch_in_celery(run) or DAGSTER_CELERY_TASK_ID_TAG in run.tags
+    def _is_celery_routed_run(self, run: DagsterRun) -> bool:
+        return (
+            self._should_launch_in_celery(run)
+            or self.resolved_queue_tag_key in run.tags
+            or DAGSTER_CELERY_TASK_ID_TAG in run.tags
+        )
+
+    @staticmethod
+    def _has_celery_task_id(run: DagsterRun) -> bool:
+        return bool(run.tags.get(DAGSTER_CELERY_TASK_ID_TAG))
 
     def _get_celery_launcher_for_existing_run(self, run: DagsterRun) -> CeleryRunLauncher:
         queue = run.tags.get(DAGSTER_CELERY_QUEUE_TAG) or run.tags.get(self.resolved_queue_tag_key)
