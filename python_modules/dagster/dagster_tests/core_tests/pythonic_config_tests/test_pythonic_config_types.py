@@ -1092,6 +1092,24 @@ def test_config_alias_with_populate_by_name() -> None:
     assert MyConfig(python_name="name").python_name == "name"
 
 
+def test_configurable_resource_alias_with_populate_by_name() -> None:
+    class MyResource(dg.ConfigurableResource):
+        model_config = pydantic.ConfigDict(populate_by_name=True)
+        python_name: str | None = pydantic.Field(default=None, alias="configName")
+
+    @dg.op
+    def read_resource(resource: MyResource) -> str | None:
+        return resource.python_name
+
+    @dg.job
+    def resource_job() -> None:
+        read_resource()
+
+    result = resource_job.execute_in_process(resources={"resource": MyResource(python_name="name")})
+
+    assert result.output_for_node("read_resource") == "name"
+
+
 def test_config_alias_without_populate_by_name() -> None:
     class MyConfig(dg.Config):
         python_name: str = pydantic.Field(alias="configName")
