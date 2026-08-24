@@ -541,16 +541,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
         ]),
         'description': 'Sends Dagster asset health report to #bot-purina Slack channel',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'monitoring',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["asset_health_report_slack"]',
         'job_names': None,
         'kinds': list([
           'slack',
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -567,15 +577,25 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "user_roles"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -592,16 +612,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
           'cloud-prod-workspace-replication/staging/asset_checks',
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_asset_checks"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -618,16 +648,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
           'cloud-prod-workspace-replication/staging/assets',
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_assets"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -644,16 +684,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
           'cloud-prod-workspace-replication/staging/external_repo_metadata',
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_external_repo_metadata"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -670,16 +720,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
           'cloud-prod-workspace-replication/staging/jobs',
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_jobs"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -696,16 +756,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
           'cloud-prod-workspace-replication/staging/metadata',
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_metadata"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -722,16 +792,26 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
           'cloud-prod-workspace-replication/staging/partitions',
         ]),
         'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'aws_stages',
+        'health': dict({
+          'asset_checks_status': 'HEALTHY',
+          'asset_health': 'HEALTHY',
+          'freshness_status': 'HEALTHY',
+          'materialization_status': 'HEALTHY',
+        }),
         'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_partitions"]',
         'job_names': None,
         'kinds': list([
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -752,16 +832,26 @@
     ]),
     'automation_condition': None,
     'backfill_policy': None,
+    'compute_kind': None,
     'dependency_keys': list([
       'cloud-prod-workspace-replication/staging/assets',
     ]),
     'description': 'Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.',
     'downstream_keys': None,
+    'freshness_policy': None,
     'group_name': 'aws_stages',
+    'health': dict({
+      'asset_checks_status': 'HEALTHY',
+      'asset_health': 'HEALTHY',
+      'freshness_status': 'HEALTHY',
+      'materialization_status': 'HEALTHY',
+    }),
     'id': 'dagster_open_platform.__repository__.["aws", "cloud-prod", "workspace_staging_assets"]',
     'job_names': None,
     'kinds': list([
     ]),
+    'latest_failed_to_materialize_timestamp': None,
+    'latest_materialization_timestamp': None,
     'metadata_entries': list([
     ]),
     'owners': None,
@@ -803,16 +893,26 @@
     ]),
     'automation_condition': None,
     'backfill_policy': None,
+    'compute_kind': None,
     'dependency_keys': list([
     ]),
     'description': 'Sends Dagster asset health report to #bot-purina Slack channel',
     'downstream_keys': None,
+    'freshness_policy': None,
     'group_name': 'monitoring',
+    'health': dict({
+      'asset_checks_status': 'HEALTHY',
+      'asset_health': 'HEALTHY',
+      'freshness_status': 'HEALTHY',
+      'materialization_status': 'HEALTHY',
+    }),
     'id': 'dagster_open_platform.__repository__.["asset_health_report_slack"]',
     'job_names': None,
     'kinds': list([
       'slack',
     ]),
+    'latest_failed_to_materialize_timestamp': None,
+    'latest_materialization_timestamp': None,
     'metadata_entries': list([
     ]),
     'owners': None,
@@ -896,23 +996,39 @@
   dict({
     'items': list([
       dict({
+        'agent_type': 'HYBRID',
         'id': 87,
+        'is_branch_deployment': False,
         'name': 'data-eng-prod',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 190248,
+        'is_branch_deployment': False,
         'name': 'gtm20',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 213933,
+        'is_branch_deployment': False,
         'name': 'data-eng-staging',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 217021,
+        'is_branch_deployment': False,
         'name': 'data-eng-dev',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
     ]),
@@ -923,18 +1039,30 @@
   dict({
     'items': list([
       dict({
+        'agent_type': 'HYBRID',
         'id': 300001,
+        'is_branch_deployment': True,
         'name': 'feature-add-auth',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'BRANCH',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 300002,
+        'is_branch_deployment': True,
         'name': 'fix-pipeline-timeout',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'BRANCH',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 300003,
+        'is_branch_deployment': True,
         'name': 'refactor-sensors',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'BRANCH',
       }),
     ]),
@@ -962,23 +1090,39 @@
   dict({
     'items': list([
       dict({
+        'agent_type': 'HYBRID',
         'id': 87,
+        'is_branch_deployment': False,
         'name': 'data-eng-prod',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 190248,
+        'is_branch_deployment': False,
         'name': 'gtm20',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 213933,
+        'is_branch_deployment': False,
         'name': 'data-eng-staging',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
       dict({
+        'agent_type': 'HYBRID',
         'id': 217021,
+        'is_branch_deployment': False,
         'name': 'data-eng-dev',
+        'organization_name': 'hooli',
+        'status': 'ACTIVE',
         'type': 'PRODUCTION',
       }),
     ]),
@@ -1312,8 +1456,24 @@
     'ended_at': 1751036909.142719,
     'id': 'e0248005-fc38-4e55-a9fb-472c8694303b',
     'job_name': 'run_etl_pipeline',
+    'run_config_yaml': '''
+      ops: {}
+  
+    ''',
     'started_at': 1751036903.35325,
+    'stats': dict({
+      'expectations': 1,
+      'materializations': 2,
+      'steps_failed': 0,
+      'steps_succeeded': 3,
+    }),
     'status': 'CANCELED',
+    'tags': list([
+      dict({
+        'key': 'dagster/partition',
+        'value': '2024-01-01',
+      }),
+    ]),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_failed_run_json]
@@ -1322,8 +1482,24 @@
     'ended_at': 1757703554.673739,
     'id': '4db16a22-4124-4d43-bd4c-ea0aeaa78172',
     'job_name': 'snowflake_insights_import',
+    'run_config_yaml': '''
+      ops: {}
+  
+    ''',
     'started_at': 1757703550.780887,
+    'stats': dict({
+      'expectations': 1,
+      'materializations': 2,
+      'steps_failed': 0,
+      'steps_succeeded': 3,
+    }),
     'status': 'FAILURE',
+    'tags': list([
+      dict({
+        'key': 'dagster/partition',
+        'value': '2024-01-01',
+      }),
+    ]),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_get_events_json]
@@ -2445,8 +2621,24 @@
     'ended_at': 1757703732.670455,
     'id': '2e562bd3-7e72-4448-9f05-32bad2ea8046',
     'job_name': '__ASSET_JOB',
+    'run_config_yaml': '''
+      ops: {}
+  
+    ''',
     'started_at': 1757703690.474944,
+    'stats': dict({
+      'expectations': 1,
+      'materializations': 2,
+      'steps_failed': 0,
+      'steps_succeeded': 3,
+    }),
     'status': 'SUCCESS',
+    'tags': list([
+      dict({
+        'key': 'dagster/partition',
+        'value': '2024-01-01',
+      }),
+    ]),
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_single_run_text_text]

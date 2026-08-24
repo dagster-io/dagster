@@ -13,6 +13,7 @@ from dagster_rest_resources.__generated__.get_asset_details import (
     GetAssetDetails,
     GetAssetDetailsAssetsOrErrorAssetConnection,
     GetAssetDetailsAssetsOrErrorAssetConnectionNodes,
+    GetAssetDetailsAssetsOrErrorAssetConnectionNodesAssetHealth,
     GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinition,
     GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionAutomationCondition,
     GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionBackfillPolicy,
@@ -101,10 +102,20 @@ def _make_asset_detail_node(
     return GetAssetDetailsAssetsOrErrorAssetConnectionNodes(
         id=id,
         key=GetAssetDetailsAssetsOrErrorAssetConnectionNodesKey(path=path or ["test", "asset"]),
+        latestMaterializationTimestamp=1705311000.0,
+        latestFailedToMaterializeTimestamp=None,
+        assetHealth=GetAssetDetailsAssetsOrErrorAssetConnectionNodesAssetHealth(
+            assetHealth=AssetHealthStatus.HEALTHY,
+            materializationStatus=AssetHealthStatus.HEALTHY,
+            assetChecksStatus=AssetHealthStatus.HEALTHY,
+            freshnessStatus=AssetHealthStatus.HEALTHY,
+        ),
         definition=GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinition(
             description=description,
             groupName=group_name,
+            computeKind="python",
             kinds=kinds or [],
+            freshnessPolicy=None,
             dependencyKeys=[],
             metadataEntries=[],
             automationCondition=None,
@@ -174,6 +185,9 @@ class TestListAssets:
                     GetAssetDetailsAssetsOrErrorAssetConnectionNodes(
                         id="no-def",
                         key=GetAssetDetailsAssetsOrErrorAssetConnectionNodesKey(path=["no", "def"]),
+                        latestMaterializationTimestamp=None,
+                        latestFailedToMaterializeTimestamp=None,
+                        assetHealth=None,
                         definition=None,
                     )
                 ],
@@ -248,10 +262,15 @@ class TestGetAsset:
                     GetAssetDetailsAssetsOrErrorAssetConnectionNodes(
                         id="a1",
                         key=GetAssetDetailsAssetsOrErrorAssetConnectionNodesKey(path=["test/path"]),
+                        latestMaterializationTimestamp=None,
+                        latestFailedToMaterializeTimestamp=None,
+                        assetHealth=None,
                         definition=GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinition(
                             description=None,
                             groupName="grp",
+                            computeKind=None,
                             kinds=[],
+                            freshnessPolicy=None,
                             dependencyKeys=[
                                 GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionDependencyKeys(
                                     path=["dep"]

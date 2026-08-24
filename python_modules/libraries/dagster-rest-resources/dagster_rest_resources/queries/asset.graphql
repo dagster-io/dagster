@@ -1,5 +1,5 @@
-query ListAssetRecords($cursor: String, $limit: Int) {
-  assetRecordsOrError(cursor: $cursor, limit: $limit) {
+query ListAssetRecords($prefix: [String!], $cursor: String, $limit: Int) {
+  assetRecordsOrError(prefix: $prefix, cursor: $cursor, limit: $limit) {
     __typename
     ... on AssetRecordConnection {
       assets {
@@ -16,6 +16,7 @@ query ListAssetRecords($cursor: String, $limit: Int) {
   }
 }
 
+# TODO - consider leaving health out of this query since the dg cli for getting asset details originally had health as a separate query on --status flag
 query GetAssetDetails($assetKeys: [AssetKeyInput!]!) {
   assetsOrError(assetKeys: $assetKeys) {
     __typename
@@ -25,10 +26,23 @@ query GetAssetDetails($assetKeys: [AssetKeyInput!]!) {
         key {
           path
         }
+        latestMaterializationTimestamp
+        latestFailedToMaterializeTimestamp
+        assetHealth {
+          assetHealth
+          materializationStatus
+          assetChecksStatus
+          freshnessStatus
+        }
         definition {
           description
           groupName
+          computeKind
           kinds
+          freshnessPolicy {
+            maximumLagMinutes
+            cronSchedule
+          }
           dependencyKeys {
             path
           }

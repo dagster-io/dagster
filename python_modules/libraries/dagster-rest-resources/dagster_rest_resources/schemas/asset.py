@@ -52,6 +52,24 @@ class DgApiAssetStatus(BaseModel):
     checks_status: DgApiAssetChecksStatus | None
 
 
+class DgApiAssetHealth(BaseModel):
+    """Health summary returned alongside an asset's definition.
+
+    `DgApiAssetStatus` carries the same statuses plus the supporting metadata; this is the
+    lighter shape available without a second request.
+    """
+
+    asset_health: DgApiAssetHealthStatus | None = None
+    materialization_status: DgApiAssetHealthStatus | None = None
+    asset_checks_status: DgApiAssetHealthStatus | None = None
+    freshness_status: DgApiAssetHealthStatus | None = None
+
+
+class DgApiFreshnessPolicy(BaseModel):
+    maximum_lag_minutes: float | None = None
+    cron_schedule: str | None = None
+
+
 class DgApiAutomationCondition(BaseModel):
     label: str | None
     expanded_label: list[str]
@@ -90,6 +108,11 @@ class DgApiAssetBase(BaseModel):
 class DgApiAsset(DgApiAssetBase):
     id: str
     metadata_entries: list[dict]
+    compute_kind: str | None = None
+    latest_materialization_timestamp: float | None = None
+    latest_failed_to_materialize_timestamp: float | None = None
+    health: DgApiAssetHealth | None = None
+    freshness_policy: DgApiFreshnessPolicy | None = None
     # Extended detail fields - populated only for get (single asset)
     partition_definition: DgApiPartitionDefinition | None = None
     backfill_policy: DgApiBackfillPolicy | None = None

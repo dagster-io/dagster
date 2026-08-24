@@ -8,12 +8,27 @@ query GetRun($runId: ID!) {
       startTime
       endTime
       jobName
+      runConfigYaml
+      tags {
+        key
+        value
+      }
+      stats {
+        ... on RunStatsSnapshot {
+          stepsSucceeded
+          stepsFailed
+          materializations
+          expectations
+        }
+      }
     }
     ... on RunNotFoundError {
+      runId
       message
     }
     ... on PythonError {
       message
+      stack
     }
   }
 }
@@ -29,11 +44,19 @@ query ListRuns($filter: RunsFilter, $cursor: String, $limit: Int) {
         startTime
         endTime
         jobName
+        tags {
+          key
+          value
+        }
       }
       count
     }
+    ... on InvalidPipelineRunsFilterError {
+      message
+    }
     ... on PythonError {
       message
+      stack
     }
   }
 }

@@ -20,6 +20,7 @@ from dagster_rest_resources.schemas.asset import (
     DgApiAssetEvent,
     DgApiAssetEventList,
     DgApiAssetFreshnessInfo,
+    DgApiAssetHealth,
     DgApiAssetList,
     DgApiAssetMaterialization,
     DgApiAssetStatus,
@@ -28,6 +29,7 @@ from dagster_rest_resources.schemas.asset import (
     DgApiEvaluationNode,
     DgApiEvaluationRecord,
     DgApiEvaluationRecordList,
+    DgApiFreshnessPolicy,
     DgApiPartitionDefinition,
     DgApiPartitionMapping,
     DgApiPartitionStats,
@@ -45,14 +47,16 @@ class DgApiAssetApi:
         self,
         limit: int = 50,
         cursor: str | None = None,
+        prefix: list[str] | None = None,
     ) -> DgApiAssetList:
-        """List assets with cursor-based pagination."""
+        """List assets with cursor-based pagination, optionally filtered by key prefix."""
         assets: list[DgApiAsset] = []
         next_cursor = cursor
 
         while True:
             remaining = limit - len(assets)
             record_result = self._client.list_asset_records(
+                prefix=prefix,
                 cursor=next_cursor,
                 limit=remaining,
             ).asset_records_or_error
@@ -444,10 +448,29 @@ class DgApiAssetApi:
 
         job_names = definition.job_names if definition.job_names else None
 
+        health = None
+        if node.asset_health:
+            health = DgApiAssetHealth(
+                asset_health=node.asset_health.asset_health,
+                materialization_status=node.asset_health.materialization_status,
+                asset_checks_status=node.asset_health.asset_checks_status,
+                freshness_status=node.asset_health.freshness_status,
+            )
+
+        freshness_policy = None
+        if definition.freshness_policy:
+            freshness_policy = DgApiFreshnessPolicy(
+                maximum_lag_minutes=definition.freshness_policy.maximum_lag_minutes,
+                cron_schedule=definition.freshness_policy.cron_schedule,
+            )
+
         return DgApiAsset(
             id=node.id,
             asset_key=asset_key,
             asset_key_parts=asset_key_parts,
+            compute_kind=definition.compute_kind,
+            latest_materialization_timestamp=node.latest_materialization_timestamp,
+            latest_failed_to_materialize_timestamp=node.latest_failed_to_materialize_timestamp,
             description=definition.description,
             group_name=definition.group_name,
             kinds=list(definition.kinds),
@@ -461,6 +484,8 @@ class DgApiAssetApi:
             tags=tags,
             backfill_policy=backfill_policy,
             job_names=job_names,
+            health=health,
+            freshness_policy=freshness_policy,
         )
 
     def _build_asset_status(

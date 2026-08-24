@@ -7,6 +7,8 @@ from dagster_rest_resources.__generated__.get_run import (
     GetRunRunOrErrorPythonError,
     GetRunRunOrErrorRun,
     GetRunRunOrErrorRunNotFoundError,
+    GetRunRunOrErrorRunStatsRunStatsSnapshot,
+    GetRunRunOrErrorRunTags,
 )
 from dagster_rest_resources.__generated__.input_types import (
     AssetKeyInput,
@@ -39,6 +41,7 @@ from dagster_rest_resources.__generated__.list_runs import (
     ListRunsRunsOrErrorPythonError,
     ListRunsRunsOrErrorRuns,
     ListRunsRunsOrErrorRunsResults,
+    ListRunsRunsOrErrorRunsResultsTags,
 )
 from dagster_rest_resources.api.run import (
     PARTITION_TAG,
@@ -48,6 +51,7 @@ from dagster_rest_resources.api.run import (
     DgApiRunList,
 )
 from dagster_rest_resources.gql_client import DagsterPlusGraphqlError, IGraphQLClient
+from dagster_rest_resources.schemas.run import DgApiRunStats, DgApiRunTag
 
 
 def _make_run_result(
@@ -66,6 +70,15 @@ def _make_run_result(
         startTime=start_time,
         endTime=end_time,
         jobName=job_name,
+        runConfigYaml="ops: {}\n",
+        tags=[GetRunRunOrErrorRunTags(key="dagster/partition", value="2024-01-01")],
+        stats=GetRunRunOrErrorRunStatsRunStatsSnapshot(
+            __typename="RunStatsSnapshot",
+            stepsSucceeded=3,
+            stepsFailed=0,
+            materializations=2,
+            expectations=1,
+        ),
     )
 
 
@@ -83,12 +96,22 @@ class TestGetRun:
             started_at=None,
             ended_at=None,
             job_name="test-job-1",
+            tags=[DgApiRunTag(key="dagster/partition", value="2024-01-01")],
+            run_config_yaml="ops: {}\n",
+            stats=DgApiRunStats(
+                steps_succeeded=3,
+                steps_failed=0,
+                materializations=2,
+                expectations=1,
+            ),
         )
 
     def test_run_not_found_raises(self):
         client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(
-            runOrError=GetRunRunOrErrorRunNotFoundError(__typename="RunNotFoundError", message="")
+            runOrError=GetRunRunOrErrorRunNotFoundError(
+                __typename="RunNotFoundError", runId="run-xyz", message=""
+            )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Run not found"):
             DgApiRunApi(client).get_run("run-xyz")
@@ -96,7 +119,7 @@ class TestGetRun:
     def test_python_error_raises(self):
         client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(
-            runOrError=GetRunRunOrErrorPythonError(__typename="PythonError", message="")
+            runOrError=GetRunRunOrErrorPythonError(__typename="PythonError", message="", stack=[])
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching run"):
             DgApiRunApi(client).get_run("run-xyz")
@@ -117,6 +140,7 @@ def _make_list_run_result(
         startTime=start_time,
         endTime=end_time,
         jobName=job_name,
+        tags=[ListRunsRunsOrErrorRunsResultsTags(key="dagster/partition", value="2024-01-01")],
     )
 
 
@@ -176,15 +200,21 @@ class TestListRuns:
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorInvalidPipelineRunsFilterError(
                 __typename="InvalidPipelineRunsFilterError",
+                message="pipelineName is not a valid filter",
             )
         )
-        with pytest.raises(DagsterPlusGraphqlError, match="Invalid runs filter"):
+        with pytest.raises(
+            DagsterPlusGraphqlError,
+            match="Invalid runs filter: pipelineName is not a valid filter",
+        ):
             DgApiRunApi(client).list_runs()
 
     def test_python_error_raises(self):
         client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
-            runsOrError=ListRunsRunsOrErrorPythonError(__typename="PythonError", message="")
+            runsOrError=ListRunsRunsOrErrorPythonError(
+                __typename="PythonError", message="", stack=[]
+            )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching runs"):
             DgApiRunApi(client).list_runs()

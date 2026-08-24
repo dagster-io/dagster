@@ -3,13 +3,16 @@
     "__typename": "AssetConnection",
     "nodes": [
       {
+        "assetHealth": null,
+        "definition": null,
         "id": "[\"nonexistent-asset\"]",
         "key": {
           "path": [
             "nonexistent-asset"
           ]
         },
-        "definition": null
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
       }
     ]
   }

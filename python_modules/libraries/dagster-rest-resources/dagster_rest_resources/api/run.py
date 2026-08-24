@@ -13,7 +13,13 @@ from dagster_rest_resources.__generated__.input_types import (
 )
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
-from dagster_rest_resources.schemas.run import DgApiRun, DgApiRunLaunchResult, DgApiRunList
+from dagster_rest_resources.schemas.run import (
+    DgApiRun,
+    DgApiRunLaunchResult,
+    DgApiRunList,
+    DgApiRunStats,
+    DgApiRunTag,
+)
 
 PARTITION_TAG = "dagster/partition"
 
@@ -27,6 +33,14 @@ class DgApiRunApi:
 
         match result.typename__:
             case "Run":
+                stats = None
+                if result.stats.typename__ == "RunStatsSnapshot":  # ty: ignore[unresolved-attribute]
+                    stats = DgApiRunStats(
+                        steps_succeeded=result.stats.steps_succeeded,  # ty: ignore[unresolved-attribute]
+                        steps_failed=result.stats.steps_failed,  # ty: ignore[unresolved-attribute]
+                        materializations=result.stats.materializations,  # ty: ignore[unresolved-attribute]
+                        expectations=result.stats.expectations,  # ty: ignore[unresolved-attribute]
+                    )
                 return DgApiRun(
                     id=result.run_id,  # ty: ignore[unresolved-attribute]
                     status=result.status,  # ty: ignore[unresolved-attribute]
@@ -34,6 +48,9 @@ class DgApiRunApi:
                     started_at=result.start_time,  # ty: ignore[unresolved-attribute]
                     ended_at=result.end_time,  # ty: ignore[unresolved-attribute]
                     job_name=result.job_name,  # ty: ignore[unresolved-attribute]
+                    tags=[DgApiRunTag(key=t.key, value=t.value) for t in result.tags],  # ty: ignore[unresolved-attribute]
+                    run_config_yaml=result.run_config_yaml,  # ty: ignore[unresolved-attribute]
+                    stats=stats,
                 )
             case "RunNotFoundError":
                 raise DagsterPlusGraphqlError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
@@ -69,15 +86,14 @@ class DgApiRunApi:
                             started_at=r.start_time,
                             ended_at=r.end_time,
                             job_name=r.job_name,
+                            tags=[DgApiRunTag(key=t.key, value=t.value) for t in r.tags],
                         )
                         for r in result.results  # ty: ignore[unresolved-attribute]
                     ],
                     total=result.count,  # ty: ignore[unresolved-attribute]
                 )
             case "InvalidPipelineRunsFilterError":
-                raise DagsterPlusGraphqlError(
-                    f"Invalid runs filter:\n  statuses: {', '.join(statuses or [])}\n  job_name: {job_name}"
-                )
+                raise DagsterPlusGraphqlError(f"Invalid runs filter: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
                 raise DagsterPlusGraphqlError(f"Error fetching runs: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:

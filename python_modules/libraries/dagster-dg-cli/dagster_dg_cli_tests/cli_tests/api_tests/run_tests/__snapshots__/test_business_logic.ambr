@@ -5,8 +5,11 @@
     'ended_at': 1705311120.0,
     'id': 'canceled-run-789',
     'job_name': 'canceled_pipeline',
+    'run_config_yaml': None,
     'started_at': 1705311060.0,
+    'stats': None,
     'status': 'CANCELED',
+    'tags': None,
   })
 # ---
 # name: TestFormatRun.test_format_canceled_run_text_output[0]
@@ -25,8 +28,11 @@
     'ended_at': 1705311180.0,
     'id': 'failed-run-456',
     'job_name': 'failing_pipeline',
+    'run_config_yaml': None,
     'started_at': 1705311060.0,
+    'stats': None,
     'status': 'FAILURE',
+    'tags': None,
   })
 # ---
 # name: TestFormatRun.test_format_failed_run_text_output[0]
@@ -45,8 +51,11 @@
     'ended_at': None,
     'id': 'minimal-run-123',
     'job_name': None,
+    'run_config_yaml': None,
     'started_at': None,
+    'stats': None,
     'status': 'QUEUED',
+    'tags': None,
   })
 # ---
 # name: TestFormatRun.test_format_minimal_run_text_output[0]
@@ -62,8 +71,11 @@
     'ended_at': 1705311900.0,
     'id': '123e4567-e89b-12d3-a456-426614174000',
     'job_name': 'my_pipeline',
+    'run_config_yaml': None,
     'started_at': 1705311060.0,
+    'stats': None,
     'status': 'SUCCESS',
+    'tags': None,
   })
 # ---
 # name: TestFormatRun.test_format_run_text_output[0]
@@ -106,24 +118,33 @@
         'ended_at': 1705311900.0,
         'id': 'run-001',
         'job_name': 'my_pipeline',
+        'run_config_yaml': None,
         'started_at': 1705311060.0,
+        'stats': None,
         'status': 'SUCCESS',
+        'tags': None,
       }),
       dict({
         'created_at': 1705312000.0,
         'ended_at': 1705312180.0,
         'id': 'run-002',
         'job_name': 'failing_pipeline',
+        'run_config_yaml': None,
         'started_at': 1705312060.0,
+        'stats': None,
         'status': 'FAILURE',
+        'tags': None,
       }),
       dict({
         'created_at': 1705313000.0,
         'ended_at': None,
         'id': 'run-003',
         'job_name': None,
+        'run_config_yaml': None,
         'started_at': None,
+        'stats': None,
         'status': 'QUEUED',
+        'tags': None,
       }),
     ]),
     'total': 3,

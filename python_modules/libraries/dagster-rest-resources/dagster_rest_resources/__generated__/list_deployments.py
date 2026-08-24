@@ -4,7 +4,7 @@
 from pydantic import Field
 
 from .base_model import BaseModel
-from .enums import DagsterCloudDeploymentType
+from .enums import DagsterCloudDeploymentType, DeploymentAgentType, DeploymentStatus
 
 
 class ListDeployments(BaseModel):
@@ -17,6 +17,10 @@ class ListDeploymentsFullDeployments(BaseModel):
     deployment_name: str = Field(alias="deploymentName")
     deployment_id: int = Field(alias="deploymentId")
     deployment_type: DagsterCloudDeploymentType = Field(alias="deploymentType")
+    deployment_status: DeploymentStatus = Field(alias="deploymentStatus")
+    agent_type: DeploymentAgentType = Field(alias="agentType")
+    is_branch_deployment: bool = Field(alias="isBranchDeployment")
+    organization_name: str = Field(alias="organizationName")
 
 
 ListDeployments.model_rebuild()

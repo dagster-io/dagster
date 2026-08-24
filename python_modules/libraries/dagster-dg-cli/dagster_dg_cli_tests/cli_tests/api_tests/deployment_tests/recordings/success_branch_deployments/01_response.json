@@ -2,19 +2,31 @@
   "branchDeployments": {
     "nodes": [
       {
+        "agentType": "HYBRID",
         "deploymentId": 300001,
         "deploymentName": "feature-add-auth",
-        "deploymentType": "BRANCH"
+        "deploymentStatus": "ACTIVE",
+        "deploymentType": "BRANCH",
+        "isBranchDeployment": true,
+        "organizationName": "hooli"
       },
       {
+        "agentType": "HYBRID",
         "deploymentId": 300002,
         "deploymentName": "fix-pipeline-timeout",
-        "deploymentType": "BRANCH"
+        "deploymentStatus": "ACTIVE",
+        "deploymentType": "BRANCH",
+        "isBranchDeployment": true,
+        "organizationName": "hooli"
       },
       {
+        "agentType": "HYBRID",
         "deploymentId": 300003,
         "deploymentName": "refactor-sensors",
-        "deploymentType": "BRANCH"
+        "deploymentStatus": "ACTIVE",
+        "deploymentType": "BRANCH",
+        "isBranchDeployment": true,
+        "organizationName": "hooli"
       }
     ]
   }

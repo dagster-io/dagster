@@ -177,6 +177,7 @@ class Client(BaseClient):
 
     def list_asset_records(
         self,
+        prefix: Union[Optional[list[str]], "UnsetType"] = UNSET,
         cursor: Union[Optional[str], "UnsetType"] = UNSET,
         limit: Union[Optional[int], "UnsetType"] = UNSET,
         **kwargs: Any
@@ -185,8 +186,8 @@ class Client(BaseClient):
 
         query = gql(
             """
-            query ListAssetRecords($cursor: String, $limit: Int) {
-              assetRecordsOrError(cursor: $cursor, limit: $limit) {
+            query ListAssetRecords($prefix: [String!], $cursor: String, $limit: Int) {
+              assetRecordsOrError(prefix: $prefix, cursor: $cursor, limit: $limit) {
                 __typename
                 ... on AssetRecordConnection {
                   assets {
@@ -204,7 +205,11 @@ class Client(BaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"cursor": cursor, "limit": limit}
+        variables: dict[str, object] = {
+            "prefix": prefix,
+            "cursor": cursor,
+            "limit": limit,
+        }
         response = self.execute(
             query=query,
             operation_name="ListAssetRecords",
@@ -230,10 +235,23 @@ class Client(BaseClient):
                     key {
                       path
                     }
+                    latestMaterializationTimestamp
+                    latestFailedToMaterializeTimestamp
+                    assetHealth {
+                      assetHealth
+                      materializationStatus
+                      assetChecksStatus
+                      freshnessStatus
+                    }
                     definition {
                       description
                       groupName
+                      computeKind
                       kinds
+                      freshnessPolicy {
+                        maximumLagMinutes
+                        cronSchedule
+                      }
                       dependencyKeys {
                         path
                       }
@@ -1028,6 +1046,10 @@ class Client(BaseClient):
                 deploymentName
                 deploymentId
                 deploymentType
+                deploymentStatus
+                agentType
+                isBranchDeployment
+                organizationName
               }
             }
             """
@@ -1055,6 +1077,10 @@ class Client(BaseClient):
                   deploymentName
                   deploymentId
                   deploymentType
+                  deploymentStatus
+                  agentType
+                  isBranchDeployment
+                  organizationName
                 }
               }
             }
@@ -1085,6 +1111,10 @@ class Client(BaseClient):
                   deploymentName
                   deploymentId
                   deploymentType
+                  deploymentStatus
+                  agentType
+                  isBranchDeployment
+                  organizationName
                 }
                 ... on DeploymentNotFoundError {
                   message
@@ -1175,6 +1205,10 @@ class Client(BaseClient):
                   deploymentId
                   deploymentName
                   deploymentType
+                  deploymentStatus
+                  agentType
+                  isBranchDeployment
+                  organizationName
                 }
                 ... on PythonError {
                   message
@@ -1805,12 +1839,28 @@ class Client(BaseClient):
                   startTime
                   endTime
                   jobName
+                  runConfigYaml
+                  tags {
+                    key
+                    value
+                  }
+                  stats {
+                    __typename
+                    ... on RunStatsSnapshot {
+                      stepsSucceeded
+                      stepsFailed
+                      materializations
+                      expectations
+                    }
+                  }
                 }
                 ... on RunNotFoundError {
+                  runId
                   message
                 }
                 ... on PythonError {
                   message
+                  stack
                 }
               }
             }
@@ -1845,11 +1895,19 @@ class Client(BaseClient):
                     startTime
                     endTime
                     jobName
+                    tags {
+                      key
+                      value
+                    }
                   }
                   count
                 }
+                ... on InvalidPipelineRunsFilterError {
+                  message
+                }
                 ... on PythonError {
                   message
+                  stack
                 }
               }
             }
