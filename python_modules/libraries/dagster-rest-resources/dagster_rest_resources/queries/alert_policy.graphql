@@ -32,3 +32,346 @@ mutation ReconcileAlertPolicies($document: GenericScalar!) {
     }
   }
 }
+
+fragment AlertPolicyFields on AlertPolicy {
+  id
+  name
+  description
+  tags {
+    key
+    value
+  }
+  eventTypes
+  notificationService {
+    __typename
+    ... on EmailAlertPolicyNotification {
+      emailAddresses
+    }
+    ... on SlackAlertPolicyNotification {
+      slackWorkspaceName
+      slackChannelName
+    }
+    ... on EmailOwnersAlertPolicyNotification {
+      defaultEmailAddresses
+    }
+    ... on MicrosoftTeamsAlertPolicyNotification {
+      webhookUrl
+    }
+    ... on PagerdutyAlertPolicyNotification {
+      integrationKey
+    }
+    ... on WebhookAlertPolicyNotification {
+      webhookUrl
+      bodyTemplate
+    }
+  }
+  enabled
+  alertTargets {
+    __typename
+    ... on AssetGroupTarget {
+      assetGroup
+      locationName
+      repoName
+    }
+    ... on AssetKeyTarget {
+      assetKey {
+        path
+      }
+    }
+    ... on AssetSelectionTarget {
+      assetSelectionString
+    }
+    ... on AssetSelectionViewTarget {
+      view {
+        ... on CatalogView {
+          id
+          name
+        }
+      }
+    }
+    ... on FavoritesSelectionViewTarget {
+      userEmail
+      user {
+        name
+        email
+      }
+      assets {
+        key {
+          path
+        }
+      }
+    }
+    ... on InsightsDeploymentThresholdTarget {
+      metricName
+      threshold
+      selectionPeriodDays
+      operator
+    }
+    ... on InsightsAssetGroupThresholdTarget {
+      metricName
+      threshold
+      selectionPeriodDays
+      operator
+      assetGroup
+      locationName
+      repoName
+    }
+    ... on InsightsAssetThresholdTarget {
+      metricName
+      threshold
+      selectionPeriodDays
+      operator
+      assetKey {
+        path
+      }
+    }
+    ... on InsightsJobThresholdTarget {
+      metricName
+      threshold
+      selectionPeriodDays
+      operator
+      jobName
+      locationName
+      repoName
+    }
+    ... on CreditLimitTarget {
+      creditLimit
+    }
+    ... on LongRunningJobThresholdTarget {
+      thresholdSeconds
+      tags {
+        key
+        value
+      }
+      codeLocationNames
+      jobs {
+        codeLocationName
+        repositoryName
+        jobName
+      }
+    }
+    ... on RunResultTarget {
+      tags {
+        key
+        value
+      }
+      codeLocationNames
+      jobs {
+        codeLocationName
+        repositoryName
+        jobName
+      }
+    }
+    ... on ScheduleSensorTarget {
+      codeLocationNames
+      types
+      schedulesSensors {
+        codeLocationName
+        repositoryName
+        name
+      }
+    }
+    ... on CodeLocationTarget {
+      codeLocationNames
+    }
+  }
+  policyOptions {
+    consecutiveFailureThreshold
+    includeDescriptionInNotification
+    renotifyIntervalMinutes
+  }
+}
+
+fragment AlertNotificationFields on AlertNotification {
+  __typename
+  ... on JobRunAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    jobName
+    codeLocationName
+    repositoryName
+    eventType
+    runId
+  }
+  ... on AssetAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    runId
+    assetsEvents {
+      assetKey {
+        path
+      }
+      eventType
+    }
+  }
+  ... on TickAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    instigatorEvents {
+      instigatorName
+      repositoryName
+      codeLocationName
+      eventType
+    }
+  }
+  ... on AgentAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+  }
+  ... on CodeLocationAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    codeLocationName
+    failureMessage
+  }
+  ... on InsightsAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    metricName
+    computedValue
+  }
+}
+
+fragment RunNotificationFields on RunNotification {
+  __typename
+  ... on JobRunAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    jobName
+    codeLocationName
+    repositoryName
+    eventType
+    runId
+  }
+  ... on AssetAlertNotification {
+    id
+    status
+    sendTimestamp
+    errorMessage
+    alertPolicyId
+    runId
+    assetsEvents {
+      assetKey {
+        path
+      }
+      eventType
+    }
+  }
+}
+
+query ListAlertPolicies {
+  alertPolicies {
+    ...AlertPolicyFields
+  }
+}
+
+query GetAlertPolicy($alertPolicyId: String!) {
+  alertPolicyById(alertPolicyId: $alertPolicyId) {
+    ...AlertPolicyFields
+  }
+}
+
+query GetAlertPoliciesForJob(
+  $jobName: String!
+  $repositoryName: String!
+  $repositoryLocationName: String!
+) {
+  alertPoliciesForJob(
+    jobName: $jobName
+    repositoryName: $repositoryName
+    repositoryLocationName: $repositoryLocationName
+  ) {
+    ...AlertPolicyFields
+  }
+}
+
+query GetAlertPolicyNotifications(
+  $alertPolicyId: String!
+  $limit: Int!
+  $cursor: String
+) {
+  alertPolicyNotifications(
+    alertPolicyId: $alertPolicyId
+    limit: $limit
+    cursor: $cursor
+  ) {
+    results {
+      ...AlertNotificationFields
+    }
+    cursor
+    hasMore
+  }
+}
+
+query GetRunAlertNotifications($runId: String!, $limit: Int) {
+  runNotificationsOrError(runId: $runId, limit: $limit) {
+    __typename
+    ... on RunNotifications {
+      notifications {
+        ...RunNotificationFields
+      }
+      alertPolicies {
+        ...AlertPolicyFields
+      }
+    }
+    ... on RunNotificationsExpiredError {
+      message
+    }
+  }
+}
+
+mutation CreateOrUpdateAlertPolicy($document: GenericScalar!) {
+  createOrUpdateAlertPolicyFromDocument(document: $document) {
+    __typename
+    ... on AlertPolicy {
+      ...AlertPolicyFields
+    }
+    ... on InvalidAlertPolicyError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+mutation DeleteAlertPolicy($alertPolicyName: String!) {
+  deleteAlertPolicy(alertPolicyName: $alertPolicyName) {
+    __typename
+    ... on DeleteAlertPolicySuccess {
+      alertPolicyName
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}

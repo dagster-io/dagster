@@ -6,7 +6,294 @@ from typing import Annotated, Literal, Optional, Union
 from pydantic import Field
 
 from .base_model import BaseModel
-from .enums import IssueStatus, RunStatus
+from .enums import (
+    AlertPolicyEventType,
+    InsightsAlertComparisonOperator,
+    InstigatorType,
+    IssueStatus,
+    RunStatus,
+)
+
+
+class AlertPolicyFields(BaseModel):
+    id: str
+    name: str
+    description: str
+    tags: Optional[list["AlertPolicyFieldsTags"]]
+    event_types: list[AlertPolicyEventType] = Field(alias="eventTypes")
+    notification_service: Union[
+        "AlertPolicyFieldsNotificationServiceEmailAlertPolicyNotification",
+        "AlertPolicyFieldsNotificationServiceSlackAlertPolicyNotification",
+        "AlertPolicyFieldsNotificationServiceEmailOwnersAlertPolicyNotification",
+        "AlertPolicyFieldsNotificationServiceMicrosoftTeamsAlertPolicyNotification",
+        "AlertPolicyFieldsNotificationServicePagerdutyAlertPolicyNotification",
+        "AlertPolicyFieldsNotificationServiceWebhookAlertPolicyNotification",
+    ] = Field(alias="notificationService", discriminator="typename__")
+    enabled: bool
+    alert_targets: list[
+        Annotated[
+            Union[
+                "AlertPolicyFieldsAlertTargetsAssetGroupTarget",
+                "AlertPolicyFieldsAlertTargetsAssetKeyTarget",
+                "AlertPolicyFieldsAlertTargetsAssetSelectionTarget",
+                "AlertPolicyFieldsAlertTargetsAssetSelectionViewTarget",
+                "AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTarget",
+                "AlertPolicyFieldsAlertTargetsInsightsDeploymentThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsInsightsAssetGroupThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsInsightsAssetThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsInsightsJobThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsMetricMonitorFavoritesThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionViewThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsCreditLimitTarget",
+                "AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsRunResultTarget",
+                "AlertPolicyFieldsAlertTargetsScheduleSensorTarget",
+                "AlertPolicyFieldsAlertTargetsCodeLocationTarget",
+            ],
+            Field(discriminator="typename__"),
+        ]
+    ] = Field(alias="alertTargets")
+    policy_options: "AlertPolicyFieldsPolicyOptions" = Field(alias="policyOptions")
+
+
+class AlertPolicyFieldsTags(BaseModel):
+    key: str
+    value: Optional[str]
+
+
+class AlertPolicyFieldsNotificationServiceEmailAlertPolicyNotification(BaseModel):
+    typename__: Literal["EmailAlertPolicyNotification"] = Field(alias="__typename")
+    email_addresses: list[str] = Field(alias="emailAddresses")
+
+
+class AlertPolicyFieldsNotificationServiceSlackAlertPolicyNotification(BaseModel):
+    typename__: Literal["SlackAlertPolicyNotification"] = Field(alias="__typename")
+    slack_workspace_name: str = Field(alias="slackWorkspaceName")
+    slack_channel_name: str = Field(alias="slackChannelName")
+
+
+class AlertPolicyFieldsNotificationServiceEmailOwnersAlertPolicyNotification(BaseModel):
+    typename__: Literal["EmailOwnersAlertPolicyNotification"] = Field(
+        alias="__typename"
+    )
+    default_email_addresses: list[str] = Field(alias="defaultEmailAddresses")
+
+
+class AlertPolicyFieldsNotificationServiceMicrosoftTeamsAlertPolicyNotification(
+    BaseModel
+):
+    typename__: Literal["MicrosoftTeamsAlertPolicyNotification"] = Field(
+        alias="__typename"
+    )
+    webhook_url: str = Field(alias="webhookUrl")
+
+
+class AlertPolicyFieldsNotificationServicePagerdutyAlertPolicyNotification(BaseModel):
+    typename__: Literal["PagerdutyAlertPolicyNotification"] = Field(alias="__typename")
+    integration_key: str = Field(alias="integrationKey")
+
+
+class AlertPolicyFieldsNotificationServiceWebhookAlertPolicyNotification(BaseModel):
+    typename__: Literal["WebhookAlertPolicyNotification"] = Field(alias="__typename")
+    webhook_url: str = Field(alias="webhookUrl")
+    body_template: str = Field(alias="bodyTemplate")
+
+
+class AlertPolicyFieldsAlertTargetsAssetGroupTarget(BaseModel):
+    typename__: Literal["AssetGroupTarget"] = Field(alias="__typename")
+    asset_group: str = Field(alias="assetGroup")
+    location_name: str = Field(alias="locationName")
+    repo_name: Optional[str] = Field(alias="repoName")
+
+
+class AlertPolicyFieldsAlertTargetsAssetKeyTarget(BaseModel):
+    typename__: Literal["AssetKeyTarget"] = Field(alias="__typename")
+    asset_key: "AlertPolicyFieldsAlertTargetsAssetKeyTargetAssetKey" = Field(
+        alias="assetKey"
+    )
+
+
+class AlertPolicyFieldsAlertTargetsAssetKeyTargetAssetKey(BaseModel):
+    path: list[str]
+
+
+class AlertPolicyFieldsAlertTargetsAssetSelectionTarget(BaseModel):
+    typename__: Literal["AssetSelectionTarget"] = Field(alias="__typename")
+    asset_selection_string: str = Field(alias="assetSelectionString")
+
+
+class AlertPolicyFieldsAlertTargetsAssetSelectionViewTarget(BaseModel):
+    typename__: Literal["AssetSelectionViewTarget"] = Field(alias="__typename")
+    view: Optional["AlertPolicyFieldsAlertTargetsAssetSelectionViewTargetView"]
+
+
+class AlertPolicyFieldsAlertTargetsAssetSelectionViewTargetView(BaseModel):
+    id: str
+    name: str
+
+
+class AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTarget(BaseModel):
+    typename__: Literal["FavoritesSelectionViewTarget"] = Field(alias="__typename")
+    user_email: str = Field(alias="userEmail")
+    user: Optional["AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTargetUser"]
+    assets: list["AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTargetAssets"]
+
+
+class AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTargetUser(BaseModel):
+    name: Optional[str]
+    email: str
+
+
+class AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTargetAssets(BaseModel):
+    key: "AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTargetAssetsKey"
+
+
+class AlertPolicyFieldsAlertTargetsFavoritesSelectionViewTargetAssetsKey(BaseModel):
+    path: list[str]
+
+
+class AlertPolicyFieldsAlertTargetsInsightsDeploymentThresholdTarget(BaseModel):
+    typename__: Literal["InsightsDeploymentThresholdTarget"] = Field(alias="__typename")
+    metric_name: str = Field(alias="metricName")
+    threshold: float
+    selection_period_days: int = Field(alias="selectionPeriodDays")
+    operator: InsightsAlertComparisonOperator
+
+
+class AlertPolicyFieldsAlertTargetsInsightsAssetGroupThresholdTarget(BaseModel):
+    typename__: Literal["InsightsAssetGroupThresholdTarget"] = Field(alias="__typename")
+    metric_name: str = Field(alias="metricName")
+    threshold: float
+    selection_period_days: int = Field(alias="selectionPeriodDays")
+    operator: InsightsAlertComparisonOperator
+    asset_group: str = Field(alias="assetGroup")
+    location_name: str = Field(alias="locationName")
+    repo_name: Optional[str] = Field(alias="repoName")
+
+
+class AlertPolicyFieldsAlertTargetsInsightsAssetThresholdTarget(BaseModel):
+    typename__: Literal["InsightsAssetThresholdTarget"] = Field(alias="__typename")
+    metric_name: str = Field(alias="metricName")
+    threshold: float
+    selection_period_days: int = Field(alias="selectionPeriodDays")
+    operator: InsightsAlertComparisonOperator
+    asset_key: "AlertPolicyFieldsAlertTargetsInsightsAssetThresholdTargetAssetKey" = (
+        Field(alias="assetKey")
+    )
+
+
+class AlertPolicyFieldsAlertTargetsInsightsAssetThresholdTargetAssetKey(BaseModel):
+    path: list[str]
+
+
+class AlertPolicyFieldsAlertTargetsInsightsJobThresholdTarget(BaseModel):
+    typename__: Literal["InsightsJobThresholdTarget"] = Field(alias="__typename")
+    metric_name: str = Field(alias="metricName")
+    threshold: float
+    selection_period_days: int = Field(alias="selectionPeriodDays")
+    operator: InsightsAlertComparisonOperator
+    job_name: str = Field(alias="jobName")
+    location_name: str = Field(alias="locationName")
+    repo_name: Optional[str] = Field(alias="repoName")
+
+
+class AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionThresholdTarget(
+    BaseModel
+):
+    typename__: Literal["MetricMonitorAssetSelectionThresholdTarget"] = Field(
+        alias="__typename"
+    )
+
+
+class AlertPolicyFieldsAlertTargetsMetricMonitorFavoritesThresholdTarget(BaseModel):
+    typename__: Literal["MetricMonitorFavoritesThresholdTarget"] = Field(
+        alias="__typename"
+    )
+
+
+class AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionViewThresholdTarget(
+    BaseModel
+):
+    typename__: Literal["MetricMonitorAssetSelectionViewThresholdTarget"] = Field(
+        alias="__typename"
+    )
+
+
+class AlertPolicyFieldsAlertTargetsCreditLimitTarget(BaseModel):
+    typename__: Literal["CreditLimitTarget"] = Field(alias="__typename")
+    credit_limit: int = Field(alias="creditLimit")
+
+
+class AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTarget(BaseModel):
+    typename__: Literal["LongRunningJobThresholdTarget"] = Field(alias="__typename")
+    threshold_seconds: float = Field(alias="thresholdSeconds")
+    tags: Optional[
+        list["AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTargetTags"]
+    ]
+    code_location_names: Optional[list[str]] = Field(alias="codeLocationNames")
+    jobs: Optional[
+        list["AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTargetJobs"]
+    ]
+
+
+class AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTargetTags(BaseModel):
+    key: str
+    value: Optional[str]
+
+
+class AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTargetJobs(BaseModel):
+    code_location_name: str = Field(alias="codeLocationName")
+    repository_name: str = Field(alias="repositoryName")
+    job_name: str = Field(alias="jobName")
+
+
+class AlertPolicyFieldsAlertTargetsRunResultTarget(BaseModel):
+    typename__: Literal["RunResultTarget"] = Field(alias="__typename")
+    tags: Optional[list["AlertPolicyFieldsAlertTargetsRunResultTargetTags"]]
+    code_location_names: Optional[list[str]] = Field(alias="codeLocationNames")
+    jobs: Optional[list["AlertPolicyFieldsAlertTargetsRunResultTargetJobs"]]
+
+
+class AlertPolicyFieldsAlertTargetsRunResultTargetTags(BaseModel):
+    key: str
+    value: Optional[str]
+
+
+class AlertPolicyFieldsAlertTargetsRunResultTargetJobs(BaseModel):
+    code_location_name: str = Field(alias="codeLocationName")
+    repository_name: str = Field(alias="repositoryName")
+    job_name: str = Field(alias="jobName")
+
+
+class AlertPolicyFieldsAlertTargetsScheduleSensorTarget(BaseModel):
+    typename__: Literal["ScheduleSensorTarget"] = Field(alias="__typename")
+    code_location_names: Optional[list[str]] = Field(alias="codeLocationNames")
+    types: Optional[list[InstigatorType]]
+    schedules_sensors: Optional[
+        list["AlertPolicyFieldsAlertTargetsScheduleSensorTargetSchedulesSensors"]
+    ] = Field(alias="schedulesSensors")
+
+
+class AlertPolicyFieldsAlertTargetsScheduleSensorTargetSchedulesSensors(BaseModel):
+    code_location_name: str = Field(alias="codeLocationName")
+    repository_name: str = Field(alias="repositoryName")
+    name: str
+
+
+class AlertPolicyFieldsAlertTargetsCodeLocationTarget(BaseModel):
+    typename__: Literal["CodeLocationTarget"] = Field(alias="__typename")
+    code_location_names: Optional[list[str]] = Field(alias="codeLocationNames")
+
+
+class AlertPolicyFieldsPolicyOptions(BaseModel):
+    consecutive_failure_threshold: Optional[int] = Field(
+        alias="consecutiveFailureThreshold"
+    )
+    include_description_in_notification: Optional[bool] = Field(
+        alias="includeDescriptionInNotification"
+    )
+    renotify_interval_minutes: Optional[int] = Field(alias="renotifyIntervalMinutes")
 
 
 class IssueFields(BaseModel):
@@ -82,5 +369,6 @@ class SecretFieldsUpdatedBy(BaseModel):
     email: str
 
 
+AlertPolicyFields.model_rebuild()
 IssueFields.model_rebuild()
 SecretFields.model_rebuild()
