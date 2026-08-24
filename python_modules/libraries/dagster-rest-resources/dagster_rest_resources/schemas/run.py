@@ -36,3 +36,21 @@ class DgApiRunList(DgApiTruncatedList[DgApiRun]):
 class DgApiRunLaunchResult(BaseModel):
     run_id: str
     status: DgApiRunStatus
+
+
+class DgApiRunTerminateResult(BaseModel):
+    run_id: str
+    status: DgApiRunStatus
+
+
+class DgApiRunReexecuteResult(BaseModel):
+    run_id: str
+    status: DgApiRunStatus
+    job_name: str
+    root_run_id: str | None = None
+    parent_run_id: str | None = None
+
+
+class DgApiBackfillReexecuteResult(BaseModel):
+    backfill_id: str
+    launched_run_ids: list[str] = []

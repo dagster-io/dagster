@@ -1,7 +1,11 @@
 from unittest.mock import Mock
 
 import pytest
-from dagster_rest_resources.__generated__.enums import EvaluationErrorReason, RunStatus
+from dagster_rest_resources.__generated__.enums import (
+    EvaluationErrorReason,
+    ReexecutionStrategy,
+    RunStatus,
+)
 from dagster_rest_resources.__generated__.get_run import (
     GetRun,
     GetRunRunOrErrorPythonError,
@@ -43,6 +47,22 @@ from dagster_rest_resources.__generated__.list_runs import (
     ListRunsRunsOrErrorRunsResults,
     ListRunsRunsOrErrorRunsResultsTags,
 )
+from dagster_rest_resources.__generated__.rerun_backfill import (
+    RerunBackfill,
+    RerunBackfillReexecutePartitionBackfillLaunchBackfillSuccess,
+)
+from dagster_rest_resources.__generated__.rerun_run import (
+    RerunRun,
+    RerunRunLaunchRunReexecutionInvalidStepError,
+    RerunRunLaunchRunReexecutionLaunchRunSuccess,
+    RerunRunLaunchRunReexecutionLaunchRunSuccessRun,
+)
+from dagster_rest_resources.__generated__.terminate_run import (
+    TerminateRun,
+    TerminateRunTerminateRunTerminateRunFailure,
+    TerminateRunTerminateRunTerminateRunSuccess,
+    TerminateRunTerminateRunTerminateRunSuccessRun,
+)
 from dagster_rest_resources.api.run import (
     PARTITION_TAG,
     DgApiRun,
@@ -51,7 +71,7 @@ from dagster_rest_resources.api.run import (
     DgApiRunList,
 )
 from dagster_rest_resources.gql_client import DagsterPlusGraphqlError, IGraphQLClient
-from dagster_rest_resources.schemas.run import DgApiRunStats, DgApiRunTag
+from dagster_rest_resources.schemas.run import DgApiRunStats, DgApiRunTag, DgApiRunTerminateResult
 
 
 def _make_run_result(
@@ -438,3 +458,92 @@ class TestLaunchRun:
         client.launch_run.return_value = LaunchRun(launchRun=error_obj)
         with pytest.raises(DagsterPlusGraphqlError, match=match):
             DgApiRunApi(client).create_run(**_launch_args())
+
+
+class TestActionTerminateRun:
+    def test_returns_terminated_run(self):
+        client = Mock(spec=IGraphQLClient)
+        client.terminate_run.return_value = TerminateRun(
+            terminateRun=TerminateRunTerminateRunTerminateRunSuccess(
+                __typename="TerminateRunSuccess",
+                run=TerminateRunTerminateRunTerminateRunSuccessRun(
+                    runId="run-1", status=RunStatus.CANCELED
+                ),
+            )
+        )
+
+        result = DgApiRunApi(client).action_terminate_run("run-1")
+
+        assert result == DgApiRunTerminateResult(run_id="run-1", status=RunStatus.CANCELED)
+        client.terminate_run.assert_called_once_with(run_id="run-1")
+
+    def test_failure_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.terminate_run.return_value = TerminateRun(
+            terminateRun=TerminateRunTerminateRunTerminateRunFailure(
+                __typename="TerminateRunFailure", message="already finished"
+            )
+        )
+
+        with pytest.raises(DagsterPlusGraphqlError, match="Could not terminate run"):
+            DgApiRunApi(client).action_terminate_run("run-1")
+
+
+class TestActionReexecuteRun:
+    def test_returns_new_run(self):
+        client = Mock(spec=IGraphQLClient)
+        client.rerun_run.return_value = RerunRun(
+            launchRunReexecution=RerunRunLaunchRunReexecutionLaunchRunSuccess(
+                __typename="LaunchRunSuccess",
+                run=RerunRunLaunchRunReexecutionLaunchRunSuccessRun(
+                    runId="run-2",
+                    status=RunStatus.STARTED,
+                    jobName="my_job",
+                    rootRunId="run-1",
+                    parentRunId="run-1",
+                ),
+            )
+        )
+
+        result = DgApiRunApi(client).action_reexecute_run(
+            "run-1", use_parent_run_tags=True, extra_tags={"retry": "1"}
+        )
+
+        assert result.run_id == "run-2"
+        assert result.parent_run_id == "run-1"
+        params = client.rerun_run.call_args.kwargs["reexecution_params"]
+        assert params.parent_run_id == "run-1"
+        assert params.strategy == ReexecutionStrategy.FROM_FAILURE
+        assert params.use_parent_run_tags is True
+        assert [(t.key, t.value) for t in params.extra_tags] == [("retry", "1")]
+
+    def test_reports_the_failing_union_member(self):
+        client = Mock(spec=IGraphQLClient)
+        client.rerun_run.return_value = RerunRun(
+            launchRunReexecution=RerunRunLaunchRunReexecutionInvalidStepError(
+                __typename="InvalidStepError", invalidStepKey="my_op"
+            )
+        )
+
+        with pytest.raises(
+            DagsterPlusGraphqlError, match="Error re-executing run: InvalidStepError: my_op"
+        ):
+            DgApiRunApi(client).action_reexecute_run("run-1")
+
+
+class TestActionReexecuteBackfill:
+    def test_returns_backfill_and_launched_runs(self):
+        client = Mock(spec=IGraphQLClient)
+        client.rerun_backfill.return_value = RerunBackfill(
+            reexecutePartitionBackfill=RerunBackfillReexecutePartitionBackfillLaunchBackfillSuccess(
+                __typename="LaunchBackfillSuccess",
+                backfillId="backfill-1",
+                launchedRunIds=["run-1", None, "run-2"],
+            )
+        )
+
+        result = DgApiRunApi(client).action_reexecute_backfill("backfill-0")
+
+        assert result.backfill_id == "backfill-1"
+        # graphql types the list as nullable entries; the nulls are dropped
+        assert result.launched_run_ids == ["run-1", "run-2"]

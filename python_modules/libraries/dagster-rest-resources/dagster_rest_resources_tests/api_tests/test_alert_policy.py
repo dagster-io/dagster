@@ -358,7 +358,8 @@ class TestNotificationServiceKinds:
             ),
             (
                 AlertPolicyFieldsNotificationServicePagerdutyAlertPolicyNotification(
-                    __typename="PagerdutyAlertPolicyNotification", integrationKey="abc123"
+                    __typename="PagerdutyAlertPolicyNotification",
+                    integrationKey="abc123",
                 ),
                 DgApiPagerdutyNotification(integration_key="abc123"),
             ),

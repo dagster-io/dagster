@@ -15,7 +15,12 @@ if TYPE_CHECKING:
     from .delete_alert_policy import DeleteAlertPolicy
     from .delete_code_location import DeleteCodeLocation
     from .delete_deployment import DeleteDeployment
-    from .enums import InstigationTickStatus, IssueStatus, PullRequestStatus
+    from .enums import (
+        InstigationTickStatus,
+        IssueStatus,
+        PullRequestStatus,
+        TerminateRunPolicy,
+    )
     from .get_alert_policies_for_job import GetAlertPoliciesForJob
     from .get_alert_policy import GetAlertPolicy
     from .get_alert_policy_notifications import GetAlertPolicyNotifications
@@ -48,6 +53,7 @@ if TYPE_CHECKING:
         IssueLinkedObjectInput,
         IssuesFilter,
         OrganizationSettingsInput,
+        ReexecutionParams,
         RepositorySelector,
         RunsFilter,
         ScheduleSelector,
@@ -75,7 +81,10 @@ if TYPE_CHECKING:
     from .list_sensors import ListSensors
     from .reconcile_alert_policies import ReconcileAlertPolicies
     from .remove_link_from_issue import RemoveLinkFromIssue
+    from .rerun_backfill import RerunBackfill
+    from .rerun_run import RerunRun
     from .set_deployment_settings import SetDeploymentSettings
+    from .terminate_run import TerminateRun
     from .update_issue import UpdateIssue
     from .update_organization_settings import UpdateOrganizationSettings
 
@@ -3042,6 +3051,172 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return ListRuns.model_validate(data)
+
+    def terminate_run(
+        self,
+        run_id: str,
+        terminate_policy: Union[Optional["TerminateRunPolicy"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "TerminateRun":
+        from .terminate_run import TerminateRun
+
+        query = gql(
+            """
+            mutation TerminateRun($runId: String!, $terminatePolicy: TerminateRunPolicy) {
+              terminateRun(runId: $runId, terminatePolicy: $terminatePolicy) {
+                __typename
+                ... on TerminateRunSuccess {
+                  run {
+                    runId
+                    status
+                  }
+                }
+                ... on TerminateRunFailure {
+                  message
+                }
+                ... on RunNotFoundError {
+                  runId
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "runId": run_id,
+            "terminatePolicy": terminate_policy,
+        }
+        response = self.execute(
+            query=query, operation_name="TerminateRun", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return TerminateRun.model_validate(data)
+
+    def rerun_run(
+        self, reexecution_params: "ReexecutionParams", **kwargs: Any
+    ) -> "RerunRun":
+        from .rerun_run import RerunRun
+
+        query = gql(
+            """
+            mutation RerunRun($reexecutionParams: ReexecutionParams!) {
+              launchRunReexecution(reexecutionParams: $reexecutionParams) {
+                __typename
+                ... on LaunchRunSuccess {
+                  run {
+                    runId
+                    status
+                    jobName
+                    rootRunId
+                    parentRunId
+                  }
+                }
+                ... on RunConfigValidationInvalid {
+                  errors {
+                    __typename
+                    message
+                    reason
+                  }
+                }
+                ... on PipelineNotFoundError {
+                  pipelineName
+                  message
+                }
+                ... on InvalidStepError {
+                  invalidStepKey
+                }
+                ... on InvalidOutputError {
+                  stepKey
+                  invalidOutputName
+                }
+                ... on InvalidSubsetError {
+                  message
+                }
+                ... on RunConflict {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"reexecutionParams": reexecution_params}
+        response = self.execute(
+            query=query, operation_name="RerunRun", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return RerunRun.model_validate(data)
+
+    def rerun_backfill(
+        self,
+        reexecution_params: Union[Optional["ReexecutionParams"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "RerunBackfill":
+        from .rerun_backfill import RerunBackfill
+
+        query = gql(
+            """
+            mutation RerunBackfill($reexecutionParams: ReexecutionParams) {
+              reexecutePartitionBackfill(reexecutionParams: $reexecutionParams) {
+                __typename
+                ... on LaunchBackfillSuccess {
+                  backfillId
+                  launchedRunIds
+                }
+                ... on RunConfigValidationInvalid {
+                  errors {
+                    __typename
+                    message
+                    reason
+                  }
+                }
+                ... on PipelineNotFoundError {
+                  pipelineName
+                  message
+                }
+                ... on InvalidStepError {
+                  invalidStepKey
+                }
+                ... on InvalidOutputError {
+                  stepKey
+                  invalidOutputName
+                }
+                ... on InvalidSubsetError {
+                  message
+                }
+                ... on RunConflict {
+                  message
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"reexecutionParams": reexecution_params}
+        response = self.execute(
+            query=query, operation_name="RerunBackfill", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return RerunBackfill.model_validate(data)
 
     def get_run_events(
         self,

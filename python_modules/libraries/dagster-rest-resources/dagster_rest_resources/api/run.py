@@ -1,27 +1,65 @@
 from dataclasses import dataclass
+from typing import Any
 
 from typing_extensions import assert_never
 
-from dagster_rest_resources.__generated__.enums import RunStatus
+from dagster_rest_resources.__generated__.enums import ReexecutionStrategy, RunStatus
 from dagster_rest_resources.__generated__.input_types import (
     AssetKeyInput,
     ExecutionMetadata,
     ExecutionParams,
     ExecutionTag,
     JobOrPipelineSelector,
+    ReexecutionParams,
     RunsFilter,
 )
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 from dagster_rest_resources.schemas.run import (
+    DgApiBackfillReexecuteResult,
     DgApiRun,
     DgApiRunLaunchResult,
     DgApiRunList,
+    DgApiRunReexecuteResult,
     DgApiRunStats,
     DgApiRunTag,
+    DgApiRunTerminateResult,
 )
 
 PARTITION_TAG = "dagster/partition"
+
+
+def _reexecution_params(
+    *,
+    parent_run_id: str,
+    strategy: ReexecutionStrategy,
+    use_parent_run_tags: bool | None,
+    extra_tags: dict[str, str] | None,
+) -> ReexecutionParams:
+    return ReexecutionParams(
+        parentRunId=parent_run_id,
+        strategy=strategy,
+        useParentRunTags=use_parent_run_tags,
+        extraTags=(
+            [ExecutionTag(key=k, value=v) for k, v in extra_tags.items()] if extra_tags else None
+        ),
+    )
+
+
+def _reexecution_error(result: Any) -> str:
+    """Describe a re-execution failure.
+
+    Both mutations can fail as any of a dozen union members, most carrying a message and a
+    few carrying only a step or output name, so this reports whichever is present.
+    """
+    for attr in ("message", "invalid_step_key", "invalid_output_name", "preset"):
+        value = getattr(result, attr, None)
+        if value:
+            return f"{result.typename__}: {value}"
+    errors = getattr(result, "errors", None)
+    if errors:
+        return f"{result.typename__}: " + "; ".join(e.message for e in errors)
+    return str(result.typename__)
 
 
 @dataclass(frozen=True)
@@ -175,3 +213,84 @@ class DgApiRunApi:
                 raise DagsterPlusGraphqlError(f"Error launching run: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
+
+    def action_terminate_run(self, run_id: str) -> DgApiRunTerminateResult:
+        result = self._client.terminate_run(run_id=run_id).terminate_run
+
+        match result.typename__:
+            case "TerminateRunSuccess":
+                return DgApiRunTerminateResult(
+                    run_id=result.run.run_id,  # ty: ignore[unresolved-attribute]
+                    status=result.run.status,  # ty: ignore[unresolved-attribute]
+                )
+            case "TerminateRunFailure":
+                raise DagsterPlusGraphqlError(f"Could not terminate run: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "RunNotFoundError":
+                raise DagsterPlusGraphqlError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "UnauthorizedError":
+                raise DagsterPlusGraphqlError(f"Unauthorized: {result.message}")  # ty: ignore[unresolved-attribute]
+            case "PythonError":
+                raise DagsterPlusGraphqlError(f"Error terminating run: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def action_reexecute_run(
+        self,
+        parent_run_id: str,
+        strategy: ReexecutionStrategy = ReexecutionStrategy.FROM_FAILURE,
+        use_parent_run_tags: bool | None = None,
+        extra_tags: dict[str, str] | None = None,
+    ) -> DgApiRunReexecuteResult:
+        result = self._client.rerun_run(
+            reexecution_params=_reexecution_params(
+                parent_run_id=parent_run_id,
+                strategy=strategy,
+                use_parent_run_tags=use_parent_run_tags,
+                extra_tags=extra_tags,
+            )
+        ).launch_run_reexecution
+
+        match result.typename__:
+            case "LaunchRunSuccess":
+                return DgApiRunReexecuteResult(
+                    run_id=result.run.run_id,  # ty: ignore[unresolved-attribute]
+                    status=result.run.status,  # ty: ignore[unresolved-attribute]
+                    job_name=result.run.job_name,  # ty: ignore[unresolved-attribute]
+                    root_run_id=result.run.root_run_id,  # ty: ignore[unresolved-attribute]
+                    parent_run_id=result.run.parent_run_id,  # ty: ignore[unresolved-attribute]
+                )
+            case _:
+                raise DagsterPlusGraphqlError(
+                    f"Error re-executing run: {_reexecution_error(result)}"
+                )
+
+    def action_reexecute_backfill(
+        self,
+        parent_run_id: str,
+        strategy: ReexecutionStrategy = ReexecutionStrategy.FROM_FAILURE,
+        use_parent_run_tags: bool | None = None,
+        extra_tags: dict[str, str] | None = None,
+    ) -> DgApiBackfillReexecuteResult:
+        result = self._client.rerun_backfill(
+            reexecution_params=_reexecution_params(
+                parent_run_id=parent_run_id,
+                strategy=strategy,
+                use_parent_run_tags=use_parent_run_tags,
+                extra_tags=extra_tags,
+            )
+        ).reexecute_partition_backfill
+
+        match result.typename__:
+            case "LaunchBackfillSuccess":
+                return DgApiBackfillReexecuteResult(
+                    backfill_id=result.backfill_id,  # ty: ignore[unresolved-attribute]
+                    launched_run_ids=[
+                        run_id
+                        for run_id in (result.launched_run_ids or [])  # ty: ignore[unresolved-attribute]
+                        if run_id is not None
+                    ],
+                )
+            case _:
+                raise DagsterPlusGraphqlError(
+                    f"Error re-executing backfill: {_reexecution_error(result)}"
+                )
