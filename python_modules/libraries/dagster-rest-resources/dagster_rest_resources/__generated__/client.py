@@ -1257,6 +1257,10 @@ class Client(BaseClient):
                 ... on Run {
                   __typename
                   id
+                  status
+                  jobName
+                  startTime
+                  endTime
                 }
                 ... on Asset {
                   __typename
@@ -1269,10 +1273,12 @@ class Client(BaseClient):
                 ... on DagsterCloudUser {
                   __typename
                   displayName
+                  email
                 }
                 ... on ServiceUser {
                   __typename
                   displayName
+                  description
                 }
               }
             }
@@ -1325,6 +1331,10 @@ class Client(BaseClient):
                 ... on Run {
                   __typename
                   id
+                  status
+                  jobName
+                  startTime
+                  endTime
                 }
                 ... on Asset {
                   __typename
@@ -1337,10 +1347,12 @@ class Client(BaseClient):
                 ... on DagsterCloudUser {
                   __typename
                   displayName
+                  email
                 }
                 ... on ServiceUser {
                   __typename
                   displayName
+                  description
                 }
               }
             }
@@ -1362,14 +1374,20 @@ class Client(BaseClient):
         title: str,
         description: str,
         status: Union[Optional["IssueStatus"], "UnsetType"] = UNSET,
+        origin: Union[Optional["IssueLinkedObjectInput"], "UnsetType"] = UNSET,
         **kwargs: Any
     ) -> "CreateIssue":
         from .create_issue import CreateIssue
 
         query = gql(
             """
-            mutation CreateIssue($title: String!, $description: String!, $status: IssueStatus) {
-              createIssue(title: $title, description: $description, status: $status) {
+            mutation CreateIssue($title: String!, $description: String!, $status: IssueStatus, $origin: IssueLinkedObjectInput) {
+              createIssue(
+                title: $title
+                description: $description
+                status: $status
+                origin: $origin
+              ) {
                 __typename
                 ... on CreateIssueSuccess {
                   issue {
@@ -1395,6 +1413,10 @@ class Client(BaseClient):
                 ... on Run {
                   __typename
                   id
+                  status
+                  jobName
+                  startTime
+                  endTime
                 }
                 ... on Asset {
                   __typename
@@ -1407,10 +1429,12 @@ class Client(BaseClient):
                 ... on DagsterCloudUser {
                   __typename
                   displayName
+                  email
                 }
                 ... on ServiceUser {
                   __typename
                   displayName
+                  description
                 }
               }
             }
@@ -1420,6 +1444,7 @@ class Client(BaseClient):
             "title": title,
             "description": description,
             "status": status,
+            "origin": origin,
         }
         response = self.execute(
             query=query, operation_name="CreateIssue", variables=variables, **kwargs
@@ -1473,6 +1498,10 @@ class Client(BaseClient):
                 ... on Run {
                   __typename
                   id
+                  status
+                  jobName
+                  startTime
+                  endTime
                 }
                 ... on Asset {
                   __typename
@@ -1485,10 +1514,12 @@ class Client(BaseClient):
                 ... on DagsterCloudUser {
                   __typename
                   displayName
+                  email
                 }
                 ... on ServiceUser {
                   __typename
                   displayName
+                  description
                 }
               }
             }
@@ -1541,6 +1572,10 @@ class Client(BaseClient):
                 ... on Run {
                   __typename
                   id
+                  status
+                  jobName
+                  startTime
+                  endTime
                 }
                 ... on Asset {
                   __typename
@@ -1553,10 +1588,12 @@ class Client(BaseClient):
                 ... on DagsterCloudUser {
                   __typename
                   displayName
+                  email
                 }
                 ... on ServiceUser {
                   __typename
                   displayName
+                  description
                 }
               }
             }
@@ -1606,6 +1643,10 @@ class Client(BaseClient):
                 ... on Run {
                   __typename
                   id
+                  status
+                  jobName
+                  startTime
+                  endTime
                 }
                 ... on Asset {
                   __typename
@@ -1618,10 +1659,12 @@ class Client(BaseClient):
                 ... on DagsterCloudUser {
                   __typename
                   displayName
+                  email
                 }
                 ... on ServiceUser {
                   __typename
                   displayName
+                  description
                 }
               }
             }

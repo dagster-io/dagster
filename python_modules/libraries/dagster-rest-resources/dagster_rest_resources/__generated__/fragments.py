@@ -6,7 +6,7 @@ from typing import Annotated, Literal, Optional, Union
 from pydantic import Field
 
 from .base_model import BaseModel
-from .enums import IssueStatus
+from .enums import IssueStatus, RunStatus
 
 
 class IssueFields(BaseModel):
@@ -44,16 +44,22 @@ class IssueFieldsLinkedObjectsAssetKey(BaseModel):
 class IssueFieldsLinkedObjectsRun(BaseModel):
     typename__: Literal["Run"] = Field(alias="__typename")
     id: str
+    status: RunStatus
+    job_name: str = Field(alias="jobName")
+    start_time: Optional[float] = Field(alias="startTime")
+    end_time: Optional[float] = Field(alias="endTime")
 
 
 class IssueFieldsCreatedByServiceUser(BaseModel):
     typename__: Literal["ServiceUser"] = Field(alias="__typename")
     display_name: str = Field(alias="displayName")
+    description: Optional[str]
 
 
 class IssueFieldsCreatedByDagsterCloudUser(BaseModel):
     typename__: Literal["DagsterCloudUser"] = Field(alias="__typename")
     display_name: str = Field(alias="displayName")
+    email: str
 
 
 class SecretFields(BaseModel):
