@@ -74,10 +74,11 @@ alert_policies:
 
 ### Infrastructure events
 
-| Event type            | Description                  |
-| --------------------- | ---------------------------- |
-| `AGENT_UNAVAILABLE`   | Agent became unavailable     |
-| `CODE_LOCATION_ERROR` | Code location failed to load |
+| Event type                     | Description                         |
+| ------------------------------ | ----------------------------------- |
+| `AGENT_UNAVAILABLE`            | Agent became unavailable            |
+| `CODE_LOCATION_ERROR`          | Code location failed to load        |
+| `CODE_LOCATION_DEPLOY_SUCCESS` | Code location successfully deployed |
 
 ### Insights and metrics events
 

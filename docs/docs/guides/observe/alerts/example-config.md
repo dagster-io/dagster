@@ -179,6 +179,35 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
   </TabItem>
 </Tabs>
 
+## Code location deploy success alert
+
+<Tabs groupId="notification_service">
+  <TabItem value="email" label="Email">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/observe/alerts/generated-config/code-location-deploy-success-email.yaml"
+      language="yaml"
+    />
+  </TabItem>
+  <TabItem value="microsoft_teams" label="Microsoft Teams">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/observe/alerts/generated-config/code-location-deploy-success-microsoft_teams.yaml"
+      language="yaml"
+    />
+  </TabItem>
+  <TabItem value="pagerduty" label="PagerDuty">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/observe/alerts/generated-config/code-location-deploy-success-pagerduty.yaml"
+      language="yaml"
+    />
+  </TabItem>
+  <TabItem value="slack" label="Slack">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/observe/alerts/generated-config/code-location-deploy-success-slack.yaml"
+      language="yaml"
+    />
+  </TabItem>
+</Tabs>
+
 ## Automation alert
 
 <Tabs groupId="notification_service">
