@@ -825,6 +825,7 @@ const AssetGraphExplorerWithData = ({
                               setErrorState(errors);
                             }
                           }}
+                          showRecentSearches
                         />
                       </div>
                       <CreateCatalogViewButton

@@ -22,6 +22,7 @@ export const AutomationSelectionInput = ({
     <SelectionAutoCompleteInput
       wildcardAttributeName="name"
       id="automation-selection"
+      recentSearchesKey="automation-selection"
       useAutoComplete={useAutomationSelectionAutoCompleteProvider(items).useAutoComplete}
       placeholder="Search and filter automations"
       linter={getLinter()}
