@@ -7,6 +7,9 @@ type FeatureContext = {
   canSeeToggleSensorAction: boolean;
   canSeeExecuteChecksAction: boolean;
   canSeeBackfillCoordinatorLogs: boolean;
+  // Whether deleting dynamic partitions can also wipe their materializations. Requires
+  // event log storage support for partitioned wipes, which OSS storages do not have.
+  canWipeOnDeleteDynamicPartitions: boolean;
 };
 
 export const CloudOSSContext = React.createContext<{
@@ -21,5 +24,6 @@ export const CloudOSSContext = React.createContext<{
     canSeeWipeMaterializationAction: true,
     canSeeExecuteChecksAction: true,
     canSeeBackfillCoordinatorLogs: false,
+    canWipeOnDeleteDynamicPartitions: false,
   },
 });

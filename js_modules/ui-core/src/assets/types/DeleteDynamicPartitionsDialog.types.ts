@@ -17,6 +17,7 @@ export type DeleteDynamicPartitionsMutationVariables = Exact<{
   partitionKeys: Array<string> | string;
   partitionsDefName: string;
   repositorySelector: Types.RepositorySelector;
+  wipeMaterializations?: boolean | null | undefined;
 }>;
 
 export type DeleteDynamicPartitionsMutation = {
@@ -37,6 +38,6 @@ export type DeleteDynamicPartitionsMutation = {
     | {__typename: 'UnsupportedOperationError'; message: string};
 };
 
-export const DeleteDynamicPartitionsMutationVersion = '7c6250469e198683a2ddd58e56b23d84dead4b2bfab3b1ea87ca53d412005f0a';
+export const DeleteDynamicPartitionsMutationVersion = '89a9c3ce67e9c317c50f0858eb087b7c4ca2794d2cb951218ced3304232787aa';
 
 export const DeleteVersion = '3c61c79b99122910e754a8863e80dc5ed479a0c23cc1a9d9878d91e603fc0dfe';

@@ -30,7 +30,7 @@
   "AutoMaterializeSensorFlag": "961162c030e7e3c35be91db37c1990ad31b53cb8225d216fece2bdc2a6210bce",
   "BackfillPreviewQuery": "21a636242bab27144e5627361658207b708cc3e60c149f8901e476c3d9d0b021",
   "AssetStaleStatusQuery": "2c0792a380368dfd0b6c892bd7c18f86bb34e599a2f8b020852b4a6285defa37",
-  "DeleteDynamicPartitionsMutation": "7c6250469e198683a2ddd58e56b23d84dead4b2bfab3b1ea87ca53d412005f0a",
+  "DeleteDynamicPartitionsMutation": "89a9c3ce67e9c317c50f0858eb087b7c4ca2794d2cb951218ced3304232787aa",
   "LaunchAssetWarningsQuery": "1924efd011a8fa46372d16674bca736ef10e46d3aff77430b0bd24461359813e",
   "LaunchAssetLoaderQuery": "ae6a5d5eaf00ec9eeefaf3e7dc85a7710eb3647608aa00e3ded59877a289d645",
   "LaunchAssetLoaderJobQuery": "112371f3f0c11b7467940b71e83cba8abf678aed019820af94fdee4f99531841",
