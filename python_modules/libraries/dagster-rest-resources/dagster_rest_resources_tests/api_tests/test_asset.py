@@ -42,6 +42,21 @@ from dagster_rest_resources.__generated__.get_asset_health import (
     GetAssetHealthAssetsOrErrorAssetConnectionNodesKey,
     GetAssetHealthAssetsOrErrorPythonError,
 )
+from dagster_rest_resources.__generated__.get_asset_location import (
+    GetAssetLocation,
+    GetAssetLocationAssetNodeOrErrorAssetNode,
+    GetAssetLocationAssetNodeOrErrorAssetNodeAssetKey,
+    GetAssetLocationAssetNodeOrErrorAssetNodeRepository,
+    GetAssetLocationAssetNodeOrErrorAssetNodeRepositoryLocation,
+    GetAssetLocationAssetNodeOrErrorAssetNotFoundError,
+)
+from dagster_rest_resources.__generated__.get_asset_locations import (
+    GetAssetLocations,
+    GetAssetLocationsAssetNodes,
+    GetAssetLocationsAssetNodesAssetKey,
+    GetAssetLocationsAssetNodesRepository,
+    GetAssetLocationsAssetNodesRepositoryLocation,
+)
 from dagster_rest_resources.__generated__.get_asset_materialization_events import (
     GetAssetMaterializationEvents,
     GetAssetMaterializationEventsAssetsOrErrorAssetConnection,
@@ -66,6 +81,7 @@ from dagster_rest_resources.__generated__.get_asset_partition_status import (
     GetAssetPartitionStatusAssetNodeOrErrorAssetNodePartitionStats,
     GetAssetPartitionStatusAssetNodeOrErrorAssetNotFoundError,
 )
+from dagster_rest_resources.__generated__.input_types import AssetKeyInput
 from dagster_rest_resources.__generated__.list_asset_records import (
     ListAssetRecords,
     ListAssetRecordsAssetRecordsOrErrorAssetRecordConnection,
@@ -757,3 +773,80 @@ class TestGetPartitionStatus:
 
         with pytest.raises(DagsterPlusGraphqlError, match="Error getting partition status"):
             DgApiAssetApi(_client=client).get_partition_status("test/asset")
+
+
+def _location_node(path: list[str], repo: str = "repo", location: str = "loc"):
+    return GetAssetLocationAssetNodeOrErrorAssetNode(
+        __typename="AssetNode",
+        assetKey=GetAssetLocationAssetNodeOrErrorAssetNodeAssetKey(path=path),
+        repository=GetAssetLocationAssetNodeOrErrorAssetNodeRepository(
+            name=repo,
+            location=GetAssetLocationAssetNodeOrErrorAssetNodeRepositoryLocation(name=location),
+        ),
+    )
+
+
+class TestGetAssetLocation:
+    def test_returns_repository_and_code_location(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_location.return_value = GetAssetLocation(
+            assetNodeOrError=_location_node(["warehouse", "orders"])
+        )
+
+        result = DgApiAssetApi(_client=client).get_asset_location(["warehouse", "orders"])
+
+        assert result.asset_key == "warehouse/orders"
+        assert result.asset_key_parts == ["warehouse", "orders"]
+        assert result.repository_name == "repo"
+        assert result.code_location_name == "loc"
+        client.get_asset_location.assert_called_once_with(
+            asset_key=AssetKeyInput(path=["warehouse", "orders"])
+        )
+
+    def test_missing_asset_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_location.return_value = GetAssetLocation(
+            assetNodeOrError=GetAssetLocationAssetNodeOrErrorAssetNotFoundError(
+                __typename="AssetNotFoundError", message="no such asset"
+            )
+        )
+
+        with pytest.raises(DagsterPlusGraphqlError, match="Asset not found: no such asset"):
+            DgApiAssetApi(_client=client).get_asset_location(["nope"])
+
+
+class TestListAssetLocations:
+    def test_returns_a_location_per_node(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_locations.return_value = GetAssetLocations(
+            assetNodes=[
+                GetAssetLocationsAssetNodes(
+                    assetKey=GetAssetLocationsAssetNodesAssetKey(path=["a"]),
+                    repository=GetAssetLocationsAssetNodesRepository(
+                        name="repo-a",
+                        location=GetAssetLocationsAssetNodesRepositoryLocation(name="loc-a"),
+                    ),
+                ),
+                GetAssetLocationsAssetNodes(
+                    assetKey=GetAssetLocationsAssetNodesAssetKey(path=["b", "c"]),
+                    repository=GetAssetLocationsAssetNodesRepository(
+                        name="repo-b",
+                        location=GetAssetLocationsAssetNodesRepositoryLocation(name="loc-b"),
+                    ),
+                ),
+            ]
+        )
+
+        result = DgApiAssetApi(_client=client).list_asset_locations([["a"], ["b", "c"]])
+
+        assert result.total == 2
+        assert [i.asset_key for i in result.items] == ["a", "b/c"]
+        assert [i.code_location_name for i in result.items] == ["loc-a", "loc-b"]
+
+    def test_absent_assets_are_simply_missing(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_asset_locations.return_value = GetAssetLocations(assetNodes=[])
+
+        result = DgApiAssetApi(_client=client).list_asset_locations([["gone"]])
+
+        assert result.items == []

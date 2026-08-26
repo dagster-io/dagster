@@ -22,6 +22,8 @@ from dagster_rest_resources.schemas.asset import (
     DgApiAssetFreshnessInfo,
     DgApiAssetHealth,
     DgApiAssetList,
+    DgApiAssetLocation,
+    DgApiAssetLocationList,
     DgApiAssetMaterialization,
     DgApiAssetStatus,
     DgApiAutomationCondition,
@@ -37,6 +39,15 @@ from dagster_rest_resources.schemas.asset import (
 from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
 
 logger = logging.getLogger(__name__)
+
+
+def _build_location(node: Any) -> DgApiAssetLocation:
+    return DgApiAssetLocation(
+        asset_key="/".join(node.asset_key.path),
+        asset_key_parts=list(node.asset_key.path),
+        repository_name=node.repository.name,
+        code_location_name=node.repository.location.name,
+    )
 
 
 @dataclass(frozen=True)
@@ -306,6 +317,36 @@ class DgApiAssetApi:
                 raise DagsterPlusGraphqlError(f"Migration required: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
+
+    def get_asset_location(self, asset_key: list[str]) -> DgApiAssetLocation:
+        """Get the repository and code location that define an asset.
+
+        Takes the key as path components, since a component may itself contain a slash and
+        a joined form cannot be split back unambiguously.
+        """
+        result = self._client.get_asset_location(
+            asset_key=AssetKeyInput(path=asset_key),
+        ).asset_node_or_error
+
+        match result.typename__:
+            case "AssetNode":
+                return _build_location(result)
+            case "AssetNotFoundError":
+                raise DagsterPlusGraphqlError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def list_asset_locations(self, asset_keys: list[list[str]]) -> DgApiAssetLocationList:
+        """Get repository and code location for several assets in one request.
+
+        Takes keys as path components, as get_asset_location does. Assets that do not
+        exist are absent from the result rather than raising, so the caller should not
+        assume the order or length matches what was asked for.
+        """
+        nodes = self._client.get_asset_locations(
+            asset_keys=[AssetKeyInput(path=key) for key in asset_keys],
+        ).asset_nodes
+        return DgApiAssetLocationList(items=[_build_location(n) for n in nodes])
 
     def get_partition_status(self, asset_key: str) -> DgApiPartitionStats:
         """Get partition materialization stats for an asset by slash-separated key."""

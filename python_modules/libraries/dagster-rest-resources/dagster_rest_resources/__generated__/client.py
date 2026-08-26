@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     from .get_asset_condition_evaluations import GetAssetConditionEvaluations
     from .get_asset_details import GetAssetDetails
     from .get_asset_health import GetAssetHealth
+    from .get_asset_location import GetAssetLocation
+    from .get_asset_locations import GetAssetLocations
     from .get_asset_materialization_events import GetAssetMaterializationEvents
     from .get_asset_observation_events import GetAssetObservationEvents
     from .get_asset_partition_status import GetAssetPartitionStatus
@@ -1791,6 +1793,76 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return GetAssetPartitionStatus.model_validate(data)
+
+    def get_asset_location(
+        self, asset_key: "AssetKeyInput", **kwargs: Any
+    ) -> "GetAssetLocation":
+        from .get_asset_location import GetAssetLocation
+
+        query = gql(
+            """
+            query GetAssetLocation($assetKey: AssetKeyInput!) {
+              assetNodeOrError(assetKey: $assetKey) {
+                __typename
+                ... on AssetNode {
+                  assetKey {
+                    path
+                  }
+                  repository {
+                    name
+                    location {
+                      name
+                    }
+                  }
+                }
+                ... on AssetNotFoundError {
+                  message
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"assetKey": asset_key}
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetLocation",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetLocation.model_validate(data)
+
+    def get_asset_locations(
+        self, asset_keys: list["AssetKeyInput"], **kwargs: Any
+    ) -> "GetAssetLocations":
+        from .get_asset_locations import GetAssetLocations
+
+        query = gql(
+            """
+            query GetAssetLocations($assetKeys: [AssetKeyInput!]!) {
+              assetNodes(assetKeys: $assetKeys) {
+                assetKey {
+                  path
+                }
+                repository {
+                  name
+                  location {
+                    name
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"assetKeys": asset_keys}
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetLocations",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetLocations.model_validate(data)
 
     def list_asset_checks(
         self,

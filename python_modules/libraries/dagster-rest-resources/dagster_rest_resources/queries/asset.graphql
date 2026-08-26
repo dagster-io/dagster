@@ -374,3 +374,37 @@ query GetAssetPartitionStatus($assetKey: AssetKeyInput!) {
     }
   }
 }
+
+query GetAssetLocation($assetKey: AssetKeyInput!) {
+  assetNodeOrError(assetKey: $assetKey) {
+    __typename
+    ... on AssetNode {
+      assetKey {
+        path
+      }
+      repository {
+        name
+        location {
+          name
+        }
+      }
+    }
+    ... on AssetNotFoundError {
+      message
+    }
+  }
+}
+
+query GetAssetLocations($assetKeys: [AssetKeyInput!]!) {
+  assetNodes(assetKeys: $assetKeys) {
+    assetKey {
+      path
+    }
+    repository {
+      name
+      location {
+        name
+      }
+    }
+  }
+}

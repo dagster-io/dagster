@@ -125,6 +125,19 @@ class DgApiAssetList(DgApiPaginatedList[DgApiAsset]):
     pass
 
 
+class DgApiAssetLocation(BaseModel):
+    """Where an asset is defined: which repository, in which code location."""
+
+    asset_key: str  # "my/asset/key"
+    asset_key_parts: list[str]  # ["my", "asset", "key"]
+    repository_name: str
+    code_location_name: str
+
+
+class DgApiAssetLocationList(DgApiList[DgApiAssetLocation]):
+    pass
+
+
 class DgApiAssetEvent(BaseModel):
     timestamp: str  # millisecond timestamp string from GraphQL
     run_id: str
