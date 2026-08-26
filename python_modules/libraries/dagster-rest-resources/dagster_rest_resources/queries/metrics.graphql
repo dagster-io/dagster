@@ -1,0 +1,337 @@
+query ListAssetMetricTypes($metricsStoreType: MetricsStoreType) {
+  metricTypesForAsset(metricsStoreType: $metricsStoreType) {
+    __typename
+    ... on MetricTypeList {
+      id
+      metricTypes {
+        id
+        metricName
+        displayName
+        category
+        unitType
+        description
+        pending
+        visible
+        customIcon
+        costMultiplier
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query ListSpecificAssetMetricTypes(
+  $metricsFilter: AssetReportingMetricsFilter
+  $timeframeSelector: ReportingMetricsTimeframeSelector!
+  $metricsStoreType: MetricsStoreType
+) {
+  metricTypesForSpecificAsset(
+    metricsFilter: $metricsFilter
+    timeframeSelector: $timeframeSelector
+    metricsStoreType: $metricsStoreType
+  ) {
+    __typename
+    ... on MetricTypeList {
+      id
+      metricTypes {
+        id
+        metricName
+        displayName
+        category
+        unitType
+        description
+        pending
+        visible
+        customIcon
+        costMultiplier
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query ListJobMetricTypes($metricsStoreType: MetricsStoreType) {
+  metricTypesForJob(metricsStoreType: $metricsStoreType) {
+    __typename
+    ... on MetricTypeList {
+      id
+      metricTypes {
+        id
+        metricName
+        displayName
+        category
+        unitType
+        description
+        pending
+        visible
+        customIcon
+        costMultiplier
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query ListSpecificJobMetricTypes(
+  $metricsFilter: JobReportingMetricsFilter
+  $timeframeSelector: ReportingMetricsTimeframeSelector!
+  $metricsStoreType: MetricsStoreType
+) {
+  metricTypesForSpecificJob(
+    metricsFilter: $metricsFilter
+    timeframeSelector: $timeframeSelector
+    metricsStoreType: $metricsStoreType
+  ) {
+    __typename
+    ... on MetricTypeList {
+      id
+      metricTypes {
+        id
+        metricName
+        displayName
+        category
+        unitType
+        description
+        pending
+        visible
+        customIcon
+        costMultiplier
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query ListDeploymentMetricTypes($metricsStoreType: MetricsStoreType) {
+  metricTypesForDeployment(metricsStoreType: $metricsStoreType) {
+    __typename
+    ... on MetricTypeList {
+      id
+      metricTypes {
+        id
+        metricName
+        displayName
+        category
+        unitType
+        description
+        pending
+        visible
+        customIcon
+        costMultiplier
+      }
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query GetMetricsTimeRanges {
+  metricsTimeRanges {
+    timeRanges
+  }
+}
+
+query GetAssetMetrics(
+  $metricsFilter: AssetReportingMetricsFilter
+  $metricsSelector: ReportingMetricsSelector!
+  $metricsStoreType: MetricsStoreType
+) {
+  reportingMetricsByAsset(
+    metricsFilter: $metricsFilter
+    metricsSelector: $metricsSelector
+    metricsStoreType: $metricsStoreType
+  ) {
+    __typename
+    ... on ReportingMetrics {
+      metrics {
+        entity {
+          __typename
+          ... on ReportingAsset {
+            assetKey {
+              path
+            }
+            assetGroup
+            codeLocationName
+            repositoryName
+          }
+        }
+        aggregateValue
+        aggregateValueChange {
+          change
+          isNewlyAvailable
+        }
+        values
+      }
+      timestamps
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on ReportingInputError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query GetJobMetrics(
+  $metricsFilter: JobReportingMetricsFilter
+  $metricsSelector: ReportingMetricsSelector!
+  $metricsStoreType: MetricsStoreType
+) {
+  reportingMetricsByJob(
+    metricsFilter: $metricsFilter
+    metricsSelector: $metricsSelector
+    metricsStoreType: $metricsStoreType
+  ) {
+    __typename
+    ... on ReportingMetrics {
+      metrics {
+        entity {
+          __typename
+          ... on ReportingJob {
+            jobName
+            codeLocationName
+            repositoryName
+          }
+        }
+        aggregateValue
+        aggregateValueChange {
+          change
+          isNewlyAvailable
+        }
+        values
+      }
+      timestamps
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on ReportingInputError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query GetDeploymentMetrics(
+  $metricsFilter: DeploymentReportingMetricsFilter
+  $metricsSelector: ReportingMetricsSelector!
+  $metricsStoreType: MetricsStoreType
+) {
+  reportingMetricsByDeployment(
+    metricsFilter: $metricsFilter
+    metricsSelector: $metricsSelector
+    metricsStoreType: $metricsStoreType
+  ) {
+    __typename
+    ... on ReportingMetrics {
+      metrics {
+        entity {
+          __typename
+          ... on DagsterCloudDeployment {
+            deploymentId
+            deploymentName
+            organizationName
+            deploymentType
+            deploymentStatus
+            isBranchDeployment
+          }
+        }
+        aggregateValue
+        aggregateValueChange {
+          change
+          isNewlyAvailable
+        }
+        values
+      }
+      timestamps
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on ReportingInputError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query GetAssetSelectionMetrics(
+  $metricsFilter: AssetSelectionReportingMetricsFilter!
+  $metricsSelector: ReportingMetricsSelector!
+  $metricsStoreType: MetricsStoreType
+) {
+  reportingMetricsByAssetSelection(
+    metricsFilter: $metricsFilter
+    metricsSelector: $metricsSelector
+    metricsStoreType: $metricsStoreType
+  ) {
+    __typename
+    ... on ReportingMetrics {
+      metrics {
+        entity {
+          __typename
+          ... on ReportingAssetSelection {
+            selection
+          }
+        }
+        aggregateValue
+        aggregateValueChange {
+          change
+          isNewlyAvailable
+        }
+        values
+      }
+      timestamps
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on ReportingInputError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}

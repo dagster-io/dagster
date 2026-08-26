@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .enums import (
         InstigationTickStatus,
         IssueStatus,
+        MetricsStoreType,
         PullRequestStatus,
         TerminateRunPolicy,
     )
@@ -30,15 +31,20 @@ if TYPE_CHECKING:
     from .get_asset_location import GetAssetLocation
     from .get_asset_locations import GetAssetLocations
     from .get_asset_materialization_events import GetAssetMaterializationEvents
+    from .get_asset_metrics import GetAssetMetrics
     from .get_asset_observation_events import GetAssetObservationEvents
     from .get_asset_partition_status import GetAssetPartitionStatus
+    from .get_asset_selection_metrics import GetAssetSelectionMetrics
     from .get_captured_logs import GetCapturedLogs
     from .get_captured_logs_metadata import GetCapturedLogsMetadata
     from .get_deployment import GetDeployment
+    from .get_deployment_metrics import GetDeploymentMetrics
     from .get_deployment_settings import GetDeploymentSettings
     from .get_issue import GetIssue
+    from .get_job_metrics import GetJobMetrics
     from .get_location_statuses import GetLocationStatuses
     from .get_logs_captured_events import GetLogsCapturedEvents
+    from .get_metrics_time_ranges import GetMetricsTimeRanges
     from .get_organization_settings import GetOrganizationSettings
     from .get_run import GetRun
     from .get_run_alert_notifications import GetRunAlertNotifications
@@ -50,12 +56,18 @@ if TYPE_CHECKING:
     from .get_sensor_ticks import GetSensorTicks
     from .input_types import (
         AssetKeyInput,
+        AssetReportingMetricsFilter,
+        AssetSelectionReportingMetricsFilter,
+        DeploymentReportingMetricsFilter,
         DeploymentSettingsInput,
         ExecutionParams,
         IssueLinkedObjectInput,
         IssuesFilter,
+        JobReportingMetricsFilter,
         OrganizationSettingsInput,
         ReexecutionParams,
+        ReportingMetricsSelector,
+        ReportingMetricsTimeframeSelector,
         RepositorySelector,
         RunsFilter,
         ScheduleSelector,
@@ -68,11 +80,14 @@ if TYPE_CHECKING:
     from .list_alert_policies_as_document import ListAlertPoliciesAsDocument
     from .list_asset_check_executions import ListAssetCheckExecutions
     from .list_asset_checks import ListAssetChecks
+    from .list_asset_metric_types import ListAssetMetricTypes
     from .list_asset_records import ListAssetRecords
     from .list_branch_deployments import ListBranchDeployments
     from .list_code_locations import ListCodeLocations
+    from .list_deployment_metric_types import ListDeploymentMetricTypes
     from .list_deployments import ListDeployments
     from .list_issues import ListIssues
+    from .list_job_metric_types import ListJobMetricTypes
     from .list_repositories import ListRepositories
     from .list_repositories_for_ticks import ListRepositoriesForTicks
     from .list_repositories_with_schedules import ListRepositoriesWithSchedules
@@ -81,6 +96,8 @@ if TYPE_CHECKING:
     from .list_schedules import ListSchedules
     from .list_secrets import ListSecrets
     from .list_sensors import ListSensors
+    from .list_specific_asset_metric_types import ListSpecificAssetMetricTypes
+    from .list_specific_job_metric_types import ListSpecificJobMetricTypes
     from .reconcile_alert_policies import ReconcileAlertPolicies
     from .remove_link_from_issue import RemoveLinkFromIssue
     from .rerun_backfill import RerunBackfill
@@ -2968,6 +2985,556 @@ class Client(BaseClient):
         )
         data = self.get_data(response)
         return LaunchRun.model_validate(data)
+
+    def list_asset_metric_types(
+        self,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "ListAssetMetricTypes":
+        from .list_asset_metric_types import ListAssetMetricTypes
+
+        query = gql(
+            """
+            query ListAssetMetricTypes($metricsStoreType: MetricsStoreType) {
+              metricTypesForAsset(metricsStoreType: $metricsStoreType) {
+                __typename
+                ... on MetricTypeList {
+                  id
+                  metricTypes {
+                    id
+                    metricName
+                    displayName
+                    category
+                    unitType
+                    description
+                    pending
+                    visible
+                    customIcon
+                    costMultiplier
+                  }
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"metricsStoreType": metrics_store_type}
+        response = self.execute(
+            query=query,
+            operation_name="ListAssetMetricTypes",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return ListAssetMetricTypes.model_validate(data)
+
+    def list_specific_asset_metric_types(
+        self,
+        timeframe_selector: "ReportingMetricsTimeframeSelector",
+        metrics_filter: Union[
+            Optional["AssetReportingMetricsFilter"], "UnsetType"
+        ] = UNSET,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "ListSpecificAssetMetricTypes":
+        from .list_specific_asset_metric_types import ListSpecificAssetMetricTypes
+
+        query = gql(
+            """
+            query ListSpecificAssetMetricTypes($metricsFilter: AssetReportingMetricsFilter, $timeframeSelector: ReportingMetricsTimeframeSelector!, $metricsStoreType: MetricsStoreType) {
+              metricTypesForSpecificAsset(
+                metricsFilter: $metricsFilter
+                timeframeSelector: $timeframeSelector
+                metricsStoreType: $metricsStoreType
+              ) {
+                __typename
+                ... on MetricTypeList {
+                  id
+                  metricTypes {
+                    id
+                    metricName
+                    displayName
+                    category
+                    unitType
+                    description
+                    pending
+                    visible
+                    customIcon
+                    costMultiplier
+                  }
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "metricsFilter": metrics_filter,
+            "timeframeSelector": timeframe_selector,
+            "metricsStoreType": metrics_store_type,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="ListSpecificAssetMetricTypes",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return ListSpecificAssetMetricTypes.model_validate(data)
+
+    def list_job_metric_types(
+        self,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "ListJobMetricTypes":
+        from .list_job_metric_types import ListJobMetricTypes
+
+        query = gql(
+            """
+            query ListJobMetricTypes($metricsStoreType: MetricsStoreType) {
+              metricTypesForJob(metricsStoreType: $metricsStoreType) {
+                __typename
+                ... on MetricTypeList {
+                  id
+                  metricTypes {
+                    id
+                    metricName
+                    displayName
+                    category
+                    unitType
+                    description
+                    pending
+                    visible
+                    customIcon
+                    costMultiplier
+                  }
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"metricsStoreType": metrics_store_type}
+        response = self.execute(
+            query=query,
+            operation_name="ListJobMetricTypes",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return ListJobMetricTypes.model_validate(data)
+
+    def list_specific_job_metric_types(
+        self,
+        timeframe_selector: "ReportingMetricsTimeframeSelector",
+        metrics_filter: Union[
+            Optional["JobReportingMetricsFilter"], "UnsetType"
+        ] = UNSET,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "ListSpecificJobMetricTypes":
+        from .list_specific_job_metric_types import ListSpecificJobMetricTypes
+
+        query = gql(
+            """
+            query ListSpecificJobMetricTypes($metricsFilter: JobReportingMetricsFilter, $timeframeSelector: ReportingMetricsTimeframeSelector!, $metricsStoreType: MetricsStoreType) {
+              metricTypesForSpecificJob(
+                metricsFilter: $metricsFilter
+                timeframeSelector: $timeframeSelector
+                metricsStoreType: $metricsStoreType
+              ) {
+                __typename
+                ... on MetricTypeList {
+                  id
+                  metricTypes {
+                    id
+                    metricName
+                    displayName
+                    category
+                    unitType
+                    description
+                    pending
+                    visible
+                    customIcon
+                    costMultiplier
+                  }
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "metricsFilter": metrics_filter,
+            "timeframeSelector": timeframe_selector,
+            "metricsStoreType": metrics_store_type,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="ListSpecificJobMetricTypes",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return ListSpecificJobMetricTypes.model_validate(data)
+
+    def list_deployment_metric_types(
+        self,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "ListDeploymentMetricTypes":
+        from .list_deployment_metric_types import ListDeploymentMetricTypes
+
+        query = gql(
+            """
+            query ListDeploymentMetricTypes($metricsStoreType: MetricsStoreType) {
+              metricTypesForDeployment(metricsStoreType: $metricsStoreType) {
+                __typename
+                ... on MetricTypeList {
+                  id
+                  metricTypes {
+                    id
+                    metricName
+                    displayName
+                    category
+                    unitType
+                    description
+                    pending
+                    visible
+                    customIcon
+                    costMultiplier
+                  }
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"metricsStoreType": metrics_store_type}
+        response = self.execute(
+            query=query,
+            operation_name="ListDeploymentMetricTypes",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return ListDeploymentMetricTypes.model_validate(data)
+
+    def get_metrics_time_ranges(self, **kwargs: Any) -> "GetMetricsTimeRanges":
+        from .get_metrics_time_ranges import GetMetricsTimeRanges
+
+        query = gql(
+            """
+            query GetMetricsTimeRanges {
+              metricsTimeRanges {
+                timeRanges
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {}
+        response = self.execute(
+            query=query,
+            operation_name="GetMetricsTimeRanges",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetMetricsTimeRanges.model_validate(data)
+
+    def get_asset_metrics(
+        self,
+        metrics_selector: "ReportingMetricsSelector",
+        metrics_filter: Union[
+            Optional["AssetReportingMetricsFilter"], "UnsetType"
+        ] = UNSET,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetAssetMetrics":
+        from .get_asset_metrics import GetAssetMetrics
+
+        query = gql(
+            """
+            query GetAssetMetrics($metricsFilter: AssetReportingMetricsFilter, $metricsSelector: ReportingMetricsSelector!, $metricsStoreType: MetricsStoreType) {
+              reportingMetricsByAsset(
+                metricsFilter: $metricsFilter
+                metricsSelector: $metricsSelector
+                metricsStoreType: $metricsStoreType
+              ) {
+                __typename
+                ... on ReportingMetrics {
+                  metrics {
+                    entity {
+                      __typename
+                      ... on ReportingAsset {
+                        assetKey {
+                          path
+                        }
+                        assetGroup
+                        codeLocationName
+                        repositoryName
+                      }
+                    }
+                    aggregateValue
+                    aggregateValueChange {
+                      change
+                      isNewlyAvailable
+                    }
+                    values
+                  }
+                  timestamps
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on ReportingInputError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "metricsFilter": metrics_filter,
+            "metricsSelector": metrics_selector,
+            "metricsStoreType": metrics_store_type,
+        }
+        response = self.execute(
+            query=query, operation_name="GetAssetMetrics", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetMetrics.model_validate(data)
+
+    def get_job_metrics(
+        self,
+        metrics_selector: "ReportingMetricsSelector",
+        metrics_filter: Union[
+            Optional["JobReportingMetricsFilter"], "UnsetType"
+        ] = UNSET,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetJobMetrics":
+        from .get_job_metrics import GetJobMetrics
+
+        query = gql(
+            """
+            query GetJobMetrics($metricsFilter: JobReportingMetricsFilter, $metricsSelector: ReportingMetricsSelector!, $metricsStoreType: MetricsStoreType) {
+              reportingMetricsByJob(
+                metricsFilter: $metricsFilter
+                metricsSelector: $metricsSelector
+                metricsStoreType: $metricsStoreType
+              ) {
+                __typename
+                ... on ReportingMetrics {
+                  metrics {
+                    entity {
+                      __typename
+                      ... on ReportingJob {
+                        jobName
+                        codeLocationName
+                        repositoryName
+                      }
+                    }
+                    aggregateValue
+                    aggregateValueChange {
+                      change
+                      isNewlyAvailable
+                    }
+                    values
+                  }
+                  timestamps
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on ReportingInputError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "metricsFilter": metrics_filter,
+            "metricsSelector": metrics_selector,
+            "metricsStoreType": metrics_store_type,
+        }
+        response = self.execute(
+            query=query, operation_name="GetJobMetrics", variables=variables, **kwargs
+        )
+        data = self.get_data(response)
+        return GetJobMetrics.model_validate(data)
+
+    def get_deployment_metrics(
+        self,
+        metrics_selector: "ReportingMetricsSelector",
+        metrics_filter: Union[
+            Optional["DeploymentReportingMetricsFilter"], "UnsetType"
+        ] = UNSET,
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetDeploymentMetrics":
+        from .get_deployment_metrics import GetDeploymentMetrics
+
+        query = gql(
+            """
+            query GetDeploymentMetrics($metricsFilter: DeploymentReportingMetricsFilter, $metricsSelector: ReportingMetricsSelector!, $metricsStoreType: MetricsStoreType) {
+              reportingMetricsByDeployment(
+                metricsFilter: $metricsFilter
+                metricsSelector: $metricsSelector
+                metricsStoreType: $metricsStoreType
+              ) {
+                __typename
+                ... on ReportingMetrics {
+                  metrics {
+                    entity {
+                      __typename
+                      ... on DagsterCloudDeployment {
+                        deploymentId
+                        deploymentName
+                        organizationName
+                        deploymentType
+                        deploymentStatus
+                        isBranchDeployment
+                      }
+                    }
+                    aggregateValue
+                    aggregateValueChange {
+                      change
+                      isNewlyAvailable
+                    }
+                    values
+                  }
+                  timestamps
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on ReportingInputError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "metricsFilter": metrics_filter,
+            "metricsSelector": metrics_selector,
+            "metricsStoreType": metrics_store_type,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="GetDeploymentMetrics",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetDeploymentMetrics.model_validate(data)
+
+    def get_asset_selection_metrics(
+        self,
+        metrics_filter: "AssetSelectionReportingMetricsFilter",
+        metrics_selector: "ReportingMetricsSelector",
+        metrics_store_type: Union[Optional["MetricsStoreType"], "UnsetType"] = UNSET,
+        **kwargs: Any
+    ) -> "GetAssetSelectionMetrics":
+        from .get_asset_selection_metrics import GetAssetSelectionMetrics
+
+        query = gql(
+            """
+            query GetAssetSelectionMetrics($metricsFilter: AssetSelectionReportingMetricsFilter!, $metricsSelector: ReportingMetricsSelector!, $metricsStoreType: MetricsStoreType) {
+              reportingMetricsByAssetSelection(
+                metricsFilter: $metricsFilter
+                metricsSelector: $metricsSelector
+                metricsStoreType: $metricsStoreType
+              ) {
+                __typename
+                ... on ReportingMetrics {
+                  metrics {
+                    entity {
+                      __typename
+                      ... on ReportingAssetSelection {
+                        selection
+                      }
+                    }
+                    aggregateValue
+                    aggregateValueChange {
+                      change
+                      isNewlyAvailable
+                    }
+                    values
+                  }
+                  timestamps
+                }
+                ... on UnauthorizedError {
+                  message
+                }
+                ... on ReportingInputError {
+                  message
+                }
+                ... on PythonError {
+                  message
+                  stack
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "metricsFilter": metrics_filter,
+            "metricsSelector": metrics_selector,
+            "metricsStoreType": metrics_store_type,
+        }
+        response = self.execute(
+            query=query,
+            operation_name="GetAssetSelectionMetrics",
+            variables=variables,
+            **kwargs
+        )
+        data = self.get_data(response)
+        return GetAssetSelectionMetrics.model_validate(data)
 
     def get_organization_settings(self, **kwargs: Any) -> "GetOrganizationSettings":
         from .get_organization_settings import GetOrganizationSettings
