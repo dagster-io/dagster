@@ -31,6 +31,7 @@ async_client = false
 plugins = [
     "ariadne_codegen.contrib.client_forward_refs.ClientForwardRefsPlugin",
     "ariadne_codegen.contrib.no_reimports.NoReimportsPlugin",
+    "dagster_rest_resources.codegen_plugins.TypingGenericsInFragmentsPlugin",
 ]
 
 [dependency-groups]
