@@ -312,7 +312,13 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         self.read_mode: Literal["rb"] = "rb"
 
     def _get_path(self, path: str) -> str:
-        return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)
+        base = self.base_dir or ""
+        filepath = os.path.join(base, path)
+        if base and os.path.commonpath([os.path.realpath(filepath), os.path.realpath(base)]) != os.path.realpath(base):
+            raise DagsterInvariantViolationError(
+                f"Path traversal detected: '{path}' escapes base directory '{base}'"
+            )
+        return filepath
 
     def handle_output(self, context: OutputContext, obj: object):
         """Pickle the data and store the object to a custom file path.
