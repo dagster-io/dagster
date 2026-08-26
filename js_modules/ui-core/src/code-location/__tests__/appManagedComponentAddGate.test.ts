@@ -20,7 +20,7 @@ describe('addComponentDisabledReason', () => {
   });
 
   it('blocks when git-backed and the location has no binding', () => {
-    expect(addComponentDisabledReason(inputs({hasBinding: false}))).toMatch(/not bound/);
+    expect(addComponentDisabledReason(inputs({hasBinding: false}))).toMatch(/Set a repository/);
   });
 
   // Without the gate the submit writes component state directly, so a repo

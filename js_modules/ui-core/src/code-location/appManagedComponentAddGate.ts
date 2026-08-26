@@ -22,10 +22,7 @@ export const addComponentDisabledReason = ({
     return 'Connect a git integration to author components.';
   }
   if (gitBackedEnabled && !bindingLoading && !hasBinding) {
-    return (
-      'This code location is not bound to a git repository, so authored components have' +
-      ' nowhere to be committed.'
-    );
+    return 'Set a repository to open pull requests for components created in the UI.';
   }
   return null;
 };

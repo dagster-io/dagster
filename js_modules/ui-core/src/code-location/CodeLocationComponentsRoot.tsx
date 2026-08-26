@@ -2,6 +2,7 @@ import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components
 import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
 import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {AppManagedComponentRepoBindingSection} from '@shared/code-location/AppManagedComponentRepoBindingSection';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
 import {useAppManagedComponentRepoBinding} from '@shared/code-location/useAppManagedComponentRepoBinding';
@@ -139,6 +140,9 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
             </Tooltip>
           ) : null}
         </Box>
+      ) : null}
+      {componentInstanceUIEnabled && subTab === 'instances' ? (
+        <AppManagedComponentRepoBindingSection locationName={repoAddress.location} />
       ) : null}
       <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'auto'}}>
         {renderSubTab()}
