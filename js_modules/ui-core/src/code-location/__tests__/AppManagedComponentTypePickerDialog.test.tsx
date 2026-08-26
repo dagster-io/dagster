@@ -1,4 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
 import {useOpenAppManagedComponentPullRequest} from '@shared/code-location/useOpenAppManagedComponentPullRequest';
 import {render, screen} from '@testing-library/react';
@@ -30,6 +31,10 @@ jest.mock('../AppManagedComponentEditorBody', () => {
   };
 });
 
+jest.mock('@shared/app/useGitBackedComponentAuthoringEnabled', () => ({
+  useGitBackedComponentAuthoringEnabled: jest.fn(),
+}));
+
 jest.mock('@shared/app/useGitProviderConnected', () => ({
   useGitProviderConnected: jest.fn(),
 }));
@@ -38,6 +43,7 @@ jest.mock('@shared/code-location/useOpenAppManagedComponentPullRequest', () => (
   useOpenAppManagedComponentPullRequest: jest.fn(),
 }));
 
+const gitBackedEnabledMock = useGitBackedComponentAuthoringEnabled as jest.Mock;
 const gitProviderConnectedMock = useGitProviderConnected as jest.Mock;
 const openPullRequestHookMock = useOpenAppManagedComponentPullRequest as jest.Mock;
 
@@ -85,6 +91,7 @@ function renderDialog() {
 
 describe('AppManagedComponentTypePickerDialog', () => {
   it('names the pull request on submit and says so before the user submits', async () => {
+    gitBackedEnabledMock.mockReturnValue(true);
     gitProviderConnectedMock.mockReturnValue(true);
     openPullRequestHookMock.mockReturnValue(jest.fn());
 
@@ -97,6 +104,7 @@ describe('AppManagedComponentTypePickerDialog', () => {
   });
 
   it('keeps the live-write label and no pull request note when not git-backed', async () => {
+    gitBackedEnabledMock.mockReturnValue(false);
     gitProviderConnectedMock.mockReturnValue(false);
     openPullRequestHookMock.mockReturnValue(null);
 
@@ -109,6 +117,7 @@ describe('AppManagedComponentTypePickerDialog', () => {
   });
 
   it('shows progress and disables the footer while the pull request is opening', async () => {
+    gitBackedEnabledMock.mockReturnValue(true);
     gitProviderConnectedMock.mockReturnValue(true);
     let resolvePullRequest: (result: OpenComponentPullRequestResult) => void = () => {};
     openPullRequestHookMock.mockReturnValue(
