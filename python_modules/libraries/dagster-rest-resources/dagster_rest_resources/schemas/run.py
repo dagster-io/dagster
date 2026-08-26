@@ -36,6 +36,7 @@ class DgApiRunList(DgApiTruncatedList[DgApiRun]):
 class DgApiRunLaunchResult(BaseModel):
     run_id: str
     status: DgApiRunStatus
+    job_name: str | None = None
 
 
 class DgApiRunTerminateResult(BaseModel):

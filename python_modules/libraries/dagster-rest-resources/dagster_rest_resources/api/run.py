@@ -28,6 +28,12 @@ from dagster_rest_resources.schemas.run import (
 
 PARTITION_TAG = "dagster/partition"
 
+# Launching an ad hoc selection of assets means launching the implicit asset job with an
+# asset selection. Defined here rather than imported so the library does not depend on
+# dagster itself; the source of truth is
+# dagster._core.definitions.assets.job.asset_job.IMPLICIT_ASSET_JOB_NAME.
+IMPLICIT_ASSET_JOB_NAME = "__ASSET_JOB"
+
 
 def _reexecution_params(
     *,
@@ -142,17 +148,68 @@ class DgApiRunApi:
         *,
         location_name: str,
         repository_name: str,
-        job_name: str | None,
-        asset_keys: list[str] | None,
+        job_name: str,
+        asset_keys: list[list[str]] | None = None,
+        tags: dict[str, str] | None = None,
+        run_config: dict | None = None,
+        partition: str | None = None,
+    ) -> DgApiRunLaunchResult:
+        """Launch a run of a job, optionally narrowed to a subset of its assets.
+
+        Asset keys are path components, as `[["marts", "dim_customers"]]`, because a single
+        component may itself contain a slash and a joined form cannot be split back
+        unambiguously.
+        """
+        return self._launch(
+            location_name=location_name,
+            repository_name=repository_name,
+            job_name=job_name,
+            asset_keys=asset_keys,
+            tags=tags,
+            run_config=run_config,
+            partition=partition,
+        )
+
+    def create_asset_run(
+        self,
+        *,
+        location_name: str,
+        repository_name: str,
+        asset_keys: list[list[str]],
+        tags: dict[str, str] | None = None,
+        run_config: dict | None = None,
+        partition: str | None = None,
+    ) -> DgApiRunLaunchResult:
+        """Materialize an ad hoc selection of assets.
+
+        This launches the implicit asset job with the given selection, which is what the
+        graphql api expects; there is no separate asset materialization mutation. All the
+        assets must live in the same repository and code location.
+        """
+        if not asset_keys:
+            raise DagsterPlusGraphqlError("At least one asset key is required.")
+
+        return self._launch(
+            location_name=location_name,
+            repository_name=repository_name,
+            job_name=IMPLICIT_ASSET_JOB_NAME,
+            asset_keys=asset_keys,
+            tags=tags,
+            run_config=run_config,
+            partition=partition,
+        )
+
+    def _launch(
+        self,
+        *,
+        location_name: str,
+        repository_name: str,
+        job_name: str,
+        asset_keys: list[list[str]] | None,
         tags: dict[str, str] | None,
         run_config: dict | None,
         partition: str | None,
     ) -> DgApiRunLaunchResult:
-        if not job_name and not asset_keys:
-            raise DagsterPlusGraphqlError(
-                "At least one of `job_name` or `asset_keys` must be provided."
-            )
-
         execution_tags: list[ExecutionTag] = []
         if tags:
             execution_tags.extend(ExecutionTag(key=k, value=v) for k, v in tags.items())
@@ -164,7 +221,7 @@ class DgApiRunApi:
             repositoryName=repository_name,
             jobName=job_name,
             assetSelection=(
-                [AssetKeyInput(path=key.split("/")) for key in asset_keys] if asset_keys else None
+                [AssetKeyInput(path=key) for key in asset_keys] if asset_keys else None
             ),
         )
 
@@ -181,6 +238,7 @@ class DgApiRunApi:
                 return DgApiRunLaunchResult(
                     run_id=result.run.run_id,  # ty: ignore[unresolved-attribute]
                     status=result.run.status,  # ty: ignore[unresolved-attribute]
+                    job_name=result.run.job_name,  # ty: ignore[unresolved-attribute]
                 )
             case "RunConfigValidationInvalid":
                 joined = "\n  ".join(e.message for e in result.errors)  # ty: ignore[unresolved-attribute]

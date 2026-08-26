@@ -90,6 +90,7 @@
 # ---
 # name: TestFormatRunLaunchResult.test_format_run_launch_result_json[0]
   dict({
+    'job_name': None,
     'run_id': '123e4567-e89b-12d3-a456-426614174000',
     'status': 'STARTED',
   })

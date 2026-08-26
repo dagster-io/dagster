@@ -1530,12 +1530,14 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_launch_asset_json_json]
   dict({
+    'job_name': '__ASSET_JOB',
     'run_id': '2a1f7b3c-9d8e-4c5b-8a6d-3f1e2b9c4d7a',
     'status': 'STARTED',
   })
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_launch_job_json_json]
   dict({
+    'job_name': 'ingest_customers',
     'run_id': '5b3c8a91-2e4f-4d7b-9c6a-1f8d3e5b2c4a',
     'status': 'STARTED',
   })
@@ -1549,6 +1551,7 @@
 # ---
 # name: TestDynamicCommandExecution.test_command_execution[run_success_launch_with_partition_and_tags_json_json]
   dict({
+    'job_name': 'ingest_customers',
     'run_id': '8c4d2e7f-1a9b-4e3d-7c5b-9f2a1d8e3b6c',
     'status': 'STARTED',
   })

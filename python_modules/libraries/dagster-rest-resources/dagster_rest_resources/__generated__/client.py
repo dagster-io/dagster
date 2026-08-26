@@ -2930,6 +2930,7 @@ class Client(BaseClient):
                   run {
                     runId
                     status
+                    jobName
                   }
                 }
                 ... on InvalidStepError {

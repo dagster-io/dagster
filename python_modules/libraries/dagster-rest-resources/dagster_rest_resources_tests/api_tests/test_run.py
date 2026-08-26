@@ -64,6 +64,7 @@ from dagster_rest_resources.__generated__.terminate_run import (
     TerminateRunTerminateRunTerminateRunSuccessRun,
 )
 from dagster_rest_resources.api.run import (
+    IMPLICIT_ASSET_JOB_NAME,
     PARTITION_TAG,
     DgApiRun,
     DgApiRunApi,
@@ -240,13 +241,14 @@ class TestListRuns:
             DgApiRunApi(client).list_runs()
 
 
-def _make_launch_success(run_id: str = "run-1") -> LaunchRun:
+def _make_launch_success(run_id: str = "run-1", job_name: str = "my_job") -> LaunchRun:
     return LaunchRun(
         launchRun=LaunchRunLaunchRunLaunchRunSuccess(
             __typename="LaunchRunSuccess",
             run=LaunchRunLaunchRunLaunchRunSuccessRun(
                 runId=run_id,
                 status=RunStatus.STARTED,
+                jobName=job_name,
             ),
         )
     )
@@ -285,17 +287,18 @@ class TestLaunchRun:
                 executionMetadata=None,
             )
         )
-        assert result == DgApiRunLaunchResult(run_id="run-1", status=RunStatus.STARTED)
+        assert result == DgApiRunLaunchResult(
+            run_id="run-1", status=RunStatus.STARTED, job_name="my_job"
+        )
 
     def test_launches_with_asset_keys(self):
         client = Mock(spec=IGraphQLClient)
         client.launch_run.return_value = _make_launch_success()
 
-        DgApiRunApi(client).create_run(
-            **_launch_args(
-                job_name=None,
-                asset_keys=["raw_customers", "marts/dim_customers"],
-            )
+        DgApiRunApi(client).create_asset_run(
+            location_name="loc",
+            repository_name="__repository__",
+            asset_keys=[["raw_customers"], ["marts", "dim_customers"]],
         )
 
         call_params: ExecutionParams = client.launch_run.call_args.kwargs["execution_params"]
@@ -303,7 +306,8 @@ class TestLaunchRun:
             AssetKeyInput(path=["raw_customers"]),
             AssetKeyInput(path=["marts", "dim_customers"]),
         ]
-        assert call_params.selector.job_name is None
+        # an ad hoc asset selection runs against the implicit asset job
+        assert call_params.selector.job_name == IMPLICIT_ASSET_JOB_NAME
 
     def test_launches_with_partition_adds_tag(self):
         client = Mock(spec=IGraphQLClient)
@@ -347,8 +351,10 @@ class TestLaunchRun:
 
     def test_raises_when_neither_job_nor_assets(self):
         client = Mock(spec=IGraphQLClient)
-        with pytest.raises(DagsterPlusGraphqlError, match="At least one of"):
-            DgApiRunApi(client).create_run(**_launch_args(job_name=None, asset_keys=None))
+        with pytest.raises(DagsterPlusGraphqlError, match="At least one asset key"):
+            DgApiRunApi(client).create_asset_run(
+                location_name="loc", repository_name="__repository__", asset_keys=[]
+            )
         client.launch_run.assert_not_called()
 
     def test_run_config_validation_invalid_raises_with_messages(self):
@@ -547,3 +553,39 @@ class TestActionReexecuteBackfill:
         assert result.backfill_id == "backfill-1"
         # graphql types the list as nullable entries; the nulls are dropped
         assert result.launched_run_ids == ["run-1", "run-2"]
+
+
+class TestCreateAssetRun:
+    def test_preserves_a_slash_inside_a_key_component(self):
+        client = Mock(spec=IGraphQLClient)
+        client.launch_run.return_value = _make_launch_success()
+
+        DgApiRunApi(client).create_asset_run(
+            location_name="loc",
+            repository_name="__repository__",
+            asset_keys=[["marts/dim_customers"]],
+        )
+
+        call_params: ExecutionParams = client.launch_run.call_args.kwargs["execution_params"]
+        # one component containing a slash stays one component, where a joined form would
+        # have split it into two
+        assert call_params.selector.asset_selection == [AssetKeyInput(path=["marts/dim_customers"])]
+
+    def test_forwards_tags_and_partition(self):
+        client = Mock(spec=IGraphQLClient)
+        client.launch_run.return_value = _make_launch_success()
+
+        DgApiRunApi(client).create_asset_run(
+            location_name="loc",
+            repository_name="__repository__",
+            asset_keys=[["a"]],
+            tags={"team": "data"},
+            partition="2026-05-15",
+        )
+
+        call_params: ExecutionParams = client.launch_run.call_args.kwargs["execution_params"]
+        assert call_params.execution_metadata is not None
+        assert call_params.execution_metadata.tags is not None
+        pairs = [(t.key, t.value) for t in call_params.execution_metadata.tags]
+        assert ("team", "data") in pairs
+        assert (PARTITION_TAG, "2026-05-15") in pairs

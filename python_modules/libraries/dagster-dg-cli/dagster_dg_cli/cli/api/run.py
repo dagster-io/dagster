@@ -472,15 +472,31 @@ def launch_run_command(
             except json.JSONDecodeError as e:
                 raise click.UsageError(f"--config-json is not valid JSON: {e}")
 
-        result = api.create_run(
-            location_name=location,
-            repository_name=repository,
-            job_name=job_name,
-            asset_keys=list(asset_keys) if asset_keys else None,
-            tags=tags or None,
-            run_config=run_config,
-            partition=partition,
-        )
+        # the library takes asset keys as path components. The cli takes them slash
+        # separated, so a component containing a slash cannot be expressed here.
+        key_paths = [key.split("/") for key in asset_keys] if asset_keys else None
+
+        if job_name:
+            result = api.create_run(
+                location_name=location,
+                repository_name=repository,
+                job_name=job_name,
+                asset_keys=key_paths,
+                tags=tags or None,
+                run_config=run_config,
+                partition=partition,
+            )
+        elif key_paths is not None:
+            result = api.create_asset_run(
+                location_name=location,
+                repository_name=repository,
+                asset_keys=key_paths,
+                tags=tags or None,
+                run_config=run_config,
+                partition=partition,
+            )
+        else:
+            raise click.UsageError("At least one of --job or --asset-key must be provided.")
 
         if wait:
             while result.status not in TERMINAL_RUN_STATUSES:
