@@ -289,6 +289,50 @@ ab2 = dg.AssetsDefinition(
 )
 
 
+@dg.multi_asset(
+    outs={
+        "optional_output_1": dg.AssetOut(is_required=False),
+        "optional_output_2": dg.AssetOut(is_required=False),
+    },
+    partitions_def=static_partitions,
+)
+def optional_multi_asset():
+    # Only yields one of two optional outputs
+    yield dg.Output(1, output_name="optional_output_1")
+
+
+@dg.asset(
+    deps=["optional_output_2"],
+    partitions_def=static_partitions,
+)
+def downstream_of_optional():
+    return 1
+
+
+@dg.multi_asset(
+    outs={
+        "all_optional_output_1": dg.AssetOut(is_required=False),
+        "all_optional_output_2": dg.AssetOut(is_required=False),
+    },
+    partitions_def=static_partitions,
+)
+def all_optional_multi_asset():
+    # Yields all optional outputs
+    yield dg.Output(1, output_name="all_optional_output_1")
+    yield dg.Output(2, output_name="all_optional_output_2")
+
+
+@dg.asset(partitions_def=static_partitions, backfill_policy=BackfillPolicy.single_run())
+def partially_failing_ranged_asset(context: AssetExecutionContext):
+    # Materializes every partition in the range but the last, then fails, so a single run has
+    # both materialized and failed partitions of the same asset.
+    for partition_key in context.partition_keys[:-1]:
+        context.log_event(
+            dg.AssetMaterialization(asset_key=context.asset_key, partition=partition_key)
+        )
+    raise Exception("failed on last partition")
+
+
 partitions_a = dg.StaticPartitionsDefinition(["foo_a"])
 
 partitions_b = dg.StaticPartitionsDefinition(["foo_b"])
@@ -565,6 +609,10 @@ def the_repo():
             "multi_asset_job",
             selection=[my_multi_asset],
         ),
+        optional_multi_asset,
+        downstream_of_optional,
+        all_optional_multi_asset,
+        partially_failing_ranged_asset,
     ]
 
 
@@ -3951,7 +3999,7 @@ def test_asset_backfill_not_complete_until_retries_complete(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.asset_backfill_data
-    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+    assert backfill.asset_backfill_data.get_targeted_partitions_without_materialization_status().is_empty
     assert backfill.status == BulkActionStatus.REQUESTED
 
     # manually mark the run as successful to show that the backfill will be marked as complete
@@ -4029,7 +4077,7 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.asset_backfill_data
-    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+    assert backfill.asset_backfill_data.get_targeted_partitions_without_materialization_status().is_empty
     assert backfill.status == BulkActionStatus.REQUESTED
 
     # automatic retries wont get automatically run in test environment, so we run the function manually
@@ -4104,7 +4152,7 @@ def test_asset_backfill_fails_if_retries_fail(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.asset_backfill_data
-    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+    assert backfill.asset_backfill_data.get_targeted_partitions_without_materialization_status().is_empty
     assert backfill.status == BulkActionStatus.REQUESTED
 
     runs = instance.get_run_records()
@@ -4490,3 +4538,230 @@ def test_threaded_submit_backfill(
     runs = instance.get_runs()
     partitions = {run.tags[PARTITION_NAME_TAG] for run in runs}
     assert partitions == {"one", "two", "three"}
+
+
+def test_asset_backfill_completes_with_optional_output_not_yielded(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    """When a multi_asset with optional outputs only yields some outputs, the backfill should
+    complete as COMPLETED_FAILED rather than hanging forever.
+    """
+    backfill_id = "optional_output_backfill"
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [dg.AssetKey("optional_output_1"), dg.AssetKey("optional_output_2")]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    # First iteration: launches runs
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    # All runs should succeed (even though optional_output_2 is not yielded)
+    for run in instance.get_runs():
+        assert run.status == DagsterRunStatus.SUCCESS
+
+    # Second iteration: picks up materializations, detects runs complete but partitions without status
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    # Third iteration: detects stall (data unchanged) and completes the backfill
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+    assert backfill.backfill_end_timestamp is not None
+
+    # optional_output_1 should be materialized
+    backfill_data = backfill.asset_backfill_data
+    assert backfill_data
+    materialized_keys = set(backfill_data.materialized_subset.asset_keys)
+    assert dg.AssetKey("optional_output_1") in materialized_keys
+
+    # optional_output_2 should be in failed_and_downstream_subset
+    failed_keys = set(backfill_data.failed_and_downstream_subset.asset_keys)
+    assert dg.AssetKey("optional_output_2") in failed_keys
+
+
+def test_asset_backfill_completes_with_optional_output_and_downstream(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    """When an optional output is not yielded, downstream assets should also be in
+    failed_and_downstream_subset.
+    """
+    backfill_id = "optional_output_downstream_backfill"
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [
+        dg.AssetKey("optional_output_1"),
+        dg.AssetKey("optional_output_2"),
+        dg.AssetKey("downstream_of_optional"),
+    ]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+
+    # Run iterations until backfill completes (max 10 iterations to avoid infinite loop)
+    backfill = None
+    for _ in range(10):
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+        wait_for_all_runs_to_finish(instance, timeout=30)
+        backfill = instance.get_backfill(backfill_id)
+        assert backfill
+        if backfill.status != BulkActionStatus.REQUESTED:
+            break
+
+    assert backfill is not None
+    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+    assert backfill.backfill_end_timestamp is not None
+
+    backfill_data = backfill.asset_backfill_data
+    assert backfill_data
+
+    # optional_output_1 should be materialized
+    materialized_keys = set(backfill_data.materialized_subset.asset_keys)
+    assert dg.AssetKey("optional_output_1") in materialized_keys
+
+    # optional_output_2 and its downstream should be in failed_and_downstream_subset
+    failed_keys = set(backfill_data.failed_and_downstream_subset.asset_keys)
+    assert dg.AssetKey("optional_output_2") in failed_keys
+    assert dg.AssetKey("downstream_of_optional") in failed_keys
+
+
+def test_asset_backfill_succeeds_when_all_optional_outputs_yielded(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    """When all optional outputs are yielded, the backfill should complete as COMPLETED_SUCCESS.
+    Ensures stall detection doesn't false-positive.
+    """
+    backfill_id = "all_optional_output_backfill"
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [
+        dg.AssetKey("all_optional_output_1"),
+        dg.AssetKey("all_optional_output_2"),
+    ]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+
+    # First iteration: launches runs
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    # All runs should succeed
+    for run in instance.get_runs():
+        assert run.status == DagsterRunStatus.SUCCESS
+
+    # Second iteration: picks up all materializations and completes
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
+
+
+def test_asset_backfill_completes_when_ranged_run_partially_fails(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    """A single run that materializes some partitions of an asset and fails on others leaves the
+    failed partitions with no status, since failed work is derived per asset key. The backfill
+    should still terminate, with those partitions marked as failed.
+    """
+    backfill_id = "ranged_partial_failure_backfill"
+    partition_keys = static_partitions.get_partition_keys()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=[partially_failing_ranged_asset.key],
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    assert runs[0].status == DagsterRunStatus.FAILURE
+    assert runs[0].tags[ASSET_PARTITION_RANGE_START_TAG] == partition_keys[0]
+    assert runs[0].tags[ASSET_PARTITION_RANGE_END_TAG] == partition_keys[-1]
+
+    # Second iteration picks up the materializations; third detects the stall and completes.
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+    assert backfill.backfill_end_timestamp is not None
+
+    backfill_data = backfill.asset_backfill_data
+    assert backfill_data
+    materialized = set(backfill_data.materialized_subset.iterate_asset_partitions())
+    failed = set(backfill_data.failed_and_downstream_subset.iterate_asset_partitions())
+    assert materialized == {
+        AssetKeyPartitionKey(partially_failing_ranged_asset.key, pk) for pk in partition_keys[:-1]
+    }
+    assert failed == {AssetKeyPartitionKey(partially_failing_ranged_asset.key, partition_keys[-1])}

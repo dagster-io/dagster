@@ -164,19 +164,17 @@ class AssetBackfillData(NamedTuple):
     def with_requested_runs_for_target_roots(self, requested_runs_for_target_roots: bool):
         return self._replace(requested_runs_for_target_roots=requested_runs_for_target_roots)
 
-    def all_targeted_partitions_have_materialization_status(self) -> bool:
-        """The asset backfill is complete when all runs to be requested have finished (success,
-        failure, or cancellation). Since the AssetBackfillData object stores materialization states
-        per asset partition, we can use the materialization states and whether any runs for the backfill are
-        not finished to determine if the backfill is complete. We want the daemon to continue to update
-        the backfill data until all runs have finished in order to display the final partition statuses in the UI.
+    def with_failed_and_downstream_subset(
+        self, failed_and_downstream_subset: AssetGraphSubset
+    ) -> "AssetBackfillData":
+        return self._replace(failed_and_downstream_subset=failed_and_downstream_subset)
+
+    def get_targeted_partitions_without_materialization_status(self) -> AssetGraphSubset:
+        """Returns the subset of targeted partitions that have neither been materialized nor
+        marked as failed/downstream-of-failed. An empty result means all targeted partitions
+        have a materialization status.
         """
-        return (
-            (
-                self.materialized_subset | self.failed_and_downstream_subset
-            ).num_partitions_and_non_partitioned_assets
-            == self.target_subset.num_partitions_and_non_partitioned_assets
-        )
+        return self.target_subset - (self.materialized_subset | self.failed_and_downstream_subset)
 
     def all_requested_partitions_marked_as_materialized_or_failed(self) -> bool:
         return (
@@ -931,34 +929,17 @@ def _check_validity_of_asset_backfill_data_and_should_process_backfill(
     return True
 
 
-def backfill_is_complete(
+def backfill_runs_are_complete(
     backfill_id: str,
-    backfill_data: AssetBackfillData,
     instance: DagsterInstance,
     logger: logging.Logger,
-):
-    """A backfill is complete when:
-    1. all asset partitions in the target subset have a materialization state (successful, failed, downstream of a failed partition).
-    2. there are no in progress runs for the backfill.
-    3. there are no failed runs that will result in an automatic retry, but have not yet been retried.
+) -> bool:
+    """Whether all runs for the backfill have finished and no automatic retries are pending.
 
-    Condition 1 ensures that for each asset partition we have attempted to materialize it or have determined we
-    cannot materialize it because of a failed dependency. Condition 2 ensures that no retries of failed runs are
-    in progress. Condition 3 guards against a race condition where a failed run could be automatically retried
-    but it was not added into the queue in time to be caught by condition 2.
-
-    Since the AssetBackfillData object stores materialization states per asset partition, we want to ensure the
-    daemon continues to update the backfill data until all runs have finished in order to display the
-    final partition statuses in the UI.
+    The retry check guards against a race where a failed run is about to be automatically
+    retried but the retry has not yet been launched, so it does not show up as an in-progress run.
+    Both checks query fresh; a run may fail (and become eligible for retry) at any point during a tick.
     """
-    # Condition 1 - if any asset partitions in the target subset do not have a materialization state, the backfill
-    # is not complete
-    if not backfill_data.all_targeted_partitions_have_materialization_status():
-        logger.info(
-            "Not all targeted asset partitions have a materialization status. Backfill is still in progress."
-        )
-        return False
-    # Condition 2 - if there are in progress runs for the backfill, the backfill is not complete
     if (
         len(
             instance.get_run_ids(
@@ -973,7 +954,6 @@ def backfill_is_complete(
     ):
         logger.info("Backfill has in progress runs. Backfill is still in progress.")
         return False
-    # Condition 3 - if there are runs that will be retried, but have not yet been retried, the backfill is not complete
     runs_waiting_to_retry = [
         run.run_id
         for run in instance.get_runs(
@@ -991,6 +971,49 @@ def backfill_is_complete(
             formatted_runs += f"\n... {len(runs_waiting_to_retry) - num_runs_to_log} more"
         logger.info(
             f"The following runs for the backfill will be retried, but retries have not been launched. Backfill is still in progress:\n{formatted_runs}"
+        )
+        return False
+    return True
+
+
+def _backfill_is_stalled(
+    backfill_id: str,
+    previous_backfill_data: AssetBackfillData,
+    updated_backfill_data: AssetBackfillData,
+    asset_graph: RemoteWorkspaceAssetGraph,
+    instance_queryer: CachingInstanceQueryer,
+    logger: logging.Logger,
+) -> bool:
+    """Whether targeted partitions that still lack a materialization status can never receive one.
+
+    This happens when a run finishes without materializing everything the backfill expected of
+    it, e.g. a run that succeeds without yielding an optional output. Without this check such a
+    backfill stays in progress forever.
+
+    The run check must come before the materialization check: once no runs are in flight or
+    pending retry, no further materializations can appear, so a fetch that then finds nothing new
+    is conclusive.
+    """
+    # Any progress since the last tick rules out a stall, and skipping the run queries in that
+    # case keeps the common path cheap.
+    if (
+        updated_backfill_data.materialized_subset != previous_backfill_data.materialized_subset
+        or updated_backfill_data.failed_and_downstream_subset
+        != previous_backfill_data.failed_and_downstream_subset
+        or updated_backfill_data.requested_subset != previous_backfill_data.requested_subset
+    ):
+        return False
+
+    if not backfill_runs_are_complete(backfill_id, instance_queryer.instance, logger):
+        return False
+
+    fresh_materialized_subset = get_asset_backfill_iteration_materialized_subset(
+        backfill_id, updated_backfill_data, asset_graph, instance_queryer
+    )
+    if fresh_materialized_subset != updated_backfill_data.materialized_subset:
+        logger.info(
+            "All runs for the backfill have finished, but new materializations appeared during"
+            " this tick. Deferring to the next tick."
         )
         return False
     return True
@@ -1115,23 +1138,58 @@ async def execute_asset_backfill_iteration(
 
         updated_backfill_data = updated_backfill.get_asset_backfill_data(asset_graph)
 
-        if backfill_is_complete(
-            backfill_id=backfill.backfill_id,
-            backfill_data=updated_backfill_data,
-            instance=instance,
-            logger=logger,
-        ):
-            if (
-                updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
-                > 0
-            ):
-                updated_backfill = updated_backfill.with_status(BulkActionStatus.COMPLETED_FAILED)
-            else:
-                updated_backfill: PartitionBackfill = updated_backfill.with_status(
-                    BulkActionStatus.COMPLETED_SUCCESS
-                )
+        partitions_without_status = (
+            updated_backfill_data.get_targeted_partitions_without_materialization_status()
+        )
 
-            updated_backfill = updated_backfill.with_end_timestamp(get_current_timestamp())
+        if partitions_without_status.is_empty:
+            if backfill_runs_are_complete(backfill.backfill_id, instance, logger):
+                if (
+                    updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
+                    > 0
+                ):
+                    updated_backfill = updated_backfill.with_status(
+                        BulkActionStatus.COMPLETED_FAILED
+                    )
+                else:
+                    updated_backfill: PartitionBackfill = updated_backfill.with_status(
+                        BulkActionStatus.COMPLETED_SUCCESS
+                    )
+
+                updated_backfill = updated_backfill.with_end_timestamp(get_current_timestamp())
+                instance.update_backfill(updated_backfill)
+        elif _backfill_is_stalled(
+            backfill.backfill_id,
+            previous_asset_backfill_data,
+            updated_backfill_data,
+            asset_graph,
+            instance_queryer,
+            logger,
+        ):
+            logger.warning(
+                f"Backfill {backfill.backfill_id} has partitions with no materialization status"
+                f" despite all runs being complete. Marking them as failed:\n"
+                f"{_asset_graph_subset_to_str(partitions_without_status, asset_graph)}"
+            )
+            failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
+                backfill.backfill_id,
+                updated_backfill_data,
+                asset_graph_view,
+                updated_backfill_data.materialized_subset,
+                partitions_without_status | updated_backfill_data.failed_and_downstream_subset,
+            )
+            updated_backfill_data = updated_backfill_data.with_failed_and_downstream_subset(
+                failed_and_downstream_subset
+            )
+            updated_backfill = (
+                updated_backfill.with_asset_backfill_data(
+                    updated_backfill_data,
+                    dynamic_partitions_store=instance,
+                    asset_graph=asset_graph,
+                )
+                .with_status(BulkActionStatus.COMPLETED_FAILED)
+                .with_end_timestamp(get_current_timestamp())
+            )
             instance.update_backfill(updated_backfill)
 
         new_materialized_partitions = (
