@@ -51,7 +51,7 @@ When using `@record_custom`, there should be no defaults set on the field defini
      - `Cls._fields` → `get_record_annotations(Cls).keys()`
    - **Option B**: Add `LegacyNamedTupleMixin` to preserve NamedTuple API compatibility
 7. Use kwargs only in `super().__new__()` for `record_custom`
-8. Run `make ruff`
+8. Run `just ruff`
 
 ## Positional args
 

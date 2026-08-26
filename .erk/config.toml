@@ -8,5 +8,5 @@
 #  shell = "bash"
 #  commands = [
 #    "uv venv",
-#    "uv run make dev_install",
+#    "uv run just dev_install",
 #  ]

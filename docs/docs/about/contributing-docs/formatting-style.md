@@ -196,7 +196,7 @@ To type-check the code snippets during development, run the following command fr
 This will run `pyright` on all new/changed files relative to the master branch.
 
 ```
-make quick_pyright
+just quick-ty
 ```
 
 ### Line selection

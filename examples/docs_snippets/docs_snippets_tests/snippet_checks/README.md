@@ -6,7 +6,7 @@ Currently, these tests are used to validate user-facing guides in `/docs/docs` t
 
 ### Prerequisites
 
-Before running tests or regenerating snippets, you will need to create a virtual environment and run `make dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
+Before running tests or regenerating snippets, you will need to create a virtual environment and run `just dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
 
 ### Running the tests
 

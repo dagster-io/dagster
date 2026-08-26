@@ -182,7 +182,7 @@ def clickhouse_testcontainers_extra_cmds(_version: AvailablePythonVersion, _) ->
     ]
 
 
-ui_extra_cmds = [f"make -C {oss_path('.')} rebuild_ui"]
+ui_extra_cmds = [f"just -f {oss_path('justfile')} rebuild_ui"]
 
 
 mysql_extra_cmds = [
