@@ -4,16 +4,13 @@ description: Learn how to use Dagster's AI skills to build Dagster projects fast
 sidebar_label: AI tools
 ---
 
-Dagster maintains a set of AI skills that give coding agents better context and patterns for building Dagster projects. With these skills installed, your agent can help you create robust data pipelines according to Dagster best practices.
+Dagster maintains an AI skill that gives coding agents better context and patterns for building Dagster projects. With this skill installed, your agent can help you create robust data pipelines according to Dagster best practices.
 
 ## About Dagster skills
 
 A **skill** is a structured document that your AI coding agent loads when you invoke it. Skills tell agents what to do and how -- for example, which CLI commands to use, how to structure assets, and which patterns to follow.
 
-Dagster maintains two skills in the [dagster-io/skills](https://github.com/dagster-io/skills) repository:
-
-- **`dagster-expert`:** Expert guidance for building production-quality Dagster projects. Covers [`dg`](/api/clis/cli) CLI usage, asset patterns, automation strategies, and implementation workflows.
-- **`dignified-python`:** Production-quality Python coding standards for modern Python (types, exceptions, API design). Not Dagster-specific and can be used for general Python quality.
+Dagster maintains the `dagster-expert` skill in the [dagster-io/skills](https://github.com/dagster-io/skills) repository. It provides expert guidance for building production-quality Dagster projects, covering [`dg`](/api/clis/cli) CLI usage, asset patterns, automation strategies, and implementation workflows.
 
 ## Installing Dagster skills
 
@@ -30,26 +27,21 @@ Dagster maintains two skills in the [dagster-io/skills](https://github.com/dagst
 
    ![Claude Code plugin marketplace showing the Dagster skills being added](/img/getting-started/ai-tools/claude-marketplace.png)
 
-3. Install the skills you want to use from the plugin. For example, to install the `dagster-expert` skill, run the following command:
+3. Install the `dagster-expert` skill from the plugin:
 
    ```text
-   /plugin install dagster-expert@dagster-skills
+   /plugin install dagster-expert@dagster
    ```
 
-4. To confirm the skills are enabled, open the plugin list:
+4. To confirm the skill is enabled, open the plugin list:
 
    ```text
    /plugin
    ```
 
-   Switch to the **Installed** tab and confirm you see:
+   Switch to the **Installed** tab and confirm you see **dagster-expert**: enabled. If it is disabled, enable it before continuing.
 
-   - **dagster-expert**: enabled
-   - **dignified-python**: enabled
-
-   If any are disabled, enable them before continuing.
-
-   ![Claude Code plugin list showing dagster-expert and dignified-python enabled](/img/getting-started/ai-tools/claude-plugin.png)
+   ![Claude Code plugin list showing dagster-expert enabled](/img/getting-started/ai-tools/claude-plugin.png)
 
 </TabItem>
 <TabItem value="cursor" label="Cursor">
@@ -70,12 +62,9 @@ To install Dagster skills with Cursor, you will need `npx`, which comes with Nod
 
    ![Terminal output showing npx skills install completing successfully](/img/getting-started/ai-tools/npx-install.png)
 
-3. To confirm the skills are enabled, open Cursor's Agent panel. You want at least:
+3. To confirm the skill is enabled, open Cursor's Agent panel and look for `dagster-expert`.
 
-   - `dagster-expert`
-   - `dignified-python`
-
-   ![Cursor showing the Dagster skills available in the agent panel](/img/getting-started/ai-tools/cursor-skill.png)
+   ![Cursor showing the dagster-expert skill available in the agent panel](/img/getting-started/ai-tools/cursor-skill.png)
 
 </TabItem>
 <TabItem value="copilot" label="GitHub Copilot">
@@ -98,12 +87,9 @@ To install Dagster skills with GitHub Copilot, you will need `npx`, which comes 
 
    ![Terminal output showing npx skills install completing successfully](/img/getting-started/ai-tools/npx-install.png)
 
-4. In the Copilot Chat panel, verify that the Dagster skills are enabled:
+4. In the Copilot Chat panel, verify that the `dagster-expert` skill is enabled.
 
-   - `dagster-expert`
-   - `dignified-python`
-
-   ![GitHub Copilot Chat showing the Dagster skills available](/img/getting-started/ai-tools/copilot-skill.png)
+   ![GitHub Copilot Chat showing the dagster-expert skill available](/img/getting-started/ai-tools/copilot-skill.png)
 
 </TabItem>
 <TabItem value="codex" label="Codex">
@@ -124,12 +110,9 @@ To install Dagster skills with Codex, you will need `npx`, which comes with Node
 
    ![Terminal output showing npx skills install completing successfully](/img/getting-started/ai-tools/npx-install.png)
 
-3. In Codex settings or the skill list, confirm the Dagster skills are enabled:
+3. In Codex settings or the skill list, confirm the `dagster-expert` skill is enabled.
 
-   - `dagster-expert`
-   - `dignified-python`
-
-   ![Codex showing the Dagster skills enabled](/img/getting-started/ai-tools/codex-skill.png)
+   ![Codex showing the dagster-expert skill enabled](/img/getting-started/ai-tools/codex-skill.png)
 
 </TabItem>
 </Tabs>
