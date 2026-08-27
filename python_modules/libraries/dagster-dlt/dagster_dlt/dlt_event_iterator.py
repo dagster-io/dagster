@@ -17,16 +17,18 @@ def _fetch_row_count(
     dlt_pipeline: Pipeline,
     table_name: str,
 ) -> int | None:
-    """Exists mostly for ease of testing."""
-    with dlt_pipeline.sql_client() as client:  # ty: ignore[invalid-context-manager]
-        with client.execute_query(
-            f"select count(*) as row_count from {table_name}",
-        ) as cursor:
-            result = cursor.fetchone()
-            if result is not None and isinstance(result[0], int):
-                return result[0]
-            else:
-                return None
+    """Fetch the total row count for a table using dlt's built-in dataset interface.
+
+    Uses ``pipeline.dataset().row_counts(...)`` instead of a hand-written SQL query so that dlt
+    handles destination-specific query building (identifier quoting, dialects) and destinations
+    without a raw SQL client (e.g. filesystem). Exists as a standalone helper mostly for ease of
+    testing.
+    """
+    # ``row_counts`` returns a relation yielding ``(table_name, row_count)`` rows.
+    result = dlt_pipeline.dataset().row_counts(table_names=[table_name]).fetchone()
+    if result is not None and isinstance(result[1], int):
+        return result[1]
+    return None
 
 
 def fetch_row_count_metadata(
