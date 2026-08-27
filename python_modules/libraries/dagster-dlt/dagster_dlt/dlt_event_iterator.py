@@ -19,10 +19,9 @@ def _fetch_row_count(
 ) -> int | None:
     """Fetch the total row count for a table using dlt's built-in dataset interface.
 
-    Uses ``pipeline.dataset().row_counts(...)`` instead of a hand-written SQL query so that dlt
-    handles destination-specific query building (identifier quoting, dialects) and destinations
-    without a raw SQL client (e.g. filesystem). Exists as a standalone helper mostly for ease of
-    testing.
+    Uses ``pipeline.dataset().row_counts(...)`` so that dlt handles destination-specific query
+    building (identifier quoting, dialects) and destinations without a raw SQL client (e.g.
+    filesystem).
     """
     # ``row_counts`` returns a relation yielding ``(table_name, row_count)`` rows.
     result = dlt_pipeline.dataset().row_counts(table_names=[table_name]).fetchone()

@@ -24,8 +24,8 @@ def _config_to_metadata_value(value: Any) -> MetadataValue | None:
 class DagsterDltMetadataSet(NamespacedMetadataSet):
     """Metadata entries that apply to assets loaded by dlt.
 
-    These are sourced directly from the dlt resource's hints so that dlt's own configuration is
-    surfaced on the asset at definition time rather than re-derived by Dagster.
+    These are sourced from the dlt resource's hints so that dlt's own configuration is surfaced
+    on the asset at definition time.
 
     Args:
         write_disposition (Optional[MetadataValue]): How dlt writes the table, e.g. ``append``,
@@ -53,7 +53,7 @@ class DagsterDltMetadataSet(NamespacedMetadataSet):
         """Build the metadata set from a dlt resource's hints, omitting values that are not set.
 
         These hints are known statically at definition time, so the metadata is attached to the
-        asset spec rather than recomputed on every materialization.
+        asset spec.
         """
         table_format = resource.table_format
         return cls(

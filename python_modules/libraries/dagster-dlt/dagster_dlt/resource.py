@@ -84,7 +84,7 @@ class DagsterDltResource(ConfigurableResource):
 
         # dlt's own JSON encoder handles types that are not natively JSON serializable
         # (e.g. pendulum ``DateTime``), so round-tripping through it yields metadata that
-        # Dagster can store without a hand-rolled datetime caster.
+        # Dagster can store.
         load_info_dict = dlt_json.loads(dlt_json.dumps(load_info.asdict()))
 
         # shared metadata that is displayed for all assets

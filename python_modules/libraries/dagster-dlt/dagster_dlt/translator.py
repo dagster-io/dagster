@@ -30,13 +30,13 @@ def _classify_destination(destination: Destination) -> str | None:
     """Classify a dlt destination as ``"table"``- or ``"file"``-based for use as a Dagster kind.
 
     Inspects the destination config class's MRO (matched by class *name* so it stays robust
-    across dlt versions, which have moved these classes between modules) rather than relying on a
-    hardcoded destination list. Returns ``None`` for destinations that are neither (e.g. the
-    ``dummy`` destination), so no classification kind is added.
+    across dlt versions) rather than relying on a hardcoded destination list. Returns ``None``
+    for destinations that are neither (e.g. the ``dummy`` destination), so no classification kind
+    is added.
     """
     try:
-        # ``Destination.spec`` is the config *class*; read its MRO directly (guard in case a
-        # future dlt returns an instance).
+        # ``Destination.spec`` is the config *class*; use its type if given an instance, then read
+        # the MRO directly.
         spec = destination.spec
         spec_class = spec if isinstance(spec, type) else type(spec)
         mro_names = {klass.__name__ for klass in spec_class.__mro__}
