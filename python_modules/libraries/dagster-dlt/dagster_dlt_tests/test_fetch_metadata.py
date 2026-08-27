@@ -1,6 +1,7 @@
 import asyncio
 from unittest import mock
 
+import dlt
 from dagster import AssetExecutionContext, AssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.partitions.definition import MonthlyPartitionsDefinition
@@ -39,6 +40,36 @@ def test_fetch_row_count(dlt_pipeline: Pipeline) -> None:
         if materialization.asset_key == AssetKey("dlt_pipeline_repo_issues")
     )
     assert repo_issues_materialization.metadata["dagster/row_count"].value == 7
+
+
+def test_fetch_row_count_no_rows_loaded(dlt_pipeline: Pipeline) -> None:
+    """A run that loads no rows produces no load jobs, so row count enrichment should be skipped
+    rather than failing the materialization.
+    """
+
+    @dlt.source
+    def empty_source():
+        @dlt.resource(name="empty")
+        def empty():
+            return
+            yield  # pragma: no cover - never yields, so no rows are loaded
+
+        return empty
+
+    @dlt_assets(dlt_source=empty_source(), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context).fetch_row_count()
+
+    res = materialize(
+        [example_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+    assert res.success
+    materializations = [event.materialization for event in res.get_asset_materialization_events()]
+    assert len(materializations) == 1
+    assert "dagster/row_count" not in materializations[0].metadata
 
 
 def test_fetch_row_count_partitioned(dlt_pipeline: Pipeline) -> None:

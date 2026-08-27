@@ -47,7 +47,9 @@ def fetch_row_count_metadata(
 
     jobs_metadata = materialization.metadata.get("jobs")
     if not jobs_metadata or not isinstance(jobs_metadata, list):
-        raise Exception("Missing jobs metadata to retrieve row count.")
+        # A run that loads no rows produces no load jobs for the table, so there is nothing to
+        # count. Row count is opt-in enrichment, so skip it rather than failing the materialization.
+        return TableMetadataSet(row_count=None, storage_kind=storage_kind)
     table_name = jobs_metadata[0].get("table_name")  # ty: ignore[unresolved-attribute]
     try:
         return TableMetadataSet(
