@@ -24,6 +24,7 @@ from dlt.pipeline.pipeline import Pipeline
 
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
+from dagster_dlt.metadata_set import DagsterDltMetadataSet
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
@@ -73,38 +74,26 @@ class DagsterDltResource(ConfigurableResource):
             Mapping[str, Any]: Asset-specific metadata dictionary
 
         """
-        dlt_base_metadata_types = {
-            "first_run",
-            "started_at",
-            "finished_at",
-            "dataset_name",
-            "destination_name",
-            "destination_type",
-        }
-
         # dlt's own JSON encoder handles types that are not natively JSON serializable
         # (e.g. pendulum ``DateTime``), so round-tripping through it yields metadata that
         # Dagster can store.
         load_info_dict = dlt_json.loads(dlt_json.dumps(load_info.asdict()))
 
-        # shared metadata that is displayed for all assets
-        base_metadata = {k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types}
         default_schema = dlt_pipeline.default_schema
         normalized_table_name = default_schema.naming.normalize_table_identifier(
             str(resource.table_name)
         )
         # job metadata for specific target `normalized_table_name`
-        base_metadata["jobs"] = [
+        jobs = [
             job
             for load_package in load_info_dict.get("load_packages", [])
             for job in load_package.get("jobs", [])
             if job.get("table_name") == normalized_table_name
         ]
+        # A table absent from the normalize row counts had zero rows loaded this run.
         rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            normalized_table_name
+            normalized_table_name, 0
         )
-        if rows_loaded is not None:
-            base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
         schema: str | None = None
         for load_package in load_info_dict.get("load_packages", []):
@@ -115,7 +104,7 @@ class DagsterDltResource(ConfigurableResource):
             if schema:
                 break
 
-        destination_name: str | None = base_metadata.get("destination_name")
+        destination_name: str | None = load_info_dict.get("destination_name")
         table_name = None
         if destination_name and schema:
             table_name = ".".join([destination_name, schema, normalized_table_name])
@@ -133,17 +122,24 @@ class DagsterDltResource(ConfigurableResource):
         }
         table_schema = self._extract_table_schema_metadata(normalized_table_name, default_schema)
 
-        base_metadata = {
+        # Static destination/dataset metadata lives on the asset spec (see
+        # ``DagsterDltMetadataSet.from_pipeline``); only run-specific values are emitted here.
+        runtime_metadata = DagsterDltMetadataSet(
+            first_run=load_info_dict.get("first_run"),
+            started_at=load_info_dict.get("started_at"),
+            finished_at=load_info_dict.get("finished_at"),
+            rows_loaded=rows_loaded,
+            jobs=MetadataValue.json(jobs) if jobs else None,
+        )
+
+        return {
             **child_table_schemas,
-            **base_metadata,
+            **runtime_metadata,
             **TableMetadataSet(
                 column_schema=table_schema,
                 table_name=table_name,
-                storage_kind=destination_name,
             ),
         }
-
-        return base_metadata
 
     @public
     def run(

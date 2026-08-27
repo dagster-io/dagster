@@ -315,18 +315,20 @@ def test_get_automation_condition_converts_auto_materialize_policy_legacy(
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     # Emitted per-run on the materialization event.
     required_event_metadata_keys = {
-        "destination_type",
-        "destination_name",
-        "dataset_name",
-        "first_run",
-        "started_at",
-        "finished_at",
-        "jobs",
+        "dagster-dlt/first_run",
+        "dagster-dlt/started_at",
+        "dagster-dlt/finished_at",
+        "dagster-dlt/jobs",
+        "dagster-dlt/rows_loaded",
     }
-    # dlt-native table settings are attached to the asset spec at definition time.
+    # Static dlt settings (resource hints and destination) are attached to the asset spec at
+    # definition time rather than repeated on every materialization.
     required_spec_metadata_keys = {
         "dagster-dlt/write_disposition",
         "dagster-dlt/resource",
+        "dagster-dlt/destination_name",
+        "dagster-dlt/destination_type",
+        "dagster-dlt/dataset_name",
     }
 
     @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
@@ -561,30 +563,38 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
         yield from dlt_pipeline_resource.run(context=context)
 
     first_asset_metadata = next(iter(example_pipeline_assets.metadata_by_key.values()))
-    dagster_dlt_source = first_asset_metadata.get("dagster_dlt/source")
-    dagster_dlt_pipeline = first_asset_metadata.get("dagster_dlt/pipeline")
-    dagster_dlt_translator = first_asset_metadata.get("dagster_dlt/translator")
+    dagster_dlt_source = first_asset_metadata.get("dagster-dlt/dlt_source")
+    dagster_dlt_pipeline = first_asset_metadata.get("dagster-dlt/dlt_pipeline")
+    dagster_dlt_translator = first_asset_metadata.get("dagster-dlt/dagster_dlt_translator")
 
     assert example_pipeline_assets.metadata_by_key == {
         AssetKey("dlt_pipeline_repos"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/table_name": "repos",
             "dagster/storage_kind": "duckdb",
             "dagster-dlt/write_disposition": TextMetadataValue("merge"),
             "dagster-dlt/resource": "repos",
+            "dagster-dlt/table_name": "repos",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": "id",
         },
         AssetKey("dlt_pipeline_repo_issues"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/table_name": "repo_issues",
             "dagster/storage_kind": "duckdb",
             "dagster-dlt/write_disposition": TextMetadataValue("merge"),
             "dagster-dlt/resource": "repo_issues",
+            "dagster-dlt/table_name": "repo_issues",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": ["repo_id", "issue_id"],
         },
@@ -612,24 +622,30 @@ def test_asset_metadata_legacy(dlt_pipeline: Pipeline) -> None:
         yield from dlt_pipeline_resource.run(context=context)
 
     first_asset_metadata = next(iter(example_pipeline_assets.metadata_by_key.values()))
-    dagster_dlt_source = first_asset_metadata.get("dagster_dlt/source")
-    dagster_dlt_pipeline = first_asset_metadata.get("dagster_dlt/pipeline")
-    dagster_dlt_translator = first_asset_metadata.get("dagster_dlt/translator")
+    dagster_dlt_source = first_asset_metadata.get("dagster-dlt/dlt_source")
+    dagster_dlt_pipeline = first_asset_metadata.get("dagster-dlt/dlt_pipeline")
+    dagster_dlt_translator = first_asset_metadata.get("dagster-dlt/dagster_dlt_translator")
 
     assert example_pipeline_assets.metadata_by_key == {
         AssetKey("dlt_pipeline_repos"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": "id",
         },
         AssetKey("dlt_pipeline_repo_issues"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": ["repo_id", "issue_id"],
         },

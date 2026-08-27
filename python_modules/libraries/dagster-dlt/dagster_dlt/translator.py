@@ -37,11 +37,9 @@ _NON_TABULAR_DESTINATIONS = {"qdrant", "weaviate", "lancedb", "dummy"}
 def _classify_destination(destination: Destination) -> str | None:
     """Classify a dlt destination as ``"table"``- or ``"file"``-based for use as a Dagster kind.
 
-    Keyed off the public ``destination_name`` rather than any internal config/capabilities so we
-    stay on dlt's stable, documented surface. The filesystem destination is file-based; known
+    Keyed off the public ``destination_name``. The filesystem destination is file-based; known
     non-tabular destinations (vector databases, the no-op ``dummy``) are left unclassified
-    (``None``) so no ``table``/``file`` kind is forced onto them; every other destination is a SQL
-    warehouse and is treated as tabular.
+    (``None``); every other destination is treated as a tabular SQL warehouse.
     """
     destination_name = destination.destination_name
     if destination_name == _FILE_DESTINATION:
@@ -81,6 +79,9 @@ class DagsterDltTranslator:
             "get_metadata", self._default_metadata_fn, data.resource
         )
         destination_name = data.destination.destination_name if data.destination else None
+        destination_metadata = (
+            DagsterDltMetadataSet.from_pipeline(data.pipeline) if data.pipeline else {}
+        )
         return AssetSpec(
             key=self._resolve_back_compat_method(
                 "get_asset_key", self._default_asset_key_fn, data.resource
@@ -97,7 +98,11 @@ class DagsterDltTranslator:
             group_name=self._resolve_back_compat_method(
                 "get_group_name", self._default_group_name_fn, data.resource
             ),
-            metadata={**metadata, **TableMetadataSet(storage_kind=destination_name)},
+            metadata={
+                **metadata,
+                **TableMetadataSet(storage_kind=destination_name),
+                **destination_metadata,
+            },
             owners=self._resolve_back_compat_method(
                 "get_owners", self._default_owners_fn, data.resource
             ),
@@ -470,10 +475,8 @@ class DagsterDltTranslator:
             destination_name = destination.destination_name
             kinds.add(_DESTINATION_KIND_NORMALIZATION.get(destination_name, destination_name))
 
-        # ``table_format`` is read directly from the resource's hints. It is only known at
-        # definition time when set explicitly on the resource (otherwise it is resolved during the
-        # run), and may be a callable for dynamically-computed hints -- in either case we treat it
-        # as absent and add no format kind.
+        # ``table_format`` is only known statically when set as a plain string on the resource; a
+        # callable (dynamically-computed) hint is resolved during the run and treated as absent here.
         table_format = resource.table_format
         table_format = table_format if isinstance(table_format, str) else None
         table_format_kind = (
