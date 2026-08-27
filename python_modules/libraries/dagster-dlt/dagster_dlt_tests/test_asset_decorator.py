@@ -127,11 +127,11 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         text="duckdb.pipeline.repos"
     )
 
-    # dlt-native table settings surfaced under the ``dagster-dlt`` namespace
-    assert repos_materialization.metadata["dagster-dlt/write_disposition"] == TextMetadataValue(
-        text="merge"
-    )
-    assert repos_materialization.metadata["dagster-dlt/resource"] == TextMetadataValue(text="repos")
+    # dlt-native table settings are surfaced under the ``dagster-dlt`` namespace at definition
+    # time (on the asset spec), sourced from the resource hints -- not re-emitted per run.
+    repos_spec_metadata = example_pipeline_assets.metadata_by_key[AssetKey("dlt_pipeline_repos")]
+    assert repos_spec_metadata["dagster-dlt/write_disposition"] == TextMetadataValue(text="merge")
+    assert repos_spec_metadata["dagster-dlt/resource"] == "repos"
 
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
@@ -313,7 +313,8 @@ def test_get_automation_condition_converts_auto_materialize_policy_legacy(
 
 
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
-    required_metadata_keys = {
+    # Emitted per-run on the materialization event.
+    required_event_metadata_keys = {
         "destination_type",
         "destination_name",
         "dataset_name",
@@ -321,6 +322,9 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
         "started_at",
         "finished_at",
         "jobs",
+    }
+    # dlt-native table settings are attached to the asset spec at definition time.
+    required_spec_metadata_keys = {
         "dagster-dlt/write_disposition",
         "dagster-dlt/resource",
     }
@@ -331,8 +335,14 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     ):
         for asset in dlt_pipeline_resource.run(context=context):
             assert asset.metadata
-            assert all(key in asset.metadata.keys() for key in required_metadata_keys)
+            assert all(key in asset.metadata.keys() for key in required_event_metadata_keys)
             yield asset
+
+    assert all(
+        key in spec_metadata.keys()
+        for spec_metadata in example_pipeline_assets.metadata_by_key.values()
+        for key in required_spec_metadata_keys
+    )
 
     res = materialize(
         [example_pipeline_assets],
@@ -557,6 +567,8 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
             "dagster_dlt/translator": dagster_dlt_translator,
             "dagster/table_name": "repos",
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/write_disposition": TextMetadataValue("merge"),
+            "dagster-dlt/resource": "repos",
             "mode": "upsert",
             "primary_key": "id",
         },
@@ -566,6 +578,8 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
             "dagster_dlt/translator": dagster_dlt_translator,
             "dagster/table_name": "repo_issues",
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/write_disposition": TextMetadataValue("merge"),
+            "dagster-dlt/resource": "repo_issues",
             "mode": "upsert",
             "primary_key": ["repo_id", "issue_id"],
         },

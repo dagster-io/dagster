@@ -11,6 +11,8 @@ from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 from dlt.pipeline.pipeline import Pipeline
 
+from dagster_dlt.metadata_set import DagsterDltMetadataSet
+
 # Maps dlt destination names whose name does not match a recognized Dagster "kind" to the kind
 # that renders the right technology icon. dlt names that already match a recognized kind are
 # passed through unchanged (see ``_default_kinds_fn``); only these mismatches need remapping.
@@ -349,7 +351,10 @@ class DagsterDltTranslator:
         table_name = resource.table_name
         if callable(table_name):
             table_name = resource.name
-        return dict(TableMetadataSet(table_name=table_name))
+        return {
+            **TableMetadataSet(table_name=table_name),
+            **DagsterDltMetadataSet.from_resource(resource),
+        }
 
     @superseded(
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).owners` instead.",

@@ -3,7 +3,7 @@ from typing import Any
 
 from dagster import MetadataValue
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
-from dlt.common.schema.typing import TTableSchema
+from dlt.extract.resource import DltResource
 
 
 def _config_to_metadata_value(value: Any) -> MetadataValue | None:
@@ -11,9 +11,10 @@ def _config_to_metadata_value(value: Any) -> MetadataValue | None:
 
     Several dlt table settings (e.g. ``schema_contract``) can be expressed either as a simple
     string shorthand or as a nested dict. We render the mapping form as JSON so it is displayed
-    in a structured way, and the string form as plain text.
+    in a structured way, and the string form as plain text. Dynamically-computed hints (callables)
+    are only resolved during the run, so they are treated as absent at definition time.
     """
-    if value is None:
+    if value is None or callable(value):
         return None
     if isinstance(value, Mapping):
         return MetadataValue.json(dict(value))
@@ -23,8 +24,8 @@ def _config_to_metadata_value(value: Any) -> MetadataValue | None:
 class DagsterDltMetadataSet(NamespacedMetadataSet):
     """Metadata entries that apply to assets loaded by dlt.
 
-    These are sourced directly from the dlt table schema so that dlt's own configuration is
-    surfaced on the materialized asset rather than re-derived by Dagster.
+    These are sourced directly from the dlt resource's hints so that dlt's own configuration is
+    surfaced on the asset at definition time rather than re-derived by Dagster.
 
     Args:
         write_disposition (Optional[MetadataValue]): How dlt writes the table, e.g. ``append``,
@@ -36,27 +37,28 @@ class DagsterDltMetadataSet(NamespacedMetadataSet):
         resource (Optional[str]): The name of the dlt resource that produced the table.
         table_format (Optional[str]): The open table format used by the destination, e.g.
             ``iceberg`` or ``delta``, when configured.
-        file_format (Optional[str]): The file format used when loading the table, e.g. ``parquet``
-            or ``jsonl``, when configured.
     """
 
     write_disposition: MetadataValue | None = None
     schema_contract: MetadataValue | None = None
     resource: str | None = None
     table_format: str | None = None
-    file_format: str | None = None
 
     @classmethod
     def namespace(cls) -> str:
         return "dagster-dlt"
 
     @classmethod
-    def from_table_schema(cls, table_schema: TTableSchema) -> "DagsterDltMetadataSet":
-        """Build the metadata set from a dlt table schema, omitting values that are not set."""
+    def from_resource(cls, resource: DltResource) -> "DagsterDltMetadataSet":
+        """Build the metadata set from a dlt resource's hints, omitting values that are not set.
+
+        These hints are known statically at definition time, so the metadata is attached to the
+        asset spec rather than recomputed on every materialization.
+        """
+        table_format = resource.table_format
         return cls(
-            write_disposition=_config_to_metadata_value(table_schema.get("write_disposition")),
-            schema_contract=_config_to_metadata_value(table_schema.get("schema_contract")),
-            resource=table_schema.get("resource"),
-            table_format=table_schema.get("table_format"),
-            file_format=table_schema.get("file_format"),
+            write_disposition=_config_to_metadata_value(resource.write_disposition),
+            schema_contract=_config_to_metadata_value(resource.schema_contract),
+            resource=resource.name,
+            table_format=table_format if isinstance(table_format, str) else None,
         )
