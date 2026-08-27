@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.13.20 (core) / 0.29.20 (libraries)
+
+### New
+
+- In Dagster+, dynamic partitions can now be wiped and deleted in a single action, clearing the asset's degraded health status. Multi-partitioned assets are not yet supported.
+- Alert policies can now notify on successful code location deploys.
+- [ui] Filter inputs now show your recent searches in the autocomplete dropdown before you start typing.
+- [ui] Refreshed the Dagster and Dagster+ logos and favicons to the new branding.
+- [ui] Updated the Google kind tag icons. (Thanks, [@dragos-pop](https://github.com/dragos-pop)!)
+
+### Bugfixes
+
+- [dagster-aws] Fixed an issue where an ECS run launch would fail instead of retrying when ECS reported a transient `AGENT` failure. (Thanks, [@yishern](https://github.com/yishern)!)
+
 ## 1.13.19 (core) / 0.29.19 (libraries)
 
 ### New
