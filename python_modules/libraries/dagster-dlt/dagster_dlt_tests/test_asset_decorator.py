@@ -428,6 +428,11 @@ def _delta_resource():
         ),
         # Destinations that are neither table- nor file-based only get the destination name.
         (_plain_resource, "dummy", {"dlt", "dummy"}),
+        # Vector databases model data as collections/points/objects, not tables, so they get no
+        # "table" classification kind -- only the destination name.
+        (_plain_resource, "qdrant", {"dlt", "qdrant"}),
+        (_plain_resource, "weaviate", {"dlt", "weaviate"}),
+        (_plain_resource, "lancedb", {"dlt", "lancedb"}),
     ],
 )
 def test_default_kinds_by_destination(

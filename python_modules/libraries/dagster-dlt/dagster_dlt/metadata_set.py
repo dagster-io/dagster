@@ -3,7 +3,7 @@ from typing import Any
 
 from dagster import MetadataValue
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
-from dlt.extract.resource import DltResource
+from dlt.sources import DltResource
 
 
 def _config_to_metadata_value(value: Any) -> MetadataValue | None:

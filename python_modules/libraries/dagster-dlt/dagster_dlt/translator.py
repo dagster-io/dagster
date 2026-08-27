@@ -25,30 +25,30 @@ _DESTINATION_KIND_NORMALIZATION = {
 # ``delta`` kind); ``iceberg`` matches a recognized kind directly and passes through.
 _TABLE_FORMAT_KIND_NORMALIZATION = {"delta": "deltalake"}
 
+# dlt's file destination.
+_FILE_DESTINATION = "filesystem"
+
+# dlt destinations whose data model is neither tabular nor file-based, so they get no
+# ``table``/``file`` classification kind. Vector databases model data as
+# collections/points/objects rather than tables, and ``dummy`` is a no-op test destination.
+_NON_TABULAR_DESTINATIONS = {"qdrant", "weaviate", "lancedb", "dummy"}
+
 
 def _classify_destination(destination: Destination) -> str | None:
     """Classify a dlt destination as ``"table"``- or ``"file"``-based for use as a Dagster kind.
 
-    Inspects the destination config class's MRO (matched by class *name* so it stays robust
-    across dlt versions) rather than relying on a hardcoded destination list. Returns ``None``
-    for destinations that are neither (e.g. the ``dummy`` destination), so no classification kind
-    is added.
+    Keyed off the public ``destination_name`` rather than any internal config/capabilities so we
+    stay on dlt's stable, documented surface. The filesystem destination is file-based; known
+    non-tabular destinations (vector databases, the no-op ``dummy``) are left unclassified
+    (``None``) so no ``table``/``file`` kind is forced onto them; every other destination is a SQL
+    warehouse and is treated as tabular.
     """
-    try:
-        # ``Destination.spec`` is the config *class*; use its type if given an instance, then read
-        # the MRO directly.
-        spec = destination.spec
-        spec_class = spec if isinstance(spec, type) else type(spec)
-        mro_names = {klass.__name__ for klass in spec_class.__mro__}
-    except Exception:
-        return None
-    # ``filesystem`` configs subclass both the filesystem config and the dwh/staging config, so
-    # the filesystem check must come first.
-    if "FilesystemConfiguration" in mro_names:
+    destination_name = destination.destination_name
+    if destination_name == _FILE_DESTINATION:
         return "file"
-    if "DestinationClientDwhConfiguration" in mro_names:
-        return "table"
-    return None
+    if destination_name in _NON_TABULAR_DESTINATIONS:
+        return None
+    return "table"
 
 
 # Use Optional because the Dlt metaclass doesn't support __or__ (|operator)
@@ -441,11 +441,13 @@ class DagsterDltTranslator:
         """A method that takes in a dlt resource and returns the kinds which should be attached.
 
         Always includes ``"dlt"``. When a destination is available it also adds a technology kind
-        and a ``"table"``/``"file"`` classification kind:
+        and, where applicable, a ``"table"``/``"file"`` classification kind:
 
         - SQL/warehouse destinations get the (normalized) destination name (e.g. ``snowflake``)
           plus the ``"table"`` classification kind.
         - Filesystem destinations get the generic ``"file"`` kind.
+        - Non-tabular destinations (e.g. vector databases) get only the destination name, with no
+          ``"table"``/``"file"`` classification kind.
 
         If the resource declares an open table format (e.g. ``iceberg``/``delta``), that more
         specific format kind supersedes the generic ``"table"`` classification kind.
