@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -355,13 +356,87 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
 
         for key in example_pipeline_assets.asset_and_check_keys:
             if isinstance(key, AssetKey):
-                assert has_kind(example_pipeline_assets.tags_by_key[key], destination_type)
+                tags = example_pipeline_assets.tags_by_key[key]
+                assert has_kind(tags, destination_type)
+                # duckdb/snowflake/bigquery are all SQL/warehouse destinations, so they also get
+                # the generic "table" classification kind.
+                assert has_kind(tags, "table")
                 assert (
                     TableMetadataSet.extract(
                         example_pipeline_assets.metadata_by_key[key]
                     ).storage_kind
                     == destination_type
                 )
+
+
+@dlt.resource
+def _plain_resource():
+    yield {}
+
+
+@dlt.resource(table_format="iceberg")
+def _iceberg_resource():
+    yield {}
+
+
+@dlt.resource(table_format="delta")
+def _delta_resource():
+    yield {}
+
+
+@pytest.mark.parametrize(
+    "resource, destination, expected_kinds",
+    [
+        # SQL/warehouse destinations get the (normalized) destination name plus the generic
+        # "table" classification kind.
+        (_plain_resource, "duckdb", {"dlt", "duckdb", "table"}),
+        (_plain_resource, "snowflake", {"dlt", "snowflake", "table"}),
+        # mssql is normalized to the recognized "sqlserver" UI kind.
+        (_plain_resource, "mssql", {"dlt", "sqlserver", "table"}),
+        # Destinations whose name already matches a kind pass through unchanged.
+        (_plain_resource, "motherduck", {"dlt", "motherduck", "table"}),
+        # An explicit open table format supersedes the generic "table" kind.
+        (_iceberg_resource, "snowflake", {"dlt", "snowflake", "iceberg"}),
+        (_delta_resource, "snowflake", {"dlt", "snowflake", "deltalake"}),
+        # All filesystem destinations get the generic "file" kind, regardless of storage backend.
+        (
+            _plain_resource,
+            dlt.destinations.filesystem(bucket_url="s3://bucket/prefix"),
+            {"dlt", "file"},
+        ),
+        (
+            _plain_resource,
+            dlt.destinations.filesystem(bucket_url="file:///tmp/dlt"),
+            {"dlt", "file"},
+        ),
+        (_plain_resource, "filesystem", {"dlt", "file"}),
+        # Filesystem + table format adds the format kind alongside "file".
+        (
+            _delta_resource,
+            dlt.destinations.filesystem(bucket_url="s3://bucket/prefix"),
+            {"dlt", "file", "deltalake"},
+        ),
+        # Destinations that are neither table- nor file-based only get the destination name.
+        (_plain_resource, "dummy", {"dlt", "dummy"}),
+    ],
+)
+def test_default_kinds_by_destination(
+    resource: DltResource, destination: Any, expected_kinds: set[str]
+) -> None:
+    translator = DagsterDltTranslator()
+    pipeline = dlt.pipeline(
+        pipeline_name=str(uuid.uuid4()),
+        dataset_name="example",
+        destination=destination,
+    )
+    data = DltResourceTranslatorData(resource=resource, pipeline=pipeline)
+    assert set(translator.get_asset_spec(data).kinds) == expected_kinds
+
+
+def test_default_kinds_without_destination() -> None:
+    translator = DagsterDltTranslator()
+    data = DltResourceTranslatorData(resource=_plain_resource, pipeline=None)
+    assert set(translator.get_asset_spec(data).kinds) == {"dlt"}
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:

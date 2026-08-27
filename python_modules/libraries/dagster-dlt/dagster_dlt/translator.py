@@ -11,6 +11,43 @@ from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 from dlt.pipeline.pipeline import Pipeline
 
+# Maps dlt destination names whose name does not match a recognized Dagster "kind" to the kind
+# that renders the right technology icon. dlt names that already match a recognized kind are
+# passed through unchanged (see ``_default_kinds_fn``); only these mismatches need remapping.
+_DESTINATION_KIND_NORMALIZATION = {
+    "mssql": "sqlserver",
+    "filesystem": "file",
+}
+
+# dlt's ``delta`` table format corresponds to the ``deltalake`` Dagster kind (there is no
+# ``delta`` kind); ``iceberg`` matches a recognized kind directly and passes through.
+_TABLE_FORMAT_KIND_NORMALIZATION = {"delta": "deltalake"}
+
+
+def _classify_destination(destination: Destination) -> str | None:
+    """Classify a dlt destination as ``"table"``- or ``"file"``-based for use as a Dagster kind.
+
+    Inspects the destination config class's MRO (matched by class *name* so it stays robust
+    across dlt versions, which have moved these classes between modules) rather than relying on a
+    hardcoded destination list. Returns ``None`` for destinations that are neither (e.g. the
+    ``dummy`` destination), so no classification kind is added.
+    """
+    try:
+        # ``Destination.spec`` is the config *class*; read its MRO directly (guard in case a
+        # future dlt returns an instance).
+        spec = destination.spec
+        spec_class = spec if isinstance(spec, type) else type(spec)
+        mro_names = {klass.__name__ for klass in spec_class.__mro__}
+    except Exception:
+        return None
+    # ``filesystem`` configs subclass both the filesystem config and the dwh/staging config, so
+    # the filesystem check must come first.
+    if "FilesystemConfiguration" in mro_names:
+        return "file"
+    if "DestinationClientDwhConfiguration" in mro_names:
+        return "table"
+    return None
+
 
 # Use Optional because the Dlt metaclass doesn't support __or__ (|operator)
 @record
@@ -396,8 +433,17 @@ class DagsterDltTranslator:
         resource: DltResource,
         destination: Optional[Destination],  # noqa: UP045
     ) -> set[str]:
-        """A method that takes in a dlt resource and returns the kinds which should be
-        attached. Defaults to the destination type and "dlt".
+        """A method that takes in a dlt resource and returns the kinds which should be attached.
+
+        Always includes ``"dlt"``. When a destination is available it also adds a technology kind
+        and a ``"table"``/``"file"`` classification kind:
+
+        - SQL/warehouse destinations get the (normalized) destination name (e.g. ``snowflake``)
+          plus the ``"table"`` classification kind.
+        - Filesystem destinations get the generic ``"file"`` kind.
+
+        If the resource declares an open table format (e.g. ``iceberg``/``delta``), that more
+        specific format kind supersedes the generic ``"table"`` classification kind.
 
         Args:
             resource (DltResource): dlt resource
@@ -407,5 +453,33 @@ class DagsterDltTranslator:
             Set[str]: The kinds of the asset.
         """
         kinds = {"dlt"}
-        destination_set = {destination.destination_name} if destination else set()
-        return kinds.union(destination_set)
+        if destination is None:
+            return kinds
+
+        classification = _classify_destination(destination)
+        if classification == "file":
+            kinds.add("file")
+        else:
+            destination_name = destination.destination_name
+            kinds.add(_DESTINATION_KIND_NORMALIZATION.get(destination_name, destination_name))
+
+        # ``table_format`` is read directly from the resource's hints. It is only known at
+        # definition time when set explicitly on the resource (otherwise it is resolved during the
+        # run), and may be a callable for dynamically-computed hints -- in either case we treat it
+        # as absent and add no format kind.
+        table_format = resource.table_format
+        table_format = table_format if isinstance(table_format, str) else None
+        table_format_kind = (
+            _TABLE_FORMAT_KIND_NORMALIZATION.get(table_format, table_format)
+            if table_format
+            else None
+        )
+
+        if classification == "table":
+            # A specific open table format (e.g. iceberg/deltalake) already implies table-ness, so
+            # it supersedes the generic "table" kind.
+            kinds.add(table_format_kind or "table")
+        elif classification == "file" and table_format_kind:
+            kinds.add(table_format_kind)
+
+        return kinds
