@@ -10,7 +10,16 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-The Dagster+ MCP server allows you to access information and take actions in your Dagster+ deployment within an AI session. Currently, the MCP server is not available for organizations in the EU region.
+The Dagster+ MCP server allows you to access information and take actions in your Dagster+ deployment within an AI session.
+
+The server URL depends on the region your organization is in:
+
+| Region | URL                                      |
+| ------ | ---------------------------------------- |
+| US     | `https://mcp.agent.dagster.cloud/mcp`    |
+| EU     | `https://mcp.agent.eu.dagster.cloud/mcp` |
+
+The examples below use the US URL. If your organization is in the EU region, substitute the EU URL.
 
 ## Connecting to the MCP server
 
@@ -20,7 +29,7 @@ You can connect to the Dagster+ MCP server using OAuth or by manually specifying
 <TabItem value="oauth" label="OAuth">
 Add the Dagster+ MCP server to your client by specifying the following URL:
 
-- **URL:** `https://mcp.agent.dagster.cloud/mcp`
+- **URL:** `https://mcp.agent.dagster.cloud/mcp` (EU: `https://mcp.agent.eu.dagster.cloud/mcp`)
 
 Then authenticate the MCP server according to the client instructions.
 
@@ -39,7 +48,7 @@ open a browser window where you can log into Dagster+ and allow the MCP server a
 <TabItem value="headers" label="Manually provide headers">
 Connect to the Dagster+ MCP server by specifying a URL and a few headers.
 
-- **URL:** `https://mcp.agent.dagster.cloud/mcp`
+- **URL:** `https://mcp.agent.dagster.cloud/mcp` (EU: `https://mcp.agent.eu.dagster.cloud/mcp`)
 
 - **Headers:**
   - `Authorization: Bearer [your user token]`
