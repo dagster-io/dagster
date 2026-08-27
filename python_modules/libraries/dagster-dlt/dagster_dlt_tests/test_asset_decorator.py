@@ -126,6 +126,12 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
         text="duckdb.pipeline.repos"
     )
 
+    # dlt-native table settings surfaced under the ``dagster-dlt`` namespace
+    assert repos_materialization.metadata["dagster-dlt/write_disposition"] == TextMetadataValue(
+        text="merge"
+    )
+    assert repos_materialization.metadata["dagster-dlt/resource"] == TextMetadataValue(text="repos")
+
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
             columns=[
@@ -314,6 +320,8 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
         "started_at",
         "finished_at",
         "jobs",
+        "dagster-dlt/write_disposition",
+        "dagster-dlt/resource",
     }
 
     @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)

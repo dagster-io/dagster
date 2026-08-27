@@ -24,6 +24,7 @@ from dlt.pipeline.pipeline import Pipeline
 
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
+from dagster_dlt.metadata_set import DagsterDltMetadataSet
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
@@ -133,9 +134,19 @@ class DagsterDltResource(ConfigurableResource):
         }
         table_schema = self._extract_table_schema_metadata(normalized_table_name, default_schema)
 
+        # Surface dlt-native table settings (write disposition, schema contract, etc.) under the
+        # ``dagster-dlt`` namespace, sourced directly from the dlt table schema.
+        dlt_table_schema = default_schema.tables.get(normalized_table_name)
+        dlt_metadata = (
+            DagsterDltMetadataSet.from_table_schema(dlt_table_schema)
+            if dlt_table_schema is not None
+            else DagsterDltMetadataSet()
+        )
+
         base_metadata = {
             **child_table_schemas,
             **base_metadata,
+            **dlt_metadata,
             **TableMetadataSet(
                 column_schema=table_schema,
                 table_name=table_name,
