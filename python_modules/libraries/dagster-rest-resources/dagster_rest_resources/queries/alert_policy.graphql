@@ -21,6 +21,9 @@ mutation ReconcileAlertPolicies($document: GenericScalar!) {
         name
       }
     }
+    ... on CodeBackedAlertPolicyError {
+      message
+    }
     ... on UnauthorizedError {
       message
     }
@@ -346,6 +349,9 @@ mutation CreateOrUpdateAlertPolicy($document: GenericScalar!) {
     __typename
     ... on AlertPolicy {
       ...AlertPolicyFields
+    }
+    ... on CodeBackedAlertPolicyError {
+      message
     }
     ... on InvalidAlertPolicyError {
       message

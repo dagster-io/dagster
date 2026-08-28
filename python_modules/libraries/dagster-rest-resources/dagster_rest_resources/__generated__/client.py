@@ -187,6 +187,9 @@ class Client(BaseClient):
                     name
                   }
                 }
+                ... on CodeBackedAlertPolicyError {
+                  message
+                }
                 ... on UnauthorizedError {
                   message
                 }
@@ -1071,6 +1074,9 @@ class Client(BaseClient):
                 __typename
                 ... on AlertPolicy {
                   ...AlertPolicyFields
+                }
+                ... on CodeBackedAlertPolicyError {
+                  message
                 }
                 ... on InvalidAlertPolicyError {
                   message

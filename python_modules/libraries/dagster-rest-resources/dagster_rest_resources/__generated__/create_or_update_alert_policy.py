@@ -15,6 +15,7 @@ class CreateOrUpdateAlertPolicy(BaseModel):
         "CreateOrUpdateAlertPolicyCreateOrUpdateAlertPolicyFromDocumentPythonError",
         "CreateOrUpdateAlertPolicyCreateOrUpdateAlertPolicyFromDocumentUnauthorizedError",
         "CreateOrUpdateAlertPolicyCreateOrUpdateAlertPolicyFromDocumentInvalidAlertPolicyError",
+        "CreateOrUpdateAlertPolicyCreateOrUpdateAlertPolicyFromDocumentCodeBackedAlertPolicyError",
     ] = Field(alias="createOrUpdateAlertPolicyFromDocument", discriminator="typename__")
 
 
@@ -43,6 +44,13 @@ class CreateOrUpdateAlertPolicyCreateOrUpdateAlertPolicyFromDocumentInvalidAlert
     BaseModel
 ):
     typename__: Literal["InvalidAlertPolicyError"] = Field(alias="__typename")
+    message: str
+
+
+class CreateOrUpdateAlertPolicyCreateOrUpdateAlertPolicyFromDocumentCodeBackedAlertPolicyError(
+    BaseModel
+):
+    typename__: Literal["CodeBackedAlertPolicyError"] = Field(alias="__typename")
     message: str
 
 

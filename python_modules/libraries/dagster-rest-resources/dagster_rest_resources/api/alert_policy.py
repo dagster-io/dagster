@@ -203,6 +203,8 @@ class DgApiAlertPolicyApi:
         match result.typename__:
             case "AlertPolicy":
                 return _build_policy(result)
+            case "CodeBackedAlertPolicyError":
+                raise DagsterPlusGraphqlError(result.message)
             case "InvalidAlertPolicyError":
                 raise DagsterPlusGraphqlError(f"Invalid alert policy: {result.message}")
             case "UnauthorizedError":
@@ -241,6 +243,8 @@ class DgApiAlertPolicyApi:
                 return DgApiAlertPolicySyncResult(
                     items=sorted(p.name for p in result.alert_policies if p is not None)  # ty: ignore[unresolved-attribute]
                 )
+            case "CodeBackedAlertPolicyError":
+                raise DagsterPlusGraphqlError(result.message)  # ty: ignore[unresolved-attribute]
             case "InvalidAlertPolicyError":
                 raise DagsterPlusGraphqlError(f"Invalid alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
