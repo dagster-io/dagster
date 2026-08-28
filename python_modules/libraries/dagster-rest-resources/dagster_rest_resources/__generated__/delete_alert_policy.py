@@ -11,6 +11,7 @@ from .base_model import BaseModel
 class DeleteAlertPolicy(BaseModel):
     delete_alert_policy: Union[
         "DeleteAlertPolicyDeleteAlertPolicyDeleteAlertPolicySuccess",
+        "DeleteAlertPolicyDeleteAlertPolicyCodeBackedAlertPolicyError",
         "DeleteAlertPolicyDeleteAlertPolicyPythonError",
         "DeleteAlertPolicyDeleteAlertPolicyUnauthorizedError",
     ] = Field(alias="deleteAlertPolicy", discriminator="typename__")
@@ -19,6 +20,11 @@ class DeleteAlertPolicy(BaseModel):
 class DeleteAlertPolicyDeleteAlertPolicyDeleteAlertPolicySuccess(BaseModel):
     typename__: Literal["DeleteAlertPolicySuccess"] = Field(alias="__typename")
     alert_policy_name: str = Field(alias="alertPolicyName")
+
+
+class DeleteAlertPolicyDeleteAlertPolicyCodeBackedAlertPolicyError(BaseModel):
+    typename__: Literal["CodeBackedAlertPolicyError"] = Field(alias="__typename")
+    message: str
 
 
 class DeleteAlertPolicyDeleteAlertPolicyPythonError(BaseModel):

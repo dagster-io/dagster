@@ -220,6 +220,8 @@ class DgApiAlertPolicyApi:
         match result.typename__:
             case "DeleteAlertPolicySuccess":
                 return DgApiAlertPolicyDeleteResult(name=result.alert_policy_name)
+            case "CodeBackedAlertPolicyError":
+                raise DagsterPlusGraphqlError(result.message)
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error deleting alert policy: {result.message}")
             case "PythonError":

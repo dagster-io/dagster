@@ -366,6 +366,9 @@ mutation DeleteAlertPolicy($alertPolicyName: String!) {
     ... on DeleteAlertPolicySuccess {
       alertPolicyName
     }
+    ... on CodeBackedAlertPolicyError {
+      message
+    }
     ... on UnauthorizedError {
       message
     }

@@ -1258,6 +1258,9 @@ class Client(BaseClient):
                 ... on DeleteAlertPolicySuccess {
                   alertPolicyName
                 }
+                ... on CodeBackedAlertPolicyError {
+                  message
+                }
                 ... on UnauthorizedError {
                   message
                 }
