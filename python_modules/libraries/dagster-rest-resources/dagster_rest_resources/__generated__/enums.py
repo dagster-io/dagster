@@ -958,6 +958,12 @@ class SnapshotBaseDeploymentCondition(str, Enum):
     ON_UPDATE = "ON_UPDATE"
 
 
+class AlertPolicySource(str, Enum):
+    CODE = "CODE"
+    UI = "UI"
+    LEGACY = "LEGACY"
+
+
 class S3ClientMethod(str, Enum):
     GET = "GET"
     PUT = "PUT"
