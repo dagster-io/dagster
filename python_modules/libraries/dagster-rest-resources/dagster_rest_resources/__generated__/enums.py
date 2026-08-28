@@ -581,6 +581,12 @@ class TableSchemaChangeType(str, Enum):
     COLUMN_TAGS_CHANGED = "COLUMN_TAGS_CHANGED"
 
 
+class AlertPolicySource(str, Enum):
+    CODE = "CODE"
+    UI = "UI"
+    LEGACY = "LEGACY"
+
+
 class NotificationStatus(str, Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
@@ -956,12 +962,6 @@ class InstallablePackageNames(str, Enum):
 class SnapshotBaseDeploymentCondition(str, Enum):
     ON_CREATE = "ON_CREATE"
     ON_UPDATE = "ON_UPDATE"
-
-
-class AlertPolicySource(str, Enum):
-    CODE = "CODE"
-    UI = "UI"
-    LEGACY = "LEGACY"
 
 
 class S3ClientMethod(str, Enum):
