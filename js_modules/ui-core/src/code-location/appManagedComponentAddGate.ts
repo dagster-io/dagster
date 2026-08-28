@@ -1,4 +1,5 @@
 interface AddGateInputs {
+  isBranchDeployment: boolean;
   gitProviderConnected: boolean;
   gitBackedEnabled: boolean;
   bindingLoading: boolean;
@@ -13,11 +14,18 @@ interface AddGateInputs {
  * directly and needs no repo.
  */
 export const addComponentDisabledReason = ({
+  isBranchDeployment,
   gitProviderConnected,
   gitBackedEnabled,
   bindingLoading,
   hasBinding,
 }: AddGateInputs): string | null => {
+  // A branch deployment previews the component authored on the pull request.
+  // Adding another one there would leave state the pull request never contains,
+  // so only edits to the existing draft are allowed.
+  if (isBranchDeployment) {
+    return 'Components can only be added from the base deployment.';
+  }
   if (!gitProviderConnected) {
     return 'Connect a git integration to author components.';
   }

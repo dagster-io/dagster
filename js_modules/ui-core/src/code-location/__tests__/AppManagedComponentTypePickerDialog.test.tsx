@@ -1,6 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
 import {useOpenAppManagedComponentPullRequest} from '@shared/code-location/useOpenAppManagedComponentPullRequest';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -39,12 +40,17 @@ jest.mock('@shared/app/useGitProviderConnected', () => ({
   useGitProviderConnected: jest.fn(),
 }));
 
+jest.mock('@shared/app/useIsBranchDeployment', () => ({
+  useIsBranchDeployment: jest.fn(() => false),
+}));
+
 jest.mock('@shared/code-location/useOpenAppManagedComponentPullRequest', () => ({
   useOpenAppManagedComponentPullRequest: jest.fn(),
 }));
 
 const gitBackedEnabledMock = useGitBackedComponentAuthoringEnabled as jest.Mock;
 const gitProviderConnectedMock = useGitProviderConnected as jest.Mock;
+const isBranchDeploymentMock = useIsBranchDeployment as jest.Mock;
 const openPullRequestHookMock = useOpenAppManagedComponentPullRequest as jest.Mock;
 
 const LOCATION_NAME = 'my_location';
@@ -90,6 +96,12 @@ function renderDialog() {
 }
 
 describe('AppManagedComponentTypePickerDialog', () => {
+  // clearMocks resets calls but not implementations, so a return value set by
+  // one test would otherwise leak into the next.
+  beforeEach(() => {
+    isBranchDeploymentMock.mockReturnValue(false);
+  });
+
   it('names the pull request on submit and says so before the user submits', async () => {
     gitBackedEnabledMock.mockReturnValue(true);
     gitProviderConnectedMock.mockReturnValue(true);
@@ -107,6 +119,22 @@ describe('AppManagedComponentTypePickerDialog', () => {
     gitBackedEnabledMock.mockReturnValue(false);
     gitProviderConnectedMock.mockReturnValue(false);
     openPullRequestHookMock.mockReturnValue(null);
+
+    const user = userEvent.setup();
+    renderDialog();
+    await user.click(await screen.findByRole('button', {name: 'Configure'}));
+
+    expect(await screen.findByRole('button', {name: 'Add component'})).toBeEnabled();
+    expect(screen.queryByText(/Submitting opens a pull request/)).toBeNull();
+  });
+
+  // Editing a draft in the preview applies to live state; opening a second pull
+  // request from the branch deployment would be wrong.
+  it('keeps the live-write path on a branch deployment', async () => {
+    gitBackedEnabledMock.mockReturnValue(true);
+    gitProviderConnectedMock.mockReturnValue(true);
+    isBranchDeploymentMock.mockReturnValue(true);
+    openPullRequestHookMock.mockReturnValue(jest.fn());
 
     const user = userEvent.setup();
     renderDialog();

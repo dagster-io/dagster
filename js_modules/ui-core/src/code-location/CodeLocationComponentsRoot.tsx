@@ -2,6 +2,7 @@ import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components
 import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
 import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
 import {AppManagedComponentRepoBindingSection} from '@shared/code-location/AppManagedComponentRepoBindingSection';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
@@ -34,11 +35,13 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
   // with no binding has nowhere to write. Block it here rather than letting the
   // form be filled in and rejected at submit.
   const gitBackedEnabled = useGitBackedComponentAuthoringEnabled();
+  const isBranchDeployment = useIsBranchDeployment();
   const {binding, loading: bindingLoading} = useAppManagedComponentRepoBinding(
     repoAddress.location,
   );
 
   const addDisabledReason = addComponentDisabledReason({
+    isBranchDeployment,
     gitProviderConnected,
     gitBackedEnabled,
     bindingLoading,

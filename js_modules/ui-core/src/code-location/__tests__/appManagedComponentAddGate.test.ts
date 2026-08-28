@@ -1,6 +1,7 @@
 import {addComponentDisabledReason} from '../appManagedComponentAddGate';
 
 const inputs = (overrides: Partial<Parameters<typeof addComponentDisabledReason>[0]> = {}) => ({
+  isBranchDeployment: false,
   gitProviderConnected: true,
   gitBackedEnabled: true,
   bindingLoading: false,
@@ -21,6 +22,14 @@ describe('addComponentDisabledReason', () => {
 
   it('blocks when git-backed and the location has no binding', () => {
     expect(addComponentDisabledReason(inputs({hasBinding: false}))).toMatch(/Set a repository/);
+  });
+
+  // A branch deployment previews the pull request's component; adding another
+  // there would leave state the pull request never contains.
+  it('blocks adding on a branch deployment', () => {
+    expect(addComponentDisabledReason(inputs({isBranchDeployment: true}))).toMatch(
+      /only be added from the base deployment/,
+    );
   });
 
   // Without the gate the submit writes component state directly, so a repo

@@ -16,6 +16,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
 import {useOpenAppManagedComponentPullRequest} from '@shared/code-location/useOpenAppManagedComponentPullRequest';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
@@ -182,9 +183,13 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
   // or no provider connected — the existing state-write path is used. The gate is
   // the same one the server enforces live-state writes with, so the two agree.
   const gitBackedEnabled = useGitBackedComponentAuthoringEnabled();
+  const isBranchDeployment = useIsBranchDeployment();
   const openPullRequest = useOpenAppManagedComponentPullRequest();
   const gitProviderConnected = useGitProviderConnected();
-  const gitBacked = gitBackedEnabled && openPullRequest !== null && gitProviderConnected;
+  // A branch deployment is already the preview of an authoring pull request, so
+  // edits there write component state directly rather than opening another one.
+  const gitBacked =
+    gitBackedEnabled && !isBranchDeployment && openPullRequest !== null && gitProviderConnected;
   const [pullRequest, setPullRequest] = useState<{
     url: string;
     branch: string;
