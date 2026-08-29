@@ -23,7 +23,7 @@ from dagster import (
     op,
 )
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY, _validate_check_keys
+from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_shared.record import replace
@@ -54,26 +54,71 @@ def _get_select_args(dbt_cli_invocation) -> set[str]:
     return set(dbt_select_args.split())
 
 
-def test_duplicate_asset_check_keys_are_rejected() -> None:
-    check_key = AssetCheckKey(asset_key=AssetKey("orders"), name="validates_amount")
+def test_duplicate_asset_check_keys_are_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    model_ids = {"model.project.first", "model.project.second"}
+    test_ids = {"test.project.first", "test.project.second"}
+    duplicate_test_ids = sorted(test_ids)
     manifest = {
+        "metadata": {"dbt_version": "1.9.0", "project_name": "project"},
         "nodes": {
-            "test.project.first": {"original_file_path": "tests/first.yml"},
-            "test.project.second": {"original_file_path": "tests/second.yml"},
-        }
+            **{
+                model_id: {
+                    "resource_type": "model",
+                    "name": model_id.rsplit(".", 1)[-1],
+                    "unique_id": model_id,
+                    "config": {},
+                    "original_file_path": f"models/{model_id.rsplit('.', 1)[-1]}.sql",
+                }
+                for model_id in model_ids
+            },
+            **{
+                test_id: {
+                    "resource_type": "test",
+                    "name": test_id.rsplit(".", 1)[-1],
+                    "unique_id": test_id,
+                    "attached_node": f"model.project.{test_id.rsplit('.', 1)[-1]}",
+                    "depends_on": {"nodes": [f"model.project.{test_id.rsplit('.', 1)[-1]}"]},
+                    "original_file_path": f"tests/{test_id.rsplit('.', 1)[-1]}.yml",
+                }
+                for test_id in test_ids
+            },
+        },
+        "child_map": {
+            "model.project.first": ["test.project.first"],
+            "model.project.second": ["test.project.second"],
+        },
+        "parent_map": {
+            "test.project.first": ["model.project.first"],
+            "test.project.second": ["model.project.second"],
+        },
     }
+    monkeypatch.setattr(
+        "dagster_dbt.asset_utils.select_unique_ids",
+        lambda **_: model_ids | test_ids,
+    )
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_asset_check_spec(self, asset_spec, manifest, unique_id, project):
+            check_spec = super().get_asset_check_spec(asset_spec, manifest, unique_id, project)
+            if check_spec and unique_id in duplicate_test_ids:
+                return check_spec._replace(
+                    asset_key=AssetKey("duplicate"),
+                    name="duplicate_check",
+                )
+            return check_spec
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="identical Dagster asset check keys",
     ) as exc_info:
-        _validate_check_keys(
-            manifest,
-            {check_key: {"test.project.first", "test.project.second"}},
+        @dbt_assets(
+            manifest=manifest,
+            dagster_dbt_translator=CustomDagsterDbtTranslator(),
         )
+        def my_dbt_assets(): ...
 
-    assert "test.project.first" in str(exc_info.value)
-    assert "test.project.second" in str(exc_info.value)
+    for unique_id in duplicate_test_ids:
+        assert unique_id in str(exc_info.value)
+        assert manifest["nodes"][unique_id]["original_file_path"] in str(exc_info.value)
 
 
 def test_without_asset_checks(test_asset_checks_manifest: dict[str, Any]) -> None:
