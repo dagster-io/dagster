@@ -934,6 +934,7 @@ def build_dbt_specs(
 
     specs: list[AssetSpec] = []
     check_specs: dict[str, AssetCheckSpec] = {}
+    test_ids_by_check_key: defaultdict[AssetCheckKey, set[str]] = defaultdict(set)
     key_by_unique_id: dict[str, AssetKey] = {}
 
     child_map = _build_child_map(manifest)
@@ -973,6 +974,7 @@ def build_dbt_specs(
 
             if check_spec:
                 check_specs[check_spec.get_python_identifier()] = check_spec
+                test_ids_by_check_key[check_spec.key].add(child_unique_id)
 
         # update the keys_by_unqiue_id dictionary to include keys created for upstream
         # assets. note that this step may need to change once the translator is updated
@@ -995,8 +997,10 @@ def build_dbt_specs(
                     )
                     if check_spec:
                         check_specs[check_spec.get_python_identifier()] = check_spec
+                        test_ids_by_check_key[check_spec.key].add(child_unique_id)
 
     _validate_asset_keys(translator, manifest, key_by_unique_id)
+    _validate_check_keys(manifest, test_ids_by_check_key)
     return specs, list(check_specs.values())
 
 
@@ -1036,6 +1040,44 @@ def _validate_asset_keys(
         raise DagsterInvalidDefinitionError(
             "\n\n".join([DUPLICATE_ASSET_KEY_ERROR_MESSAGE, *error_messages])
         )
+
+
+def _validate_check_keys(
+    manifest: Mapping[str, Any],
+    test_ids_by_check_key: Mapping[AssetCheckKey, AbstractSet[str]],
+) -> None:
+    collisions = {
+        key: unique_ids for key, unique_ids in test_ids_by_check_key.items() if len(unique_ids) > 1
+    }
+    if not collisions:
+        return
+
+    error_messages = []
+    for key, unique_ids in collisions.items():
+        formatted_ids = [
+            f"  - `{unique_id}` ({get_node(manifest, unique_id)['original_file_path']})"
+            for unique_id in sorted(unique_ids)
+        ]
+        error_messages.append(
+            "\n".join(
+                [
+                    f"The following dbt tests generate the same asset check key `{key}`:",
+                    *formatted_ids,
+                ]
+            )
+        )
+
+    raise DagsterInvalidDefinitionError(
+        "\n\n".join(
+            [
+                (
+                    "The following dbt tests generate identical Dagster asset check keys."
+                    " Please ensure that each dbt test has a unique name."
+                ),
+                *error_messages,
+            ]
+        )
+    )
 
 
 def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:

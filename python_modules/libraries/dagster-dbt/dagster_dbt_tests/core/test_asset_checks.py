@@ -12,6 +12,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
+    DagsterInvalidDefinitionError,
     ExecuteInProcessResult,
     OpExecutionContext,
     Output,
@@ -22,7 +23,7 @@ from dagster import (
     op,
 )
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
+from dagster_dbt.asset_utils import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY, _validate_check_keys
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_shared.record import replace
@@ -51,6 +52,28 @@ def _get_select_args(dbt_cli_invocation) -> set[str]:
     *_, dbt_select_flag, dbt_select_args = list(dbt_cli_invocation.process.args)
     assert dbt_select_flag == "--select"
     return set(dbt_select_args.split())
+
+
+def test_duplicate_asset_check_keys_are_rejected() -> None:
+    check_key = AssetCheckKey(asset_key=AssetKey("orders"), name="validates_amount")
+    manifest = {
+        "nodes": {
+            "test.project.first": {"original_file_path": "tests/first.yml"},
+            "test.project.second": {"original_file_path": "tests/second.yml"},
+        }
+    }
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="identical Dagster asset check keys",
+    ) as exc_info:
+        _validate_check_keys(
+            manifest,
+            {check_key: {"test.project.first", "test.project.second"}},
+        )
+
+    assert "test.project.first" in str(exc_info.value)
+    assert "test.project.second" in str(exc_info.value)
 
 
 def test_without_asset_checks(test_asset_checks_manifest: dict[str, Any]) -> None:
