@@ -12,7 +12,8 @@ from dagster_rest_resources.__generated__.input_types import (
 )
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.issue import (
@@ -44,7 +45,7 @@ class DgApiIssueApi:
     def get_issue(self, issue_id: str) -> DgApiIssue:
         result = self._client.get_issue(issue_id=issue_id).issue
         if result is None:
-            raise DagsterPlusGraphqlError(f"Issue not found: {issue_id}")
+            raise DagsterPlusClientError(f"Issue not found: {issue_id}")
 
         match result.typename__:
             case "Issue":
@@ -52,7 +53,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -86,7 +87,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -114,7 +115,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -140,7 +141,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -161,7 +162,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -184,7 +185,7 @@ class DgApiIssueApi:
                     f"Error removing link from issue: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error removing link from issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error removing link from issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

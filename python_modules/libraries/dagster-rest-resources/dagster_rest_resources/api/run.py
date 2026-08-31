@@ -14,7 +14,12 @@ from dagster_rest_resources.__generated__.input_types import (
     RunsFilter,
 )
 from dagster_rest_resources.gql_client import IGraphQLClient
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import (
+    DagsterPlusClientError,
+    DagsterPlusServerError,
+    DagsterPlusUnauthorizedError,
+    error_for_typename,
+)
 from dagster_rest_resources.schemas.run import (
     DgApiBackfillReexecuteResult,
     DgApiRun,
@@ -97,9 +102,9 @@ class DgApiRunApi:
                     stats=stats,
                 )
             case "RunNotFoundError":
-                raise DagsterPlusGraphqlError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching run: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching run: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -137,9 +142,9 @@ class DgApiRunApi:
                     total=result.count,  # ty: ignore[unresolved-attribute]
                 )
             case "InvalidPipelineRunsFilterError":
-                raise DagsterPlusGraphqlError(f"Invalid runs filter: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Invalid runs filter: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching runs: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching runs: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -187,7 +192,7 @@ class DgApiRunApi:
         assets must live in the same repository and code location.
         """
         if not asset_keys:
-            raise DagsterPlusGraphqlError("At least one asset key is required.")
+            raise DagsterPlusClientError("At least one asset key is required.")
 
         return self._launch(
             location_name=location_name,
@@ -242,33 +247,33 @@ class DgApiRunApi:
                 )
             case "RunConfigValidationInvalid":
                 joined = "\n  ".join(e.message for e in result.errors)  # ty: ignore[unresolved-attribute]
-                raise DagsterPlusGraphqlError(f"Invalid run config:\n  {joined}")
+                raise DagsterPlusClientError(f"Invalid run config:\n  {joined}")
             case "PipelineNotFoundError":
-                raise DagsterPlusGraphqlError(f"Job not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Job not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "InvalidStepError":
-                raise DagsterPlusGraphqlError(
+                raise DagsterPlusClientError(
                     f"Invalid step key: {result.invalid_step_key}"  # ty: ignore[unresolved-attribute]
                 )
             case "InvalidOutputError":
-                raise DagsterPlusGraphqlError(
+                raise DagsterPlusClientError(
                     f"Invalid output `{result.invalid_output_name}` on step `{result.step_key}`"  # ty: ignore[unresolved-attribute]
                 )
             case "InvalidSubsetError":
-                raise DagsterPlusGraphqlError(f"Invalid subset: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Invalid subset: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PresetNotFoundError":
-                raise DagsterPlusGraphqlError(f"Preset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Preset not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "ConflictingExecutionParamsError":
-                raise DagsterPlusGraphqlError(
+                raise DagsterPlusClientError(
                     f"Conflicting execution params: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "NoModeProvidedError":
-                raise DagsterPlusGraphqlError(f"No mode provided: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"No mode provided: {result.message}")  # ty: ignore[unresolved-attribute]
             case "RunConflict":
-                raise DagsterPlusGraphqlError(f"Run conflict: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Run conflict: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusGraphqlError(f"Unauthorized: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusUnauthorizedError(f"Unauthorized: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error launching run: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error launching run: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -282,13 +287,13 @@ class DgApiRunApi:
                     status=result.run.status,  # ty: ignore[unresolved-attribute]
                 )
             case "TerminateRunFailure":
-                raise DagsterPlusGraphqlError(f"Could not terminate run: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Could not terminate run: {result.message}")  # ty: ignore[unresolved-attribute]
             case "RunNotFoundError":
-                raise DagsterPlusGraphqlError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Run not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
-                raise DagsterPlusGraphqlError(f"Unauthorized: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusUnauthorizedError(f"Unauthorized: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error terminating run: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error terminating run: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -318,7 +323,7 @@ class DgApiRunApi:
                     parent_run_id=result.run.parent_run_id,  # ty: ignore[unresolved-attribute]
                 )
             case _:
-                raise DagsterPlusGraphqlError(
+                raise error_for_typename(result.typename__)(
                     f"Error re-executing run: {_reexecution_error(result)}"
                 )
 
@@ -349,6 +354,6 @@ class DgApiRunApi:
                     ],
                 )
             case _:
-                raise DagsterPlusGraphqlError(
+                raise error_for_typename(result.typename__)(
                     f"Error re-executing backfill: {_reexecution_error(result)}"
                 )

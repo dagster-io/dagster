@@ -9,7 +9,8 @@ from dagster_rest_resources.__generated__.get_secret_with_value import (
 from dagster_rest_resources.__generated__.input_types import SecretScopesInput
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.secret import DgApiSecret, DgApiSecretList, DgApiUpdatedBy
@@ -57,7 +58,7 @@ class DgApiSecretApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error listing secrets: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing secrets: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing secrets: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -83,12 +84,12 @@ class DgApiSecretApi:
             )
         ).secrets_or_error
         if result is None:
-            raise DagsterPlusGraphqlError(f"Secret '{secret_name}' not found")
+            raise DagsterPlusClientError(f"Secret '{secret_name}' not found")
 
         match result.typename__:
             case "Secrets":
                 if not result.secrets:  # ty: ignore[unresolved-attribute]
-                    raise DagsterPlusGraphqlError(f"Secret '{secret_name}' not found")
+                    raise DagsterPlusClientError(f"Secret '{secret_name}' not found")
                 secret = result.secrets[0]  # ty: ignore[unresolved-attribute]
                 return self._build_secret(
                     secret,
@@ -99,7 +100,7 @@ class DgApiSecretApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error fetching secret: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching secret: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching secret: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

@@ -36,7 +36,7 @@ from dagster_rest_resources.schemas.asset import (
     DgApiPartitionMapping,
     DgApiPartitionStats,
 )
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ class DgApiAssetApi:
                     next_cursor = record_result.cursor  # ty: ignore[unresolved-attribute]
 
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing assets: {record_result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing assets: {record_result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -93,7 +93,7 @@ class DgApiAssetApi:
                 case "AssetConnection":
                     nodes_by_key = {"/".join(n.key.path): n for n in detail_result.nodes}  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusServerError(
                         f"Error fetching asset details: {detail_result.message}"  # ty: ignore[unresolved-attribute]
                     )
                 case _ as unreachable:
@@ -131,13 +131,13 @@ class DgApiAssetApi:
             case "AssetConnection":
                 nodes = result.nodes  # ty: ignore[unresolved-attribute]
                 if not nodes:
-                    raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                    raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                 asset = self._build_asset_from_node(nodes[0])
                 if asset is None:
-                    raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                    raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                 return asset
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching asset: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching asset: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -152,11 +152,11 @@ class DgApiAssetApi:
             case "AssetConnection":
                 nodes = result.nodes  # ty: ignore[unresolved-attribute]
                 if not nodes:
-                    raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                    raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                 node = nodes[0]
                 return self._build_asset_status(node, asset_key)
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching asset health: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching asset health: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -196,7 +196,7 @@ class DgApiAssetApi:
             match mat_result.typename__:
                 case "AssetConnection":
                     if not mat_result.nodes:  # ty: ignore[unresolved-attribute]
-                        raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                        raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                     events.extend(
                         DgApiAssetEvent(
                             timestamp=mat.timestamp,
@@ -211,7 +211,7 @@ class DgApiAssetApi:
                         for mat in mat_result.nodes[0].asset_materializations  # ty: ignore[unresolved-attribute]
                     )
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusServerError(
                         f"Error fetching asset events: {mat_result.message}"  # ty: ignore[unresolved-attribute]
                     )
                 case _ as unreachable:
@@ -228,7 +228,7 @@ class DgApiAssetApi:
             match obs_result.typename__:
                 case "AssetConnection":
                     if not obs_result.nodes:  # ty: ignore[unresolved-attribute]
-                        raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                        raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                     events.extend(
                         DgApiAssetEvent(
                             timestamp=obs.timestamp,
@@ -243,7 +243,7 @@ class DgApiAssetApi:
                         for obs in obs_result.nodes[0].asset_observations  # ty: ignore[unresolved-attribute]
                     )
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusServerError(
                         f"Error fetching asset events: {obs_result.message}"  # ty: ignore[unresolved-attribute]
                     )
                 case _ as unreachable:
@@ -314,7 +314,7 @@ class DgApiAssetApi:
 
                 return DgApiEvaluationRecordList(items=evaluations)
             case "AutoMaterializeAssetEvaluationNeedsMigrationError":
-                raise DagsterPlusGraphqlError(f"Migration required: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Migration required: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -332,7 +332,7 @@ class DgApiAssetApi:
             case "AssetNode":
                 return _build_location(result)
             case "AssetNotFoundError":
-                raise DagsterPlusGraphqlError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -358,7 +358,7 @@ class DgApiAssetApi:
             case "AssetNode":
                 partition_stats = result.partition_stats  # ty: ignore[unresolved-attribute]
                 if partition_stats is None:
-                    raise DagsterPlusGraphqlError("Asset does not have partitions")
+                    raise DagsterPlusClientError("Asset does not have partitions")
                 return DgApiPartitionStats(
                     num_materialized=partition_stats.num_materialized,
                     num_failed=partition_stats.num_failed,
@@ -366,7 +366,7 @@ class DgApiAssetApi:
                     num_partitions=partition_stats.num_partitions,
                 )
             case "AssetNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error getting partition status: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error getting partition status: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

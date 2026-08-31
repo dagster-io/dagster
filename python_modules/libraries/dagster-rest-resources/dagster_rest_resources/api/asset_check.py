@@ -10,7 +10,7 @@ from dagster_rest_resources.schemas.asset_check import (
     DgApiAssetCheckExecutionList,
     DgApiAssetCheckList,
 )
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError
 
 
 @dataclass(frozen=True)
@@ -42,21 +42,21 @@ class DgApiAssetCheckApi:
                             ]
                         )
                     case "AssetCheckNeedsMigrationError":
-                        raise DagsterPlusGraphqlError(
+                        raise DagsterPlusClientError(
                             f"Asset check needs migration: {checks_result.message}"  # ty: ignore[unresolved-attribute]
                         )
                     case "AssetCheckNeedsUserCodeUpgrade":
-                        raise DagsterPlusGraphqlError(
+                        raise DagsterPlusClientError(
                             f"Asset check needs user code upgrade: {checks_result.message}"  # ty: ignore[unresolved-attribute]
                         )
                     case "AssetCheckNeedsAgentUpgradeError":
-                        raise DagsterPlusGraphqlError(
+                        raise DagsterPlusClientError(
                             f"Asset check needs agent update: {checks_result.message}"  # ty: ignore[unresolved-attribute]
                         )
                     case _ as unreachable:
                         assert_never(unreachable)
             case "AssetNotFoundError":
-                raise DagsterPlusGraphqlError(f"Asset not found: {node_result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Asset not found: {node_result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

@@ -25,7 +25,8 @@ from dagster_rest_resources.schemas.alert_policy import (
     DgApiWebhookNotification,
 )
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 
@@ -62,7 +63,7 @@ def _build_notification_service(service: Any) -> DgApiNotificationService:
                 body_template=service.body_template,
             )
         case unexpected:
-            raise DagsterPlusGraphqlError(f"Unknown notification service: {unexpected}")
+            raise DagsterPlusServerError(f"Unknown notification service: {unexpected}")
 
 
 def _build_policy(policy: AlertPolicyFields) -> DgApiAlertPolicy:
@@ -105,7 +106,7 @@ class DgApiAlertPolicyApi:
     def list_alert_policies_as_document(self) -> DgApiAlertPolicyDocument:
         result = self._client.list_alert_policies_as_document().alert_policies_as_document_or_error
         if result is None:
-            raise DagsterPlusGraphqlError("No alert policies data in GraphQL response")
+            raise DagsterPlusServerError("No alert policies data in GraphQL response")
 
         match result.typename__:
             case "AlertPoliciesAsDocument":
@@ -119,7 +120,7 @@ class DgApiAlertPolicyApi:
                     f"Error fetching alert policies: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching alert policies: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching alert policies: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -132,7 +133,7 @@ class DgApiAlertPolicyApi:
             alert_policy_id=alert_policy_id
         ).alert_policy_by_id
         if policy is None:
-            raise DagsterPlusGraphqlError(f"Alert policy not found: {alert_policy_id}")
+            raise DagsterPlusClientError(f"Alert policy not found: {alert_policy_id}")
         return _build_policy(policy)
 
     def list_alert_policies_for_job(
@@ -177,7 +178,7 @@ class DgApiAlertPolicyApi:
             limit=limit if limit is not None else UNSET,
         ).run_notifications_or_error
         if result is None:
-            raise DagsterPlusGraphqlError(f"No notifications data for run: {run_id}")
+            raise DagsterPlusServerError(f"No notifications data for run: {run_id}")
 
         match result.typename__:
             case "RunNotifications":
@@ -186,7 +187,7 @@ class DgApiAlertPolicyApi:
                     alert_policies=[_build_policy(p) for p in result.alert_policies],
                 )
             case "RunNotificationsExpiredError":
-                raise DagsterPlusGraphqlError(f"Run notifications have expired: {result.message}")
+                raise DagsterPlusClientError(f"Run notifications have expired: {result.message}")
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -204,13 +205,13 @@ class DgApiAlertPolicyApi:
             case "AlertPolicy":
                 return _build_policy(result)
             case "CodeBackedAlertPolicyError":
-                raise DagsterPlusGraphqlError(result.message)
+                raise DagsterPlusClientError(result.message)
             case "InvalidAlertPolicyError":
-                raise DagsterPlusGraphqlError(f"Invalid alert policy: {result.message}")
+                raise DagsterPlusClientError(f"Invalid alert policy: {result.message}")
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error saving alert policy: {result.message}")
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error saving alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error saving alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -223,11 +224,11 @@ class DgApiAlertPolicyApi:
             case "DeleteAlertPolicySuccess":
                 return DgApiAlertPolicyDeleteResult(name=result.alert_policy_name)
             case "CodeBackedAlertPolicyError":
-                raise DagsterPlusGraphqlError(result.message)
+                raise DagsterPlusClientError(result.message)
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error deleting alert policy: {result.message}")
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error deleting alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error deleting alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -244,14 +245,14 @@ class DgApiAlertPolicyApi:
                     items=sorted(p.name for p in result.alert_policies if p is not None)  # ty: ignore[unresolved-attribute]
                 )
             case "CodeBackedAlertPolicyError":
-                raise DagsterPlusGraphqlError(result.message)  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(result.message)  # ty: ignore[unresolved-attribute]
             case "InvalidAlertPolicyError":
-                raise DagsterPlusGraphqlError(f"Invalid alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Invalid alert policy: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(
                     f"Error fetching alert policies: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error reconciling alert policies: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error reconciling alert policies: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)

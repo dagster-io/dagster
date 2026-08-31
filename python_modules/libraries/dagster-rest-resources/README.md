@@ -117,7 +117,7 @@ Thanks to the code generation and type system, you can always account for every 
 
 The methods must handle all possible return types from those queries, including errors.
 Successful responses must be transformed into the schemas you defined in step 3.
-Error responses must be wrapped in the appropriate `Exception`, given a descriptive message, and raised to the consumer.
+Error responses must be wrapped in the appropriate `Exception`, given a descriptive message, and raised to the consumer. We have 3 error classes: `DagsterPlusServerError`, `DagsterPlusClientError`, and `DagsterPlusGraphqlError`. `DagsterPlusClientError` should be used for exceptions caused by user input (querying for a run id that doesn't exist). `DagsterPlusServerError` should be used for server-side issues. Use those two error types whenever possible, but if neither works for a situation use `DagsterPlusGraphqlError`.
 
 ```python
 # api/run.py
@@ -139,9 +139,9 @@ class DgApiRunApi:
                     job_name=result.job_name,
                 )
             case "RunNotFoundError":
-                raise DagsterPlusGraphqlError(f"Run not found: {result.message}")
+                raise DagsterPlusClientError(f"Run not found: {result.message}")
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching run: {result.message}")
+                raise DagsterPlusServerError(f"Error fetching run: {result.message}")
             case _ as unreachable:
                 # this will trigger a type error if any possible return type has not been handled
                 assert_never(unreachable)
@@ -189,7 +189,7 @@ class TestGetRun:
         client.get_run.return_value = GetRun(
             runOrError=GetRunRunOrErrorRunNotFoundError(__typename="RunNotFoundError", message="")
         )
-        with pytest.raises(DagsterPlusGraphqlError, match="Run not found"):
+        with pytest.raises(DagsterPlusClientError, match="Run not found"):
             DgApiRunApi(client).get_run("run-xyz")
 
     def test_python_error_raises(self):
@@ -197,7 +197,7 @@ class TestGetRun:
         client.get_run.return_value = GetRun(
             runOrError=GetRunRunOrErrorPythonError(__typename="PythonError", message="")
         )
-        with pytest.raises(DagsterPlusGraphqlError, match="Error fetching run"):
+        with pytest.raises(DagsterPlusServerError, match="Error fetching run"):
             DgApiRunApi(client).get_run("run-xyz")
 ```
 
