@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from dagster_rest_resources.__generated__.enums import ReportingTimeRange, ReportingUnitType
+from dagster_rest_resources.__generated__.enums import ReportingUnitType
 from dagster_rest_resources.schemas.util import DgApiList
 
 
@@ -45,7 +45,3 @@ class DgApiMetricEntry(BaseModel):
 class DgApiMetrics(BaseModel):
     items: list[DgApiMetricEntry]
     timestamps: list[float]
-
-
-class DgApiMetricsTimeRanges(DgApiList[ReportingTimeRange]):
-    pass

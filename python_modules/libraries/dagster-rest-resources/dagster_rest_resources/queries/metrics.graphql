@@ -154,12 +154,6 @@ query ListDeploymentMetricTypes($metricsStoreType: MetricsStoreType) {
   }
 }
 
-query GetMetricsTimeRanges {
-  metricsTimeRanges {
-    timeRanges
-  }
-}
-
 query GetAssetMetrics(
   $metricsFilter: AssetReportingMetricsFilter
   $metricsSelector: ReportingMetricsSelector!

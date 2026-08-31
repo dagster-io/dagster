@@ -28,7 +28,6 @@ from dagster_rest_resources.schemas.exception import (
 from dagster_rest_resources.schemas.metrics import (
     DgApiMetricEntry,
     DgApiMetrics,
-    DgApiMetricsTimeRanges,
     DgApiMetricType,
     DgApiMetricTypeList,
     DgApiMetricValueChange,
@@ -203,10 +202,6 @@ class DgApiMetricsApi:
             metrics_store_type=_METRICS_STORE
         ).metric_types_for_deployment
         return _build_metric_types(result, "listing deployment metric types")
-
-    def get_metrics_time_ranges(self) -> DgApiMetricsTimeRanges:
-        result = self._client.get_metrics_time_ranges().metrics_time_ranges
-        return DgApiMetricsTimeRanges(items=list(result.time_ranges))
 
     def get_asset_metrics(
         self,

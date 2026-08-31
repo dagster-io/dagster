@@ -15,10 +15,6 @@ from dagster_rest_resources.__generated__.get_asset_metrics import (
     GetAssetMetricsReportingMetricsByAssetReportingMetricsMetricsEntityReportingAssetAssetKey,
     GetAssetMetricsReportingMetricsByAssetUnauthorizedError,
 )
-from dagster_rest_resources.__generated__.get_metrics_time_ranges import (
-    GetMetricsTimeRanges,
-    GetMetricsTimeRangesMetricsTimeRanges,
-)
 from dagster_rest_resources.__generated__.list_asset_metric_types import (
     ListAssetMetricTypes,
     ListAssetMetricTypesMetricTypesForAssetMetricTypeList,
@@ -165,15 +161,3 @@ class TestGetAssetSelectionMetrics:
             )
 
         client.get_asset_selection_metrics.assert_not_called()
-
-
-class TestGetMetricsTimeRanges:
-    def test_returns_the_supported_ranges(self):
-        client = Mock(spec=IGraphQLClient)
-        client.get_metrics_time_ranges.return_value = GetMetricsTimeRanges(
-            metricsTimeRanges=GetMetricsTimeRangesMetricsTimeRanges(timeRanges=[])
-        )
-
-        result = DgApiMetricsApi(_client=client).get_metrics_time_ranges()
-
-        assert result.items == []
