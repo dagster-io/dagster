@@ -105,6 +105,7 @@ class DagsterLogRecordMetadata(TypedDict):
     orig_message: str
     log_message_id: str
     log_timestamp: str
+    dagster_user_metadata: Optional[Mapping[str, Any]]
 
 
 def construct_log_record_message(metadata: DagsterLogRecordMetadata) -> str:
@@ -154,6 +155,7 @@ def construct_log_record_metadata(
     orig_message: str,
     event: Optional["DagsterEvent"],
     event_batch_metadata: Optional["DagsterEventBatchMetadata"],
+    dagster_user_metadata: Optional[Mapping[str, Any]] = None,
 ) -> DagsterLogRecordMetadata:
     step_key = handler_metadata["step_key"] or (event.step_key if event else None)
     timestamp = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None).isoformat()
@@ -170,6 +172,7 @@ def construct_log_record_metadata(
         dagster_event=event,
         dagster_event_batch_metadata=event_batch_metadata,
         step_key=step_key,
+        dagster_user_metadata=dagster_user_metadata,
     )
 
 
@@ -230,8 +233,24 @@ class DagsterLogHandler(logging.Handler):
             if has_log_record_event_batch_metadata(record)
             else None
         )
+        # Extract extra dict that was passed via context.log.info(msg, extra={...})
+        # Python's logging smashes extra keys into record.__dict__; _extract_extra reverses that.
+        # Exclude dagster-internal attrs that were also smashed into __dict__ to avoid
+        # leaking DagsterEvent objects (not JSON-serializable) into dagster_user_metadata.
+        _INTERNAL_LOG_ATTRS = frozenset([
+            LOG_RECORD_EVENT_ATTR,
+            LOG_RECORD_EVENT_BATCH_METADATA_ATTR,
+            LOG_RECORD_METADATA_ATTR,
+        ])
+        raw_extra = self._extract_extra(record)
+        dagster_user_metadata = {
+            k: v for k, v in raw_extra.items()
+            if k not in _INTERNAL_LOG_ATTRS
+            and isinstance(v, (str, int, float, bool, type(None), list, dict))
+        }
         metadata = construct_log_record_metadata(
-            self._metadata, record.getMessage(), event, event_batch_metadata
+            self._metadata, record.getMessage(), event, event_batch_metadata,
+            dagster_user_metadata or None
         )
         message = construct_log_record_message(metadata)
 

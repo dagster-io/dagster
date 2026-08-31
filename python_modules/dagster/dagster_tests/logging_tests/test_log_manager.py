@@ -284,3 +284,114 @@ def test_log_handler_emit_by_handlers_level():
 
     for k, v in test_extra.items():
         assert getattr(captured_record, k) == v
+
+
+def test_log_handler_extra_context_captured_in_metadata():
+    """Regression test for https://github.com/dagster-io/dagster/issues/29443.
+
+    When using context.log.info(msg, extra={...}), the extra dict was silently dropped.
+    It should be captured in dagster_meta['dagster_user_metadata'] and included in EventLogEntry.
+    """
+
+    class MockCaptureHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__()
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = MockCaptureHandler()
+
+    test_extra = {"foo": 1, "bar": "baz"}
+
+    with user_code_error_boundary(
+        dg.DagsterUserCodeExecutionError,
+        lambda: "Some Error Message",
+        log_manager=dg.DagsterLogManager(
+            dagster_handler=DagsterLogHandler(
+                metadata=_construct_log_handler_metadata(
+                    run_id="123456", job_name="job", step_key="some_step"
+                ),
+                loggers=[],
+                handlers=[capture_handler],
+            ),
+            managed_loggers=[logging.getLogger("python_log")],
+        ),
+    ):
+        python_log = logging.getLogger("python_log")
+        python_log.setLevel(logging.INFO)
+        python_log.info("test message", extra=test_extra)
+
+    assert len(capture_handler.captured) == 1
+    captured_record = capture_handler.captured[0]
+
+    # The extra dict should appear in dagster_meta as dagster_user_metadata
+    assert captured_record.dagster_meta.get("dagster_user_metadata") == test_extra
+
+    # Also verify it round-trips through construct_event_record
+    from dagster._core.events.log import construct_event_record
+    from dagster._utils.log import StructuredLoggerMessage
+
+    # Simulate what StructuredLoggerHandler does: creates a StructuredLoggerMessage
+    # from the captured record
+    logger_message = StructuredLoggerMessage(
+        name=captured_record.name,
+        message=captured_record.msg,
+        level=captured_record.levelno,
+        meta=captured_record.dagster_meta,
+        record=captured_record,
+    )
+    event_record = construct_event_record(logger_message)
+
+    # The extra context should be present in the EventLogEntry
+    assert event_record.dagster_user_metadata == test_extra
+
+
+def test_log_handler_extra_drops_non_serializable_and_internal_attrs():
+    """Extra values that are not JSON-serializable or are dagster-internal attrs
+    must be silently dropped — they must not appear in dagster_user_metadata,
+    otherwise EventLogEntry serialization crashes.
+    """
+
+    class MockCaptureHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__()
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = MockCaptureHandler()
+
+    non_serializable_value = object()
+    test_extra = {
+        "valid_key": "valid_value",
+        "internal_dagster_attr": "should_be_dropped",
+    }
+
+    with user_code_error_boundary(
+        dg.DagsterUserCodeExecutionError,
+        lambda: "Some Error Message",
+        log_manager=dg.DagsterLogManager(
+            dagster_handler=DagsterLogHandler(
+                metadata=_construct_log_handler_metadata(
+                    run_id="123456", job_name="job", step_key="some_step"
+                ),
+                loggers=[],
+                handlers=[capture_handler],
+            ),
+            managed_loggers=[logging.getLogger("python_log")],
+        ),
+    ):
+        python_log = logging.getLogger("python_log")
+        python_log.setLevel(logging.INFO)
+        python_log.info("test message", extra=test_extra)
+
+    assert len(capture_handler.captured) == 1
+    captured_record = capture_handler.captured[0]
+
+    dagster_user_metadata = captured_record.dagster_meta.get("dagster_user_metadata") or {}
+    assert dagster_user_metadata.get("valid_key") == "valid_value"
+    assert "internal_dagster_attr" not in dagster_user_metadata
+    assert non_serializable_value not in dagster_user_metadata.values()
