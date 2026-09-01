@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import threading
 from collections.abc import Mapping, Sequence
@@ -213,29 +214,16 @@ class DagsterLogHandler(logging.Handler):
             handlers=self._handlers,
         )
 
-    # Attributes that dagster's logging machinery injects into LogRecord.__dict__ via
-    # set_log_record_metadata / set_log_record_event / set_log_record_event_batch_metadata.
-    # These are internal and must not be confused with user-supplied extra dict entries.
-    _DAGSTER_INTERNAL_ATTRS = frozenset([
-        "dagster_event",
-        "dagster_event_batch_metadata",
-        "dagster_meta",
-        "dagster_log_message_id",
-        "dagster_log_step_key",
-        "dagster_user_metadata",
-    ])
-
     def _extract_extra(self, record: logging.LogRecord) -> Mapping[str, Any]:
         """In the logging.Logger log() implementation, the elements of the `extra` dictionary
         argument are smashed into the __dict__ of the underlying logging.LogRecord.
         This function figures out what the original `extra` values of the log call were by
-        comparing the set of attributes in the received record to those of a default record,
-        while also excluding dagster's own internal attributes.
+        comparing the set of attributes in the received record to those of a default record.
         """
-        ref_attrs = set(logging.makeLogRecord({}).__dict__.keys()) | {
+        ref_attrs = list(logging.makeLogRecord({}).__dict__.keys()) + [
             "message",
             "asctime",
-        } | self._DAGSTER_INTERNAL_ATTRS
+        ]
         return {k: v for k, v in record.__dict__.items() if k not in ref_attrs}
 
     def _convert_record(self, record: logging.LogRecord) -> logging.LogRecord:
@@ -248,20 +236,30 @@ class DagsterLogHandler(logging.Handler):
         )
         # Extract extra dict that was passed via context.log.info(msg, extra={...})
         # Python's logging smashes extra keys into record.__dict__; _extract_extra reverses that
-        extra = self._extract_extra(record)
-        # Attempt to capture user-supplied extra dict for dagster_user_metadata.
+        raw_extra = self._extract_extra(record)
+        # Exclude dagster-internal attrs (DagsterEvent objects) that are smashed into
+        # __dict__ and would cause SerializationError when stored in dagster_user_metadata.
+        dagster_internal_attrs = {
+            LOG_RECORD_EVENT_ATTR,
+            LOG_RECORD_EVENT_BATCH_METADATA_ATTR,
+            LOG_RECORD_METADATA_ATTR,
+        }
+        user_extra = {
+            k: v for k, v in raw_extra.items() if k not in dagster_internal_attrs
+        }
         # Guard against unserializable values so a bad extra object doesn't drop the
         # entire log message: if JSON serialization fails we silently discard the extra
         # rather than replacing the user event with an engine error event.
         dagster_user_metadata: Optional[Mapping[str, Any]] = None
-        if extra:
+        if user_extra:
             try:
-                json.dumps(extra)
-                dagster_user_metadata = extra
+                json.dumps(user_extra)
+                dagster_user_metadata = user_extra
             except TypeError:
                 pass
         metadata = construct_log_record_metadata(
-            self._metadata, record.getMessage(), event, event_batch_metadata, dagster_user_metadata
+            self._metadata, record.getMessage(), event, event_batch_metadata,
+            dagster_user_metadata if dagster_user_metadata else None,
         )
         message = construct_log_record_message(metadata)
 
