@@ -38,6 +38,7 @@ from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
 from dagster_shared.record import replace
 
+from dagster_dbt.core.dbt_env import _get_dbt_env_var
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids
@@ -524,7 +525,7 @@ def get_updated_cli_invocation_params_for_context(
         assets_def = None
 
     selection_args: list[str] = []
-    indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
+    indirect_selection = _get_dbt_env_var(DBT_INDIRECT_SELECTION_ENV, None)
     dbt_project = None
     used_generated_selector = False
     if context and assets_def is not None:
