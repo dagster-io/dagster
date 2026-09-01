@@ -440,6 +440,16 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     ) -> Sequence[MultiPartitionKey]:
         check.str_param(dimension_name, "dimension_name")
         check.str_param(dimension_partition_key, "dimension_partition_key")
+        return self.get_multipartition_keys_with_dimension_values(
+            dimension_name, [dimension_partition_key]
+        )
+
+    def get_multipartition_keys_with_dimension_values(
+        self, dimension_name: str, dimension_partition_keys: Sequence[str]
+    ) -> Sequence[MultiPartitionKey]:
+        """Expands keys of the named dimension into full multi-partition keys."""
+        check.str_param(dimension_name, "dimension_name")
+        check.sequence_param(dimension_partition_keys, "dimension_partition_keys", of_type=str)
 
         matching_dimensions = [
             dimension for dimension in self.partitions_defs if dimension.name == dimension_name
@@ -454,12 +464,12 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             f" {[dim.name for dim in self.partitions_defs]}",
         )
 
-        partition_sequences = [
+        partition_sequences = [dimension_partition_keys] + [
             partition_dim.partitions_def.get_partition_keys() for partition_dim in other_dimensions
-        ] + [[dimension_partition_key]]
+        ]
 
         # Names of partitions dimensions in the same order as partition_sequences
-        partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
+        partition_dim_names = [dimension_name] + [dim.name for dim in other_dimensions]
 
         return [
             MultiPartitionKey(

@@ -386,6 +386,54 @@ def test_keys_with_dimension_value_with_dynamic():
             ]
 
 
+def test_keys_with_dimension_values_matches_singular_and_reads_other_dimension_once():
+    daily_partitions_def = dg.DailyPartitionsDefinition(start_date="2015-01-01")
+    dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="dummy")
+    multipartitions_def = dg.MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "dynamic": dynamic_partitions_def,
+        }
+    )
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])  # ty: ignore[invalid-argument-type]
+
+        date_keys = ["2015-01-01", "2015-01-02", "2015-01-03"]
+        with partition_loading_context(
+            effective_dt=datetime(year=2015, month=1, day=5), dynamic_partitions_store=instance
+        ):
+            batched = multipartitions_def.get_multipartition_keys_with_dimension_values(
+                dimension_name="date",
+                dimension_partition_keys=date_keys,
+            )
+            one_at_a_time = [
+                key
+                for date_key in date_keys
+                for key in multipartitions_def.get_multipartition_keys_with_dimension_value(
+                    dimension_name="date",
+                    dimension_partition_key=date_key,
+                )
+            ]
+
+        assert batched == one_at_a_time
+
+        # the dynamic dimension is read once, not once per given key
+        spy = mock.Mock(wraps=instance.get_dynamic_partitions)
+        with (
+            mock.patch.object(instance, "get_dynamic_partitions", spy),
+            partition_loading_context(
+                effective_dt=datetime(year=2015, month=1, day=5), dynamic_partitions_store=instance
+            ),
+        ):
+            multipartitions_def.get_multipartition_keys_with_dimension_values(
+                dimension_name="date",
+                dimension_partition_keys=date_keys,
+            )
+
+        assert spy.call_count == 1
+
+
 def test_keys_with_dimension_value_with_dynamic_without_instance():
     daily_partitions_def = dg.DailyPartitionsDefinition(start_date="2015-01-01")
     dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="dummy")
