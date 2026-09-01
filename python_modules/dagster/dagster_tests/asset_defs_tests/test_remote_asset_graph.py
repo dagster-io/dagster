@@ -1,10 +1,14 @@
+import datetime
 import unittest.mock
 import warnings
 
 import dagster as dg
 import pytest
 from dagster._core.definitions.asset_key import AssetJobKey
-from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetJobNode
+from dagster._core.definitions.assets.graph.remote_asset_graph import (
+    RemoteAssetJobNode,
+    RemoteWorkspaceAssetNode,
+)
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
@@ -177,3 +181,102 @@ def test_duplicate_job_keys_across_locations(second_job_name: str, expect_warnin
     # regardless of the collision, each distinct job name resolves to a single node (last-wins)
     assert graph.has(AssetJobKey("shared_job"))
     assert graph.has(AssetJobKey(second_job_name))
+
+
+def _materializable_defs(
+    name: str,
+    freshness_policy: dg.FreshnessPolicy | None = None,
+    legacy_freshness_policy: dg.LegacyFreshnessPolicy | None = None,
+) -> dg.Definitions:
+    @dg.asset(
+        name=name,
+        freshness_policy=freshness_policy,
+        legacy_freshness_policy=legacy_freshness_policy,
+    )
+    def _asset():
+        return 1
+
+    return dg.Definitions(assets=[_asset])
+
+
+def _observable_defs(spec: dg.AssetSpec) -> dg.Definitions:
+    @dg.multi_observable_source_asset(specs=[spec])
+    def _observations(): ...
+
+    return dg.Definitions(assets=[_observations])
+
+
+def _fresh_policy(hours: int) -> dg.FreshnessPolicy:
+    return dg.FreshnessPolicy.time_window(fail_window=datetime.timedelta(hours=hours))
+
+
+def _get_shared_node(defs_by_location: dict[str, dg.Definitions]) -> "RemoteWorkspaceAssetNode":
+    workspace = _workspace_with_locations(defs_by_location)
+    return workspace.asset_graph.get(dg.AssetKey("shared"))
+
+
+# When one AssetKey is defined in multiple locations, a freshness policy is typically declared
+# in only one of them, so the merged node takes the first non-None policy in priority order
+# (materialization -> observation -> non-stub -> any) instead of reading only the singular
+# resolved node, which may not be the declaring one.
+def test_workspace_freshness_policy_merges_across_locations() -> None:
+    mat_policy = _fresh_policy(6)
+    obs_policy = _fresh_policy(24)
+
+    # single location: unchanged
+    node = _get_shared_node({"mat": _materializable_defs("shared", freshness_policy=mat_policy)})
+    assert node.freshness_policy == mat_policy
+
+    # an observation-side declaration surfaces when the materialization side has none
+    node = _get_shared_node(
+        {
+            "mat": _materializable_defs("shared"),
+            "obs": _observable_defs(dg.AssetSpec("shared", freshness_policy=obs_policy)),
+        }
+    )
+    assert node.is_materializable and node.is_observable  # merge actually happened
+    assert node.freshness_policy == obs_policy
+
+    # same for an unexecutable external spec (e.g. an ingestion tool's source declaration)
+    node = _get_shared_node(
+        {
+            "mat": _materializable_defs("shared"),
+            "external": dg.Definitions(
+                assets=[dg.AssetSpec("shared", freshness_policy=obs_policy)]
+            ),
+        }
+    )
+    assert node.freshness_policy == obs_policy
+
+    # the materialization side still wins when both declare
+    node = _get_shared_node(
+        {
+            "mat": _materializable_defs("shared", freshness_policy=mat_policy),
+            "obs": _observable_defs(dg.AssetSpec("shared", freshness_policy=obs_policy)),
+        }
+    )
+    assert node.freshness_policy == mat_policy
+
+    # no declarations: still None
+    node = _get_shared_node(
+        {
+            "mat": _materializable_defs("shared"),
+            "obs": _observable_defs(dg.AssetSpec("shared")),
+        }
+    )
+    assert node.freshness_policy is None
+
+
+def test_workspace_legacy_freshness_policy_merges_across_locations() -> None:
+    legacy_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=60)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        node = _get_shared_node(
+            {
+                "mat": _materializable_defs("shared"),
+                "obs": _observable_defs(
+                    dg.AssetSpec("shared", legacy_freshness_policy=legacy_policy)
+                ),
+            }
+        )
+    assert node.legacy_freshness_policy == legacy_policy
