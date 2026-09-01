@@ -65,6 +65,13 @@ class S3CredentialsComponent(Boto3CredentialsComponent):
     use_unsigned_session: bool | None = Field(
         default=None, description="Specifies whether to use an unsigned S3 session."
     )
+    botocore_config: dict = Field(
+        default_factory=dict,
+        description=(
+            "Extra keyword arguments for botocore.config.Config, e.g. connect_timeout,"
+            " read_timeout, or max_pool_connections. A 'retries' entry is merged with max_attempts."
+        ),
+    )
 
 
 @public
