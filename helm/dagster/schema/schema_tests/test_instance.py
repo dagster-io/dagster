@@ -45,6 +45,7 @@ from schema.charts.dagster.subschema.run_launcher import (
     RunLauncherType,
 )
 from schema.charts.dagster.subschema.telemetry import Telemetry
+from schema.charts.dagster.subschema.ui import UI
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
@@ -999,6 +1000,24 @@ def test_telemetry(template: HelmTemplate, enabled: bool):
     telemetry_config = instance.get("telemetry")
 
     assert telemetry_config["enabled"] == enabled
+
+
+def test_ui_label(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(ui=UI.construct(label="Staging", intent="warning"))
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["ui"] == {"label": "Staging", "intent": "warning"}
+
+
+def test_ui_label_omitted_by_default(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(ui=UI.construct())
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert "ui" not in instance
 
 
 @pytest.mark.parametrize(
