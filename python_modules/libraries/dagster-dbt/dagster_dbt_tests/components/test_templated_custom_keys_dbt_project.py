@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from unittest.mock import patch
 
+import dagster as dg
 import pytest
 from dagster import AssetKey
 from dagster._core.instance_for_test import instance_for_test
@@ -128,3 +129,168 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             },
         )
         assert defs.resolve_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+
+
+def test_subclass_get_asset_spec_remaps_model_deps(dbt_path: Path) -> None:
+    """Subclass override prefixing keys must remap deps to other models.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/33823.
+    """
+
+    class PrefixedDbtComponent(DbtProjectComponent):
+        def get_asset_spec(self, manifest, unique_id, project):
+            base = super().get_asset_spec(manifest, unique_id, project)
+            return base.replace_attributes(key=base.key.with_prefix("some_prefix"))
+
+    defs = build_component_defs_for_test(PrefixedDbtComponent, {"project": str(dbt_path)})
+    graph = defs.resolve_asset_graph()
+
+    assert graph.get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+
+    customers = AssetKey(["some_prefix", "customers"])
+    assert graph.get(customers).parent_keys == {
+        AssetKey(["some_prefix", "stg_customers"]),
+        AssetKey(["some_prefix", "stg_orders"]),
+        AssetKey(["some_prefix", "stg_payments"]),
+    }
+
+
+def test_subclass_get_asset_spec_remaps_source_deps(dbt_path: Path) -> None:
+    """Source upstreams (raw_*) are remapped too, not just model upstreams."""
+
+    class PrefixedDbtComponent(DbtProjectComponent):
+        def get_asset_spec(self, manifest, unique_id, project):
+            base = super().get_asset_spec(manifest, unique_id, project)
+            return base.replace_attributes(key=base.key.with_prefix("some_prefix"))
+
+    defs = build_component_defs_for_test(PrefixedDbtComponent, {"project": str(dbt_path)})
+    graph = defs.resolve_asset_graph()
+
+    assert graph.get(AssetKey(["some_prefix", "stg_customers"])).parent_keys == {
+        AssetKey(["some_prefix", "raw_customers"]),
+    }
+
+
+def test_subclass_get_asset_spec_no_key_change_is_full_noop(dbt_path: Path) -> None:
+    """A subclass that overrides get_asset_spec without changing keys must not perturb
+    keys, deps (including partition_mapping and metadata), group_name, kinds, or
+    metadata keys on any spec.
+    """
+    baseline_defs = build_component_defs_for_test(DbtProjectComponent, {"project": str(dbt_path)})
+    baseline_graph = baseline_defs.resolve_asset_graph()
+
+    class TaggedDbtComponent(DbtProjectComponent):
+        def get_asset_spec(self, manifest, unique_id, project):
+            base = super().get_asset_spec(manifest, unique_id, project)
+            return base.merge_attributes(tags={"custom": "yes"})
+
+    overridden_defs = build_component_defs_for_test(TaggedDbtComponent, {"project": str(dbt_path)})
+    overridden_graph = overridden_defs.resolve_asset_graph()
+
+    assert overridden_graph.get_all_asset_keys() == baseline_graph.get_all_asset_keys()
+    for key in baseline_graph.get_all_asset_keys():
+        baseline_spec = baseline_defs.resolve_assets_def(key).get_asset_spec(key)
+        overridden_spec = overridden_defs.resolve_assets_def(key).get_asset_spec(key)
+        # The added tag is the one allowed difference.
+        assert {
+            k: v for k, v in overridden_spec.tags.items() if k != "custom"
+        } == baseline_spec.tags
+        # Deps must match exactly, including partition_mapping and metadata.
+        baseline_deps = {d.asset_key: d for d in baseline_spec.deps}
+        overridden_deps = {d.asset_key: d for d in overridden_spec.deps}
+        assert baseline_deps.keys() == overridden_deps.keys()
+        for asset_key, baseline_dep in baseline_deps.items():
+            assert overridden_deps[asset_key].partition_mapping == baseline_dep.partition_mapping
+            assert overridden_deps[asset_key].metadata == baseline_dep.metadata
+        assert overridden_spec.group_name == baseline_spec.group_name
+        assert overridden_spec.kinds == baseline_spec.kinds
+        assert overridden_spec.partitions_def == baseline_spec.partitions_def
+        assert overridden_spec.metadata == baseline_spec.metadata
+
+
+def test_subclass_manual_dep_rewrite_still_works(dbt_path: Path) -> None:
+    """The issue reporter's manual workaround must continue to produce a correct graph
+    after the auto-remap is added (i.e. no double-apply).
+    """
+
+    class ManualPrefixedDbtComponent(DbtProjectComponent):
+        def get_asset_spec(self, manifest, unique_id, project):
+            base = super().get_asset_spec(manifest, unique_id, project)
+            new_key = base.key.with_prefix("some_prefix")
+            new_deps = [
+                dg.AssetDep(
+                    asset=d.asset_key.with_prefix("some_prefix"),
+                    partition_mapping=d.partition_mapping,
+                    metadata=d.metadata,
+                )
+                for d in base.deps
+            ]
+            return base.replace_attributes(key=new_key, deps=new_deps)
+
+    defs = build_component_defs_for_test(ManualPrefixedDbtComponent, {"project": str(dbt_path)})
+    graph = defs.resolve_asset_graph()
+    assert graph.get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+    customers = AssetKey(["some_prefix", "customers"])
+    assert graph.get(customers).parent_keys == {
+        AssetKey(["some_prefix", "stg_customers"]),
+        AssetKey(["some_prefix", "stg_orders"]),
+        AssetKey(["some_prefix", "stg_payments"]),
+    }
+
+
+def test_subclass_get_asset_spec_memoizes_remap_calls(dbt_path: Path) -> None:
+    """The shim translator memoizes its final spec per unique_id, so the recursive
+    `shim_translator.get_asset_spec(...)` calls inside `_remap_deps_for_overridden_keys`
+    hit the cache instead of re-walking the upstream sub-DAG.
+
+    Without the memo, repeated traversals of shared ancestors would inflate the
+    `_remap_deps_for_overridden_keys` call count well past O(unique_ids) on wide DAGs.
+    This test locks in the upper bound for the jaffle_shop fixture.
+    """
+    from dagster_dbt.components.dbt_project import component as dbt_project_component_module
+
+    class PrefixedDbtComponent(DbtProjectComponent):
+        def get_asset_spec(self, manifest, unique_id, project):
+            base = super().get_asset_spec(manifest, unique_id, project)
+            return base.replace_attributes(key=base.key.with_prefix("some_prefix"))
+
+    original = dbt_project_component_module._remap_deps_for_overridden_keys  # noqa: SLF001  -- test wraps the private helper to count invocations
+    call_count = 0
+
+    def counting(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        return original(*args, **kwargs)
+
+    with patch.object(
+        dbt_project_component_module, "_remap_deps_for_overridden_keys", side_effect=counting
+    ):
+        defs = build_component_defs_for_test(PrefixedDbtComponent, {"project": str(dbt_path)})
+        defs.resolve_asset_graph()
+
+    # jaffle_shop has 8 selected asset keys (5 models + 3 sources). With memoization,
+    # `_remap_deps_for_overridden_keys` is invoked at most once per asset key — and
+    # only when the node has deps (sources have none, so they short-circuit before
+    # the helper does any work). Without the memo, repeated shim recursions would
+    # push this well above the unique-id count.
+    assert call_count <= len(JAFFLE_SHOP_KEYS), (
+        f"Expected <= {len(JAFFLE_SHOP_KEYS)} remap calls with shim memo; got {call_count}. "
+        f"Regression: the memoization on DbtProjectComponentTranslator.get_asset_spec was lost."
+    )
+
+
+def test_yaml_translation_key_rewrite_remaps_deps(dbt_path: Path) -> None:
+    """Regression lock: the YAML translation path already remapped deps correctly;
+    assert it explicitly so future refactors don't silently break it.
+    """
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), "translation": {"key": "some_prefix/{{ node.name }}"}},
+    )
+    graph = defs.resolve_asset_graph()
+    customers = AssetKey(["some_prefix", "customers"])
+    assert graph.get(customers).parent_keys == {
+        AssetKey(["some_prefix", "stg_customers"]),
+        AssetKey(["some_prefix", "stg_orders"]),
+        AssetKey(["some_prefix", "stg_payments"]),
+    }
