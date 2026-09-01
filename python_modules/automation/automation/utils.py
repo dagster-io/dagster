@@ -1,5 +1,4 @@
 import os
-import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
@@ -16,12 +15,6 @@ def check_output(cmd: list[str], dry_run: bool = True, cwd: str | None = None) -
         return None
     else:
         return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT, cwd=cwd)
-
-
-def which_(exe: str) -> str | None:
-    """Uses shutil to look for an executable, mimicking unix which."""
-    # Replaced distutils.spawn with shutil.which for Python 3.12+ compatibility
-    return shutil.which(exe)
 
 
 def all_equal(iterable: Iterable[object]) -> bool:

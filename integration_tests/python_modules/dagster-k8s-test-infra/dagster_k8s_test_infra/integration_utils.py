@@ -2,7 +2,6 @@
 import json
 import os
 import random
-import shutil
 import subprocess
 import time
 from collections.abc import Mapping, Sequence
@@ -28,12 +27,6 @@ def check_output(*args, **kwargs):
     except subprocess.CalledProcessError as exc:
         output = exc.output.decode("utf-8")
         raise Exception(output) from exc
-
-
-def which_(exe):
-    """Uses shutil to look for an executable, mimicking unix which."""
-    # Replaced distutils.spawn with shutil.which for Python 3.12+ compatibility
-    return shutil.which(exe)
 
 
 def get_test_namespace(prefix="dagster-test"):
