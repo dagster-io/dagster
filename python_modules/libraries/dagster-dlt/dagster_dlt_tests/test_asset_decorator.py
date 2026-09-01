@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -125,6 +126,12 @@ def test_example_pipeline(dlt_pipeline: Pipeline) -> None:
     assert repos_materialization.metadata["dagster/table_name"] == TextMetadataValue(
         text="duckdb.pipeline.repos"
     )
+
+    # dlt-native table settings are surfaced under the ``dagster-dlt`` namespace at definition
+    # time (on the asset spec), sourced from the resource hints -- not re-emitted per run.
+    repos_spec_metadata = example_pipeline_assets.metadata_by_key[AssetKey("dlt_pipeline_repos")]
+    assert repos_spec_metadata["dagster-dlt/write_disposition"] == TextMetadataValue(text="merge")
+    assert repos_spec_metadata["dagster-dlt/resource"] == "repos"
 
     assert repos_materialization.metadata["dagster/column_schema"] == TableSchemaMetadataValue(
         schema=TableSchema(
@@ -306,14 +313,22 @@ def test_get_automation_condition_converts_auto_materialize_policy_legacy(
 
 
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
-    required_metadata_keys = {
-        "destination_type",
-        "destination_name",
-        "dataset_name",
-        "first_run",
-        "started_at",
-        "finished_at",
-        "jobs",
+    # Emitted per-run on the materialization event.
+    required_event_metadata_keys = {
+        "dagster-dlt/first_run",
+        "dagster-dlt/started_at",
+        "dagster-dlt/finished_at",
+        "dagster-dlt/jobs",
+        "dagster-dlt/rows_loaded",
+    }
+    # Static dlt settings (resource hints and destination) are attached to the asset spec at
+    # definition time rather than repeated on every materialization.
+    required_spec_metadata_keys = {
+        "dagster-dlt/write_disposition",
+        "dagster-dlt/resource",
+        "dagster-dlt/destination_name",
+        "dagster-dlt/destination_type",
+        "dagster-dlt/dataset_name",
     }
 
     @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
@@ -322,8 +337,14 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
     ):
         for asset in dlt_pipeline_resource.run(context=context):
             assert asset.metadata
-            assert all(key in asset.metadata.keys() for key in required_metadata_keys)
+            assert all(key in asset.metadata.keys() for key in required_event_metadata_keys)
             yield asset
+
+    assert all(
+        key in spec_metadata.keys()
+        for spec_metadata in example_pipeline_assets.metadata_by_key.values()
+        for key in required_spec_metadata_keys
+    )
 
     res = materialize(
         [example_pipeline_assets],
@@ -347,13 +368,92 @@ def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
 
         for key in example_pipeline_assets.asset_and_check_keys:
             if isinstance(key, AssetKey):
-                assert has_kind(example_pipeline_assets.tags_by_key[key], destination_type)
+                tags = example_pipeline_assets.tags_by_key[key]
+                assert has_kind(tags, destination_type)
+                # duckdb/snowflake/bigquery are all SQL/warehouse destinations, so they also get
+                # the generic "table" classification kind.
+                assert has_kind(tags, "table")
                 assert (
                     TableMetadataSet.extract(
                         example_pipeline_assets.metadata_by_key[key]
                     ).storage_kind
                     == destination_type
                 )
+
+
+@dlt.resource
+def _plain_resource():
+    yield {}
+
+
+@dlt.resource(table_format="iceberg")
+def _iceberg_resource():
+    yield {}
+
+
+@dlt.resource(table_format="delta")
+def _delta_resource():
+    yield {}
+
+
+@pytest.mark.parametrize(
+    "resource, destination, expected_kinds",
+    [
+        # SQL/warehouse destinations get the (normalized) destination name plus the generic
+        # "table" classification kind.
+        (_plain_resource, "duckdb", {"dlt", "duckdb", "table"}),
+        (_plain_resource, "snowflake", {"dlt", "snowflake", "table"}),
+        # mssql is normalized to the recognized "sqlserver" UI kind.
+        (_plain_resource, "mssql", {"dlt", "sqlserver", "table"}),
+        # Destinations whose name already matches a kind pass through unchanged.
+        (_plain_resource, "motherduck", {"dlt", "motherduck", "table"}),
+        # An explicit open table format supersedes the generic "table" kind.
+        (_iceberg_resource, "snowflake", {"dlt", "snowflake", "iceberg"}),
+        (_delta_resource, "snowflake", {"dlt", "snowflake", "deltalake"}),
+        # All filesystem destinations get the generic "file" kind, regardless of storage backend.
+        (
+            _plain_resource,
+            dlt.destinations.filesystem(bucket_url="s3://bucket/prefix"),
+            {"dlt", "file"},
+        ),
+        (
+            _plain_resource,
+            dlt.destinations.filesystem(bucket_url="file:///tmp/dlt"),
+            {"dlt", "file"},
+        ),
+        (_plain_resource, "filesystem", {"dlt", "file"}),
+        # Filesystem + table format adds the format kind alongside "file".
+        (
+            _delta_resource,
+            dlt.destinations.filesystem(bucket_url="s3://bucket/prefix"),
+            {"dlt", "file", "deltalake"},
+        ),
+        # Destinations that are neither table- nor file-based only get the destination name.
+        (_plain_resource, "dummy", {"dlt", "dummy"}),
+        # Vector databases model data as collections/points/objects, not tables, so they get no
+        # "table" classification kind -- only the destination name.
+        (_plain_resource, "qdrant", {"dlt", "qdrant"}),
+        (_plain_resource, "weaviate", {"dlt", "weaviate"}),
+        (_plain_resource, "lancedb", {"dlt", "lancedb"}),
+    ],
+)
+def test_default_kinds_by_destination(
+    resource: DltResource, destination: Any, expected_kinds: set[str]
+) -> None:
+    translator = DagsterDltTranslator()
+    pipeline = dlt.pipeline(
+        pipeline_name=str(uuid.uuid4()),
+        dataset_name="example",
+        destination=destination,
+    )
+    data = DltResourceTranslatorData(resource=resource, pipeline=pipeline)
+    assert set(translator.get_asset_spec(data).kinds) == expected_kinds
+
+
+def test_default_kinds_without_destination() -> None:
+    translator = DagsterDltTranslator()
+    data = DltResourceTranslatorData(resource=_plain_resource, pipeline=None)
+    assert set(translator.get_asset_spec(data).kinds) == {"dlt"}
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:
@@ -463,26 +563,38 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
         yield from dlt_pipeline_resource.run(context=context)
 
     first_asset_metadata = next(iter(example_pipeline_assets.metadata_by_key.values()))
-    dagster_dlt_source = first_asset_metadata.get("dagster_dlt/source")
-    dagster_dlt_pipeline = first_asset_metadata.get("dagster_dlt/pipeline")
-    dagster_dlt_translator = first_asset_metadata.get("dagster_dlt/translator")
+    dagster_dlt_source = first_asset_metadata.get("dagster-dlt/dlt_source")
+    dagster_dlt_pipeline = first_asset_metadata.get("dagster-dlt/dlt_pipeline")
+    dagster_dlt_translator = first_asset_metadata.get("dagster-dlt/dagster_dlt_translator")
 
     assert example_pipeline_assets.metadata_by_key == {
         AssetKey("dlt_pipeline_repos"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/table_name": "repos",
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/write_disposition": TextMetadataValue("merge"),
+            "dagster-dlt/resource": "repos",
+            "dagster-dlt/table_name": "repos",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": "id",
         },
         AssetKey("dlt_pipeline_repo_issues"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/table_name": "repo_issues",
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/write_disposition": TextMetadataValue("merge"),
+            "dagster-dlt/resource": "repo_issues",
+            "dagster-dlt/table_name": "repo_issues",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": ["repo_id", "issue_id"],
         },
@@ -510,24 +622,30 @@ def test_asset_metadata_legacy(dlt_pipeline: Pipeline) -> None:
         yield from dlt_pipeline_resource.run(context=context)
 
     first_asset_metadata = next(iter(example_pipeline_assets.metadata_by_key.values()))
-    dagster_dlt_source = first_asset_metadata.get("dagster_dlt/source")
-    dagster_dlt_pipeline = first_asset_metadata.get("dagster_dlt/pipeline")
-    dagster_dlt_translator = first_asset_metadata.get("dagster_dlt/translator")
+    dagster_dlt_source = first_asset_metadata.get("dagster-dlt/dlt_source")
+    dagster_dlt_pipeline = first_asset_metadata.get("dagster-dlt/dlt_pipeline")
+    dagster_dlt_translator = first_asset_metadata.get("dagster-dlt/dagster_dlt_translator")
 
     assert example_pipeline_assets.metadata_by_key == {
         AssetKey("dlt_pipeline_repos"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": "id",
         },
         AssetKey("dlt_pipeline_repo_issues"): {
-            "dagster_dlt/source": dagster_dlt_source,
-            "dagster_dlt/pipeline": dagster_dlt_pipeline,
-            "dagster_dlt/translator": dagster_dlt_translator,
+            "dagster-dlt/dlt_source": dagster_dlt_source,
+            "dagster-dlt/dlt_pipeline": dagster_dlt_pipeline,
+            "dagster-dlt/dagster_dlt_translator": dagster_dlt_translator,
             "dagster/storage_kind": "duckdb",
+            "dagster-dlt/destination_name": "duckdb",
+            "dagster-dlt/destination_type": "dlt.destinations.duckdb",
+            "dagster-dlt/dataset_name": "example",
             "mode": "upsert",
             "primary_key": ["repo_id", "issue_id"],
         },

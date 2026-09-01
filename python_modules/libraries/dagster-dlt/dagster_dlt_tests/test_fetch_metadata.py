@@ -41,6 +41,43 @@ def test_fetch_row_count(dlt_pipeline: Pipeline) -> None:
     assert repo_issues_materialization.metadata["dagster/row_count"].value == 7
 
 
+def test_fetch_row_count_reports_total_when_no_new_rows(dlt_pipeline: Pipeline) -> None:
+    """A run that loads no new rows produces no dlt load jobs, but the destination table still
+    holds rows from prior runs. Row count should report the destination's total, not fail or skip.
+    """
+    # First run loads data; second run selects nothing (a month with no matching records), so it
+    # loads no new rows into the already-populated tables.
+    sources = iter([pipeline(), pipeline("1999-01")])
+
+    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(
+            context=context, dlt_source=next(sources)
+        ).fetch_row_count()
+
+    res1 = materialize(
+        [example_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+    assert res1.success
+
+    res2 = materialize(
+        [example_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+    assert res2.success
+
+    materializations = [event.materialization for event in res2.get_asset_materialization_events()]
+    repos_materialization = next(
+        materialization
+        for materialization in materializations
+        if materialization.asset_key == AssetKey("dlt_pipeline_repos")
+    )
+    assert repos_materialization.metadata["dagster/row_count"].value == 3
+
+
 def test_fetch_row_count_partitioned(dlt_pipeline: Pipeline) -> None:
     @dlt_assets(
         dlt_source=pipeline(),

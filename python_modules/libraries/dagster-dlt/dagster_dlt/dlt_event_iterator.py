@@ -1,32 +1,62 @@
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from typing import TypeAlias
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.op_execution_context import OpExecutionContext
 from dlt import Pipeline
 from typing_extensions import TypeVar
 
+from dagster_dlt.metadata_set import DagsterDltMetadataSet
+
 DltEventType: TypeAlias = AssetMaterialization | MaterializeResult
 T = TypeVar("T", bound=DltEventType)
+
+
+def _resolve_dlt_table_name(
+    materialization: "DltEventType",
+    context: OpExecutionContext | AssetExecutionContext,
+) -> str | None:
+    """Resolve the destination table name for a materialized dlt resource.
+
+    Prefer the ``dagster-dlt`` metadata attached to the asset spec at definition time so the table
+    can be counted even on an incremental run that loaded no new rows (which produces no dlt load
+    jobs). Outside of an asset definition (e.g. op-based usage) there is no spec, so fall back to
+    the run's load jobs.
+    """
+    if isinstance(context, AssetExecutionContext) and context.has_assets_def:
+        spec_metadata = context.assets_def.metadata_by_key.get(materialization.asset_key)
+        if spec_metadata:
+            table_name = DagsterDltMetadataSet.extract(spec_metadata).table_name
+            if table_name:
+                return table_name
+
+    jobs = DagsterDltMetadataSet.extract(materialization.metadata or {}).jobs
+    if isinstance(jobs, JsonMetadataValue) and isinstance(jobs.value, list) and jobs.value:
+        first_job = jobs.value[0]
+        if isinstance(first_job, Mapping):
+            return first_job.get("table_name")
+    return None
 
 
 def _fetch_row_count(
     dlt_pipeline: Pipeline,
     table_name: str,
 ) -> int | None:
-    """Exists mostly for ease of testing."""
-    with dlt_pipeline.sql_client() as client:  # ty: ignore[invalid-context-manager]
-        with client.execute_query(
-            f"select count(*) as row_count from {table_name}",
-        ) as cursor:
-            result = cursor.fetchone()
-            if result is not None and isinstance(result[0], int):
-                return result[0]
-            else:
-                return None
+    """Fetch the total row count for a table using dlt's built-in dataset interface.
+
+    Uses ``pipeline.dataset().row_counts(...)`` so that dlt handles destination-specific query
+    building (identifier quoting, dialects) and destinations without a raw SQL client (e.g.
+    filesystem).
+    """
+    # ``row_counts`` returns a relation yielding ``(table_name, row_count)`` rows.
+    result = dlt_pipeline.dataset().row_counts(table_names=[table_name]).fetchone()
+    if result is not None and isinstance(result[1], int):
+        return result[1]
+    return None
 
 
 def fetch_row_count_metadata(
@@ -36,23 +66,16 @@ def fetch_row_count_metadata(
 ) -> TableMetadataSet:
     if not materialization.metadata:
         raise Exception("Missing required metadata to retrieve row count.")
-    storage_kind = dlt_pipeline.destination.destination_name if dlt_pipeline.destination else None
     if context.has_partition_key:
-        rows_loaded = materialization.metadata.get("rows_loaded")
-        return TableMetadataSet(
-            partition_row_count=rows_loaded.value if rows_loaded else 0,  # type: ignore
-            storage_kind=storage_kind,
-        )
+        # ``rows_loaded`` is the number of rows loaded this run, i.e. the partition's row count.
+        rows_loaded = DagsterDltMetadataSet.extract(materialization.metadata).rows_loaded
+        return TableMetadataSet(partition_row_count=rows_loaded if rows_loaded is not None else 0)
 
-    jobs_metadata = materialization.metadata.get("jobs")
-    if not jobs_metadata or not isinstance(jobs_metadata, list):
-        raise Exception("Missing jobs metadata to retrieve row count.")
-    table_name = jobs_metadata[0].get("table_name")  # ty: ignore[unresolved-attribute]
+    table_name = _resolve_dlt_table_name(materialization, context)
+    if table_name is None:
+        return TableMetadataSet(row_count=None)
     try:
-        return TableMetadataSet(
-            row_count=_fetch_row_count(dlt_pipeline, table_name),
-            storage_kind=storage_kind,
-        )
+        return TableMetadataSet(row_count=_fetch_row_count(dlt_pipeline, table_name))
     # Filesystem does not have a SQL client and table might not be found
     except Exception as e:
         context.log.error(
@@ -60,7 +83,7 @@ def fetch_row_count_metadata(
             " will not be included in the event.\n\n"
             f"Exception: {e}"
         )
-        return TableMetadataSet(row_count=None, storage_kind=storage_kind)
+        return TableMetadataSet(row_count=None)
 
 
 class DltEventIterator(Iterator[T]):
@@ -99,7 +122,6 @@ class DltEventIterator(Iterator[T]):
                 row_count_metadata = fetch_row_count_metadata(
                     event,
                     context=self._context,
-                    # table_name=str(self._resource.table_name),
                     dlt_pipeline=self._dlt_pipeline,
                 )
                 if event.metadata:

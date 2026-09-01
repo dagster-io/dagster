@@ -11,6 +11,43 @@ from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 from dlt.pipeline.pipeline import Pipeline
 
+from dagster_dlt.metadata_set import DagsterDltMetadataSet
+
+# Maps dlt destination names whose name does not match a recognized Dagster "kind" to the kind
+# that renders the right technology icon. dlt names that already match a recognized kind are
+# passed through unchanged (see ``_default_kinds_fn``); only these mismatches need remapping.
+_DESTINATION_KIND_NORMALIZATION = {
+    "mssql": "sqlserver",
+    "filesystem": "file",
+}
+
+# dlt's ``delta`` table format corresponds to the ``deltalake`` Dagster kind (there is no
+# ``delta`` kind); ``iceberg`` matches a recognized kind directly and passes through.
+_TABLE_FORMAT_KIND_NORMALIZATION = {"delta": "deltalake"}
+
+# dlt's file destination.
+_FILE_DESTINATION = "filesystem"
+
+# dlt destinations whose data model is neither tabular nor file-based, so they get no
+# ``table``/``file`` classification kind. Vector databases model data as
+# collections/points/objects rather than tables, and ``dummy`` is a no-op test destination.
+_NON_TABULAR_DESTINATIONS = {"qdrant", "weaviate", "lancedb", "dummy"}
+
+
+def _classify_destination(destination: Destination) -> str | None:
+    """Classify a dlt destination as ``"table"``- or ``"file"``-based for use as a Dagster kind.
+
+    Keyed off the public ``destination_name``. The filesystem destination is file-based; known
+    non-tabular destinations (vector databases, the no-op ``dummy``) are left unclassified
+    (``None``); every other destination is treated as a tabular SQL warehouse.
+    """
+    destination_name = destination.destination_name
+    if destination_name == _FILE_DESTINATION:
+        return "file"
+    if destination_name in _NON_TABULAR_DESTINATIONS:
+        return None
+    return "table"
+
 
 # Use Optional because the Dlt metaclass doesn't support __or__ (|operator)
 @record
@@ -42,6 +79,9 @@ class DagsterDltTranslator:
             "get_metadata", self._default_metadata_fn, data.resource
         )
         destination_name = data.destination.destination_name if data.destination else None
+        destination_metadata = (
+            DagsterDltMetadataSet.from_pipeline(data.pipeline) if data.pipeline else {}
+        )
         return AssetSpec(
             key=self._resolve_back_compat_method(
                 "get_asset_key", self._default_asset_key_fn, data.resource
@@ -58,7 +98,11 @@ class DagsterDltTranslator:
             group_name=self._resolve_back_compat_method(
                 "get_group_name", self._default_group_name_fn, data.resource
             ),
-            metadata={**metadata, **TableMetadataSet(storage_kind=destination_name)},
+            metadata={
+                **metadata,
+                **TableMetadataSet(storage_kind=destination_name),
+                **destination_metadata,
+            },
             owners=self._resolve_back_compat_method(
                 "get_owners", self._default_owners_fn, data.resource
             ),
@@ -312,7 +356,10 @@ class DagsterDltTranslator:
         table_name = resource.table_name
         if callable(table_name):
             table_name = resource.name
-        return dict(TableMetadataSet(table_name=table_name))
+        return {
+            **TableMetadataSet(table_name=table_name),
+            **DagsterDltMetadataSet.from_resource(resource),
+        }
 
     @superseded(
         additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).owners` instead.",
@@ -396,8 +443,19 @@ class DagsterDltTranslator:
         resource: DltResource,
         destination: Optional[Destination],  # noqa: UP045
     ) -> set[str]:
-        """A method that takes in a dlt resource and returns the kinds which should be
-        attached. Defaults to the destination type and "dlt".
+        """A method that takes in a dlt resource and returns the kinds which should be attached.
+
+        Always includes ``"dlt"``. When a destination is available it also adds a technology kind
+        and, where applicable, a ``"table"``/``"file"`` classification kind:
+
+        - SQL/warehouse destinations get the (normalized) destination name (e.g. ``snowflake``)
+          plus the ``"table"`` classification kind.
+        - Filesystem destinations get the generic ``"file"`` kind.
+        - Non-tabular destinations (e.g. vector databases) get only the destination name, with no
+          ``"table"``/``"file"`` classification kind.
+
+        If the resource declares an open table format (e.g. ``iceberg``/``delta``), that more
+        specific format kind supersedes the generic ``"table"`` classification kind.
 
         Args:
             resource (DltResource): dlt resource
@@ -407,5 +465,31 @@ class DagsterDltTranslator:
             Set[str]: The kinds of the asset.
         """
         kinds = {"dlt"}
-        destination_set = {destination.destination_name} if destination else set()
-        return kinds.union(destination_set)
+        if destination is None:
+            return kinds
+
+        classification = _classify_destination(destination)
+        if classification == "file":
+            kinds.add("file")
+        else:
+            destination_name = destination.destination_name
+            kinds.add(_DESTINATION_KIND_NORMALIZATION.get(destination_name, destination_name))
+
+        # ``table_format`` is only known statically when set as a plain string on the resource; a
+        # callable (dynamically-computed) hint is resolved during the run and treated as absent here.
+        table_format = resource.table_format
+        table_format = table_format if isinstance(table_format, str) else None
+        table_format_kind = (
+            _TABLE_FORMAT_KIND_NORMALIZATION.get(table_format, table_format)
+            if table_format
+            else None
+        )
+
+        if classification == "table":
+            # A specific open table format (e.g. iceberg/deltalake) already implies table-ness, so
+            # it supersedes the generic "table" kind.
+            kinds.add(table_format_kind or "table")
+        elif classification == "file" and table_format_kind:
+            kinds.add(table_format_kind)
+
+        return kinds

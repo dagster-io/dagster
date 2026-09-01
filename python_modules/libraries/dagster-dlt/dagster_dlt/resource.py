@@ -1,5 +1,4 @@
 from collections.abc import Iterator, Mapping
-from datetime import datetime, timezone
 from typing import Any, Optional
 
 from dagster import (
@@ -15,14 +14,17 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dlt.common import json as dlt_json
 from dlt.common.pipeline import LoadInfo
 from dlt.common.schema import Schema
+from dlt.common.schema.utils import get_nested_tables
 from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
+from dagster_dlt.metadata_set import DagsterDltMetadataSet
 from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
@@ -30,41 +32,6 @@ class DagsterDltResource(ConfigurableResource):
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return True
-
-    def _cast_load_info_metadata(self, mapping: Mapping[Any, Any]) -> Mapping[Any, Any]:
-        """Converts datetime and timezone values in a mapping to strings.
-
-        Workaround for dagster._core.errors.DagsterInvalidMetadata: Could not resolve the metadata
-        value for "jobs" to a known type. Value is not JSON serializable.
-
-        Args:
-            mapping (Mapping): Dictionary possibly containing datetime/timezone values
-
-        Returns:
-            Mapping[Any, Any]: Metadata with datetime and timezone values casted to strings
-
-        """
-        try:
-            # zoneinfo is python >= 3.9
-            from zoneinfo import ZoneInfo
-
-            casted_instance_types = (datetime, timezone, ZoneInfo)
-        except:
-            from dateutil.tz import tzfile
-
-            casted_instance_types = (datetime, timezone, tzfile)
-
-        def _recursive_cast(value: Any):
-            if isinstance(value, dict):
-                return {k: _recursive_cast(v) for k, v in value.items()}
-            elif isinstance(value, list):
-                return [_recursive_cast(item) for item in value]
-            elif isinstance(value, casted_instance_types):
-                return str(value)
-            else:
-                return value
-
-        return {k: _recursive_cast(v) for k, v in mapping.items()}
 
     def _extract_table_schema_metadata(self, table_name: str, schema: Schema) -> TableSchema:
         # Pyright does not detect the default value from 'pop' and 'get'
@@ -107,35 +74,26 @@ class DagsterDltResource(ConfigurableResource):
             Mapping[str, Any]: Asset-specific metadata dictionary
 
         """
-        dlt_base_metadata_types = {
-            "first_run",
-            "started_at",
-            "finished_at",
-            "dataset_name",
-            "destination_name",
-            "destination_type",
-        }
+        # dlt's own JSON encoder handles types that are not natively JSON serializable
+        # (e.g. pendulum ``DateTime``), so round-tripping through it yields metadata that
+        # Dagster can store.
+        load_info_dict = dlt_json.loads(dlt_json.dumps(load_info.asdict()))
 
-        load_info_dict = self._cast_load_info_metadata(load_info.asdict())
-
-        # shared metadata that is displayed for all assets
-        base_metadata = {k: v for k, v in load_info_dict.items() if k in dlt_base_metadata_types}
         default_schema = dlt_pipeline.default_schema
         normalized_table_name = default_schema.naming.normalize_table_identifier(
             str(resource.table_name)
         )
         # job metadata for specific target `normalized_table_name`
-        base_metadata["jobs"] = [
+        jobs = [
             job
             for load_package in load_info_dict.get("load_packages", [])
             for job in load_package.get("jobs", [])
             if job.get("table_name") == normalized_table_name
         ]
+        # A table absent from the normalize row counts had zero rows loaded this run.
         rows_loaded = dlt_pipeline.last_trace.last_normalize_info.row_counts.get(
-            normalized_table_name
+            normalized_table_name, 0
         )
-        if rows_loaded:
-            base_metadata["rows_loaded"] = MetadataValue.int(rows_loaded)
 
         schema: str | None = None
         for load_package in load_info_dict.get("load_packages", []):
@@ -146,33 +104,42 @@ class DagsterDltResource(ConfigurableResource):
             if schema:
                 break
 
-        destination_name: str | None = base_metadata.get("destination_name")
+        destination_name: str | None = load_info_dict.get("destination_name")
         table_name = None
         if destination_name and schema:
             table_name = ".".join([destination_name, schema, normalized_table_name])
 
+        # Discover nested (child) tables via dlt's schema parent relationships rather than
+        # assuming the "__" nesting separator, which is configurable in dlt.
         child_table_names = [
-            name
-            for name in default_schema.data_table_names()
-            if name.startswith(f"{normalized_table_name}__")
+            check.not_none(nested_table.get("name"))
+            for nested_table in get_nested_tables(default_schema.tables, normalized_table_name)
         ]
         child_table_schemas = {
-            table_name: self._extract_table_schema_metadata(table_name, default_schema)
-            for table_name in child_table_names
+            child_table_name: self._extract_table_schema_metadata(child_table_name, default_schema)
+            for child_table_name in child_table_names
+            if child_table_name != normalized_table_name
         }
         table_schema = self._extract_table_schema_metadata(normalized_table_name, default_schema)
 
-        base_metadata = {
+        # Static destination/dataset metadata lives on the asset spec (see
+        # ``DagsterDltMetadataSet.from_pipeline``); only run-specific values are emitted here.
+        runtime_metadata = DagsterDltMetadataSet(
+            first_run=load_info_dict.get("first_run"),
+            started_at=load_info_dict.get("started_at"),
+            finished_at=load_info_dict.get("finished_at"),
+            rows_loaded=rows_loaded,
+            jobs=MetadataValue.json(jobs) if jobs else None,
+        )
+
+        return {
             **child_table_schemas,
-            **base_metadata,
+            **runtime_metadata,
             **TableMetadataSet(
                 column_schema=table_schema,
                 table_name=table_name,
-                storage_kind=destination_name,
             ),
         }
-
-        return base_metadata
 
     @public
     def run(
