@@ -1,6 +1,5 @@
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {weakMapMemoize} from '../util/weakMapMemoize';
 import {
   DownTraversalContext,
   FunctionNameContext,
@@ -10,6 +9,7 @@ import {
 } from './generated/AssetSelectionParser';
 import {ValueContext as OpSelectionValueContext} from '../op-selection/generated/OpSelectionParser';
 import {ValueContext as RunSelectionValueContext} from '../run-selection/generated/RunSelectionParser';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
   const digits = ctx.DIGITS();

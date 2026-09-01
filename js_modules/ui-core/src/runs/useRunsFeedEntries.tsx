@@ -2,9 +2,9 @@ import {useMemo} from 'react';
 
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedTableEntryFragment';
 import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
+import {gql} from '../apollo-client';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/useRunsFeedEntries.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
-import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {RunsFeedView, RunsFilter} from '../graphql/types';
 

@@ -558,3 +558,77 @@ describe('parseAssetSelectionQuery - job', () => {
     expect(result.all).toEqual([]);
   });
 });
+
+// not_materialized_in_hours tests
+//
+// Materialization recency is not on the asset graph node; it is fetched out of band
+// (see useAssetGraphSupplementaryData) and supplied via supplementaryData, keyed by the
+// hours window -- exactly like status:. These tests supply that data directly and assert
+// the visitor resolves it correctly.
+
+function buildMaterializationAsset(name: string): AssetGraphQueryItem {
+  return {
+    name,
+    node: buildAssetNode({assetKey: buildAssetKey({path: [name]})}),
+    inputs: [{dependsOn: []}],
+    outputs: [{dependedBy: []}],
+  };
+}
+
+const MATERIALIZATION_GRAPH: AssetGraphQueryItem[] = [
+  buildMaterializationAsset('recent'),
+  buildMaterializationAsset('stale'),
+  buildMaterializationAsset('never'),
+];
+
+function buildNotMaterializedSupplementaryData(): SupplementaryInformation {
+  const data: Record<string, {path: string[]}[]> = {};
+  function addWindow(hours: string, names: string[]) {
+    const key = getSupplementaryDataKey({field: 'not_materialized_in_hours', value: hours});
+    data[key] = names.map((name) => ({path: [name]}));
+  }
+  // Within 24h: 'recent' was refreshed; 'stale' and 'never' were not.
+  addWindow('24', ['stale', 'never']);
+  // Within 100h: 'stale' was refreshed ~48h ago (inside the window), so only 'never'.
+  addWindow('100', ['never']);
+  return data;
+}
+
+const NOT_MATERIALIZED_SUPPLEMENTARY_DATA = buildNotMaterializedSupplementaryData();
+
+function assertNotMaterializedResult(query: string, expectedNames: string[]) {
+  const result = parseAssetSelectionQuery(
+    MATERIALIZATION_GRAPH,
+    query,
+    NOT_MATERIALIZED_SUPPLEMENTARY_DATA,
+  );
+  if (result instanceof Error) {
+    throw result;
+  }
+  expect(new Set(result.all.map((a) => a.name))).toEqual(new Set(expectedNames));
+}
+
+describe('parseAssetSelectionQuery - not_materialized_in_hours', () => {
+  it('selects assets not successfully materialized within the window', () => {
+    assertNotMaterializedResult('not_materialized_in_hours:24', ['stale', 'never']);
+  });
+
+  it('selects only never-materialized assets for a wide window', () => {
+    assertNotMaterializedResult('not_materialized_in_hours:100', ['never']);
+  });
+
+  it('returns empty when no data is present for the window', () => {
+    // No bucket was built for :6, so nothing matches (graceful, like status:).
+    assertNotMaterializedResult('not_materialized_in_hours:6', []);
+  });
+
+  it('composes with other attributes via boolean operators', () => {
+    assertNotMaterializedResult('not_materialized_in_hours:24 and key:stale', ['stale']);
+  });
+
+  it('rejects a non-integer argument', () => {
+    expect(
+      parseAssetSelectionQuery(MATERIALIZATION_GRAPH, 'not_materialized_in_hours:abc'),
+    ).toBeInstanceOf(Error);
+  });
+});

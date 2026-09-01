@@ -2,13 +2,13 @@ import {useEffect, useState} from 'react';
 
 import {AssetCheckPartitionStatus} from './AssetCheckPartitionStatus';
 import {gql, useApolloClient} from '../../apollo-client';
-import {AssetCheckPartitionRangeStatus} from '../../graphql/types';
-import {usePartitionDataSubscriber} from '../PartitionSubscribers';
-import {AssetKey} from '../types';
 import {
   AssetCheckPartitionHealthQuery,
   AssetCheckPartitionHealthQueryVariables,
 } from './types/useAssetCheckPartitionData.types';
+import {AssetCheckPartitionRangeStatus} from '../../graphql/types';
+import {usePartitionDataSubscriber} from '../PartitionSubscribers';
+import {AssetKey} from '../types';
 
 export interface AssetCheckPartitionData {
   assetKey: AssetKey;
