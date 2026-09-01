@@ -10,6 +10,9 @@ export type AppContextValue = {
   statusPolling?: Set<DeploymentStatusType>;
   localCacheIdPrefix?: string;
   shouldUseAssetManifestForWorkspace?: boolean;
+  // Deployment name and tag color from dagster.yaml, shown in the navigation.
+  uiLabel?: string;
+  uiIntent?: string;
 };
 
 export const AppContext = createContext<AppContextValue>({

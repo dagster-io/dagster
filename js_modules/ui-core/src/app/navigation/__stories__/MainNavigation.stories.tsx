@@ -3,6 +3,7 @@ import {FeatureFlag} from '@shared/FeatureFlags';
 import {MainNavigation} from '@shared/app/navigation/MainNavigation';
 import {useContext} from 'react';
 
+import {AppContext, AppContextValue} from '../../AppContext';
 import {NavCollapseContext, NavCollapseProvider} from '../NavCollapseProvider';
 import {getBottomGroups, getTopGroups} from '../mainNavigationItems';
 
@@ -37,5 +38,25 @@ export const Default = () => {
         <Nav />
       </NavCollapseProvider>
     </MockedProvider>
+  );
+};
+
+const labelled: AppContextValue = {
+  basePath: '',
+  rootServerURI: '',
+  telemetryEnabled: false,
+  uiLabel: 'Production',
+  uiIntent: 'danger',
+};
+
+export const WithDeploymentLabel = () => {
+  return (
+    <AppContext.Provider value={labelled}>
+      <MockedProvider mocks={[]}>
+        <NavCollapseProvider>
+          <Nav />
+        </NavCollapseProvider>
+      </MockedProvider>
+    </AppContext.Provider>
   );
 };
