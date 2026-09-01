@@ -3102,8 +3102,16 @@
         "UserDeployment": {
             "properties": {
                 "name": {
-                    "title": "Name",
-                    "type": "string"
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Name"
                 },
                 "image": {
                     "$ref": "#/$defs/Image"
@@ -3439,7 +3447,6 @@
                 }
             },
             "required": [
-                "name",
                 "image",
                 "port"
             ],
@@ -3477,11 +3484,30 @@
                     "type": "array"
                 },
                 "deployments": {
-                    "items": {
-                        "$ref": "#/$defs/UserDeployment"
-                    },
-                    "title": "Deployments",
-                    "type": "array"
+                    "anyOf": [
+                        {
+                            "items": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/$defs/UserDeployment"
+                                    },
+                                    {
+                                        "required": [
+                                            "name"
+                                        ]
+                                    }
+                                ]
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "additionalProperties": {
+                                "$ref": "#/$defs/UserDeployment"
+                            },
+                            "type": "object"
+                        }
+                    ],
+                    "title": "Deployments"
                 }
             },
             "required": [
