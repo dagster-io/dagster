@@ -367,7 +367,7 @@ def test_log_handler_extra_drops_non_serializable_and_internal_attrs():
     non_serializable_value = object()
     test_extra = {
         "valid_key": "valid_value",
-        "internal_dagster_attr": "should_be_dropped",
+        "non_serializable": non_serializable_value,
     }
 
     with user_code_error_boundary(
@@ -393,5 +393,5 @@ def test_log_handler_extra_drops_non_serializable_and_internal_attrs():
 
     dagster_user_metadata = captured_record.dagster_meta.get("dagster_user_metadata") or {}
     assert dagster_user_metadata.get("valid_key") == "valid_value"
-    assert "internal_dagster_attr" not in dagster_user_metadata
+    assert "non_serializable" not in dagster_user_metadata
     assert non_serializable_value not in dagster_user_metadata.values()
