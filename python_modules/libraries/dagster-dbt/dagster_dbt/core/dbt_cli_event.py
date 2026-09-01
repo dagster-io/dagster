@@ -134,6 +134,10 @@ def _build_column_lineage_metadata(
             dialect=sql_dialect,
         ),
     )
+    # SQLGlot 28.1+ expects aliases in a reparsed expression to be Expression
+    # objects. Serializing the optimized AST avoids a compatibility issue where
+    # optimized CTE/join aliases are strings.
+    optimized_node_sql = optimized_node_ast.sql(dialect=sql_dialect)
 
     # 2. Retrieve the column names from the current node.
     schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
@@ -176,7 +180,7 @@ def _build_column_lineage_metadata(
         column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
-            sql=optimized_node_ast,
+            sql=optimized_node_sql,
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
         ).walk():
