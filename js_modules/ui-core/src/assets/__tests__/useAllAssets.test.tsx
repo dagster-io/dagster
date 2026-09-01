@@ -10,6 +10,7 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildTeamAssetOwner,
+  buildTimeWindowFreshnessPolicy,
   buildUserAssetOwner,
   buildWorkspaceLocationEntry,
 } from '../../graphql/builders';
@@ -160,6 +161,7 @@ describe('useAllAssets', () => {
       }),
       isMaterializable: true,
       isObservable: false,
+      internalFreshnessPolicy: null,
     });
 
     const assetNode2 = buildAssetNode({
@@ -174,6 +176,7 @@ describe('useAllAssets', () => {
       }),
       isMaterializable: false,
       isObservable: true,
+      internalFreshnessPolicy: buildTimeWindowFreshnessPolicy({failWindowSeconds: 3600}),
     });
 
     const workspaceWithDuplicateAssets = buildWorkspaceMocks([
@@ -257,6 +260,11 @@ describe('useAllAssets', () => {
         expect.objectContaining({key: 'tag', value: 'value'}),
         expect.objectContaining({key: 'tag2', value: 'value2'}),
       ]),
+    );
+
+    // A freshness policy declared on only the non-representative definition still surfaces
+    expect(asset?.definition?.internalFreshnessPolicy).toEqual(
+      expect.objectContaining({failWindowSeconds: 3600}),
     );
   });
 });
