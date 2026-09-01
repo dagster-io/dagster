@@ -194,6 +194,7 @@ test-components = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-sqlalchemy-1-3"}, {group = "test-sqlalchemy-1-4"}],
 ]

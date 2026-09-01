@@ -37,6 +37,7 @@ test-pypi = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-source"}, {group = "test-pypi"}],
 ]

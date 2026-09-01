@@ -40,5 +40,8 @@ test = [
     "pytest>=9.0.2",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }

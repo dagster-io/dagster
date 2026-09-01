@@ -96,6 +96,7 @@ test-dbt111 = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [
         {group = "test-dbt17"},

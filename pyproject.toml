@@ -109,3 +109,12 @@ module_name = "dagster_test.toys.repo"
 dev = [
     "erk>=0.6.0",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
+
+# erk requires >=3.11; without a floor here, bulk relock tooling that
+# defaults older interpreters (scripts/update_lockfiles.py) can't resolve
+# this virtual project. Keep in sync with the uv.lock `requires-python`.
+[tool.uv.dependency-groups]
+dev = { requires-python = ">=3.12" }

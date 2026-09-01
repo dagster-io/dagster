@@ -46,6 +46,7 @@ test-kubernetes-36 = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [
         {group = "test-kubernetes-12"},

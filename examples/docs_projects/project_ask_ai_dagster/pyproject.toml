@@ -44,3 +44,6 @@ root_module = "project_ask_ai_dagster"
 registry_modules = [
     "project_ask_ai_dagster.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

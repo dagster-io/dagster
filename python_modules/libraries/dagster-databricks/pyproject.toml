@@ -39,6 +39,7 @@ test-pydantic2 = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-pydantic1"}, {group = "test-pydantic2"}],
 ]

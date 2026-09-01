@@ -34,6 +34,9 @@ directory_type = "project"
 root_module = "project_components_pdf_extraction"
 defs_module = "project_components_pdf_extraction.defs"
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-test = { path = '../../../python_modules/dagster-test', editable = true }
 dagster-graphql = { path = '../../../python_modules/dagster-graphql', editable = true }

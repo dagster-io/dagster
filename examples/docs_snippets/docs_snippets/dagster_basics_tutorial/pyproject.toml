@@ -25,3 +25,6 @@ root_module = "dagster_tutorial"
 registry_modules = [
     "dagster_tutorial.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

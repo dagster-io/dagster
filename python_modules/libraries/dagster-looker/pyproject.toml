@@ -31,6 +31,9 @@ test = [
     "dagster[test]",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-pipes = { path = "../../dagster-pipes", editable = true }
 dagster-shared = { path = "../dagster-shared", editable = true }

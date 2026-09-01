@@ -67,6 +67,9 @@ test-plus = [
     "dagster-docker",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster = { path = "../../../python_modules/dagster", editable = true }
 dagster-test = { path = "../../../python_modules/dagster-test", editable = true }

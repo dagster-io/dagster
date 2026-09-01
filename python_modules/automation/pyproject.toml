@@ -116,6 +116,9 @@ test = [
     "dagster-cloud-cli",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster = { path = "../dagster", editable = true }
 dagster-pipes = { path = "../dagster-pipes", editable = true }

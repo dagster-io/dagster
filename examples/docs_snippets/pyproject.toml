@@ -131,6 +131,9 @@ test-docs-snapshot = [
     "typer==0.16.0",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster = { path = "../../python_modules/dagster", editable = true }
 dagster-graphql = { path = "../../python_modules/dagster-graphql", editable = true }

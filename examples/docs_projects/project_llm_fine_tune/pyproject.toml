@@ -34,3 +34,6 @@ root_module = "project_llm_fine_tune"
 registry_modules = [
     "project_llm_fine_tune.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
