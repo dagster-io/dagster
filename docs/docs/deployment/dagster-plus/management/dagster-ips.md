@@ -22,33 +22,26 @@ The Dagster+ agent interacts with the following IP addresses:
   <TabItem value="us-region" label="US region">
 
 ```plain
-34.215.239.157
-35.165.239.109
-35.83.161.124
-44.236.154.129
-44.236.31.202
-44.239.93.251
-54.185.29.42
-54.188.126.120
+32.184.138.148
+35.164.177.20
+44.247.161.157
+44.254.59.148
 ```
 
   </TabItem>
   <TabItem value="eu-region" label="EU region">
 
 ```plain
-13.50.180.120
-13.51.19.57
-13.60.164.107
-13.62.96.222
-13.62.107.201
-51.21.15.208
+13.62.158.6
+13.63.55.36
+16.171.127.203
 ```
 
   </TabItem>
 </Tabs>
 
 :::note
-Additional IP addresses may be added over time. This list was last updated on **December 17, 2025**.
+Additional IP addresses may be added over time. This list was last updated on **August 31, 2026**.
 :::
 
 ## URLs
