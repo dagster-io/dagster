@@ -87,6 +87,15 @@ T = TypeVar("T")
     type=click.INT,
 )
 @click.option(
+    "--db-pool-pre-ping/--no-db-pool-pre-ping",
+    help=(
+        "Whether to test sqlalchemy pool connections for liveness on each checkout, "
+        "transparently recovering from stale connections (e.g. dropped by the database, "
+        "a connection pooler, or a network timeout)."
+    ),
+    default=None,
+)
+@click.option(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     help="Whether to schema-check defs.yaml files for the project before starting the dev server.",
@@ -107,6 +116,7 @@ def dev_command(
     db_statement_timeout: int | None,
     db_pool_recycle: int | None,
     db_pool_max_overflow: int | None,
+    db_pool_pre_ping: bool | None,
     check_yaml: bool | None,
     target_path: Path,
     verbose: bool,  # from dg_global_options
@@ -140,6 +150,7 @@ def dev_command(
             db_statement_timeout=db_statement_timeout,
             db_pool_recycle=db_pool_recycle,
             db_pool_max_overflow=db_pool_max_overflow,
+            db_pool_pre_ping=db_pool_pre_ping,
         )
 
     # If not, use dg config to construct a workspace file and do a yaml check before
@@ -204,4 +215,5 @@ def dev_command(
             db_statement_timeout=db_statement_timeout,
             db_pool_recycle=db_pool_recycle,
             db_pool_max_overflow=db_pool_max_overflow,
+            db_pool_pre_ping=db_pool_pre_ping,
         )
