@@ -28,6 +28,66 @@ filterwarnings = [
 markers = [
   "integration: Tests requiring real git operations or other I/O",
   "slow: Tests that take more than 1 second",
+
+  # dagster: misc suite selection
+  "typesignature: Type-signature tests for pythonic resources/config",
+  "nettest: Requires network access",
+
+  # dagster-graphql: graphql_context_test_suite builds a context out of one
+  # marker from each of these groups, and tox selects on the combination.
+  "graphql_context_test_suite: Part of the GraphQL context test suite",
+  "graphql_context_variants: Tests over the GraphQL context variants themselves",
+  "python_client_test_suite: Python GraphQL client test suite",
+  "sqlite_instance: Context backed by a SQLite instance",
+  "postgres_instance: Context backed by a Postgres instance",
+  "asset_aware_instance: Context backed by an asset-aware instance",
+  "managed_grpc_env: Code location served by a managed gRPC server",
+  "deployed_grpc_env: Code location served by a deployed gRPC server",
+  "code_server_cli_grpc_env: Code location served via the code-server CLI",
+  "multi_location: Context with multiple code locations",
+  "lazy_repository: Context with a lazily-loaded repository",
+  "default_run_launcher: Context using the default run launcher",
+  "sync_run_launcher: Context using the synchronous run launcher",
+  "queued_run_coordinator: Context using the queued run coordinator",
+  "non_launchable: Context whose runs cannot be launched",
+  "read_only: Context with read-only permissions",
+  "backfill_daemon: Requires the backfill daemon",
+
+  # dagster-dbt
+  "core: dbt-core tests (applied in conftest)",
+  "cloud: dbt Cloud tests (applied in conftest)",
+  "fusion: dbt Fusion support tests",
+  "snowflake: Requires Snowflake",
+  "bigquery: Requires BigQuery",
+  "derived_metadata: dbt derived column metadata tests",
+
+  # dagster-snowflake
+  "skip_if_no_snowflake_credentials: Skipped without Snowflake credentials",
+
+  # dagster-airflow
+  "requires_no_db: Runs without a database",
+  "requires_local_db: Requires a local database",
+  "requires_persistent_db: Requires a persistent database",
+  "structures: Airflow structure tests",
+
+  # dagster-k8s / helm integration test infra
+  "default: Default Helm subchart configuration",
+  "subchart: Helm subchart tests",
+  "mark_redis: Requires Redis",
+  "mark_rabbitmq: Requires RabbitMQ",
+
+  # dagstermill
+  "notebook_test: Executes a notebook",
+
+  # dagster-dg-cli
+  "serial: Must not run in parallel",
+
+  # dagster-dbt cloud_v2 reconstruction tests (pytest-order)
+  "order: Explicit test ordering",
+
+  # backcompat-test-suite: applied dynamically from MARK_TO_VERSIONS_MAP
+  "user-code-earliest-release: User code at the earliest tested release",
+  "user-code-latest-release: User code at the most recent release",
 ]
 
 ### pytest-asyncio configuration
