@@ -8,7 +8,7 @@ packages = ["dbt_example"]
 [project]
 name = "starlift-demo"
 version = "1!0+dev"
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "dagster",
     "dagster-webserver",
