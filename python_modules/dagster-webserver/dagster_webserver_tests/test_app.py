@@ -123,6 +123,67 @@ def test_index_view_at_path_prefix(instance):
         assert b'"pathPrefix": "/dagster-path",' in res.content
 
 
+def test_index_view_ui_label():
+    with instance_for_test(
+        overrides={"ui": {"label": "Staging", "intent": "warning"}}
+    ) as configured:
+        with load_workspace_process_context_from_yaml_paths(
+            configured, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            client = TestClient(
+                create_app_from_workspace_process_context(workspace_process_context)
+            )
+            res = client.get("/")
+
+            assert res.status_code == 200, res.content
+            assert b'"uiLabel": "Staging"' in res.content
+            assert b'"uiIntent": "warning"' in res.content
+
+
+def test_index_view_ui_label_unset(instance):
+    with load_workspace_process_context_from_yaml_paths(
+        instance, [file_relative_path(__file__, "./workspace.yaml")]
+    ) as workspace_process_context:
+        client = TestClient(create_app_from_workspace_process_context(workspace_process_context))
+        res = client.get("/")
+
+        assert res.status_code == 200, res.content
+        assert b'"uiLabel": null' in res.content
+        assert b"__UI_LABEL__" not in res.content
+
+
+def test_index_view_ui_label_rejects_unknown_intent():
+    with instance_for_test(overrides={"ui": {"label": "Staging", "intent": "chartreuse"}}) as bad:
+        with load_workspace_process_context_from_yaml_paths(
+            bad, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            client = TestClient(
+                create_app_from_workspace_process_context(workspace_process_context)
+            )
+            res = client.get("/")
+
+            assert res.status_code == 200, res.content
+            assert b'"uiIntent": null' in res.content
+
+
+def test_index_view_ui_label_escapes_script_tag():
+    with instance_for_test(
+        overrides={"ui": {"label": "</script><script>alert(1)</script>"}}
+    ) as configured:
+        with load_workspace_process_context_from_yaml_paths(
+            configured, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            client = TestClient(
+                create_app_from_workspace_process_context(workspace_process_context)
+            )
+            res = client.get("/")
+
+            assert res.status_code == 200, res.content
+            # The "<" of the injected markup is escaped, so it cannot close the JSON script tag.
+            assert b"<script>alert(1)" not in res.content
+            assert rb"\u003c/script>\u003cscript>alert(1)" in res.content
+
+
 def test_graphql_view(instance):
     with load_workspace_process_context_from_yaml_paths(
         instance, [file_relative_path(__file__, "./workspace.yaml")]
