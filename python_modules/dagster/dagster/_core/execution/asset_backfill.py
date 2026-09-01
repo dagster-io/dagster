@@ -945,7 +945,7 @@ def backfill_runs_are_complete(
             instance.get_run_ids(
                 filters=RunsFilter(
                     statuses=NOT_FINISHED_STATUSES,
-                    tags={BACKFILL_ID_TAG: backfill_id},
+                    backfill_id=backfill_id,
                 ),
                 limit=1,
             )
@@ -958,7 +958,8 @@ def backfill_runs_are_complete(
         run.run_id
         for run in instance.get_runs(
             filters=RunsFilter(
-                tags={BACKFILL_ID_TAG: backfill_id, WILL_RETRY_TAG: "true"},
+                backfill_id=backfill_id,
+                tags={WILL_RETRY_TAG: "true"},
                 statuses=[DagsterRunStatus.FAILURE],
             )
         )
@@ -2219,7 +2220,7 @@ def _get_failed_asset_graph_subset(
 
     runs = instance_queryer.instance.get_runs(
         filters=RunsFilter(
-            tags={BACKFILL_ID_TAG: backfill_id},
+            backfill_id=backfill_id,
             statuses=[DagsterRunStatus.CANCELED, DagsterRunStatus.FAILURE],
         )
     )
