@@ -23,6 +23,7 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     LocalComputeLogManager as LocalComputeLogManagerModel,
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
+from schema.charts.dagster.subschema.config import Source
 from schema.charts.dagster.subschema.daemon import (
     BlockOpConcurrencyLimitedRuns,
     ConfigurableClass,
@@ -1009,6 +1010,15 @@ def test_ui_label(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
     assert instance["ui"] == {"label": "Staging", "intent": "warning"}
+
+
+def test_ui_label_from_env(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(ui=UI.construct(label=Source(env="DAGSTER_UI_LABEL")))
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["ui"]["label"] == {"env": "DAGSTER_UI_LABEL"}
 
 
 def test_ui_label_omitted_by_default(template: HelmTemplate):
