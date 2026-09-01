@@ -195,3 +195,4 @@ exponent.txt
 .erk/scratch/
 .impl/
 .erk/config.local.toml
+examples/quickstart_etl/.tmp_dagster_home_*

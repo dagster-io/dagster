@@ -9,7 +9,7 @@ from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record_custom
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_checks.asset_check_result import AssetCheckResult
-from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.data_version import DataVersion, DataVersionsByPartition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (  # noqa
     MetadataValue,
@@ -25,7 +25,7 @@ def coerce_asset_result_args(
     asset_key: CoercibleToAssetKey | None,
     metadata: RawMetadataMapping | None,
     check_results: Sequence[AssetCheckResult] | None,
-    data_version: DataVersion | None,
+    data_version: DataVersion | DataVersionsByPartition | None,
     tags: Mapping[str, Any] | None,
 ) -> Mapping[str, Any]:
     from dagster._core.definitions.events import validate_asset_event_tags
@@ -45,7 +45,7 @@ class AssetResult:
     asset_key: PublicAttr[AssetKey | None]
     metadata: PublicAttr[RawMetadataMapping | None]
     check_results: PublicAttr[Sequence[AssetCheckResult]]
-    data_version: PublicAttr[DataVersion | None]
+    data_version: PublicAttr[DataVersion | DataVersionsByPartition | None]
     tags: PublicAttr[Mapping[str, str] | None]
 
     def check_result_named(self, check_name: str) -> AssetCheckResult:
@@ -71,7 +71,7 @@ class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin
         metadata (Optional[RawMetadataMapping]): Metadata to record with the corresponding AssetMaterialization event.
         check_results (Optional[Sequence[AssetCheckResult]]): Check results to record with the
             corresponding AssetMaterialization event.
-        data_version (Optional[DataVersion]): The data version of the asset that was observed.
+        data_version (Optional[Union[DataVersion, DataVersionsByPartition]]): The data version of the asset that was observed.
         tags (Optional[Mapping[str, str]]): Tags to record with the corresponding
             AssetMaterialization event.
         value (Optional[Any]): The output value of the asset that was materialized.
@@ -80,7 +80,7 @@ class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin
     asset_key: PublicAttr[AssetKey | None]
     metadata: PublicAttr[RawMetadataMapping | None]
     check_results: PublicAttr[Sequence[AssetCheckResult]]
-    data_version: PublicAttr[DataVersion | None]
+    data_version: PublicAttr[DataVersion | DataVersionsByPartition | None]
     tags: PublicAttr[Mapping[str, str] | None]
     value: PublicAttr[T]
 
@@ -89,7 +89,7 @@ class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin
         asset_key: CoercibleToAssetKey | None = None,
         metadata: RawMetadataMapping | None = None,
         check_results: Sequence[AssetCheckResult] | None = None,
-        data_version: DataVersion | None = None,
+        data_version: DataVersion | DataVersionsByPartition | None = None,
         tags: Mapping[str, str] | None = None,
         value: T = NoValueSentinel,  # ty: ignore[invalid-parameter-default]
     ):
@@ -118,7 +118,7 @@ class ObserveResult(AssetResult, IHaveNew, LegacyNamedTupleMixin):
             AssetObservation event.
         check_results (Optional[Sequence[AssetCheckResult]]): Check results to record with the
             corresponding AssetObservation event.
-        data_version (Optional[DataVersion]): The data version of the asset that was observed.
+        data_version (Optional[Union[DataVersion, DataVersionsByPartition]]): The data version of the asset that was observed.
         tags (Optional[Mapping[str, str]]): Tags to record with the corresponding AssetObservation
             event.
     """
@@ -126,7 +126,7 @@ class ObserveResult(AssetResult, IHaveNew, LegacyNamedTupleMixin):
     asset_key: PublicAttr[AssetKey | None]
     metadata: PublicAttr[RawMetadataMapping | None]
     check_results: PublicAttr[Sequence[AssetCheckResult]]
-    data_version: PublicAttr[DataVersion | None]
+    data_version: PublicAttr[DataVersion | DataVersionsByPartition | None]
     tags: PublicAttr[Mapping[str, str] | None]
 
     def __new__(
@@ -134,7 +134,7 @@ class ObserveResult(AssetResult, IHaveNew, LegacyNamedTupleMixin):
         asset_key: CoercibleToAssetKey | None = None,
         metadata: RawMetadataMapping | None = None,
         check_results: Sequence[AssetCheckResult] | None = None,
-        data_version: DataVersion | None = None,
+        data_version: DataVersion | DataVersionsByPartition | None = None,
         tags: Mapping[str, str] | None = None,
     ):
         return super().__new__(
