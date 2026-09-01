@@ -12,6 +12,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
+    DagsterInvalidDefinitionError,
     ExecuteInProcessResult,
     OpExecutionContext,
     Output,
@@ -950,8 +951,7 @@ def test_dbt_source_tests_checks_enabled(
 
 def test_duplicate_asset_check_keys_are_rejected() -> None:
     """Distinct dbt tests that generate the same AssetCheckKey must raise at definition time."""
-    from dagster import DagsterInvalidDefinitionError
-    from dagster_dbt.asset_utils import _validate_check_keys
+    from dagster_dbt.asset_utils import _validate_check_identifiers
 
     manifest = {
         "nodes": {
@@ -972,22 +972,68 @@ def test_duplicate_asset_check_keys_are_rejected() -> None:
     }
 
     check_key = AssetCheckKey(asset_key=AssetKey(["my_model"]), name="test_name")
-    test_unique_ids_by_check_key = {
-        check_key: {
-            "test.test_project.test_name.abc123",
-            "test.test_project.test_name.def456",
+    check_identifier = AssetCheckSpec(
+        asset=check_key.asset_key, name=check_key.name
+    ).get_python_identifier()
+    test_check_keys_by_identifier = {
+        check_identifier: {
+            "test.test_project.test_name.abc123": check_key,
+            "test.test_project.test_name.def456": check_key,
         }
     }
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        _validate_check_keys(manifest, test_unique_ids_by_check_key)
+        _validate_check_identifiers(manifest, test_check_keys_by_identifier)
 
     error_message = str(exc_info.value)
-    assert "identical Dagster asset check keys" in error_message
+    assert "conflicting Dagster asset check identifiers" in error_message
+    assert check_identifier in error_message
     assert "test.test_project.test_name.abc123" in error_message
     assert "test.test_project.test_name.def456" in error_message
     assert "models/_models.yml" in error_message
     assert "models/_other.yml" in error_message
+
+
+def test_distinct_asset_check_keys_with_same_python_identifier_are_rejected() -> None:
+    from dagster_dbt.asset_utils import _validate_check_identifiers
+
+    manifest = {
+        "nodes": {
+            "test.test_project.test_name.abc123": {
+                "original_file_path": "models/_models.yml",
+            },
+            "test.test_project.test_name.def456": {
+                "original_file_path": "models/_other.yml",
+            },
+        },
+        "sources": {},
+    }
+    first_key = AssetCheckKey(asset_key=AssetKey(["foo-bar"]), name="test_name")
+    second_key = AssetCheckKey(asset_key=AssetKey(["foo.bar"]), name="test_name")
+    check_identifier = AssetCheckSpec(
+        asset=first_key.asset_key, name=first_key.name
+    ).get_python_identifier()
+
+    assert first_key != second_key
+    assert (
+        check_identifier
+        == AssetCheckSpec(asset=second_key.asset_key, name=second_key.name).get_python_identifier()
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+        _validate_check_identifiers(
+            manifest,
+            {
+                check_identifier: {
+                    "test.test_project.test_name.abc123": first_key,
+                    "test.test_project.test_name.def456": second_key,
+                }
+            },
+        )
+
+    error_message = str(exc_info.value)
+    assert first_key.to_user_string() in error_message
+    assert second_key.to_user_string() in error_message
 
 
 def test_same_test_via_multiple_parents_is_valid(

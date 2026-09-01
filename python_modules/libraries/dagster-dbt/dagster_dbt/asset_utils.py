@@ -136,11 +136,12 @@ DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
     " https://docs.dagster.io/integrations/libraries/dbt/reference#customizing-asset-keys."
 )
 
-DUPLICATE_ASSET_CHECK_KEY_ERROR_MESSAGE = (
-    "The following dbt tests generate identical Dagster asset check keys."
-    " This typically happens when two tests on the same model share the same synthesized name"
-    " (e.g., tests that differ only in config options like `where`)."
-    " To fix this, add a unique `name` to each test in your dbt schema YAML."
+DUPLICATE_ASSET_CHECK_IDENTIFIER_ERROR_MESSAGE = (
+    "The following dbt tests generate conflicting Dagster asset check identifiers."
+    " This typically happens when two tests generate the same asset check key, or when distinct"
+    " asset check keys normalize to the same Python identifier."
+    " To fix this, add a unique `name` to each test in your dbt schema YAML, or customize the"
+    " asset keys so that their Python identifiers are unique."
 )
 
 logger = get_dagster_logger()
@@ -942,7 +943,7 @@ def build_dbt_specs(
     specs: list[AssetSpec] = []
     check_specs: dict[str, AssetCheckSpec] = {}
     key_by_unique_id: dict[str, AssetKey] = {}
-    test_unique_ids_by_check_key: dict[AssetCheckKey, set[str]] = defaultdict(set)
+    test_check_keys_by_identifier: dict[str, dict[str, AssetCheckKey]] = defaultdict(dict)
 
     child_map = _build_child_map(manifest)
     for unique_id in selected_unique_ids:
@@ -980,8 +981,9 @@ def build_dbt_specs(
             )
 
             if check_spec:
-                check_specs[check_spec.get_python_identifier()] = check_spec
-                test_unique_ids_by_check_key[check_spec.key].add(child_unique_id)
+                check_identifier = check_spec.get_python_identifier()
+                check_specs[check_identifier] = check_spec
+                test_check_keys_by_identifier[check_identifier][child_unique_id] = check_spec.key
 
         # update the keys_by_unqiue_id dictionary to include keys created for upstream
         # assets. note that this step may need to change once the translator is updated
@@ -1003,11 +1005,14 @@ def build_dbt_specs(
                         project=project,
                     )
                     if check_spec:
-                        check_specs[check_spec.get_python_identifier()] = check_spec
-                        test_unique_ids_by_check_key[check_spec.key].add(child_unique_id)
+                        check_identifier = check_spec.get_python_identifier()
+                        check_specs[check_identifier] = check_spec
+                        test_check_keys_by_identifier[check_identifier][child_unique_id] = (
+                            check_spec.key
+                        )
 
     _validate_asset_keys(translator, manifest, key_by_unique_id)
-    _validate_check_keys(manifest, test_unique_ids_by_check_key)
+    _validate_check_identifiers(manifest, test_check_keys_by_identifier)
     return specs, list(check_specs.values())
 
 
@@ -1049,22 +1054,23 @@ def _validate_asset_keys(
         )
 
 
-def _validate_check_keys(
+def _validate_check_identifiers(
     manifest: Mapping[str, Any],
-    test_unique_ids_by_check_key: Mapping[AssetCheckKey, AbstractSet[str]],
+    test_check_keys_by_identifier: Mapping[str, Mapping[str, AssetCheckKey]],
 ) -> None:
     error_messages = []
-    for check_key, unique_ids in test_unique_ids_by_check_key.items():
-        if len(unique_ids) <= 1:
+    for check_identifier, check_keys_by_unique_id in test_check_keys_by_identifier.items():
+        if len(check_keys_by_unique_id) <= 1:
             continue
         formatted_ids = [
-            f"  - `{id}` ({get_node(manifest, id)['original_file_path']})"
-            for id in sorted(unique_ids)
+            f"  - `{unique_id}` ({get_node(manifest, unique_id)['original_file_path']}; "
+            f"asset check key `{check_key.to_user_string()}`)"
+            for unique_id, check_key in sorted(check_keys_by_unique_id.items())
         ]
         error_messages.append(
             "\n".join(
                 [
-                    f"The following dbt tests have the asset check key `{check_key.to_user_string()}`:",
+                    f"The following dbt tests have the Python identifier `{check_identifier}`:",
                     *formatted_ids,
                 ]
             )
@@ -1072,7 +1078,7 @@ def _validate_check_keys(
 
     if error_messages:
         raise DagsterInvalidDefinitionError(
-            "\n\n".join([DUPLICATE_ASSET_CHECK_KEY_ERROR_MESSAGE, *error_messages])
+            "\n\n".join([DUPLICATE_ASSET_CHECK_IDENTIFIER_ERROR_MESSAGE, *error_messages])
         )
 
 
