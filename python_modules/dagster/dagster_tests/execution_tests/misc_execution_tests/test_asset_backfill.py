@@ -3377,3 +3377,53 @@ def test_asset_backfill_with_partitioned_asset_check(policy):
             ).get(asset_check_key)
             is not None
         )
+
+
+def test_ranged_run_partial_failure_marks_only_unmaterialized_partitions_failed():
+    """A failed ranged run that materialized some of an asset's partitions must contribute exactly
+    the unmaterialized partitions to the failed subset. Deriving failed work per asset key would
+    drop the asset entirely, since it is both planned and materialized in that run.
+    """
+    instance = DagsterInstance.ephemeral()
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b", "c"])
+
+    @dg.asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+    def ranged_asset(context: dg.AssetExecutionContext):
+        for partition_key in context.partition_keys[:-1]:
+            context.log_event(
+                dg.AssetMaterialization(asset_key=context.asset_key, partition=partition_key)
+            )
+        raise Exception("failed on last partition")
+
+    assets_by_repo_name = {"repo": [ranged_asset]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+    backfill_id = "ranged_partial_failure"
+    backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=["a", "b", "c"],
+        asset_selection=[ranged_asset.key],
+        dynamic_partitions_store=MagicMock(spec=DynamicPartitionsStore),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2024, 1, 1, 0, 0, 0).timestamp(),
+    )
+
+    # First iteration launches the single ranged run; second observes its partial failure.
+    for _ in range(2):
+        backfill_data = _single_backfill_iteration(
+            backfill_id, backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+    runs = instance.get_runs()
+    assert len(runs) == 1
+    assert runs[0].status == DagsterRunStatus.FAILURE
+    assert runs[0].tags[ASSET_PARTITION_RANGE_START_TAG] == "a"
+    assert runs[0].tags[ASSET_PARTITION_RANGE_END_TAG] == "c"
+
+    assert set(backfill_data.materialized_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(ranged_asset.key, "a"),
+        AssetKeyPartitionKey(ranged_asset.key, "b"),
+    }
+    assert set(backfill_data.failed_and_downstream_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(ranged_asset.key, "c")
+    }
+    assert backfill_data.get_targeted_partitions_without_materialization_status().is_empty

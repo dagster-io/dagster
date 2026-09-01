@@ -977,6 +977,7 @@ def backfill_runs_are_complete(
 
 
 def _backfill_is_stalled(
+    *,
     backfill_id: str,
     previous_backfill_data: AssetBackfillData,
     updated_backfill_data: AssetBackfillData,
@@ -1159,12 +1160,12 @@ async def execute_asset_backfill_iteration(
                 updated_backfill = updated_backfill.with_end_timestamp(get_current_timestamp())
                 instance.update_backfill(updated_backfill)
         elif _backfill_is_stalled(
-            backfill.backfill_id,
-            previous_asset_backfill_data,
-            updated_backfill_data,
-            asset_graph,
-            instance_queryer,
-            logger,
+            backfill_id=backfill.backfill_id,
+            previous_backfill_data=previous_asset_backfill_data,
+            updated_backfill_data=updated_backfill_data,
+            asset_graph=asset_graph,
+            instance_queryer=instance_queryer,
+            logger=logger,
         ):
             logger.warning(
                 f"Backfill {backfill.backfill_id} has partitions with no materialization status"
@@ -2229,17 +2230,14 @@ def _get_failed_asset_graph_subset(
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
             run_id=run.run_id
         )
-        completed_asset_keys = instance_queryer.get_current_materializations_for_run(
-            run_id=run.run_id
-        )
-        failed_asset_keys = planned_asset_keys - completed_asset_keys
 
         if (
             run.tags.get(ASSET_PARTITION_RANGE_START_TAG)
             and run.tags.get(ASSET_PARTITION_RANGE_END_TAG)
             and run.tags.get(PARTITION_NAME_TAG) is None
         ):
-            # reconstruct the partition keys from a chunked backfill run
+            # A ranged run can materialize some partitions of an asset and fail on others, so take
+            # every planned asset's full range and let the materialized_subset subtraction drop the successes.
             partition_range = PartitionKeyRange(
                 start=run.tags[ASSET_PARTITION_RANGE_START_TAG],
                 end=run.tags[ASSET_PARTITION_RANGE_END_TAG],
@@ -2247,12 +2245,16 @@ def _get_failed_asset_graph_subset(
             candidate_subset = AssetGraphSubset.from_entity_subsets(
                 [
                     asset_graph_view.get_entity_subset_in_range(asset_key, partition_range)
-                    for asset_key in failed_asset_keys
+                    for asset_key in planned_asset_keys
                 ]
             )
 
         else:
             # a regular backfill run that run on a single partition
+            completed_asset_keys = instance_queryer.get_current_materializations_for_run(
+                run_id=run.run_id
+            )
+            failed_asset_keys = planned_asset_keys - completed_asset_keys
             partition_key = run.tags.get(PARTITION_NAME_TAG)
             candidate_subset = AssetGraphSubset.from_asset_partition_set(
                 {AssetKeyPartitionKey(asset_key, partition_key) for asset_key in failed_asset_keys},

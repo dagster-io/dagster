@@ -4713,9 +4713,8 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
 ):
-    """A single run that materializes some partitions of an asset and fails on others leaves the
-    failed partitions with no status, since failed work is derived per asset key. The backfill
-    should still terminate, with those partitions marked as failed.
+    """A single run that materializes some partitions of an asset and fails on others should
+    leave the backfill completed, with exactly the unmaterialized partitions marked as failed.
     """
     backfill_id = "ranged_partial_failure_backfill"
     partition_keys = static_partitions.get_partition_keys()
@@ -4745,12 +4744,7 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
     assert runs[0].tags[ASSET_PARTITION_RANGE_START_TAG] == partition_keys[0]
     assert runs[0].tags[ASSET_PARTITION_RANGE_END_TAG] == partition_keys[-1]
 
-    # Second iteration picks up the materializations; third detects the stall and completes.
-    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
-    backfill = instance.get_backfill(backfill_id)
-    assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
-
+    # Second iteration picks up the materializations and the failed run, and completes.
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)
     assert backfill
