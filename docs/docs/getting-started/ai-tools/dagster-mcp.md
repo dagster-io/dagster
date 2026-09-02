@@ -1,14 +1,16 @@
 ---
 title: Dagster+ MCP server
 description: Connect the Dagster+ MCP server to your AI agent of choice to access information and take actions in your Dagster+ deployment
-canonicalUrl: '/guides/labs/dagster-mcp'
-slug: '/guides/labs/dagster-mcp'
 sidebar_position: 5
 ---
 
-import Preview from '@site/docs/partials/\_Preview.md';
+import DagsterPlus from '@site/docs/partials/\_DagsterPlus.md';
 
-<Preview />
+<DagsterPlus />
+
+import Beta from '@site/docs/partials/\_Beta.md';
+
+<Beta />
 
 The Dagster+ MCP server allows you to access information and take actions in your Dagster+ deployment within an AI session.
 

@@ -1,7 +1,7 @@
 ---
-title: AI tools for Dagster
+title: AI skills for Dagster
 description: Learn how to use Dagster's AI skills to build Dagster projects faster, with best practices built in.
-sidebar_label: AI tools
+sidebar_label: Dagster skills
 ---
 
 Dagster maintains an AI skill that gives coding agents better context and patterns for building Dagster projects. With this skill installed, your agent can help you create robust data pipelines according to Dagster best practices.
