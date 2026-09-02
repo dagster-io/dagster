@@ -127,7 +127,6 @@ dependencies = [
   "pandas-gbq",            # dagster-gcp-pandas, dagster-gcp-pyspark test code
   "gcp-storage-emulator",  # dagster-gcp pipes test code
   "requests-mock",         # dagster-aws test code
-  "pytest-cases",          # dagster-aws test code
 
   # ---- Examples (in-repo, top-level)
   "airlift-federation-tutorial",

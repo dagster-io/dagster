@@ -2750,7 +2750,6 @@ test = [
     { name = "dagster-spark", editable = "../../python_modules/libraries/dagster-spark" },
     { name = "dagster-test", editable = "../../python_modules/dagster-test" },
     { name = "moto", extras = ["s3", "server", "glue", "emrserverless", "logs", "emrcontainers"], specifier = ">=5.0" },
-    { name = "pytest-cases" },
     { name = "pytest-rerunfailures" },
     { name = "requests-mock" },
     { name = "s3fs" },
@@ -5418,18 +5417,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c1/55/f14deb95eaf4f30f07ef4b90a8590fc05d9e04df85ee379712f6fb6736d7/debugpy-1.8.20-cp312-cp312-win32.whl", hash = "sha256:4057ac68f892064e5f98209ab582abfee3b543fb55d2e87610ddc133a954d390", size = 5331372, upload-time = "2026-01-29T23:03:45.526Z" },
     { url = "https://files.pythonhosted.org/packages/a1/39/2bef246368bd42f9bd7cba99844542b74b84dacbdbea0833e610f384fee8/debugpy-1.8.20-cp312-cp312-win_amd64.whl", hash = "sha256:a1a8f851e7cf171330679ef6997e9c579ef6dd33c9098458bd9986a0f4ca52e3", size = 5372835, upload-time = "2026-01-29T23:03:47.245Z" },
     { url = "https://files.pythonhosted.org/packages/e0/c3/7f67dea8ccf8fdcb9c99033bbe3e90b9e7395415843accb81428c441be2d/debugpy-1.8.20-py2.py3-none-any.whl", hash = "sha256:5be9bed9ae3be00665a06acaa48f8329d2b9632f15fd09f6a9a8c8d9907e54d7", size = 5337658, upload-time = "2026-01-29T23:04:17.404Z" },
-]
-
-[[package]]
-name = "decopatch"
-version = "1.4.10"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "makefun" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/90/4c/8ca1f193428cbc4d63d0f07db9b8bd96be2db8ee5deefa93e7e8a28f2812/decopatch-1.4.10.tar.gz", hash = "sha256:957f49c93f4150182c23f8fb51d13bb3213e0f17a79e09c8cca7057598b55720", size = 69538, upload-time = "2022-03-01T08:57:21.79Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/fa/8e4a51e1afda8d4bd73d784bfe4a60cfdeeced9bea419eff5c271180377e/decopatch-1.4.10-py2.py3-none-any.whl", hash = "sha256:e151f7f93de2b1b3fd3f3272dcc7cefd1a69f68ec1c2d8e288ecd9deb36dc5f7", size = 18015, upload-time = "2022-03-01T08:57:20.676Z" },
 ]
 
 [[package]]
@@ -11403,21 +11390,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-cases"
-version = "3.10.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "decopatch" },
-    { name = "makefun" },
-    { name = "packaging" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c1/a2/c7abc3b606125cf3732e8e613092b0e2549365e824b5f37972125c22806b/pytest_cases-3.10.1.tar.gz", hash = "sha256:451f9e3ecd5d2d81a4362c10c441126f5b3d1ae3a7efaf59f60b1fb930df2d69", size = 1095867, upload-time = "2026-03-02T23:05:33.824Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/f2/7a29fb0571562034b05c38dceabba48dcc622be5d6c5448db80779e55de7/pytest_cases-3.10.1-py2.py3-none-any.whl", hash = "sha256:0deb8a85b6132e44adbc1cfc57897c6a624ec23f48ab445a43c7d56a6b9315a4", size = 108870, upload-time = "2026-03-02T23:05:32.663Z" },
-]
-
-[[package]]
 name = "pytest-cov"
 version = "5.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -13565,7 +13537,6 @@ dependencies = [
     { name = "project-multi-workspace-databricks" },
     { name = "project-prompt-eng" },
     { name = "pydantic" },
-    { name = "pytest-cases" },
     { name = "requests-mock" },
     { name = "sling-decorator" },
     { name = "snowflake-medallion" },
@@ -13714,7 +13685,6 @@ requires-dist = [
     { name = "project-multi-workspace-databricks", editable = "../../examples/docs_projects/project_multi_workspace_databricks" },
     { name = "project-prompt-eng", editable = "../../examples/docs_projects/project_prompt_eng" },
     { name = "pydantic", specifier = ">=2.13.3" },
-    { name = "pytest-cases" },
     { name = "requests-mock" },
     { name = "sling-decorator", editable = "../../examples/experimental/sling_decorator" },
     { name = "snowflake-medallion", editable = "../../examples/project_databricks_and_snowflake/projects/snowflake-medallion" },
@@ -14633,7 +14603,6 @@ test = [
     { name = "dagster-spark", editable = "../../python_modules/libraries/dagster-spark" },
     { name = "dagster-webserver", editable = "../../python_modules/dagster-webserver" },
     { name = "moto", extras = ["s3", "server", "glue", "emrserverless", "logs", "emrcontainers"], specifier = ">=5.0" },
-    { name = "pytest-cases" },
     { name = "pytest-rerunfailures" },
     { name = "requests-mock" },
     { name = "s3fs" },

@@ -46,7 +46,6 @@ test = [
     "requests-mock",
     "xmltodict>=0.12.0",
     "pytest-rerunfailures",
-    "pytest-cases",
     "s3fs",
 ]
 
