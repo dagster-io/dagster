@@ -466,6 +466,20 @@ class OutputContext:
 
     @public
     @property
+    def has_partition_keys(self) -> bool:
+        """Whether the current run covers multiple partitions (i.e. has partition keys)."""
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.has_partition_keys. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        return self._asset_partitions_subset is not None
+
+    @public
+    @property
     def asset_partition_key(self) -> str:
         """The partition key for output asset.
 
