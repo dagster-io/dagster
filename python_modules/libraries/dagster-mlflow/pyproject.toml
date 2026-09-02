@@ -28,6 +28,9 @@ test = [
 
 [tool.uv]
 exclude-newer = "48h"
+# mlflow caps cryptography by major version as a blanket policy; the cap
+# would otherwise pull cryptography back to a release with an open advisory.
+override-dependencies = ["cryptography>=50"]
 
 [tool.uv.sources]
 dagster = { path = "../../dagster", editable = true }
