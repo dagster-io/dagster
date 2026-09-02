@@ -658,7 +658,7 @@ def dg_exits(*matches: str) -> Iterator[None]:
     message.
 
     Args:
-        match: The string to match against the warning message.
+        matches: The strings to match against the output.
     """
     with redirect_dg_output() as out:
         with pytest.raises(SystemExit):
@@ -678,7 +678,7 @@ def dg_does_not_exit(*matches: str) -> Iterator[None]:
     """Context manager that checks that dg does not emit the given output or throw an exception.
 
     Args:
-        match: The string to match against the warning message.
+        matches: The strings to match against the output.
     """
     with redirect_dg_output() as out:
         yield
@@ -698,7 +698,7 @@ def dg_warns(*matches: str) -> Iterator[None]:
     since dg warnings don't emit actual python warnings.
 
     Args:
-        match: The string to match against the warning message.
+        matches: The strings to match against the warning message.
     """
     with redirect_dg_output() as out:
         yield
