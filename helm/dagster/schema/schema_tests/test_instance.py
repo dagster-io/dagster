@@ -68,15 +68,25 @@ def helm_template() -> HelmTemplate:
 
 @pytest.mark.parametrize("postgresql_scheme", ["", "postgresql", "postgresql+psycopg2"])
 @pytest.mark.parametrize("storage", ["schedule_storage", "run_storage", "event_log_storage"])
-def test_storage_postgres_db_config(template: HelmTemplate, postgresql_scheme: str, storage: str):
+@pytest.mark.parametrize("connect_timeout", [None, 0, 10, 15])
+def test_storage_postgres_db_config(
+    template: HelmTemplate, postgresql_scheme: str, storage: str, connect_timeout: int | None
+):
     postgresql_username = "username"
     postgresql_host = "1.1.1.1"
     postgresql_database = "database"
-    postgresql_params = {
-        "connect_timeout": 10,
+    postgresql_params: dict[str, object] = {
         "application_name": "myapp",
         "options": "-c synchronous_commit=off",
     }
+    if connect_timeout is not None:
+        postgresql_params["connect_timeout"] = connect_timeout
+    expected_postgresql_params = {
+        **postgresql_params,
+        "fallback_application_name": "dagster",
+    }
+    expected_postgresql_params.setdefault("connect_timeout", 15)
+
     postgresql_port = 8080
     helm_values = DagsterHelmValues.construct(
         postgresql=PostgreSQL.construct(
@@ -104,7 +114,7 @@ def test_storage_postgres_db_config(template: HelmTemplate, postgresql_scheme: s
     assert postgres_db["hostname"] == postgresql_host
     assert postgres_db["db_name"] == postgresql_database
     assert postgres_db["port"] == postgresql_port
-    assert postgres_db["params"] == postgresql_params
+    assert postgres_db["params"] == expected_postgresql_params
     if not postgresql_scheme:
         assert "scheme" not in postgres_db
     else:
