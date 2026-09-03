@@ -216,6 +216,12 @@ class DgApiMetricsApi:
         sort_targets: list[ReportingSortTarget] | None = None,
         sort_directions: list[ReportingSortDirection] | None = None,
     ) -> DgApiMetrics:
+        if not asset_keys and not asset_selection:
+            raise DagsterPlusClientError("An asset_selection or asset_keys is required.")
+
+        if asset_keys and asset_selection:
+            raise DagsterPlusClientError("Cannot provide both asset_selection and asset_keys.")
+
         result = self._client.get_asset_metrics(
             metrics_filter=AssetReportingMetricsFilter(
                 assets=_asset_inputs(asset_keys),
@@ -305,6 +311,9 @@ class DgApiMetricsApi:
     ) -> DgApiMetrics:
         if not asset_keys and not asset_selection:
             raise DagsterPlusClientError("An asset_selection or asset_keys is required.")
+
+        if asset_keys and asset_selection:
+            raise DagsterPlusClientError("Cannot provide both asset_selection and asset_keys.")
 
         result = self._client.get_asset_selection_metrics(
             metrics_filter=AssetSelectionReportingMetricsFilter(
