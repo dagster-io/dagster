@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.13.21 (core) / 0.29.21 (libraries)
+
+### New
+
+- Asset backfills whose runs have all finished but which still have partitions with no materialization status now complete as failed instead of remaining in progress indefinitely.
+- In Dagster+, wiping and deleting dynamic partitions in a single action now also supports multi-partitioned assets that use the dynamic partitions definition as a dimension.
+- In Dagster+, alert policies defined in a YAML file can no longer be edited, disabled, or deleted from the UI. Update the file and sync instead. Muting is still available from the UI, and the in-app YAML editor now shows only UI-managed alert policies.
+- In Dagster+, syncing alert policies from a YAML file no longer deletes alert policies created in the UI. Alert policies that existed before this release are never removed by a sync and must be deleted manually from the UI.
+- [ui] Automation condition evaluations now explain history-dependent conditions (`since`, `newly_true`, `newly_missing`) by showing the remembered values that determined them, such as when a latch was set or reset and an operand's value on the current versus previous tick, instead of the operands' current values, which could appear to contradict the parent condition.
+
+### Bugfixes
+
+- Fixed an issue where a freshness policy declared for an asset in one code location was ignored when another code location defined the same asset without a policy (for example, a dbt source spec paired with an ingestion-tool materialization). The policy now appears in the asset catalog and is evaluated by the freshness daemon.
+- Fixed a bug where a backfill run that materialized some partitions of an asset and failed on others left the failed partitions showing as in progress.
+- [dagster-postgres] Fixed a connection leak where checking for the existence of the event log table did not return its connection to the pool, which could exhaust the webserver's connection pool on instances with many asset nodes. (Thanks, [@watacoso](https://github.com/watacoso)!)
+
+### Documentation
+
+- Updated the list of Dagster+ IP addresses that agents connect to, for use in network allowlists.
+
 ## 1.13.20 (core) / 0.29.20 (libraries)
 
 ### New
