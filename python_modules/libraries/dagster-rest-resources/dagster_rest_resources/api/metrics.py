@@ -270,7 +270,6 @@ class DgApiMetricsApi:
         granularity: ReportingMetricsGranularity = ReportingMetricsGranularity.DAILY,
         aggregation_function: ReportingAggregationFunction | None = None,
         deployment_ids: list[int] | None = None,
-        branch_deployments: bool | None = None,
         limit: int | None = None,
         sort_targets: list[ReportingSortTarget] | None = None,
         sort_directions: list[ReportingSortDirection] | None = None,
@@ -278,7 +277,7 @@ class DgApiMetricsApi:
         result = self._client.get_deployment_metrics(
             metrics_filter=DeploymentReportingMetricsFilter(
                 deploymentIds=deployment_ids,
-                branchDeployments=branch_deployments,
+                branchDeployments=False,
                 limit=limit,
             ),
             metrics_selector=_selector(
