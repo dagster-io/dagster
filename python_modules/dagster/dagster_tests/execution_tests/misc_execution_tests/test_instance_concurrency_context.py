@@ -50,6 +50,31 @@ def test_global_concurrency(concurrency_instance_op_granularity):
     assert foo_info.pending_step_count == 0
 
 
+def test_global_concurrency_pool_slots(concurrency_instance_op_granularity):
+    instance = concurrency_instance_op_granularity
+    run = instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
+    instance.event_log_storage.set_concurrency_slots("foo", 4)
+
+    with InstanceConcurrencyContext(instance, run) as context:
+        # a 3-slot step occupies 3 of the pool's 4 slots
+        assert context.claim("foo", "heavy", pool_slots=3)
+        foo_info = instance.event_log_storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 3
+
+        assert context.claim("foo", "light")
+        assert not context.claim("foo", "light_2")
+        assert context.pending_claim_steps() == ["light_2"]
+
+        # freeing the weighted step releases all of its slots
+        context.free_step("heavy")
+        foo_info = instance.event_log_storage.get_concurrency_info("foo")
+        assert foo_info.active_slot_count == 1
+
+        # a step that can never fit raises instead of hanging
+        with pytest.raises(dg.DagsterInvalidInvocationError, match="exceeds the pool's limit"):
+            context.claim("foo", "too_heavy", pool_slots=5)
+
+
 def test_limitless_context(concurrency_instance_op_granularity):
     run = concurrency_instance_op_granularity.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id()

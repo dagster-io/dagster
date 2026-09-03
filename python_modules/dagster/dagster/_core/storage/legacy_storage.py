@@ -720,10 +720,18 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
 
     def claim_concurrency_slot(
-        self, concurrency_key: str, run_id: str, step_key: str, priority: int | None = None
+        self,
+        concurrency_key: str,
+        run_id: str,
+        step_key: str,
+        priority: int | None = None,
+        slots: int = 1,
     ) -> ConcurrencyClaimStatus:
+        # only pass slots for weighted claims, so that external EventLogStorage implementations
+        # that predate the slots parameter keep working for default-weight steps
+        slots_kwargs = {"slots": slots} if slots > 1 else {}
         return self._storage.event_log_storage.claim_concurrency_slot(
-            concurrency_key, run_id, step_key, priority
+            concurrency_key, run_id, step_key, priority, **slots_kwargs
         )
 
     def check_concurrency_claim(self, concurrency_key: str, run_id: str, step_key: str):

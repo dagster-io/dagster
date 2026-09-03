@@ -600,6 +600,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         run_id: str,
         step_key: str,
         priority: int | None = None,
+        slots: int = 1,
     ) -> ConcurrencyClaimStatus:
         """Claim concurrency slots for step."""
         raise NotImplementedError()
