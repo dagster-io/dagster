@@ -26,9 +26,7 @@ class DgApiJobApi:
                 for repo in result.nodes:  # ty: ignore[unresolved-attribute]
                     location_name = repo.location.name
                     repo_name = repo.name
-                    repository_origin = (
-                        f"{location_name}@{repo_name}" if location_name and repo_name else None
-                    )
+                    repository_origin = f"{location_name}@{repo_name}"
                     jobs.extend(
                         DgApiJob(
                             id=j.id,

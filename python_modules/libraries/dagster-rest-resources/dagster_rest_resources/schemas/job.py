@@ -27,7 +27,7 @@ class DgApiJob(BaseModel):
     tags: list[DgApiJobTag] = []
     schedules: list[DgApiJobScheduleSummary] = []
     sensors: list[DgApiJobSensorSummary] = []
-    repository_origin: str | None = None
+    repository_origin: str
 
 
 class DgApiJobList(DgApiTruncatedList[DgApiJob]):

@@ -127,6 +127,7 @@ class TestFormatJob:
             tags=[],
             schedules=[],
             sensors=[],
+            repository_origin="dagster_open_platform@__repository__",
         )
 
     def test_format_job_text_output(self, snapshot):
