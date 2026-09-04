@@ -168,3 +168,53 @@ def test_read_state_of_a_real_task_run(prefect_resource: PrefectResource) -> Non
 
     assert state is not None
     assert state.is_completed()
+
+
+def test_metadata_carries_the_prefect_run_id_and_url() -> None:
+    prefect_run = PrefectRun(kind="flow-run", id=uuid4())
+    client = ScriptedStatesClient(
+        states=[Completed()],
+        prefect=PrefectResource(api_url=UNREACHABLE_API_URL),
+        prefect_run=prefect_run,
+        poll_interval_seconds=0,
+    )
+
+    result = materialize_with(client)
+
+    metadata = result.get_asset_materialization_events()[0].materialization.metadata
+    assert metadata["Prefect Run ID"].value == str(prefect_run.id)
+    assert metadata["Prefect Run URL"].value == (
+        f"http://127.0.0.1:1/runs/flow-run/{prefect_run.id}"
+    )
+
+
+def test_metadata_url_points_at_the_task_run_for_a_task() -> None:
+    prefect_run = PrefectRun(kind="task-run", id=uuid4())
+    client = ScriptedStatesClient(
+        states=[Completed()],
+        prefect=PrefectResource(api_url=UNREACHABLE_API_URL),
+        prefect_run=prefect_run,
+        poll_interval_seconds=0,
+    )
+
+    result = materialize_with(client)
+
+    metadata = result.get_asset_materialization_events()[0].materialization.metadata
+    assert metadata["Prefect Run URL"].value == (
+        f"http://127.0.0.1:1/runs/task-run/{prefect_run.id}"
+    )
+
+
+def test_the_run_url_is_logged_at_launch(capsys: pytest.CaptureFixture[str]) -> None:
+    prefect_run = PrefectRun(kind="flow-run", id=uuid4())
+    client = ScriptedStatesClient(
+        states=[Running(), Completed()],
+        prefect=PrefectResource(api_url=UNREACHABLE_API_URL),
+        prefect_run=prefect_run,
+        poll_interval_seconds=0,
+    )
+
+    materialize_with(client)
+
+    # Logged before polling starts, so the link is available while the run is in flight.
+    assert f"runs/flow-run/{prefect_run.id}" in capsys.readouterr().err

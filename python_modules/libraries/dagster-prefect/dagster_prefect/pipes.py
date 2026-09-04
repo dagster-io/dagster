@@ -5,6 +5,7 @@ from uuid import UUID
 
 import dagster._check as check
 from dagster import PipesClient
+from dagster._core.definitions.metadata import RawMetadataMapping, UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -90,13 +91,15 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
             extras=extras,
         ) as session:
             prefect_run = self._launch(context=context, session=session, **kwargs)
+            # Logged at launch rather than on completion so a long-running Prefect run can be
+            # opened from the Dagster run's logs while it is still going.
             context.log.info(
                 f"[pipes] launched Prefect {prefect_run.kind} {prefect_run.id}, waiting for it "
-                "to finish"
+                f"to finish: {self._run_url(prefect_run)}"
             )
             self._poll_til_final(context, prefect_run)
 
-        return PipesClientCompletedInvocation(session)
+        return PipesClientCompletedInvocation(session, metadata=self._dagster_metadata(prefect_run))
 
     @abstractmethod
     def _launch(
@@ -144,6 +147,22 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
         if prefect_run.kind == "flow-run":
             return self.prefect.get_flow_run(prefect_run.id).state
         return self.prefect.get_task_run(prefect_run.id).state
+
+    def _run_url(self, prefect_run: PrefectRun) -> str:
+        if prefect_run.kind == "flow-run":
+            return self.prefect.flow_run_url(prefect_run.id)
+        return self.prefect.task_run_url(prefect_run.id)
+
+    def _dagster_metadata(self, prefect_run: PrefectRun) -> RawMetadataMapping:
+        """Metadata attached to every result the session reports.
+
+        Keys stay the same whichever way the work was launched, so a run is findable by the
+        same metadata whether it was a task or a deployment.
+        """
+        return {
+            "Prefect Run ID": str(prefect_run.id),
+            "Prefect Run URL": UrlMetadataValue(self._run_url(prefect_run)),
+        }
 
 
 def _state_message(state: State | None) -> str:

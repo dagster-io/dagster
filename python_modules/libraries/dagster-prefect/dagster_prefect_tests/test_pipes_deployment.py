@@ -146,3 +146,5 @@ def test_flow_reports_back_through_pipes(
     materialization = result.get_asset_materialization_events()[0].materialization
     assert materialization.metadata["rows"].value == 100
     assert materialization.metadata["as_of"].value == "2026-09-01"
+    # The link back to Prefect survives on the asset, alongside what the flow reported.
+    assert "/runs/flow-run/" in str(materialization.metadata["Prefect Run URL"].value)
