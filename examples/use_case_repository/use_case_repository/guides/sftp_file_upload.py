@@ -13,7 +13,7 @@ sftp_resource = SSHResource(
 def sftp_file(context: AssetExecutionContext, sftp: SSHResource):
     local_file_path = "hello.txt"
     remote_file_path = "/path/to/destination/hello.txt"
-    sftp.sftp_put(local_file_path, remote_file_path)
+    sftp.sftp_put(remote_file_path, local_file_path)
     context.log.info(f"Uploaded {local_file_path} to {remote_file_path} on SFTP server")
 
 
