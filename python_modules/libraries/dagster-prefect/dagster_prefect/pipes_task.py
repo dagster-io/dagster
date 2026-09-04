@@ -55,10 +55,13 @@ class PipesPrefectTaskClient(BasePipesPrefectClient):
         task: Task,
         parameters: Mapping[str, Any] | None = None,
         args: Sequence[Any] | None = None,
+        partition_parameter: str | None = None,
+        partition_window_parameters: tuple[str, str] | None = None,
     ) -> PrefectRun:
         """Submit the task with `.delay()`, which returns as soon as the run is created."""
         task_parameters = {
             **(parameters or {}),
+            **self._partition_parameters(context, partition_parameter, partition_window_parameters),
             # Encoded rather than raw so it survives Prefect's parameter serialization, and
             # so `PipesMappingParamsLoader` on the task side can read it as-is.
             PIPES_PARAMS_TASK_ARGUMENT: dict(session.get_bootstrap_env_vars()),

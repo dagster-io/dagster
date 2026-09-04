@@ -59,11 +59,18 @@ class PipesPrefectDeploymentClient(BasePipesPrefectClient):
         parameters: Mapping[str, Any] | None = None,
         job_variables: Mapping[str, Any] | None = None,
         tags: Sequence[str] | None = None,
+        partition_parameter: str | None = None,
+        partition_window_parameters: tuple[str, str] | None = None,
     ) -> PrefectRun:
         """Create a flow run for `flow-name/deployment-name` and return without waiting."""
         flow_run = self.prefect.launch_deployment_run(
             deployment,
-            parameters=parameters,
+            parameters={
+                **(parameters or {}),
+                **self._partition_parameters(
+                    context, partition_parameter, partition_window_parameters
+                ),
+            },
             job_variables=self._job_variables_with_pipes_env(session, job_variables),
             tags=tags,
         )

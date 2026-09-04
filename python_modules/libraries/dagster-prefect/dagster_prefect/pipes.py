@@ -4,10 +4,14 @@ from typing import Literal
 from uuid import UUID
 
 import dagster._check as check
-from dagster import PipesClient
+from dagster import MultiPartitionKey, PipesClient
 from dagster._core.definitions.metadata import RawMetadataMapping, UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
+from dagster._core.errors import (
+    DagsterExecutionInterruptedError,
+    DagsterInvariantViolationError,
+    DagsterPipesExecutionError,
+)
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
@@ -152,6 +156,54 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
                 return
 
             time.sleep(self.poll_interval_seconds)
+
+    def _partition_parameters(
+        self,
+        context: OpExecutionContext | AssetExecutionContext,
+        partition_parameter: str | None,
+        partition_window_parameters: tuple[str, str] | None,
+    ) -> dict[str, str]:
+        """Build the parameters that tell Prefect which slice of data to compute.
+
+        Both are opt-in: a flow or task that decides its own slice keeps working untouched.
+        Values are strings because Prefect parameters have to be JSON-serializable, which a
+        `datetime` is not.
+
+        Note that a Pipes-aware flow or task can also read `partition_key`,
+        `partition_key_range`, and `partition_time_window` off the Pipes context without any
+        of this. These parameters are for the far more common case of a flow whose own
+        signature takes the date it should process.
+        """
+        if partition_parameter is None and partition_window_parameters is None:
+            return {}
+
+        if not context.has_partition_key:
+            raise DagsterInvariantViolationError(
+                "Asked to pass partition information to Prefect, but this run does not target "
+                "a partition. Drop `partition_parameter` / `partition_window_parameters`, or "
+                "give the asset a `partitions_def`."
+            )
+
+        parameters: dict[str, str] = {}
+
+        if partition_parameter is not None:
+            # A composite key ("a|b") is never what a flow parameter wants; make the user
+            # map the dimensions themselves rather than passing something meaningless.
+            if isinstance(context.partition_key, MultiPartitionKey):
+                raise DagsterInvariantViolationError(
+                    "`partition_parameter` does not support multi-dimensional partitions, "
+                    f"whose keys are composite ({context.partition_key!r}). Pass the "
+                    "dimensions you want as ordinary `parameters` instead."
+                )
+            parameters[partition_parameter] = context.partition_key
+
+        if partition_window_parameters is not None:
+            start_parameter, end_parameter = partition_window_parameters
+            time_window = context.partition_time_window
+            parameters[start_parameter] = time_window.start.isoformat()
+            parameters[end_parameter] = time_window.end.isoformat()
+
+        return parameters
 
     def _read_state(self, prefect_run: PrefectRun) -> State | None:
         if prefect_run.kind == "flow-run":

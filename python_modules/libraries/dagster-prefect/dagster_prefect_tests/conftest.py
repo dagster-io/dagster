@@ -5,6 +5,8 @@ from dagster_prefect.resource import PrefectResource
 from prefect.settings import get_current_settings
 from prefect.testing.utilities import prefect_test_harness
 
+from dagster_prefect_tests.deployed_flow import orders_summary
+
 
 @pytest.fixture(scope="session")
 def prefect_api_url() -> Iterator[str]:
@@ -22,3 +24,15 @@ def prefect_api_url() -> Iterator[str]:
 @pytest.fixture
 def prefect_resource(prefect_api_url: str) -> PrefectResource:
     return PrefectResource(api_url=prefect_api_url)
+
+
+DEPLOYMENT = "orders-summary/test"
+
+
+@pytest.fixture
+def deployment(prefect_resource: PrefectResource) -> str:
+    """Register a deployment with no work pool. Nothing executes its runs."""
+    with prefect_resource.get_client() as client:
+        flow_id = client.create_flow(orders_summary)
+        client.create_deployment(flow_id, name="test")
+    return DEPLOYMENT

@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from dagster import AssetExecutionContext, asset, materialize
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset, materialize
 from dagster_prefect.pipes import PrefectRun
 from dagster_prefect.pipes_deployment import PipesPrefectDeploymentClient
 from dagster_prefect.resource import PrefectResource
@@ -13,9 +13,9 @@ from prefect.client.schemas.actions import WorkPoolCreate
 from prefect.client.schemas.objects import State
 from prefect.states import Completed
 
+from dagster_prefect_tests.conftest import DEPLOYMENT
 from dagster_prefect_tests.deployed_flow import orders_summary
 
-DEPLOYMENT = "orders-summary/test"
 WORK_POOL = "dagster-prefect-tests"
 WORKER_STARTUP_SECONDS = 8
 
@@ -34,15 +34,6 @@ class RecordingDeploymentClient(PipesPrefectDeploymentClient):
 
     def _read_state(self, prefect_run: PrefectRun) -> State | None:
         return Completed()
-
-
-@pytest.fixture
-def deployment(prefect_resource: PrefectResource) -> str:
-    """Register a deployment with no work pool. Nothing executes its runs."""
-    with prefect_resource.get_client() as client:
-        flow_id = client.create_flow(orders_summary)
-        client.create_deployment(flow_id, name="test")
-    return DEPLOYMENT
 
 
 def materialize_with(client: PipesPrefectDeploymentClient, **run_kwargs):
@@ -137,14 +128,26 @@ def deployment_on_a_work_pool(
 def test_flow_reports_back_through_pipes(
     prefect_resource: PrefectResource, deployment_on_a_work_pool: str
 ) -> None:
-    """The flow's signature is untouched: it only calls `open_dagster_pipes()`."""
+    """The flow's signature is untouched: it only calls `open_dagster_pipes()`.
+
+    Partitioned, so this also covers both ways a flow can learn its slice: `as_of` is filled
+    in from the partition key as an ordinary parameter, and the same key arrives on the Pipes
+    context without being asked for.
+    """
     client = PipesPrefectDeploymentClient(prefect=prefect_resource, poll_interval_seconds=1)
 
-    result = materialize_with(client, parameters={"as_of": "2026-09-01"})
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2026-01-01"))
+    def orders_summary_asset(context: AssetExecutionContext):
+        return client.run(
+            context=context, deployment=DEPLOYMENT, partition_parameter="as_of"
+        ).get_materialize_result()
+
+    result = materialize([orders_summary_asset], partition_key="2026-09-01", raise_on_error=True)
 
     assert result.success
     materialization = result.get_asset_materialization_events()[0].materialization
     assert materialization.metadata["rows"].value == 100
     assert materialization.metadata["as_of"].value == "2026-09-01"
+    assert materialization.metadata["pipes_partition_key"].value == "2026-09-01"
     # The link back to Prefect survives on the asset, alongside what the flow reported.
     assert "/runs/flow-run/" in str(materialization.metadata["Prefect Run URL"].value)
