@@ -3,7 +3,10 @@ from typing import AbstractSet  # noqa: UP035
 
 import dagster as dg
 from dagster import AssetExecutionContext, AssetKey, DagsterInstance, Definitions
-from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.external_asset import (
+    create_external_asset_from_source_asset,
+    create_unexecutable_external_asset_from_assets_def,
+)
 
 
 def _assets_def_for_specs(*specs: dg.AssetSpec) -> dg.AssetsDefinition:
@@ -291,3 +294,34 @@ def test_external_assets_with_dependencies() -> None:
     assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }
+
+
+def test_create_unexecutable_external_asset_from_heterogeneous_partitions() -> None:
+    """create_unexecutable_external_asset_from_assets_def must succeed for a multi-asset with
+    heterogeneous partitions_defs (e.g. one daily spec and one monthly spec).
+
+    Regression test: previously the heterogeneous-partitions check in AssetsDefinition.__init__
+    required can_subset=True, but unexecutable assets always have node_def=None which requires
+    can_subset=False — making the two constraints mutually exclusive and causing
+    DagsterInvalidDefinitionError. The fix relaxes the heterogeneous-partition check so it only
+    applies to executable assets (those with a node_def).
+    """
+    daily = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    monthly = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("daily_asset", partitions_def=daily),
+            dg.AssetSpec("monthly_asset", partitions_def=monthly),
+        ],
+        can_subset=True,
+    )
+    def mixed_partition_assets(context: dg.AssetExecutionContext): ...
+
+    external = create_unexecutable_external_asset_from_assets_def(mixed_partition_assets)
+
+    assert not external.is_executable
+    assert dg.AssetKey("daily_asset") in external.keys
+    assert dg.AssetKey("monthly_asset") in external.keys
+    assert external.get_asset_spec(dg.AssetKey("daily_asset")).partitions_def == daily
+    assert external.get_asset_spec(dg.AssetKey("monthly_asset")).partitions_def == monthly
