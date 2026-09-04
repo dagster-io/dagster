@@ -4040,7 +4040,7 @@ requires-dist = [
     { name = "dagster", editable = "../../python_modules/dagster" },
     { name = "lkml" },
     { name = "looker-sdk", specifier = "<24.18.0" },
-    { name = "python-liquid", specifier = "<2" },
+    { name = "python-liquid", specifier = ">=2.2.1" },
     { name = "sqlglot", specifier = ">=25.19.0" },
 ]
 
@@ -11556,16 +11556,18 @@ wheels = [
 
 [[package]]
 name = "python-liquid"
-version = "1.13.0"
+version = "2.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "babel" },
     { name = "importlib-resources" },
+    { name = "markupsafe" },
     { name = "python-dateutil" },
-    { name = "typing-extensions" },
+    { name = "pytz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/75/0fed0ca920161b058806fa52d3e2ed82cf14beb2abe1afb114358ccc1413/python_liquid-1.13.0.tar.gz", hash = "sha256:c158fbaad6dd41c49de7cff34e3611bff7211326fb3049322d27673e1d66e166", size = 127389, upload-time = "2025-02-08T14:15:46.487Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/03/66f47583db72f8c5360a7e90424c7821041569e1939f930cd094f5845335/python_liquid-2.3.1.tar.gz", hash = "sha256:884586b7884bb804767fa4f03d3eb4dfaa9979a7f445152aa016402d220dd97b", size = 95610, upload-time = "2026-08-08T07:48:44.952Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e3/b0/a795755aad1230c8d2f15c63c703204c351abd183deeff85941866a88a92/python_liquid-1.13.0-py3-none-any.whl", hash = "sha256:843ed7b8af00c1480d1bf402553ed07bdddce130ebbf4b1fefc84bb2e076f5d4", size = 210446, upload-time = "2025-02-08T14:15:44.935Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/b0/70b1b7347bd6d0474b6a11a46d8e601540cd16596e4a20f0731344c3ede0/python_liquid-2.3.1-py3-none-any.whl", hash = "sha256:b935e4e3b29a9b8176909539bc5803a84fd88afed02792de989ccea06956999f", size = 141549, upload-time = "2026-08-08T07:48:43.402Z" },
 ]
 
 [[package]]
