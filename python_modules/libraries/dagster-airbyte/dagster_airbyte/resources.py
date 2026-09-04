@@ -255,6 +255,20 @@ class AirbyteClient(DagsterModel):
                 )
                 response.raise_for_status()
                 return response.json()
+            except requests.exceptions.HTTPError as e:
+                # 4xx client errors are not transient — retrying will not help.
+                if e.response is not None and 400 <= e.response.status_code < 500:
+                    raise Failure(
+                        f"Airbyte API returned client error {e.response.status_code} for"
+                        f" url {url} with method {method}: {e}"
+                    ) from e
+                self._log.error(
+                    f"Request to Airbyte API failed for url {url} with method {method} : {e}"
+                )
+                if num_retries >= self.request_max_retries:
+                    break
+                num_retries += 1
+                time.sleep(self.request_retry_delay)
             except RequestException as e:
                 self._log.error(
                     f"Request to Airbyte API failed for url {url} with method {method} : {e}"

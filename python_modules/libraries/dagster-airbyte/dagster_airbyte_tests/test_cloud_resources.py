@@ -7,6 +7,7 @@ import pytest
 import responses
 from dagster import Failure
 from dagster_airbyte import AirbyteCloudResource, AirbyteJobStatusType, AirbyteOutput
+from dagster_airbyte.resources import AirbyteClient
 
 
 @responses.activate
@@ -194,3 +195,82 @@ def test_refresh_access_token() -> None:
         assert access_token_call_body["client_id"] == "some_client_id"
         assert access_token_call_body["client_secret"] == "some_client_secret"
         assert jobs_api_call.request.headers["Authorization"] == "Bearer some_access_token"
+
+
+# ── Regression tests for https://github.com/dagster-io/dagster/issues/34172 ──
+# AirbyteClient._single_request must NOT retry 4xx client errors.
+
+
+@responses.activate
+def test_single_request_does_not_retry_4xx() -> None:
+    """A 4xx response must raise Failure immediately without retrying."""
+    client = AirbyteClient(
+        workspace_id="test-workspace",
+        client_id="test-client-id",
+        client_secret="test-client-secret",
+        request_max_retries=3,
+        request_retry_delay=0,
+        request_timeout=15,
+    )
+
+    # Mock the token endpoint so _get_session() succeeds
+    responses.add(
+        responses.POST,
+        f"{client.rest_api_base_url}/applications/token",
+        json={"access_token": "test-token"},
+        status=200,
+    )
+    responses.add(
+        responses.POST,
+        f"{client.rest_api_base_url}/test-endpoint",
+        json={"error": "bad request"},
+        status=400,
+    )
+
+    with pytest.raises(Failure) as exc_info:
+        client._single_request("POST", f"{client.rest_api_base_url}/test-endpoint", data={})
+
+    # Must have raised on the first attempt — only 2 calls (1 token + 1 request), not 5
+    request_calls = [c for c in responses.calls if "test-endpoint" in c.request.url]
+    assert len(request_calls) == 1, (
+        f"Expected 1 request call (no retries on 4xx), got {len(request_calls)}"
+    )
+    assert "400" in str(exc_info.value)
+
+
+@responses.activate
+def test_single_request_retries_5xx() -> None:
+    """A 5xx response IS transient and must be retried up to request_max_retries times."""
+    client = AirbyteClient(
+        workspace_id="test-workspace",
+        client_id="test-client-id",
+        client_secret="test-client-secret",
+        request_max_retries=2,
+        request_retry_delay=0,
+        request_timeout=15,
+    )
+
+    # Token endpoint (called once per session)
+    responses.add(
+        responses.POST,
+        f"{client.rest_api_base_url}/applications/token",
+        json={"access_token": "test-token"},
+        status=200,
+    )
+    # All 3 attempts return 503
+    for _ in range(3):
+        responses.add(
+            responses.GET,
+            f"{client.rest_api_base_url}/health",
+            json={"error": "service unavailable"},
+            status=503,
+        )
+
+    with pytest.raises(Failure) as exc_info:
+        client._single_request("GET", f"{client.rest_api_base_url}/health")
+
+    health_calls = [c for c in responses.calls if "health" in c.request.url]
+    assert len(health_calls) == 3, (
+        f"Expected 3 calls (1 + 2 retries on 5xx), got {len(health_calls)}"
+    )
+    assert "Max retries" in str(exc_info.value)
