@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
+from typing import NoReturn
 
 import click
 from rich.console import Console
@@ -32,6 +33,23 @@ SYNC_NAMES = ["dagster-inbound", "dagster-outbound", "skills-inbound", "skills-o
 SYNC_CHOICES = [*SYNC_NAMES, "all"]
 CHECK_CHOICES = ["completeness", "correctness", "all"]
 FORMAT_CHOICES = ["text", "json"]
+
+# Exit codes for a failed destination push. The pipeline's retry rules key on these: a push
+# the remote rejects outright fails identically on every attempt, because copybara mints a new
+# commit for each run, so there is no new state for a retry to succeed against.
+EXIT_PUSH_RETRYABLE = 75
+EXIT_PUSH_REJECTED = 78
+
+# git/remote wording that means the destination moved rather than refused us.
+RETRYABLE_PUSH_MARKERS = (
+    "non-fast-forward",
+    "fetch first",
+    "stale info",
+    "cannot lock ref",
+    "the remote end hung up",
+    "rpc failed",
+    "could not read from remote repository",
+)
 
 
 def _detect_internal_repo() -> Path:
@@ -611,6 +629,78 @@ def fix_commit(
 # ########################
 
 
+def _fail_push(dest_url: str, error: subprocess.CalledProcessError) -> NoReturn:
+    """Report a failed destination push, separating a moved destination from a refusal.
+
+    Exits EXIT_PUSH_RETRYABLE when a rerun can plausibly succeed, EXIT_PUSH_REJECTED when it
+    cannot. Always echoes git's own output, which is the only thing that names the real cause.
+    """
+    detail = "\n".join(
+        stream.strip() for stream in (error.stdout, error.stderr) if stream and stream.strip()
+    )
+
+    click.echo(f"Push to {dest_url} failed (exit {error.returncode}).", err=True)
+    if detail:
+        click.echo(detail, err=True)
+
+    if any(marker in detail.lower() for marker in RETRYABLE_PUSH_MARKERS):
+        click.echo(
+            "\nThe destination advanced during the sync. Rerun this command; copybara is "
+            "incremental and will pick up the new commits from both sides.",
+            err=True,
+        )
+        raise SystemExit(EXIT_PUSH_RETRYABLE)
+
+    click.echo(
+        "\nThe remote rejected the push outright, so check the destination's branch rules and "
+        "the push credential's permissions on it. Rerunning will not help: copybara mints a new "
+        "commit for every run, so each attempt is rejected the same way.",
+        err=True,
+    )
+    raise SystemExit(EXIT_PUSH_REJECTED)
+
+
+def _backfill_partial_clone(repo: Path) -> None:
+    """Fill in objects the source checkout's partial-clone filter omitted.
+
+    The Buildkite agent checks the source out with `--filter tree:0`, borrowing the omitted
+    objects from a node-local mirror. copybara reads the source through a file:// remote, and
+    git's upload-pack refuses to lazy-fetch while serving, so any tree that mirror happens to
+    lack fails copybara's fetch outright with "fatal: bad tree object". Dropping the filter and
+    refetching makes the checkout self-sufficient. No-op on a complete clone.
+    """
+    probe = subprocess.run(
+        ["git", "config", "--get", "remote.origin.partialclonefilter"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    active_filter = probe.stdout.strip()
+    if not active_filter:
+        return
+
+    click.echo(f"Source is a partial clone ({active_filter}); backfilling omitted objects ...")
+    subprocess.run(
+        ["git", "config", "--unset-all", "remote.origin.partialclonefilter"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    try:
+        git(["fetch", "--refetch", "origin"], cwd=repo)
+    except subprocess.CalledProcessError as e:
+        detail = "\n".join(
+            stream.strip() for stream in (e.stdout, e.stderr) if stream and stream.strip()
+        )
+        raise click.ClickException(
+            f"Could not backfill the partial source clone (exit {e.returncode}). copybara "
+            f"cannot fetch from a treeless checkout, so the sync would fail later with "
+            f'"bad tree object".\n{detail}'
+        ) from e
+
+
 def _adapt_copybara_config(config_path: Path, url_map: dict[str, str]) -> str:
     """Read a copy.bara.sky config and substitute URLs."""
     content = config_path.read_text(encoding="utf-8")
@@ -728,6 +818,8 @@ def run_sync(
         adapted_config = Path(tmpdir) / "copy.bara.sky"
         adapted_config.write_text(adapted)
 
+        _backfill_partial_clone(source_repo)
+
         # Build copybara command
         cmd = [
             "copybara",
@@ -784,19 +876,9 @@ def run_sync(
         if fixed:
             click.echo(f"Fixed {fixed} commit(s).")
 
-        # Push to the real remote. A non-fast-forward error here means the
-        # destination's master advanced between our initial clone and now —
-        # rerunning the sync against fresh state should resolve it, since
-        # copybara is incremental.
         click.echo(f"Pushing to {effective_dest_url} ...")
         try:
             git(["push", "origin", "master"], cwd=dest_clone)
         except subprocess.CalledProcessError as e:
-            raise click.ClickException(
-                f"Push to {effective_dest_url} failed (exit {e.returncode}). "
-                f"The destination's master likely advanced during sync "
-                f"(concurrent commits from another pipeline run, or a direct push). "
-                f"Rerun this command; copybara will pick up any new commits from "
-                f"both sides and the next push should succeed against fresh state."
-            ) from e
+            _fail_push(effective_dest_url, e)
         click.echo("Done.")
