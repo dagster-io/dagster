@@ -1,6 +1,7 @@
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from dagster._annotations import preview
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
@@ -14,6 +15,7 @@ from dagster_prefect.pipes import BasePipesPrefectClient, PrefectRun
 ENV_JOB_VARIABLE = "env"
 
 
+@preview
 class PipesPrefectDeploymentClient(BasePipesPrefectClient):
     """Launches a Prefect deployment run and materializes when the flow run finishes.
 
@@ -49,6 +51,10 @@ class PipesPrefectDeploymentClient(BasePipesPrefectClient):
     work pool, or a Prefect Managed work pool. Without one the run stays scheduled and this
     blocks until the Dagster run is terminated.
     """
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def _launch(  # ty: ignore[invalid-method-override]
         self,

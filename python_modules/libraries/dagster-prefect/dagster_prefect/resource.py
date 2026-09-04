@@ -4,6 +4,7 @@ from typing import Any
 from uuid import UUID
 
 from dagster import ConfigurableResource
+from dagster._annotations import preview, public
 from dagster._core.errors import DagsterInvariantViolationError
 from prefect.client.orchestration import SyncPrefectClient
 from prefect.client.schemas.objects import FlowRun, State, TaskRun
@@ -16,6 +17,7 @@ from pydantic import Field
 _API_URL_SUFFIX = "/api"
 
 
+@preview
 class PrefectResource(ConfigurableResource):
     """Client for the Prefect API.
 
@@ -64,12 +66,14 @@ class PrefectResource(ConfigurableResource):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
+    @public
     @contextmanager
     def get_client(self) -> Iterator[SyncPrefectClient]:
         """Open a Prefect client scoped to this resource's config."""
         with SyncPrefectClient(api=self.api_url, api_key=self.api_key) as client:
             yield client
 
+    @public
     def launch_deployment_run(
         self,
         deployment_name: str,
@@ -98,14 +102,17 @@ class PrefectResource(ConfigurableResource):
                 tags=list(tags) if tags else None,
             )
 
+    @public
     def get_flow_run(self, flow_run_id: UUID | str) -> FlowRun:
         with self.get_client() as client:
             return client.read_flow_run(_as_uuid(flow_run_id))
 
+    @public
     def get_task_run(self, task_run_id: UUID | str) -> TaskRun:
         with self.get_client() as client:
             return client.read_task_run(_as_uuid(task_run_id))
 
+    @public
     def cancel_flow_run(self, flow_run_id: UUID | str) -> None:
         """Ask Prefect to cancel a flow run.
 
@@ -115,9 +122,11 @@ class PrefectResource(ConfigurableResource):
         with self.get_client() as client:
             client.set_flow_run_state(_as_uuid(flow_run_id), Cancelling())
 
+    @public
     def flow_run_url(self, flow_run_id: UUID | str) -> str:
         return self._run_url("flow-run", flow_run_id)
 
+    @public
     def task_run_url(self, task_run_id: UUID | str) -> str:
         return self._run_url("task-run", task_run_id)
 

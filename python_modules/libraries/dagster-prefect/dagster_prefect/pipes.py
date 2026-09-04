@@ -5,6 +5,7 @@ from uuid import UUID
 
 import dagster._check as check
 from dagster import MultiPartitionKey, PipesClient
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping, UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import (
@@ -80,6 +81,7 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
         )
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
+    @public
     def run(
         self,
         *,

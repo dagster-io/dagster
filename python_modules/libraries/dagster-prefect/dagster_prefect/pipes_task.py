@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any
 
+from dagster._annotations import preview
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
@@ -17,6 +18,7 @@ from dagster_prefect.pipes import BasePipesPrefectClient, PrefectRun
 PIPES_PARAMS_TASK_ARGUMENT = "dagster_pipes_params"
 
 
+@preview
 class PipesPrefectTaskClient(BasePipesPrefectClient):
     """Launches a Prefect background task and materializes when its task run finishes.
 
@@ -46,6 +48,10 @@ class PipesPrefectTaskClient(BasePipesPrefectClient):
     A task worker must be serving the task (``prefect task serve``), otherwise the task run
     is created and never picked up, and this blocks until the Dagster run is terminated.
     """
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
 
     def _launch(  # ty: ignore[invalid-method-override]
         self,
