@@ -427,6 +427,12 @@ exclude = [
   # env's python-version is 3.10 (matching dagster's minimum), so ty
   # would flag those imports as unresolved here.
   "scripts/run-ty.py",
+
+  # `prefect` cannot be installed in this env: it requires sqlalchemy>=2,
+  # while the airflow 2.9.3 that dagster-airlift pins below python 3.13
+  # requires sqlalchemy<2. Excluded rather than left red until the package
+  # gets a ty env of its own.
+  "python_modules/libraries/dagster-prefect",
 ]
 
 # Ignore all files that are git-ignored unless explicitly included.
