@@ -688,17 +688,21 @@ def _backfill_partial_clone(repo: Path) -> None:
         text=True,
         check=False,
     )
+    # Best-effort: `--refetch` needs git >= 2.41 and the copybara image is older, so a failure
+    # here must not fail the sync. Without the backfill copybara can still fetch whatever the
+    # agent's `--reference` mirror supplies, which is how this worked before the backfill existed.
     try:
         git(["fetch", "--refetch", "origin"], cwd=repo)
     except subprocess.CalledProcessError as e:
         detail = "\n".join(
             stream.strip() for stream in (e.stdout, e.stderr) if stream and stream.strip()
         )
-        raise click.ClickException(
-            f"Could not backfill the partial source clone (exit {e.returncode}). copybara "
-            f"cannot fetch from a treeless checkout, so the sync would fail later with "
-            f'"bad tree object".\n{detail}'
-        ) from e
+        click.echo(
+            f"Could not backfill the partial source clone (exit {e.returncode}); continuing. "
+            f"copybara will rely on the checkout's reference mirror for omitted objects, and "
+            f'may fail with "bad tree object" if the mirror lacks them.\n{detail}',
+            err=True,
+        )
 
 
 def _adapt_copybara_config(config_path: Path, url_map: dict[str, str]) -> str:
