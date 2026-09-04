@@ -7,7 +7,7 @@ import dagster._check as check
 from dagster import PipesClient
 from dagster._core.definitions.metadata import RawMetadataMapping, UrlMetadataValue
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.errors import DagsterPipesExecutionError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import (
@@ -51,6 +51,9 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
         context_injector (Optional[PipesContextInjector]): Overrides the subclass's default.
         message_reader (Optional[PipesMessageReader]): Overrides the subclass's default.
         poll_interval_seconds (float): How long to sleep between state checks. Defaults to 5.
+        forward_termination (bool): Whether to cancel the Prefect run when the Dagster run is
+            terminated. Defaults to True. Only flow runs can actually be cancelled; see
+            :py:meth:`_forward_termination`.
     """
 
     def __init__(
@@ -59,6 +62,7 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
         context_injector: PipesContextInjector | None = None,
         message_reader: PipesMessageReader | None = None,
         poll_interval_seconds: float = 5,
+        forward_termination: bool = True,
     ):
         self.prefect = check.inst_param(prefect, "prefect", PrefectResource)
         self._context_injector = check.opt_inst_param(
@@ -70,6 +74,7 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
         self.poll_interval_seconds = check.numeric_param(
             poll_interval_seconds, "poll_interval_seconds"
         )
+        self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
     def run(
         self,
@@ -97,7 +102,12 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
                 f"[pipes] launched Prefect {prefect_run.kind} {prefect_run.id}, waiting for it "
                 f"to finish: {self._run_url(prefect_run)}"
             )
-            self._poll_til_final(context, prefect_run)
+            try:
+                self._poll_til_final(context, prefect_run)
+            except DagsterExecutionInterruptedError:
+                if self.forward_termination:
+                    self._forward_termination(context, prefect_run)
+                raise
 
         return PipesClientCompletedInvocation(session, metadata=self._dagster_metadata(prefect_run))
 
@@ -147,6 +157,33 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
         if prefect_run.kind == "flow-run":
             return self.prefect.get_flow_run(prefect_run.id).state
         return self.prefect.get_task_run(prefect_run.id).state
+
+    def _forward_termination(
+        self, context: OpExecutionContext | AssetExecutionContext, prefect_run: PrefectRun
+    ) -> None:
+        """Ask Prefect to cancel the run the Dagster step was waiting on.
+
+        Only flow runs can be cancelled. Prefect's task worker does not act on a cancellation
+        request: the task run moves to `CANCELLING`, the worker runs the task to completion
+        anyway, and the resulting terminal state overwrites the request. Warning is the honest
+        option — writing a state that gets overwritten would only misreport what happened.
+        """
+        if prefect_run.kind != "flow-run":
+            context.log.warning(
+                f"[pipes] Dagster run terminated, but Prefect {prefect_run.kind} "
+                f"{prefect_run.id} cannot be cancelled: Prefect's task worker runs a task to "
+                "completion regardless. It will keep running."
+            )
+            return
+
+        context.log.info(
+            f"[pipes] Dagster run terminated, cancelling Prefect {prefect_run.kind} "
+            f"{prefect_run.id}"
+        )
+        # Returns as soon as Prefect accepts the request. The worker moves the run from
+        # CANCELLING to CANCELLED on its own schedule, and blocking on that would hold up
+        # Dagster's own termination.
+        self.prefect.cancel_flow_run(prefect_run.id)
 
     def _run_url(self, prefect_run: PrefectRun) -> str:
         if prefect_run.kind == "flow-run":

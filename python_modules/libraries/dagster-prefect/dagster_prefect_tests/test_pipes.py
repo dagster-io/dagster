@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.errors import DagsterPipesExecutionError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
 from dagster._core.pipes.context import PipesSession
@@ -11,7 +11,7 @@ from dagster._core.pipes.utils import PipesTempFileContextInjector, PipesTempFil
 from dagster_prefect.pipes import BasePipesPrefectClient, PrefectRun
 from dagster_prefect.resource import PrefectResource
 from prefect import flow, task
-from prefect.client.schemas.objects import State
+from prefect.client.schemas.objects import State, StateType
 from prefect.runtime import task_run as task_run_runtime
 from prefect.states import Cancelled, Completed, Crashed, Failed, Running
 
@@ -218,3 +218,59 @@ def test_the_run_url_is_logged_at_launch(capsys: pytest.CaptureFixture[str]) -> 
 
     # Logged before polling starts, so the link is available while the run is in flight.
     assert f"runs/flow-run/{prefect_run.id}" in capsys.readouterr().err
+
+
+class InterruptedClient(StubPipesPrefectClient):
+    """Stands in for the Dagster run being terminated while waiting on Prefect."""
+
+    def _read_state(self, prefect_run: PrefectRun) -> State | None:
+        raise DagsterExecutionInterruptedError()
+
+
+def _interrupted_client(prefect_resource: PrefectResource, prefect_run: PrefectRun, **kwargs):
+    return InterruptedClient(
+        prefect=prefect_resource,
+        prefect_run=prefect_run,
+        poll_interval_seconds=0,
+        **kwargs,
+    )
+
+
+def test_termination_cancels_the_prefect_flow_run(prefect_resource: PrefectResource) -> None:
+    with prefect_resource.get_client() as prefect_client:
+        flow_run = prefect_client.create_flow_run(reads_back)
+    client = _interrupted_client(prefect_resource, PrefectRun(kind="flow-run", id=flow_run.id))
+
+    with pytest.raises(DagsterExecutionInterruptedError):
+        materialize_with(client)
+
+    state = prefect_resource.get_flow_run(flow_run.id).state
+    assert state is not None
+    assert state.type in (StateType.CANCELLING, StateType.CANCELLED)
+
+
+def test_forward_termination_can_be_turned_off(prefect_resource: PrefectResource) -> None:
+    with prefect_resource.get_client() as prefect_client:
+        flow_run = prefect_client.create_flow_run(reads_back)
+    client = _interrupted_client(
+        prefect_resource, PrefectRun(kind="flow-run", id=flow_run.id), forward_termination=False
+    )
+
+    with pytest.raises(DagsterExecutionInterruptedError):
+        materialize_with(client)
+
+    state = prefect_resource.get_flow_run(flow_run.id).state
+    assert state is not None
+    assert state.type not in (StateType.CANCELLING, StateType.CANCELLED)
+
+
+def test_termination_warns_that_a_task_run_keeps_running(
+    prefect_resource: PrefectResource, capsys: pytest.CaptureFixture[str]
+) -> None:
+    task_run = PrefectRun(kind="task-run", id=uuid4())
+    client = _interrupted_client(prefect_resource, task_run)
+
+    with pytest.raises(DagsterExecutionInterruptedError):
+        materialize_with(client)
+
+    assert "cannot be cancelled" in capsys.readouterr().err
