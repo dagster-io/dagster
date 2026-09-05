@@ -41,7 +41,7 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._core.storage.tags import IDEMPOTENCY_KEY_TAG, MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -462,8 +462,48 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return {
             key
             for key in tag_keys
-            if key == DATA_VERSION_TAG or key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+            if key == DATA_VERSION_TAG
+            or key == IDEMPOTENCY_KEY_TAG
+            or key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
         }
+
+    def claim_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> bool:
+        """Attempts to claim the given idempotency key for the given asset key, so a caller
+        can report a runless asset event exactly once even if the same (asset_key,
+        idempotency_key) pair is submitted concurrently or repeatedly.
+
+        Returns True if this call won the claim and the caller should proceed to report the
+        event (tagging it with `idempotency_key`), or False if the key was already claimed
+        -- by this call or a concurrent one -- and the caller should treat the event as
+        already reported and skip it.
+
+        The base implementation only checks for an existing tag and isn't atomic under
+        concurrent calls; storages that can provide a real guarantee (e.g. via a unique
+        constraint) should override both this and `release_idempotency_key`.
+        """
+        return (
+            len(
+                self.get_event_tags_for_asset(
+                    asset_key, filter_tags={IDEMPOTENCY_KEY_TAG: idempotency_key}
+                )
+            )
+            == 0
+        )
+
+    def release_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> None:
+        """Releases a claim made by `claim_idempotency_key` that was never followed by a
+        successfully persisted event (e.g. because reporting the event failed partway
+        through), so a later retry with the same key isn't blocked forever. No-op in the
+        base implementation, since its claim doesn't reserve anything up front.
+        """
+
+    def confirm_idempotency_key(self, asset_key: AssetKey, idempotency_key: str) -> None:
+        """Marks a claim made by `claim_idempotency_key` as backed by a successfully
+        persisted event, so it's never mistaken for an orphaned claim and reclaimed later --
+        which would duplicate that event. Callers must call this immediately after the
+        event report that followed the claim succeeds. No-op in the base implementation,
+        which does not implement claim expiry.
+        """
 
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey) -> None:

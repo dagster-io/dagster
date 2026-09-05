@@ -35,6 +35,19 @@ jest.mock('../../app/CustomAlertProvider', () => ({
 
 const onCloseMock = jest.fn();
 
+// Asset-event idempotency keys are randomly generated (crypto.randomUUID()) so a retry
+// reuses a stable key even if the client never saw the previous response. Mock them to
+// deterministic, sequential values so fixtures can assert on exact mutation variables.
+let idempotencyKeyCounter = 0;
+beforeEach(() => {
+  idempotencyKeyCounter = 0;
+  // jsdom's `crypto` has no `randomUUID` to spy on, so define it directly.
+  globalThis.crypto.randomUUID = jest.fn(
+    () =>
+      `idempotency-key-${idempotencyKeyCounter++}` as `${string}-${string}-${string}-${string}-${string}`,
+  );
+});
+
 function Test({
   mocks,
   resolvers,
@@ -264,6 +277,234 @@ describe('SensorDryRunTest', () => {
     });
 
     expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
+  it('reports asset events and shows "Commit tick result" (not Skipped) when the sensor only returns asset events', async () => {
+    const user = userEvent.setup();
+    render(
+      <Test
+        mocks={[
+          Mocks.SensorDryRunMutationAssetEventsOnly,
+          Mocks.ReportSensorTickAssetEventsMutationMock,
+          Mocks.PersistCursorValueMock,
+        ]}
+      />,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByText(/1\sasset\sevent\b/g)).toBeVisible();
+      expect(screen.queryByText('Skipped')).toBe(null);
+      // Commit-only button (no run requests / dynamic partitions to apply).
+      expect(screen.getByTestId('commit-tick-result')).toBeVisible();
+    });
+
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    // ReportSensorTickAssetEventsMutationMock and PersistCursorValueMock both need to
+    // be matched for this to resolve -- an unmatched request fails the test.
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+  });
+
+  it('shows an error and does not persist the cursor when reporting asset events fails', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        mocks={[
+          Mocks.SensorDryRunMutationAssetEventsOnly,
+          Mocks.ReportSensorTickAssetEventsUnauthorizedMock,
+          // No PersistCursorValueMock -- an unmatched request fails the test.
+        ]}
+      />,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByTestId('commit-tick-result')).toBeVisible();
+    });
+
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Could not report asset events',
+        body: 'You do not have permission to report asset events for this code location.',
+      });
+    });
+
+    expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
+  it('does not close the dialog when asset-event reporting fails after runs already launched', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    (useHistory as jest.Mock).mockReturnValue({push: jest.fn(), createHref: jest.fn()});
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            Mocks.SensorDryRunMutationRunRequestsAndAssetEvents,
+            Mocks.SensorLaunchAllMutation,
+            Mocks.ReportSensorTickAssetEventsUnauthorizedMock,
+            // No PersistCursorValueMock -- the cursor must not be persisted after a
+            // failed asset-event report, so an unmatched request would fail the test.
+          ]}
+        />
+      </MemoryRouter>,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Could not report asset events',
+        body: 'You do not have permission to report asset events for this code location.',
+      });
+    });
+
+    expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
+  it('does not close the dialog when asset-event reporting rejects with a network error after runs already launched', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    onCloseMock.mockClear();
+
+    (useHistory as jest.Mock).mockReturnValue({push: jest.fn(), createHref: jest.fn()});
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={['/automation']}>
+        <Test
+          mocks={[
+            Mocks.SensorDryRunMutationRunRequestsAndAssetEvents,
+            Mocks.SensorLaunchAllMutation,
+            Mocks.ReportSensorTickAssetEventsNetworkErrorMock,
+            // No PersistCursorValueMock -- the cursor must not be persisted after a
+            // failed asset-event report, so an unmatched request would fail the test.
+          ]}
+        />
+      </MemoryRouter>,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    });
+    expect(onCloseMock).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('retries only the remaining asset events after a partial failure', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        mocks={[
+          Mocks.SensorDryRunMutationTwoAssetEvents,
+          Mocks.ReportSensorTickAssetEventsPartialFailureMock,
+          Mocks.ReportSensorTickAssetEventsRetryRemainderMock,
+          Mocks.PersistCursorValueMock,
+        ]}
+      />,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByTestId('commit-tick-result')).toBeVisible();
+    });
+
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith(
+        expect.objectContaining({title: 'Could not report all asset events'}),
+      );
+    });
+    expect(onCloseMock).not.toHaveBeenCalled();
+
+    // Retry -- ReportSensorTickAssetEventsRetryRemainderMock only matches a request for
+    // the single remaining event; resending both (the original request) would leave this
+    // mutation unmatched and fail the test.
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalled();
+    });
+  });
+
+  it('retries only the remaining asset event when two events in the batch are byte-identical', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        mocks={[
+          Mocks.SensorDryRunMutationTwoIdenticalAssetEvents,
+          Mocks.ReportSensorTickAssetEventsIdenticalPartialFailureMock,
+          Mocks.ReportSensorTickAssetEventsIdenticalRetryRemainderMock,
+          Mocks.PersistCursorValueMock,
+        ]}
+      />,
+    );
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    await waitFor(() => {
+      expect(screen.getByTestId('commit-tick-result')).toBeVisible();
+    });
+
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith(
+        expect.objectContaining({title: 'Could not report all asset events'}),
+      );
+    });
+    expect(onCloseMock).not.toHaveBeenCalled();
+
+    // Retry -- ReportSensorTickAssetEventsIdenticalRetryRemainderMock only matches a
+    // request for a single remaining event; resending both identical entries (because
+    // content-based matching can't tell them apart) would leave this mutation unmatched
+    // and fail the test.
+    await user.click(screen.getByTestId('commit-tick-result'));
+
+    await waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalled();
+    });
   });
 
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
