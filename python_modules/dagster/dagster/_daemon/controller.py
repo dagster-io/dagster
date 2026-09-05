@@ -24,6 +24,7 @@ from dagster._daemon.daemon import (
     SchedulerDaemon,
     SensorDaemon,
 )
+from dagster._daemon.event_log_retention import EventLogRetentionDaemon
 from dagster._daemon.freshness import FreshnessDaemon
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
@@ -380,6 +381,8 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
         )
     elif daemon_type == FreshnessDaemon.daemon_type():
         return FreshnessDaemon()
+    elif daemon_type == EventLogRetentionDaemon.daemon_type():
+        return EventLogRetentionDaemon()
     else:
         raise Exception(f"Unexpected daemon type {daemon_type}")
 
