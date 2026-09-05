@@ -312,6 +312,18 @@ def test_webserver_db_pool_max_overflow(deployment_template: HelmTemplate):
     assert f"--db-pool-max-overflow {pool_max_overflow_s}" in command
 
 
+def test_webserver_timeout_keep_alive(deployment_template: HelmTemplate):
+    timeout_keep_alive_s = 65
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(timeoutKeepAlive=timeout_keep_alive_s)
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--timeout-keep-alive {timeout_keep_alive_s}" in command
+
+
 def test_webserver_log_level(deployment_template: HelmTemplate):
     log_level = "trace"
     helm_values = DagsterHelmValues.construct(
