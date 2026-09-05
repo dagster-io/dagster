@@ -257,7 +257,13 @@ class AirbyteClient(DagsterModel):
                 return response.json()
             except requests.exceptions.HTTPError as e:
                 # 4xx client errors are not transient — retrying will not help.
-                if e.response is not None and 400 <= e.response.status_code < 500:
+                # 429 (rate limited) is the exception: throttling is temporary, so
+                # it keeps the normal retry path below.
+                if (
+                    e.response is not None
+                    and 400 <= e.response.status_code < 500
+                    and e.response.status_code != 429
+                ):
                     raise Failure(
                         f"Airbyte API returned client error {e.response.status_code} for"
                         f" url {url} with method {method}: {e}"
