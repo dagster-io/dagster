@@ -2018,7 +2018,6 @@ __metadata:
     "@types/jest": "npm:^29.5.11"
     "@types/react": "npm:^18.3.9"
     "@types/react-dom": "npm:^18.3.0"
-    "@types/uuid": "npm:^8.3.4"
     "@types/validator": "npm:^13"
     "@types/webpack-bundle-analyzer": "npm:^4"
     "@typescript-eslint/eslint-plugin": "npm:^8.44.0"
@@ -2045,7 +2044,7 @@ __metadata:
     react-router-dom-v5-compat: "npm:^6.30.3"
     recoil: "npm:^0.7.7"
     typescript: "npm:5.9.2"
-    uuid: "npm:^9.0.0"
+    uuid: "npm:^11.1.1"
     validator: "npm:^13.15.22"
     web-vitals: "npm:^2.1.3"
     webpack: "npm:^5.94.0"
@@ -7022,13 +7021,6 @@ __metadata:
   version: 2.0.11
   resolution: "@types/unist@npm:2.0.11"
   checksum: 10/6d436e832bc35c6dde9f056ac515ebf2b3384a1d7f63679d12358766f9b313368077402e9c1126a14d827f10370a5485e628bf61aa91117cf4fc882423191a4e
-  languageName: node
-  linkType: hard
-
-"@types/uuid@npm:^8.3.4":
-  version: 8.3.4
-  resolution: "@types/uuid@npm:8.3.4"
-  checksum: 10/6f11f3ff70f30210edaa8071422d405e9c1d4e53abbe50fdce365150d3c698fe7bbff65c1e71ae080cbfb8fded860dbb5e174da96fdbbdfcaa3fb3daa474d20f
   languageName: node
   linkType: hard
 
@@ -20090,12 +20082,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:^9.0.0":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
+"uuid@npm:^11.1.1":
+  version: 11.1.1
+  resolution: "uuid@npm:11.1.1"
   bin:
-    uuid: dist/bin/uuid
-  checksum: 10/9d0b6adb72b736e36f2b1b53da0d559125ba3e39d913b6072f6f033e0c87835b414f0836b45bcfaf2bdf698f92297fea1c3cc19b0b258bc182c9c43cc0fab9f2
+    uuid: dist/esm/bin/uuid
+  checksum: 10/16411d3dc12a08d6691616c09a75e66a7f900ba1beef6628a76fe0602f82fae2ee537b564d0b7bc95c24f58d059ca9b58c75a1e806118efb50e17822ff00ddd2
   languageName: node
   linkType: hard
 
