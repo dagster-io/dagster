@@ -274,3 +274,40 @@ def test_single_request_retries_5xx() -> None:
         f"Expected 3 calls (1 + 2 retries on 5xx), got {len(health_calls)}"
     )
     assert "Max retries" in str(exc_info.value)
+
+@responses.activate
+def test_single_request_retries_429() -> None:
+    """A 429 is transient throttling, not a permanent client error: retry it."""
+    client = AirbyteClient(
+        workspace_id="test-workspace",
+        client_id="test-client-id",
+        client_secret="test-client-secret",
+        request_max_retries=2,
+        request_retry_delay=0,
+        request_timeout=15,
+    )
+
+    # Token endpoint (called once per session)
+    responses.add(
+        responses.POST,
+        f"{client.rest_api_base_url}/applications/token",
+        json={"access_token": "test-token"},
+        status=200,
+    )
+    # All 3 attempts return 429
+    for _ in range(3):
+        responses.add(
+            responses.GET,
+            f"{client.rest_api_base_url}/health",
+            json={"error": "rate limited"},
+            status=429,
+        )
+
+    with pytest.raises(Failure) as exc_info:
+        client._single_request("GET", f"{client.rest_api_base_url}/health")
+
+    health_calls = [c for c in responses.calls if "health" in c.request.url]
+    assert len(health_calls) == 3, (
+        f"Expected 3 calls (1 + 2 retries on 429), got {len(health_calls)}"
+    )
+    assert "Max retries" in str(exc_info.value)
