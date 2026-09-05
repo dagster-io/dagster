@@ -12,6 +12,9 @@ test_dbt_functions_path = projects_path.joinpath("test_dagster_dbt_functions")
 test_dbt_model_versions_path = projects_path.joinpath("test_dagster_dbt_model_versions")
 test_dbt_python_interleaving_path = projects_path.joinpath("test_dagster_dbt_python_interleaving")
 test_dbt_semantic_models_path = projects_path.joinpath("test_dagster_dbt_semantic_models")
+test_dbt_snapshot_column_lineage_path = projects_path.joinpath(
+    "test_dagster_dbt_snapshot_column_lineage"
+)
 test_dbt_source_freshness_path = projects_path.joinpath("test_dagster_dbt_source_freshness")
 test_dbt_unit_tests_path = projects_path.joinpath("test_dagster_dbt_unit_tests")
 test_duplicate_source_asset_key_path = projects_path.joinpath(
