@@ -33,7 +33,7 @@ from schema.charts.dagster.subschema.daemon import (
     RunCoordinatorType,
     TagConcurrencyLimit,
 )
-from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
+from schema.charts.dagster.subschema.postgresql import Pool, PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
 from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.run_launcher import (
@@ -109,6 +109,42 @@ def test_storage_postgres_db_config(template: HelmTemplate, postgresql_scheme: s
         assert "scheme" not in postgres_db
     else:
         assert postgres_db["scheme"] == postgresql_scheme
+
+
+@pytest.mark.parametrize("storage", ["schedule_storage", "run_storage", "event_log_storage"])
+def test_storage_postgres_pool_config(template: HelmTemplate, storage: str):
+    # pool_size=0 is the critical case: it disables persistent connections for pgBouncer
+    # transaction-mode pooling compatibility and must not be silently skipped.
+    helm_values = DagsterHelmValues.construct(
+        postgresql=PostgreSQL.construct(
+            pool=Pool(size=0, maxOverflow=10, recycle=3600),
+            service=Service(port=5432),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    config = instance[storage]["config"]
+    assert config["pool_size"] == 0
+    assert config["max_overflow"] == 10
+    assert config["pool_recycle"] == 3600
+
+
+@pytest.mark.parametrize("storage", ["schedule_storage", "run_storage", "event_log_storage"])
+def test_storage_postgres_pool_mode(template: HelmTemplate, storage: str):
+    helm_values = DagsterHelmValues.construct(
+        postgresql=PostgreSQL.construct(
+            pool=Pool(mode="transaction"),
+            service=Service(port=5432),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    config = instance[storage]["config"]
+    assert config["pool_mode"] == "transaction"
 
 
 def test_k8s_run_launcher_config(template: HelmTemplate):
