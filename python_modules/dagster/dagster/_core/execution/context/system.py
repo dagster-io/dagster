@@ -1087,7 +1087,22 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         upstream_asset_key = asset_layer.get_asset_key_for_node_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
-            upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
+            upstream_asset_node = asset_layer.get(upstream_asset_key)
+            upstream_asset_partitions_def = upstream_asset_node.partitions_def
+
+            upstream_is_auto_created_stub = upstream_asset_node.assets_def.is_auto_created_stub
+            if upstream_asset_partitions_def is None and upstream_is_auto_created_stub:
+                raise DagsterInvariantViolationError(
+                    f"Cannot access partition information for input '{input_name}' of step"
+                    f" '{self.step.key}': upstream asset '{upstream_asset_key.to_string()}' has no"
+                    " partitions_def because it was auto-created as a stub asset. This happens"
+                    " when an asset dependency references a key with no corresponding definition"
+                    " in this Definitions object (for example, an asset that is defined in a"
+                    " different code location). To use partition-based context methods such as"
+                    " `asset_partition_key_for_input` for this input, the upstream asset's"
+                    " definition (including its partitions_def) must be included in this"
+                    " Definitions object."
+                )
 
             if upstream_asset_partitions_def is not None:
                 partitions_def = self.entity_partitions_def if assets_def else None
