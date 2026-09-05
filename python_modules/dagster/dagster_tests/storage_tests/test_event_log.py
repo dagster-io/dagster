@@ -97,6 +97,17 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def can_wipe_asset_partitions(self) -> bool:
         return False
 
+    def test_filesystem_event_log_storage_lock_is_reentrant(self, storage):
+        # SQLite initialization can emit a managed Python log that synchronously stores an event,
+        # re-entering event-log storage on the same thread.
+        lock = storage._db_lock  # noqa: SLF001
+        assert lock.acquire(blocking=False)
+        try:
+            assert lock.acquire(blocking=False)
+            lock.release()
+        finally:
+            lock.release()
+
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
 
