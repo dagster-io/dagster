@@ -160,6 +160,20 @@ data:
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
 
+    {{- if or .Values.ui.label .Values.ui.intent }}
+    ui:
+      {{- if .Values.ui.label }}
+      {{- if kindIs "string" .Values.ui.label }}
+      label: {{ .Values.ui.label | quote }}
+      {{- else }}
+      label: {{- .Values.ui.label | toYaml | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.ui.intent }}
+      intent: {{ .Values.ui.intent | quote }}
+      {{- end }}
+    {{- end }}
+
     {{- if .Values.retention.enabled }}
     retention:
       {{- if .Values.retention.sensor }}

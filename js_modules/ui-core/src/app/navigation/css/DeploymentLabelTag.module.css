@@ -1,0 +1,25 @@
+/* The collapsed rail has no room for the label, so carry the intent color alone.
+   Accent rather than background tokens: the tag fills are translucent, which a
+   10px dot cannot carry. The tooltip supplies the text. */
+.dot {
+  border-radius: 50%;
+  height: 10px;
+  width: 10px;
+  background-color: var(--color-accent-gray);
+}
+
+.dot[data-intent='primary'] {
+  background-color: var(--color-accent-blue);
+}
+
+.dot[data-intent='success'] {
+  background-color: var(--color-accent-green);
+}
+
+.dot[data-intent='warning'] {
+  background-color: var(--color-accent-yellow);
+}
+
+.dot[data-intent='danger'] {
+  background-color: var(--color-accent-red);
+}

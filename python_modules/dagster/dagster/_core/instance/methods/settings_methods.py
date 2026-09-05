@@ -74,6 +74,19 @@ class SettingsMethods:
             return dagster_telemetry_enabled_default
 
     @property
+    def ui_label(self) -> str | None:
+        label = (self.get_settings("ui") or {}).get("label") or ""
+        return label.strip() or None
+
+    @property
+    def ui_intent(self) -> str | None:
+        """Color scheme for the UI label. Unrecognized values fall back to the default tag color."""
+        # Mirrors the Intent type in js_modules/ui-components/src/components/Intent.tsx.
+        valid = {"none", "primary", "success", "warning", "danger"}
+        intent = (self.get_settings("ui") or {}).get("intent")
+        return intent if intent in valid else None
+
+    @property
     def nux_enabled(self) -> bool:
         if self.is_ephemeral:
             return False

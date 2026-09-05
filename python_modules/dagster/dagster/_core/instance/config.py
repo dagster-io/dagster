@@ -538,6 +538,23 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "nux": Field(
             {"enabled": Field(Bool, is_required=False)},
         ),
+        "ui": Field(
+            {
+                "label": Field(
+                    StringSource,
+                    is_required=False,
+                    description="Name for this deployment, shown in the UI navigation. Use it to "
+                    "tell deployments apart, e.g. 'Production' or 'Staging'.",
+                ),
+                "intent": Field(
+                    StringSource,
+                    is_required=False,
+                    description="Color scheme for the deployment label: one of none, primary, "
+                    "success, warning, danger.",
+                ),
+            },
+            is_required=False,
+        ),
         "instance_class": config_field_for_configurable_class(),
         "python_logs": python_logs_config_schema(),
         "run_monitoring": Field(

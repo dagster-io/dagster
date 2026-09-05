@@ -67,6 +67,7 @@ To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and
 | Schedule evaluation    | `schedules`              | Controls how schedules are evaluated.                                                                                                           |
 | Auto-materialize       | `auto_materialize`       | Controls how assets are auto-materialized.                                                                                                      |
 | Backfills              | `backfills`              | Controls how backfills are processed.                                                                                                           |
+| UI                     | `ui`                     | Names this deployment in the UI navigation, so deployments running the same code can be told apart.                                             |
 
 :::note
 
@@ -311,6 +312,26 @@ The `telemetry` key allows you to opt in or out of Dagster collecting anonymized
 />
 
 For more information, see the [Telemetry documentation](/about/telemetry).
+
+### UI
+
+The `ui` key names this deployment in the UI navigation. Deployments that run the same code, such as production and staging, otherwise look identical in the browser.
+
+`label` is the text shown under the logo. `intent` sets the color: one of `none`, `primary`, `success`, `warning`, or `danger`. An unrecognized `intent` falls back to `none`.
+
+<CodeExample
+  path="docs_snippets/docs_snippets/deployment/oss/dagster_instance/dagster.yaml"
+  startAfter="start_marker_ui"
+  endBefore="end_marker_ui"
+/>
+
+To use one `dagster.yaml` across environments, set the label from an environment variable:
+
+```yaml
+ui:
+  label:
+    env: DAGSTER_UI_LABEL
+```
 
 ### gRPC servers
 

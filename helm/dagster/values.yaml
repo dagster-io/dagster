@@ -1432,6 +1432,13 @@ migrate:
 telemetry:
   enabled: true
 
+# Name this deployment in the UI navigation, so that deployments running the same
+# code can be told apart. Leave label empty to show nothing.
+ui:
+  label: ~
+  # One of: none, primary, success, warning, danger.
+  intent: ~
+
 serviceAccount:
   create: true
 
