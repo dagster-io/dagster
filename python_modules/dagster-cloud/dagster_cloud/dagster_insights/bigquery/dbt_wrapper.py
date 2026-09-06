@@ -20,6 +20,8 @@ from packaging import version
 
 from dagster_cloud.dagster_insights.bigquery.bigquery_utils import (
     build_bigquery_cost_metadata,
+    derive_invocation_time_bounds,
+    format_bigquery_timestamp,
     marker_asset_key_for_job,
 )
 from dagster_cloud.dagster_insights.insights_utils import (
@@ -77,7 +79,7 @@ def dbt_with_bigquery_insights(
 
     Args:
         context (AssetExecutionContext): The context of the asset that is being materialized.
-        dbt_cli_invocation (DbtCliInvocation): The invocation of the dbt CLI to wrap.
+        dbt_cli_invocation (DbtCliInvocation): The invocation of the dbt CLI invocation to wrap.
         dagster_events (Optional[Iterable[Union[Output, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]]):
             The events that were produced by the dbt CLI invocation. If not provided, it is assumed
             that the dbt CLI invocation has not yet been run, and it will be run and the events
@@ -106,7 +108,6 @@ def dbt_with_bigquery_insights(
         dbt_project_config = safe_load_yaml(
             (dbt_cli_invocation.project_dir / "dbt_project.yml").open("r")
         )
-        # sanity check that the sigil is present somewhere in the query comment
         query_comment = dbt_project_config.get("query-comment")
         if query_comment is None:
             raise RuntimeError("query-comment is required in dbt_project.yml but it was missing")
@@ -149,8 +150,10 @@ def dbt_with_bigquery_insights(
     marker_asset_key = marker_asset_key_for_job(context.job_def)
     run_results_json = dbt_cli_invocation.get_artifact("run_results.json")
     invocation_id = run_results_json["metadata"]["invocation_id"]
+    creation_time_lower_bound, creation_time_upper_bound = derive_invocation_time_bounds(
+        run_results_json
+    )
 
-    # backcompat-proof in case the invocation does not have an instantiated adapter on it
     adapter: BaseAdapter | None = getattr(dbt_cli_invocation, "adapter", None)
     if not adapter:
         if version.parse(dagster_dbt_version) < version.parse(MIN_DAGSTER_DBT_VERSION):
@@ -170,10 +173,6 @@ def dbt_with_bigquery_insights(
             client: bigquery.Client = adapter.connections.get_thread_connection().handle
 
             if (client.location or adapter.config.credentials.location) and client.project:
-                # we should populate the location/project from the client, and use that to determine
-                # the correct INFORMATION_SCHEMA.JOBS table to query for cost information
-                # If the client doesn't have a location, fall back to the location provided
-                # in the dbt profile config
                 location = client.location or adapter.config.credentials.location
                 project = client.project
             else:
@@ -197,6 +196,8 @@ def dbt_with_bigquery_insights(
                     total_slot_ms AS slots_ms
                     FROM `{project}`.`region-{location.lower()}`.INFORMATION_SCHEMA.JOBS
                     WHERE query like '%{invocation_id}%'
+                    AND creation_time >= TIMESTAMP('{format_bigquery_timestamp(creation_time_lower_bound)}')
+                    AND creation_time <= TIMESTAMP('{format_bigquery_timestamp(creation_time_upper_bound)}')
                 """
             )
             for row in query_result:
