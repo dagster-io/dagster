@@ -1,6 +1,6 @@
 import os
 from contextlib import nullcontext
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from dagster import AssetExecutionContext, materialize
@@ -8,6 +8,8 @@ from dagster_cloud.dagster_insights import dbt_with_bigquery_insights, dbt_with_
 from dagster_cloud.dagster_insights.bigquery.bigquery_utils import (
     BIGQUERY_METADATA_BYTES_BILLED,
     BIGQUERY_METADATA_SLOTS_MS,
+    derive_invocation_time_bounds,
+    format_bigquery_timestamp,
 )
 from dagster_cloud.dagster_insights.snowflake.dagster_snowflake_insights import (
     get_cost_data_for_hour,
@@ -164,6 +166,71 @@ def test_bigquery_asset_metadata_added(
     assert asset_keys_with_metadata == JAFFLE_SHOP_ASSET_KEYS
 
 
+def test_derive_invocation_time_bounds_prefers_invocation_started_at():
+    run_results = {
+        "metadata": {
+            "invocation_started_at": "2026-09-06T06:45:17.109273Z",
+            "generated_at": "2026-09-06T06:45:20.715770Z",
+        },
+        "results": [],
+        "elapsed_time": 3.0,
+    }
+
+    lower_bound, upper_bound = derive_invocation_time_bounds(run_results)
+
+    assert lower_bound.isoformat() == "2026-09-06T05:45:17.109273+00:00"
+    assert upper_bound.isoformat() == "2026-09-06T07:45:20.715770+00:00"
+
+
+def test_derive_invocation_time_bounds_falls_back_to_node_timing():
+    run_results = {
+        "metadata": {
+            "generated_at": "2026-09-06T06:45:20.715770Z",
+        },
+        "results": [
+            {
+                "timing": [
+                    {
+                        "started_at": "2026-09-06T06:45:18.271103Z",
+                        "completed_at": "2026-09-06T06:45:18.354161Z",
+                    },
+                    {
+                        "started_at": "2026-09-06T06:45:18.356879Z",
+                        "completed_at": "2026-09-06T06:45:18.644936Z",
+                    },
+                ]
+            }
+        ],
+    }
+
+    lower_bound, upper_bound = derive_invocation_time_bounds(run_results)
+
+    assert lower_bound.isoformat() == "2026-09-06T05:45:18.271103+00:00"
+    assert upper_bound.isoformat() == "2026-09-06T07:45:20.715770+00:00"
+
+
+def test_derive_invocation_time_bounds_falls_back_to_elapsed_time():
+    run_results = {
+        "metadata": {
+            "generated_at": "2026-09-06T06:45:20.715770Z",
+        },
+        "results": [],
+        "elapsed_time": 10.0,
+    }
+
+    lower_bound, upper_bound = derive_invocation_time_bounds(run_results)
+
+    assert lower_bound.isoformat() == "2026-09-06T05:45:10.715770+00:00"
+    assert upper_bound.isoformat() == "2026-09-06T07:45:20.715770+00:00"
+
+
+def test_format_bigquery_timestamp_uses_utc():
+    assert (
+        format_bigquery_timestamp(datetime(2026, 9, 6, 6, 45, 17, 109273, tzinfo=timezone.utc))
+        == "2026-09-06 06:45:17.109273 UTC"
+    )
+
+
 @pytest.mark.parametrize(
     "bq_client_args",
     [
@@ -206,6 +273,8 @@ def test_bigquery_client(bigquery_manifest_path, bigquery_jaffle_dir, bq_client_
         assert client.query.call_count == 1
         query_arg = client.query.call_args[0][0]
         assert f"FROM {expected_cost_table}" in query_arg
+        assert "creation_time >=" in query_arg
+        assert "creation_time <=" in query_arg
 
 
 def test_bigquery_with_check_failures_cost_metadata_added(
@@ -275,7 +344,6 @@ def test_bigquery_with_execution_project(
     assert asset_keys_with_metadata == JAFFLE_SHOP_ASSET_KEYS
     assert not result.success
 
-    # Assert that the query was executed in the execution project, not the default project
     assert (
         "`fake_exec_project`.`region-us`.INFORMATION_SCHEMA.JOBS"
         in bigquery_client_with_execution_project.query.call_args[0][0]
