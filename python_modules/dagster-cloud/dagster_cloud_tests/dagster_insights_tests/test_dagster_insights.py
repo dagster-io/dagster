@@ -344,6 +344,7 @@ def test_bigquery_with_execution_project(
     assert asset_keys_with_metadata == JAFFLE_SHOP_ASSET_KEYS
     assert not result.success
 
+    # Assert that the query was executed in the execution project, not the default project
     assert (
         "`fake_exec_project`.`region-us`.INFORMATION_SCHEMA.JOBS"
         in bigquery_client_with_execution_project.query.call_args[0][0]
