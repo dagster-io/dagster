@@ -311,3 +311,41 @@ def test_single_request_retries_429() -> None:
         f"Expected 3 calls (1 + 2 retries on 429), got {len(health_calls)}"
     )
     assert "Max retries" in str(exc_info.value)
+
+
+@responses.activate
+def test_single_request_retries_408() -> None:
+    """A 408 means the server never received the call: safe to retry like a 429."""
+    client = AirbyteClient(
+        workspace_id="test-workspace",
+        client_id="test-client-id",
+        client_secret="test-client-secret",
+        request_max_retries=2,
+        request_retry_delay=0,
+        request_timeout=15,
+    )
+
+    # Token endpoint (called once per session)
+    responses.add(
+        responses.POST,
+        f"{client.rest_api_base_url}/applications/token",
+        json={"access_token": "test-token"},
+        status=200,
+    )
+    # All 3 attempts return 408
+    for _ in range(3):
+        responses.add(
+            responses.GET,
+            f"{client.rest_api_base_url}/health",
+            json={"error": "request timeout"},
+            status=408,
+        )
+
+    with pytest.raises(Failure) as exc_info:
+        client._single_request("GET", f"{client.rest_api_base_url}/health")
+
+    health_calls = [c for c in responses.calls if "health" in c.request.url]
+    assert len(health_calls) == 3, (
+        f"Expected 3 calls (1 + 2 retries on 408), got {len(health_calls)}"
+    )
+    assert "Max retries" in str(exc_info.value)
