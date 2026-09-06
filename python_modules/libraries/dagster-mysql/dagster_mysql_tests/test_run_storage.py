@@ -1,9 +1,9 @@
 from urllib.parse import urlparse
 
 import pytest
-import yaml
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster_mysql.run_storage import MySQLRunStorage
+from dagster_shared.yaml_utils import safe_load_yaml
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.run_storage import TestRunStorage
@@ -85,15 +85,15 @@ class TestMySQLRunStorage(TestRunStorage):
                   port: {port}
             """
 
-            with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
+            with instance_for_test(overrides=safe_load_yaml(url_cfg)) as from_url_instance:
                 with instance_for_test(
-                    overrides=yaml.safe_load(explicit_cfg)
+                    overrides=safe_load_yaml(explicit_cfg)
                 ) as from_explicit_instance:
                     assert (
                         from_url_instance._run_storage.mysql_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                         == from_explicit_instance._run_storage.mysql_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                     )
-                with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
+                with instance_for_test(overrides=safe_load_yaml(env_cfg)) as from_env_instance:
                     assert (
                         from_url_instance._run_storage.mysql_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                         == from_env_instance._run_storage.mysql_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]

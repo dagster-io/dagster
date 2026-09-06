@@ -147,7 +147,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             )
 
         query = data.get("query")
-        variables: str | None | dict[str, Any] = data.get("variables")
+        variables: str | dict[str, Any] | None = data.get("variables")
         operation_name = data.get("operationName")
 
         if query is None:

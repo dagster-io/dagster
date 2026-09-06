@@ -4,11 +4,22 @@
 
 .selectListContainer {
   overscroll-behavior: none;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding: 4px;
+}
+
+.selectListContainerNoTopPadding {
+  padding-top: 0;
 }
 
 .noResults {
   outline: none;
   cursor: default;
+}
+
+/* When a custom itemListRenderer wraps items in a <Menu>, the Menu's own
+   background/border-radius duplicates the popover container's styling.
+   Reset them so only the popover container provides the visual chrome. */
+.selectContent :global([role='menu']) {
+  background: none;
+  border-radius: 0;
 }

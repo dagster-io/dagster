@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from importlib import metadata as importlib_metadata
 import os
-from pathlib import Path
 import re
 import time
+from importlib import metadata as importlib_metadata
+from pathlib import Path
 from typing import Any, Protocol
 from urllib import error, request
 

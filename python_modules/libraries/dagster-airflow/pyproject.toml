@@ -81,6 +81,7 @@ test-airflow1 = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-airflow1"}, {group = "test-airflow2"}],
 ]

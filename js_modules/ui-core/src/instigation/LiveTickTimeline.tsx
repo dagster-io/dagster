@@ -1,4 +1,4 @@
-import {Caption, Colors, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
+import {Text, Tooltip, ifPlural, useViewport} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import dayjs from 'dayjs';
 import {memo, useEffect, useMemo, useState} from 'react';
@@ -123,9 +123,9 @@ export const LiveTickTimeline = <T extends HistoryTickFragment | AssetDaemonTick
               <div className={styles.gridTickLine} />
               {tick.showLabel ? (
                 <div className={styles.gridTickTime}>
-                  <Caption>
+                  <Text size={12}>
                     <Timestamp timestamp={{ms: tick.time}} timeFormat={{showSeconds: true}} />
-                  </Caption>
+                  </Text>
                 </div>
               ) : null}
             </div>
@@ -211,14 +211,16 @@ const TickTooltip = memo(
 
     return (
       <div>
-        <Caption as="div">
+        <Text size={12} as="div">
           <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showSeconds: true}} />
-        </Caption>
-        <Caption as="div">
+        </Text>
+        <Text size={12} as="div">
           {status} ({elapsedTime})
-        </Caption>
+        </Text>
         {tick.status === InstigationTickStatus.STARTED ? null : (
-          <Caption color={Colors.textLight()}>Click for details</Caption>
+          <Text size={12} color="textLight">
+            Click for details
+          </Text>
         )}
       </div>
     );

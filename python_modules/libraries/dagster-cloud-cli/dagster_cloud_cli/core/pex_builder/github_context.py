@@ -77,11 +77,17 @@ class GithubEvent:
         return gh.repository(repo_owner, repo_name)
 
     def get_github_avatar_url(self) -> str | None:
-        repo = self.get_github_repo()
-        if not repo:
-            return
-        commit = repo.commit(self.github_sha)
-        return commit.author.get("avatar_url") if commit.author else None
+        import github3.exceptions
+
+        try:
+            repo = self.get_github_repo()
+            if not repo:
+                return None
+            commit = repo.commit(self.github_sha)
+            return commit.author.get("avatar_url") if commit.author else None
+        except github3.exceptions.GitHubException:
+            logging.exception("Ignoring error when loading avatar URL")
+            return None
 
     def update_pr_comment(
         self, body: str, orig_author: str | None = None, orig_text: str | None = None

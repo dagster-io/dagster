@@ -1,0 +1,16 @@
+{
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package[prepare-and-package]": 7.541998557000625,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package[prepare-for-deployment]": 14.497148863999428,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package_runs_deps_when_packages_exist": 14.344799944999977,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package_with_dependencies": 13.97039261899954,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package_with_file_named_dbt": 0.056626320999384916,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package_with_packages": 14.434582459999547,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_prepare_and_package.py::test_prepare_and_package_with_state": 31.722961585999656,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_on_invalid_dagster_project_name": 0.06758033400001295,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_on_invalid_dbt_project_dir": 0.0030054360013309633,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_on_package_conflict[dagster]": 0.09167444099966815,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_on_package_conflict[dagster_dbt]": 0.08201831900078105,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_with_dbt_project_with_runtime_manifest": 15.653368991998832,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_with_precompiled_manifest": 10.956363754999984,
+    "python_modules/libraries/dagster-dbt/dagster_dbt_tests/cli/test_scaffold.py::test_project_scaffold_command_with_runtime_manifest_without_env_var": 0.018107751999195898
+}

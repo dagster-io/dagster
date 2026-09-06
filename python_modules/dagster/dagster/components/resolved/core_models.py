@@ -30,6 +30,12 @@ from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injected, Model, Resolver
 
 
+def _resolve_tags(context: ResolutionContext, tags: Mapping[str, Any]) -> Mapping[str, str]:
+    """Resolve tags, coercing non-string scalar values to strings."""
+    resolved = context.resolve_value(tags)
+    return {k: str(v) for k, v in resolved.items()}
+
+
 def _resolve_asset_key(context: ResolutionContext, key: str) -> AssetKey:
     resolved_val = context.resolve_value(key, as_type=AssetKey)
     return (
@@ -228,7 +234,9 @@ class SharedAssetKwargs(Resolvable):
     ] = None
     tags: Annotated[
         Mapping[str, str],
-        Resolver.default(
+        Resolver(
+            _resolve_tags,
+            model_field_type=Mapping[str, str | int | float | bool],
             description="Tags for filtering and organizing.",
             examples=[{"tier": "prod", "team": "analytics"}],
         ),

@@ -1,7 +1,14 @@
 import * as dagre from 'dagre';
 
 import {AssetNodeFacet} from './AssetNodeFacetsUtil';
-import {GraphData, GraphId, groupIdForNode, isGroupId} from './Utils';
+import {
+  GraphData,
+  GraphId,
+  ancestorGroupIds,
+  groupIdForNode,
+  isGroupId,
+  parseGroupId,
+} from './Utils';
 import type {IBounds, IPoint} from '../graph/common';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
@@ -18,6 +25,8 @@ export interface GroupLayout {
   repositoryLocationName: string;
   bounds: IBounds; // Overall frame of the box relative to 0,0 on the graph
   expanded: boolean;
+  // Depth in the group hierarchy (0 = top-level).
+  depth: number;
 }
 export type AssetLayoutEdge = {
   from: IPoint;
@@ -72,7 +81,7 @@ export const Config = {
     nodesep: -10,
     nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 65,
-    groupPaddingBottom: -4,
+    groupPaddingBottom: 16,
     groupRendering: 'if-varied' as 'if-varied' | 'always',
     clusterpaddingtop: 100,
   },
@@ -86,7 +95,7 @@ export const Config = {
     edgesep: 10,
     nodeHeight: 'auto' as 'auto' | number,
     groupPaddingTop: 55,
-    groupPaddingBottom: -4,
+    groupPaddingBottom: 16,
     groupRendering: 'if-varied' as 'if-varied' | 'always',
   },
 };
@@ -123,91 +132,153 @@ export const layoutAssetGraphImpl = (
   g.setDefaultEdgeLabel(() => ({}));
 
   const renderedNodes = Object.values(graphData.nodes);
-  const expandedGroups = graphData.expandedGroups || [];
-  const expandedGroupsSet = new Set(expandedGroups);
-
-  // Identify all the groups
-  const groups: {[id: string]: GroupLayout} = {};
-  for (const node of renderedNodes) {
-    if (node.definition.groupName) {
-      const id = groupIdForNode(node);
-      groups[id] = groups[id] || {
-        id,
-        expanded: expandedGroupsSet.has(id),
-        groupName: node.definition.groupName,
-        repositoryName: node.definition.repository.name,
-        repositoryLocationName: node.definition.repository.location.name,
-        bounds: {x: 0, y: 0, width: 0, height: 0},
-      };
+  // Expanding a child implicitly expands all of its ancestors — otherwise the
+  // child would be hidden under a collapsed parent.
+  const expandedGroupsSet = new Set<string>();
+  for (const id of graphData.expandedGroups || []) {
+    expandedGroupsSet.add(id);
+    for (const anc of ancestorGroupIds(id)) {
+      expandedGroupsSet.add(anc);
     }
   }
 
-  // Add all the group boxes to the graph. We only render groups when there's
-  // more than one (to avoid a redundant wrapper around a single group), unless
-  // the caller specifies `groupRendering: 'always'`.
-  const groupsPresent =
-    config.groupRendering === 'if-varied' ? Object.keys(groups).length > 1 : true;
+  const groups: {[id: string]: GroupLayout} = {};
+  const sampleNodeForGroupId = new Map<string, (typeof renderedNodes)[number]>();
+  // Track which (repo, location) pairs contribute to each group id. When a
+  // synthetic ancestor spans multiple code locations (e.g. flag off, two
+  // repos both define `marketing/foo`), we can't attribute it to one of
+  // them — clear the repo fields so callers like onFilterToGroup skip the
+  // `code_location:` filter that would otherwise hide the other location.
+  const locationsForGroupId = new Map<string, Set<string>>();
+  const recordLocation = (groupId: string, node: (typeof renderedNodes)[number]) => {
+    const key = `${node.definition.repository.name}|${node.definition.repository.location.name}`;
+    let set = locationsForGroupId.get(groupId);
+    if (!set) {
+      set = new Set();
+      locationsForGroupId.set(groupId, set);
+    }
+    set.add(key);
+  };
 
-  if (groupsPresent) {
-    Object.keys(groups).forEach((groupId) => {
-      if (expandedGroupsSet.has(groupId)) {
-        // sized based on it's children, but "border" tells Dagre we want cluster-level
-        // spacing between the node and others. Necessary because our groups have title bars.
-        g.setNode(groupId, {borderType: 'borderRight'});
-      } else {
-        g.setNode(groupId, {width: ASSET_NODE_WIDTH, height: 110});
+  for (const node of renderedNodes) {
+    if (!node.definition.groupName) {
+      continue;
+    }
+    const leafId = groupIdForNode(node);
+    if (!sampleNodeForGroupId.has(leafId)) {
+      sampleNodeForGroupId.set(leafId, node);
+    }
+    recordLocation(leafId, node);
+    for (const ancId of ancestorGroupIds(leafId)) {
+      if (!sampleNodeForGroupId.has(ancId)) {
+        sampleNodeForGroupId.set(ancId, node);
       }
-    });
+      recordLocation(ancId, node);
+    }
   }
 
-  // Add all the nodes inside expanded groups to the graph
-  renderedNodes.forEach((node) => {
-    if (!groupsPresent || expandedGroupsSet.has(groupIdForNode(node))) {
-      const label =
-        config.nodeHeight === 'auto'
-          ? getAssetNodeDimensions(facets)
-          : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
+  for (const [id, sample] of sampleNodeForGroupId.entries()) {
+    const parsed = parseGroupId(id);
+    const depth = parsed ? Math.max(parsed.segments.length - 1, 0) : 0;
+    const isMultiLocation = (locationsForGroupId.get(id)?.size ?? 0) > 1;
+    groups[id] = {
+      id,
+      expanded: expandedGroupsSet.has(id),
+      groupName: parsed ? parsed.segments.join('/') : id,
+      repositoryName: isMultiLocation ? '' : sample.definition.repository.name,
+      repositoryLocationName: isMultiLocation ? '' : sample.definition.repository.location.name,
+      bounds: {x: 0, y: 0, width: 0, height: 0},
+      depth,
+    };
+  }
 
-      g.setNode(node.id, label);
-      if (groupsPresent && node.definition.groupName) {
-        g.setParent(node.id, groupIdForNode(node));
+  // A collapsed ancestor hides its entire subtree.
+  const allGroupIds = new Set(Object.keys(groups));
+  const visibleGroupIds = new Set<string>();
+  for (const id of allGroupIds) {
+    const ancs = ancestorGroupIds(id);
+    if (ancs.every((anc) => !allGroupIds.has(anc) || expandedGroupsSet.has(anc))) {
+      visibleGroupIds.add(id);
+    }
+  }
+
+  const deepestVisibleAncestor = (id: string): string | undefined => {
+    const ancs = ancestorGroupIds(id);
+    for (let i = ancs.length - 1; i >= 0; i--) {
+      const anc = ancs[i];
+      if (anc !== undefined && visibleGroupIds.has(anc)) {
+        return anc;
       }
+    }
+    return undefined;
+  };
+
+  const groupsPresent = config.groupRendering === 'if-varied' ? allGroupIds.size > 1 : true;
+
+  if (groupsPresent) {
+    for (const id of visibleGroupIds) {
+      if (expandedGroupsSet.has(id)) {
+        // borderType lets us reference the cluster as an edge endpoint.
+        g.setNode(id, {borderType: 'borderRight'});
+      } else {
+        g.setNode(id, {width: ASSET_NODE_WIDTH, height: 110});
+      }
+      const parent = deepestVisibleAncestor(id);
+      if (parent !== undefined) {
+        g.setParent(id, parent);
+      }
+    }
+  }
+
+  renderedNodes.forEach((node) => {
+    const leafId = node.definition.groupName ? groupIdForNode(node) : null;
+    const assetVisible =
+      !groupsPresent || !leafId || (visibleGroupIds.has(leafId) && expandedGroupsSet.has(leafId));
+    if (!assetVisible) {
+      return;
+    }
+
+    const label =
+      config.nodeHeight === 'auto'
+        ? getAssetNodeDimensions(facets)
+        : {width: ASSET_NODE_WIDTH, height: config.nodeHeight};
+
+    g.setNode(node.id, label);
+    if (groupsPresent && leafId) {
+      g.setParent(node.id, leafId);
     }
   });
 
   const linksToAssetsOutsideGraphedSet: {[id: string]: true} = {};
 
-  // Build a map from asset ID to group ID, but only when we have multiple groups
-  // and only for nodes that actually have a groupName. This map is used to collapse
-  // edges to point to group nodes when the group is collapsed.
-  const groupIdForAssetId: {[id: string]: string} = {};
+  const edgeEndpointById: {[id: string]: string} = {};
   if (groupsPresent) {
     for (const [id, node] of Object.entries(graphData.nodes)) {
-      if (node.definition.groupName) {
-        groupIdForAssetId[id] = groupIdForNode(node);
+      if (!node.definition.groupName) {
+        continue;
+      }
+      const leafId = groupIdForNode(node);
+      if (visibleGroupIds.has(leafId) && expandedGroupsSet.has(leafId)) {
+        edgeEndpointById[id] = id;
+      } else if (visibleGroupIds.has(leafId)) {
+        edgeEndpointById[id] = leafId;
+      } else {
+        const anc = deepestVisibleAncestor(leafId);
+        edgeEndpointById[id] = anc ?? id;
       }
     }
   }
 
-  // Add the edges to the graph, and accumulate a set of "foreign nodes" (for which
-  // we have an inbound/outbound edge, but we don't have the `node` in the graphData).
+  const edgeEndpointFor = (assetId: string): string => edgeEndpointById[assetId] ?? assetId;
+
   Object.entries(graphData.downstream).forEach(([upstreamId, graphDataDownstream]) => {
     const downstreamIds = Object.keys(graphDataDownstream);
     downstreamIds.forEach((downstreamId) => {
       if (!graphData.nodes[downstreamId] && !graphData.nodes[upstreamId]) {
         return;
       }
-      let v = upstreamId;
-      let w = downstreamId;
-
-      const wGroup = groupIdForAssetId[downstreamId];
-      if (wGroup && !expandedGroupsSet.has(wGroup)) {
-        w = wGroup;
-      }
-      const vGroup = groupIdForAssetId[upstreamId];
-      if (vGroup && !expandedGroupsSet.has(vGroup)) {
-        v = vGroup;
-      }
+      const v = edgeEndpointFor(upstreamId);
+      const w = edgeEndpointFor(downstreamId);
       if (v === w) {
         return;
       }
@@ -259,27 +330,45 @@ export const layoutAssetGraphImpl = (
     maxHeight = Math.max(maxHeight, dagreNode.y + dagreNode.height / 2);
   });
 
-  // Apply bounds to the groups based on the nodes inside them
+  // Walk groups deepest-first so each group's header padding is baked in
+  // before its bounds get propagated to its visible ancestor.
   if (groupsPresent) {
-    for (const node of renderedNodes) {
-      const nodeLayout = nodes[node.id];
-      if (nodeLayout && node.definition.groupName) {
-        const groupId = groupIdForNode(node);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const group = groups[groupId]!;
-        group.bounds =
-          group.bounds.width === 0
-            ? nodeLayout.bounds
-            : extendBounds(group.bounds, nodeLayout.bounds);
+    const accumulate = (groupId: string, childBounds: IBounds) => {
+      const group = groups[groupId];
+      if (!group) {
+        return;
       }
+      group.bounds =
+        group.bounds.width === 0 ? childBounds : extendBounds(group.bounds, childBounds);
+    };
+
+    for (const node of renderedNodes) {
+      const leafId = node.definition.groupName ? groupIdForNode(node) : null;
+      if (!leafId) {
+        continue;
+      }
+      const nodeLayout = nodes[node.id];
+      if (!nodeLayout) {
+        continue;
+      }
+      accumulate(leafId, nodeLayout.bounds);
     }
-    for (const group of Object.values(groups)) {
+
+    const groupsByDepthDesc = Object.values(groups).sort((a, b) => b.depth - a.depth);
+    for (const group of groupsByDepthDesc) {
+      if (!visibleGroupIds.has(group.id) || group.bounds.width === 0) {
+        continue;
+      }
       if (group.expanded) {
         group.bounds = padBounds(group.bounds, {
           x: 15,
           top: config.groupPaddingTop,
           bottom: config.groupPaddingBottom,
         });
+      }
+      const anc = deepestVisibleAncestor(group.id);
+      if (anc !== undefined) {
+        accumulate(anc, group.bounds);
       }
     }
   }
@@ -313,12 +402,22 @@ export const layoutAssetGraphImpl = (
     );
   });
 
+  // Hidden ancestors (under a collapsed parent) would otherwise render as
+  // zero-width artifacts.
+  const visibleGroups: {[id: string]: GroupLayout} = {};
+  for (const id of visibleGroupIds) {
+    const group = groups[id];
+    if (group && group.bounds.width > 0) {
+      visibleGroups[id] = group;
+    }
+  }
+
   return {
     nodes,
     edges,
     width: maxWidth + MARGIN,
     height: maxHeight + MARGIN,
-    groups: groupsPresent ? groups : {},
+    groups: groupsPresent ? visibleGroups : {},
   };
 };
 

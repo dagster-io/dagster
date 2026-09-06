@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  CaptionMono,
   Colors,
   Dialog,
   DialogBody,
@@ -9,6 +8,7 @@ import {
   FontFamily,
   Icon,
   Table,
+  Text,
   Tooltip,
   tryPrettyPrintJSON,
 } from '@dagster-io/ui-components';
@@ -415,9 +415,9 @@ export const TableMetadataEntryComponent = ({entry}: {entry: TableMetadataEntryF
                     content={<div style={{maxWidth: '400px'}}>{record}</div>}
                     placement="top"
                   >
-                    <CaptionMono>
+                    <Text size={12} family="mono">
                       {record.length > 20 ? `${record.slice(0, 20)}…` : record}
-                    </CaptionMono>
+                    </Text>
                   </Tooltip>
                 </div>
               </td>

@@ -5,12 +5,12 @@ from typing import Annotated, Any
 
 import click
 import typer
-import yaml
 from dagster._cli.project import check_if_pypi_package_conflict_exists
 from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     find_objects_in_module_of_types,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
@@ -112,11 +112,11 @@ def copy_scaffold(
     use_experimental_dbt_state: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
-    dbt_project_yaml: dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
+    dbt_project_yaml: dict[str, Any] = safe_load_yaml(dbt_project_yaml_path.read_bytes())
     dbt_project_name: str = dbt_project_yaml["name"]
 
     dbt_profiles_path = find_dbt_profiles_path(dbt_project_dir=dbt_project_dir)
-    dbt_profiles_yaml: dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
+    dbt_profiles_yaml: dict[str, Any] = safe_load_yaml(dbt_profiles_path.read_bytes())
 
     # Remove config from profiles.yml
     dbt_profiles_yaml.pop("config", None)

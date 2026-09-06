@@ -1,4 +1,5 @@
 import os
+from unittest.mock import MagicMock
 
 import duckdb
 import pandas as pd
@@ -10,6 +11,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_output_context,
     graph,
     instance_for_test,
     materialize,
@@ -23,11 +25,40 @@ from dagster._core.definitions.partitions.definition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
+from dagster._core.storage.db_io_manager import TableSlice
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager, duckdb_pyspark_io_manager
+from dagster_duckdb_pyspark.duckdb_pyspark_type_handler import DuckDBPySparkTypeHandler
 from pyspark.sql import (
     DataFrame as SparkDF,
     SparkSession,
 )
+from pyspark.sql.types import StringType, StructField, StructType
+
+
+def test_handle_output_empty_dataframe():
+    handler = DuckDBPySparkTypeHandler()
+    spark = SparkSession.builder.getOrCreate()
+    schema = StructType(
+        [StructField("col1", StringType(), True), StructField("col2", StringType(), True)]
+    )
+    df = spark.createDataFrame([], schema)
+    connection = MagicMock()
+    output_context = build_output_context()
+
+    handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+            columns=None,
+            partition_dimensions=[],
+        ),
+        df,
+        connection,
+    )
+
+    connection.execute.assert_not_called()
 
 
 @pytest.fixture

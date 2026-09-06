@@ -1,4 +1,4 @@
-import {Body2, Box, Button, MonoSmall, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, Button, NonIdealState, Spinner, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import capitalize from 'lodash/capitalize';
 import * as React from 'react';
@@ -55,7 +55,9 @@ export const InvalidSelectionQueryNotice = ({errors}: {errors: SyntaxError[]}) =
         description={
           <Box flex={{direction: 'column', gap: 8}}>
             The selection query you entered is invalid. Please try again.
-            <MonoSmall>{errors.map((error) => error.message).join('\n')}</MonoSmall>
+            <Text size={12} family="mono">
+              {errors.map((error) => error.message).join('\n')}
+            </Text>
           </Box>
         }
       />
@@ -89,10 +91,10 @@ export const LargeDAGNotice = ({
         title="This graph may be too large to display"
         description={
           <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
-            <Body2>
+            <Text size={14}>
               Build an {nodeType} filter above to render a portion of the graph, or click below to
               attempt to render it in full.
-            </Body2>
+            </Text>
             <Button onClick={() => setForceLargeGraph(true)}>Show Graph</Button>
           </Box>
         }

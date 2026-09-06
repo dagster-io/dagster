@@ -1,14 +1,4 @@
-import {
-  Box,
-  Caption,
-  Colors,
-  Icon,
-  IconName,
-  Mono,
-  Tag,
-  TextInput,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, Tag, Text, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {createContext, useContext, useState} from 'react';
 
@@ -17,6 +7,7 @@ import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
+import styles from '../assets/css/AssetEventMetadataEntriesTable.module.css';
 import {AssetKeyInput} from '../graphql/types';
 import {
   MetadataEntryFragment_CodeReferencesMetadataEntry as CodeReferencesMetadataEntry,
@@ -93,9 +84,9 @@ export const TableSchema = ({
           placeholder="Filter columns"
         />
         {schemaLoadTimestamp && (
-          <Caption color={Colors.textLighter()}>
+          <Text size={12} color="textLighter">
             Updated <Timestamp timestamp={{ms: schemaLoadTimestamp}} />
-          </Caption>
+          </Text>
         )}
       </Box>
       {multiColumnConstraints.length > 0 && (
@@ -108,53 +99,59 @@ export const TableSchema = ({
           ))}
         </Box>
       )}
-      <StyledTableWithHeader>
-        <thead>
-          <tr>
-            <td>Column name</td>
-            <td style={{width: 200}}>Type</td>
-            <td>Description</td>
-            <AssetColumnLinksCell column={null} />
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((column) => (
-            <tr key={column.name}>
-              <td>
-                <Mono>{column.name}</Mono>
-                {column.tags && (
-                  <Box flex={{gap: 4, wrap: 'wrap'}} margin={{top: 4}}>
-                    {column.tags.map((tag, i) => (
-                      <Tag key={i}>{buildTagString(tag)}</Tag>
+      <div className={styles.assetEventMetadataScrollContainer}>
+        <StyledTableWithHeader>
+          <thead>
+            <tr>
+              <td>Column name</td>
+              <td style={{width: 200}}>Type</td>
+              <td>Description</td>
+              <AssetColumnLinksCell column={null} />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((column) => (
+              <tr key={column.name}>
+                <td>
+                  <Text size={14} family="mono">
+                    {column.name}
+                  </Text>
+                  {column.tags && (
+                    <Box flex={{gap: 4, wrap: 'wrap'}} margin={{top: 4}}>
+                      {column.tags.map((tag, i) => (
+                        <Tag key={i}>{buildTagString(tag)}</Tag>
+                      ))}
+                    </Box>
+                  )}
+                </td>
+                <td>
+                  <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
+                    <TypeTag type={column.type} />
+                    {!column.constraints.nullable && NonNullableTag}
+                    {column.constraints.unique && UniqueTag}
+                    {column.constraints.other.map((constraint, i) => (
+                      <ArbitraryConstraintTag key={i} constraint={constraint} />
                     ))}
                   </Box>
-                )}
-              </td>
-              <td>
-                <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
-                  <TypeTag type={column.type} />
-                  {!column.constraints.nullable && NonNullableTag}
-                  {column.constraints.unique && UniqueTag}
-                  {column.constraints.other.map((constraint, i) => (
-                    <ArbitraryConstraintTag key={i} constraint={constraint} />
-                  ))}
-                </Box>
-              </td>
-              <td>
-                <Description description={column.description} />
-              </td>
-              <AssetColumnLinksCell column={column.name} />
-            </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={4}>
-                <Caption color={Colors.textLight()}>No table schema columns</Caption>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </StyledTableWithHeader>
+                </td>
+                <td>
+                  <Description description={column.description} />
+                </td>
+                <AssetColumnLinksCell column={column.name} />
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={4}>
+                  <Text size={12} color="textLight">
+                    No table schema columns
+                  </Text>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </StyledTableWithHeader>
+      </div>
     </Box>
   );
 };

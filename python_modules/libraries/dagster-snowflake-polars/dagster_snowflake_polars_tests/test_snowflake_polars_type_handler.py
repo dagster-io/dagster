@@ -128,6 +128,38 @@ def test_handle_output():
     }
 
 
+def test_handle_output_empty_dataframe():
+    handler = SnowflakePolarsTypeHandler()
+    connection = MagicMock()
+    connection.account = "account_abc"
+    connection.user = "user_abc"
+    connection.password = "password_abc"
+    connection.database = "database_abc"
+    connection.schema = "schema_abc"
+    connection.warehouse = "warehouse_abc"
+
+    df = pl.DataFrame({"col1": pl.Series([], dtype=pl.Utf8), "col2": pl.Series([], dtype=pl.Int64)})
+    output_context = build_output_context(
+        resource_config={**resource_config, "time_data_to_string": False}
+    )
+
+    with patch.object(pl.DataFrame, "write_database", MagicMock()) as mock_write_database:
+        handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=[],
+            ),
+            df,
+            connection,
+        )
+
+    mock_write_database.assert_not_called()
+
+
 def test_handle_output_escapes_partition_key_quotes():
     """Regression: partition key values with single quotes must be escaped before
     being interpolated into the DELETE statement, to prevent SQL injection.

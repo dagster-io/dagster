@@ -14,6 +14,8 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    GroupWildCardAssetSelection,
+    IsAttributeAssetSelection,
     JobAssetSelection,
     PartitionsAssetSelection,
     ScheduleNameAssetSelection,
@@ -62,6 +64,14 @@ from dagster._core.definitions.asset_selection import (
         (
             "kind:my_kind",
             "(start (expr (traversalAllowedExpr (attributeExpr kind : (value my_kind)))) <EOF>)",
+        ),
+        (
+            "is:external",
+            "(start (expr (traversalAllowedExpr (attributeExpr is : (value external)))) <EOF>)",
+        ),
+        (
+            "is:materializable",
+            "(start (expr (traversalAllowedExpr (attributeExpr is : (value materializable)))) <EOF>)",
         ),
         (
             "code_location:my_location",
@@ -115,6 +125,8 @@ def test_antlr_tree(selection_str, expected_tree_str) -> None:
         "owner:owner@owner.com",
         "owner:<none>",
         "key:<fake>",
+        "is:nonsense",
+        "is:observable",
     ],
 )
 def test_antlr_tree_invalid(selection_str):
@@ -195,9 +207,25 @@ def test_antlr_tree_invalid(selection_str):
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
         ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
         (
+            "group:marketing/foo/bar",
+            AssetSelection.groups("marketing/foo/bar", include_sources=True),
+        ),
+        (
+            'group:"marketing/*"',
+            GroupWildCardAssetSelection(
+                selected_group_wildcard="marketing/*", include_sources=True
+            ),
+        ),
+        (
+            'group:"*"',
+            GroupWildCardAssetSelection(selected_group_wildcard="*", include_sources=True),
+        ),
+        (
             "kind:my_kind",
             AssetSelection.kind("my_kind", include_sources=True),
         ),
+        ("is:external", IsAttributeAssetSelection(attribute="external")),
+        ("is:materializable", IsAttributeAssetSelection(attribute="materializable")),
         (
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),

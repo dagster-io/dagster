@@ -306,7 +306,7 @@ class SigmaComponent(StateBackedComponent, Resolvable):
             fetch_column_data=self.fetch_column_data,
             fetch_lineage_data=self.fetch_lineage_data,
         )
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Path | None

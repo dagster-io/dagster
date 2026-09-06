@@ -1,8 +1,9 @@
 import {
   Box,
-  Caption,
   Checkbox,
   MiddleTruncate,
+  RowCell,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
@@ -25,7 +26,6 @@ import {
   ScheduleAssetSelectionQueryVariables,
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {RowCell} from '../ui/VirtualizedTable';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 import {RepoAddress} from '../workspace/types';
@@ -173,7 +173,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                 />
                 {scheduleData.scheduleState.nextTick &&
                 scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
-                  <Caption>
+                  <Text size={12}>
                     <div
                       style={{
                         overflow: 'hidden',
@@ -190,7 +190,7 @@ export const VirtualizedAutomationScheduleRow = forwardRef(
                         timeFormat={{showSeconds: false, showTimezone: true}}
                       />
                     </div>
-                  </Caption>
+                  </Text>
                 ) : null}
               </Box>
             ) : (

@@ -29,7 +29,7 @@ def test_type_signatures_constructor_nested_resource():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource
@@ -69,7 +69,7 @@ def test_type_signatures_config_at_launch():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource
@@ -94,7 +94,7 @@ def test_type_signatures_constructor_resource_dependency():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource, ResourceDependency
@@ -130,7 +130,7 @@ def test_type_signatures_alias():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource

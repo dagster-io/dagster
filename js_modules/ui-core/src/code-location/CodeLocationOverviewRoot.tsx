@@ -2,9 +2,9 @@ import {
   Box,
   FontFamily,
   Icon,
-  Mono,
   SpinnerWithText,
   Table,
+  Text,
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
@@ -19,6 +19,7 @@ import * as yaml from 'yaml';
 import {CodeLocationDefsStateComparisonSection} from './CodeLocationDefsStateComparisonSection';
 import {CodeLocationOverviewSectionHeader} from './CodeLocationOverviewSectionHeader';
 import {useCopyToClipboard} from '../app/browser';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {CodeLocationNotFound} from '../workspace/CodeLocationNotFound';
 import {LocationStatus} from '../workspace/CodeLocationRowSet';
@@ -150,10 +151,14 @@ export const CodeLocationOverviewRoot = (props: Props) => {
               {libraryVersions.map((version) => (
                 <tr key={version.name}>
                   <td style={{width: RIGHT_COLUMN_WIDTH}}>
-                    <Mono>{version.name}</Mono>
+                    <Text size={14} family="mono">
+                      {version.name}
+                    </Text>
                   </td>
                   <td>
-                    <Mono>{version.version}</Mono>
+                    <Text size={14} family="mono">
+                      {version.version}
+                    </Text>
                   </td>
                 </tr>
               ))}
@@ -176,6 +181,8 @@ export const CodeLocationOverviewRoot = (props: Props) => {
 };
 
 const QueryfulCodeLocationOverviewRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
+  useDocumentTitle(`Code locations | ${repoAddressAsHumanString(repoAddress)}`);
+
   const {
     locationEntries,
     locationStatuses,

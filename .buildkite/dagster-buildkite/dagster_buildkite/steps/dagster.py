@@ -30,19 +30,6 @@ from dagster_buildkite.steps.packages import (
 from dagster_buildkite.steps.test_project import build_test_project_steps
 
 
-def build_buildkite_lint_steps() -> list[CommandStepConfiguration]:
-    commands = [
-        f"cd {oss_path('.')}",
-        "pytest .buildkite/buildkite-shared/lints.py",
-    ]
-    return [
-        CommandStepBuilder("buildkite-lints", [":lint-roller:"])
-        .run(*commands)
-        .on_test_image()
-        .build()
-    ]
-
-
 def build_repo_wide_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
     # the target. `ty` and `ruff` are run for the whole repo at once.
@@ -50,7 +37,6 @@ def build_repo_wide_steps(ctx: BuildkiteContext) -> list[StepConfiguration]:
         *build_repo_wide_ty_steps(ctx),
         *build_repo_wide_ruff_steps(ctx),
         *build_repo_wide_prettier_steps(ctx),
-        *build_buildkite_lint_steps(),
     ]
 
 

@@ -726,7 +726,9 @@ def load_sigma_asset_specs(
 
     snapshot = None
     if snapshot_path and not os.getenv(SNAPSHOT_ENV_VAR_NAME):
-        snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
+        snapshot = deserialize_value(
+            Path(snapshot_path).read_text(encoding="utf-8"), RepositoryLoadData
+        )
 
     with organization.process_config_and_initialize_cm() as initialized_organization:
         return check.is_list(

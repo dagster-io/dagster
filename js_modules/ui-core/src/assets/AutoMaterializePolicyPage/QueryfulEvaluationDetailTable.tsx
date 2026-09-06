@@ -5,7 +5,12 @@ import {
   GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY,
 } from './GetEvaluationsQuery';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
-import {tokenForEntityKey} from './flattenEvaluations';
+import {
+  assetCheckNameForEntityKey,
+  assetKeyForEntityKey,
+  jobNameForEntityKey,
+  tokenForEntityKey,
+} from './flattenEvaluations';
 import {useQuery} from '../../apollo-client';
 import {AssetKey} from '../types';
 import {EvaluationHistoryStackItem} from './types';
@@ -35,19 +40,18 @@ export const QueryfulEvaluationDetailTable = ({
   setSelectedPartition,
   pushHistory,
 }: EvaluationDetailDialogContentsProps) => {
-  const assetKeyPath =
-    entityKey.__typename === 'AssetKey' ? entityKey.path : entityKey.assetKey.path;
+  const assetKeyPath = assetKeyForEntityKey(entityKey)?.path ?? null;
   const partitionQuery = useQuery<
     GetEvaluationsSpecificPartitionQuery,
     GetEvaluationsSpecificPartitionQueryVariables
   >(GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY, {
     variables: {
-      assetKey: {path: assetKeyPath},
+      assetKey: {path: assetKeyPath ?? []},
       evaluationId: evaluation.evaluationId,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       partition: selectedPartition!,
     },
-    skip: !selectedPartition || !evaluation.isLegacy,
+    skip: !selectedPartition || !evaluation.isLegacy || !assetKeyPath,
   });
 
   const allAssetKeys = useMemo(() => {
@@ -103,7 +107,8 @@ export const QueryfulEvaluationDetailTable = ({
   return (
     <PolicyEvaluationTable
       assetKeyPath={assetKeyPath}
-      assetCheckName={entityKey.__typename === 'AssetCheckhandle' ? entityKey.name : undefined}
+      assetCheckName={assetCheckNameForEntityKey(entityKey)}
+      jobName={jobNameForEntityKey(entityKey)}
       evaluationId={evaluation.evaluationId}
       lastEvaluationsByEntityKey={lastEvaluationsByAssetKey}
       evaluationNodes={

@@ -112,9 +112,7 @@ def get_dynamic_job() -> dg.JobDefinition:
         n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
         echo(n)
         echo_default()
-        fan_outs = []
-        for i in range(0, 10):
-            fan_outs.append(return_one.alias(f"return_one_{i}")())
+        fan_outs = [return_one.alias(f"return_one_{i}")() for i in range(0, 10)]
         sum_fan_in(fan_outs)
 
     return dynamic_job

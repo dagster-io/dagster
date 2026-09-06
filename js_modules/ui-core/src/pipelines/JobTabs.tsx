@@ -1,7 +1,8 @@
-import {Tab, Tabs, Tooltip} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {Box, Tab, Tabs, Tag, Tooltip} from '@dagster-io/ui-components';
+import {ReactNode, useMemo} from 'react';
 
 import {ExplorerPath, explorerPathToString} from './PipelinePathUtils';
+import styles from './css/JobTabs.module.css';
 import {
   DEFAULT_DISABLED_REASON,
   PermissionResult,
@@ -12,7 +13,7 @@ import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-export const DEFAULT_JOB_TAB_ORDER = ['overview', 'playground', 'runs', 'partitions'];
+export const DEFAULT_JOB_TAB_ORDER = ['overview', 'playground', 'runs', 'partitions', 'automation'];
 
 interface Props {
   repoAddress: RepoAddress;
@@ -74,11 +75,12 @@ export type JobTabConfigInput = {
   hasLaunchpad: boolean;
   hasPartitionSet: boolean;
   hasLaunchExecutionPermission?: boolean;
+  hasAutomationCondition?: boolean;
 };
 
 export interface JobTabConfig {
   id: string;
-  title: string;
+  title: ReactNode;
   pathComponent: string;
   getPermissionsResult?: (permissionsState: PermissionsState) => PermissionResult;
   isHidden?: boolean;
@@ -88,7 +90,8 @@ export interface JobTabConfig {
  * Define the default set of job tabs.
  */
 export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabConfig> => {
-  const {hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission} = input;
+  const {hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission, hasAutomationCondition} =
+    input;
   return {
     overview: {
       id: 'overview',
@@ -120,6 +123,19 @@ export const buildJobTabMap = (input: JobTabConfigInput): Record<string, JobTabC
       title: 'Partitions',
       pathComponent: 'partitions',
       isHidden: !hasPartitionSet,
+    },
+    automation: {
+      id: 'automation',
+      title: (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+          <span>Automation</span>
+          <Tag>
+            <span className={styles.previewTagText}>Preview</span>
+          </Tag>
+        </Box>
+      ),
+      pathComponent: 'automation',
+      isHidden: !hasAutomationCondition,
     },
   };
 };

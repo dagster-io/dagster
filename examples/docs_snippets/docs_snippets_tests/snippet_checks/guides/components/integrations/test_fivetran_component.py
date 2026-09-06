@@ -35,10 +35,11 @@ SNIPPETS_DIR = (
 
 def _swap_to_mock_fivetran_component(path: Path) -> None:
     path.write_text(
-        path.read_text().replace(
+        path.read_text(encoding="utf-8").replace(
             "dagster_fivetran.FivetranAccountComponent",
             "my_project.defs.fivetran_ingest.test_utils.MockFivetranComponent",
-        )
+        ),
+        encoding="utf-8",
     )
 
 

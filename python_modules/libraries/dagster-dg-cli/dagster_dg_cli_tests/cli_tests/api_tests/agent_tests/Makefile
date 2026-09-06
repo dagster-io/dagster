@@ -1,7 +1,7 @@
 .PHONY: rerecord test clean
 
 rerecord:
-	dagster-dev dg-api-record agent
+	python ../_record.py agent
 
 test:
 	pytest . -v

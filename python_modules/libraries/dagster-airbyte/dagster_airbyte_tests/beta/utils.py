@@ -11,7 +11,7 @@ def optional_pytest_raise(
         kwargs = {}
         if exception_message:
             kwargs["match"] = exception_message
-        with pytest.raises(exception_cls, **kwargs):  # ty: ignore[invalid-context-manager]
+        with pytest.raises(exception_cls, **kwargs):  # ty: ignore[invalid-context-manager, no-matching-overload]
             yield
     else:
         yield

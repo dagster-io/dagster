@@ -1,0 +1,146 @@
+name: "Dagster+ Hybrid Deploy"
+
+# start_triggers
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - dev
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: dagster-deploy-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
+env:
+  DAGSTER_CLOUD_URL: "https://${{ vars.DAGSTER_CLOUD_ORGANIZATION }}.dagster.cloud"
+# end_triggers
+
+jobs:
+  # start_job_configure
+  configure:
+    runs-on: ubuntu-latest
+    outputs:
+      deployment: ${{ steps.target.outputs.deployment }}
+      is_branch_deploy: ${{ steps.target.outputs.is_branch_deploy }}
+      image_tag: ${{ steps.tag.outputs.image_tag }}
+    steps:
+      - name: Determine deployment target
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "deployment=branch"       >> "$GITHUB_OUTPUT"
+            echo "is_branch_deploy=true"   >> "$GITHUB_OUTPUT"
+          else
+            case "${{ github.ref_name }}" in
+              main)    echo "deployment=prod"    >> "$GITHUB_OUTPUT" ;;
+              staging) echo "deployment=staging" >> "$GITHUB_OUTPUT" ;;
+              dev)     echo "deployment=dev"     >> "$GITHUB_OUTPUT" ;;
+            esac
+            echo "is_branch_deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute image tag
+        id: tag
+        run: |
+          echo "image_tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+  # end_job_configure
+
+  # start_job_build
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: configure
+    if: github.event.action != 'closed'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.CONTAINER_REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push user code image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ vars.CONTAINER_REGISTRY }}/dagster-deploy-demo:${{ needs.configure.outputs.image_tag }}
+            ${{ vars.CONTAINER_REGISTRY }}/dagster-deploy-demo:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  # end_job_build
+
+  # start_job_deploy_full
+  deploy-full:
+    runs-on: ubuntu-latest
+    needs: [configure, build-and-push]
+    if: needs.configure.outputs.is_branch_deploy == 'false'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dagster-cloud CLI
+        run: pip install dagster-cloud-cli
+
+      - name: Update code location image in Dagster+
+        run: |
+          dagster-cloud deployment code-location update \
+            --url "${{ env.DAGSTER_CLOUD_URL }}" \
+            --api-token "${{ secrets.DAGSTER_CLOUD_API_TOKEN }}" \
+            --deployment "${{ needs.configure.outputs.deployment }}" \
+            --location-name dagster_deploy_demo \
+            --image "${{ vars.CONTAINER_REGISTRY }}/dagster-deploy-demo:${{ needs.configure.outputs.image_tag }}" \
+            --location-file dagster_cloud.yaml \
+            --git-url "${{ github.server_url }}/${{ github.repository }}/tree/${{ github.sha }}" \
+            --commit-hash "${{ github.sha }}"
+  # end_job_deploy_full
+
+  # start_job_deploy_branch
+  deploy-branch:
+    runs-on: ubuntu-latest
+    needs: [configure, build-and-push]
+    if: |
+      always()
+      && needs.configure.outputs.is_branch_deploy == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dagster-cloud CLI
+        run: pip install dagster-cloud-cli
+
+      - name: Close branch deployment
+        if: github.event.action == 'closed'
+        run: |
+          dagster-cloud deployment branch-deployment delete \
+            --url "${{ env.DAGSTER_CLOUD_URL }}" \
+            --api-token "${{ secrets.DAGSTER_CLOUD_API_TOKEN }}" \
+            --branch-deployment-name "pr-${{ github.event.pull_request.number }}"
+
+      - name: Create or update branch deployment
+        if: github.event.action != 'closed'
+        run: |
+          dagster-cloud deployment branch-deployment create-or-update \
+            --url "${{ env.DAGSTER_CLOUD_URL }}" \
+            --api-token "${{ secrets.DAGSTER_CLOUD_API_TOKEN }}" \
+            --branch-deployment-name "pr-${{ github.event.pull_request.number }}" \
+            --branch-name "${{ github.head_ref }}" \
+            --commit-hash "${{ github.sha }}" \
+            --base-deployment-name "dev"
+
+          dagster-cloud deployment code-location update \
+            --url "${{ env.DAGSTER_CLOUD_URL }}" \
+            --api-token "${{ secrets.DAGSTER_CLOUD_API_TOKEN }}" \
+            --deployment "pr-${{ github.event.pull_request.number }}" \
+            --location-name dagster_deploy_demo \
+            --image "${{ vars.CONTAINER_REGISTRY }}/dagster-deploy-demo:${{ needs.configure.outputs.image_tag }}" \
+            --location-file dagster_cloud.yaml \
+            --git-url "${{ github.server_url }}/${{ github.repository }}/tree/${{ github.sha }}" \
+            --commit-hash "${{ github.sha }}"
+  # end_job_deploy_branch

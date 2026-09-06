@@ -404,10 +404,11 @@ def resolve_checked_op_fn_inputs(
     explicit_names = explicit_names - resource_arg_names
 
     if compute_fn.has_config_arg() or resource_arg_names:
-        new_input_args = []
-        for input_arg in input_args:
-            if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-                new_input_args.append(input_arg)
+        new_input_args = [
+            input_arg
+            for input_arg in input_args
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names
+        ]
         input_args = new_input_args
 
     # Validate input arguments

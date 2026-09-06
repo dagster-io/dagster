@@ -1,4 +1,4 @@
-import {Box, Button, MiddleTruncate, Subtitle2} from '@dagster-io/ui-components';
+import {Box, Button, Heading, MiddleTruncate} from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -28,7 +28,9 @@ export const LineageSection = ({
 
       <Box flex={{direction: 'row'}}>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Upstream assets</Subtitle2>
+          <Heading size={14} weight={600}>
+            Upstream assets
+          </Heading>
           {upstream?.length ? (
             <AssetLinksWithStatus assets={upstream} />
           ) : (
@@ -38,7 +40,9 @@ export const LineageSection = ({
           )}
         </Box>
         <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
-          <Subtitle2>Downstream assets</Subtitle2>
+          <Heading size={14} weight={600}>
+            Downstream assets
+          </Heading>
           {downstream?.length ? (
             <AssetLinksWithStatus assets={downstream} />
           ) : (

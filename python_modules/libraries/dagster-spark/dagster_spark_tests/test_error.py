@@ -1,9 +1,9 @@
 import os
 import uuid
 
-import yaml
 from dagster._utils import file_relative_path
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_spark import spark_resource
 from dagster_spark.ops import create_spark_op
 
@@ -28,7 +28,7 @@ RESOURCE_DEFS = {"spark": spark_resource}
 def test_jar_not_found():
     spark_op = create_spark_op("spark_op", main_class="something")
     # guid guaranteed to not exist
-    run_config = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
+    run_config = safe_load_yaml(CONFIG_FILE.format(path=str(uuid.uuid4())))
 
     result = wrap_op_in_graph_and_execute(
         spark_op, run_config=run_config, raise_on_error=False, resources=RESOURCE_DEFS
@@ -60,7 +60,7 @@ def test_no_spark_home():
         del os.environ["SPARK_HOME"]
 
     spark_op = create_spark_op("spark_op", main_class="something")
-    run_config = yaml.safe_load(
+    run_config = safe_load_yaml(
         NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, "."))
     )
 
@@ -73,3 +73,32 @@ def test_no_spark_home():
         "$SPARK_HOME in your environment (got None)."
         in result.failure_data_for_node("spark_op").error.cause.message  # ty: ignore[unresolved-attribute]
     )
+
+
+def test_command_injection_repro_is_neutralized(tmp_path):
+    marker = tmp_path / "dagster_injection_marker.txt"
+    payload = f"realarg ; id > {marker} ; echo INJECTED_MARKER"
+
+    spark_op = create_spark_op("spark_op", main_class="org.example.Main")
+    run_config = {
+        "ops": {
+            "spark_op": {
+                "config": {
+                    "master_url": "local[*]",
+                    # A real file so we get past the jar-existence check and reach execution.
+                    "application_jar": file_relative_path(__file__, "fake.jar"),
+                    # A path with no spark-submit binary, mirroring the original repro.
+                    "spark_home": str(tmp_path / "nonexistent_spark"),
+                    "application_arguments": payload,
+                }
+            }
+        }
+    }
+    result = wrap_op_in_graph_and_execute(
+        spark_op, run_config=run_config, raise_on_error=False, resources=RESOURCE_DEFS
+    )
+
+    # The injected command must never run.
+    assert not marker.exists()
+    # The absent spark-submit must be reported as a failure, not masked as SUCCESS.
+    assert result.is_node_failed("spark_op")

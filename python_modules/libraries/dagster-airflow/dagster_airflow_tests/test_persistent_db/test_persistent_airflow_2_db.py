@@ -211,7 +211,6 @@ def airflow_examples_repo(postgres_airflow_db) -> RepositoryDefinition:
 def get_examples_airflow_repo_params() -> list[ParameterSet]:
     definitions = make_dagster_definitions_from_airflow_example_dags()
     repo = definitions.get_repository_def()
-    params = []
     no_job_run_dags = [
         # requires k8s environment to work
         # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
@@ -230,10 +229,10 @@ def get_examples_airflow_repo_params() -> list[ParameterSet]:
         "example_dynamic_task_mapping",
         "example_dynamic_task_mapping_with_no_taskflow_operators",
     ]
-    for job_name in repo.job_names:
-        params.append(
-            pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name),
-        )
+    params = [
+        pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name)
+        for job_name in repo.job_names
+    ]
 
     return params
 

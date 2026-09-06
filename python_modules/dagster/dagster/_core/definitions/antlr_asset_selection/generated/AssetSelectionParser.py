@@ -12,8 +12,8 @@ def serializedATN():
     return [
         4,
         1,
-        34,
-        135,
+        35,
+        138,
         2,
         0,
         7,
@@ -231,9 +231,15 @@ def serializedATN():
         6,
         1,
         6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
         3,
         6,
-        106,
+        109,
         8,
         6,
         1,
@@ -280,7 +286,7 @@ def serializedATN():
         6,
         3,
         6,
-        129,
+        132,
         8,
         6,
         1,
@@ -310,21 +316,21 @@ def serializedATN():
         3,
         1,
         0,
-        28,
         29,
+        30,
         3,
         0,
-        25,
-        27,
-        30,
+        26,
+        28,
         31,
-        33,
-        33,
+        32,
+        34,
+        34,
         1,
         0,
-        30,
-        32,
-        153,
+        31,
+        33,
+        157,
         0,
         18,
         1,
@@ -362,19 +368,19 @@ def serializedATN():
         0,
         0,
         12,
-        128,
+        131,
         1,
         0,
         0,
         0,
         14,
-        130,
+        133,
         1,
         0,
         0,
         0,
         16,
-        132,
+        135,
         1,
         0,
         0,
@@ -782,7 +788,7 @@ def serializedATN():
         0,
         0,
         74,
-        129,
+        132,
         3,
         16,
         8,
@@ -830,7 +836,7 @@ def serializedATN():
         0,
         0,
         81,
-        129,
+        132,
         1,
         0,
         0,
@@ -848,7 +854,7 @@ def serializedATN():
         0,
         0,
         84,
-        129,
+        132,
         3,
         14,
         7,
@@ -866,7 +872,7 @@ def serializedATN():
         0,
         0,
         87,
-        129,
+        132,
         3,
         14,
         7,
@@ -884,7 +890,7 @@ def serializedATN():
         0,
         0,
         90,
-        129,
+        132,
         3,
         14,
         7,
@@ -892,7 +898,7 @@ def serializedATN():
         91,
         92,
         5,
-        18,
+        17,
         0,
         0,
         92,
@@ -902,7 +908,7 @@ def serializedATN():
         0,
         0,
         93,
-        129,
+        132,
         3,
         14,
         7,
@@ -920,7 +926,7 @@ def serializedATN():
         0,
         0,
         96,
-        129,
+        132,
         3,
         14,
         7,
@@ -938,7 +944,7 @@ def serializedATN():
         0,
         0,
         99,
-        129,
+        132,
         3,
         14,
         7,
@@ -956,65 +962,65 @@ def serializedATN():
         0,
         0,
         102,
-        105,
+        132,
         3,
         14,
         7,
         0,
         103,
         104,
-        5,
-        1,
-        0,
-        0,
-        104,
-        106,
-        3,
-        14,
-        7,
-        0,
-        105,
-        103,
-        1,
-        0,
-        0,
-        0,
-        105,
-        106,
-        1,
-        0,
-        0,
-        0,
-        106,
-        129,
-        1,
-        0,
-        0,
-        0,
-        107,
-        108,
-        5,
-        17,
-        0,
-        0,
-        108,
-        109,
-        5,
-        8,
-        0,
-        0,
-        109,
-        129,
-        3,
-        14,
-        7,
-        0,
-        110,
-        111,
         5,
         22,
         0,
         0,
+        104,
+        105,
+        5,
+        8,
+        0,
+        0,
+        105,
+        108,
+        3,
+        14,
+        7,
+        0,
+        106,
+        107,
+        5,
+        1,
+        0,
+        0,
+        107,
+        109,
+        3,
+        14,
+        7,
+        0,
+        108,
+        106,
+        1,
+        0,
+        0,
+        0,
+        108,
+        109,
+        1,
+        0,
+        0,
+        0,
+        109,
+        132,
+        1,
+        0,
+        0,
+        0,
+        110,
+        111,
+        5,
+        18,
+        0,
+        0,
         111,
         112,
         5,
@@ -1022,7 +1028,7 @@ def serializedATN():
         0,
         0,
         112,
-        129,
+        132,
         3,
         14,
         7,
@@ -1040,7 +1046,7 @@ def serializedATN():
         0,
         0,
         115,
-        129,
+        132,
         3,
         14,
         7,
@@ -1058,7 +1064,7 @@ def serializedATN():
         0,
         0,
         118,
-        129,
+        132,
         3,
         14,
         7,
@@ -1076,7 +1082,7 @@ def serializedATN():
         0,
         0,
         121,
-        129,
+        132,
         3,
         14,
         7,
@@ -1094,7 +1100,7 @@ def serializedATN():
         0,
         0,
         124,
-        129,
+        132,
         3,
         14,
         7,
@@ -1112,132 +1118,156 @@ def serializedATN():
         0,
         0,
         127,
-        129,
+        132,
         3,
         14,
         7,
         0,
         128,
+        129,
+        5,
+        28,
+        0,
+        0,
+        129,
+        130,
+        5,
+        8,
+        0,
+        0,
+        130,
+        132,
+        3,
+        14,
+        7,
+        0,
+        131,
         72,
         1,
         0,
         0,
         0,
-        128,
+        131,
         75,
         1,
         0,
         0,
         0,
-        128,
+        131,
         82,
         1,
         0,
         0,
         0,
-        128,
+        131,
         85,
         1,
         0,
         0,
         0,
-        128,
+        131,
         88,
         1,
         0,
         0,
         0,
-        128,
+        131,
         91,
         1,
         0,
         0,
         0,
-        128,
+        131,
         94,
         1,
         0,
         0,
         0,
-        128,
+        131,
         97,
         1,
         0,
         0,
         0,
-        128,
+        131,
         100,
         1,
         0,
         0,
         0,
-        128,
-        107,
+        131,
+        103,
         1,
         0,
         0,
         0,
-        128,
+        131,
         110,
         1,
         0,
         0,
         0,
-        128,
+        131,
         113,
         1,
         0,
         0,
         0,
-        128,
+        131,
         116,
         1,
         0,
         0,
         0,
-        128,
+        131,
         119,
         1,
         0,
         0,
         0,
-        128,
+        131,
         122,
         1,
         0,
         0,
         0,
-        128,
+        131,
         125,
         1,
         0,
         0,
         0,
-        129,
-        13,
-        1,
-        0,
-        0,
-        0,
-        130,
         131,
-        7,
-        1,
-        0,
-        0,
-        131,
-        15,
+        128,
         1,
         0,
         0,
         0,
         132,
+        13,
+        1,
+        0,
+        0,
+        0,
         133,
+        134,
+        7,
+        1,
+        0,
+        0,
+        134,
+        15,
+        1,
+        0,
+        0,
+        0,
+        135,
+        136,
         7,
         2,
         0,
         0,
-        133,
+        136,
         17,
         1,
         0,
@@ -1251,8 +1281,8 @@ def serializedATN():
         62,
         68,
         80,
-        105,
-        128,
+        108,
+        131,
     ]
 
 
@@ -1283,6 +1313,7 @@ class AssetSelectionParser(Parser):
         "'group'",
         "'tag'",
         "'kind'",
+        "'is'",
         "'code_location'",
         "'status'",
         "'column'",
@@ -1320,6 +1351,7 @@ class AssetSelectionParser(Parser):
         "GROUP",
         "TAG",
         "KIND",
+        "IS",
         "CODE_LOCATION",
         "STATUS",
         "COLUMN",
@@ -1379,24 +1411,25 @@ class AssetSelectionParser(Parser):
     GROUP = 14
     TAG = 15
     KIND = 16
-    CODE_LOCATION = 17
-    STATUS = 18
-    COLUMN = 19
-    TABLE_NAME = 20
-    COLUMN_TAG = 21
-    CHANGED_IN_BRANCH = 22
-    PARTITIONS = 23
-    AUTOMATION_TYPE = 24
-    SENSOR = 25
-    SCHEDULE = 26
-    JOB = 27
-    SINKS = 28
-    ROOTS = 29
-    QUOTED_STRING = 30
-    UNQUOTED_STRING = 31
-    UNQUOTED_WILDCARD_STRING = 32
-    NULL_STRING = 33
-    WS = 34
+    IS = 17
+    CODE_LOCATION = 18
+    STATUS = 19
+    COLUMN = 20
+    TABLE_NAME = 21
+    COLUMN_TAG = 22
+    CHANGED_IN_BRANCH = 23
+    PARTITIONS = 24
+    AUTOMATION_TYPE = 25
+    SENSOR = 26
+    SCHEDULE = 27
+    JOB = 28
+    SINKS = 29
+    ROOTS = 30
+    QUOTED_STRING = 31
+    UNQUOTED_STRING = 32
+    UNQUOTED_WILDCARD_STRING = 33
+    NULL_STRING = 34
+    WS = 35
 
     def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
         super().__init__(input, output)
@@ -1921,13 +1954,13 @@ class AssetSelectionParser(Parser):
             self.state = 59
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]:
+            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]:
                 localctx = AssetSelectionParser.AttributeExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 49
                 self.attributeExpr()
                 pass
-            elif token in [28, 29]:
+            elif token in [29, 30]:
                 localctx = AssetSelectionParser.FunctionCallExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 50
@@ -2106,7 +2139,7 @@ class AssetSelectionParser(Parser):
             self.enterOuterAlt(localctx, 1)
             self.state = 70
             _la = self._input.LA(1)
-            if not (_la == 28 or _la == 29):
+            if not (_la == 29 or _la == 30):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -2444,6 +2477,36 @@ class AssetSelectionParser(Parser):
             else:
                 return visitor.visitChildren(self)
 
+    class IsAttributeExprContext(AttributeExprContext):
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a AssetSelectionParser.AttributeExprContext
+            super().__init__(parser)
+            self.copyFrom(ctx)
+
+        def IS(self):
+            return self.getToken(AssetSelectionParser.IS, 0)
+
+        def COLON(self):
+            return self.getToken(AssetSelectionParser.COLON, 0)
+
+        def value(self):
+            return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
+
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterIsAttributeExpr"):
+                listener.enterIsAttributeExpr(self)
+
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitIsAttributeExpr"):
+                listener.exitIsAttributeExpr(self)
+
+        def accept(self, visitor: ParseTreeVisitor):
+            if hasattr(visitor, "visitIsAttributeExpr"):
+                return visitor.visitIsAttributeExpr(self)
+            else:
+                return visitor.visitChildren(self)
+
     class StatusAttributeExprContext(AttributeExprContext):
         def __init__(
             self, parser, ctx: ParserRuleContext
@@ -2629,7 +2692,7 @@ class AssetSelectionParser(Parser):
         localctx = AssetSelectionParser.AttributeExprContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_attributeExpr)
         try:
-            self.state = 128
+            self.state = 131
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [12]:
@@ -2691,123 +2754,133 @@ class AssetSelectionParser(Parser):
                 self.state = 90
                 self.value()
                 pass
-            elif token in [18]:
-                localctx = AssetSelectionParser.StatusAttributeExprContext(self, localctx)
+            elif token in [17]:
+                localctx = AssetSelectionParser.IsAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 6)
                 self.state = 91
-                self.match(AssetSelectionParser.STATUS)
+                self.match(AssetSelectionParser.IS)
                 self.state = 92
                 self.match(AssetSelectionParser.COLON)
                 self.state = 93
                 self.value()
                 pass
             elif token in [19]:
-                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.StatusAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 7)
                 self.state = 94
-                self.match(AssetSelectionParser.COLUMN)
+                self.match(AssetSelectionParser.STATUS)
                 self.state = 95
                 self.match(AssetSelectionParser.COLON)
                 self.state = 96
                 self.value()
                 pass
             elif token in [20]:
-                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 8)
                 self.state = 97
-                self.match(AssetSelectionParser.TABLE_NAME)
+                self.match(AssetSelectionParser.COLUMN)
                 self.state = 98
                 self.match(AssetSelectionParser.COLON)
                 self.state = 99
                 self.value()
                 pass
             elif token in [21]:
-                localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 9)
                 self.state = 100
-                self.match(AssetSelectionParser.COLUMN_TAG)
+                self.match(AssetSelectionParser.TABLE_NAME)
                 self.state = 101
                 self.match(AssetSelectionParser.COLON)
                 self.state = 102
                 self.value()
+                pass
+            elif token in [22]:
+                localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 10)
+                self.state = 103
+                self.match(AssetSelectionParser.COLUMN_TAG)
+                self.state = 104
+                self.match(AssetSelectionParser.COLON)
                 self.state = 105
+                self.value()
+                self.state = 108
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input, 7, self._ctx)
                 if la_ == 1:
-                    self.state = 103
+                    self.state = 106
                     self.match(AssetSelectionParser.EQUAL)
-                    self.state = 104
+                    self.state = 107
                     self.value()
 
                 pass
-            elif token in [17]:
+            elif token in [18]:
                 localctx = AssetSelectionParser.CodeLocationAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 10)
-                self.state = 107
-                self.match(AssetSelectionParser.CODE_LOCATION)
-                self.state = 108
-                self.match(AssetSelectionParser.COLON)
-                self.state = 109
-                self.value()
-                pass
-            elif token in [22]:
-                localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 11)
                 self.state = 110
-                self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
+                self.match(AssetSelectionParser.CODE_LOCATION)
                 self.state = 111
                 self.match(AssetSelectionParser.COLON)
                 self.state = 112
                 self.value()
                 pass
             elif token in [23]:
-                localctx = AssetSelectionParser.PartitionsAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 12)
                 self.state = 113
-                self.match(AssetSelectionParser.PARTITIONS)
+                self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
                 self.state = 114
                 self.match(AssetSelectionParser.COLON)
                 self.state = 115
                 self.value()
                 pass
             elif token in [24]:
-                localctx = AssetSelectionParser.AutomationTypeAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.PartitionsAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 13)
                 self.state = 116
-                self.match(AssetSelectionParser.AUTOMATION_TYPE)
+                self.match(AssetSelectionParser.PARTITIONS)
                 self.state = 117
                 self.match(AssetSelectionParser.COLON)
                 self.state = 118
                 self.value()
                 pass
             elif token in [25]:
-                localctx = AssetSelectionParser.SensorAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.AutomationTypeAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 14)
                 self.state = 119
-                self.match(AssetSelectionParser.SENSOR)
+                self.match(AssetSelectionParser.AUTOMATION_TYPE)
                 self.state = 120
                 self.match(AssetSelectionParser.COLON)
                 self.state = 121
                 self.value()
                 pass
             elif token in [26]:
-                localctx = AssetSelectionParser.ScheduleAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.SensorAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 15)
                 self.state = 122
-                self.match(AssetSelectionParser.SCHEDULE)
+                self.match(AssetSelectionParser.SENSOR)
                 self.state = 123
                 self.match(AssetSelectionParser.COLON)
                 self.state = 124
                 self.value()
                 pass
             elif token in [27]:
-                localctx = AssetSelectionParser.JobAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.ScheduleAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 16)
                 self.state = 125
-                self.match(AssetSelectionParser.JOB)
+                self.match(AssetSelectionParser.SCHEDULE)
                 self.state = 126
                 self.match(AssetSelectionParser.COLON)
                 self.state = 127
+                self.value()
+                pass
+            elif token in [28]:
+                localctx = AssetSelectionParser.JobAttributeExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 17)
+                self.state = 128
+                self.match(AssetSelectionParser.JOB)
+                self.state = 129
+                self.match(AssetSelectionParser.COLON)
+                self.state = 130
                 self.value()
                 pass
             else:
@@ -2870,9 +2943,9 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 130
+            self.state = 133
             _la = self._input.LA(1)
-            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 12046041088) != 0):
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 24092082176) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -2925,9 +2998,9 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 132
+            self.state = 135
             _la = self._input.LA(1)
-            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 7516192768) != 0):
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 15032385536) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)

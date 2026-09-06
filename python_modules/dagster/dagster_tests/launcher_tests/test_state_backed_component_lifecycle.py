@@ -67,9 +67,9 @@ def _scope_component_defs():
 
         def write_state_to_path(self, state_path):
             sentinel_path = Path(self.sentinel_file_path)
-            current_count = int(sentinel_path.read_text().strip())
+            current_count = int(sentinel_path.read_text(encoding="utf-8").strip())
             new_count = current_count + 1
-            sentinel_path.write_text(str(new_count))
+            sentinel_path.write_text(str(new_count), encoding="utf-8")
             state_path.write_text(f"state_content_{new_count}")
 
     @dg.definitions

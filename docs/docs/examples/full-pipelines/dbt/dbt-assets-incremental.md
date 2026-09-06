@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 50
 ---
 
-With lineage in place, there’s one final adjustment to make to our scaffolding. In our dbt project, the `daily_metrics` model is an [incremental model](https://docs.getdbt.com/docs/build/incremental-models). Incremental models improve performance by avoiding full refreshes: instead of reprocessing everything, they only handle new or modified data based on a time filter.
+With lineage in place, there's one final adjustment to make to our scaffolding. In our dbt project, the `daily_metrics` model is an [incremental model](https://docs.getdbt.com/docs/build/incremental-models). Incremental models improve performance by avoiding full refreshes: instead of reprocessing everything, they only handle new or modified data based on a time filter.
 
 <CodeExample
   path="docs_projects/project_dbt/src/project_dbt/analytics/models/marts/daily_metrics.sql"
@@ -14,7 +14,7 @@ With lineage in place, there’s one final adjustment to make to our scaffolding
   title="src/project_dbt/analytics/models/marts/daily_metrics.sql"
 />
 
-Here’s how incremental models work:
+Here's how incremental models work:
 
 - **First run**: the model processes the full dataset with no filters.
 - **Subsequent runs**: dbt applies the `is_incremental()` filter, using `min_date` and `max_date` values provided at runtime.

@@ -13,7 +13,12 @@ from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.utils.warnings import preview_warning
 
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.asset_key import (
+    AssetCheckKey,
+    AssetKey,
+    AssetOrCheckKey,
+    CoercibleToAssetKey,
+)
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 
 if TYPE_CHECKING:
@@ -99,7 +104,9 @@ class AssetCheckSpec(IHaveNew, LegacyNamedTupleMixin):
         additional_deps: Iterable["CoercibleToAssetDep"] | None = None,
         blocking: bool = False,
         metadata: Mapping[str, Any] | None = None,
-        automation_condition: Optional["AutomationCondition[AssetCheckKey]"] = None,
+        automation_condition: Optional[
+            "AutomationCondition[AssetCheckKey] | AutomationCondition[AssetOrCheckKey]"
+        ] = None,
         partitions_def: PartitionsDefinition | None = None,
     ):
         from dagster._core.definitions.assets.definition.asset_dep import (

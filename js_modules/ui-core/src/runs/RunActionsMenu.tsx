@@ -112,7 +112,10 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
   }, [run.hasReExecutePermission, jobError, infoReady]);
 
   const jobLink = workspacePipelineLinkForRun({
-    run,
+    // executionPlan (with its asset keys) is only available once the lazy environment query has
+    // loaded; until then the "View asset lineage" link has no keys, but the menu item stays
+    // disabled until `infoReady` so it is never clicked in that state.
+    run: {...run, executionPlan: pipelineRun?.executionPlan},
     repositoryName: repoMatch?.match.repository.name,
     repositoryLocationName: repoMatch?.match.repositoryLocation.name,
     isJob,
@@ -130,7 +133,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
               {canCreateIssue && (
                 <MenuItem
                   icon="issue"
-                  text="Create issue"
+                  text="Create or link issue"
                   onClick={() => setVisibleDialog('create-issue')}
                 />
               )}

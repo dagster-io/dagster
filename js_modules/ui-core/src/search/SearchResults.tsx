@@ -1,12 +1,4 @@
-import {
-  BaseTag,
-  Box,
-  Caption,
-  CaptionBolded,
-  Colors,
-  Icon,
-  IconName,
-} from '@dagster-io/ui-components';
+import {BaseTag, Box, Colors, Icon, IconName, Text} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import * as React from 'react';
@@ -105,7 +97,7 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>, queryString: st
   const exactMatchPosition = label.indexOf(queryStringLower);
 
   if (exactMatchPosition === -1) {
-    return <Caption>{result.item.label}</Caption>;
+    return <Text size={12}>{result.item.label}</Text>;
   }
 
   const stringBeforeMatch = label.slice(0, exactMatchPosition);
@@ -114,9 +106,11 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>, queryString: st
 
   return (
     <>
-      <Caption>{stringBeforeMatch}</Caption>
-      <CaptionBolded>{match}</CaptionBolded>
-      <Caption>{stringAfterMatch}</Caption>
+      <Text size={12}>{stringBeforeMatch}</Text>
+      <Text size={12} weight={600}>
+        {match}
+      </Text>
+      <Text size={12}>{stringAfterMatch}</Text>
     </>
   );
 }
@@ -202,10 +196,10 @@ export const SearchResultItem = <T extends ResultType>({
               label={
                 <>
                   {isAssetFilterSearchResultType(item.type) && (
-                    <Caption>{assetFilterPrefixString(item.type)}:</Caption>
+                    <Text size={12}>{assetFilterPrefixString(item.type)}:</Text>
                   )}
                   {labelComponents}
-                  {item.repoPath ? <Caption> in {item.repoPath}</Caption> : null}
+                  {item.repoPath ? <Text size={12}> in {item.repoPath}</Text> : null}
                 </>
               }
             />

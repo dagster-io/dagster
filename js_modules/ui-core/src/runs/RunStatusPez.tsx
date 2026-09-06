@@ -1,4 +1,4 @@
-import {Box, CaptionMono, Colors, Popover} from '@dagster-io/ui-components';
+import {Box, Colors, Popover, Text} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {RunStatusIndicator} from './RunStatusDots';
@@ -93,7 +93,9 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
           <Link to={`/runs/${run.id}`}>
-            <CaptionMono>{titleForRun(run)}</CaptionMono>
+            <Text size={12} family="mono">
+              {titleForRun(run)}
+            </Text>
           </Link>
         </Box>
         <Box flex={{direction: 'column', gap: 4}}>

@@ -23,7 +23,7 @@ import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql} from '../apollo-client';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
-import {AssetKey, AssetViewParams} from './types';
+import {AssetKey, AssetViewParams, AssetViewTab} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {WorkspaceAssetNode} from './useAllAssets';
 import {useAssetDefinition} from './useAssetDefinition';
@@ -354,12 +354,12 @@ const AssetLoadingDefinitionState = () => (
 //
 function getQueryForVisibleAssets(
   assetKey: AssetKey,
-  view: string,
+  view: AssetViewTab,
   {lineageDepth, lineageScope}: AssetViewParams,
 ) {
   const token = tokenForAssetKey(assetKey);
 
-  if (view === 'definition' || view === 'overview') {
+  if (view === 'overview') {
     return {
       query: `1+key:"${token}"+1`,
       requestedDepth: 1,

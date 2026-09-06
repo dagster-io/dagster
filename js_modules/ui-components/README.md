@@ -16,31 +16,13 @@ yarn add @dagster-io/ui-components
 
 Note that the library currently includes a lot of peer dependencies. Be sure to install these.
 
-### 2. Add font styles
+### 2. Add global styles
 
-If necessary, add font styles to your application root and use them in your global styles.
-
-If you are importing fonts via some other means (e.g. Google Fonts API) you may not need to do this.
+Import Blueprint CSS and ui-components global styles in your application root.
 
 ```jsx
-import {FontFamily, GlobalInter} from '@dagster-io/ui-components`;
-import {createGlobalStyle} from 'styled-components';
-
-const GlobalStyle = createGlobalStyle`
-  * {
-    font-family: ${FontFamily.default}; /* Default font is Inter */
-  }
-`;
-
-const MyAppRoot = () => (
-  <>
-    <GlobalInter />
-    <GlobalStyle />
-    <div>
-      /* Your app */
-    </div>
-  </>
-);
+import '@dagster-io/ui-components/src/blueprint.css';
+import '@dagster-io/ui-components/src/components/index.css';
 ```
 
 ### 3. Import components

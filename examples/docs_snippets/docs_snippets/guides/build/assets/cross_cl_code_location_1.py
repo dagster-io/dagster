@@ -11,7 +11,7 @@ from dagster import Definitions, asset
 
 @asset
 def code_location_1_asset():
-    with open("/tmp/data/code_location_1_asset.json", "w+") as f:
+    with open("/tmp/data/code_location_1_asset.json", "w+", encoding="utf-8") as f:
         json.dump(5, f)
 
 

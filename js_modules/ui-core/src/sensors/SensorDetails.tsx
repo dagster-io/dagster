@@ -2,10 +2,10 @@ import {
   Box,
   Button,
   FontFamily,
+  Heading,
   Icon,
   MetadataTableWIP,
   PageHeader,
-  Subtitle1,
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -114,11 +114,11 @@ export const SensorDetails = ({
     <>
       <PageHeader
         title={
-          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Subtitle1>
+          </Heading>
         }
         icon="sensors"
         tags={

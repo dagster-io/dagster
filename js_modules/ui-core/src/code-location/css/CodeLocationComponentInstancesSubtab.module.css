@@ -1,0 +1,93 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+}
+
+.rowRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.rowId {
+  font-weight: 600;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.rowType {
+  color: var(--color-text-light);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.reloadOverlay {
+  position: absolute;
+  inset: 0;
+  background: var(--color-background-default);
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+.reloadOverlayInner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  color: var(--color-text-light);
+  font-size: 13px;
+}
+
+.editorFrame {
+  border-radius: 4px;
+  height: 320px;
+  overflow: hidden;
+  background: var(--color-background-default);
+}
+
+.formEditorFrame {
+  border-radius: 4px;
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  background: var(--color-background-default);
+}
+
+/* react-jsonschema-form renders <fieldset> for object groups; the user-agent
+ * default of min-width: min-content forces the fieldset to grow wider than
+ * its container if any nested field has a fixed natural width, producing
+ * horizontal overflow inside the form frame. */
+.formEditorFrame fieldset {
+  min-width: 0;
+}
+
+.formEditorFrame input,
+.formEditorFrame select,
+.formEditorFrame textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.fieldLabel {
+  font-weight: 500;
+}

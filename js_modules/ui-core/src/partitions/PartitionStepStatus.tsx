@@ -24,6 +24,9 @@ import {
   topLabelHeightForLabels,
 } from './RunMatrixUtils';
 import styles from './css/PartitionStepStatus.module.css';
+// `.square` and its status modifier classes are defined alongside `.gridColumn` in
+// RunMatrixUtils.module.css, so the square element must use those hashed class names.
+import runMatrixStyles from './css/RunMatrixUtils.module.css';
 import {
   PartitionStepStatusPipelineQuery,
   PartitionStepStatusPipelineQueryVariables,
@@ -463,7 +466,7 @@ const PartitionSquare = React.memo(
     }
     const content = (
       <div
-        className={`square ${squareStatus}`}
+        className={clsx(runMatrixStyles.square, runMatrixStyles[squareStatus])}
         onMouseEnter={() => setHovered({stepName: step?.name, partitionName})}
         onMouseLeave={() => setHovered(null)}
         data-tooltip={

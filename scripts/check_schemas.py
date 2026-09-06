@@ -1,7 +1,6 @@
 import importlib
 import pkgutil
 
-import dagster
 import dagster._core.storage
 import sqlalchemy as db
 from sqlalchemy.sql import elements as db_sql_elements

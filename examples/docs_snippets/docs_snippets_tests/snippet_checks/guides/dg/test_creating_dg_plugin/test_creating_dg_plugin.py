@@ -60,12 +60,12 @@ def test_creating_dg_plugin(update_snippets: bool) -> None:
 
         # Add entry point to pyproject.toml
         pyproject_toml_path = Path("pyproject.toml")
-        pyproject_toml_content = pyproject_toml_path.read_text()
+        pyproject_toml_content = pyproject_toml_path.read_text(encoding="utf-8")
         pyproject_toml_content += format_multiline("""
             [project.entry-points]
             "dagster_dg_cli.registry_modules" = { my_library = "my_library" }
         """)
-        pyproject_toml_path.write_text(pyproject_toml_content)
+        pyproject_toml_path.write_text(pyproject_toml_content, encoding="utf-8")
 
         context.check_file(
             "pyproject.toml",

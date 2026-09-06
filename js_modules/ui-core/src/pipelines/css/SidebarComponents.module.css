@@ -6,7 +6,7 @@
 }
 
 .sidebarTitle {
-  font-family: var(--font-mono);
+  font-family: var(--font-default);
   font-size: 16px;
   margin: 0 0 12px;
   overflow: hidden;

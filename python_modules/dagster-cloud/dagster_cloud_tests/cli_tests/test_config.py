@@ -8,12 +8,12 @@ from unittest import mock
 
 import pytest
 import requests
-import yaml
 from click import Command
 from dagster._core.test_utils import environ
 from dagster_cloud_cli import config_utils
 from dagster_cloud_cli.commands.config import SetupAuthMethod, app, app_configure
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.yaml_utils import safe_load_yaml
 from typer import Context
 from typer.testing import CliRunner
 
@@ -111,7 +111,7 @@ def test_view_command(populated_config):
 
     assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
-    assert yaml.safe_load(result.output) == {
+    assert safe_load_yaml(result.output) == {
         "organization": "acme",
         "default_deployment": "staging",
         "user_token": "xyz123",
@@ -124,7 +124,7 @@ def test_view_command_using_dg_config(populated_dg_config):
 
     assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
-    assert yaml.safe_load(result.output) == {
+    assert safe_load_yaml(result.output) == {
         "organization": "bcme",
         "default_deployment": "prod",
         "user_token": "abc123",

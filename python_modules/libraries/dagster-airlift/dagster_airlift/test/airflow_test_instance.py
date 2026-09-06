@@ -411,16 +411,15 @@ def make_instance(
                     for task_id in dag_and_task_structure[dag_run.dag_id]
                 ]
             )
-    datasets = []
-    for dataset_info in dataset_construction_info:
-        datasets.append(
-            make_dataset(
-                producing_tasks=dataset_info["producing_tasks"],
-                consuming_dags=dataset_info["consuming_dags"],
-                uri=dataset_info["uri"],
-                extra=dataset_info.get("extra", {}),
-            )
+    datasets = [
+        make_dataset(
+            producing_tasks=dataset_info["producing_tasks"],
+            consuming_dags=dataset_info["consuming_dags"],
+            uri=dataset_info["uri"],
+            extra=dataset_info.get("extra", {}),
         )
+        for dataset_info in dataset_construction_info
+    ]
     return AirflowInstanceFake(
         dag_infos=dag_infos,
         task_infos=task_infos,

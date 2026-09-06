@@ -61,8 +61,7 @@ It's important to note that this interval represents a minimum interval between 
 ```python
 # Sensor will be evaluated at least every 30 seconds
 @dg.sensor(job=my_job, minimum_interval_seconds=30)
-def new_file_sensor():
-  ...
+def new_file_sensor(): ...
 ```
 
 In this example, if the `new_file_sensor`'s evaluation function takes less than a second to run, you can expect the sensor to run consistently around every 30 seconds. However, if the evaluation function takes longer, the interval between evaluations will be longer.
@@ -105,6 +104,7 @@ When working with sensors in Dagster, you might need to access tags from upstrea
 
 ```python
 from dagster import sensor, AssetKey, RunRequest
+
 
 @sensor(asset_key=AssetKey("my_asset"))
 def my_asset_sensor(context, asset_event):

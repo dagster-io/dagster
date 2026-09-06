@@ -45,16 +45,23 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
         self, context: OutputContext, table_slice: TableSlice, obj: pd.DataFrame, connection
     ):
         """Stores the pandas DataFrame in BigQuery."""
-        with_uppercase_cols = obj.rename(columns=str.upper)
+        if obj.empty:
+            context.log.warning(
+                "Skipping BigQuery write for empty DataFrame. An empty table will not be created."
+            )
+        else:
+            with_uppercase_cols = obj.rename(columns=str.upper)
 
-        job = connection.load_table_from_dataframe(
-            dataframe=with_uppercase_cols,
-            destination=f"{table_slice.schema}.{table_slice.table}",
-            project=table_slice.database,
-            location=context.resource_config.get("location") if context.resource_config else None,
-            timeout=context.resource_config.get("timeout") if context.resource_config else None,
-        )
-        job.result()
+            job = connection.load_table_from_dataframe(
+                dataframe=with_uppercase_cols,
+                destination=f"{table_slice.schema}.{table_slice.table}",
+                project=table_slice.database,
+                location=context.resource_config.get("location")
+                if context.resource_config
+                else None,
+                timeout=context.resource_config.get("timeout") if context.resource_config else None,
+            )
+            job.result()
 
         context.add_output_metadata(
             {

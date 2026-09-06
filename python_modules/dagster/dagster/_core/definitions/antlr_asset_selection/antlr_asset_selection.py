@@ -11,12 +11,15 @@ from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionVis
     AssetSelectionVisitor,
 )
 from dagster._core.definitions.asset_selection import (
+    IS_ATTRIBUTE_VALUES,
     AssetSelection,
     AutomationTypeAssetSelection,
     ChangedInBranchAssetSelection,
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    GroupWildCardAssetSelection,
+    IsAttributeAssetSelection,
     JobAssetSelection,
     KeyWildCardAssetSelection,
     PartitionsAssetSelection,
@@ -133,13 +136,26 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
-        return AssetSelection.groups(
-            *([] if not group else [group]), include_sources=self.include_sources
-        )
+        if not group:
+            return AssetSelection.groups(include_sources=self.include_sources)
+        if "*" in group:
+            return GroupWildCardAssetSelection(
+                selected_group_wildcard=group, include_sources=self.include_sources
+            )
+        return AssetSelection.groups(group, include_sources=self.include_sources)
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
         return AssetSelection.kind(kind, include_sources=self.include_sources)
+
+    def visitIsAttributeExpr(self, ctx: AssetSelectionParser.IsAttributeExprContext):
+        value = self.visit(ctx.value())
+        if value not in IS_ATTRIBUTE_VALUES:
+            raise Exception(
+                f"Invalid 'is:' attribute value {value!r}. "
+                f"Supported values are: {sorted(IS_ATTRIBUTE_VALUES)}."
+            )
+        return IsAttributeAssetSelection(attribute=value)
 
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext

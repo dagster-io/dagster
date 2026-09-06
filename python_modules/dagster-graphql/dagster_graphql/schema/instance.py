@@ -338,9 +338,10 @@ class GrapheneInstance(graphene.ObjectType):
         return self._instance.event_log_storage.supports_global_concurrency_limits
 
     def resolve_concurrencyLimits(self, _graphene_info: ResolveInfo):
-        res = []
-        for key in self._instance.event_log_storage.get_concurrency_keys():
-            res.append(GrapheneConcurrencyKeyInfo(key))
+        res = [
+            GrapheneConcurrencyKeyInfo(key)
+            for key in self._instance.event_log_storage.get_concurrency_keys()
+        ]
         return res
 
     def resolve_concurrencyLimit(self, _graphene_info: ResolveInfo, concurrencyKey):

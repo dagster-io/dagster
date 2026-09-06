@@ -3,3 +3,13 @@
   padding: 4px;
   background-color: var(--color-background-gray-hover);
 }
+
+/* Padding rather than margin, so the spacing is part of the height the virtualizer
+   measures. */
+.dividerWrapper {
+  padding: 4px 0;
+}
+
+.divider {
+  border-top: 1px solid var(--color-keyline-default);
+}

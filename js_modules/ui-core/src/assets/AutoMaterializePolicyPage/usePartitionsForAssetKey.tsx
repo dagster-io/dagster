@@ -8,14 +8,15 @@ type DimensionPartitionKeys = {partitionKeys: string[]};
 const emptyArray: DimensionPartitionKeys[] = [];
 
 export const usePartitionsForAssetKey = (
-  assetKeyPath: string[],
+  assetKeyPath: string[] | null,
 ): {partitions: string[]; loading: boolean} => {
   const fullPartitionsQueryResult = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
     {
       variables: {
-        assetKey: {path: assetKeyPath},
+        assetKey: {path: assetKeyPath ?? []},
       },
+      skip: !assetKeyPath,
     },
   );
 

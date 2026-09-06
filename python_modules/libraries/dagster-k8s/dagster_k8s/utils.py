@@ -112,7 +112,7 @@ def detect_current_namespace(
     It will attempt to take from the active context if it exists and returns None if it does not exist.
     """
     if namespace_secret_path.exists():
-        with namespace_secret_path.open() as f:
+        with namespace_secret_path.open(encoding="utf-8") as f:
             # We only need to read the first line, this guards us against bad input.
             return f.read().strip()
 

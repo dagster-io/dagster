@@ -111,7 +111,7 @@ def monitor_ipc_shutdown_pipe(pipe_fd: int, handler: Callable[[], None]) -> Iter
     break_event = threading.Event()
 
     def _watch_pipe_for_shutdown():
-        with open(pipe_fd) as pipe:
+        with open(pipe_fd, encoding="utf-8") as pipe:
             while not break_event.is_set():
                 line = pipe.readline()
                 if not line:  # EOF or pipe closed

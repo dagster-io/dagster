@@ -654,13 +654,6 @@ def deprecated_param(
         additional_warn_text (str): Additional text to display after the deprecation warning.
             Typically this should suggest a newer API.
         emit_runtime_warning (bool): Whether to emit a warning when the function is called.
-        hidden (bool): Whether or not this is a hidden parameters. Hidden parameters are only
-            passed via kwargs and are hidden from the type signature. This makes it so
-            that this hidden parameter does not appear in typeaheads. In order to provide
-            high quality error messages we also provide the helper function
-            only_allow_hidden_params_in_kwargs to ensure there are high quality
-            error messages if the user passes an unsupported keyword argument.
-
 
     """
     if __obj is None:
@@ -767,12 +760,6 @@ def hidden_param(
         breaking_version (str): The version at which the deprecated function will be removed.
         additional_warn_text (Optional[str]): Additional text to display after the deprecation warning.
             Typically this should suggest a newer API.
-        subject (Optional[str]): The subject of the deprecation warning. Defaults to a string
-            representation of the decorated object. This is useful when marking usage of
-            a deprecated API inside an otherwise non-deprecated function, so
-            that it can be easily cleaned up later. It should only be used with
-            `emit_runtime_warning=False`, as we don't want to warn users when a
-            deprecated API is used internally.
         emit_runtime_warning (bool): Whether to emit a warning when the function is called.
 
     Usage:

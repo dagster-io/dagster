@@ -1,4 +1,4 @@
-import {Box, NonIdealState, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, PageHeader, Tag} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -35,12 +35,16 @@ export const GraphRoot = (props: Props) => {
   // Show the name of the composite solid we are within (-1 is the selection, -2 is current parent)
   // or the name of the pipeline tweaked to look a bit more like a graph name.
   const title = path.opNames.length > 1 ? path.opNames[path.opNames.length - 2] : path.pipelineName;
-  useDocumentTitle(`Graph: ${title}`);
+  useDocumentTitle(`Graphs | ${title}`);
 
   return (
     <div style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
       <PageHeader
-        title={<Subtitle1>{title}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {title}
+          </Heading>
+        }
         tags={
           <Tag icon="schema">
             Graph in <RepositoryLink repoAddress={repoAddress} />

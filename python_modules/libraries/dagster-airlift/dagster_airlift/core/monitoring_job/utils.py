@@ -97,10 +97,13 @@ def extract_metadata_from_logs(context: OpExecutionContext, logs: str) -> dict[s
                 _assert_param_value(value["type"], EXTERNAL_METADATA_TYPES)
                 new_external_metadata_map[key] = cast("ExternalMetadataValue", value)
             else:
-                new_external_metadata_map[key] = {
-                    "raw_value": value,
-                    "type": EXTERNAL_METADATA_TYPE_INFER,
-                }
+                new_external_metadata_map[key] = cast(
+                    "ExternalMetadataValue",
+                    {
+                        "raw_value": value,
+                        "type": EXTERNAL_METADATA_TYPE_INFER,
+                    },
+                )
 
         metadata_map = metadata_map_from_external(new_external_metadata_map)
         metadata.update(metadata_map)

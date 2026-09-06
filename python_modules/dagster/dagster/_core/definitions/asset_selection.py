@@ -53,6 +53,10 @@ def is_coercible_to_asset_selection(
     )
 
 
+def _wildcard_to_regex(pattern: str) -> re.Pattern[str]:
+    return re.compile("^" + re.escape(pattern).replace("\\*", ".*") + "$")
+
+
 class DagsterInvalidAssetSelectionError(DagsterError):
     """An error raised when an invalid asset selection is provided."""
 
@@ -964,6 +968,38 @@ class GroupsAssetSelection(AssetSelection):
 
 @whitelist_for_serdes
 @record
+class GroupWildCardAssetSelection(AssetSelection):
+    """Selection of assets whose group_name matches a wildcard pattern.
+
+    Patterns use ``*`` to match any sequence of characters (including ``/``),
+    so ``marketing/*`` matches both ``marketing/foo`` and
+    ``marketing/foo/bar``.
+    """
+
+    selected_group_wildcard: str
+    include_sources: bool
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        regex = _wildcard_to_regex(self.selected_group_wildcard)
+        return {
+            node.key
+            for node in asset_graph.asset_nodes
+            if node.group_name is not None
+            and regex.match(node.group_name)
+            and (self.include_sources or node.is_materializable)
+        }
+
+    def to_serializable_asset_selection(self, asset_graph: BaseAssetGraph) -> "AssetSelection":
+        return self
+
+    def to_selection_str(self) -> str:
+        return f'group:"{self.selected_group_wildcard}"'
+
+
+@whitelist_for_serdes
+@record
 class KindAssetSelection(AssetSelection):
     include_sources: bool
     kind_str: str | None
@@ -982,7 +1018,7 @@ class KindAssetSelection(AssetSelection):
         if self.kind_str is None:
             return {
                 node.key
-                for key, node in base_nodes.items()
+                for node in base_nodes.values()
                 if (not any(tag_key.startswith(KIND_PREFIX) for tag_key in (node.tags or {})))
             }
         else:
@@ -996,6 +1032,39 @@ class KindAssetSelection(AssetSelection):
         if self.kind_str is None:
             return "kind:<null>"
         return f'kind:"{self.kind_str}"'
+
+
+IS_ATTRIBUTE_VALUES = frozenset({"external", "materializable"})
+
+
+@whitelist_for_serdes
+@record
+class IsAttributeAssetSelection(AssetSelection):
+    """Selects assets by a boolean structural attribute on the asset node.
+
+    Supported values: ``"external"`` (asset nodes where ``is_external`` is True)
+    and ``"materializable"`` (asset nodes where ``is_materializable`` is True).
+    These are logical inverses today — both derive from the asset's execution
+    type — but are kept as separate values so the surface syntax reads
+    naturally in both directions (``is:external`` vs. ``is:materializable``).
+    """
+
+    attribute: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        if self.attribute == "external":
+            return {node.key for node in asset_graph.asset_nodes if node.is_external}
+        if self.attribute == "materializable":
+            return {node.key for node in asset_graph.asset_nodes if node.is_materializable}
+        raise DagsterInvalidSubsetError(
+            f"Unsupported 'is:' attribute value {self.attribute!r}. "
+            f"Supported values are: {sorted(IS_ATTRIBUTE_VALUES)}."
+        )
+
+    def to_selection_str(self) -> str:
+        return f"is:{self.attribute}"
 
 
 @whitelist_for_serdes
@@ -1486,7 +1555,7 @@ class KeyWildCardAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        regex = re.compile("^" + re.escape(self.selected_key_wildcard).replace("\\*", ".*") + "$")
+        regex = _wildcard_to_regex(self.selected_key_wildcard)
         return {
             key for key in asset_graph.get_all_asset_keys() if regex.match(key.to_user_string())
         }

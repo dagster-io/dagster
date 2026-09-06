@@ -1,11 +1,11 @@
 import {
   Box,
-  Caption,
   Checkbox,
   Colors,
   Icon,
   Spinner,
   Table,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -91,10 +91,9 @@ export const RepoSelector = (props: Props) => {
                       <div className={styles.repoLocation}>{addressString}</div>
                       <Box flex={{direction: 'column', gap: 2}}>
                         {option.repository.displayMetadata.map(({key, value}) => (
-                          <Caption
-                            style={{color: Colors.textLighter()}}
-                            key={key}
-                          >{`${key}: ${value}`}</Caption>
+                          <Text size={12} color="textLighter" key={key}>
+                            {`${key}: ${value}`}
+                          </Text>
                         ))}
                       </Box>
                     </Box>

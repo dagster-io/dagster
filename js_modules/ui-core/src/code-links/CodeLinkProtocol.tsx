@@ -1,11 +1,11 @@
 import {
   Box,
   Button,
-  CaptionMono,
   Icon,
   Menu,
   MenuItem,
   Select,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -59,7 +59,8 @@ export const CodeLinkProtocolSelect = ({}) => {
           modifiers: {offset: {enabled: true, options: {offset: [-12, 8]}}},
         }}
         activeItem={isCustom ? '' : codeLinkProtocol.protocol}
-        inputProps={{style: {width: '300px'}}}
+        menuWidth={400}
+        inputProps={{style: {width: '400px'}}}
         items={Object.keys(POPULAR_PROTOCOLS)}
         itemPredicate={(query: string, protocol: string) =>
           protocol.toLowerCase().includes(query.toLowerCase())
@@ -101,7 +102,9 @@ export const CodeLinkProtocolSelect = ({}) => {
         />
       ) : (
         <Box padding={{left: 8, top: 2}}>
-          <CaptionMono>{codeLinkProtocol.protocol}</CaptionMono>
+          <Text size={12} family="mono">
+            {codeLinkProtocol.protocol}
+          </Text>
         </Box>
       )}
     </Box>

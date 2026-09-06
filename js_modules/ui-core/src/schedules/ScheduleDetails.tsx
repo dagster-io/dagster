@@ -1,4 +1,4 @@
-import {Box, Code, MetadataTableWIP, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {Box, Code, Heading, MetadataTableWIP, PageHeader, Tag} from '@dagster-io/ui-components';
 import {ScheduleAlertDetails} from '@shared/schedules/ScheduleAlertDetails';
 import {Link} from 'react-router-dom';
 
@@ -38,11 +38,11 @@ export const ScheduleDetails = (props: {
     <>
       <PageHeader
         title={
-          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Subtitle1>
+          </Heading>
         }
         tags={
           <Tag icon="schedule">

@@ -5,15 +5,14 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   MetadataTableWIP,
-  Mono,
   NonIdealState,
   Page,
   PageHeader,
   SpinnerWithText,
-  Subheading,
-  Subtitle1,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -120,7 +119,11 @@ export const InstanceConcurrencyPage = () => {
   return (
     <Page style={{padding: 0}}>
       <PageHeader
-        title={<Subtitle1>{pageTitle}</Subtitle1>}
+        title={
+          <Heading size={16} weight={600}>
+            {pageTitle}
+          </Heading>
+        }
         tabs={<InstanceTabs tab="concurrency" />}
       />
       <InstanceConcurrencyIndexContent />
@@ -148,12 +151,21 @@ export const RunConcurrencyContent = ({
           border="bottom"
           flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subheading>Run tag concurrency</Subheading>
+          <Heading size={14} weight={600}>
+            Run tag concurrency
+          </Heading>
         </Box>
         <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
-          limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
-          <Mono>dagster.yaml</Mono>. See the{' '}
+          limits, configure your instance to use the{' '}
+          <Text size={14} family="mono">
+            QueuedRunCoordinator
+          </Text>{' '}
+          in your{' '}
+          <Text size={14} family="mono">
+            dagster.yaml
+          </Text>
+          . See the{' '}
           <a
             target="_blank"
             rel="noreferrer"

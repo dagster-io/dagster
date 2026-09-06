@@ -62,8 +62,7 @@ def get_parameters_by_tags(
         for page in paginator.paginate(
             ParameterFilters=[filter_spec],
         ):
-            for param in page["Parameters"]:
-                parameter_names.append(param["Name"])
+            parameter_names.extend(param["Name"] for param in page["Parameters"])
     if not parameter_names:
         return {}
     else:

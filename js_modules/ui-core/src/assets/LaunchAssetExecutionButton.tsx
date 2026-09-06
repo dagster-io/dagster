@@ -918,7 +918,7 @@ export function buildAssetAdditionalRequiredKeysAlert(data: LaunchAssetLoaderQue
         <ul>
           {data.assetNodeAdditionalRequiredKeys.map((assetKey, idx) => (
             <li key={idx}>
-              <Link to={assetDetailsPathForKey(assetKey, {view: 'definition'})} target="_blank">
+              <Link to={assetDetailsPathForKey(assetKey, {view: 'overview'})} target="_blank">
                 <strong>{displayNameForAssetKey(assetKey)}</strong>
               </Link>
             </li>

@@ -39,6 +39,9 @@ RETRY_STATUS_CODES = [
     409,
 ]
 
+# S3 returns sporadic HTTP 500 as a transient error per its retry guidance.
+PRESIGNED_URL_PUT_RETRY_STATUS_CODES = [500, *RETRY_STATUS_CODES]
+
 
 class DagsterCloudAgentHttpClient:
     def __init__(

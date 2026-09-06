@@ -14,7 +14,8 @@ from buildkite_shared.utils import oss_path
 def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
         CommandStepBuilder("yarn-format-check", [":notebook:"])
-        .on_test_image(env=["COREPACK_ENABLE_DOWNLOAD_PROMPT=0"])
+        .on_test_image()
+        .with_env({"COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"})
         .run(
             f"cd {oss_path('docs')}",
             "corepack enable",
@@ -29,7 +30,8 @@ def build_repo_wide_format_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConf
 def build_build_docs_step(ctx: BuildkiteContext) -> GroupLeafStepConfiguration:
     return (
         CommandStepBuilder("build-docs")
-        .on_test_image(env=["COREPACK_ENABLE_DOWNLOAD_PROMPT=0"])
+        .on_test_image()
+        .with_env({"COREPACK_ENABLE_DOWNLOAD_PROMPT": "0"})
         .run(
             f"cd {oss_path('docs')}",
             "corepack enable",

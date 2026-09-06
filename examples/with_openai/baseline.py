@@ -22,8 +22,10 @@ def search_index(source_docs):
     source_chunks = []
     splitter = CharacterTextSplitter(separator=" ", chunk_size=1024, chunk_overlap=0)
     for source in source_docs:
-        for chunk in splitter.split_text(source.page_content):
-            source_chunks.append(Document(page_content=chunk, metadata=source.metadata))
+        source_chunks.extend(
+            Document(page_content=chunk, metadata=source.metadata)
+            for chunk in splitter.split_text(source.page_content)
+        )
     search_index = FAISS.from_documents(source_chunks, OpenAIEmbeddings())
     with open("search_index.pickle", "wb") as f:
         pickle.dump(search_index.serialize_to_bytes(), f)
@@ -53,7 +55,7 @@ def get_github_docs(repo_owner, repo_name):
         repo_path = pathlib.Path(d)
         markdown_files = list(repo_path.glob("*/*.md")) + list(repo_path.glob("*/*.mdx"))
         for index, markdown_file in enumerate(markdown_files):
-            with open(markdown_file) as f:
+            with open(markdown_file, encoding="utf-8") as f:
                 relative_path = markdown_file.relative_to(repo_path)
                 github_url = (
                     f"https://github.com/{repo_owner}/{repo_name}/blob/{git_sha}/{relative_path}"

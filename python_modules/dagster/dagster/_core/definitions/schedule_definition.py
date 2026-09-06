@@ -531,6 +531,9 @@ class ScheduleDefinition(IHasInternalInit):
             schedule. Values will be normalized to typed `MetadataValue` objects. Not currently
             shown in the UI but available at runtime via
             `ScheduleEvaluationContext.repository_def.get_schedule_def(<name>).metadata`.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the schedule.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":

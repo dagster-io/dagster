@@ -123,7 +123,9 @@ def test_terminate_job_on_celery(dagster_celery_worker, instance: DagsterInstanc
     revoke_steps = [
         result
         for result in results
-        if result.event_type == DagsterEventType.ENGINE_EVENT and "was revoked." in result.message
+        if result.event_type == DagsterEventType.ENGINE_EVENT
+        and result.message is not None
+        and "was revoked." in result.message
     ]
     assert len(revoke_steps) > 0 or DagsterEventType.STEP_FAILURE in result_types, (
         f"expected the celery executor to observe the interrupt, but saw no "

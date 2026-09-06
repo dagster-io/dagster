@@ -1,4 +1,4 @@
-import {Body2, Box, Button, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {Box, Button, NonIdealState, Spinner, Text} from '@dagster-io/ui-components';
 import React, {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
@@ -15,7 +15,7 @@ import {useSavedAssetNodeFacets} from '../asset-graph/AssetNodeFacets';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {AssetGraphSettingsButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
-import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
+import {GraphData, groupedAssetsWithAncestors, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -42,13 +42,7 @@ const AssetNodeLineageGraphInner = ({
   const assetGraphId = toGraphId(assetKey);
 
   const {allGroups, groupedAssets} = useMemo(() => {
-    const groupedAssets: Record<string, GraphNode[]> = {};
-    Object.values(assetGraphData.nodes).forEach((node) => {
-      const groupId = groupIdForNode(node);
-      groupedAssets[groupId] = groupedAssets[groupId] || [];
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      groupedAssets[groupId]!.push(node);
-    });
+    const groupedAssets = groupedAssetsWithAncestors(Object.values(assetGraphData.nodes));
     return {allGroups: Object.keys(groupedAssets), groupedAssets};
   }, [assetGraphData]);
 
@@ -110,10 +104,10 @@ const AssetNodeLineageGraphInner = ({
           title="Lineage graph too large"
           description={
             <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
-              <Body2>
+              <Text size={14}>
                 This asset has too many upstream or downstream dependencies to render. Try reducing
                 the lineage depth or click below to render anyway.
-              </Body2>
+              </Text>
               <Button onClick={() => setForceLargeGraph(true)}>Show Lineage Graph</Button>
             </Box>
           }
@@ -185,8 +179,7 @@ const AssetNodeLineageGraphInner = ({
               .map((group) => (
                 <foreignObject {...group.bounds} key={group.id}>
                   <ExpandedGroupNode
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    group={{...group, assets: groupedAssets[group.id]!}}
+                    group={{...group, assets: groupedAssets[group.id] ?? []}}
                     minimal={scale < MINIMAL_SCALE}
                     setHighlighted={setHighlighted}
                   />

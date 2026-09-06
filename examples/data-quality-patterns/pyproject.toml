@@ -38,3 +38,6 @@ directory_type = "project"
 root_module = "data_quality_patterns"
 defs_module = "data_quality_patterns.defs"
 code_location_target_module = "data_quality_patterns.definitions"
+
+[tool.uv]
+exclude-newer = "48h"

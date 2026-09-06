@@ -1,15 +1,15 @@
 import {
-  Body2,
   Box,
   Button,
   Checkbox,
   Colors,
   DialogBody,
   DialogFooter,
+  Heading,
   Icon,
   NonIdealState,
   Spinner,
-  Subheading,
+  Text,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -189,7 +189,9 @@ export const BackfillPartitionSelector = ({
                 {refreshing && (
                   <Box flex={{gap: 4, alignItems: 'center'}}>
                     <Spinner purpose="body-text" />
-                    <Body2 color={Colors.textLight()}>Refreshing...</Body2>
+                    <Text size={14} color="textLight">
+                      Refreshing...
+                    </Text>
                   </Box>
                 )}
               </Box>
@@ -496,7 +498,9 @@ const Section = ({
   children: React.ReactNode;
 }) => (
   <Box flex={{direction: 'column', gap: 4}}>
-    <Subheading>{title}</Subheading>
+    <Heading size={14} weight={600}>
+      {title}
+    </Heading>
     <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} border="top">
       {children}
     </Box>

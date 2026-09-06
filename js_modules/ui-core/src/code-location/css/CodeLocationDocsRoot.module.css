@@ -17,3 +17,7 @@
   flex: 1;
   overflow-y: auto;
 }
+
+.error {
+  padding: 24px;
+}

@@ -1,7 +1,6 @@
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any
 
-import yaml
 from dagster import (
     AssetCheckEvaluation,
     AssetCheckResult,
@@ -12,6 +11,7 @@ from dagster import (
     OpExecutionContext,
     Output,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_cloud.dagster_insights.insights_utils import (
     extract_asset_info_from_event,
@@ -73,7 +73,7 @@ def dbt_with_snowflake_insights(
     """
     if not skip_config_check:
         is_snowflake = dbt_cli_invocation.manifest["metadata"]["adapter_type"] == "snowflake"
-        dbt_project_config = yaml.safe_load(
+        dbt_project_config = safe_load_yaml(
             (dbt_cli_invocation.project_dir / "dbt_project.yml").open("r")
         )
         # sanity check that the sigil is present somewhere in the query comment

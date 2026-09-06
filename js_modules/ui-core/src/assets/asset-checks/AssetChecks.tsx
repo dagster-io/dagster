@@ -1,12 +1,13 @@
 import {
-  Body2,
   Box,
-  Caption,
-  Colors,
+  Container,
+  Heading,
   Icon,
+  Inner,
   MiddleTruncate,
   NonIdealState,
-  Subtitle1,
+  Row,
+  Text,
   TextInput,
   useViewport,
 } from '@dagster-io/ui-components';
@@ -42,7 +43,6 @@ import {COMMON_COLLATOR, assertUnreachable} from '../../app/Util';
 import {AssetKeyInput} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useCursorPaginatedQuery} from '../../runs/useCursorPaginatedQuery';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {PAGE_SIZE} from '../AutoMaterializePolicyPage/useEvaluationsQueryResult';
@@ -165,10 +165,10 @@ export const AssetChecks = ({
           icon="asset_check"
           description={
             <Box flex={{direction: 'column', gap: 8}}>
-              <Body2>
+              <Text size={14}>
                 Asset checks can verify properties of a data asset, e.g. that there are no null
                 values in a particular column.
-              </Body2>
+              </Text>
               <a href="https://docs.dagster.io/concepts/assets/asset-checks">
                 Learn more about asset checks
               </a>
@@ -192,9 +192,9 @@ export const AssetChecks = ({
             flex={{justifyContent: 'space-between', alignItems: 'center'}}
             padding={{left: 24, vertical: 12, right: 12}}
           >
-            <Subtitle1>
+            <Heading size={16} weight={600}>
               Checks {checks.length ? <>({numberFormatter.format(checks.length)})</> : null}
-            </Subtitle1>
+            </Heading>
             <ExecuteChecksButton assetNode={assetNode} checks={checks} />
           </Box>
           <Box
@@ -209,15 +209,15 @@ export const AssetChecks = ({
             />
             <FixedScrollContainer>
               <Container ref={containerRef}>
-                <Inner $totalHeight={totalHeight}>
+                <Inner totalHeight={totalHeight}>
                   {items.map(({index, size, start}) => {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     const check = filteredChecks[index]!;
                     return (
                       <Row
                         key={check.name}
-                        $height={size}
-                        $start={start}
+                        height={size}
+                        start={start}
                         className={clsx(
                           styles.checkRow,
                           selectedCheck === check && styles.checkRowSelected,
@@ -238,15 +238,16 @@ export const AssetChecks = ({
                             >
                               {getCheckIcon(check)}
                             </Box>
-                            <Body2 style={{overflow: 'hidden'}}>
+                            <Text size={14} style={{overflow: 'hidden'}}>
                               <MiddleTruncate text={check.name} />
-                              <Caption
-                                color={Colors.textLight()}
+                              <Text
+                                size={12}
+                                color="textLight"
                                 style={{textTransform: 'capitalize'}}
                               >
                                 {assetCheckStatusDescription(check)}
-                              </Caption>
-                            </Body2>
+                              </Text>
+                            </Text>
                           </Box>
                         </Box>
                       </Row>
@@ -266,7 +267,9 @@ export const AssetChecks = ({
           >
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <Icon name="asset_check" />
-              <Subtitle1>{selectedCheck.name}</Subtitle1>
+              <Heading size={16} weight={600}>
+                {selectedCheck.name}
+              </Heading>
             </Box>
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               {reportDialogElement}

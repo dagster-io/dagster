@@ -353,8 +353,7 @@ class ActiveExecution:
         now = time.time()
         intervals = []
         if self._waiting_to_retry:
-            for t in self._waiting_to_retry.values():
-                intervals.append(t - now)
+            intervals.extend(t - now for t in self._waiting_to_retry.values())
         if (
             self._instance_concurrency_context
             and self._instance_concurrency_context.has_pending_claims()

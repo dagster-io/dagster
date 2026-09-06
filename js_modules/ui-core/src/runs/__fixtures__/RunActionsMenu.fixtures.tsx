@@ -49,6 +49,7 @@ export const buildRunActionsMenuFragment = ({hasReExecutePermission}: RunConfigI
     solidSelection: null,
     assetSelection: null,
     assetCheckSelection: null,
+    assetCheckSelectionCount: 0,
     tags: [],
     startTime: 123,
     endTime: 456,

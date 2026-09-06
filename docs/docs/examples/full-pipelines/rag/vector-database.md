@@ -1,6 +1,6 @@
 ---
-title: Vector Database
-description: Vector Database
+title: Vector database
+description: Vector database
 last_update:
   author: Dennis Hume
 sidebar_position: 30

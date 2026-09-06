@@ -1,15 +1,13 @@
 import {
   BaseTag,
-  Body,
   Box,
   ButtonLink,
-  Caption,
-  CaptionSubtitle,
   Colors,
+  Heading,
   Icon,
   Popover,
-  Subtitle2,
   Tag,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
@@ -101,7 +99,7 @@ export const StaleReasonsLabel = ({
   }
 
   return (
-    <Body color={Colors.textYellow()}>
+    <Text size={14} color="textYellow">
       <Popover
         position="top"
         content={<StaleCausesPopoverSummary liveData={liveData} assetKey={assetKey} />}
@@ -110,7 +108,7 @@ export const StaleReasonsLabel = ({
       >
         {Object.keys(groupedCauses(assetKey, liveData)).join(', ')}
       </Popover>
-    </Body>
+    </Text>
   );
 };
 
@@ -129,7 +127,7 @@ export const StaleReasonsTag = ({
   if (!totalCauses) {
     return null;
   }
-  const label = <Caption>Unsynced ({numberFormatter.format(totalCauses)})</Caption>;
+  const label = <Text size={12}>Unsynced ({numberFormatter.format(totalCauses)})</Text>;
   return (
     <Box
       flex={{gap: 4, alignItems: 'center', justifyContent: 'space-between'}}
@@ -203,10 +201,10 @@ const StaleCausesPopoverSummary = ({
   return (
     <Box flex={{direction: 'column'}} style={{maxHeight: 300, overflowY: 'auto'}}>
       <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-        <Subtitle2>
+        <Heading size={14} weight={600}>
           {numberFormatter.format(totalCauses)} {ifPlural(totalCauses, 'change', 'changes')} since
           last materialization
-        </Subtitle2>
+        </Heading>
       </Box>
       {Object.entries(grouped).map(([label, causes], idx) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -217,10 +215,10 @@ const StaleCausesPopoverSummary = ({
               padding={{horizontal: 12, vertical: 8}}
               border={idx === 0 ? 'bottom' : 'top-and-bottom'}
             >
-              <CaptionSubtitle>
+              <Text size={12} weight={600}>
                 {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
                 {getCollapsedHeaderLabel(isSelf, causes[0]!.category, causes.length)}
-              </CaptionSubtitle>
+              </Text>
             </Box>
             {causes.map((cause, idx) => (
               <Box
@@ -246,7 +244,7 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
         <Link to={assetDetailsPathForKey(key)}>
           <Tag icon="asset">{displayNameForAssetKey(key)}</Tag>
         </Link>
-        <Caption>{` ${reason}`}</Caption>
+        <Text size={12}>{` ${reason}`}</Text>
       </>
     );
   }
@@ -257,7 +255,7 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
     const reasonUpToDep = reason.slice(0, -dependencyPythonName.length);
     return (
       <>
-        <Caption>{reasonUpToDep}</Caption>
+        <Text size={12}>{reasonUpToDep}</Text>
         <Link to={assetDetailsPathForKey(dependency)}>
           <Tag icon="asset">{dependencyName}</Tag>
         </Link>
@@ -270,7 +268,7 @@ const StaleReason = ({cause}: {cause: NonNullable<StaleDataForNode['staleCauses'
       <Link to={assetDetailsPathForKey(dependency)}>
         <Tag icon="asset">{dependencyName}</Tag>
       </Link>
-      <Caption>{` ${reason} `}</Caption>
+      <Text size={12}>{` ${reason} `}</Text>
     </>
   );
 };

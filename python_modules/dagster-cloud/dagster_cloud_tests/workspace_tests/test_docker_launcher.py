@@ -5,7 +5,6 @@ import time
 from contextlib import contextmanager
 from unittest.mock import patch
 
-import docker
 import docker.errors
 import docker.models.containers
 import pytest

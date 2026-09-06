@@ -6,8 +6,8 @@ import {
   DialogBody,
   DialogFooter,
   Icon,
-  Mono,
   ProgressBar,
+  Text,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
 import {Link} from 'react-router-dom';
@@ -362,7 +362,9 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Box flex={{direction: 'row', gap: 8, alignItems: 'baseline'}}>
-                    <Mono>{runId.slice(0, 8)}</Mono>
+                    <Text size={14} family="mono">
+                      {runId.slice(0, 8)}
+                    </Text>
                     {errors[runId] ? <div>{errorText(errors[runId])}</div> : null}
                   </Box>
                 </li>

@@ -66,12 +66,7 @@ from dagster_gcp import BigQueryIOManager
 from dagster import Definitions, EnvVar
 
 defs = Definitions(
-    resources={
-        "io_manager": BigQueryIOManager(
-            project=EnvVar("GCP_PROJECT"),
-            write_mode="replace"
-        )
-    }
+    resources={"io_manager": BigQueryIOManager(project=EnvVar("GCP_PROJECT"), write_mode="replace")}
 )
 ```
 

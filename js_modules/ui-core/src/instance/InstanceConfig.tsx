@@ -1,6 +1,6 @@
 import 'codemirror/addon/search/searchcursor';
 
-import {Box, Code, PageHeader, Spinner, Subheading, Subtitle1} from '@dagster-io/ui-components';
+import {Box, Code, Heading, PageHeader, Spinner} from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import CodeMirror from 'codemirror';
 import {memo, useContext, useMemo} from 'react';
@@ -65,9 +65,9 @@ export const InstanceConfigContent = memo(() => {
         border="bottom"
         flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
       >
-        <Subheading>
+        <Heading size={14} weight={600}>
           Dagster version: <Code style={{fontSize: '16px'}}>{data.version}</Code>
-        </Subheading>
+        </Heading>
         <QueryRefreshCountdown refreshState={refreshState} />
       </Box>
       {/* Div wrapper on CodeMirror to allow entire page to scroll */}
@@ -87,7 +87,14 @@ export const InstanceConfigRoot = () => {
   const {pageTitle} = useContext(InstancePageContext);
   return (
     <>
-      <PageHeader title={<Subtitle1>{pageTitle}</Subtitle1>} tabs={<InstanceTabs tab="config" />} />
+      <PageHeader
+        title={
+          <Heading size={16} weight={600}>
+            {pageTitle}
+          </Heading>
+        }
+        tabs={<InstanceTabs tab="config" />}
+      />
       <InstanceConfigContent />
     </>
   );

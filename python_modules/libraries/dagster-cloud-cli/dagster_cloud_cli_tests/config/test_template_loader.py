@@ -1,6 +1,6 @@
-import yaml
 from dagster_cloud_cli.config.jinja_template_loader import JinjaTemplateLoader
 from dagster_cloud_cli_tests.conftest import create_template_file
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def test_template_loader(tmpdir, monkeypatch):
@@ -41,5 +41,5 @@ def test_template_loader_to_yaml_filter(tmpdir):
 
     with create_template_file(tmpdir, "template.jinja", ARTICLES_TEMPLATE) as template_file:
         result = JinjaTemplateLoader().render(template_file, context)
-        roundtrip = yaml.safe_load(result)
+        roundtrip = safe_load_yaml(result)
         assert roundtrip == context

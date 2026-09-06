@@ -71,14 +71,14 @@ def save_payload(source_id: str, payload: dict) -> str:
     # Load existing payloads
     existing = []
     if source_file.exists():
-        with open(source_file) as f:
+        with open(source_file, encoding="utf-8") as f:
             existing = json.load(f)
 
     # Append new payload
     existing.append(enriched_payload)
 
     # Save back
-    with open(source_file, "w") as f:
+    with open(source_file, "w", encoding="utf-8") as f:
         json.dump(existing, f, indent=2)
 
     return payload_id
@@ -126,7 +126,7 @@ def get_pending(source_id: str):
     if not source_file.exists():
         return jsonify({"source": source_id, "pending": [], "count": 0})
 
-    with open(source_file) as f:
+    with open(source_file, encoding="utf-8") as f:
         payloads = json.load(f)
 
     return jsonify({"source": source_id, "pending": payloads, "count": len(payloads)})

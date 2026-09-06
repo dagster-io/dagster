@@ -48,7 +48,7 @@ def instance_for_test(
     """
     with ExitStack() as stack:
         if not temp_dir:
-            temp_dir = stack.enter_context(tempfile.TemporaryDirectory())
+            temp_dir = stack.enter_context(tempfile.TemporaryDirectory(ignore_cleanup_errors=True))
 
         # wait for any grpc processes that created runs during test disposal to finish,
         # since they might also be using this instance's tempdir (and to keep each test

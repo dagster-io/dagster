@@ -108,7 +108,6 @@ def make_dagster_definitions_from_airflow_dags_path(
 
     Args:
         dag_path (str): Path to directory or file that contains Airflow Dags
-        include_examples (bool): True to include Airflow's example DAGs. (default: False)
         safe_mode (bool): True to use Airflow's default heuristic to find files that contain DAGs
             (ie find files that contain both b'DAG' and b'airflow') (default: True)
         connections (List[Connection]): List of Airflow Connections to be created in the Airflow DB

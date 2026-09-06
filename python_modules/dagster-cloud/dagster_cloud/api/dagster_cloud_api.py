@@ -101,6 +101,9 @@ class DagsterCloudApi(Enum):
     TERMINATE_RUN = "TERMINATE_RUN"
 
     PING_LOCATION = "PING_LOCATION"  # Signal that a location is in use and should keep servers up
+    REFRESH_COMPONENT_STATE = (
+        "REFRESH_COMPONENT_STATE"  # Refresh state for one or more state-backed components
+    )
 
     CHECK_RUN_HEALTH = "CHECK_RUN_HEALTH"  # deprecated, agents now surface this in heartbeats
     LAUNCH_STEP = "LAUNCH_STEP"  # deprecated with cloud executor
@@ -200,6 +203,13 @@ class LoadRepositoriesResponse:
 @record
 class PingLocationArgs:
     location_name: str
+
+
+@whitelist_for_serdes
+@record
+class RefreshComponentStateArgs:
+    location_name: str
+    defs_state_keys: Sequence[str]
 
 
 @whitelist_for_serdes(storage_field_names={"dagster_run": "pipeline_run"})

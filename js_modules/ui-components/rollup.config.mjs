@@ -45,8 +45,6 @@ const sharedExternals = [
   'react',
   'react-dom',
   'react-is',
-  'styled-components',
-  'stylis',
 ];
 
 export default [

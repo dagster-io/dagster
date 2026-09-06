@@ -19,7 +19,7 @@ def topstory_ids() -> None:
     top_new_story_ids = requests.get(newstories_url).json()[:100]
 
     os.makedirs("data", exist_ok=True)
-    with open("data/topstory_ids.json", "w") as f:
+    with open("data/topstory_ids.json", "w", encoding="utf-8") as f:
         json.dump(top_new_story_ids, f)
 
 
@@ -29,7 +29,7 @@ def topstories(context: AssetExecutionContext) -> MaterializeResult:
 
     API Docs: https://github.com/HackerNews/API#items
     """
-    with open("data/topstory_ids.json") as f:
+    with open("data/topstory_ids.json", encoding="utf-8") as f:
         topstory_ids = json.load(f)
 
     results = []
@@ -89,7 +89,7 @@ def most_frequent_words(context: AssetExecutionContext) -> MaterializeResult:
     # Convert the image to Markdown to preview it within Dagster
     md_content = f"![img](data:image/png;base64,{image_data.decode()})"
 
-    with open("data/most_frequent_words.json", "w") as f:
+    with open("data/most_frequent_words.json", "w", encoding="utf-8") as f:
         json.dump(top_words, f)
 
     # Attach the Markdown content as metadata to the asset

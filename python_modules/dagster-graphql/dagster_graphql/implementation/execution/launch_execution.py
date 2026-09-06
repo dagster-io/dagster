@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -107,7 +107,7 @@ async def launch_reexecution_from_parent_run(
     )
 
     run = instance.create_reexecuted_run(
-        parent_run=cast("DagsterRun", parent_run),
+        parent_run=parent_run,
         request_context=graphene_info.context,
         code_location=repo_location,
         remote_job=external_pipeline,

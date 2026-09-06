@@ -4,9 +4,9 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   CursorHistoryControls,
   FontFamily,
+  Heading,
   Icon,
   Menu,
   MenuItem,
@@ -14,8 +14,8 @@ import {
   NonIdealState,
   Select,
   Spinner,
-  Subheading,
   Table,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {Chart} from 'chart.js';
@@ -24,7 +24,12 @@ import * as React from 'react';
 import {useState} from 'react';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
-import {HISTORY_TICK_FRAGMENT, RUN_STATUS_FRAGMENT, RunStatusLink} from './InstigationUtils';
+import {
+  HISTORY_TICK_FRAGMENT,
+  RUN_STATUS_FRAGMENT,
+  RunStatusLink,
+  labelForRequestedMaterializationsAndJobRuns,
+} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
 import {HistoryTickFragment} from './types/InstigationUtils.types';
@@ -245,7 +250,6 @@ export const TicksTable = ({
       <TickDetailsDialog
         isOpen={!!showDetailsForTick}
         tickId={showDetailsForTick?.tickId}
-        tickResultType={tickResultType}
         instigationSelector={instigationSelector}
         onClose={() => setShowDetailsForTick(null)}
       />
@@ -362,7 +366,9 @@ export const TickHistoryTimeline = ({
     return (
       <>
         <Box padding={{top: 16, horizontal: 24}} border="bottom">
-          <Subheading>Recent ticks</Subheading>
+          <Heading size={14} weight={600}>
+            Recent ticks
+          </Heading>
         </Box>
         <Box padding={{vertical: 64}}>
           <Spinner purpose="section" />
@@ -403,12 +409,13 @@ export const TickHistoryTimeline = ({
       <TickDetailsDialog
         isOpen={!!selectedTickId}
         tickId={selectedTickId}
-        tickResultType={tickResultType}
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />
       <Box padding={{vertical: 16, horizontal: 24}}>
-        <Subheading>Recent ticks</Subheading>
+        <Heading size={14} weight={600}>
+          Recent ticks
+        </Heading>
       </Box>
       <Box border="top">
         <LiveTickTimeline
@@ -520,14 +527,15 @@ function TickRow({
           ) : (
             <Box flex={{alignItems: 'center', gap: 8}}>
               <ButtonLink onClick={() => onShowDetails(tick)}>
-                {tick.requestedAssetMaterializationCount === 1
-                  ? '1 materialization requested'
-                  : `${tick.requestedAssetMaterializationCount} materializations requested`}
+                {labelForRequestedMaterializationsAndJobRuns(
+                  tick.requestedAssetMaterializationCount,
+                  tick.requestedJobRunCount,
+                )}
               </ButtonLink>
             </Box>
           )}
           {addedPartitions || deletedPartitions ? (
-            <Caption>
+            <Text size={12}>
               (
               {addedPartitions ? (
                 <span>
@@ -541,7 +549,7 @@ function TickRow({
                 </span>
               ) : null}
               )
-            </Caption>
+            </Text>
           ) : null}
         </Box>
       </td>

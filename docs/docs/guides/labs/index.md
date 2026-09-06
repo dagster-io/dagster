@@ -8,13 +8,13 @@ slug: '/guides/labs'
 
 The features in this section are under active development. You may encounter feature gaps, and the APIs may change.
 
-### Dagster+ AI Agent
+### Dagster+ AI (Dagster+)
 
-With Dagster+ AI, you can interact with Dagster+ through chat. The agent can analyze run logs, identify root causes of failures, and suggest improvements. Start an open-ended chat, or trigger a summary from any completed run or from a degraded asset on the home page. For more information, see the [Dagster+ AI Agent guide](/guides/labs/dagster-ai-agent).
+Dagster+ AI helps you detect, understand, and resolve pipeline failures — from chat-based summaries and proactive monitoring to AI-powered code fixes. For more information, see the [Dagster+ AI docs](/guides/labs/dagster-ai).
 
 ### Issues (Dagster+)
 
-Issues let you link together multiple failures with a shared root cause, to help you get from noticing a problem to having a fix in production quickly and with full visibility across your team. For more information, see the [Issues docs](/guides/labs/issues).
+Issues let you link together multiple failures with a shared root cause. Dagster+ AI can automatically create Issues from detected failure patterns, and you can dispatch an AI agent to implement fixes. For more information, see the [Issues docs](/guides/labs/issues).
 
 ### Connections (Dagster+)
 

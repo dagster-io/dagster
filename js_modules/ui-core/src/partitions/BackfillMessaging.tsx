@@ -1,4 +1,4 @@
-import {Alert, Box, ButtonLink, Colors, Mono, showToast} from '@dagster-io/ui-components';
+import {Alert, Box, ButtonLink, Colors, Text, showToast} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
@@ -72,7 +72,10 @@ export async function showBackfillSuccessToast(backfillId: string) {
     intent: 'success',
     message: (
       <div>
-        Created backfill <Mono>{backfillId}</Mono>
+        Created backfill{' '}
+        <Text size={14} family="mono">
+          {backfillId}
+        </Text>
       </div>
     ),
     action: {

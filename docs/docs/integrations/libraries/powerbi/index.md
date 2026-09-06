@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-powerbi
 pypi: https://pypi.org/project/dagster-powerbi
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/powerbi.svg
 partnerlink: https://learn.microsoft.com/en-us/power-bi/
 canonicalUrl: '/integrations/libraries/powerbi'

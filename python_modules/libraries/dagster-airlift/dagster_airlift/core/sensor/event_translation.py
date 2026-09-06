@@ -176,13 +176,12 @@ def synthetic_mats_for_task_instance(
 def synthetic_mats_for_mapped_asset_keys(
     dag_run: DagRun, task_instance: TaskInstance, asset_keys: AbstractSet[AssetKey]
 ) -> Sequence[AssetMaterialization]:
-    mats = []
-    for asset_key in asset_keys:
-        mats.append(
-            AssetMaterialization(
-                asset_key=asset_key,
-                description=task_instance.note,
-                metadata=get_task_instance_metadata(dag_run, task_instance),
-            )
+    mats = [
+        AssetMaterialization(
+            asset_key=asset_key,
+            description=task_instance.note,
+            metadata=get_task_instance_metadata(dag_run, task_instance),
         )
+        for asset_key in asset_keys
+    ]
     return mats

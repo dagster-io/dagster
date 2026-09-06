@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Icon, NonIdealState, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, NonIdealState, Text, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {gql} from '../apollo-client';
@@ -27,21 +27,21 @@ export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
   return (
     <Box flex={{direction: 'column', gap: 16}}>
       <Box padding={12} border={{side: 'bottom', color: Colors.textLighter()}}>
-        <Body>
+        <Text size={14}>
           Targeted Runs
           <Tooltip content="Runs this tick reacted on and reported back to.">
             <Icon name="info" color={Colors.textLight()} />
           </Tooltip>
-        </Body>
+        </Text>
         <RunList runIds={originRunIds} />
       </Box>
       <Box padding={12} margin={{bottom: 8}}>
-        <Body>
+        <Text size={14}>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
             <Icon name="info" color={Colors.textLight()} />
           </Tooltip>
-        </Body>
+        </Text>
         <NonIdealState
           icon="sensors"
           title="No runs to display"

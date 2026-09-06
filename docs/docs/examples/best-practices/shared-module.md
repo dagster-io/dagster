@@ -11,7 +11,7 @@ In this example, we'll explore strategies for sharing code across Dagster [code 
 
 ## Problem: Sharing modules across code locations
 
-Imagine you’ve implemented a factory function that generates assets. This function is needed in multiple code locations, but you don’t want to re-implement it in every repo.
+Imagine you've implemented a factory function that generates assets. This function is needed in multiple code locations, but you don't want to re-implement it in every repo.
 
 Suppose the shared module has the following structure:
 
@@ -47,7 +47,7 @@ You can add the shared module as a local dependency in your `pyproject.toml`:
 
 <CodeExample
   path="docs_projects/project_mini/pyproject.toml"
-  language="yaml"
+  language="toml"
   title="pyproject.toml"
   startAfter="start_dependencies"
   endBefore="end_dependencies"
@@ -57,7 +57,7 @@ And reference it as a path dependency:
 
 <CodeExample
   path="docs_projects/project_mini/pyproject.toml"
-  language="yaml"
+  language="toml"
   title="pyproject.toml"
   startAfter="start_uv_sources"
   endBefore="end_uv_sources"
@@ -68,17 +68,17 @@ Then, inside your code location, you can import and use the shared factory:
 <CodeExample
   path="docs_projects/project_mini/src/project_mini/defs/shared_module/shared_module.py"
   language="python"
-  title="src/project_mini/defs/assets.py"
+  title="src/project_mini/defs/shared_module/shared_module.py"
 />
 
 ## Solution 2: Include the code as a Git submodule
 
-If each code location exists in its own repository, colocating isn’t an option. Instead, you can maintain the shared library in a separate repository and include it as a Git submodule in each code location repo.
+If each code location exists in its own repository, colocating isn't an option. Instead, you can maintain the shared library in a separate repository and include it as a Git submodule in each code location repo.
 
 This works best when:
 
 - Each code location lives in its own repo.
-- You want to ensure the shared library is always available but don’t need fine-grained versioning.
+- You want to ensure the shared library is always available but don't need fine-grained versioning.
 
 To add the submodule:
 
@@ -111,7 +111,7 @@ This works best when:
 - Teams or projects consume the shared library independently.
 - You need a single source of truth for shared code.
 
-Then, in each code location’s `pyproject.toml`, you can pin a specific version:
+Then, in each code location's `pyproject.toml`, you can pin a specific version:
 
 ```
 [project]

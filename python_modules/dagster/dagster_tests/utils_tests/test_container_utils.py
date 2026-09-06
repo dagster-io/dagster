@@ -70,31 +70,31 @@ def test_containerized_utilization_metrics_cgroup_v1(
     cgroup_version_mock.return_value = CGroupVersion.V1
 
     if cpu_usage_val:
-        with open(f"{temp_dir}/cpuacct.usage", "w") as f:
+        with open(f"{temp_dir}/cpuacct.usage", "w", encoding="utf-8") as f:
             f.write(str(cpu_usage_val * 1e9))
 
     if cpu_cores_val:
-        with open(f"{temp_dir}/cpuinfo", "w") as f:
+        with open(f"{temp_dir}/cpuinfo", "w", encoding="utf-8") as f:
             f.write("\n".join([f"processor : {i}" for i in range(cpu_cores_val)]))
 
     if cpu_quota_val:
-        with open(f"{temp_dir}/cpu.cfs_quota_us", "w") as f:
+        with open(f"{temp_dir}/cpu.cfs_quota_us", "w", encoding="utf-8") as f:
             f.write(str(cpu_quota_val))
 
     if cpu_period_val:
-        with open(f"{temp_dir}/cpu.cfs_period_us", "w") as f:
+        with open(f"{temp_dir}/cpu.cfs_period_us", "w", encoding="utf-8") as f:
             f.write(str(cpu_period_val))
 
     if memory_usage_val:
-        with open(f"{temp_dir}/memory.usage_in_bytes", "w") as f:
+        with open(f"{temp_dir}/memory.usage_in_bytes", "w", encoding="utf-8") as f:
             f.write(str(memory_usage_val))
         # memory.stat is required for the working-set calculation; in real
         # cgroup environments it sits alongside memory.usage_in_bytes.
-        with open(f"{temp_dir}/memory.stat.v1", "w") as f:
+        with open(f"{temp_dir}/memory.stat.v1", "w", encoding="utf-8") as f:
             f.write("total_inactive_file 0\n")
 
     if memory_limit_val:
-        with open(f"{temp_dir}/memory.limit_in_bytes", "w") as f:
+        with open(f"{temp_dir}/memory.limit_in_bytes", "w", encoding="utf-8") as f:
             f.write(str(memory_limit_val))
 
     previous_cpu_usage = 1.0 if was_cpu_previously_retrieved else None
@@ -145,10 +145,10 @@ def test_memory_usage_subtracts_inactive_file_v1(
 ):
     cgroup_version_mock.return_value = CGroupVersion.V1
 
-    with open(f"{temp_dir}/memory.usage_in_bytes", "w") as f:
+    with open(f"{temp_dir}/memory.usage_in_bytes", "w", encoding="utf-8") as f:
         f.write(str(raw_usage))
     if inactive_file_line is not None:
-        with open(f"{temp_dir}/memory.stat.v1", "w") as f:
+        with open(f"{temp_dir}/memory.stat.v1", "w", encoding="utf-8") as f:
             f.write(inactive_file_line)
 
     metrics = retrieve_containerized_utilization_metrics(
@@ -180,10 +180,10 @@ def test_memory_usage_subtracts_inactive_file_v2(
 ):
     cgroup_version_mock.return_value = CGroupVersion.V2
 
-    with open(f"{temp_dir}/memory.current", "w") as f:
+    with open(f"{temp_dir}/memory.current", "w", encoding="utf-8") as f:
         f.write(str(raw_usage))
     if inactive_file_line is not None:
-        with open(f"{temp_dir}/memory.stat.v2", "w") as f:
+        with open(f"{temp_dir}/memory.stat.v2", "w", encoding="utf-8") as f:
             f.write(inactive_file_line)
 
     metrics = retrieve_containerized_utilization_metrics(
@@ -225,27 +225,27 @@ def test_containerized_utilization_metrics_cgroup_v2(
     cgroup_version_mock: mock.Mock,
 ):
     if cpu_usage_val:
-        with open(f"{temp_dir}/cpu.stat", "w") as f:
+        with open(f"{temp_dir}/cpu.stat", "w", encoding="utf-8") as f:
             f.write(f"usage_usec {int(cpu_usage_val * 1e6)}")
 
     if cpu_cores_val:
-        with open(f"{temp_dir}/cpuinfo", "w") as f:
+        with open(f"{temp_dir}/cpuinfo", "w", encoding="utf-8") as f:
             f.write("\n".join([f"processor : {i}" for i in range(cpu_cores_val)]))
 
     if cpu_quota_and_period_val:
-        with open(f"{temp_dir}/cpu.max", "w") as f:
+        with open(f"{temp_dir}/cpu.max", "w", encoding="utf-8") as f:
             f.write(str(cpu_quota_and_period_val))
 
     if memory_usage_val:
-        with open(f"{temp_dir}/memory.current", "w") as f:
+        with open(f"{temp_dir}/memory.current", "w", encoding="utf-8") as f:
             f.write(str(memory_usage_val))
         # memory.stat is required for the working-set calculation; in real
         # cgroup v2 environments it sits alongside memory.current.
-        with open(f"{temp_dir}/memory.stat.v2", "w") as f:
+        with open(f"{temp_dir}/memory.stat.v2", "w", encoding="utf-8") as f:
             f.write("inactive_file 0\n")
 
     if memory_limit_val:
-        with open(f"{temp_dir}/memory.max", "w") as f:
+        with open(f"{temp_dir}/memory.max", "w", encoding="utf-8") as f:
             f.write(str(memory_limit_val))
 
     cgroup_version_mock.return_value = CGroupVersion.V2

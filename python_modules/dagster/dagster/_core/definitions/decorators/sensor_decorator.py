@@ -95,7 +95,9 @@ def sensor(
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
             This is a parameter that will replace `job`, `jobs`, and `asset_selection`.
-        owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the sensor.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the sensor.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
     """
     check.opt_str_param(name, "name")
 

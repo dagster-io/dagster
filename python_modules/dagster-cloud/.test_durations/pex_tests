@@ -1,0 +1,5 @@
+{
+    "python_modules/dagster-cloud/dagster_cloud_tests/cli_tests/pex_tests/test_build_pex.py::test_build_methods": 11.855123127999832,
+    "python_modules/dagster-cloud/dagster_cloud_tests/cli_tests/pex_tests/test_build_pex.py::test_build_python_executable": 18.84167144299863,
+    "python_modules/dagster-cloud/dagster_cloud_tests/cli_tests/pex_tests/test_build_pex.py::test_build_quickstart_etl": 20.122806106998723
+}

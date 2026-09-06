@@ -619,9 +619,7 @@ def test_materialize_result_generators():
     assert res[1].metadata["baz"].value == "qux"
 
     async def _run_async_gen():
-        results = []
-        async for result in async_gen_specs_multi_asset():  # ty: ignore[not-iterable]
-            results.append(result)
+        results = [result async for result in async_gen_specs_multi_asset()]  # ty: ignore[not-iterable]
         return results
 
     res = asyncio.run(_run_async_gen())

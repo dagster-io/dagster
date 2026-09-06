@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-import yaml
 from dagster_airlift.in_airflow.proxied_state import (
     AirflowProxiedState,
     DagProxiedState,
@@ -9,6 +8,7 @@ from dagster_airlift.in_airflow.proxied_state import (
     TaskProxiedState,
     load_proxied_state_from_yaml,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def test_proxied_state() -> None:
@@ -46,7 +46,7 @@ def test_proxied_state() -> None:
 
 
 def test_proxied_state_from_yaml() -> None:
-    proxied_state_dict = yaml.safe_load("""
+    proxied_state_dict = safe_load_yaml("""
 tasks:
   - id: load_raw_customers
     proxied: False
@@ -63,19 +63,19 @@ tasks:
 
 
 def test_dag_level_proxied_state_from_yaml() -> None:
-    proxied_state_dict = yaml.safe_load("""
+    proxied_state_dict = safe_load_yaml("""
 proxied: True
 """)
     dag_proxied_state = DagProxiedState.from_dict(proxied_state_dict)
     assert dag_proxied_state.proxied is True
 
-    proxied_state_dict = yaml.safe_load("""
+    proxied_state_dict = safe_load_yaml("""
 proxied: False
 """)
     dag_proxied_state = DagProxiedState.from_dict(proxied_state_dict)
     assert dag_proxied_state.proxied is False
 
-    proxied_state_dict = yaml.safe_load("""
+    proxied_state_dict = safe_load_yaml("""
 proxied: Fish
 """)
     with pytest.raises(Exception, match="Expected 'proxied' key to be a boolean or None"):

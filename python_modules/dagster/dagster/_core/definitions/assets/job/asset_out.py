@@ -248,7 +248,7 @@ class AssetOut:
         key: AssetKey,
         deps: Sequence[AssetDep],
         additional_tags: Mapping[str, str] = {},
-        partitions_def: PartitionsDefinition | None | EllipsisType = ...,
+        partitions_def: PartitionsDefinition | EllipsisType | None = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,

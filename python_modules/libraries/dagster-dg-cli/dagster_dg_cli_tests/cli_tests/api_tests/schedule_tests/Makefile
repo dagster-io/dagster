@@ -1,7 +1,7 @@
 .PHONY: rerecord test clean
 
 rerecord:
-	dagster-dev dg-api-record schedule
+	python ../_record.py schedule
 
 test:
 	pytest . -v

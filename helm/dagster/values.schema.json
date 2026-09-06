@@ -3165,6 +3165,12 @@
                     "title": "Port",
                     "type": "integer"
                 },
+                "replicaCount": {
+                    "default": 1,
+                    "exclusiveMinimum": 0,
+                    "title": "Replicacount",
+                    "type": "integer"
+                },
                 "env": {
                     "anyOf": [
                         {

@@ -1,11 +1,4 @@
-import {
-  Box,
-  Checkbox,
-  Colors,
-  Icon,
-  SubtitleSmall,
-  UnstyledButton,
-} from '@dagster-io/ui-components';
+import {Box, Checkbox, Colors, Heading, Icon, UnstyledButton} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './css/StatusHeaderContainer.module.css';
@@ -44,9 +37,9 @@ export const AssetCatalogTableGroupHeaderRow = React.memo(
           >
             <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
               {icon}
-              <SubtitleSmall>
+              <Heading size={12} weight={500}>
                 {text} ({numberFormatter.format(count)})
-              </SubtitleSmall>
+              </Heading>
             </Box>
             <Box padding={{right: 8}}>
               <Icon

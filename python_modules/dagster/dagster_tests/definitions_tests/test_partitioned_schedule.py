@@ -620,20 +620,20 @@ def test_owners():
     asset_job = dg.define_asset_job("asset1_job", selection=[asset])
 
     asset_job_schedule = dg.build_schedule_from_partitioned_job(
-        asset_job, owners=["user@example.com", "team:data"]
+        asset_job, owners=["user@example.com", "team:Data Engineering"]
     )
 
-    assert asset_job_schedule.owners == ["user@example.com", "team:data"]
+    assert asset_job_schedule.owners == ["user@example.com", "team:Data Engineering"]
 
     # Resolved partitioned schedule
     @dg.job(partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"))
     def non_asset_job(): ...
 
     non_asset_job_schedule = dg.build_schedule_from_partitioned_job(
-        non_asset_job, owners=["user@example.com", "team:data"]
+        non_asset_job, owners=["user@example.com", "team:Data Engineering"]
     )
 
-    assert non_asset_job_schedule.owners == ["user@example.com", "team:data"]
+    assert non_asset_job_schedule.owners == ["user@example.com", "team:Data Engineering"]
 
 
 def test_owners_validation():
@@ -644,16 +644,18 @@ def test_owners_validation():
 
     asset_job = dg.define_asset_job("asset_job", selection=[asset])
 
-    # Invalid team name with special characters
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
-        dg.build_schedule_from_partitioned_job(asset_job, owners=["team:bad-name"])
-
     # Empty team name
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Team name cannot be empty after 'team:' prefix",
+    ):
         dg.build_schedule_from_partitioned_job(asset_job, owners=["team:"])
 
     # Invalid owner format
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Owner must be an email address"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
         dg.build_schedule_from_partitioned_job(asset_job, owners=["not-an-email-or-team"])
 
     # Resolved partitioned schedule
@@ -661,14 +663,16 @@ def test_owners_validation():
     @dg.job(partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"))
     def non_asset_job(): ...
 
-    # Invalid team name with special characters
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="contains invalid characters"):
-        dg.build_schedule_from_partitioned_job(non_asset_job, owners=["team:bad-name"])
-
     # Empty team name
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Team name cannot be empty"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Team name cannot be empty after 'team:' prefix",
+    ):
         dg.build_schedule_from_partitioned_job(non_asset_job, owners=["team:"])
 
     # Invalid owner format
-    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Owner must be an email address"):
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match="Owner must be an email address or a team name prefixed with 'team:'",
+    ):
         dg.build_schedule_from_partitioned_job(non_asset_job, owners=["not-an-email-or-team"])

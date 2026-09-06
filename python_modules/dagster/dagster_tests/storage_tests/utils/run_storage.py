@@ -1207,16 +1207,16 @@ class TestRunStorage:
         #          |
         #         [c]
 
-        for _ in range(3):
-            runs.append(
-                create_dagster_run(
-                    run_id=make_new_run_id(),
-                    job_name="foo_job",
-                    root_run_id=root_run.run_id,
-                    parent_run_id=root_run.run_id,
-                    tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
-                )
+        runs.extend(
+            create_dagster_run(
+                run_id=make_new_run_id(),
+                job_name="foo_job",
+                root_run_id=root_run.run_id,
+                parent_run_id=root_run.run_id,
+                tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
             )
+            for _ in range(3)
+        )
         for _ in range(3):
             # get root run id from the previous run if exists, otherwise use previous run's id
             root_run_id = runs[-1].root_run_id if runs[-1].root_run_id else runs[-1].run_id
@@ -1485,6 +1485,40 @@ class TestRunStorage:
         )
         storage.add_backfill(two)
         self.get_backfills_and_assert_expected_count(storage, multi_filters, 2)
+
+    def test_backfill_selector_id_filtering(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        other_origin = self.fake_partition_set_origin("other_partition_set")
+        assert origin.get_selector_id() != other_origin.get_selector_id()
+
+        one = PartitionBackfill(
+            "one",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        two = PartitionBackfill(
+            "two",
+            partition_set_origin=other_origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b", "c"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(one)
+        storage.add_backfill(two)
+
+        one_filter = BulkActionsFilter(selector_id=origin.get_selector_id())
+        matching = self.get_backfills_and_assert_expected_count(storage, one_filter, 1)
+        assert matching[0].backfill_id == "one"
+
+        other_filter = BulkActionsFilter(selector_id=other_origin.get_selector_id())
+        matching = self.get_backfills_and_assert_expected_count(storage, other_filter, 1)
+        assert matching[0].backfill_id == "two"
 
     def test_backfill_created_time_filtering(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")

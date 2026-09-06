@@ -1,7 +1,6 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, HeaderCell, HeaderRow} from '@dagster-io/ui-components';
 
 import styles from './css/VirtualizedAutomationRow.module.css';
-import {HeaderCell, HeaderRow} from '../ui/VirtualizedTable';
 
 export const TEMPLATE_COLUMNS = '60px minmax(400px, 1.5fr) 240px 1fr 200px 200px';
 

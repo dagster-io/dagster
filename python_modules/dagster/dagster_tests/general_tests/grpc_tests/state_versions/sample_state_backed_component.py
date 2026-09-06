@@ -11,7 +11,7 @@ class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         self, context: dg.ComponentLoadContext, state_path: Path | None
     ) -> dg.Definitions:
         assert state_path is not None
-        with open(state_path) as f:
+        with open(state_path, encoding="utf-8") as f:
             state = f.read()
         assert state == "hi"
 

@@ -1,16 +1,19 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.backfill import (
+        GrapheneBackfillNotFoundError,
         GraphenePartitionBackfill,
         GraphenePartitionBackfills,
     )
     from dagster_graphql.schema.util import ResolveInfo
 
 
-def get_backfill(graphene_info: "ResolveInfo", backfill_id: str) -> "GraphenePartitionBackfill":
+def get_backfill(
+    graphene_info: "ResolveInfo", backfill_id: str
+) -> Union["GraphenePartitionBackfill", "GrapheneBackfillNotFoundError"]:
     from dagster_graphql.schema.backfill import (
         GrapheneBackfillNotFoundError,
         GraphenePartitionBackfill,

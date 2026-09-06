@@ -21,7 +21,7 @@ attributes:
   ...
 ```
 
-By default, many components currently use the legacy code server snapshots strategy for backwards compatibility. This default will be changed in the 1.13.0 release. To use a different strategy, add the `defs_state` field:
+As of the 1.13.0 release, bundled state-backed components default to `LOCAL_FILESYSTEM`. To use a different strategy, add the `defs_state` field:
 
 ```yaml
 # defs.yaml
@@ -55,6 +55,12 @@ defs_state:
 ```
 
 You typically don't need to override the key unless you have specific naming requirements.
+
+:::warning Shared keys share state
+
+Two components configured with the same `key` will read and write the same state object. This is useful when intentional (for example, several `DbtProjectComponent` instances that select different model subsets from the same project), but accidental key collisions will cause components to overwrite each other's state. Set `key` explicitly only when you intend the components to share state.
+
+:::
 
 ### management_type
 

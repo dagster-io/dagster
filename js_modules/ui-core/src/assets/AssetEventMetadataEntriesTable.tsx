@@ -2,11 +2,9 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Caption,
-  Colors,
   Icon,
-  Mono,
   Tag,
+  Text,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -218,7 +216,9 @@ export const AssetEventMetadataEntriesTable = ({
               {filteredRows.length === 0 && (
                 <tr>
                   <td colSpan={4}>
-                    <Caption color={Colors.textLight()}>No metadata entries</Caption>
+                    <Text size={12} color="textLight">
+                      No metadata entries
+                    </Text>
                   </td>
                 </tr>
               )}
@@ -228,7 +228,9 @@ export const AssetEventMetadataEntriesTable = ({
                   <tr key={`metadata-${timestamp}-${entry.label}`}>
                     <td>
                       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                        <Mono>{entry.label}</Mono>
+                        <Text size={14} family="mono">
+                          {entry.label}
+                        </Text>
                         {renderMetadataKeyExtra?.(entry.label)}
                       </Box>
                     </td>
@@ -253,9 +255,9 @@ export const AssetEventMetadataEntriesTable = ({
                           gap: 8,
                         }}
                       >
-                        <Mono>
+                        <Text size={14} family="mono">
                           <MetadataEntry entry={entry} expandSmallValues={true} />
-                        </Mono>
+                        </Text>
                         {renderMetadataValueExtra?.(entry)}
                       </Box>
                     </td>
@@ -312,12 +314,14 @@ const ObservedInRun = ({
     <Box>
       {`Observed in run `}
       <Link to={`/runs/${runId}?timestamp=${timestamp}`}>
-        <Mono>{titleForRun({id: runId})}</Mono>
+        <Text size={14} family="mono">
+          {titleForRun({id: runId})}
+        </Text>
       </Link>
     </Box>
-    <Caption>
+    <Text size={12}>
       {`(${dayjs(Number(timestamp)).from(Number(relativeTo), true /* withoutSuffix */)} later)`}
-    </Caption>
+    </Text>
   </>
 );
 

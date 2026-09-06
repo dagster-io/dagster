@@ -10,6 +10,7 @@ from dagster_dg_cli.utils.yaml_template_generator import (
     generate_defs_yaml_example_values,
     generate_defs_yaml_schema,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 # Import the component classes directly
 from dagster_test.components import SimplePipesScriptComponent
@@ -104,14 +105,14 @@ def test_generated_yaml_is_valid(test_case):
     schema_content = "\n".join(schema_lines)
 
     try:
-        yaml.safe_load(schema_content)
+        safe_load_yaml(schema_content)
     except yaml.YAMLError as e:
         pytest.fail(f"Generated schema YAML is invalid for {test_case['name']}: {e}")
 
     # Test example YAML
     example_yaml = generate_defs_yaml_example_values(component_type_str, component_schema)
     try:
-        parsed_example = yaml.safe_load(example_yaml)
+        parsed_example = safe_load_yaml(example_yaml)
         assert "type" in parsed_example
         assert "attributes" in parsed_example
     except yaml.YAMLError as e:

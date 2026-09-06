@@ -2895,6 +2895,77 @@ def test_subset_contiguity_without_exclusions():
         assert len(subset_with_gap.included_time_windows) == 2
 
 
+def _holiday_partitions_def() -> TimeWindowPartitionsDefinition:
+    return TimeWindowPartitionsDefinition(
+        start="2025-01-01",
+        end="2025-02-01",
+        fmt="%Y-%m-%d",
+        cron_schedule="0 0 * * *",
+        exclusions=[
+            "0 0 * * 6-7",  # weekends
+            create_datetime(2025, 1, 20),  # MLK Day (Mon)
+        ],
+    )
+
+
+def test_subtract_leaves_no_exclusion_only_windows():
+    """Subtracting one subset from another operates purely on timestamps, so the leftover can be
+    a window that spans only excluded dates (a weekend + holiday gap). Such a window contains no
+    partitions and must not be retained, otherwise the subset reports is_empty=False while having
+    a partition count of zero.
+    """
+    partitions_def = _holiday_partitions_def()
+
+    with partition_loading_context(effective_dt=datetime.strptime("2025-02-01", "%Y-%m-%d")):
+        # Fri Jan 17 and Tue Jan 21 merge into a single window since only excluded dates
+        # (Sat Jan 18, Sun Jan 19, MLK Mon Jan 20) lie between them.
+        full = cast(
+            "TimeWindowPartitionsSubset",
+            partitions_def.subset_with_partition_keys(["2025-01-17", "2025-01-21"]),
+        )
+        assert len(full.included_time_windows) == 1
+
+        jan_17 = partitions_def.subset_with_partition_keys(["2025-01-17"])
+        jan_21 = partitions_def.subset_with_partition_keys(["2025-01-21"])
+
+        # Removing both endpoints leaves only the exclusion-only gap between them.
+        leftover = cast("TimeWindowPartitionsSubset", full - (jan_17 | jan_21))
+
+        assert leftover.is_empty
+        assert leftover.num_partitions == 0
+        assert len(leftover.included_time_windows) == 0
+
+
+def test_intersection_leaves_no_exclusion_only_windows():
+    """Two subsets can overlap only over excluded dates, producing an intersection window that
+    contains no partitions. That window must be dropped so is_empty stays consistent with the
+    partition count.
+    """
+    partitions_def = _holiday_partitions_def()
+
+    with partition_loading_context(effective_dt=datetime.strptime("2025-02-01", "%Y-%m-%d")):
+        full = cast(
+            "TimeWindowPartitionsSubset",
+            partitions_def.subset_with_partition_keys(["2025-01-17", "2025-01-21"]),
+        )
+        jan_17 = partitions_def.subset_with_partition_keys(["2025-01-17"])
+        jan_21 = partitions_def.subset_with_partition_keys(["2025-01-21"])
+
+        # left spans Jan 18 -> Jan 22 (drops Jan 17); right spans Jan 17 -> Jan 21 (drops Jan 21).
+        # Both still hold a real partition, so neither is empty on its own.
+        left = cast("TimeWindowPartitionsSubset", full - jan_17)
+        right = cast("TimeWindowPartitionsSubset", full - jan_21)
+        assert left.num_partitions == 1
+        assert right.num_partitions == 1
+
+        # Their overlap is Jan 18 -> Jan 21: Sat, Sun, and MLK Day only -> no partitions.
+        overlap = cast("TimeWindowPartitionsSubset", left & right)
+
+        assert overlap.is_empty
+        assert overlap.num_partitions == 0
+        assert len(overlap.included_time_windows) == 0
+
+
 def test_validate_partition_definition():
     partitions_def = dg.TimeWindowPartitionsDefinition(
         start="2025-01-01",

@@ -1,4 +1,4 @@
-import {Box, Subtitle2} from '@dagster-io/ui-components';
+import {Box, Heading} from '@dagster-io/ui-components';
 
 import {FreshnessTag} from './FreshnessPolicySection';
 import {FRESHNESS_EVALUATION_ENABLED_QUERY} from './FreshnessQueries';
@@ -28,7 +28,9 @@ export const FreshnessPolicyStatus = (props: Props) => {
 
   return (
     <Box flex={{direction: 'column', gap: 6}}>
-      <Subtitle2>Freshness policy</Subtitle2>
+      <Heading size={14} weight={600}>
+        Freshness policy
+      </Heading>
       <FreshnessTag policy={freshnessPolicy} assetKey={assetKey} />
     </Box>
   );

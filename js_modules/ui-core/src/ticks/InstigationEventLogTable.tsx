@@ -1,4 +1,4 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, Container, Inner, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useContext, useEffect, useRef} from 'react';
 
@@ -12,7 +12,6 @@ import {
   HeaderContainer,
   HeadersContainer,
 } from '../runs/LogsScrollingTableHeader';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 const Headers = () => {
   const widths = useContext(ColumnWidthsContext);
@@ -67,12 +66,12 @@ export const InstigationEventLogTable = ({events}: {events: InstigationEventLogF
     <ColumnWidthsProvider onWidthsChanged={() => {}}>
       <Headers />
       <Container ref={parentRef} style={{position: 'relative'}}>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const event = events[index]!;
             return (
-              <Row key={key} $start={start} $height={size}>
+              <Row key={key} start={start} height={size}>
                 <LogsRow
                   level={event.level}
                   highlighted={false}

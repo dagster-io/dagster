@@ -37,9 +37,7 @@ class Failer:
 
 def test_backoff_delay_generator():
     gen = exponential_delay_generator()
-    vals = []
-    for _ in range(10):
-        vals.append(next(gen))
+    vals = [next(gen) for _ in range(10)]
 
     assert vals == [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2]
 

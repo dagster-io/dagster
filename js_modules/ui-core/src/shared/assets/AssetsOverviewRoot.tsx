@@ -47,7 +47,7 @@ export const AssetsOverviewRoot = ({
 
   useDocumentTitle(
     currentPath && currentPath.length
-      ? `${documentTitlePrefix}: ${displayNameForAssetKey(assetKey)}`
+      ? `${documentTitlePrefix} | ${displayNameForAssetKey(assetKey)}`
       : documentTitlePrefix,
   );
 

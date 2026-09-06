@@ -36,13 +36,13 @@ def check_dagster_cloud_yaml(yaml_path: pathlib.Path) -> CheckResult:
         result.errors.append(f"No such file {yaml_path}")
         return result
 
-    yaml_text = yaml_path.read_text()
+    yaml_text = yaml_path.read_text(encoding="utf-8")
     if not yaml_text.strip():
         result.errors.append(f"Unexpected blank file {yaml_path}")
         return result
 
     try:
-        parsed = load_dagster_cloud_yaml(yaml_path.read_text())
+        parsed = load_dagster_cloud_yaml(yaml_path.read_text(encoding="utf-8"))
     except pydantic.ValidationError as err:
         for error in get_validation_errors(err):
             result.errors.append(error)

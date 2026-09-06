@@ -43,11 +43,11 @@ class PolytomicComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     async def write_state_to_path(self, state_path: Path) -> None:
         """Fetch documents from Polytomic API and write state to path."""
         state = await self.workspace.fetch_polytomic_state()
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def load_state_from_path(self, state_path: Path) -> PolytomicWorkspaceData:
         """Load state from path using Dagster's deserialization system."""
-        return dg.deserialize_value(state_path.read_text(), PolytomicWorkspaceData)
+        return dg.deserialize_value(state_path.read_text(encoding="utf-8"), PolytomicWorkspaceData)
 
     def _get_default_polytomic_spec(self, data: PolytomicTranslatorData) -> dg.AssetSpec | None:
         """Core function for converting a Polytomic schema into an AssetSpec object."""

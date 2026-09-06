@@ -13,14 +13,14 @@ def test_jit_check_collision():
         name: str
 
     checks = [LeakingClass("dont"), LeakingClass("leak"), LeakingClass("pls")]
-    specs = []
 
-    for check in checks:
-        specs.append(
-            Spec(
-                name=[check.name],
-            )
+    specs = [
+        Spec(
+            name=[check.name],
         )
+        for check in checks
+    ]
+    assert len(specs) == len(checks)
 
 
 def test_check_arg():

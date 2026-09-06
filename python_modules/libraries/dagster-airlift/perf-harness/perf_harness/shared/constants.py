@@ -5,7 +5,7 @@ CONSTANTS_FILE = Path(__file__).parent / "constants.txt"
 
 def read_constants() -> dict[str, int]:
     constants = {}
-    with open(CONSTANTS_FILE) as f:
+    with open(CONSTANTS_FILE, encoding="utf-8") as f:
         for line in f.readlines():
             key, value = line.strip().split(None, 1)
             constants[key] = int(value)

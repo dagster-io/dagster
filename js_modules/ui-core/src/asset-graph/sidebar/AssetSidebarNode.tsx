@@ -18,7 +18,7 @@ import {AssetGroup} from '../AssetGraphExplorer';
 import {AssetNodeMenuProps, useAssetNodeMenu} from '../AssetNodeMenu';
 import {useGroupNodeContextMenu} from '../CollapsedGroupNode';
 import {ContextMenuWrapper, triggerContextMenu} from '../ContextMenuWrapper';
-import {GraphData, GraphNode} from '../Utils';
+import {GraphData, GraphNode, groupIdLeafName} from '../Utils';
 
 type AssetSidebarNodeProps = {
   fullAssetGraphData?: GraphData;
@@ -145,7 +145,10 @@ const AssetSidebarGroupLabel = ({
         isSelected={isSelected}
         isLastSelected={isLastSelected}
         icon={<Icon name="asset_group" />}
-        text={node.groupNode.groupName}
+        // groupNode.groupName is the full hierarchical path so onFilterToGroup
+        // can build the right filter — display just the leaf segment since the
+        // ancestor folders already render above this row.
+        text={groupIdLeafName(node.id)}
       />
       <button className={sidebarStyles.expandMore} onClick={triggerContextMenu}>
         <Icon name="more_horiz" color={Colors.accentGray()} />

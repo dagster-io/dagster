@@ -81,3 +81,149 @@ def test_emr_serverless_manual(emr_serverless_setup: tuple["EMRServerlessClient"
             },
             instance=instance,
         )
+
+
+def test_emr_serverless_dashboard_refresh():
+    from unittest.mock import MagicMock, patch
+
+    from dagster_aws.pipes import PipesEMRServerlessClient
+
+    client = MagicMock()
+    client.start_job_run.return_value = {
+        "jobRunId": "test-job-run-id",
+        "applicationId": "test-app-id",
+    }
+
+    current_time = [0.0]
+
+    def mock_time():
+        return current_time[0]
+
+    def mock_sleep(seconds):
+        current_time[0] += seconds
+
+    mock_time_module = MagicMock()
+    mock_time_module.time.side_effect = mock_time
+    mock_time_module.sleep.side_effect = mock_sleep
+
+    client.get_job_run.side_effect = [
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "SUCCESS",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+    ]
+
+    client.get_dashboard_for_job_run.return_value = "http://mock-spark-ui-url"
+
+    @asset
+    def my_asset(context: AssetExecutionContext, emr_serverless_client: PipesEMRServerlessClient):
+        return emr_serverless_client.run(
+            context=context,
+            start_job_run_params={
+                "applicationId": "test-app-id",
+                "executionRoleArn": "arn:aws:iam::123456789012:role/EMRServerlessRole",
+                "jobDriver": {
+                    "sparkSubmit": {
+                        "entryPoint": "s3://my-bucket/my-script.py",
+                    }
+                },
+                "clientToken": str(uuid4()),
+            },
+        ).get_results()
+
+    with (
+        patch.object(PipesEMRServerlessClient, "_read_messages"),
+        patch.object(PipesEMRServerlessClient, "_extract_dagster_metadata", return_value={}),
+        patch("dagster_aws.pipes.clients.emr_serverless.time", mock_time_module),
+        instance_for_test() as instance,
+    ):
+        materialize(
+            [my_asset],
+            resources={
+                "emr_serverless_client": PipesEMRServerlessClient(
+                    client=client,
+                    poll_interval=600.0,
+                )
+            },
+            instance=instance,
+        )
+
+    assert client.get_dashboard_for_job_run.call_count == 1
+
+    # Reset mock and time for second run with custom interval
+    client.get_dashboard_for_job_run.reset_mock()
+    current_time[0] = 0.0
+    client.get_job_run.side_effect = [
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "RUNNING",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+        {
+            "jobRun": {
+                "state": "SUCCESS",
+                "applicationId": "test-app-id",
+                "jobRunId": "test-job-run-id",
+            }
+        },
+    ]
+
+    with (
+        patch.object(PipesEMRServerlessClient, "_read_messages"),
+        patch.object(PipesEMRServerlessClient, "_extract_dagster_metadata", return_value={}),
+        patch("dagster_aws.pipes.clients.emr_serverless.time", mock_time_module),
+        instance_for_test() as instance,
+    ):
+        materialize(
+            [my_asset],
+            resources={
+                "emr_serverless_client": PipesEMRServerlessClient(
+                    client=client,
+                    poll_interval=600.0,
+                    dashboard_refresh_interval=900.0,
+                )
+            },
+            instance=instance,
+        )
+
+    assert client.get_dashboard_for_job_run.call_count == 2

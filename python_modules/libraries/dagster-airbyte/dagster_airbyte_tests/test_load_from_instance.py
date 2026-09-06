@@ -217,7 +217,7 @@ def test_load_from_instance(
                 ]
             )
         )
-        for key, metadata in assets_def.metadata_by_key.items()
+        for metadata in assets_def.metadata_by_key.values()
     )
     # Check schema metadata works for normalization tables too
     if use_normalization_tables:
@@ -231,7 +231,7 @@ def test_load_from_instance(
                     ]
                 )
             )
-            for key, metadata in assets_def.metadata_by_key.items()
+            for metadata in assets_def.metadata_by_key.values()
         )
 
     table_names = {

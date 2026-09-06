@@ -54,9 +54,8 @@ def _extract_pipelines_and_sources_from_pipeline_file(
     file_path: Path,
 ) -> ParsedPipelineAndSource:
     """Process a Python file and generate a new file with pipeline and data definitions."""
-    imports = []
     pipelines_and_sources = {}
-    source = file_path.read_text()
+    source = file_path.read_text(encoding="utf-8")
     tree = ast.parse(source)
 
     # Create new file content
@@ -64,9 +63,11 @@ def _extract_pipelines_and_sources_from_pipeline_file(
     new_content.append('"""Generated pipeline and data definitions."""\n')
 
     # Add imports from original file
-    for node in tree.body:
-        if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
-            imports.append(ast.unparse(node).replace("from ", "from ."))
+    imports = [
+        ast.unparse(node).replace("from ", "from .")
+        for node in tree.body
+        if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom)
+    ]
 
     # Process each function
     for node in tree.body:
@@ -103,7 +104,7 @@ def _construct_pipeline_source_file(
         )
         new_content.append("")
 
-    file_path.write_text("\n".join(new_content))
+    file_path.write_text("\n".join(new_content), encoding="utf-8")
 
 
 class DltScaffolderParams(BaseModel):
@@ -164,7 +165,8 @@ class DltLoadCollectionScaffolder(Scaffolder[DltScaffolderParams]):
                     destination=f'destination="{request.params.destination}"'
                     if request.params and request.params.destination
                     else "",
-                )
+                ),
+                encoding="utf-8",
             )
 
             _format_file_if_ruff_installed(Path("loads.py"))

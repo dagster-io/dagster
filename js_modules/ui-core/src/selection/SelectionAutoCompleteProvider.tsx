@@ -1,12 +1,4 @@
-import {
-  BodySmall,
-  Box,
-  Colors,
-  Icon,
-  IconName,
-  MiddleTruncate,
-  MonoSmall,
-} from '@dagster-io/ui-components';
+import {Box, Icon, IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import React from 'react';
 
 import styles from './SelectionAutoComplete.module.css';
@@ -188,10 +180,14 @@ export const SuggestionJSXBase = ({
         }}
       >
         {icon ? <Icon name={icon} size={12} style={{margin: 0}} /> : null}
-        <BodySmall style={{overflow: 'hidden'}}>{label}</BodySmall>
+        <Text size={14} style={{overflow: 'hidden'}}>
+          {label}
+        </Text>
       </div>
       {rightLabel ? (
-        <MonoSmall style={{textAlign: 'right', overflow: 'hidden'}}>{rightLabel}</MonoSmall>
+        <Text size={14} family="mono" style={{textAlign: 'right', overflow: 'hidden'}}>
+          {rightLabel}
+        </Text>
       ) : null}
     </div>
   );
@@ -373,10 +369,12 @@ export const createProvider = <
         <SuggestionJSXBase
           label={
             <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-              <MonoSmall color={Colors.textLight()}>{attribute as string}:</MonoSmall>
-              <MonoSmall style={{overflow: 'hidden'}}>
+              <Text size={12} family="mono" color="textLight">
+                {attribute as string}:
+              </Text>
+              <Text size={12} family="mono" className={styles.attributeValue}>
                 <MiddleTruncate text={valueText} />
-              </MonoSmall>
+              </Text>
             </Box>
           }
         />
@@ -428,12 +426,12 @@ export const createProvider = <
           {
             text: '',
             jsx: (
-              <BodySmall color={Colors.textLight()}>
+              <Text size={12} color="textLight">
                 No match found for{' '}
-                <MonoSmall color={Colors.textDefault()}>
+                <Text size={12} family="mono" color="textDefault">
                   {attribute}:&quot;{query}&quot;
-                </MonoSmall>
-              </BodySmall>
+                </Text>
+              </Text>
             ),
             type: 'no-match',
           },

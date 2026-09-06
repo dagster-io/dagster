@@ -23,7 +23,9 @@ from dagster._utils import (
 from dagster_graphql import DagsterGraphQLClient
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
-MAX_TIMEOUT_SECONDS = 20
+# Cold-start cost of the earliest-tested-release user-code container under Buildkite
+# resource pressure has been seen to exceed 30s; bump comfortably above that.
+MAX_TIMEOUT_SECONDS = 120
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 EARLIEST_TESTED_RELEASE = os.getenv("EARLIEST_TESTED_RELEASE")
 MOST_RECENT_RELEASE_PLACEHOLDER = "most_recent"

@@ -1,11 +1,11 @@
 import {
-  Body1,
   Box,
   Button,
   Dialog,
   DialogBody,
   DialogFooter,
   ProgressBar,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {memo, useMemo} from 'react';
@@ -61,8 +61,10 @@ export const AssetWipeDialogInner = memo(
       if (isDone) {
         return (
           <Box flex={{direction: 'column'}}>
-            {wipedCount ? <Body1>{numberFormatter.format(wipedCount)} Wiped</Body1> : null}
-            {failedCount ? <Body1>{numberFormatter.format(failedCount)} Failed</Body1> : null}
+            {wipedCount ? <Text size={16}>{numberFormatter.format(wipedCount)} Wiped</Text> : null}
+            {failedCount ? (
+              <Text size={16}>{numberFormatter.format(failedCount)} Failed</Text>
+            ) : null}
           </Box>
         );
       } else if (!isWiping) {

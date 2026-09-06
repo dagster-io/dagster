@@ -33,10 +33,11 @@ SNIPPETS_DIR = (
 
 def _swap_to_mock_sigma_component(path: Path) -> None:
     path.write_text(
-        path.read_text().replace(
+        path.read_text(encoding="utf-8").replace(
             "dagster_sigma.SigmaComponent",
             "my_project.defs.sigma_ingest.test_sigma_utils.MockSigmaComponent",
-        )
+        ),
+        encoding="utf-8",
     )
 
 

@@ -19,7 +19,6 @@ from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partitions.context import partition_loading_context
-from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 from dagster._core.definitions.partitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partitions.utils import (
     TimeWindow,

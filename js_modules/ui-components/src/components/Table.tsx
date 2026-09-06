@@ -11,6 +11,8 @@ export const TABLE_CLASS = 'tableGlobal';
 
 export const Table = ({compact, className, ...props}: TableProps) => (
   <table
+    cellPadding="0"
+    cellSpacing="0"
     className={clsx(TABLE_CLASS, styles.table, compact && styles.compact, className)}
     {...props}
   />

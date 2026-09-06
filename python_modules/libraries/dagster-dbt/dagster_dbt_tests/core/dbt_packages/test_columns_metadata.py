@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
 
@@ -11,6 +12,7 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetSelection,
+    AssetSpec,
     TableColumn,
     TableColumnDep,
     TableColumnLineage,
@@ -21,6 +23,8 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnConstraints
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import DbtCliResource
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dbt_project import DbtProject
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
@@ -292,6 +296,81 @@ def test_no_column_lineage(test_metadata_manifest: dict[str, Any]) -> None:
         not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
+
+
+@pytest.mark.parametrize(
+    "use_fetch_column_metadata",
+    [True, False],
+    ids=["adapter_path", "native_event_history_path"],
+)
+def test_column_lineage_uses_get_asset_spec_for_upstream_keys(
+    test_metadata_manifest: dict[str, Any],
+    use_fetch_column_metadata: bool,
+) -> None:
+    """Regression test for https://github.com/dagster-io/dagster/issues/33856.
+
+    Column lineage upstream asset keys must be resolved via
+    ``translator.get_asset_spec(...).key`` so that translators which customize
+    translation only by overriding ``get_asset_spec`` (e.g.
+    ``DbtProjectComponentTranslator``) produce lineage entries that point at the
+    *translated* keys actually present in the asset graph, rather than at the
+    default-derived keys returned by ``get_asset_key``.
+
+    Exercised against both lineage-building paths through
+    ``_build_column_lineage_metadata``:
+
+    - ``adapter_path``: the post-run adapter-querying thread invoked when the
+      user calls ``.fetch_column_metadata()``
+      (``dbt_event_iterator._fetch_column_metadata``).
+    - ``native_event_history_path``: the path driven by dbt's structured event
+      history when ``has_column_lineage_metadata`` is ``True``
+      (``dbt_cli_event._get_lineage_metadata``).
+    """
+
+    class SpecOverrideTranslator(DagsterDbtTranslator):
+        def get_asset_spec(
+            self,
+            manifest: Mapping[str, Any],
+            unique_id: str,
+            project: DbtProject | None,
+        ) -> AssetSpec:
+            spec = super().get_asset_spec(manifest, unique_id, project)
+            return spec.replace_attributes(key=AssetKey(["renamed", *spec.key.path]))
+
+    translator = SpecOverrideTranslator()
+
+    @dbt_assets(manifest=test_metadata_manifest, dagster_dbt_translator=translator)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        cli_invocation = dbt.cli(["build"], context=context).stream()
+        if use_fetch_column_metadata:
+            cli_invocation = cli_invocation.fetch_column_metadata()
+        yield from cli_invocation
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+    assert result.success
+
+    upstream_keys_in_lineage: set[AssetKey] = set()
+    for event in result.get_asset_materialization_events():
+        lineage = TableMetadataSet.extract(event.materialization.metadata).column_lineage
+        if lineage is None:
+            continue
+        for col_deps in lineage.deps_by_column.values():
+            for dep in col_deps:
+                upstream_keys_in_lineage.add(dep.asset_key)
+
+    # We need at least one lineage entry for the assertion to be meaningful.
+    assert upstream_keys_in_lineage, (
+        "Expected at least one column lineage entry in the materialization metadata"
+    )
+    # Every upstream key referenced in column lineage must be the translated key
+    # ("renamed/..."), not the default-derived key.
+    for key in upstream_keys_in_lineage:
+        assert key.path[0] == "renamed", (
+            f"Upstream key {key} in column lineage was not translated via get_asset_spec"
+        )
 
 
 @pytest.mark.parametrize(

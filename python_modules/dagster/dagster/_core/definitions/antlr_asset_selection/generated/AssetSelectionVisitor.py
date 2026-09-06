@@ -1,4 +1,5 @@
 # flake8: noqa
+# type: ignore
 # Generated from AssetSelection.g4 by ANTLR 4.13.2
 from antlr4 import *
 from .AssetSelectionParser import AssetSelectionParser
@@ -92,6 +93,10 @@ class AssetSelectionVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by AssetSelectionParser#KindAttributeExpr.
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#IsAttributeExpr.
+    def visitIsAttributeExpr(self, ctx: AssetSelectionParser.IsAttributeExprContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#StatusAttributeExpr.

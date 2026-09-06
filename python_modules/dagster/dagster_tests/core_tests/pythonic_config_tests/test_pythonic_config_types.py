@@ -498,6 +498,71 @@ def test_discriminated_unions() -> None:
         )
 
 
+def test_discriminated_unions_with_default() -> None:
+    class Cat(dg.Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int = 2
+
+    class Dog(dg.Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float = 3.0
+
+    class OpConfigWithUnion(dg.Config):
+        pet: Cat | Dog = pydantic.Field(default=Dog(), discriminator="pet_type")
+
+    # The Pydantic default is propagated into the config schema as an optional
+    # field with a Selector-shaped default value
+    fields = OpConfigWithUnion.to_fields_dict()
+    assert not fields["pet"].is_required
+    assert fields["pet"].default_value == {"dog": {"barks": 3.0}}
+
+    executed = {}
+
+    @dg.op
+    def a_struct_config_op(config: OpConfigWithUnion):
+        executed["pet"] = config.pet
+
+    @dg.job
+    def a_job():
+        a_struct_config_op()
+
+    # No config provided: the default is used
+    a_job.execute_in_process()
+    assert executed["pet"] == Dog()
+
+    # Explicit config still overrides the default
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"pet": {"cat": {"meows": 5}}}}}}
+    )
+    assert executed["pet"] == Cat(meows=5)
+
+    # default_factory defaults are propagated as well
+    class OpConfigWithFactoryDefault(dg.Config):
+        pet: Cat | Dog = pydantic.Field(default_factory=Dog, discriminator="pet_type")
+
+    fields = OpConfigWithFactoryDefault.to_fields_dict()
+    assert not fields["pet"].is_required
+    assert fields["pet"].default_value == {"dog": {"barks": 3.0}}
+
+    # A union without a default stays required, with no config default
+    class OpConfigRequired(dg.Config):
+        pet: Cat | Dog = pydantic.Field(..., discriminator="pet_type")
+
+    fields = OpConfigRequired.to_fields_dict()
+    assert fields["pet"].is_required
+    assert not fields["pet"].default_provided
+
+    # An explicit default of None (accepted by Pydantic even on a non-Optional
+    # annotation) makes the field optional but is not propagated as a config
+    # default, since None is not a valid Selector value
+    class OpConfigNoneDefault(dg.Config):
+        pet: Cat | Dog = pydantic.Field(default=None, discriminator="pet_type")  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+
+    fields = OpConfigNoneDefault.to_fields_dict()
+    assert not fields["pet"].is_required
+    assert not fields["pet"].default_provided
+
+
 def test_nested_discriminated_unions() -> None:
     class Poodle(dg.Config):
         breed_type: Literal["poodle"]

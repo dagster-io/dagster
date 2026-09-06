@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from typing import Any
 
 import dagster._check as check
-import kubernetes
 import kubernetes.client.rest
 import pytest
 from dagster._core.events import DagsterEventType

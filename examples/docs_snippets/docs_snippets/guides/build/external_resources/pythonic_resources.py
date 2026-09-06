@@ -478,7 +478,9 @@ def io_adapter() -> None:
 
         def handle_output(self, context: dg.OutputContext, obj):
             with open(
-                os.path.join(self.base_path, context.step_key, context.name), "w"
+                os.path.join(self.base_path, context.step_key, context.name),
+                "w",
+                encoding="utf-8",
             ) as fd:
                 fd.write(obj)
 
@@ -489,6 +491,7 @@ def io_adapter() -> None:
                     context.upstream_output.step_key,  # type: ignore
                     context.upstream_output.name,  # type: ignore
                 ),
+                encoding="utf-8",
             ) as fd:
                 return fd.read()
 

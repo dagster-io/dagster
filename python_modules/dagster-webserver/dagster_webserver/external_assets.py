@@ -10,9 +10,21 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.workspace.permissions import Permissions
 from dagster_shared.seven import json
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+
+def _unauthorized_response_or_none(
+    context: BaseWorkspaceRequestContext, asset_key: AssetKey
+) -> JSONResponse | None:
+    if context.has_permission_for_selector(Permissions.REPORT_RUNLESS_ASSET_EVENTS, asset_key):
+        return None
+    return JSONResponse(
+        {"error": "Not authorized to report runless asset events."},
+        status_code=401,
+    )
 
 
 def _asset_key_from_request(key: str, request: Request, json_body):
@@ -72,6 +84,10 @@ async def handle_report_asset_materialization_request(
             },
             status_code=400,
         )
+
+    unauthorized = _unauthorized_response_or_none(context, asset_key)
+    if unauthorized is not None:
+        return unauthorized
 
     tags = context.get_reporting_user_tags()
     data_version = _value_from_body_or_params(ReportAssetMatParam.data_version, request, json_body)
@@ -152,6 +168,10 @@ async def handle_report_asset_check_request(
             },
             status_code=400,
         )
+
+    unauthorized = _unauthorized_response_or_none(context, asset_key)
+    if unauthorized is not None:
+        return unauthorized
 
     passed = _value_from_body_or_params(ReportAssetCheckEvalParam.passed, request, json_body)
     check_name = _value_from_body_or_params(
@@ -254,6 +274,10 @@ async def handle_report_asset_observation_request(
             },
             status_code=400,
         )
+
+    unauthorized = _unauthorized_response_or_none(context, asset_key)
+    if unauthorized is not None:
+        return unauthorized
 
     metadata = {}
     if ReportAssetObsParam.metadata in json_body:

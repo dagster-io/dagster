@@ -236,12 +236,12 @@ def get_focused_content_excerpts(diff_content: str, change_category: ChangeType)
 
 def detect_api_changes(functions: list[StructuralChange]) -> list[str]:
     """Detect public API changes that might need special attention."""
-    api_changes = []
-
-    for func in functions:
-        # Heuristic for public API - functions that don't start with _
-        if not func.name.startswith("_") and func.change_type in ["added", "deleted"]:
-            api_changes.append(f"{func.change_type.title()} public function: {func.name}")
+    # Heuristic for public API - functions that don't start with _
+    api_changes = [
+        f"{func.change_type.title()} public function: {func.name}"
+        for func in functions
+        if not func.name.startswith("_") and func.change_type in ["added", "deleted"]
+    ]
 
     return api_changes
 

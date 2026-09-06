@@ -1,10 +1,36 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type SidebarOpGraphsQueryVariables = Types.Exact<{
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: string;
+};
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type PipelineSelector = {
+  assetCheckSelection?: Array<AssetCheckHandleInput> | null | undefined;
+  assetSelection?: Array<AssetKeyInput> | null | undefined;
+  pipelineName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+  solidSelection?: Array<string> | null | undefined;
+};
+
+export type StepEventStatus = 'FAILURE' | 'IN_PROGRESS' | 'SKIPPED' | 'SUCCESS';
+
+export type SidebarOpGraphsQueryVariables = Exact<{
   selector: Types.PipelineSelector;
-  handleID: Types.Scalars['String']['input'];
+  handleID: string;
 }>;
 
 export type SidebarOpGraphsQuery = {

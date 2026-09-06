@@ -1456,6 +1456,7 @@ def test_get_backfills_with_filters():
 
                 backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
                 backfill = instance.get_backfill(backfill_id)
+                assert backfill is not None
                 all_backfills.append(backfill)
 
             get_backfills_result = execute_dagster_graphql(

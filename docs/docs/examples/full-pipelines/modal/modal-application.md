@@ -1,5 +1,5 @@
 ---
-title: Modal Application
+title: Modal application
 description: Using Modal with Dagster
 last_update:
   author: Dennis Hume

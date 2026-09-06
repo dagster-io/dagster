@@ -1,13 +1,14 @@
 import {
-  Body2,
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogBody,
   DialogFooter,
   Spinner,
+  Text,
 } from '@dagster-io/ui-components';
-import {memo, useCallback, useMemo, useState} from 'react';
+import {memo, useCallback, useContext, useMemo, useState} from 'react';
 
 import {
   DeleteDynamicPartitionsMutation,
@@ -15,6 +16,7 @@ import {
 } from './types/DeleteDynamicPartitionsDialog.types';
 import {usePartitionHealthData} from './usePartitionHealthData';
 import {RefetchQueriesFunction, gql, useMutation} from '../apollo-client';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
@@ -58,6 +60,12 @@ export const DeleteDynamicPartitionsDialogInner = memo(
       DeleteDynamicPartitionsMutation['deleteDynamicPartitions'] | undefined
     >();
     const [selectedPartitions, setSelectedPartitions] = useState<string[]>([]);
+
+    const {
+      featureContext: {canWipeOnDeleteDynamicPartitions},
+    } = useContext(CloudOSSContext);
+    const [wipeChecked, setWipeChecked] = useState(true);
+    const wipeMaterializations = canWipeOnDeleteDynamicPartitions && wipeChecked;
     const [health] = usePartitionHealthData([assetKey]);
 
     const dynamicHealth = health?.dimensions.find(
@@ -80,13 +88,21 @@ export const DeleteDynamicPartitionsDialogInner = memo(
             },
             partitionsDefName,
             partitionKeys,
+            wipeMaterializations,
           },
         });
         setResult(resp.data?.deleteDynamicPartitions);
         setDeleting(false);
         onComplete?.();
       },
-      [deletePartitions, onComplete, partitionsDefName, repoAddress.location, repoAddress.name],
+      [
+        deletePartitions,
+        onComplete,
+        partitionsDefName,
+        repoAddress.location,
+        repoAddress.name,
+        wipeMaterializations,
+      ],
     );
 
     const content = useMemo(() => {
@@ -94,10 +110,11 @@ export const DeleteDynamicPartitionsDialogInner = memo(
         return (
           <Box flex={{direction: 'column'}}>
             {result.__typename === 'DeleteDynamicPartitionsSuccess' ? (
-              <Body2>
-                The selected partitions of <strong>{partitionsDefName}</strong> and associated
-                materializations have been deleted.
-              </Body2>
+              <Text size={14}>
+                The selected partitions of <strong>{partitionsDefName}</strong>
+                {wipeMaterializations ? ' and associated materializations have' : ' have'} been
+                deleted.
+              </Text>
             ) : (
               <PythonErrorInfo error={result} />
             )}
@@ -113,10 +130,10 @@ export const DeleteDynamicPartitionsDialogInner = memo(
       }
       return (
         <Box flex={{direction: 'column', gap: 6}}>
-          <Body2>
+          <Text size={14}>
             Select partition keys of the <strong>{partitionsDefName}</strong> partition definition
             to delete.
-          </Body2>
+          </Text>
           {health && dynamicHealth ? (
             <OrdinalPartitionSelector
               allPartitions={dynamicHealth?.partitionKeys}
@@ -128,14 +145,35 @@ export const DeleteDynamicPartitionsDialogInner = memo(
           ) : (
             <Spinner purpose="section" />
           )}
-          <Body2 style={{marginTop: 10}}>
+          {canWipeOnDeleteDynamicPartitions ? (
+            <Box margin={{top: 8}}>
+              <Checkbox
+                label="Also wipe materialization events for these partitions from all assets that share this partition definition"
+                checked={wipeChecked}
+                onChange={() => setWipeChecked((checked) => !checked)}
+              />
+            </Box>
+          ) : null}
+          <Text size={14} style={{marginTop: 10}}>
             Deleting partitions impacts all assets that share this partition definition.
-            Materialization events for these partitions will be wiped.{' '}
+            {wipeMaterializations
+              ? ' Materialization events for these partitions will be wiped.'
+              : ''}{' '}
             <strong>This action cannot be undone.</strong>
-          </Body2>
+          </Text>
         </Box>
       );
-    }, [deleting, dynamicHealth, health, partitionsDefName, result, selectedPartitions]);
+    }, [
+      canWipeOnDeleteDynamicPartitions,
+      deleting,
+      dynamicHealth,
+      health,
+      partitionsDefName,
+      result,
+      selectedPartitions,
+      wipeChecked,
+      wipeMaterializations,
+    ]);
 
     return (
       <>
@@ -167,16 +205,22 @@ export const DELETE_DYNAMIC_PARTITIONS_MUTATION = gql`
     $partitionKeys: [String!]!
     $partitionsDefName: String!
     $repositorySelector: RepositorySelector!
+    $wipeMaterializations: Boolean
   ) {
     deleteDynamicPartitions(
       partitionKeys: $partitionKeys
       partitionsDefName: $partitionsDefName
       repositorySelector: $repositorySelector
+      wipeMaterializations: $wipeMaterializations
     ) {
       ... on DeleteDynamicPartitionsSuccess {
         __typename
       }
       ... on UnauthorizedError {
+        message
+        __typename
+      }
+      ... on UnsupportedOperationError {
         message
         __typename
       }

@@ -1,12 +1,4 @@
-import {
-  Box,
-  Caption,
-  Colors,
-  NonIdealState,
-  Skeleton,
-  Subtitle2,
-  Tag,
-} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, Skeleton, Tag, Text} from '@dagster-io/ui-components';
 import {AssetAlertsSection} from '@shared/assets/AssetAlertsSection';
 import {AssetEventMetadataEntriesTable} from '@shared/assets/AssetEventMetadataEntriesTable';
 import React, {useMemo} from 'react';
@@ -38,7 +30,7 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LargeCollapsibleSection} from '../LargeCollapsibleSection';
 import {MaterializationTag} from '../MaterializationTag';
 import {OverdueTag} from '../OverdueTag';
-import {RecentUpdatesTimelineForAssetKey} from '../RecentUpdatesTimeline';
+import {RecentUpdatesTimeline} from '../RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from '../SimpleStakeholderAssetStatus';
 import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
@@ -145,9 +137,9 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 16}}>
       <Box style={{display: `grid`, gridTemplateColumns: `repeat(${sections}, minmax(0, 1fr))`}}>
         <Box flex={{direction: 'column', gap: 6}}>
-          <Subtitle2>
+          <Heading size={14} weight={600}>
             Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
-          </Subtitle2>
+          </Heading>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
               <SimpleStakeholderAssetStatus
@@ -166,7 +158,9 @@ export const AssetNodeOverview = ({
         </Box>
         {liveData?.assetChecks.length ? (
           <Box flex={{direction: 'column', gap: 6}}>
-            <Subtitle2>Latest check results</Subtitle2>
+            <Heading size={14} weight={600}>
+              Latest check results
+            </Heading>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
@@ -182,25 +176,31 @@ export const AssetNodeOverview = ({
         ) : undefined}
         {rowCountMeta?.intValue != null ? (
           <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-            <Subtitle2>Row count</Subtitle2>
+            <Heading size={14} weight={600}>
+              Row count
+            </Heading>
             <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
         {sizeBytesMeta?.intValue != null ? (
           <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-            <Subtitle2>Storage</Subtitle2>
+            <Heading size={14} weight={600}>
+              Storage
+            </Heading>
             <Tag icon="database">{byteFormatter.format(sizeBytesMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
         {queryCountMeta?.intValue != null ? (
           <Box flex={{direction: 'column', gap: 4, alignItems: 'flex-start'}}>
-            <Subtitle2>Query count</Subtitle2>
+            <Heading size={14} weight={600}>
+              Query count
+            </Heading>
             <Tag icon="code_block">{numberFormatter.format(queryCountMeta.intValue)}</Tag>
           </Box>
         ) : undefined}
       </Box>
       {cachedOrLiveAssetNode.isPartitioned ? null : (
-        <RecentUpdatesTimelineForAssetKey assetKey={cachedOrLiveAssetNode.assetKey} />
+        <RecentUpdatesTimeline assetKey={cachedOrLiveAssetNode.assetKey} />
       )}
     </Box>
   );
@@ -368,10 +368,12 @@ export const AssetNodeOverviewNonSDA = ({
                   stepKey={null}
                 />
               ) : (
-                <Caption color={Colors.textLighter()}>Never materialized</Caption>
+                <Text size={12} color="textLighter">
+                  Never materialized
+                </Text>
               )}
             </div>
-            <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />
+            <RecentUpdatesTimeline assetKey={assetKey} />
           </Box>
         </LargeCollapsibleSection>
       }

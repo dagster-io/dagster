@@ -1,7 +1,7 @@
 .PHONY: rerecord test clean
 
 rerecord:
-	dagster-dev dg-api-record secret
+	python ../_record.py secret
 
 test:
 	pytest . -v

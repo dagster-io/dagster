@@ -161,6 +161,13 @@ class AssetMethods:
             run_id=RUNLESS_RUN_ID,
         )
 
+    @property
+    def supports_wipe_on_delete_for_multipartitioned_assets(self) -> bool:
+        """Whether deleting dynamic partitions may also wipe multi-partitioned assets that use
+        the definition as a dimension. Not supported in OSS.
+        """
+        return False
+
     def get_event_tags_for_asset(
         self,
         asset_key: "AssetKey",
@@ -574,7 +581,7 @@ class AssetMethods:
         asset_key: AssetKey,
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Mapping[str, "AssetPartitionStatus"] | None:
+    ) -> Mapping[str, "AssetPartitionStatus | None"] | None:
         """Get the current status of provided partition_keys for the provided asset.
         Moved from AssetDomain.get_status_by_partition().
 

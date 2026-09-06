@@ -163,8 +163,7 @@ class GrapheneSchedule(graphene.ObjectType):
                     break
         else:
             limit = limit or 10
-            for _ in range(limit):
-                tick_times.append(next(time_iter).timestamp())
+            tick_times.extend(next(time_iter).timestamp() for _ in range(limit))
 
         schedule_selector = self._remote_schedule.schedule_selector
         future_ticks = [
@@ -210,8 +209,9 @@ class GrapheneSchedule(graphene.ObjectType):
             tick_times_below_timestamp.append(first_past_tick.timestamp())
             lower_limit -= 1
 
-        for _ in range(lower_limit):
-            tick_times_below_timestamp.append(next(descending_tick_iterator).timestamp())
+        tick_times_below_timestamp.extend(
+            next(descending_tick_iterator).timestamp() for _ in range(lower_limit)
+        )
 
         # Combine tick times < start_timestamp to tick times >= timestamp to get full
         # list. We reverse timestamp range because ticks should be in ascending order when we give the full list.

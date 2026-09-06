@@ -64,8 +64,9 @@ def _get_registry_fragment(
             if "TEMPLATE_IMAGE_REGISTRY" not in fragment:
                 output.append(fragment)
             else:
-                for url in matching_urls:
-                    output.append(fragment.replace("TEMPLATE_IMAGE_REGISTRY", url))
+                output.extend(
+                    fragment.replace("TEMPLATE_IMAGE_REGISTRY", url) for url in matching_urls
+                )
             additional_secrets_hints.extend(fragment_info.secrets_hints)
 
     return "\n".join(output), additional_secrets_hints

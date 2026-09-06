@@ -318,23 +318,20 @@ def materialize_assets(
         location_name=location_name,
     )
     if partition_keys:
-        results = []
-        for key in partition_keys:
-            results.append(
-                execute_dagster_graphql(
-                    context,
-                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-                    variables={
-                        "executionParams": {
-                            "selector": selector,
-                            "executionMetadata": {
-                                "tags": [{"key": "dagster/partition", "value": key}]
-                            },
-                            "runConfigData": run_config_data,
-                        }
-                    },
-                )
+        results = [
+            execute_dagster_graphql(
+                context,
+                LAUNCH_PIPELINE_EXECUTION_MUTATION,
+                variables={
+                    "executionParams": {
+                        "selector": selector,
+                        "executionMetadata": {"tags": [{"key": "dagster/partition", "value": key}]},
+                        "runConfigData": run_config_data,
+                    }
+                },
             )
+            for key in partition_keys
+        ]
         return results
     else:
         return execute_dagster_graphql(

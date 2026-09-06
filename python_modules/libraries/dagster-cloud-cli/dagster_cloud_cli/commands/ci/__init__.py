@@ -1,10 +1,12 @@
 # CI/CD agnostic commands that work with the current CI/CD system
+import importlib.resources
 import json
 import logging
 import os
 import pathlib
 import shutil
 import sys
+import tempfile
 from collections import Counter
 from enum import Enum
 from typing import Annotated, Any, cast
@@ -14,6 +16,7 @@ import typer
 import yaml
 from dagster_shared import check
 from dagster_shared.utils import remove_none_recursively
+from dagster_shared.yaml_utils import safe_load_yaml
 from jinja2 import TemplateSyntaxError
 from typer import Typer
 
@@ -362,11 +365,11 @@ def _create_context_from_values(values_list: list[str], values_file: str | None)
     values_file_path = pathlib.Path(values_file) if values_file else None
     if values_file_path:
         try:
-            with open(values_file_path) as f:
+            with open(values_file_path, encoding="utf-8") as f:
                 if values_file_path.suffix == ".json":
                     context.update(json.load(f))
                 elif values_file_path.suffix in [".yaml", ".yml"]:
-                    context.update(yaml.safe_load(f))
+                    context.update(safe_load_yaml(f))
                 else:
                     raise ui.error(f"Unsupported values file extension {values_file_path.suffix}")
         except Exception as err:
@@ -630,6 +633,10 @@ def _get_selected_locations(
 class BuildStrategy(Enum):
     pex = "python-executable"
     docker = "docker"
+    # Internal strategy (not user-selectable): build the PEX artifacts, then bake them into a
+    # standard Docker image by unpacking into venvs at build time. Used to bridge fast-deploy (PEX)
+    # customers onto Serverless v2 (Kubernetes), which runs only Docker images and no PEX runtime.
+    pex_docker = "python-executable-image"
 
 
 @app.command(help="Build selected or requested locations")
@@ -800,6 +807,17 @@ def build_impl(
                     "Built and uploaded python executable"
                     f" {location_state.build_output.pex_tag} for location {name}"
                 )
+            elif build_strategy == BuildStrategy.pex_docker:
+                location_state.build_output = _build_pex_docker_bundle(
+                    url=url,
+                    api_token=api_token,
+                    name=name,
+                    location_build_dir=location_build_dir,
+                    python_version=python_version,
+                    pex_build_method=pex_build_method,
+                    location_state=location_state,
+                )
+                state_store.save(location_state)
         except:
             location_state.add_status_change(state.LocationStatus.failed, "build failed")
             state_store.save(location_state)
@@ -831,7 +849,8 @@ def _build_docker(
 ) -> state.DockerBuildOutput:
     name = location_state.location_name
     docker_utils.verify_docker()
-    registry_info = utils.get_registry_info(url)
+    registry_info = utils.get_registry_info(url, location_state.deployment_name)
+    repo_location = name if registry_info.get("is_harbor") else None
 
     docker_image_tag = docker_utils.default_image_tag(
         location_state.deployment_name, name, location_state.build.commit_hash
@@ -853,15 +872,19 @@ def _build_docker(
         base_image=docker_base_image,
         dockerfile_path=dockerfile_path,
         use_editable_dagster=use_editable_dagster,
+        location_name=repo_location,
+        build_args=[],
     )
     if retval != 0:
         raise ui.error(f"Failed to build docker image for location {name}")
 
-    retval = docker_utils.upload_image(docker_image_tag, registry_info)
+    retval = docker_utils.upload_image(docker_image_tag, registry_info, location_name=repo_location)
     if retval != 0:
         raise ui.error(f"Failed to upload docker image for location {name}")
 
-    image = f"{registry_info['registry_url']}:{docker_image_tag}"
+    image = docker_utils.full_image_ref(
+        registry_info["registry_url"], repo_location, docker_image_tag
+    )
     ui.print(f"Built and uploaded image {image} for location {name}")
 
     return state.DockerBuildOutput(image=image)
@@ -908,6 +931,98 @@ def _build_pex(
         image=location_kwargs.get("image"),
         pex_tag=location_kwargs["pex_tag"],
     )
+
+
+@metrics.instrument(
+    CliEventType.BUILD,
+    tags=[CliEventTags.subcommand.dagster_cloud_ci, CliEventTags.server_strategy.pex],
+)
+def _build_pex_docker_bundle(
+    *,
+    url: str,
+    api_token: str,
+    name: str,
+    location_build_dir: str,
+    python_version: str,
+    pex_build_method: deps.BuildMethod,
+    location_state: state.LocationState,
+) -> state.DockerBuildOutput:
+    """Serverless v2 bridge: build the PEX artifacts, then bake them into a standard Docker image
+    by unpacking them into venvs at build time. Reuses the customer's PEX dependency resolution
+    (no `pip` re-resolve), and produces an ordinary image v2 launches like any other.
+    """
+    name = location_state.location_name
+    docker_utils.verify_docker()
+    parsed_python_version = pex_builder.util.parse_python_version(python_version)
+    version_tag = f"{parsed_python_version.major}.{parsed_python_version.minor}"
+
+    with tempfile.TemporaryDirectory() as build_folder:
+        pex_location = pex_builder.parse_workspace.Location(
+            name,
+            directory=location_build_dir,
+            build_folder=location_build_dir,
+            location_file=location_state.location_file,
+        )
+        builds = pex_builder.deploy.build_locations(
+            url,
+            api_token,
+            [pex_location],
+            build_folder,
+            upload_pex=False,
+            deps_cache_tags=pex_builder.deploy.DepsCacheTags(None, None),
+            python_version=parsed_python_version,
+            build_method=pex_build_method,
+        )
+        build = builds[0]
+        if not build.deps_pex_path or not build.source_pex_path:
+            raise ui.error(f"Failed to build PEX files for location {name}")
+
+        context_dir = pathlib.Path(build_folder) / "docker-context"
+        context_dir.mkdir()
+        shutil.copy(build.deps_pex_path, context_dir)
+        shutil.copy(build.source_pex_path, context_dir)
+        dockerfile_path = context_dir / "Dockerfile"
+        dockerfile_template = importlib.resources.files("dagster_cloud_cli").joinpath(
+            "commands/serverless/pex_bundle.Dockerfile"
+        )
+        dockerfile_path.write_text(
+            dockerfile_template.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+
+        registry_info = utils.get_registry_info(url, location_state.deployment_name)
+        repo_location = name if registry_info.get("is_harbor") else None
+        docker_image_tag = docker_utils.default_image_tag(
+            location_state.deployment_name, name, location_state.build.commit_hash
+        )
+
+        ui.print(f"Baking PEX bundle into a docker image for location {name}")
+        if (
+            docker_utils.build_image(
+                str(context_dir),
+                docker_image_tag,
+                registry_info,
+                env_vars=[],
+                base_image=None,
+                dockerfile_path=str(dockerfile_path),
+                use_editable_dagster=False,
+                location_name=repo_location,
+                build_args=[f"PYTHON_VERSION={version_tag}"],
+            )
+            != 0
+        ):
+            raise ui.error(f"Failed to build docker image for location {name}")
+
+        if (
+            docker_utils.upload_image(docker_image_tag, registry_info, location_name=repo_location)
+            != 0
+        ):
+            raise ui.error(f"Failed to upload docker image for location {name}")
+
+        image = docker_utils.full_image_ref(
+            registry_info["registry_url"], repo_location, docker_image_tag
+        )
+        ui.print(f"Built and uploaded PEX-bundle image {image} for location {name}")
+        return state.DockerBuildOutput(image=image, pex_bundle=True)
 
 
 @app.command(help="Update the current build session for an externally built docker image.")
@@ -1066,6 +1181,8 @@ def _deploy(
             location_args["python_version"] = build_output.python_version
         else:
             metrics.instrument_add_tags([CliEventTags.server_strategy.docker])
+            if isinstance(build_output, state.DockerBuildOutput) and build_output.pex_bundle:
+                location_args["pex_bundle"] = True
 
         locations_document.append(
             get_location_document(location_state.location_name, location_args)

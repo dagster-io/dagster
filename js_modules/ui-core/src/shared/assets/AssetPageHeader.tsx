@@ -3,10 +3,10 @@ import {
   BreadcrumbProps,
   Breadcrumbs,
   Colors,
+  Heading,
   Icon,
   MiddleTruncate,
   PageHeader,
-  Subtitle1,
 } from '@dagster-io/ui-components';
 import {observeEnabled} from '@shared/app/observeEnabled';
 import {
@@ -81,25 +81,25 @@ export const AssetPageHeader = ({
             <Breadcrumbs
               items={breadcrumbs}
               currentBreadcrumbRenderer={({text}) => (
-                <Subtitle1 className={styles.truncatedHeading}>
+                <Heading size={16} weight={600} className={styles.truncatedHeading}>
                   {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                </Subtitle1>
+                </Heading>
               )}
               breadcrumbRenderer={({text, href}) => {
                 if (href) {
                   return (
-                    <Subtitle1 className={styles.truncatedHeading}>
+                    <Heading size={16} weight={600} className={styles.truncatedHeading}>
                       <Link className={styles.breadcrumbLink} to={href}>
                         {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
                       </Link>
-                    </Subtitle1>
+                    </Heading>
                   );
                 }
 
                 return (
-                  <Subtitle1 className={styles.truncatedHeading}>
+                  <Heading size={16} weight={600} className={styles.truncatedHeading}>
                     {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </Subtitle1>
+                  </Heading>
                 );
               }}
               overflowRenderer={({text, href}) =>

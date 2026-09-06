@@ -21,6 +21,9 @@ export const WORKSPACE_PIPELINE_FRAGMENT = gql`
     isAssetJob
     externalJobSource
     pipelineSnapshotId
+    automationCondition {
+      label
+    }
   }
 `;
 

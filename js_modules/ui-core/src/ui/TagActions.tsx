@@ -1,4 +1,4 @@
-import {Box, Caption, Colors, Popover} from '@dagster-io/ui-components';
+import {Box, Colors, Popover, Text} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -13,6 +13,7 @@ export type TagAction =
   | {
       label: React.ReactNode;
       to: string; // link-style action (supports cmd-click for new tab)
+      disabled?: boolean; // render greyed out and non-navigable (e.g. data still loading)
     };
 
 export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]}) => (
@@ -23,12 +24,18 @@ export const TagActions = ({data, actions}: {data: TagType; actions: TagAction[]
   >
     {actions.map((action, ii) =>
       'to' in action ? (
-        <Link to={action.to} key={ii} className={styles.tagButtonLink}>
-          <Caption>{action.label}</Caption>
-        </Link>
+        action.disabled ? (
+          <button key={ii} className={styles.tagButton} disabled>
+            <Text size={12}>{action.label}</Text>
+          </button>
+        ) : (
+          <Link to={action.to} key={ii} className={styles.tagButtonLink}>
+            <Text size={12}>{action.label}</Text>
+          </Link>
+        )
       ) : (
         <button key={ii} className={styles.tagButton} onClick={() => action.onClick(data)}>
-          <Caption>{action.label}</Caption>
+          <Text size={12}>{action.label}</Text>
         </button>
       ),
     )}
@@ -40,11 +47,13 @@ export const TagActionsPopover = ({
   actions,
   children,
   childrenMiddleTruncate,
+  onOpening,
 }: {
   data: TagType;
   actions: TagAction[];
   children: React.ReactNode;
   childrenMiddleTruncate?: boolean;
+  onOpening?: () => void;
 }) => {
   return (
     <Popover
@@ -54,6 +63,7 @@ export const TagActionsPopover = ({
       targetProps={childrenMiddleTruncate ? {style: {minWidth: 0, maxWidth: '100%'}} : {}}
       placement="top"
       interactionKind="hover"
+      onOpening={onOpening}
     >
       {children}
     </Popover>

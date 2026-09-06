@@ -12,7 +12,7 @@ import {
   LaunchPipelineExecutionMutation,
   RunTimeFragment,
 } from './types/RunUtils.types';
-import {Mono, showToast} from '../../../ui-components/src';
+import {Text, showToast} from '../../../ui-components/src';
 import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -95,7 +95,10 @@ export async function handleLaunchResult(
         intent: 'success',
         message: (
           <div>
-            Launched run <Mono>{result.run.id.slice(0, 8)}</Mono>
+            Launched run{' '}
+            <Text size={14} family="mono">
+              {result.run.id.slice(0, 8)}
+            </Text>
           </div>
         ),
         action: {

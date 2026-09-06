@@ -29,12 +29,11 @@ For example, the following asset emits a `processing_time_ms` metric each time i
 ```python
 import dagster as dg
 
+
 @dg.asset
 def my_table():
     elapsed_ms = 1500  # your logic here
-    return dg.MaterializeResult(
-        metadata={"processing_time_ms": elapsed_ms}
-    )
+    return dg.MaterializeResult(metadata={"processing_time_ms": elapsed_ms})
 ```
 
 For more details, see [the metadata guide](/guides/build/assets/metadata-and-tags#runtime-metadata).

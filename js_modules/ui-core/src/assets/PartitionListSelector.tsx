@@ -1,10 +1,9 @@
-import {Box, Colors, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, Colors, Container, Inner, MiddleTruncate, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import {CSSProperties, useEffect, useRef} from 'react';
 
 import {assetEventListStyles} from './AssetEventList';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 export interface PartitionListSelectorProps<TStatus> {
   partitions: string[];
@@ -63,7 +62,7 @@ export function PartitionListSelector<TStatus>({
         }
       }}
     >
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const dimensionKey = partitions[index]!;
@@ -71,8 +70,8 @@ export function PartitionListSelector<TStatus>({
           return (
             <Row
               key={key}
-              $height={size}
-              $start={start}
+              height={size}
+              start={start}
               className={clsx(
                 assetEventListStyles.assetListRow,
                 dimensionKey === focusedDimensionKey && assetEventListStyles.assetListRowFocused,

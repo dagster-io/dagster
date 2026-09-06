@@ -78,6 +78,7 @@ def test_single_proc_interrupt():
                 "Execution was interrupted unexpectedly. "
                 "No user initiated termination request was found, treating as failure." in message
                 for message in result_messages
+                if message is not None
             ]
         )
 
@@ -154,15 +155,16 @@ def test_interrupt_resource_teardown():
                 },
             )
 
-            results = []
             # launch a pipeline that writes a file and loops infinitely
             # next time the launched thread wakes up it will send an interrupt
-            for event in execute_run_iterator(
-                InMemoryJob(write_a_file_job),
-                dagster_run,
-                instance=instance,
-            ):
-                results.append(event.event_type)
+            results = [
+                event.event_type
+                for event in execute_run_iterator(
+                    InMemoryJob(write_a_file_job),
+                    dagster_run,
+                    instance=instance,
+                )
+            ]
 
             assert DagsterEventType.STEP_FAILURE in results
             assert DagsterEventType.PIPELINE_FAILURE in results

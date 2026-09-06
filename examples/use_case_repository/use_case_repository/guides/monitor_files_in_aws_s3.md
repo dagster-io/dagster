@@ -77,6 +77,7 @@ from dagster_aws.s3.sensor import get_s3_keys
 AWS_S3_BUCKET = "example-source-bucket"
 AWS_S3_OBJECT_PREFIX = "example-source-prefix"
 
+
 class ObjectConfig(Config):
     key: str
 

@@ -682,13 +682,12 @@ def with_auto_materialize_policy(
     """Note: this should be implemented in core dagster at some point, and this implementation is
     a lazy hack.
     """
-    ret = []
-    for assets_def in assets_defs:
-        ret.append(
-            assets_def.with_attributes(
-                automation_condition=auto_materialize_policy.to_automation_condition()
-            )
+    ret = [
+        assets_def.with_attributes(
+            automation_condition=auto_materialize_policy.to_automation_condition()
         )
+        for assets_def in assets_defs
+    ]
     return ret
 
 
@@ -726,7 +725,7 @@ def with_implicit_auto_materialize_policies(
     assets_defs: Sequence[dg.SourceAsset | dg.AssetsDefinition],
     asset_graph: BaseAssetGraph,
     targeted_assets: AbstractSet[dg.AssetKey] | None = None,
-) -> Sequence[dg.AssetsDefinition]:
+) -> Sequence[dg.AssetsDefinition | dg.SourceAsset]:
     """Accepts a list of assets, adding implied auto-materialize policies to targeted assets
     if policies do not exist.
     """

@@ -1,12 +1,11 @@
-import {Box, Colors, Icon, MonoSmall, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, Container, Icon, Inner, Row, Spinner, Text} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import clsx from 'clsx';
 import {useEffect, useRef} from 'react';
 
+import styles from './css/AssetEventList.module.css';
 import {AssetEventGroup} from './groupByPartition';
 import {Timestamp} from '../app/time/Timestamp';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
-import styles from './css/AssetEventList.module.css';
 
 // This component is on the feature-flagged AssetOverview page and replaces AssetEventTable
 
@@ -60,15 +59,15 @@ export const AssetEventList = ({
           }
         }}
       >
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const group = groups[index]!;
             return (
               <Row
                 key={key}
-                $height={size}
-                $start={start}
+                height={size}
+                start={start}
                 className={clsx(
                   styles.assetListRow,
                   group === focused && styles.assetListRowFocused,
@@ -148,7 +147,9 @@ const AssetEventListEventRow = ({group}: {group: AssetEventGroup}) => {
       {partition ? (
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
           <Icon name="partition" />
-          <MonoSmall color={Colors.textLight()}>{partition}</MonoSmall>
+          <Text size={12} family="mono" color="textLight">
+            {partition}
+          </Text>
         </Box>
       ) : undefined}
     </Box>

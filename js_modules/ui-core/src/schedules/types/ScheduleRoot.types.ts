@@ -1,8 +1,37 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type ScheduleRootQueryVariables = Types.Exact<{
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type InstigationTickStatus = 'FAILURE' | 'SKIPPED' | 'STARTED' | 'SUCCESS';
+
+export type InstigationType = 'AUTO_MATERIALIZE' | 'SCHEDULE' | 'SENSOR';
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
+
+export type ScheduleSelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+  scheduleName: string;
+};
+
+export type ScheduleRootQueryVariables = Exact<{
   scheduleSelector: Types.ScheduleSelector;
 }>;
 

@@ -15,9 +15,11 @@ import {
   buildSensor,
   buildSensorData,
   buildTickEvaluation,
+  buildUnauthorizedError,
 } from '../../graphql/builders';
 import {DynamicPartitionsRequestType, InstigationStatus, RunStatus} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
+import {buildCreatePartitionMutation} from '../../partitions/__fixtures__/CreatePartitionDialog.fixture';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
 import {SET_CURSOR_MUTATION} from '../../sensors/EditCursorDialog';
@@ -234,7 +236,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
           runConfigData:
             'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],
@@ -260,7 +262,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
           runConfigData:
             'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],
@@ -286,7 +288,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
           runConfigData:
             'solids:\n  read_file:\n    config:\n      directory: /Users/marcosalazar/code/dagster/js_modules/ui-core/src/ticks/tests\n      filename: DryRunRequestTable.test.tsx',
           selector: {
-            jobName: 'saepe',
+            jobName: 'vehemens',
             repositoryLocationName: 'testLocation',
             repositoryName: 'testName',
             assetSelection: [],
@@ -322,7 +324,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
               __typename: 'Run',
               id: '504b3a77-d6c4-440c-a128-7f59c9d75d59',
               pipeline: buildPipelineSnapshot({
-                name: 'saepe',
+                name: 'vehemens',
               }),
               tags: [
                 buildPipelineTag({key: 'dagster2', value: 'test'}),
@@ -341,7 +343,7 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
               __typename: 'Run',
               id: '6745cd03-3d89-4fd2-a41f-6b9d9ffdc134',
               pipeline: buildPipelineSnapshot({
-                name: 'saepe',
+                name: 'vehemens',
               }),
               tags: [
                 buildPipelineTag({key: 'dagster3', value: 'test'}),
@@ -378,6 +380,54 @@ export const SensorLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutation>
     },
   },
 };
+
+export const SensorDryRunMutationWithDynamicPartitionRequest: MockedResponse<SensorDryRunMutation> =
+  {
+    request: {
+      query: EVALUATE_SENSOR_MUTATION,
+      variables: {
+        selectorData: {
+          sensorName: 'test',
+          repositoryLocationName: 'testLocation',
+          repositoryName: 'testName',
+        },
+        cursor: 'testCursortesting123',
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        sensorDryRun: buildDryRunInstigationTick({
+          evaluationResult: buildTickEvaluation({
+            cursor: 'a new cursor',
+            runRequests,
+            error: null,
+            dynamicPartitionsRequests: [
+              buildDynamicPartitionRequest({
+                partitionKeys: ['unauthorized_key'],
+                partitionsDefName: 'colors',
+                type: DynamicPartitionsRequestType.ADD_PARTITIONS,
+              }),
+            ],
+          }),
+        }),
+      },
+    },
+  };
+
+export const AddDynamicPartitionUnauthorizedMock = buildCreatePartitionMutation({
+  variables: {
+    partitionsDefName: 'colors',
+    partitionKey: 'unauthorized_key',
+    repositorySelector: {
+      repositoryLocationName: 'testLocation',
+      repositoryName: 'testName',
+    },
+  },
+  data: buildUnauthorizedError({
+    message: 'You do not have permission to create dynamic partitions.',
+  }),
+});
 
 export const SensorDryRunMutationDynamicPartitionsOnly: MockedResponse<SensorDryRunMutation> = {
   request: {

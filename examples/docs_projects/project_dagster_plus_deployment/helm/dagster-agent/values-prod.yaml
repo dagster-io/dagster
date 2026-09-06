@@ -1,0 +1,55 @@
+dagsterCloud:
+  deployment: "prod"
+  agentTokenSecretName: dagster-cloud-agent-token
+  branchDeployments: false
+
+workspace:
+  serverTTL:
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 86400
+  envSecrets:
+    - name: dagster-prod-env
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "4"
+      memory: "8Gi"
+  runK8sConfig:
+    podSpecConfig:
+      nodeSelector:
+        cloud.google.com/gke-nodepool: "prod-pool"
+
+dagsterCloudAgent:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+serviceAccount:
+  create: true
+  name: dagster-agent-prod
+  annotations: {}
+
+# The chart has no built-in `podDisruptionBudget` value. To protect the agent
+# deployment from voluntary disruption (node drains, autoscaler scale-down),
+# supply your own PodDisruptionBudget through `extraManifests`. Paired with
+# `dagsterCloudAgent.replicas: 2` above, this keeps one agent serving at all times.
+extraManifests:
+  - apiVersion: policy/v1
+    kind: PodDisruptionBudget
+    metadata:
+      name: dagster-agent-prod-pdb
+    spec:
+      minAvailable: 1
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: dagster-cloud-agent
+          app.kubernetes.io/instance: "{{ .Release.Name }}"
+          deployment: agent

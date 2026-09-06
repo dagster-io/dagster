@@ -10,7 +10,6 @@ from dagster import (
     _check as check,
     materialize,
 )
-from dagster._check import CheckError
 from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
@@ -138,21 +137,27 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
     ), str(metadata_by_asset_key)
 
 
-def test_insights_err_not_snowflake_or_bq(
+def test_insights_skips_unsupported_adapter(
     test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
     caplog: pytest.LogCaptureFixture,
 ) -> None:
+    # On an unsupported adapter (here, DuckDB), `with_insights` is a graceful no-op: it logs a
+    # warning and passes the dbt events through unchanged rather than failing the run.
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream().with_insights()
 
-    with pytest.raises(CheckError) as exc_info:
-        materialize(
-            [my_dbt_assets],
-            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
-        )
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+    )
 
-    assert "is not supported for adapter type `duckdb`" in str(exc_info.value)
+    assert result.success
+    assert any(
+        "Insights is only supported for the Snowflake and BigQuery dbt adapters" in record.message
+        and "`duckdb`" in record.message
+        for record in caplog.records
+    ), [record.message for record in caplog.records]
 
 
 @pytest.mark.parametrize(
@@ -309,7 +314,7 @@ def test_attach_metadata(
         check.not_none(event.asset_key): event.materialization.metadata
         for event in result.get_asset_materialization_events()
     }
-    assert all("summary" in metadata for _, metadata in metadata_by_asset_key.items()), str(
+    assert all("summary" in metadata for metadata in metadata_by_asset_key.values()), str(
         metadata_by_asset_key
     )
 

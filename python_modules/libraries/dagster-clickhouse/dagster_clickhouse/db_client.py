@@ -58,9 +58,10 @@ class ClickhouseDbClient(DbClient[Client]):
         fqn = _qualified_table_name(table_slice)
         try:
             if table_slice.partition_dimensions:
-                where_clause = _partition_where_clause(table_slice.partition_dimensions)
+                where_clause, params = _partition_where_clause(table_slice.partition_dimensions)
                 connection.execute(
-                    f"ALTER TABLE {fqn} DELETE WHERE {where_clause} SETTINGS mutations_sync = 1"
+                    f"ALTER TABLE {fqn} DELETE WHERE {where_clause} SETTINGS mutations_sync = 1",
+                    params,
                 )
             else:
                 connection.execute(f"TRUNCATE TABLE IF EXISTS {fqn}")
@@ -71,38 +72,58 @@ class ClickhouseDbClient(DbClient[Client]):
 
     @staticmethod
     def get_select_statement(table_slice: TableSlice) -> str:
+        query, _params = ClickhouseDbClient.get_select_statement_and_params(table_slice)
+        return query
+
+    @staticmethod
+    def get_select_statement_and_params(table_slice: TableSlice) -> tuple[str, dict[str, object]]:
         col_str = (
             ", ".join(_quote_ident(c) for c in table_slice.columns) if table_slice.columns else "*"
         )
         fqn = _qualified_table_name(table_slice)
         if table_slice.partition_dimensions:
-            query = f"SELECT {col_str} FROM {fqn} WHERE\n"
-            return query + _partition_where_clause(table_slice.partition_dimensions)
-        return f"SELECT {col_str} FROM {fqn}"
+            where_clause, params = _partition_where_clause(table_slice.partition_dimensions)
+            return f"SELECT {col_str} FROM {fqn} WHERE\n{where_clause}", params
+        return f"SELECT {col_str} FROM {fqn}", {}
 
 
-def _partition_where_clause(partition_dimensions: Sequence[TablePartitionDimension]) -> str:
-    return " AND\n".join(
-        (
-            _time_window_where_clause(partition_dimension)
-            if isinstance(partition_dimension.partitions, TimeWindow)
-            else _static_where_clause(partition_dimension)
-        )
-        for partition_dimension in partition_dimensions
-    )
+def _partition_where_clause(
+    partition_dimensions: Sequence[TablePartitionDimension],
+) -> tuple[str, dict[str, object]]:
+    clauses: list[str] = []
+    params: dict[str, object] = {}
+    for idx, partition_dimension in enumerate(partition_dimensions):
+        if isinstance(partition_dimension.partitions, TimeWindow):
+            clause, clause_params = _time_window_where_clause(partition_dimension, idx)
+        else:
+            clause, clause_params = _static_where_clause(partition_dimension, idx)
+        clauses.append(clause)
+        params.update(clause_params)
+    return " AND\n".join(clauses), params
 
 
-def _time_window_where_clause(table_partition: TablePartitionDimension) -> str:
+def _time_window_where_clause(
+    table_partition: TablePartitionDimension, idx: int
+) -> tuple[str, dict[str, object]]:
     partition = cast("TimeWindow", table_partition.partitions)
     start_dt, end_dt = partition
-    start_dt_str = start_dt.strftime(CLICKHOUSE_DATETIME_FORMAT)
-    end_dt_str = end_dt.strftime(CLICKHOUSE_DATETIME_FORMAT)
+    start_param = f"partition_{idx}_start"
+    end_param = f"partition_{idx}_end"
     expr = _quote_ident(table_partition.partition_expr)
-    return f"{expr} >= '{start_dt_str}' AND {expr} < '{end_dt_str}'"
-
-
-def _static_where_clause(table_partition: TablePartitionDimension) -> str:
-    partitions = ", ".join(
-        f"'{str(p).replace(chr(39), chr(39) * 2)}'" for p in table_partition.partitions
+    return (
+        f"{expr} >= %({start_param})s AND {expr} < %({end_param})s",
+        {
+            start_param: start_dt.strftime(CLICKHOUSE_DATETIME_FORMAT),
+            end_param: end_dt.strftime(CLICKHOUSE_DATETIME_FORMAT),
+        },
     )
-    return f"{_quote_ident(table_partition.partition_expr)} IN ({partitions})"
+
+
+def _static_where_clause(
+    table_partition: TablePartitionDimension, idx: int
+) -> tuple[str, dict[str, object]]:
+    partitions_param = f"partition_{idx}_values"
+    return (
+        f"{_quote_ident(table_partition.partition_expr)} IN %({partitions_param})s",
+        {partitions_param: tuple(str(partition) for partition in table_partition.partitions)},
+    )

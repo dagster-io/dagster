@@ -464,9 +464,7 @@ def sum_fan_in(_, nums):
 
 
 def construct_fan_in_level(source, level, fanout):
-    fan_outs = []
-    for i in range(0, fanout):
-        fan_outs.append(add_one_fan.alias(f"add_one_fan_{level}_{i}")(source))
+    fan_outs = [add_one_fan.alias(f"add_one_fan_{level}_{i}")(source) for i in range(0, fanout)]
 
     return sum_fan_in.alias(f"sum_{level}")(fan_outs)
 

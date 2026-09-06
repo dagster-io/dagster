@@ -1,6 +1,6 @@
 ---
 title: Create and materialize partitioned assets
-description: Partitioning Assets by datetime and categories
+description: Partitioning assets by datetime and categories
 sidebar_position: 50
 ---
 
@@ -40,7 +40,9 @@ This partition definition can now be used in an asset:
 Partitions are accessed through the `context` object, which is passed to each asset during execution and provides runtime information. When running an asset for a specific partition date, we can reference that value using `context.partition_key`. The rest of the asset implementation should resemble the other assets we've defined. In this case, we are creating a new table, `monthly_orders`, using data from the `stg_orders` dbt model. We first delete any existing data for the current partition, then insert new data for that partition. This ensures that our pipeline is [idempotent](https://en.wikipedia.org/wiki/Idempotence), allowing us to re-execute the same partition without duplicating data.
 
 :::info
+
 Do not worry about the `automation_condition` in the `dg.asset` decorator for now. This is not necessary, but will make more sense when we discuss automation later.
+
 :::
 
 ## Step 2: Materialize partitioned assets

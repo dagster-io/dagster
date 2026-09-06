@@ -127,7 +127,6 @@ dependencies = [
   "pandas-gbq",            # dagster-gcp-pandas, dagster-gcp-pyspark test code
   "gcp-storage-emulator",  # dagster-gcp pipes test code
   "requests-mock",         # dagster-aws test code
-  "pytest-cases",          # dagster-aws test code
 
   # ---- Examples (in-repo, top-level)
   "airlift-federation-tutorial",
@@ -200,6 +199,9 @@ dependencies = [
 # Aikido blocks PyPI packages newer than 48h. Pin globally so `uv lock` works
 # from dev machines without setting UV_EXCLUDE_NEWER ad-hoc.
 [tool.uv]
+# Virtual project: this package exists only to declare the env's dependency
+# set — uv installs the deps and never builds `ty-master` itself.
+package = false
 exclude-newer = "48h"
 
 [tool.uv.sources]
@@ -374,6 +376,9 @@ python-version = "3.10"
 deprecated = "ignore"                  # Deprecation warnings across dependencies
 possibly-missing-attribute = "ignore"  # High false positive rate
 possibly-missing-import = "ignore"     # Often incorrect in complex imports
+# Misfires on dynamically-generated pydantic models (e.g. dagster's
+# Resolvable machinery), whose synthesized fields ty cannot see.
+pydantic-discarded-extra-argument = "ignore"
 # Suppress leftover `# type: ignore` / `# ty: ignore` directives that
 # no longer apply. Especially relevant for the data-platform and
 # internal envs after ty version bumps; no-op for master today.
@@ -412,7 +417,7 @@ exclude = [
   # There is code in dagster_graphql/implementation that as of ty 0.0.35 breaks
   # ty and causes runaway memory consumption. Tracked here:
   #   https://github.com/astral-sh/ty/issues/3445#issuecomment-4426769715
-  "python_modules/dagster-graphql/dagster_graphql/implementation",
+  # "python_modules/dagster-graphql/dagster_graphql/implementation",
 
   # Vendored third-party code (croniter, dateutil).
   "python_modules/dagster/dagster/_vendored",
@@ -422,27 +427,40 @@ exclude = [
   # env's python-version is 3.10 (matching dagster's minimum), so ty
   # would flag those imports as unresolved here.
   "scripts/run-ty.py",
+
+  # `prefect` cannot be installed in this env: it requires sqlalchemy>=2,
+  # while the airflow 2.9.3 that dagster-airlift pins below python 3.13
+  # requires sqlalchemy<2. Excluded rather than left red until the package
+  # gets a ty env of its own.
+  "python_modules/libraries/dagster-prefect",
 ]
 
 # Ignore all files that are git-ignored unless explicitly included.
 respect-ignore-files = true
 
-# Override for dagster_graphql/schema: graphene's ObjectType / Mutation /
-# InputObjectType / Interface metaclass synthesizes `__init__` kwargs from
-# class-body field declarations, so e.g. `GrapheneFooType(message=..., path=...)`
-# is valid at runtime even though ty can't see `message` or `path` as accepted
-# kwargs. graphene doesn't ship `@dataclass_transform`-decorated bases, so ty
-# reports every such kwarg as `unknown-argument`. Additionally, ty 0.0.35 doesn't
-# narrow pydantic discriminated unions through `match result.typename__: case 'X':`,
-# causing unresolved-attribute, invalid-argument-type, and not-subscriptable
-# errors across the schema files. Disable all four rules for the schema subtree.
+# Override for dagster_graphql/schema and dagster_graphql/implementation:
+# graphene's ObjectType / Mutation / InputObjectType / Interface metaclass
+# synthesizes `__init__` kwargs from class-body field declarations, so e.g.
+# `GrapheneFooType(message=..., path=...)` is valid at runtime even though ty
+# can't see `message` or `path` as accepted kwargs. graphene doesn't ship
+# `@dataclass_transform`-decorated bases, so ty reports every such kwarg as
+# `unknown-argument` (and positional forms as `too-many-positional-arguments`).
+# Additionally, ty 0.0.35 doesn't narrow pydantic discriminated unions through
+# `match result.typename__: case 'X':`, causing unresolved-attribute,
+# invalid-argument-type, and not-subscriptable errors. Disable these rules for
+# both subtrees.
 [[tool.ty.overrides]]
-include = ["python_modules/dagster-graphql/dagster_graphql/schema/**"]
+include = [
+  "python_modules/dagster-graphql/dagster_graphql/schema/**",
+  "python_modules/dagster-graphql/dagster_graphql/implementation/**",
+]
 
 [tool.ty.overrides.rules]
 # graphene's ObjectType / Mutation / etc. metaclass synthesizes __init__
-# from class-body fields. ty doesn't see it and flags every kwarg.
+# from class-body fields. ty doesn't see it and flags every kwarg /
+# positional form.
 unknown-argument = "ignore"
+too-many-positional-arguments = "ignore"
 # All three below are caused by ty 0.0.35 not narrowing pydantic
 # discriminated unions through `match result.typename__: case "X":`,
 # which is the dominant pattern in schema files. Revisit when ty

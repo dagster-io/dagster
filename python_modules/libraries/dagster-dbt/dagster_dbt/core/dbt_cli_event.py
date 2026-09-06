@@ -65,6 +65,7 @@ def _build_column_lineage_metadata(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
     target_path: Path | None,
+    project: DbtProject | None,
 ) -> dict[str, Any]:
     """Process the lineage metadata for a dbt CLI event.
 
@@ -200,7 +201,9 @@ def _build_column_lineage_metadata(
             # Add the column dependency.
             column_deps.add(
                 TableColumnDep(
-                    asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
+                    asset_key=dagster_dbt_translator.get_asset_spec(
+                        manifest, parent_resource_props["unique_id"], project
+                    ).key,
                     column_name=parent_column_name,
                 )
             )
@@ -342,6 +345,7 @@ class DbtCliEventMessage(ABC):
         translator: DagsterDbtTranslator,
         manifest: Mapping[str, Any],
         target_path: Path | None,
+        project: DbtProject | None,
     ) -> Mapping[str, Any]:
         try:
             column_data = self._event_history_metadata.get("columns", {})
@@ -362,6 +366,7 @@ class DbtCliEventMessage(ABC):
                     manifest=manifest,
                     dagster_dbt_translator=translator,
                     target_path=target_path,
+                    project=project,
                 )
         except Exception as e:
             logger.warning(
@@ -378,10 +383,11 @@ class DbtCliEventMessage(ABC):
         translator: DagsterDbtTranslator,
         manifest: Mapping[str, Any],
         target_path: Path | None,
+        project: DbtProject | None,
     ) -> dict[str, Any]:
         return {
             **self._get_default_metadata(manifest),
-            **self._get_lineage_metadata(translator, manifest, target_path),
+            **self._get_lineage_metadata(translator, manifest, target_path, project),
         }
 
     def _to_model_events(
@@ -393,7 +399,9 @@ class DbtCliEventMessage(ABC):
         project: DbtProject | None,
     ) -> Iterator[Output | AssetMaterialization]:
         asset_key = dagster_dbt_translator.get_asset_spec(manifest, self._unique_id, project).key
-        metadata = self._get_materialization_metadata(dagster_dbt_translator, manifest, target_path)
+        metadata = self._get_materialization_metadata(
+            dagster_dbt_translator, manifest, target_path, project
+        )
         if context and context.has_assets_def:
             yield Output(
                 value=None, output_name=asset_key.to_python_identifier(), metadata=metadata

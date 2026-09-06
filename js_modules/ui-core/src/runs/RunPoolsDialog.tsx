@@ -13,7 +13,11 @@ export const RunPoolsDialog = ({
 }) => {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} canOutsideClickClose canEscapeKeyClose title="Pools">
-      <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12}}>
+      <Box
+        margin={{horizontal: 24, vertical: 12}}
+        flex={{gap: 12, wrap: 'wrap'}}
+        style={{maxHeight: '60vh', overflowY: 'auto'}}
+      >
         {pools.map((pool) => (
           <PoolTag key={pool} pool={pool} />
         ))}

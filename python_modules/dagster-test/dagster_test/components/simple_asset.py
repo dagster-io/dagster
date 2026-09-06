@@ -3,6 +3,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components.resolved.core_models import ResolvedAssetKey
+from dagster.components.resolved.form_config import ComponentFormConfig
 
 
 class SimpleAssetComponent(Component, Resolvable, Model):
@@ -10,6 +11,10 @@ class SimpleAssetComponent(Component, Resolvable, Model):
 
     asset_key: ResolvedAssetKey
     value: str
+
+    @classmethod
+    def get_form_config(cls) -> ComponentFormConfig:
+        return ComponentFormConfig(editable=True)
 
     @classmethod
     def get_spec(cls):

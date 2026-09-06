@@ -123,7 +123,7 @@ def test_pull_env_command_project(dg_plus_cli_config):
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert result.output.strip() == "Environment variables saved to .env"
 
-        assert Path(".env").read_text().strip() == "FOO=bar\nBAZ=qux"
+        assert Path(".env").read_text(encoding="utf-8").strip() == "FOO=bar\nBAZ=qux"
 
 
 def test_pull_env_command_workspace(dg_plus_cli_config):
@@ -187,7 +187,7 @@ def test_pull_env_command_project_preserves_existing_env(dg_plus_cli_config):
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        Path(".env").write_text("EXISTING=keep\nFOO=old")
+        Path(".env").write_text("EXISTING=keep\nFOO=old", encoding="utf-8")
 
         mock_gql_response(
             query=gql.SECRETS_QUERY,
@@ -216,7 +216,7 @@ def test_pull_env_command_project_preserves_existing_env(dg_plus_cli_config):
         result = runner.invoke("plus", "pull", "env")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
-        env_contents = Path(".env").read_text()
+        env_contents = Path(".env").read_text(encoding="utf-8")
         assert "EXISTING=keep" in env_contents
         assert "FOO=bar" in env_contents
         assert "BAZ=qux" in env_contents
@@ -509,7 +509,7 @@ def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
 
         input_args = ["bar"] if input_type == "direct" else ["--from-local-env"]
         if input_type == "from-env-file":
-            Path(".env").write_text("FOO=qux")
+            Path(".env").write_text("FOO=qux", encoding="utf-8")
         result = runner.invoke("plus", "create", "env", "FOO", *input_args)
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 

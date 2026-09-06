@@ -54,7 +54,7 @@ class DuckDbComponent(dg.Component, dg.Model, dg.Resolvable):
         original_dir = os.getcwd()
         try:
             os.chdir(Path(__file__).parent)
-            query = open(sql_file).read()
+            query = open(sql_file, encoding="utf-8").read()
             # Read CSV from parent directory
             df = con.execute(query).fetchdf()
         finally:

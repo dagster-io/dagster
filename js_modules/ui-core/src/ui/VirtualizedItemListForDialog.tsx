@@ -1,8 +1,6 @@
-import {Box} from '@dagster-io/ui-components';
+import {Box, Container, Inner, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
-
-import {Container, Inner, Row} from './VirtualizedTable';
 
 interface Props<T> {
   items: T[];
@@ -31,14 +29,14 @@ export function VirtualizedItemListForDialog<A>({
 
   return (
     <Container ref={container} style={{padding}}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {virtualItems.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const assetKey = items[index]!;
           return (
             <Row
-              $height={size}
-              $start={start}
+              height={size}
+              start={start}
               key={key}
               ref={rowVirtualizer.measureElement}
               data-key={key}

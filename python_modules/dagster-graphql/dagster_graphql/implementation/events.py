@@ -536,14 +536,13 @@ def get_graphene_events_from_records_connection(
     instance, connection: EventLogConnection, job_name: str
 ):
     show_failed_to_materialize = instance.can_read_asset_failure_events()
-    events = []
-    for el_record in connection.records:
-        if (
-            show_failed_to_materialize
-            or el_record.event_log_entry.dagster_event_type
-            != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
-        ):
-            events.append(from_event_record(el_record.event_log_entry, job_name))
+    events = [
+        from_event_record(el_record.event_log_entry, job_name)
+        for el_record in connection.records
+        if show_failed_to_materialize
+        or el_record.event_log_entry.dagster_event_type
+        != DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+    ]
 
     return events
 

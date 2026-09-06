@@ -1,8 +1,26 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
 
-export type AssetInstigatorsQueryVariables = Types.Exact<{[key: string]: never}>;
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
+
+export type AssetInstigatorsQueryVariables = Exact<{[key: string]: never}>;
 
 export type AssetInstigatorsQuery = {
   __typename: 'Query';

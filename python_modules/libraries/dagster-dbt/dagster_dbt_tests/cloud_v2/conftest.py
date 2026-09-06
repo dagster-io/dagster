@@ -71,13 +71,13 @@ TEST_REST_API_BASE_URL = f"{TEST_ACCESS_URL}/api/v2/accounts/{TEST_ACCOUNT_ID}"
 
 
 def get_sample_manifest_json() -> Mapping[str, Any]:
-    with open(manifest_path) as f:
+    with open(manifest_path, encoding="utf-8") as f:
         sample_manifest_json = json.load(f)
     return sample_manifest_json
 
 
 def get_sample_run_results_json() -> Mapping[str, Any]:
-    with open(run_results_path) as f:
+    with open(run_results_path, encoding="utf-8") as f:
         sample_run_results_json = json.load(f)
     return sample_run_results_json
 

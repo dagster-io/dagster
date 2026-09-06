@@ -34,3 +34,6 @@ root_module = "project_atproto_dashboard"
 registry_modules = [
     "project_atproto_dashboard.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

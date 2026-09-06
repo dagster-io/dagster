@@ -1,3 +1,41 @@
+.headerRow {
+  display: grid;
+  height: 32px;
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+.headerRowSticky {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-background-default);
+}
+
+.headerCell {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.headerCellClickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cellBox {
+  overflow: hidden;
+
+  &:first-child {
+    padding-left: 24px;
+  }
+
+  &:last-child {
+    padding-right: 24px;
+    box-shadow: none;
+  }
+}
+
 .container {
   height: 100%;
   overflow: auto;
@@ -14,12 +52,4 @@
   right: 0;
   top: 0;
   overflow: hidden;
-}
-
-.cellBox:first-child {
-  padding-left: 24px;
-}
-
-.cellBox:last-child {
-  padding-right: 24px;
 }

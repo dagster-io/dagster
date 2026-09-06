@@ -570,6 +570,11 @@
     "permanent": true
   },
   {
+    "source": "/dagster-plus/managing-deployments/billing",
+    "destination": "/deployment/dagster-plus/management/billing",
+    "permanent": true
+  },
+  {
     "source": "/guides/deploy/deployment-options",
     "destination": "/deployment/oss/deployment-options",
     "permanent": true

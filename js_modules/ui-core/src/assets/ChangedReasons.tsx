@@ -2,9 +2,9 @@ import {
   BaseTag,
   Box,
   Colors,
+  Heading,
   Icon,
   Popover,
-  Subtitle2,
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
@@ -73,10 +73,10 @@ export const ChangedReasonsPopover = ({
       content={
         <Box flex={{direction: 'column'}}>
           <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-            <Subtitle2>
+            <Heading size={14} weight={600}>
               {numberFormatter.format(modifiedChanges.length)}{' '}
               {ifPlural(modifiedChanges.length, 'change', 'changes')} in this branch
-            </Subtitle2>
+            </Heading>
           </Box>
           {modifiedChanges.map((change) => {
             return (

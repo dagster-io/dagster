@@ -35,13 +35,13 @@ Focus on:
 2. Compliance with coding conventions from .claude/coding_conventions.md
 3. Adherence to development workflow requirements from .claude/dev_workflow.md
 4. Proper use of type annotations and @record decorators
-5. Code quality requirements including mandatory `make ruff` execution
+5. Code quality requirements including mandatory `just ruff` execution
 
 After the audit, provide:
 - A summary of any standards violations found
 - Specific recommendations for fixes
 - List of files that need attention
-- Confirmation that mandatory code quality checks (make ruff) have been run
+- Confirmation that mandatory code quality checks (just ruff) have been run
 
 If no violations are found, confirm that all changed files comply with the project's coding standards.
 ```

@@ -6,7 +6,7 @@ from typing_extensions import assert_never
 
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.organization import DgApiOrganizationSettings
@@ -42,7 +42,7 @@ class DgApiOrganizationApi:
                     f"Error setting organization settings: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(
+                raise DagsterPlusServerError(
                     f"Error setting organization settings: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case _ as unreachable:

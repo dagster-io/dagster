@@ -111,6 +111,10 @@ from dagster._core.definitions.asset_checks.asset_check_spec import (
 from dagster._core.definitions.asset_checks.asset_checks_definition import (
     AssetChecksDefinition as AssetChecksDefinition,
 )
+from dagster._core.definitions.asset_key import (
+    AssetJobKey as AssetJobKey,
+    AssetOrCheckKey as AssetOrCheckKey,
+)
 from dagster._core.definitions.asset_selection import AssetSelection as AssetSelection
 from dagster._core.definitions.asset_sensor_definition import (
     AssetSensorDefinition as AssetSensorDefinition,
@@ -667,6 +671,7 @@ from dagster.components.resolved.core_models import (
     ResolvedAssetKey as ResolvedAssetKey,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
+from dagster.components.resolved.form_config import ComponentFormConfig as ComponentFormConfig
 from dagster.components.resolved.model import (
     Injected as Injected,
     Model as Model,

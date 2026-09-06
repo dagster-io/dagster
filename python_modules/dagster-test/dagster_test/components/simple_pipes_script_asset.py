@@ -32,7 +32,7 @@ class SimplePipesScriptScaffolder(Scaffolder[SimplePipesScriptScaffoldParams]):
     def scaffold(self, request: ScaffoldRequest[SimplePipesScriptScaffoldParams]) -> None:
         scaffold_component(request, request.params.model_dump())
         Path(request.target_path, request.params.filename).write_text(
-            _SCRIPT_TEMPLATE.format(asset_key=request.params.asset_key)
+            _SCRIPT_TEMPLATE.format(asset_key=request.params.asset_key), encoding="utf-8"
         )
 
 

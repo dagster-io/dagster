@@ -145,7 +145,9 @@ def remove_matching_lines_from_error_info(
 
     Args:
         error_info (SerializableErrorInfo): The error info to truncate
-        matching_lines (Sequence[str]): The lines to truncate from the stacktrace
+        match_substrs (Sequence[str]): The lines to truncate from the stacktrace
+        build_system_frame_removed_hint (Callable[[bool, int], str | None]): A callable that
+            returns a hint string for the removed frames
 
     Returns:
         SerializableErrorInfo: A new error info with the stacktrace truncated

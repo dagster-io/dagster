@@ -1,20 +1,23 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetJobKey, AssetKey, EntityKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.schema.asset_condition_evaluations import (
     GrapheneAssetConditionEvaluation,
     GrapheneAssetConditionEvaluationRecord,
     GrapheneAssetConditionEvaluationRecords,
-    GrapheneAssetConditionEvaluationRecordsOrError,
 )
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
-from dagster_graphql.schema.inputs import GrapheneAssetCheckHandleInput, GrapheneAssetKeyInput
+from dagster_graphql.schema.inputs import (
+    GrapheneAssetCheckHandleInput,
+    GrapheneAssetJobKeyInput,
+    GrapheneAssetKeyInput,
+)
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -69,17 +72,26 @@ def fetch_asset_condition_evaluation_record_for_partition(
 
 
 def entity_key_from_graphql_input(
-    graphene_input: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
+    graphene_input: GrapheneAssetKeyInput
+    | GrapheneAssetCheckHandleInput
+    | GrapheneAssetJobKeyInput,
 ) -> EntityKey:
-    if "path" in graphene_input:
-        return AssetKey.from_graphql_input(graphene_input)
+    # graphene_input is typed as a Graphene InputObjectType, but at runtime
+    # graphql-core delivers InputObjectType values to resolvers as plain dicts.
+    input_as_dict = cast("Mapping[str, Any]", graphene_input)
+    if "jobName" in input_as_dict:
+        return AssetJobKey.from_graphql_input(input_as_dict)
+    elif "path" in input_as_dict:
+        return AssetKey.from_graphql_input(input_as_dict)
     else:
-        return AssetCheckKey.from_graphql_input(graphene_input)
+        return AssetCheckKey.from_graphql_input(input_as_dict)
 
 
 def fetch_true_partitions_for_evaluation_node(
     graphene_info: "ResolveInfo",
-    graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
+    graphene_entity_key: GrapheneAssetKeyInput
+    | GrapheneAssetCheckHandleInput
+    | GrapheneAssetJobKeyInput,
     evaluation_id: int,
     node_unique_id: str,
 ) -> Sequence[str]:
@@ -114,10 +126,15 @@ def fetch_true_partitions_for_evaluation_node(
 
 def fetch_asset_condition_evaluation_records_for_asset_key(
     graphene_info: "ResolveInfo",
-    graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
+    graphene_entity_key: GrapheneAssetKeyInput
+    | GrapheneAssetCheckHandleInput
+    | GrapheneAssetJobKeyInput,
     limit: int,
     cursor: str | None,
-) -> GrapheneAssetConditionEvaluationRecordsOrError:
+) -> (
+    GrapheneAssetConditionEvaluationRecords
+    | GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError
+):
     """Fetch asset policy evaluations from storage."""
     migration_error = _get_migration_error(graphene_info)
     if migration_error:
@@ -139,7 +156,10 @@ def fetch_asset_condition_evaluation_records_for_asset_key(
 def fetch_asset_condition_evaluation_records_for_evaluation_id(
     graphene_info: "ResolveInfo",
     evaluation_id: int,
-) -> GrapheneAssetConditionEvaluationRecordsOrError:
+) -> (
+    GrapheneAssetConditionEvaluationRecords
+    | GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError
+):
     migration_error = _get_migration_error(graphene_info)
     if migration_error:
         return migration_error

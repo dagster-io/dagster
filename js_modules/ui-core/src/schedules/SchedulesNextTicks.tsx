@@ -7,13 +7,13 @@ import {
   DialogBody,
   DialogFooter,
   ExternalAnchorButton,
+  Heading,
   Icon,
   Menu,
   MenuItem,
   NonIdealState,
   Popover,
   Spinner,
-  Subheading,
   Table,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
@@ -367,14 +367,18 @@ const NextTickDialog = ({
     body = (
       <Box flex={{direction: 'column', gap: 20}}>
         <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-          <Subheading>Tags</Subheading>
+          <Heading size={14} weight={600}>
+            Tags
+          </Heading>
           {selectedRunRequest.tags.length ? (
             <RunTags tags={selectedRunRequest.tags} mode={isJob ? null : schedule.mode} />
           ) : null}
         </Box>
         <div>
           <Box border="bottom" padding={{left: 24, bottom: 16}}>
-            <Subheading>Config</Subheading>
+            <Heading size={14} weight={600}>
+              Config
+            </Heading>
           </Box>
           <StyledRawCodeMirror
             value={selectedRunRequest.runConfigYaml}

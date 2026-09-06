@@ -579,10 +579,6 @@ def load_assets_from_dbt_cloud_job(
             config applied to dbt models, i.e.:
             `dagster_auto_materialize_policy={"type": "lazy"}` will result in that model being assigned
             `AutoMaterializePolicy.lazy()`
-        node_info_to_definition_metadata_fn (Dict[str, Any] -> Optional[Dict[str, RawMetadataMapping]]):
-            A function that takes a dictionary of dbt node info and optionally returns a dictionary
-            of metadata to be attached to the corresponding definition. This is added to the default
-            metadata assigned to the node, which consists of the node's schema (if present).
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the dbt assets.
         partition_key_to_vars_fn (Optional[str -> Dict[str, Any]]): A function to translate a given

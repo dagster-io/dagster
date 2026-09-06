@@ -722,7 +722,7 @@ class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterCha
 
     def upload_messages_chunk(self, payload: IO, index: int) -> None:
         message_path = os.path.join(self._path, f"{index}.json")
-        with open(message_path, "w") as f:
+        with open(message_path, "w", encoding="utf-8") as f:
             f.write(payload.read())
 
 
@@ -747,7 +747,7 @@ class PipesDefaultContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
                 yield data
         elif self.DIRECT_KEY in params:
@@ -884,7 +884,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         capturing_started: Event,
         capturing_should_stop: Event,
     ):
-        with open(path) as input_file:
+        with open(path, encoding="utf-8") as input_file:
             received_stop_event_at = None
 
             while not (
@@ -985,7 +985,7 @@ class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
         self._path = path
 
     def write_message(self, message: PipesMessage) -> None:
-        with open(self._path, "a") as f:
+        with open(self._path, "a", encoding="utf-8") as f:
             f.write(json.dumps(message) + "\n")
 
 
@@ -1146,7 +1146,7 @@ class PipesStdioFileLogWriterChannel(PipesStdioLogWriterChannel):
 
     def write_chunk(self, chunk: str) -> None:
         # write the chunk to a file
-        with open(self.output_path, "a") as file:
+        with open(self.output_path, "a", encoding="utf-8") as file:
             file.write(chunk)
 
 
@@ -1414,7 +1414,7 @@ class PipesDbfsContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             yield json.load(f)
 
 
@@ -1485,7 +1485,7 @@ class PipesUnityCatalogVolumesContextLoader(PipesContextLoader):
     @contextmanager
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         path = _assert_env_param_type(params, "path", str, self.__class__)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             yield json.load(f)
 
 

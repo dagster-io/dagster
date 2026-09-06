@@ -1,7 +1,6 @@
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-import dask
 import dask.distributed
 from dagster import (
     Executor,
@@ -246,8 +245,9 @@ class DaskExecutor(Executor):
                     # awaiting dependencies within each step.
                     dependencies = []
                     for step_input in step.step_inputs:
-                        for key in step_input.dependency_keys:
-                            dependencies.append(execution_futures_dict[key])
+                        dependencies.extend(
+                            execution_futures_dict[key] for key in step_input.dependency_keys
+                        )
 
                     run_config = plan_context.run_config
 

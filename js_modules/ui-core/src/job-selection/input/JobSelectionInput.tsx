@@ -22,6 +22,7 @@ export const JobSelectionInput = ({
     <SelectionAutoCompleteInput
       wildcardAttributeName="name"
       id="job-selection"
+      recentSearchesKey="job-selection"
       useAutoComplete={useJobSelectionAutoCompleteProvider(items).useAutoComplete}
       placeholder="Search and filter jobs"
       linter={getLinter()}

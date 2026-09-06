@@ -2,12 +2,12 @@ import {
   Box,
   Button,
   ButtonLink,
-  CaptionMono,
   Colors,
   FontFamily,
   Icon,
   MiddleTruncate,
   Tag,
+  Text,
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
@@ -50,7 +50,9 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
       <Box className={styles.imageNameBox}>
         <span style={{fontWeight: 500}}>image: </span>
         <span style={{marginRight: '4px'}}>
-          <CaptionMono>{imageKV.value}</CaptionMono>
+          <Text size={12} family="mono">
+            {imageKV.value}
+          </Text>
         </span>
         <Tooltip content={didCopy ? 'Copied!' : 'Click to copy image string'} placement="top">
           <UnstyledButton onClick={onClick}>

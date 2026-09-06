@@ -43,7 +43,7 @@ export const PipelineExplorerSnapshotRoot = () => {
   const history = useHistory();
 
   const openInNewTab = useOpenInNewTab();
-  useDocumentTitle(`Snapshot: ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
+  useDocumentTitle(`Snapshots | ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
 
   return (
     <PipelineExplorerContainer

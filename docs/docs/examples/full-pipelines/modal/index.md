@@ -11,7 +11,9 @@ slug: '/examples/full-pipelines/modal'
 ---
 
 :::note
-To see [video of this example](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
+
+See a [video of this example](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s).
+
 :::
 
 In this example, you'll build a pipeline with Dagster that:

@@ -7,12 +7,14 @@ interface CopyIconButtonProps {
   value: string | (() => string);
   iconSize?: 12 | 16 | 20 | 24;
   iconColor?: string;
+  ariaLabel?: string;
 }
 
 export const CopyIconButton = ({
   value,
   iconSize = 16,
   iconColor = Colors.accentGray(),
+  ariaLabel,
 }: CopyIconButtonProps) => {
   const copyToClipboard = useCopyToClipboard();
   const [didCopy, setDidCopy] = React.useState(false);
@@ -38,7 +40,7 @@ export const CopyIconButton = ({
   }, [value, copyToClipboard]);
 
   return (
-    <UnstyledButton $expandedClickPx={6} onClick={performCopy}>
+    <UnstyledButton $expandedClickPx={6} aria-label={ariaLabel} onClick={performCopy}>
       <Icon
         name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
         color={iconColor}

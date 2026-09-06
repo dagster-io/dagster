@@ -315,11 +315,10 @@ class StubbedEcs:
             # Container definitions default to empty secret lists
             container_definitions = kwargs.get("containerDefinitions", [])
 
-            new_container_definitions = []
-            for container_definition in container_definitions:
-                new_container_definitions.append(
-                    {**container_definition, "secrets": container_definition.get("secrets", [])}
-                )
+            new_container_definitions = [
+                {**container_definition, "secrets": container_definition.get("secrets", [])}
+                for container_definition in container_definitions
+            ]
 
             kwargs["containerDefinitions"] = new_container_definitions
 
@@ -372,11 +371,10 @@ class StubbedEcs:
             )["taskDefinition"]
 
             is_awsvpc = task_definition.get("networkMode") == "awsvpc"
-            containers = []
-            for container in task_definition.get("containerDefinitions", []):
-                containers.append(
-                    {key: value for key, value in container.items() if key in ["name", "image"]}
-                )
+            containers = [
+                {key: value for key, value in container.items() if key in ["name", "image"]}
+                for container in task_definition.get("containerDefinitions", [])
+            ]
 
             network_configuration = kwargs.get("networkConfiguration", {})
             vpc_configuration = network_configuration.get("awsvpcConfiguration")

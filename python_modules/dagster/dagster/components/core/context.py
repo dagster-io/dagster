@@ -19,7 +19,12 @@ if TYPE_CHECKING:
     from dagster.components.component.component import Component
     from dagster.components.core.component_tree import ComponentTree
     from dagster.components.core.decl import ComponentDecl
-    from dagster.components.core.defs_module import ComponentPath, ResolvableToComponentPath
+    from dagster.components.core.defs_module import (
+        ComponentLoc,
+        ComponentPath,
+        ResolvableToComponentLoc,
+        ResolvableToComponentPath,
+    )
 
 
 RESOLUTION_CONTEXT_STASH_KEY = "component_load_context"
@@ -74,7 +79,14 @@ class ComponentDeclLoadContext:
     resolution_context: PublicAttr[ResolutionContext]
     component_tree: "ComponentTree"
     terminate_autoloading_on_keyword_files: bool
-    component_path: PublicAttr["ComponentPath"]
+    component_loc: PublicAttr["ComponentLoc"]
+
+    @property
+    @public
+    def component_path(self) -> "ComponentPath":
+        from dagster.components.core.defs_module import ComponentPath
+
+        return check.inst(self.component_loc, ComponentPath)
 
     @property
     def path(self) -> Path:
@@ -106,8 +118,8 @@ class ComponentDeclLoadContext:
             self.resolution_context.with_source_position_tree(source_position_tree)
         )
 
-    def for_component_path(self, component_path: "ComponentPath") -> "Self":
-        return dataclasses.replace(self, component_path=component_path)
+    def for_component_loc(self, component_loc: "ComponentLoc") -> "Self":
+        return dataclasses.replace(self, component_loc=component_loc)
 
     def defs_relative_module_name(self, path: Path) -> str:
         """Returns the name of the python module at the given path, relative to the project root."""
@@ -182,16 +194,37 @@ class ComponentDeclLoadContext:
 
         resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
         self.component_tree.mark_component_load_dependency(
-            from_path=self.component_path, to_path=resolved_path
+            from_loc=self.component_loc, to_loc=resolved_path
         )
         if expected_type is not None:
             return self.component_tree.load_component(resolved_path, expected_type)
         return self.component_tree.load_component(resolved_path)
 
+    def load_structural_component_at_loc(self, loc: "ResolvableToComponentLoc") -> "Component":
+        """Loads a component from the given loc.
+
+        Args:
+            loc: ComponentLoc or path to the component to load. If a filesystem
+                path and relative, resolves relative to the defs root.
+
+        Returns:
+            Component: The component loaded from the given loc.
+        """
+        from dagster.components.core.defs_module import ComponentLoc, ComponentPath
+
+        if isinstance(loc, ComponentLoc) and not isinstance(loc, ComponentPath):
+            resolved = loc
+        else:
+            resolved = ComponentPath.from_resolvable(self.defs_module_path, loc)
+        self.component_tree.mark_component_load_dependency(
+            from_loc=self.component_loc, to_loc=resolved
+        )
+        return self.component_tree.load_structural_component_at_loc(resolved)
+
     def load_structural_component_at_path(
         self, defs_path: "ResolvableToComponentPath"
     ) -> "Component":
-        """Loads a component from the given path.
+        """Loads a component from the given filesystem path.
 
         Args:
             defs_path: Path to the component to load. If relative, resolves relative to the defs root.
@@ -199,13 +232,7 @@ class ComponentDeclLoadContext:
         Returns:
             Component: The component loaded from the given path.
         """
-        from dagster.components.core.defs_module import ComponentPath
-
-        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
-        self.component_tree.mark_component_load_dependency(
-            from_path=self.component_path, to_path=resolved_path
-        )
-        return self.component_tree.load_structural_component_at_path(resolved_path)
+        return self.load_structural_component_at_loc(defs_path)
 
 
 @public
@@ -272,7 +299,7 @@ class ComponentLoadContext(ComponentDeclLoadContext):
             load and build definitions for the component.
         """
         return ComponentLoadContext(
-            component_path=decl_load_context.component_path,
+            component_loc=decl_load_context.component_loc,
             project_root=decl_load_context.project_root,
             defs_module_path=decl_load_context.defs_module_path,
             defs_module_name=decl_load_context.defs_module_name,
@@ -282,23 +309,27 @@ class ComponentLoadContext(ComponentDeclLoadContext):
             component_decl=component_decl,
         )
 
-    def build_defs(self, defs_path: Union[Path, "ComponentPath"]) -> Definitions:
+    def build_defs(self, loc: Union[Path, "ComponentLoc", str]) -> Definitions:
         """Builds definitions from the given defs subdirectory. Currently
         does not incorporate postprocessing from parent defs modules.
 
         Args:
-            defs_path: Path to the defs module to load. If relative, resolves relative to the defs root.
+            loc: ComponentLoc or path to the defs module to load. If a filesystem
+                path and relative, resolves relative to the defs root.
 
         Returns:
-            Definitions: The definitions loaded from the given path.
+            Definitions: The definitions loaded from the given loc.
         """
-        from dagster.components.core.defs_module import ComponentPath
+        from dagster.components.core.defs_module import ComponentLoc, ComponentPath
 
-        resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
+        if isinstance(loc, ComponentLoc) and not isinstance(loc, ComponentPath):
+            resolved = loc
+        else:
+            resolved = ComponentPath.from_resolvable(self.defs_module_path, loc)
         self.component_tree.mark_component_defs_dependency(
-            from_path=self.component_path, to_path=resolved_path
+            from_loc=self.component_loc, to_loc=resolved
         )
-        return self.component_tree.build_defs(resolved_path)
+        return self.component_tree.build_defs(resolved)
 
     def for_path(self, path: Path) -> "Self":
         """Creates a new context for the given path.
@@ -312,4 +343,4 @@ class ComponentLoadContext(ComponentDeclLoadContext):
         from dagster.components.core.defs_module import ComponentPath
 
         component_path = ComponentPath.from_path(path=path)
-        return self.for_component_path(component_path)
+        return self.for_component_loc(component_path)

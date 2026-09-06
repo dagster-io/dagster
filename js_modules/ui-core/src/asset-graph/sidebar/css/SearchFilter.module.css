@@ -3,3 +3,9 @@
     width: 100%;
   }
 }
+
+/* Namespace qualifier shown after the label of an ambiguous result. */
+.pathLabel {
+  color: var(--color-text-lighter);
+  font-size: 12px;
+}

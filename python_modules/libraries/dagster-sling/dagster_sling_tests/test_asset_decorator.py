@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -17,6 +16,7 @@ from dagster import (
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.tags import build_kind_tag
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_sling import SlingReplicationParam, sling_assets
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_sling.resources import SlingConnectionResource, SlingResource
@@ -111,7 +111,7 @@ def test_base_with_meta_config_translator():
     replication_config_path = file_relative_path(
         __file__, "replication_configs/base_with_meta_config/replication.yaml"
     )
-    replication_config = yaml.safe_load(Path(replication_config_path).read_bytes())
+    replication_config = safe_load_yaml(Path(replication_config_path).read_bytes())
 
     @sling_assets(replication_config=replication_config_path)
     def my_sling_assets(): ...
@@ -290,7 +290,7 @@ def test_base_with_default_meta_translator():
     replication_config_path = file_relative_path(
         __file__, "replication_configs/base_with_default_meta/replication.yaml"
     )
-    replication_config = yaml.safe_load(Path(replication_config_path).read_bytes())
+    replication_config = safe_load_yaml(Path(replication_config_path).read_bytes())
 
     @sling_assets(replication_config=replication_config_path)
     def my_sling_assets(): ...

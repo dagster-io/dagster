@@ -4,7 +4,6 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 import dagster._check as check
-import kubernetes
 import kubernetes.client
 from dagster._config import process_config
 from dagster._core.container_context import process_shared_container_context_config
@@ -352,9 +351,11 @@ class K8sContainerContext(
 
             for key, used_fields_with_key in used_fields.items():
                 if isinstance(used_fields_with_key, set):
-                    for used_field in used_fields_with_key:
-                        if not snake_case_allowlist.get(key, {}).get(used_field):
-                            disallowed_fields.append(f"{key}.{used_field}")
+                    disallowed_fields.extend(
+                        f"{key}.{used_field}"
+                        for used_field in used_fields_with_key
+                        if not snake_case_allowlist.get(key, {}).get(used_field)
+                    )
                 else:
                     check.invariant(isinstance(used_fields_with_key, bool))
                     if used_fields_with_key and not only_allow_user_defined_k8s_config_fields.get(

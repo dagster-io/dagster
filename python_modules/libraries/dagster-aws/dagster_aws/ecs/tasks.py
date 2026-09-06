@@ -466,8 +466,7 @@ def get_task_kwargs_from_current_task(
         for eni in enis:
             if (eni.association_attribute or {}).get("PublicIp"):
                 public_ip = True
-            for group in eni.groups:
-                security_groups.append(group["GroupId"])
+            security_groups.extend(group["GroupId"] for group in eni.groups)
 
         aws_vpc_config = {
             "subnets": subnets,

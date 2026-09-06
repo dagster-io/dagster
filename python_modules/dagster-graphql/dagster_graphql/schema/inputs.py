@@ -30,6 +30,13 @@ class GrapheneAssetCheckHandleInput(graphene.InputObjectType):
         name = "AssetCheckHandleInput"
 
 
+class GrapheneAssetJobKeyInput(graphene.InputObjectType):
+    jobName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetJobKeyInput"
+
+
 class GrapheneExecutionTag(graphene.InputObjectType):
     key = graphene.NonNull(graphene.String)
     value = graphene.NonNull(graphene.String)
@@ -408,6 +415,7 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
     )
     createdBefore = graphene.InputField(graphene.Float)
     createdAfter = graphene.InputField(graphene.Float)
+    selectorId = graphene.InputField(graphene.String)
 
     class Meta:
         description = """This type represents a filter on Dagster Bulk Actions (backfills)."""
@@ -424,6 +432,7 @@ class GrapheneBulkActionsFilter(graphene.InputObjectType):
             statuses=statuses,
             created_before=created_before,
             created_after=created_after,
+            selector_id=self.selectorId,
         )
 
 

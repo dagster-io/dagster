@@ -1,9 +1,9 @@
 import pytest
-import yaml
 from dagster.components.testing import create_defs_folder_sandbox
 from dagster_databricks.components.databricks_asset_bundle.component import (
     DatabricksAssetBundleComponent,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 from pydantic import ValidationError
 
 from dagster_databricks_tests.components.databricks_asset_bundle.conftest import (
@@ -48,11 +48,11 @@ def test_scaffold_component_with_params(scaffold_params: dict, is_successful: bo
             assert defs_yaml_path.exists()
             assert (
                 str(DATABRICKS_CONFIG_LOCATION_PATH)
-                in yaml.safe_load(defs_yaml_path.read_text())["attributes"][
+                in safe_load_yaml(defs_yaml_path.read_text())["attributes"][
                     "databricks_config_path"
                 ]
             )
             assert {
                 "host": TEST_DATABRICKS_WORKSPACE_HOST,
                 "token": TEST_DATABRICKS_WORKSPACE_TOKEN,
-            } == yaml.safe_load(defs_yaml_path.read_text())["attributes"]["workspace"]
+            } == safe_load_yaml(defs_yaml_path.read_text())["attributes"]["workspace"]

@@ -8,6 +8,9 @@ import {AssetHealthStatus} from '../../graphql/types';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
+// Shared by every asset search box, so they all draw on the same recent-search history.
+export const ASSET_SELECTION_RECENTS_KEY = 'asset-selection';
+
 export const getAttributesMap = (
   assets: AssetGraphQueryItem[],
   opts?: {sensorNames?: string[]; scheduleNames?: string[]},
@@ -90,6 +93,7 @@ export const getAttributesMap = (
     group: groups,
     kind: kinds,
     code_location: codeLocations,
+    is: ['external', 'materializable'],
     partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
     automation_type: [
       'any',
@@ -145,6 +149,7 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   sensor: 'sensors',
   schedule: 'schedule',
   job: 'job',
+  is: 'flag',
 };
 
 export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(

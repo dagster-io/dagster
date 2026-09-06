@@ -190,7 +190,7 @@ def _retrieve_containerized_cpu_usage(
 
 def _retrieve_containerized_cpu_usage_v1(logger: logging.Logger | None) -> float | None:
     try:
-        with open(cpu_usage_path_cgroup_v1()) as f:
+        with open(cpu_usage_path_cgroup_v1(), encoding="utf-8") as f:
             return float(f.read()) / 1e9  # Cpuacct.usage is in nanoseconds
     except Exception as e:
         if logger:
@@ -200,7 +200,7 @@ def _retrieve_containerized_cpu_usage_v1(logger: logging.Logger | None) -> float
 
 def _retrieve_containerized_cpu_usage_v2(logger: logging.Logger | None) -> float | None:
     try:
-        with open(cpu_stat_path_cgroup_v2()) as f:
+        with open(cpu_stat_path_cgroup_v2(), encoding="utf-8") as f:
             lines = f.readlines()
             for line in lines:
                 if line.startswith("usage_usec"):
@@ -215,7 +215,7 @@ def _retrieve_containerized_cpu_usage_v2(logger: logging.Logger | None) -> float
 def _retrieve_containerized_num_allocated_cores(logger: logging.Logger | None) -> int | None:
     """Retrieve the number of cores from the /proc/cpuinfo file."""
     try:
-        with open(cpu_info_path()) as f:
+        with open(cpu_info_path(), encoding="utf-8") as f:
             return len([line for line in f if line.startswith("processor")])
     except Exception as e:
         if logger:
@@ -237,7 +237,7 @@ def _retrieve_containerized_memory_usage(
 
 def _retrieve_containerized_memory_usage_v1(logger: logging.Logger | None) -> int | None:
     try:
-        with open(memory_usage_path_cgroup_v1()) as f:
+        with open(memory_usage_path_cgroup_v1(), encoding="utf-8") as f:
             raw_usage = int(f.read())
     except Exception as e:
         if logger:
@@ -251,7 +251,7 @@ def _retrieve_containerized_memory_usage_v1(logger: logging.Logger | None) -> in
 
 def _retrieve_containerized_memory_usage_v2(logger: logging.Logger | None) -> int | None:
     try:
-        with open(memory_usage_path_cgroup_v2()) as f:
+        with open(memory_usage_path_cgroup_v2(), encoding="utf-8") as f:
             raw_usage = int(f.read())
     except Exception as e:
         if logger:
@@ -266,7 +266,7 @@ def _retrieve_containerized_memory_usage_v2(logger: logging.Logger | None) -> in
 def _retrieve_inactive_file_bytes(path: str, key: str, logger: logging.Logger | None) -> int | None:
     """Parse ``memory.stat`` and return the byte count for ``key``."""
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             for line in f:
                 parts = line.split()
                 if len(parts) >= 2 and parts[0] == key:
@@ -312,7 +312,7 @@ def _retrieve_containerized_memory_limit(
 
 def _retrieve_containerized_memory_limit_v1(logger: logging.Logger | None) -> int | None:
     try:
-        with open(memory_limit_path_cgroup_v1()) as f:
+        with open(memory_limit_path_cgroup_v1(), encoding="utf-8") as f:
             return int(f.read())
     except Exception:
         if logger:
@@ -322,7 +322,7 @@ def _retrieve_containerized_memory_limit_v1(logger: logging.Logger | None) -> in
 
 def _retrieve_containerized_memory_limit_v2(logger: logging.Logger | None) -> int | None:
     try:
-        with open(memory_limit_path_cgroup_v2()) as f:
+        with open(memory_limit_path_cgroup_v2(), encoding="utf-8") as f:
             return int(f.read())
     except Exception:
         if logger:
@@ -348,7 +348,7 @@ def _retrieve_containerized_cpu_cfs_period_us_v1(
     logger: logging.Logger | None,
 ) -> float | None:
     try:
-        with open(cpu_cfs_period_us_path()) as f:
+        with open(cpu_cfs_period_us_path(), encoding="utf-8") as f:
             return float(f.read())
     except Exception:
         if logger:
@@ -361,7 +361,7 @@ def _retrieve_containerized_cpu_cfs_period_us_v2(
 ) -> float | None:
     # We can retrieve period information from the cpu.max file. The file is in the format $MAX $PERIOD and is only one line.
     try:
-        with open(cpu_max_path_cgroup_v2()) as f:
+        with open(cpu_max_path_cgroup_v2(), encoding="utf-8") as f:
             line = f.readline()
             return float(line.split()[1])
     except Exception:
@@ -386,7 +386,7 @@ def _retrieve_containerized_cpu_cfs_quota_us_v1(
     logger: logging.Logger | None,
 ) -> float | None:
     try:
-        with open(cpu_cfs_quota_us_path()) as f:
+        with open(cpu_cfs_quota_us_path(), encoding="utf-8") as f:
             return float(f.read())
     except Exception:
         if logger:
@@ -399,7 +399,7 @@ def _retrieve_containerized_cpu_cfs_quota_us_v2(
 ) -> float | None:
     # We can retrieve quota information from the cpu.max file. The file is in the format $MAX $PERIOD .
     try:
-        with open(cpu_max_path_cgroup_v2()) as f:
+        with open(cpu_max_path_cgroup_v2(), encoding="utf-8") as f:
             line = f.readline()
             return float(line.split()[0])
     except Exception:

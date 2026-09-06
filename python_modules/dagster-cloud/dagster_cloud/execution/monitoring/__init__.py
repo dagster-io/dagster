@@ -58,6 +58,7 @@ class CloudContainerResourceLimits(TypedDict):
 
 class CloudCodeServerUtilizationMetrics(DagsterCodeServerUtilizationMetrics):
     resource_limits: CloudContainerResourceLimits
+    server_id: NotRequired[str]  # pyright: ignore[reportInvalidTypeForm]
 
 
 class CloudCodeServerHeartbeatMetadata(TypedDict):

@@ -553,11 +553,12 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         )
 
     def get_dagster_env_variables(self) -> dict[str, str]:
-        out = {}
+        out: dict[str, str] = {}
         if self.add_dagster_env_variables:
             for var in DAGSTER_SYSTEM_ENV_VARS:
-                if os.getenv(var):
-                    out.update({var: os.getenv(var)})
+                value = os.getenv(var)
+                if value is not None:
+                    out[var] = value
         return out
 
     def create_remote_config(self) -> "DatabricksConfig":

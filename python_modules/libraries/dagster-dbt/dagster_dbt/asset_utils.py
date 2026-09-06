@@ -45,6 +45,7 @@ from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_uniq
 if TYPE_CHECKING:
     from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
 
+DAGSTER_DBT_METADATA_NAMESPACE = "dagster_dbt/"
 DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
 DAGSTER_DBT_PROJECT_METADATA_KEY = "dagster_dbt/project"

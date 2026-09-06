@@ -7,7 +7,6 @@ import time
 import uuid
 
 import boto3
-import botocore
 import botocore.exceptions
 import dagster._check as check
 from botocore.config import Config

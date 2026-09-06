@@ -20,7 +20,10 @@ from dagster_rest_resources.schemas.asset import (
     DgApiAssetEvent,
     DgApiAssetEventList,
     DgApiAssetFreshnessInfo,
+    DgApiAssetHealth,
     DgApiAssetList,
+    DgApiAssetLocation,
+    DgApiAssetLocationList,
     DgApiAssetMaterialization,
     DgApiAssetStatus,
     DgApiAutomationCondition,
@@ -28,13 +31,23 @@ from dagster_rest_resources.schemas.asset import (
     DgApiEvaluationNode,
     DgApiEvaluationRecord,
     DgApiEvaluationRecordList,
+    DgApiFreshnessPolicy,
     DgApiPartitionDefinition,
     DgApiPartitionMapping,
     DgApiPartitionStats,
 )
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 
 logger = logging.getLogger(__name__)
+
+
+def _build_location(node: Any) -> DgApiAssetLocation:
+    return DgApiAssetLocation(
+        asset_key="/".join(node.asset_key.path),
+        asset_key_parts=list(node.asset_key.path),
+        repository_name=node.repository.name,
+        code_location_name=node.repository.location.name,
+    )
 
 
 @dataclass(frozen=True)
@@ -45,14 +58,16 @@ class DgApiAssetApi:
         self,
         limit: int = 50,
         cursor: str | None = None,
+        prefix: list[str] | None = None,
     ) -> DgApiAssetList:
-        """List assets with cursor-based pagination."""
+        """List assets with cursor-based pagination, optionally filtered by key prefix."""
         assets: list[DgApiAsset] = []
         next_cursor = cursor
 
         while True:
             remaining = limit - len(assets)
             record_result = self._client.list_asset_records(
+                prefix=prefix,
                 cursor=next_cursor,
                 limit=remaining,
             ).asset_records_or_error
@@ -66,7 +81,7 @@ class DgApiAssetApi:
                     next_cursor = record_result.cursor  # ty: ignore[unresolved-attribute]
 
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing assets: {record_result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing assets: {record_result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -78,7 +93,7 @@ class DgApiAssetApi:
                 case "AssetConnection":
                     nodes_by_key = {"/".join(n.key.path): n for n in detail_result.nodes}  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusServerError(
                         f"Error fetching asset details: {detail_result.message}"  # ty: ignore[unresolved-attribute]
                     )
                 case _ as unreachable:
@@ -116,13 +131,13 @@ class DgApiAssetApi:
             case "AssetConnection":
                 nodes = result.nodes  # ty: ignore[unresolved-attribute]
                 if not nodes:
-                    raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                    raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                 asset = self._build_asset_from_node(nodes[0])
                 if asset is None:
-                    raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                    raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                 return asset
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching asset: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching asset: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -137,11 +152,11 @@ class DgApiAssetApi:
             case "AssetConnection":
                 nodes = result.nodes  # ty: ignore[unresolved-attribute]
                 if not nodes:
-                    raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
+                    raise DagsterPlusClientError(f"Asset not found: {asset_key}")
                 node = nodes[0]
                 return self._build_asset_status(node, asset_key)
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching asset health: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching asset health: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -181,22 +196,22 @@ class DgApiAssetApi:
             match mat_result.typename__:
                 case "AssetConnection":
                     if not mat_result.nodes:  # ty: ignore[unresolved-attribute]
-                        raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
-                    for mat in mat_result.nodes[0].asset_materializations:  # ty: ignore[unresolved-attribute]
-                        events.append(
-                            DgApiAssetEvent(
-                                timestamp=mat.timestamp,
-                                run_id=mat.run_id,
-                                event_type="ASSET_MATERIALIZATION",
-                                partition=mat.partition,
-                                tags=[{"key": t.key, "value": t.value} for t in mat.tags],
-                                metadata_entries=[
-                                    self._metadata_entry_to_dict(e) for e in mat.metadata_entries
-                                ],
-                            )
+                        raise DagsterPlusClientError(f"Asset not found: {asset_key}")
+                    events.extend(
+                        DgApiAssetEvent(
+                            timestamp=mat.timestamp,
+                            run_id=mat.run_id,
+                            event_type="ASSET_MATERIALIZATION",
+                            partition=mat.partition,
+                            tags=[{"key": t.key, "value": t.value} for t in mat.tags],
+                            metadata_entries=[
+                                self._metadata_entry_to_dict(e) for e in mat.metadata_entries
+                            ],
                         )
+                        for mat in mat_result.nodes[0].asset_materializations  # ty: ignore[unresolved-attribute]
+                    )
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusServerError(
                         f"Error fetching asset events: {mat_result.message}"  # ty: ignore[unresolved-attribute]
                     )
                 case _ as unreachable:
@@ -213,22 +228,22 @@ class DgApiAssetApi:
             match obs_result.typename__:
                 case "AssetConnection":
                     if not obs_result.nodes:  # ty: ignore[unresolved-attribute]
-                        raise DagsterPlusGraphqlError(f"Asset not found: {asset_key}")
-                    for obs in obs_result.nodes[0].asset_observations:  # ty: ignore[unresolved-attribute]
-                        events.append(
-                            DgApiAssetEvent(
-                                timestamp=obs.timestamp,
-                                run_id=obs.run_id,
-                                event_type="ASSET_OBSERVATION",
-                                partition=obs.partition,
-                                tags=[{"key": t.key, "value": t.value} for t in obs.tags],
-                                metadata_entries=[
-                                    self._metadata_entry_to_dict(e) for e in obs.metadata_entries
-                                ],
-                            )
+                        raise DagsterPlusClientError(f"Asset not found: {asset_key}")
+                    events.extend(
+                        DgApiAssetEvent(
+                            timestamp=obs.timestamp,
+                            run_id=obs.run_id,
+                            event_type="ASSET_OBSERVATION",
+                            partition=obs.partition,
+                            tags=[{"key": t.key, "value": t.value} for t in obs.tags],
+                            metadata_entries=[
+                                self._metadata_entry_to_dict(e) for e in obs.metadata_entries
+                            ],
                         )
+                        for obs in obs_result.nodes[0].asset_observations  # ty: ignore[unresolved-attribute]
+                    )
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusServerError(
                         f"Error fetching asset events: {obs_result.message}"  # ty: ignore[unresolved-attribute]
                     )
                 case _ as unreachable:
@@ -299,9 +314,39 @@ class DgApiAssetApi:
 
                 return DgApiEvaluationRecordList(items=evaluations)
             case "AutoMaterializeAssetEvaluationNeedsMigrationError":
-                raise DagsterPlusGraphqlError(f"Migration required: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Migration required: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
+
+    def get_asset_location(self, asset_key: list[str]) -> DgApiAssetLocation:
+        """Get the repository and code location that define an asset.
+
+        Takes the key as path components, since a component may itself contain a slash and
+        a joined form cannot be split back unambiguously.
+        """
+        result = self._client.get_asset_location(
+            asset_key=AssetKeyInput(path=asset_key),
+        ).asset_node_or_error
+
+        match result.typename__:
+            case "AssetNode":
+                return _build_location(result)
+            case "AssetNotFoundError":
+                raise DagsterPlusClientError(f"Asset not found: {result.message}")  # ty: ignore[unresolved-attribute]
+            case _ as unreachable:
+                assert_never(unreachable)
+
+    def list_asset_locations(self, asset_keys: list[list[str]]) -> DgApiAssetLocationList:
+        """Get repository and code location for several assets in one request.
+
+        Takes keys as path components, as get_asset_location does. Assets that do not
+        exist are absent from the result rather than raising, so the caller should not
+        assume the order or length matches what was asked for.
+        """
+        nodes = self._client.get_asset_locations(
+            asset_keys=[AssetKeyInput(path=key) for key in asset_keys],
+        ).asset_nodes
+        return DgApiAssetLocationList(items=[_build_location(n) for n in nodes])
 
     def get_partition_status(self, asset_key: str) -> DgApiPartitionStats:
         """Get partition materialization stats for an asset by slash-separated key."""
@@ -313,7 +358,7 @@ class DgApiAssetApi:
             case "AssetNode":
                 partition_stats = result.partition_stats  # ty: ignore[unresolved-attribute]
                 if partition_stats is None:
-                    raise DagsterPlusGraphqlError("Asset does not have partitions")
+                    raise DagsterPlusClientError("Asset does not have partitions")
                 return DgApiPartitionStats(
                     num_materialized=partition_stats.num_materialized,
                     num_failed=partition_stats.num_failed,
@@ -321,7 +366,7 @@ class DgApiAssetApi:
                     num_partitions=partition_stats.num_partitions,
                 )
             case "AssetNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error getting partition status: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error getting partition status: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -444,10 +489,29 @@ class DgApiAssetApi:
 
         job_names = definition.job_names if definition.job_names else None
 
+        health = None
+        if node.asset_health:
+            health = DgApiAssetHealth(
+                asset_health=node.asset_health.asset_health,
+                materialization_status=node.asset_health.materialization_status,
+                asset_checks_status=node.asset_health.asset_checks_status,
+                freshness_status=node.asset_health.freshness_status,
+            )
+
+        freshness_policy = None
+        if definition.freshness_policy:
+            freshness_policy = DgApiFreshnessPolicy(
+                maximum_lag_minutes=definition.freshness_policy.maximum_lag_minutes,
+                cron_schedule=definition.freshness_policy.cron_schedule,
+            )
+
         return DgApiAsset(
             id=node.id,
             asset_key=asset_key,
             asset_key_parts=asset_key_parts,
+            compute_kind=definition.compute_kind,
+            latest_materialization_timestamp=node.latest_materialization_timestamp,
+            latest_failed_to_materialize_timestamp=node.latest_failed_to_materialize_timestamp,
             description=definition.description,
             group_name=definition.group_name,
             kinds=list(definition.kinds),
@@ -461,6 +525,8 @@ class DgApiAssetApi:
             tags=tags,
             backfill_policy=backfill_policy,
             job_names=job_names,
+            health=health,
+            freshness_policy=freshness_policy,
         )
 
     def _build_asset_status(

@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Mono, Tag, useDelayedState} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag, Text, useDelayedState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -99,9 +99,9 @@ export const BackfillRowContent = ({
   return (
     <tr>
       <td style={{width: 120}}>
-        <Mono>
+        <Text size={14} family="mono">
           <Link to={getBackfillPath(backfill.id)}>{backfill.id}</Link>
-        </Mono>
+        </Text>
       </td>
       <td style={{width: 220}}>
         {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}

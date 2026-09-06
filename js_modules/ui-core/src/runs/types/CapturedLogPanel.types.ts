@@ -1,10 +1,16 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type CapturedLogsSubscriptionVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+export type CapturedLogsSubscriptionVariables = Exact<{
+  logKey: Array<string> | string;
+  cursor?: string | null | undefined;
 }>;
 
 export type CapturedLogsSubscription = {
@@ -24,8 +30,8 @@ export type CapturedLogFragment = {
   cursor: string | null;
 };
 
-export type CapturedLogsMetadataQueryVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
+export type CapturedLogsMetadataQueryVariables = Exact<{
+  logKey: Array<string> | string;
 }>;
 
 export type CapturedLogsMetadataQuery = {
@@ -39,10 +45,10 @@ export type CapturedLogsMetadataQuery = {
   };
 };
 
-export type CapturedLogsQueryVariables = Types.Exact<{
-  logKey: Array<Types.Scalars['String']['input']> | Types.Scalars['String']['input'];
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+export type CapturedLogsQueryVariables = Exact<{
+  logKey: Array<string> | string;
+  cursor?: string | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type CapturedLogsQuery = {

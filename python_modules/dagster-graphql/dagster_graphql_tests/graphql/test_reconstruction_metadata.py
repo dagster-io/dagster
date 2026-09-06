@@ -32,7 +32,7 @@ def test_state_backed_defs_loader(monkeypatch) -> None:
 
 
 def _get_num_calls(log_file_path: str) -> int:
-    lines = Path(log_file_path).read_text().strip().split("\n")
+    lines = Path(log_file_path).read_text(encoding="utf-8").strip().split("\n")
     return len(lines)
 
 
@@ -70,7 +70,7 @@ def _state_backed_defs() -> None:
 
         def fetch_state(self) -> ExampleDefState:
             log_file = os.environ["DAGSTER_STATE_BACKED_DEFINITIONS_TEST_LOG_FILE"]
-            with open(log_file, "a") as f:
+            with open(log_file, "a", encoding="utf-8") as f:
                 f.write("fetch_state\n")
             return ExampleDefState(a_string="foo")
 

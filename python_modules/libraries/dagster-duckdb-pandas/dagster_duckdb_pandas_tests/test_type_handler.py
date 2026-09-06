@@ -1,5 +1,6 @@
 import os
 from typing import TYPE_CHECKING, cast
+from unittest.mock import MagicMock
 
 import duckdb
 import pandas as pd
@@ -13,6 +14,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_output_context,
     graph,
     instance_for_test,
     materialize,
@@ -26,10 +28,34 @@ from dagster._core.definitions.partitions.definition import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.partitions.utils import MultiPartitionKey
+from dagster._core.storage.db_io_manager import TableSlice
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
+from dagster_duckdb_pandas.duckdb_pandas_type_handler import DuckDBPandasTypeHandler
 
 if TYPE_CHECKING:
     from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
+
+
+def test_handle_output_empty_dataframe():
+    handler = DuckDBPandasTypeHandler()
+    df = pd.DataFrame({"a": pd.Series([], dtype="int64"), "b": pd.Series([], dtype="int64")})
+    connection = MagicMock()
+    output_context = build_output_context()
+
+    handler.handle_output(
+        output_context,
+        TableSlice(
+            table="my_table",
+            schema="my_schema",
+            database="my_db",
+            columns=None,
+            partition_dimensions=[],
+        ),
+        df,
+        connection,
+    )
+
+    connection.execute.assert_not_called()
 
 
 @pytest.fixture

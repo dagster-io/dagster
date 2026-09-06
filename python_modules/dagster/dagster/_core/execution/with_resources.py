@@ -103,8 +103,8 @@ def with_resources(
                 )
             resource_defs[key] = resource_defs[key].configured(resource_config["config"])
 
-    transformed_defs: list[T] = []
-    for definition in definitions:
-        transformed_defs.append(cast("T", definition.with_resources(resource_defs)))
+    transformed_defs: list[T] = [
+        cast("T", definition.with_resources(resource_defs)) for definition in definitions
+    ]
 
     return transformed_defs

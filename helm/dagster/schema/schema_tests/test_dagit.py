@@ -1,6 +1,6 @@
 import pytest
-import yaml
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
+from dagster_shared.yaml_utils import safe_load_yaml
 from kubernetes import client as k8s_client
 from kubernetes.client import models
 from schema.charts.dagster.subschema.webserver import Server, Webserver, Workspace
@@ -427,7 +427,7 @@ def test_webserver_workspace_servers(workspace_configmap_template: HelmTemplate)
     }
 
     [webserver_workspace_configmap] = workspace_configmap_template.render(helm_values)
-    actual = yaml.safe_load(webserver_workspace_configmap.data["workspace.yaml"])
+    actual = safe_load_yaml(webserver_workspace_configmap.data["workspace.yaml"])
 
     assert actual == expected
 
@@ -464,7 +464,7 @@ def test_webserver_workspace_servers_ssl(workspace_configmap_template: HelmTempl
     }
 
     [webserver_workspace_configmap] = workspace_configmap_template.render(helm_values)
-    actual = yaml.safe_load(webserver_workspace_configmap.data["workspace.yaml"])
+    actual = safe_load_yaml(webserver_workspace_configmap.data["workspace.yaml"])
 
     assert actual == expected
 

@@ -332,12 +332,12 @@ class PowerBIWorkspace(ConfigurableResource):
                 for source in dataset_sources
             ]
             dataset["sources"] = [source["datasourceId"] for source in dataset_sources_with_id]
-            for data_source in dataset_sources_with_id:
-                data_sources.append(
-                    PowerBIContentData(
-                        content_type=PowerBIContentType.DATA_SOURCE, properties=data_source
-                    )
+            data_sources.extend(
+                PowerBIContentData(
+                    content_type=PowerBIContentType.DATA_SOURCE, properties=data_source
                 )
+                for data_source in dataset_sources_with_id
+            )
         semantic_models = [
             PowerBIContentData(content_type=PowerBIContentType.SEMANTIC_MODEL, properties=dataset)
             for dataset in semantic_models_data

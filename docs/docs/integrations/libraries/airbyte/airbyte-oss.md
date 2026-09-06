@@ -84,7 +84,7 @@ from dagster_airbyte import AirbyteWorkspace, build_airbyte_assets_definitions
 airbyte_workspace = AirbyteWorkspace(
     rest_api_base_url="http://localhost:8000/api/public/v1",
     configuration_api_base_url="http://localhost:8000/api/v1",
-    workspace_id="your-workspace-id"
+    workspace_id="your-workspace-id",
 )
 assets = build_airbyte_assets_definitions(workspace=airbyte_workspace)
 ```

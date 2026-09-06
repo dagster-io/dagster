@@ -4,7 +4,7 @@ import {useMemo} from 'react';
 import {BackfillLogsPageQuery, BackfillLogsPageQueryVariables} from './types/BackfillLogsTab.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {gql} from '../../apollo-client';
-import {QueryRefreshCountdown} from '../../app/QueryRefresh';
+import {QueryRefreshCountdown, useRefreshAtInterval} from '../../app/QueryRefresh';
 import {useCursorAccumulatedQuery} from '../../runs/useCursorAccumulatedQuery';
 import {
   INSTIGATION_EVENT_LOG_FRAGMENT,
@@ -24,8 +24,8 @@ const getResultForBackfillLogsPage = (e: BackfillLogsPageQuery) => {
 export const BackfillLogsTab = ({backfill}: {backfill: BackfillDetailsBackfillFragment}) => {
   const {
     error,
+    fetch,
     fetched: events,
-    refreshState,
   } = useCursorAccumulatedQuery<
     BackfillLogsPageQuery,
     BackfillLogsPageQueryVariables,
@@ -35,6 +35,12 @@ export const BackfillLogsTab = ({backfill}: {backfill: BackfillDetailsBackfillFr
     query: BACKFILL_LOGS_PAGE_QUERY,
     variables: useMemo(() => ({backfillId: backfill.id}), [backfill]),
     getResult: getResultForBackfillLogsPage,
+  });
+
+  const refreshState = useRefreshAtInterval({
+    refresh: fetch,
+    intervalMs: 10000,
+    leading: true,
   });
 
   const content = () => {

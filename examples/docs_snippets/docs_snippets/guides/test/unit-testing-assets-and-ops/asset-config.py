@@ -8,7 +8,7 @@ class FilepathConfig(dg.Config):
 
 @dg.asset
 def loaded_file(config: FilepathConfig) -> str:
-    with open(config.path) as file:
+    with open(config.path, encoding="utf-8") as file:
         return file.read()
 
 

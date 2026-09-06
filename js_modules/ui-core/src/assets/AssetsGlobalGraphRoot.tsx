@@ -27,7 +27,7 @@ export const AssetsGlobalGraphRoot = () => {
   const {0: path} = useParams<AssetGroupRootParams>();
   const history = useHistory();
 
-  useDocumentTitle(`Global Asset Lineage`);
+  useDocumentTitle('Global asset lineage');
   const openInNewTab = useOpenInNewTab();
 
   const onChangeExplorerPath = useCallback(
@@ -42,7 +42,7 @@ export const AssetsGlobalGraphRoot = () => {
 
   const onNavigateToSourceAssetNode = useCallback(
     (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
-      const path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+      const path = assetDetailsPathForKey(node.assetKey, {view: 'overview'});
       if (e.metaKey) {
         openInNewTab(path);
       } else {

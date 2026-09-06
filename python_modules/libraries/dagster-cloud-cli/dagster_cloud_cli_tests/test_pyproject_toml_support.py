@@ -163,8 +163,9 @@ dependencies = ["requests>=2.25.0"]
 
 
 @patch("subprocess.run")
-def test_build_local_package_with_pyproject_toml(mock_run, temp_dir):
-    """Test building a package with pyproject.toml."""
+@patch("shutil.which", return_value=None)
+def test_build_local_package_with_pyproject_toml(mock_which, mock_run, temp_dir):
+    """Test building a package with pyproject.toml falls back to pip when uv is not available."""
     mock_run.return_value = None
 
     pyproject_path = Path(temp_dir) / "pyproject.toml"
@@ -188,6 +189,42 @@ version = "0.1.0"
         "-m",
         "pip",
         "install",
+        "--target",
+        str(build_dir),
+        "--no-deps",
+        ".",
+    ]
+    assert command == expected_command
+
+
+@patch("subprocess.run")
+@patch("shutil.which", return_value="/usr/bin/uv")
+def test_build_local_package_with_pyproject_toml_uses_uv(mock_which, mock_run, temp_dir):
+    """Test building a package with pyproject.toml uses uv when available."""
+    mock_run.return_value = None
+
+    pyproject_path = Path(temp_dir) / "pyproject.toml"
+    pyproject_path.write_text("""
+[project]
+name = "test-package"
+version = "0.1.0"
+""")
+
+    build_dir = Path(temp_dir) / "build"
+    build_dir.mkdir()
+
+    source._build_local_package(temp_dir, str(build_dir), "python")  # noqa: SLF001
+
+    mock_run.assert_called_once()
+    args, _kwargs = mock_run.call_args
+    command = args[0]
+
+    expected_command = [
+        "/usr/bin/uv",
+        "pip",
+        "install",
+        "--python",
+        "python",
         "--target",
         str(build_dir),
         "--no-deps",
@@ -309,11 +346,17 @@ test = ["pytest>=6.0.0"]
     # Should have no local packages (just the main directory)
     assert local_packages.local_package_paths == []
 
-    # Should have collected dependencies from pyproject.toml
+    # Should have collected dependencies from pyproject.toml, plus the build-time
+    # constraints get_deps_requirements always injects (see _EXTRA_BUILD_CONSTRAINTS).
     deps_lines = deps_requirements.requirements_txt.strip().split("\n")
     deps_lines = [line.strip() for line in deps_lines if line.strip()]
 
-    expected_deps = ["dagster-cloud>=1.0.0", "pytest>=6.0.0", "requests>=2.25.0"]
+    expected_deps = [
+        "dagster-cloud>=1.0.0",
+        "grpcio-health-checking<1.82",
+        "pytest>=6.0.0",
+        "requests>=2.25.0",
+    ]
     assert sorted(deps_lines) == sorted(expected_deps)
 
 

@@ -69,13 +69,28 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
 
 If you use `dagster-dbt` to manage a dbt project that targets Snowflake, you can emit usage metrics to the Dagster+ API with the `DbtCliResource`.
 
-First, add a `.with_insights()` call to your `dbt.cli()` command(s), and add Snowflake-specific insights definitions to your code using `create_snowflake_insights_asset_and_schedule`.
-
-These additional definitions are required because Snowflake usage information is only available after a delay. These definitions automatically handle running a computation on a schedule to ingest Snowflake usage information from the previous hour.
+Snowflake usage information is only available after a delay. You must add Snowflake-specific insights definitions to your code using `create_snowflake_insights_asset_and_schedule`, which automatically handles running a computation on a schedule to ingest Snowflake usage information from the previous hour.
 
 :::note
 Only use `create_snowflake_insights_asset_and_schedule` in a single code location per deployment, as this will handle ingesting usage data from your entire deployment.
 :::
+
+### Using DbtProjectComponent
+
+If you use `DbtProjectComponent`, add `insights` to the `include_metadata` list in your `defs.yaml`:
+
+```yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project: path/to/dbt_project
+  include_metadata:
+    - insights
+```
+
+### Using @dbt_assets
+
+If you use the `@dbt_assets` decorator, add a `.with_insights()` call to your `dbt.cli()` command(s):
 
 <Tabs>
   <TabItem value="before" label="Before">
@@ -92,7 +107,9 @@ Only use `create_snowflake_insights_asset_and_schedule` in a single code locatio
   </TabItem>
 </Tabs>
 
-Then, add the following to your `dbt_project.yml`:
+### Configuring dbt_project.yml
+
+Add the following to your `dbt_project.yml`:
 
 <Tabs>
   <TabItem value="before" label="Before">

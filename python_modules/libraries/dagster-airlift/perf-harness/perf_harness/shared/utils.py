@@ -16,5 +16,5 @@ def scaffold_proxied_state(num_dags: int, num_tasks: int, proxied_state: bool):
             "tasks": [{"id": f"task_{i}_{j}", "proxied": proxied_state} for j in range(num_tasks)],
         }
         # Write to a file dag_{i}.yaml
-        with open(target_dir / f"dag_{i}.yaml", "w") as f:
+        with open(target_dir / f"dag_{i}.yaml", "w", encoding="utf-8") as f:
             yaml.dump(yaml_dict, f)
