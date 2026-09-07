@@ -324,6 +324,26 @@ def test_webserver_timeout_keep_alive(deployment_template: HelmTemplate):
     assert f"--timeout-keep-alive {timeout_keep_alive_s}" in command
 
 
+def test_webserver_timeout_keep_alive_zero(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(timeoutKeepAlive=0)
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--timeout-keep-alive 0" in command
+
+
+def test_webserver_timeout_keep_alive_unset(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--timeout-keep-alive" not in command
+
+
 def test_webserver_log_level(deployment_template: HelmTemplate):
     log_level = "trace"
     helm_values = DagsterHelmValues.construct(
