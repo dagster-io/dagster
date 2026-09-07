@@ -85,6 +85,35 @@ class ProjectEnvVars:
 
     def write(self) -> None:
         env_path = self.ctx.root_path / ".env"
-        env_path.write_text(
-            "\n".join([f"{key}={value}" for key, value in self.values.items() if value is not None])
-        )
+        values_to_write = {key: value for key, value in self.values.items() if value is not None}
+
+        if env_path.exists():
+            from dotenv.parser import parse_stream
+
+            lines = []
+            existing_keys = set()
+            with env_path.open(encoding="utf-8") as env_file:
+                for binding in parse_stream(env_file):
+                    if binding.key is None:
+                        lines.append(binding.original.string)
+                    elif binding.key in values_to_write:
+                        original = binding.original.string
+                        key_index = original.rfind(binding.key)
+                        prefix = original[:key_index] if key_index >= 0 else ""
+                        line_ending = "\n" if original.endswith("\n") else ""
+                        lines.append(
+                            f"{prefix}{binding.key}={values_to_write[binding.key]}{line_ending}"
+                        )
+                        existing_keys.add(binding.key)
+
+            for key, value in values_to_write.items():
+                if key not in existing_keys:
+                    if lines and not lines[-1].endswith("\n"):
+                        lines.append("\n")
+                    lines.append(f"{key}={value}")
+
+            env_path.write_text("".join(lines), encoding="utf-8")
+        else:
+            env_path.write_text(
+                "\n".join([f"{key}={value}" for key, value in values_to_write.items()])
+            )
