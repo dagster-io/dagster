@@ -242,6 +242,76 @@ describe('LocationBaseDataFetcher', () => {
       consoleError.mockRestore();
     });
 
+    it('retries when the response is for a different version than the status poller reported', async () => {
+      // Concurrent loads for one location share a single in-flight query, so a load started
+      // after a version change can be served by an older request. The poller won't report that
+      // change again, so the fetcher has to notice and ask again itself.
+      getData.mockResolvedValueOnce({data: {value: 'previous', version: 'v1'}, error: null});
+      getData.mockResolvedValue({data: {value: 'current', version: 'v2'}, error: null});
+
+      fetcher = createFetcher();
+      const subscriber = jest.fn();
+      fetcher.subscribe(subscriber);
+      triggerUpdate();
+
+      await jest.advanceTimersByTimeAsync(0);
+      // The response is still committed -- it's newer than nothing -- but it isn't accepted as
+      // up to date.
+      expect(subscriber).toHaveBeenCalledWith({loc1: {value: 'previous', version: 'v1'}});
+      expect(getData).toHaveBeenCalledTimes(1);
+
+      await jest.advanceTimersByTimeAsync(RETRY_BASE_INTERVAL);
+      expect(getData).toHaveBeenCalledTimes(2);
+      expect(subscriber).toHaveBeenCalledWith({loc1: {value: 'current', version: 'v2'}});
+
+      await jest.advanceTimersByTimeAsync(RETRY_MAX_INTERVAL * 2);
+      expect(getData).toHaveBeenCalledTimes(2);
+    });
+
+    it('backs off per location, so a new failure is not delayed by an older one', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const callsByLocation: Record<string, number> = {loc1: 0, loc2: 0};
+      getData.mockImplementation(async ({variables}: {variables: {name: string}}) => {
+        const {name} = variables;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        callsByLocation[name] = callsByLocation[name]! + 1;
+        return {data: undefined, error: new Error(`${name} down`)};
+      });
+
+      fetcher = createFetcher();
+      fetcher.subscribe(jest.fn());
+
+      // Let loc1 fail three times so its next retry is 20s out.
+      statusPoller.trigger({
+        added: ['loc1'],
+        updated: [],
+        removed: [],
+        locationStatuses: {loc1: {versionKey: 'v1'}},
+      });
+      await jest.advanceTimersByTimeAsync(0);
+      await jest.advanceTimersByTimeAsync(RETRY_BASE_INTERVAL); // t=5s, attempt 2
+      await jest.advanceTimersByTimeAsync(RETRY_BASE_INTERVAL * 2); // t=15s, attempt 3
+      expect(callsByLocation.loc1).toBe(3);
+
+      // loc2 starts failing now. It should get its own base-interval retry rather than waiting
+      // for loc1's much longer backoff.
+      statusPoller.trigger({
+        added: ['loc2'],
+        updated: [],
+        removed: [],
+        locationStatuses: {loc1: {versionKey: 'v1'}, loc2: {versionKey: 'v1'}},
+      });
+      await jest.advanceTimersByTimeAsync(1000);
+      expect(callsByLocation.loc2).toBe(1);
+
+      await jest.advanceTimersByTimeAsync(RETRY_BASE_INTERVAL);
+      expect(callsByLocation.loc2).toBe(2);
+      expect(callsByLocation.loc1).toBe(3);
+
+      fetcher.destroy();
+      consoleError.mockRestore();
+    });
+
     it('stops retrying a location that was removed', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
       getData.mockResolvedValue({data: undefined, error: new Error('code server down')});

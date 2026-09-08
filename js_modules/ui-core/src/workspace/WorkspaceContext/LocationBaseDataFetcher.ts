@@ -26,9 +26,10 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
   private readonly key: string;
   private loadedFromCache: {[key: string]: boolean};
   private unsubscribe: () => void;
-  private failedLocations: Set<string> = new Set();
-  private retryAttempt = 0;
-  private retryTimeout: ReturnType<typeof setTimeout> | undefined;
+  // Retry bookkeeping is per location: a location that has been failing for a while must not
+  // push a location that just started failing to the back of a long backoff.
+  private retries: Map<string, {attempt: number; timeout?: ReturnType<typeof setTimeout>}> =
+    new Map();
   private destroyed = false;
   constructor(args: {
     readonly query: DocumentNode;
@@ -62,7 +63,7 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
               const nextData = {...this.data};
               delete nextData[location];
               this.data = nextData;
-              this.clearFailure(location);
+              this.clearRetry(location);
               clearCachedData({
                 key: `${this.key}/${location}`,
               });
@@ -114,7 +115,7 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
     if (!this.locationStatuses[location]) {
       // Wait for location statuses to be loaded. If we were retrying this location it no longer
       // exists as far as we know, so stop retrying it.
-      this.clearFailure(location);
+      this.clearRetry(location);
       return;
     }
     if (
@@ -122,7 +123,7 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
       this.getVersion(this.data[location]) === this.locationStatuses[location].versionKey
     ) {
       // If the version hasn't changed then we don't need to load from the server
-      this.clearFailure(location);
+      this.clearRetry(location);
       return;
     }
     await TimingControls.loadFromServer(async () => {
@@ -138,10 +139,19 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
         console.error(error);
         this.scheduleRetry(location);
       } else if (data) {
-        this.clearFailure(location);
         const nextData = {...this.data};
         nextData[location] = data;
         this.data = nextData;
+        if (this.getVersion(data) === this.locationStatuses[location]?.versionKey) {
+          this.clearRetry(location);
+        } else {
+          // The response is for a different version than the one the status poller has told us
+          // about. Concurrent requests for the same location share a single in-flight query
+          // (see `fetchData`), so a load kicked off after a version change can be served by an
+          // older request. The poller won't report that version change again, so ask again
+          // ourselves rather than leaving the UI pinned to the response we just got.
+          this.scheduleRetry(location);
+        }
         this.notifySubscribers();
       } else {
         console.error('No data or error returned from fetchLocationData');
@@ -150,39 +160,35 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
     });
   }
 
-  private clearFailure(location: string) {
-    this.failedLocations.delete(location);
-    if (!this.failedLocations.size) {
-      this.retryAttempt = 0;
+  private clearRetry(location: string) {
+    const retry = this.retries.get(location);
+    if (retry?.timeout) {
+      clearTimeout(retry.timeout);
     }
+    this.retries.delete(location);
   }
 
   private scheduleRetry(location: string) {
     if (this.destroyed) {
       return;
     }
-    this.failedLocations.add(location);
-    if (this.retryTimeout) {
-      // A retry is already armed; it picks up every location in `failedLocations`.
+    const retry = this.retries.get(location);
+    if (retry?.timeout) {
+      // Already armed for this location.
       return;
     }
-    const delay = Math.min(RETRY_BASE_INTERVAL * 2 ** this.retryAttempt, RETRY_MAX_INTERVAL);
-    this.retryAttempt += 1;
-    this.retryTimeout = setTimeout(() => {
-      this.retryTimeout = undefined;
-      this.retryFailedLocations();
+    const attempt = retry?.attempt ?? 0;
+    const delay = Math.min(RETRY_BASE_INTERVAL * 2 ** attempt, RETRY_MAX_INTERVAL);
+    const timeout = setTimeout(() => {
+      const current = this.retries.get(location);
+      if (current) {
+        current.timeout = undefined;
+      }
+      // `loadFromServer` notifies subscribers itself on success, and re-arms this timer (with a
+      // longer delay) if the location fails again.
+      this.loadFromServer(location);
     }, delay);
-  }
-
-  private async retryFailedLocations() {
-    const locations = Array.from(this.failedLocations);
-    if (this.destroyed || !locations.length) {
-      return;
-    }
-    // Each attempt that fails again calls `scheduleRetry`, which re-arms the timer, so the retry
-    // loop keeps going (with a longer delay each time) until the location loads or goes away.
-    await Promise.all(locations.map((location) => this.loadFromServer(location)));
-    this.notifySubscribers();
+    this.retries.set(location, {attempt: attempt + 1, timeout});
   }
 
   private notifySubscribers() {
@@ -194,9 +200,8 @@ export abstract class LocationBaseDataFetcher<TData, TVariables extends Operatio
   public destroy() {
     this.destroyed = true;
     this.unsubscribe();
-    if (this.retryTimeout) {
-      clearTimeout(this.retryTimeout);
-      this.retryTimeout = undefined;
+    for (const location of Array.from(this.retries.keys())) {
+      this.clearRetry(location);
     }
   }
 }

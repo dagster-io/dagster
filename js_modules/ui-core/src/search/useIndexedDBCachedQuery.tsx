@@ -28,6 +28,9 @@ class CacheManager<TQuery> {
   // already been replaced or deleted on disk.
   private current?: CacheData<TQuery>;
   private currentAwaitable?: Promise<void>;
+  // Bumped by every `set` and `clear`. A read that started before one of those lands is stale by
+  // the time it resolves and must not be applied.
+  private generation = 0;
 
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
@@ -56,14 +59,16 @@ class CacheManager<TQuery> {
     if (!this.cache) {
       return;
     }
+    const generation = this.generation;
     try {
       if (!(await this.cache.has('cache'))) {
         return;
       }
       const value = (await this.cache.get('cache'))?.value;
-      // A `set` or `clear` may have landed while this read was in flight; that value is newer
-      // than what we just read off disk, so don't clobber it.
-      if (value && !this.current) {
+      // A `set` or `clear` may have landed while this read was in flight. That value is newer
+      // than what we just read off disk, so don't clobber it -- and in particular don't
+      // resurrect an entry that was cleared.
+      if (value && !this.current && generation === this.generation) {
         this.current = value;
       }
     } catch {}
@@ -80,6 +85,7 @@ class CacheManager<TQuery> {
       return;
     }
     const entry = {data, version};
+    this.generation += 1;
     // Keep the in-memory mirror in sync with what we just persisted, so a subsequent read
     // doesn't serve the value this one replaced.
     this.current = entry;
@@ -89,6 +95,7 @@ class CacheManager<TQuery> {
   }
 
   async clear() {
+    this.generation += 1;
     this.current = undefined;
     // Resolve immediately rather than re-reading the entry we're about to delete.
     this.currentAwaitable = Promise.resolve();

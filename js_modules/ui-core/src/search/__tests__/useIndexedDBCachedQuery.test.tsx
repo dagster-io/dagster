@@ -247,6 +247,12 @@ describe('useIndexedDBCachedQuery', () => {
 // from what's on disk, callers keep reading data that was already replaced or deleted -- which is
 // how the UI ends up showing a previous deployment's asset definitions until the user clears
 // their browser storage.
+const flushMicrotasks = async () => {
+  for (let i = 0; i < 5; i++) {
+    await Promise.resolve();
+  }
+};
+
 describe('cached data helpers', () => {
   beforeEach(() => {
     mockShouldThrowError = false;
@@ -272,6 +278,27 @@ describe('cached data helpers', () => {
     expect(mockCache().set).toHaveBeenCalledWith('cache', {data: 'fresh', version: 1});
 
     await expect(getCachedData({key: 'setKey', version: 1})).resolves.toEqual('fresh');
+  });
+
+  it('does not resurrect a cleared entry from a read that was already in flight', async () => {
+    // `clear` can land while a read is suspended on IndexedDB. The read resolves with the value
+    // it captured before the delete, and must not write it back into the in-memory mirror.
+    let resolveGet: (value: unknown) => void = () => {};
+    mockCache().has.mockReturnValue(true);
+    mockCache().get.mockReturnValue(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      }),
+    );
+
+    const pendingRead = getCachedData({key: 'raceKey', version: 1});
+    await flushMicrotasks();
+
+    await clearCachedData({key: 'raceKey'});
+    resolveGet({value: {data: 'cleared-entry', version: 1}});
+
+    await expect(pendingRead).resolves.toBeUndefined();
+    await expect(getCachedData({key: 'raceKey', version: 1})).resolves.toBeUndefined();
   });
 
   it('does not return data after clearCachedData', async () => {
