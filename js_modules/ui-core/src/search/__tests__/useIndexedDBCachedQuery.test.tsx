@@ -12,7 +12,13 @@ import {
 import {buildAssetConnection} from '../../graphql/builders';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {cache as _cache} from '../../util/idb-lru-cache';
-import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
+import {
+  __resetForJest,
+  clearCachedData,
+  getCachedData,
+  setCachedData,
+  useIndexedDBCachedQuery,
+} from '../useIndexedDBCachedQuery';
 
 const mockCache = _cache as unknown as jest.Mock<{
   has: jest.Mock;
@@ -233,5 +239,50 @@ describe('useIndexedDBCachedQuery', () => {
         });
       },
     );
+  });
+});
+
+// The CacheManager behind these helpers keeps an in-memory mirror of the single entry it stores
+// in IndexedDB, and it is a process-wide singleton per key. If that mirror is allowed to drift
+// from what's on disk, callers keep reading data that was already replaced or deleted -- which is
+// how the UI ends up showing a previous deployment's asset definitions until the user clears
+// their browser storage.
+describe('cached data helpers', () => {
+  beforeEach(() => {
+    mockShouldThrowError = false;
+    jest.clearAllMocks();
+    __resetForJest();
+  });
+
+  it('does not return an entry cached under a different version', async () => {
+    mockCache().has.mockResolvedValue(true);
+    mockCache().get.mockResolvedValue({value: {data: 'version-1-data', version: 1}});
+
+    await expect(getCachedData({key: 'versionKey', version: 1})).resolves.toEqual('version-1-data');
+    await expect(getCachedData({key: 'versionKey', version: 2})).resolves.toBeUndefined();
+  });
+
+  it('returns the value written by setCachedData rather than the previously read one', async () => {
+    mockCache().has.mockResolvedValue(true);
+    mockCache().get.mockResolvedValue({value: {data: 'stale', version: 1}});
+
+    await expect(getCachedData({key: 'setKey', version: 1})).resolves.toEqual('stale');
+
+    await setCachedData({key: 'setKey', version: 1, data: 'fresh'});
+    expect(mockCache().set).toHaveBeenCalledWith('cache', {data: 'fresh', version: 1});
+
+    await expect(getCachedData({key: 'setKey', version: 1})).resolves.toEqual('fresh');
+  });
+
+  it('does not return data after clearCachedData', async () => {
+    mockCache().has.mockResolvedValue(true);
+    mockCache().get.mockResolvedValue({value: {data: 'removed-location', version: 1}});
+
+    await expect(getCachedData({key: 'clearKey', version: 1})).resolves.toEqual('removed-location');
+
+    await clearCachedData({key: 'clearKey'});
+    expect(mockCache().delete).toHaveBeenCalledWith('cache');
+
+    await expect(getCachedData({key: 'clearKey', version: 1})).resolves.toBeUndefined();
   });
 });

@@ -23,8 +23,11 @@ export const KEY_PREFIX = 'indexdbQueryCache:';
 class CacheManager<TQuery> {
   private cache: ReturnType<typeof cache<CacheData<TQuery>>> | undefined;
   private key: string;
+  // In-memory mirror of the single entry we keep in IndexedDB. It must be kept in sync with
+  // whatever we last read from or wrote to IndexedDB, otherwise reads can serve data that has
+  // already been replaced or deleted on disk.
   private current?: CacheData<TQuery>;
-  private currentAwaitable?: Promise<TQuery | undefined>;
+  private currentAwaitable?: Promise<void>;
 
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
@@ -34,46 +37,61 @@ class CacheManager<TQuery> {
   }
 
   async get(version: number | string): Promise<TQuery | undefined> {
-    if (this.current) {
-      return this.current.data;
+    if (!this.current) {
+      if (!this.currentAwaitable) {
+        this.currentAwaitable = this.readFromCache();
+      }
+      await this.currentAwaitable;
     }
-    if (!this.currentAwaitable) {
-      this.currentAwaitable = new Promise(async (res) => {
-        if (!this.cache) {
-          res(undefined);
-          return;
-        }
-        if (await this.cache.has('cache')) {
-          const entry = await this.cache.get('cache');
-          const value = entry?.value;
-          if (value && version === value.version) {
-            this.current = value;
-            res(value.data);
-          } else {
-            res(undefined);
-          }
-        } else {
-          res(undefined);
-        }
-      });
+    const current = this.current;
+    // The version is checked on every read, not just on the read that populated `current`, so a
+    // caller asking for a different version never receives the entry cached for another one.
+    if (current && current.version === version) {
+      return current.data;
     }
-    return await this.currentAwaitable;
+    return undefined;
+  }
+
+  private async readFromCache(): Promise<void> {
+    if (!this.cache) {
+      return;
+    }
+    try {
+      if (!(await this.cache.has('cache'))) {
+        return;
+      }
+      const value = (await this.cache.get('cache'))?.value;
+      // A `set` or `clear` may have landed while this read was in flight; that value is newer
+      // than what we just read off disk, so don't clobber it.
+      if (value && !this.current) {
+        this.current = value;
+      }
+    } catch {}
   }
 
   async set(data: TQuery, version: number | string): Promise<void> {
     if (
-      this.current?.data === data ||
-      (stringified(this.current?.data) === stringified(data) && this.current?.version === version)
+      this.current?.version === version &&
+      (this.current.data === data || stringified(this.current.data) === stringified(data))
     ) {
       return;
     }
     if (!this.cache) {
       return;
     }
-    return this.cache.set('cache', {data, version});
+    const entry = {data, version};
+    // Keep the in-memory mirror in sync with what we just persisted, so a subsequent read
+    // doesn't serve the value this one replaced.
+    this.current = entry;
+    // Reads no longer need to consult IndexedDB: `current` now holds the newest value.
+    this.currentAwaitable = Promise.resolve();
+    return this.cache.set('cache', entry);
   }
 
   async clear() {
+    this.current = undefined;
+    // Resolve immediately rather than re-reading the entry we're about to delete.
+    this.currentAwaitable = Promise.resolve();
     if (!this.cache) {
       return;
     }
