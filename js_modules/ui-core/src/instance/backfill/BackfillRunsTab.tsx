@@ -1,4 +1,4 @@
-import {Box, Button, ButtonGroup, Colors, ErrorBoundary} from '@dagster-io/ui-components';
+import {Box, ButtonGroup, Colors, ErrorBoundary} from '@dagster-io/ui-components';
 import React, {useDeferredValue, useMemo} from 'react';
 
 import {ExecutionTimeline} from './ExecutionTimeline';
@@ -15,7 +15,7 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from '../../runs/RunsFilterInput';
-import {HourWindow} from '../../runs/useHourWindow';
+import {TimelineRangeControls} from '../../runs/TimelineRangeControls';
 import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
 
 const BACKFILL_RUNS_HOUR_WINDOW_KEY = 'dagster.backfill-run-timeline-hour-window';
@@ -102,23 +102,14 @@ export const BackfillRunsTab = ({
         ) : undefined}
         <div style={{flex: 1}} />
         {view === 'timeline' && (
-          <ButtonGroup<HourWindow>
-            activeItems={new Set([hourWindow])}
-            buttons={[
-              {id: '1', label: '1hr'},
-              {id: '6', label: '6hr'},
-              {id: '12', label: '12hr'},
-              {id: '24', label: '24hr'},
-            ]}
-            onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
+          <TimelineRangeControls
+            hourWindow={hourWindow}
+            onSelectHourWindow={setHourWindow}
+            onPageEarlier={onPageEarlier}
+            onPageNow={onPageNow}
+            onPageLater={onPageLater}
+            nowLabel={backfill.endTimestamp ? 'Jump to end' : 'Now'}
           />
-        )}
-        {view === 'timeline' && (
-          <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-            <Button onClick={onPageEarlier}>&larr;</Button>
-            <Button onClick={onPageNow}>{backfill.endTimestamp ? 'Jump to end' : 'Now'}</Button>
-            <Button onClick={onPageLater}>&rarr;</Button>
-          </Box>
         )}
       </Box>
     </Box>

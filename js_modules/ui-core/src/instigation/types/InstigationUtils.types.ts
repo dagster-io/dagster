@@ -117,3 +117,15 @@ export type HistoryTickFragment = {
     type: Types.DynamicPartitionsRequestType;
   }>;
 };
+
+export type TimelineTickFragment = {
+  __typename: 'InstigationTick';
+  id: string;
+  tickId: string;
+  status: Types.InstigationTickStatus;
+  timestamp: number;
+  endTimestamp: number | null;
+  instigationType: Types.InstigationType;
+  requestedAssetMaterializationCount: number;
+  runIds: Array<string>;
+};

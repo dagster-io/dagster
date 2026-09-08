@@ -142,6 +142,21 @@ export const HISTORY_TICK_FRAGMENT = gql`
   ${DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT}
 `;
 
+// The timeline can cover many hours of ticks, so it fetches only what it draws. Anything
+// richer (runs, tags, partition requests) is loaded per-tick by the details dialog.
+export const TIMELINE_TICK_FRAGMENT = gql`
+  fragment TimelineTick on InstigationTick {
+    id
+    tickId
+    status
+    timestamp
+    endTimestamp
+    instigationType
+    requestedAssetMaterializationCount
+    runIds
+  }
+`;
+
 export const StatusTable = React.forwardRef<
   HTMLTableElement,
   React.ComponentPropsWithoutRef<'table'>
