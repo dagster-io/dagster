@@ -1021,6 +1021,17 @@ def test_ui_label_from_env(template: HelmTemplate):
     assert instance["ui"]["label"] == {"env": "DAGSTER_UI_LABEL"}
 
 
+def test_ui_intent_from_env(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        ui=UI.construct(label="Staging", intent=Source(env="DAGSTER_UI_INTENT"))
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["ui"]["intent"] == {"env": "DAGSTER_UI_INTENT"}
+
+
 def test_ui_label_omitted_by_default(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(ui=UI.construct())
 

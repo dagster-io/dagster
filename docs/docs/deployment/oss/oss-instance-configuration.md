@@ -325,12 +325,14 @@ The `ui` key names this deployment in the UI navigation. Deployments that run th
   endBefore="end_marker_ui"
 />
 
-To use one `dagster.yaml` across environments, set the label from an environment variable:
+To use one `dagster.yaml` across environments, set either value from an environment variable:
 
 ```yaml
 ui:
   label:
     env: DAGSTER_UI_LABEL
+  intent:
+    env: DAGSTER_UI_INTENT
 ```
 
 ### gRPC servers

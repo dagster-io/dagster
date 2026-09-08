@@ -3130,6 +3130,9 @@
                             "type": "string"
                         },
                         {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
                             "type": "null"
                         }
                     ],
