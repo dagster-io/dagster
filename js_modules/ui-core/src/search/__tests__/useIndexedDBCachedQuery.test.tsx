@@ -16,7 +16,6 @@ import {
   __resetForJest,
   clearCachedData,
   getCachedData,
-  setCachedData,
   useIndexedDBCachedQuery,
 } from '../useIndexedDBCachedQuery';
 
@@ -266,18 +265,6 @@ describe('cached data helpers', () => {
 
     await expect(getCachedData({key: 'versionKey', version: 1})).resolves.toEqual('version-1-data');
     await expect(getCachedData({key: 'versionKey', version: 2})).resolves.toBeUndefined();
-  });
-
-  it('returns the value written by setCachedData rather than the previously read one', async () => {
-    mockCache().has.mockResolvedValue(true);
-    mockCache().get.mockResolvedValue({value: {data: 'stale', version: 1}});
-
-    await expect(getCachedData({key: 'setKey', version: 1})).resolves.toEqual('stale');
-
-    await setCachedData({key: 'setKey', version: 1, data: 'fresh'});
-    expect(mockCache().set).toHaveBeenCalledWith('cache', {data: 'fresh', version: 1});
-
-    await expect(getCachedData({key: 'setKey', version: 1})).resolves.toEqual('fresh');
   });
 
   it('does not resurrect a cleared entry from a read that was already in flight', async () => {
