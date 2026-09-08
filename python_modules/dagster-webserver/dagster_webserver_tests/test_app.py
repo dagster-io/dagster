@@ -152,6 +152,27 @@ def test_index_view_ui_label_unset(instance):
         assert b"__UI_LABEL__" not in res.content
 
 
+def test_index_view_ui_label_from_env(monkeypatch):
+    monkeypatch.setenv("DAGSTER_UI_LABEL", "Production")
+    monkeypatch.setenv("DAGSTER_UI_INTENT", "danger")
+    with instance_for_test(
+        overrides={
+            "ui": {"label": {"env": "DAGSTER_UI_LABEL"}, "intent": {"env": "DAGSTER_UI_INTENT"}}
+        }
+    ) as configured:
+        with load_workspace_process_context_from_yaml_paths(
+            configured, [file_relative_path(__file__, "./workspace.yaml")]
+        ) as workspace_process_context:
+            client = TestClient(
+                create_app_from_workspace_process_context(workspace_process_context)
+            )
+            res = client.get("/")
+
+            assert res.status_code == 200, res.content
+            assert b'"uiLabel": "Production"' in res.content
+            assert b'"uiIntent": "danger"' in res.content
+
+
 def test_index_view_ui_label_rejects_unknown_intent():
     with instance_for_test(overrides={"ui": {"label": "Staging", "intent": "chartreuse"}}) as bad:
         with load_workspace_process_context_from_yaml_paths(

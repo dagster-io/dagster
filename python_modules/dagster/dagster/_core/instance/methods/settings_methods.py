@@ -1,5 +1,6 @@
 """Settings methods for DagsterInstance."""
 
+import os
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
@@ -73,17 +74,26 @@ class SettingsMethods:
         else:
             return dagster_telemetry_enabled_default
 
+    def _ui_setting(self, key: str) -> str | None:
+        # The instance schema types these as StringSource, but instance config is only
+        # validated, never processed, so an `{env: VAR}` source arrives unresolved.
+        value = (self.get_settings("ui") or {}).get(key)
+        if isinstance(value, Mapping):
+            value = os.getenv(check.str_elem(value, "env"))
+        if not isinstance(value, str):
+            return None
+        return value.strip() or None
+
     @property
     def ui_label(self) -> str | None:
-        label = (self.get_settings("ui") or {}).get("label") or ""
-        return label.strip() or None
+        return self._ui_setting("label")
 
     @property
     def ui_intent(self) -> str | None:
         """Color scheme for the UI label. Unrecognized values fall back to the default tag color."""
         # Mirrors the Intent type in js_modules/ui-components/src/components/Intent.tsx.
         valid = {"none", "primary", "success", "warning", "danger"}
-        intent = (self.get_settings("ui") or {}).get("intent")
+        intent = self._ui_setting("intent")
         return intent if intent in valid else None
 
     @property
