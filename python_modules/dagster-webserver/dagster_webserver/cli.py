@@ -138,7 +138,8 @@ DEFAULT_TIMEOUT_KEEP_ALIVE = 5  # 5 sec, uvicorn's own default
     help=(
         "The number of seconds to hold an idle keep-alive connection open before closing it."
         " Raise this above the idle timeout of any reverse proxy sitting in front of the"
-        " webserver, so that the proxy closes idle connections first."
+        " webserver, so that the proxy closes idle connections first. Set to 0 to close idle"
+        " connections immediately."
     ),
     default=DEFAULT_TIMEOUT_KEEP_ALIVE,
     type=click.INT,

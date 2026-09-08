@@ -97,7 +97,8 @@ dagsterWebserver:
 
   # The number of seconds an idle keep-alive connection is held open, defaults to 5 if not
   # set. Raise this above the idle timeout of any reverse proxy in front of the webserver,
-  # so that the proxy closes idle connections first.
+  # so that the proxy closes idle connections first. Set to 0 to close idle connections
+  # immediately.
   timeoutKeepAlive: ~
 
   # The log level of the uvicorn web server, defaults to warning if not set
