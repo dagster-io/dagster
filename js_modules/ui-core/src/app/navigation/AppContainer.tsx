@@ -1,10 +1,9 @@
-import {Icon, UnstyledButton} from '@dagster-io/ui-components';
+import {DagsterLogo, Icon, UnstyledButton} from '@dagster-io/ui-components';
 import {MainNavigation} from '@shared/app/navigation/MainNavigation';
 import clsx from 'clsx';
 import {ReactNode, useContext} from 'react';
 import {Link} from 'react-router-dom';
 
-import {DaggyWordmark} from './DaggyWordmark';
 import {NavCollapseContext} from './NavCollapseProvider';
 import styles from './css/AppContainer.module.css';
 import {NavigationGroup} from './types';
@@ -73,8 +72,8 @@ const MobileTopBar = ({isOpen, onToggleNav}: {isOpen: boolean; onToggleNav: () =
       >
         <Icon name="menu" size={24} />
       </UnstyledButton>
-      <Link to="/" className={styles.wordmark}>
-        <DaggyWordmark />
+      <Link to="/" className={styles.wordmark} aria-label="Home">
+        <DagsterLogo height={24} />
       </Link>
       <UnstyledButton className={styles.iconButton} onClick={openSearch} aria-label="Search">
         <Icon name="search" size={24} />

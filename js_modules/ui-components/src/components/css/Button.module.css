@@ -251,13 +251,14 @@
    reliably hit. Keep the max-width value in sync with MOBILE_BREAKPOINT_PX in
    breakpoints.ts. */
 @media (max-width: 768px) {
+  /* 40px: comfortably tappable without making every toolbar look oversized. */
   .button {
-    min-height: 44px;
+    min-height: 40px;
   }
 
   /* Icon-only buttons (no text child) are 32px wide on desktop. */
   .button:not(:has(.buttonText)) {
-    min-width: 44px;
+    min-width: 40px;
     justify-content: center;
   }
 }

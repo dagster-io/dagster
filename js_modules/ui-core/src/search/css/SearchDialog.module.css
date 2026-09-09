@@ -67,6 +67,11 @@
   display: none;
 }
 
+/* Wrapper around icon + input; invisible on desktop, a rounded field on phones. */
+.searchField {
+  display: contents;
+}
+
 /* Phone: search is a full-screen mode rather than a floating box in the least
    thumb-reachable third of the screen. The input is pinned at the top with a
    close button; results fill the rest. Keep the max-width value in sync with
@@ -93,9 +98,32 @@
   .searchBox.hasQueryString {
     flex: none;
     min-height: 56px;
-    padding: 6px 8px 6px 16px;
+    padding: 8px 8px 8px 12px;
+    gap: 4px;
     border-radius: 0;
     box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+  }
+
+  .searchField {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background-color: var(--color-background-light);
+    box-shadow: inset 0 0 0 1px var(--color-border-default);
+  }
+
+  .searchField:focus-within {
+    box-shadow: inset 0 0 0 1px var(--color-border-hover);
+  }
+
+  .searchInput {
+    margin-left: 0;
+    min-width: 0;
   }
 
   .closeButton {

@@ -11,6 +11,7 @@ import styles from './css/SearchDialog.module.css';
 import {SearchResult} from './types';
 import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
+import {LayoutContext} from '../app/LayoutProvider';
 import {useTrackEvent} from '../app/analytics';
 
 const MAX_DISPLAYED_RESULTS = 50;
@@ -84,6 +85,7 @@ export const useSearchDialog = () => {
     searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
@@ -182,19 +184,23 @@ export const useSearchDialog = () => {
       <SearchOverlay isOpen={shown} onClose={() => dispatch({type: 'hide-dialog'})}>
         <div className={styles.container}>
           <div className={clsx(styles.searchBox, !!queryString.length && styles.hasQueryString)}>
-            <Icon name="search" color={Colors.accentGray()} size={20} />
-            <input
-              className={styles.searchInput}
-              data-search-input="1"
-              autoFocus
-              spellCheck={false}
-              onChange={onChange}
-              onKeyDown={onKeyDown}
-              placeholder="Search assets, jobs, schedules, sensors…"
-              type="text"
-              value={queryString}
-            />
-            {loading ? <Spinner purpose="body-text" /> : null}
+            <div className={styles.searchField}>
+              <Icon name="search" color={Colors.accentGray()} size={20} />
+              <input
+                className={styles.searchInput}
+                data-search-input="1"
+                autoFocus
+                spellCheck={false}
+                onChange={onChange}
+                onKeyDown={onKeyDown}
+                placeholder={
+                  isMobileScreen ? 'Search…' : 'Search assets, jobs, schedules, sensors…'
+                }
+                type="text"
+                value={queryString}
+              />
+              {loading ? <Spinner purpose="body-text" /> : null}
+            </div>
             {/* Phone only (see css): the dialog is a full-screen mode there, so
                 it needs an explicit way out besides Escape or the backdrop. */}
             <UnstyledButton
