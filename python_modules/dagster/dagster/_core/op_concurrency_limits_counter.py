@@ -149,12 +149,14 @@ class GlobalOpConcurrencyLimitsCounter:
                 instance.event_log_storage.initialize_concurrency_limit_to_default(pool_name)
 
     def _fetch_concurrency_info(self, instance: DagsterInstance, pool_names: set[str]):
-        for pool_name in pool_names:
-            if pool_name is None or pool_name in self._concurrency_info_by_key:
-                continue
-
-            self._concurrency_info_by_key[pool_name] = (
-                instance.event_log_storage.get_concurrency_info(pool_name)
+        missing = [
+            pool_name
+            for pool_name in pool_names
+            if pool_name is not None and pool_name not in self._concurrency_info_by_key
+        ]
+        if missing:
+            self._concurrency_info_by_key.update(
+                instance.event_log_storage.get_concurrency_infos(missing)
             )
 
     def _should_allocate_slots_for_in_progress_run(self, record: RunRecord):

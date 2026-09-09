@@ -1152,12 +1152,13 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
         with mock.patch.object(
             instance.event_log_storage,
-            "get_concurrency_info",
-            wraps=instance.event_log_storage.get_concurrency_info,
-        ) as get_info:
+            "get_concurrency_infos",
+            wraps=instance.event_log_storage.get_concurrency_infos,
+        ) as get_infos:
             list(daemon.run_iteration(concurrency_limited_workspace_context))
 
-        assert sorted(call.args[0] for call in get_info.call_args_list) == ["bar", "foo"]
+        fetched = [key for call in get_infos.call_args_list for key in call.args[0]]
+        assert sorted(fetched) == ["bar", "foo"]
         # one run per pool is launched, the rest stay queued behind the single slot
         assert len(instance.run_launcher.queue()) == 2
         assert instance.get_runs_count(dg.RunsFilter(statuses=[DagsterRunStatus.QUEUED])) == (

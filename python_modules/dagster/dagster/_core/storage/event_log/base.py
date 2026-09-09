@@ -588,6 +588,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Get concurrency info for key."""
         raise NotImplementedError()
 
+    def get_concurrency_infos(
+        self, concurrency_keys: Sequence[str]
+    ) -> Mapping[str, ConcurrencyKeyInfo]:
+        """Get concurrency info for many keys. Storages override this to batch the reads."""
+        return {key: self.get_concurrency_info(key) for key in dict.fromkeys(concurrency_keys)}
+
     @abstractmethod
     def get_pool_limits(self) -> Sequence[PoolLimit]:
         """Get the set of concurrency limited keys and limits."""
