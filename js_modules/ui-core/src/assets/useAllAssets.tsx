@@ -492,6 +492,17 @@ const combineAssetDefinitions = weakMapMemoize(
     asset: ReturnType<typeof getAssets>[number],
     sdas: ReturnType<typeof getAssets>,
   ): ReturnType<typeof getAssets>[number] => {
+    // A freshness policy is typically declared on only one of the definitions, so take the first
+    // non-null value in the same priority order used to pick the representative definition
+    // (materializable, then observable, then non-stub, then any). Keep this in sync with
+    // `RemoteWorkspaceAssetNode.freshness_policy` in
+    // python_modules/dagster/dagster/_core/definitions/assets/graph/remote_asset_graph.py
+    const prioritizedDefinitions = [
+      ...sdas.filter((sda) => sda.definition?.isMaterializable),
+      ...sdas.filter((sda) => sda.definition?.isObservable),
+      ...sdas.filter((sda) => sda.definition && !sda.definition.isAutoCreatedStub),
+      ...sdas,
+    ].map((sda) => sda.definition);
     return {
       ...asset,
       definition: {
@@ -512,6 +523,9 @@ const combineAssetDefinitions = weakMapMemoize(
           },
           {} as Record<string, boolean>,
         ),
+        internalFreshnessPolicy:
+          prioritizedDefinitions.find((definition) => definition?.internalFreshnessPolicy != null)
+            ?.internalFreshnessPolicy ?? null,
       },
     };
   },

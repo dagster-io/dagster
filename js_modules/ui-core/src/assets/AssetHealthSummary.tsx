@@ -30,6 +30,8 @@ import {
   AssetHealthMaterializationDegradedNotPartitionedMetaFragment,
   AssetHealthMaterializationDegradedPartitionedMetaFragment,
   AssetHealthMaterializationHealthyPartitionedMetaFragment,
+  AssetHealthMaterializationWarningNotPartitionedMetaFragment,
+  AssetHealthMaterializationWarningPartitionedMetaFragment,
 } from '../asset-data/types/AssetHealthDataProvider.types';
 import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
 import {tokenForAssetKey} from '../asset-graph/Utils';
@@ -171,6 +173,8 @@ const Criteria = React.memo(
       | AssetHealthMaterializationDegradedNotPartitionedMetaFragment
       | AssetHealthMaterializationDegradedPartitionedMetaFragment
       | AssetHealthMaterializationHealthyPartitionedMetaFragment
+      | AssetHealthMaterializationWarningNotPartitionedMetaFragment
+      | AssetHealthMaterializationWarningPartitionedMetaFragment
       | AssetHealthFreshnessMetaFragment
       | undefined
       | null;
@@ -307,6 +311,31 @@ const Criteria = React.memo(
               </Link>
             </Text>
           );
+        case 'AssetHealthMaterializationWarningNotPartitionedMeta':
+          return metadata.failedRunId ? (
+            <Text size={14}>
+              <Link
+                to={`/runs/${metadata.failedRunId}`}
+                onClick={onClick('materialization-warning-not-partitioned')}
+              >
+                Materialization failed in run {metadata.failedRunId.split('-').shift()}, retry
+                pending
+              </Link>
+            </Text>
+          ) : null;
+        case 'AssetHealthMaterializationWarningPartitionedMeta':
+          return (
+            <Text size={14}>
+              <Link
+                to={assetDetailsPathForKey(assetKey, {view: 'partitions', status: 'FAILED'})}
+                onClick={onClick('warning-partitioned')}
+              >
+                Materialization failed in {numberFormatter.format(metadata.numUpForRetryPartitions)}{' '}
+                out of {numberFormatter.format(metadata.totalNumPartitions)} partition
+                {ifPlural(metadata.totalNumPartitions, '', 's')}, retries pending
+              </Link>
+            </Text>
+          );
         case 'AssetHealthFreshnessMeta':
           if (metadata.lastMaterializedTimestamp === null) {
             return <Text size={14}>No materializations</Text>;
@@ -321,7 +350,9 @@ const Criteria = React.memo(
         case undefined:
           return null;
         default:
-          assertUnreachable(metadata);
+          // The metadata union can gain members on the server before a deployed bundle knows
+          // about them; render no detail line rather than throwing.
+          return null;
       }
     }, [type, metadata, assetKey, onClick]);
 

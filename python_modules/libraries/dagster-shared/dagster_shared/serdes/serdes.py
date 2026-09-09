@@ -79,7 +79,6 @@ PackableValue: TypeAlias = Union[
     int,
     float,
     bool,
-    None,
     NamedTuple,
     "BaseModel",
     "DataclassInstance",
@@ -87,6 +86,7 @@ PackableValue: TypeAlias = Union[
     frozenset["PackableValue"],
     Enum,
     IHaveNew,  # indirect way of indicating @record_custom classes are packable
+    None,
 ]
 
 UnpackedValue: TypeAlias = Union[
@@ -96,7 +96,6 @@ UnpackedValue: TypeAlias = Union[
     int,
     float,
     bool,
-    None,
     NamedTuple,
     "BaseModel",
     "DataclassInstance",
@@ -105,6 +104,7 @@ UnpackedValue: TypeAlias = Union[
     Enum,
     "UnknownSerdesValue",
     IHaveNew,
+    None,
 ]
 
 SerializableObject: TypeAlias = Union[

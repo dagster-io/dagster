@@ -13,7 +13,7 @@ In this example, we'll explore two different approaches to achieving parallelism
 
 Imagine you need to process a collection of items (in our example, letters a-z), where each item requires some computation time (simulated with a sleep operation). Without parallelism, processing each item sequentially would take much longer than processing them concurrently.
 
-The key question is: Should you use Dagster's dynamic outputs to create separate op executions for each item, or should you handle the parallelism within a single op using Python's multiprocessing capabilities?
+Should you use Dagster's dynamic outputs to create separate op executions for each item, or handle the parallelism within a single op using Python's multiprocessing capabilities?
 
 ## Solution 1: Dagster dynamic outputs
 
@@ -30,7 +30,7 @@ The key question is: Should you use Dagster's dynamic outputs to create separate
 | **Execution time** | ~26 seconds (1 second per letter + Dagster overhead) |
 | **Observability**  | Full visibility into each letter's execution         |
 | **Retry logic**    | Automatic retry for individual letters               |
-| **Resource usage** | Each letter consumes a credit in Dagster Cloud       |
+| **Resource usage** | Each letter consumes a credit in Dagster+            |
 | **Complexity**     | Simple dynamic pattern setup                         |
 
 ## Solution 2: Python parallelism

@@ -5,7 +5,7 @@ from typing_extensions import assert_never
 
 from dagster_rest_resources.__generated__.input_types import RepositorySelector, ScheduleSelector
 from dagster_rest_resources.gql_client import IGraphQLClient
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 from dagster_rest_resources.schemas.schedule import DgApiSchedule, DgApiScheduleList
 
 if TYPE_CHECKING:
@@ -47,9 +47,9 @@ class DgApiScheduleApi:
                     ]
                     return DgApiScheduleList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
         else:
@@ -69,9 +69,9 @@ class DgApiScheduleApi:
                             )
                     return DgApiScheduleList(items=items)
                 case "RepositoryNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error listing schedules: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 
@@ -97,9 +97,9 @@ class DgApiScheduleApi:
                     repo_name=repository_name,
                 )
             case "ScheduleNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching schedule: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -120,18 +120,18 @@ class DgApiScheduleApi:
                         if s.name == schedule_name
                     )
                 if not matches:
-                    raise DagsterPlusGraphqlError(f"Schedule not found: {schedule_name}")
+                    raise DagsterPlusClientError(f"Schedule not found: {schedule_name}")
                 if len(matches) > 1:
                     origins = [s.code_location_origin for s in matches]
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusClientError(
                         f"Multiple schedules found with name '{schedule_name}' in code locations: {', '.join(origins)}"
                     )
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

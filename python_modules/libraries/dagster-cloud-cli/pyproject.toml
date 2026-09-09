@@ -44,5 +44,8 @@ test = [
     "pip",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-shared = { path = "../dagster-shared", editable = true }

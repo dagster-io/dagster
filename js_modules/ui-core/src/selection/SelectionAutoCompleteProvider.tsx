@@ -372,7 +372,7 @@ export const createProvider = <
               <Text size={12} family="mono" color="textLight">
                 {attribute as string}:
               </Text>
-              <Text size={12} family="mono" style={{overflow: 'hidden'}}>
+              <Text size={12} family="mono" className={styles.attributeValue}>
                 <MiddleTruncate text={valueText} />
               </Text>
             </Box>

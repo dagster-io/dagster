@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import dagster._check as check
 import pandas as pd
@@ -41,7 +41,7 @@ class LakehouseComponent(Component, LakehouseComponentParams, Resolvable):
             context: AssetExecutionContext,
             delta_storage: DeltaStorageResource,
         ) -> str:
-            base_time = datetime.now()
+            base_time = datetime.now(timezone.utc)
             data = [
                 {
                     "sensor_id": f"sensor-{i % 50:03d}",
@@ -86,7 +86,7 @@ class LakehouseComponent(Component, LakehouseComponentParams, Resolvable):
 
             if df.empty:
                 if self.demo_mode:
-                    base_time = datetime.now()
+                    base_time = datetime.now(timezone.utc)
                     data = [
                         {
                             "sensor_id": f"sensor-{i % 50:03d}",
@@ -148,7 +148,7 @@ class LakehouseComponent(Component, LakehouseComponentParams, Resolvable):
 
             if df.empty:
                 if self.demo_mode:
-                    base_time = datetime.now()
+                    base_time = datetime.now(timezone.utc)
                     data = [
                         {
                             "sensor_id": f"sensor-{i % 50:03d}",

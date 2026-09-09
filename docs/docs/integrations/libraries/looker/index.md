@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker
 pypi: https://pypi.org/project/dagster-looker
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/looker.svg
 partnerlink: https://www.looker.com/
 canonicalUrl: '/integrations/libraries/looker'

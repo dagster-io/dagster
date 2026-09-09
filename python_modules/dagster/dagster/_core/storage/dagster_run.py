@@ -40,7 +40,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
+    from dagster._core.definitions.asset_key import AssetOrCheckKey
     from dagster._core.definitions.partitions.definition.partitions_definition import (
         PartitionsDefinition,
     )
@@ -576,7 +576,7 @@ class DagsterRun(
         return self.parent_run_id
 
     @property
-    def entity_selection(self) -> AbstractSet["EntityKey"] | None:
+    def entity_selection(self) -> AbstractSet["AssetOrCheckKey"] | None:
         if self.asset_selection is None and self.asset_check_selection is None:
             return None
 

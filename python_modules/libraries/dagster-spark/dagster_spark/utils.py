@@ -1,5 +1,6 @@
 import itertools
 import os
+import shlex
 
 import dagster._check as check
 
@@ -71,12 +72,17 @@ def construct_spark_shell_command(
     master_url = ["--master", master_url] if master_url else []
     deploy_mode = ["--deploy-mode", deploy_mode] if deploy_mode else []
 
+    # Tokenize application_arguments into individual argv elements (respecting quotes) rather
+    # than passing the raw string through a shell. This preserves multi-argument and quoted
+    # usage while ensuring shell metacharacters are treated as literal, inert arguments.
+    application_args = shlex.split(application_arguments) if application_arguments else []
+
     spark_shell_cmd = (
         [f"{spark_home}/bin/spark-submit", "--class", main_class]
         + master_url
         + deploy_mode
         + parse_spark_config(spark_conf)
         + [application_jar]
-        + [application_arguments]
+        + application_args
     )
     return spark_shell_cmd

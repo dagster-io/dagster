@@ -123,13 +123,21 @@ All status tokens can be one of: `HEALTHY`, `WARNING`, `DEGRADED`, `UNKNOWN`, or
 | `{{columns_uniqueness_changed}}`  | List of `[column, old_unique, new_unique]` for uniqueness changes.      |
 | `{{columns_tags_changed}}`        | List of `[column, old_tags, new_tags]` for tag changes.                 |
 
-### Code location tokens
+### Code location error tokens
 
 | Token                 | Description                                |
 | :-------------------- | :----------------------------------------- |
 | `{{location_name}}`   | Name of the code location.                 |
 | `{{location_link}}`   | URL to the code location.                  |
 | `{{failure_message}}` | Error message describing the load failure. |
+
+### Code location deploy success tokens
+
+| Token               | Description                                       |
+| :------------------ | :------------------------------------------------ |
+| `{{location_name}}` | Name of the code location.                        |
+| `{{location_link}}` | URL to the code location.                         |
+| `{{deployed_at}}`   | When the code location was successfully deployed. |
 
 ### Tick (schedules and sensors) tokens
 

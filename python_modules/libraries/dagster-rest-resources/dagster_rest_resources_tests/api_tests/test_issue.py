@@ -8,6 +8,7 @@ from dagster_rest_resources.__generated__.add_link_to_issue import (
     AddLinkToIssueAddLinkToIssueUpdateIssueSuccess,
     AddLinkToIssueAddLinkToIssueUpdateIssueSuccessIssue,
 )
+from dagster_rest_resources.__generated__.base_model import UNSET
 from dagster_rest_resources.__generated__.create_issue import (
     CreateIssue,
     CreateIssueCreateIssueCreateIssueSuccess,
@@ -15,7 +16,7 @@ from dagster_rest_resources.__generated__.create_issue import (
     CreateIssueCreateIssuePythonError,
     CreateIssueCreateIssueUnauthorizedError,
 )
-from dagster_rest_resources.__generated__.enums import IssueStatus
+from dagster_rest_resources.__generated__.enums import IssueStatus, RunStatus
 from dagster_rest_resources.__generated__.fragments import (
     IssueFieldsCreatedByDagsterCloudUser,
     IssueFieldsLinkedObjectsAsset,
@@ -71,7 +72,9 @@ def _make_issue_fields(**kwargs) -> dict:
         context=None,
         linkedObjects=[],
         createdBy=IssueFieldsCreatedByDagsterCloudUser(
-            __typename="DagsterCloudUser", displayName="test@email.com"
+            __typename="DagsterCloudUser",
+            displayName="test@email.com",
+            email="test@email.com",
         ),
     )
     defaults.update(kwargs)
@@ -89,6 +92,10 @@ class TestGetIssue:
                         IssueFieldsLinkedObjectsRun(
                             __typename="Run",
                             id="run-123",
+                            status=RunStatus.SUCCESS,
+                            jobName="my_job",
+                            startTime=1705311000.0,
+                            endTime=1705311600.0,
                         ),
                         IssueFieldsLinkedObjectsAsset(
                             __typename="Asset",
@@ -251,6 +258,73 @@ class TestCreateIssue:
         result = DgApiIssueApi(_client=client).create_issue(title="", description="")
 
         assert result.id == "new-issue"
+        assert result.created_by_email == "test@email.com"
+        client.create_issue.assert_called_once_with(
+            title="", description="", status=None, origin=UNSET
+        )
+
+    def test_creates_issue_with_origin(self):
+        client = Mock(spec=IGraphQLClient)
+        client.create_issue.return_value = CreateIssue(
+            createIssue=CreateIssueCreateIssueCreateIssueSuccess(
+                __typename="CreateIssueSuccess",
+                issue=CreateIssueCreateIssueCreateIssueSuccessIssue(**_make_issue_fields()),
+            )
+        )
+
+        DgApiIssueApi(_client=client).create_issue(title="t", description="d", run_id="run-1")
+
+        origin = client.create_issue.call_args.kwargs["origin"]
+        # the asset key was not supplied, so it is left unset rather than sent as null
+        assert origin.model_dump(by_alias=True, exclude_unset=True) == {"runId": "run-1"}
+
+    def test_creates_issue_with_asset_origin(self):
+        client = Mock(spec=IGraphQLClient)
+        client.create_issue.return_value = CreateIssue(
+            createIssue=CreateIssueCreateIssueCreateIssueSuccess(
+                __typename="CreateIssueSuccess",
+                issue=CreateIssueCreateIssueCreateIssueSuccessIssue(**_make_issue_fields()),
+            )
+        )
+
+        DgApiIssueApi(_client=client).create_issue(
+            title="t", description="d", asset_key=["warehouse", "orders"]
+        )
+
+        origin = client.create_issue.call_args.kwargs["origin"]
+        assert origin.model_dump(by_alias=True, exclude_unset=True) == {
+            "assetKey": {"path": ["warehouse", "orders"]}
+        }
+
+    def test_linked_run_carries_status_and_timings(self):
+        client = Mock(spec=IGraphQLClient)
+        client.get_issue.return_value = GetIssue(
+            issue=GetIssueIssueIssue(
+                __typename="Issue",
+                **_make_issue_fields(
+                    linkedObjects=[
+                        IssueFieldsLinkedObjectsRun(
+                            __typename="Run",
+                            id="run-123",
+                            status=RunStatus.FAILURE,
+                            jobName="my_job",
+                            startTime=1.0,
+                            endTime=2.0,
+                        )
+                    ]
+                ),
+            )
+        )
+
+        result = DgApiIssueApi(_client=client).get_issue("issue-1")
+
+        run = result.linked_objects[0]
+        assert isinstance(run, DgApiIssueLinkedRun)
+        assert run.run_id == "run-123"
+        assert run.status == RunStatus.FAILURE
+        assert run.job_name == "my_job"
+        assert run.started_at == 1.0
+        assert run.ended_at == 2.0
 
     def test_unauthorized_raises(self):
         client = Mock(spec=IGraphQLClient)
@@ -324,6 +398,10 @@ class TestCreateLinkOnIssue:
                             IssueFieldsLinkedObjectsRun(
                                 __typename="Run",
                                 id="test-run",
+                                status=RunStatus.SUCCESS,
+                                jobName="my_job",
+                                startTime=1705311000.0,
+                                endTime=1705311600.0,
                             ),
                             IssueFieldsLinkedObjectsAsset(
                                 __typename="Asset",

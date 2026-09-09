@@ -3,8 +3,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
+from dagster_cloud_cli import config_utils
 from dagster_dg_core.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg_core.context import DgContext
+from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
 from dagster_shared import check
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
@@ -29,6 +31,31 @@ def get_dockerfile_path(
         return project_context.root_path / "Dockerfile"
 
 
+def _agent_platform_from_agents(agents: list) -> DgPlusAgentPlatform:
+    # Resolve deterministically by priority (K8S first), not by agent order: a mixed v1+v2 org
+    # mid-migration runs both a K8s and an ECS agent, and K8S is the signal that drives the
+    # Serverless v2 PEX->Docker redirect, so it must win regardless of the order agents appear in.
+    running_types: list[str] = []
+    for agent in agents:
+        if agent["status"] != "RUNNING":
+            continue
+        for metadata in agent["metadata"]:
+            if metadata["key"] != "type":
+                continue
+            running_types.append(metadata["value"].lower())
+            break
+
+    if any("K8sUserCodeLauncher".lower() in t for t in running_types):
+        return DgPlusAgentPlatform.K8S
+    if any("EcsUserCodeLauncher".lower() in t for t in running_types):
+        return DgPlusAgentPlatform.ECS
+    if any("DockerUserCodeLauncher".lower() in t for t in running_types):
+        return DgPlusAgentPlatform.DOCKER
+    if any("ProcessUserCodeLauncher".lower() in t for t in running_types):
+        return DgPlusAgentPlatform.LOCAL
+    return DgPlusAgentPlatform.UNKNOWN
+
+
 def get_agent_type_and_platform_from_graphql(
     gql_client: "IGraphQLClient",
 ) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
@@ -36,50 +63,92 @@ def get_agent_type_and_platform_from_graphql(
 
     agent_type = DgPlusAgentType(result["currentDeployment"]["agentType"])
 
-    agent_platform = DgPlusAgentPlatform.UNKNOWN
-    if agent_type == DgPlusAgentType.HYBRID:
-        for agent in result["agents"]:
-            if agent["status"] == "RUNNING":
-                for metadata in agent["metadata"]:
-                    if metadata["key"] == "type":
-                        agent_class = metadata["value"].lower()
-                        if "K8sUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.K8S
-                            break
-                        elif "EcsUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.ECS
-                            break
-                        elif "DockerUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.DOCKER
-                            break
-                        elif "ProcessUserCodeLauncher".lower() in agent_class:
-                            agent_platform = DgPlusAgentPlatform.LOCAL
-                            break
+    # Serverless is inspected as well as Hybrid: a Serverless v2 org runs the
+    # ServerlessK8sUserCodeLauncher, so K8S distinguishes v2 from classic (ECS-backed) Serverless.
+    agent_platform = (
+        _agent_platform_from_agents(result.get("agents", []))
+        if agent_type in (DgPlusAgentType.HYBRID, DgPlusAgentType.SERVERLESS)
+        else DgPlusAgentPlatform.UNKNOWN
+    )
 
     return agent_type, agent_platform
 
 
+def _gql_client_from_env_or_config(
+    cli_config: DagsterPlusCliConfig | None,
+) -> "IGraphQLClient | None":
+    """Build a Plus GraphQL client from the dg config if present, else from the
+    ``DAGSTER_CLOUD_*`` env vars used by CI and the deploy commands. Returns None if
+    credentials can't be resolved.
+    """
+    organization = (
+        cli_config.organization if cli_config else None
+    ) or config_utils.get_organization()
+    api_token = (cli_config.user_token if cli_config else None) or config_utils.get_user_token()
+    url = config_utils.get_url() or (
+        cli_config.organization_url if cli_config and cli_config.organization else None
+    )
+    deployment = (
+        cli_config.default_deployment if cli_config else None
+    ) or config_utils.get_deployment()
+    if not (organization and api_token and url):
+        return None
+    return DagsterPlusGraphQLClient(
+        url=url, api_token=api_token, organization=organization, deployment=deployment
+    )
+
+
+_SERVERLESS_V2_LAUNCHER = "ServerlessK8sUserCodeLauncher"
+
+
+def _has_running_serverless_v2_agent(agents: list) -> bool:
+    needle = _SERVERLESS_V2_LAUNCHER.lower()
+    for agent in agents:
+        if agent["status"] != "RUNNING":
+            continue
+        for metadata in agent["metadata"]:
+            if metadata["key"] == "type" and needle in metadata["value"].lower():
+                return True
+    return False
+
+
+def get_serverless_agent_platform(cli_config: DagsterPlusCliConfig | None) -> DgPlusAgentPlatform:
+    """Resolve whether a Serverless deployment runs on v2 (Kubernetes), for the PEX->Docker
+    redirect. Returns ``K8S`` only when a running ``ServerlessK8sUserCodeLauncher`` is present —
+    NOT for a generic K8s agent (e.g. Hybrid-on-K8s), which would otherwise false-positive the
+    redirect. Auth is sourced from the dg config or the ``DAGSTER_CLOUD_*`` env vars CI uses.
+    """
+    client = _gql_client_from_env_or_config(cli_config)
+    if client is None:
+        return DgPlusAgentPlatform.UNKNOWN
+    result = client.execute_arbitrary(DEPLOYMENT_INFO_QUERY)
+    return (
+        DgPlusAgentPlatform.K8S
+        if _has_running_serverless_v2_agent(result.get("agents", []))
+        else DgPlusAgentPlatform.UNKNOWN
+    )
+
+
+def get_agent_type_and_platform(
+    cli_config: DagsterPlusCliConfig | None = None,
+) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
+    gql_client = _gql_client_from_env_or_config(cli_config)
+    if gql_client is not None:
+        return get_agent_type_and_platform_from_graphql(gql_client)
+
+    prompted = DgPlusAgentType(
+        click.prompt(
+            "Deployment agent type: ",
+            type=click.Choice(
+                [agent_type.lower() for agent_type in DgPlusAgentType.__members__.keys()]
+            ),
+        ).upper()
+    )
+    return prompted, DgPlusAgentPlatform.UNKNOWN
+
+
 def get_agent_type(cli_config: DagsterPlusCliConfig | None = None) -> DgPlusAgentType:
-    if cli_config:
-        from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
-
-        gql_client = DagsterPlusGraphQLClient(
-            url=cli_config.organization_url,
-            api_token=cli_config.user_token,
-            organization=cli_config.organization,
-            deployment=cli_config.default_deployment,
-        )
-        return get_agent_type_and_platform_from_graphql(gql_client)[0]
-
-    else:
-        return DgPlusAgentType(
-            click.prompt(
-                "Deployment agent type: ",
-                type=click.Choice(
-                    [agent_type.lower() for agent_type in DgPlusAgentType.__members__.keys()]
-                ),
-            ).upper()
-        )
+    return get_agent_type_and_platform(cli_config)[0]
 
 
 def create_deploy_dockerfile(

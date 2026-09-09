@@ -198,6 +198,14 @@ CONFIG_SCHEMA_FIELDS = {
         ),
         is_required=False,
     ),
+    "pex_bundle": Field(
+        config=Noneable(bool),
+        is_required=False,
+        description=(
+            "True if the image was baked from a PEX build (fast deploys) rather than a native"
+            " Docker build (internal only)."
+        ),
+    ),
     "code_source": Field(
         Selector(
             {

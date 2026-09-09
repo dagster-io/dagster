@@ -25,16 +25,42 @@ class GetRunRunOrErrorRun(BaseModel):
     start_time: Optional[float] = Field(alias="startTime")
     end_time: Optional[float] = Field(alias="endTime")
     job_name: str = Field(alias="jobName")
+    run_config_yaml: str = Field(alias="runConfigYaml")
+    tags: list["GetRunRunOrErrorRunTags"]
+    stats: Union[
+        "GetRunRunOrErrorRunStatsRunStatsSnapshot",
+        "GetRunRunOrErrorRunStatsPythonError",
+    ] = Field(discriminator="typename__")
+
+
+class GetRunRunOrErrorRunTags(BaseModel):
+    key: str
+    value: str
+
+
+class GetRunRunOrErrorRunStatsRunStatsSnapshot(BaseModel):
+    typename__: Literal["RunStatsSnapshot"] = Field(alias="__typename")
+    steps_succeeded: int = Field(alias="stepsSucceeded")
+    steps_failed: int = Field(alias="stepsFailed")
+    materializations: int
+    expectations: int
+
+
+class GetRunRunOrErrorRunStatsPythonError(BaseModel):
+    typename__: Literal["PythonError"] = Field(alias="__typename")
 
 
 class GetRunRunOrErrorRunNotFoundError(BaseModel):
     typename__: Literal["RunNotFoundError"] = Field(alias="__typename")
+    run_id: str = Field(alias="runId")
     message: str
 
 
 class GetRunRunOrErrorPythonError(BaseModel):
     typename__: Literal["PythonError"] = Field(alias="__typename")
     message: str
+    stack: list[str]
 
 
 GetRun.model_rebuild()
+GetRunRunOrErrorRun.model_rebuild()

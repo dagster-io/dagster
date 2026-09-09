@@ -8,7 +8,7 @@ sidebar_position: 40
 
 Dagster encourages software engineering best practices, one of which is keeping code [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself). We will apply our factory pipeline to multiple podcasts which will create distinct asset lineages for each podcast, all within the same Dagster project.
 
-If you look at the `rss_pipeline_factory` function, it returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object containing the four assets, a job for those assets, and the sensor for the specific podcast feed. All of those pipelines use the same <PyObject section="resources" module="dagster" object="ConfigurableResource"/> which we can set at the project level:
+If you look at the `rss_pipeline_factory` function, it returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object containing the four assets, a job for those assets, and the sensor for the specific podcast feed. All of those pipelines use the same <PyObject section="resources" module="dagster" object="ConfigurableResource" /> which we can set at the project level:
 
 <CodeExample
   path="docs_projects/project_dagster_modal_pipes/src/project_dagster_modal_pipes/defs/resources.py"

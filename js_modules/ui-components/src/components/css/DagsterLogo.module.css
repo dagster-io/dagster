@@ -1,0 +1,49 @@
+.logo {
+  --dagster-logo-mark: var(--color-core-blue500);
+  --dagster-logo-wordmark: var(--color-core-gray990);
+  --dagster-logo-eye: var(--color-always-white);
+  --dagster-logo-pupil: var(--color-core-gray990);
+}
+
+/* Fills must be set from CSS: SVG presentation attributes do not perform
+   var() substitution. */
+.mark {
+  fill: var(--dagster-logo-mark);
+}
+
+.wordmark {
+  fill: var(--dagster-logo-wordmark);
+}
+
+.eye {
+  fill: var(--dagster-logo-eye);
+}
+
+.pupil {
+  fill: var(--dagster-logo-pupil);
+}
+
+/* Follow the OS color scheme by default, matching GlobalThemeStyle.css, which
+   applies dark theme variables to :root even when no theme class is present.
+   Explicitly selected light themes override the OS preference. */
+@media (prefers-color-scheme: dark) {
+  .logo {
+    --dagster-logo-mark: var(--color-core-blue200);
+    --dagster-logo-wordmark: var(--color-core-white);
+  }
+
+  :global(.themeLight) .logo,
+  :global(.themeLightNoRedGreen) .logo {
+    --dagster-logo-mark: var(--color-core-blue500);
+    --dagster-logo-wordmark: var(--color-core-gray990);
+  }
+}
+
+/* Explicitly selected dark themes and the reversed prop always win, so they
+   come last in the cascade. */
+.logo.reversed,
+:global(.themeDark) .logo,
+:global(.themeDarkNoRedGreen) .logo {
+  --dagster-logo-mark: var(--color-core-blue200);
+  --dagster-logo-wordmark: var(--color-core-white);
+}

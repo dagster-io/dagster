@@ -40,11 +40,8 @@ Tag values must:
 A label is a tag that only contains a key. To create a label, set the tag value to an empty string:
 
 ```python
-@dg.asset(
-    tags={"private":""}
-)
-def my_asset() -> None:
-    ...
+@dg.asset(tags={"private": ""})
+def my_asset() -> None: ...
 ```
 
 A label will look like the following in the UI:

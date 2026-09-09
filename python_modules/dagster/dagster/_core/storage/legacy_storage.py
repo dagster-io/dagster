@@ -719,6 +719,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
         return self._storage.event_log_storage.get_concurrency_info(concurrency_key)
 
+    def get_concurrency_infos(
+        self, concurrency_keys: Sequence[str]
+    ) -> Mapping[str, ConcurrencyKeyInfo]:
+        return self._storage.event_log_storage.get_concurrency_infos(concurrency_keys)
+
     def claim_concurrency_slot(
         self, concurrency_key: str, run_id: str, step_key: str, priority: int | None = None
     ) -> ConcurrencyClaimStatus:

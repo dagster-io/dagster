@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from typing import AbstractSet, NamedTuple  # noqa: UP035
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import EntityKey
+from dagster._core.definitions.asset_key import AssetOrCheckKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.assets.job.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.events import AssetKey
@@ -42,7 +42,7 @@ def _get_implicit_job_name_for_assets(
 
 def _get_execution_plan_entity_keys(
     execution_plan_snapshot: ExecutionPlanSnapshot,
-) -> AbstractSet[EntityKey]:
+) -> AbstractSet[AssetOrCheckKey]:
     output_entity_keys = set()
     for step in execution_plan_snapshot.steps:
         if step.key in execution_plan_snapshot.step_keys_to_execute:
@@ -70,7 +70,7 @@ async def get_job_execution_data_from_run_request(
     )
     handle = asset_graph.get_repository_handle(run_request.entity_keys[0])
     location_name = handle.location_name
-    job_name = (
+    job_name = run_request.job_name or (
         _get_implicit_job_name_for_assets(asset_graph, run_request.asset_selection)
         if run_request.asset_selection
         # if we're only executing checks, then this must have been created after the single implicit
@@ -237,6 +237,103 @@ async def _create_asset_run(
     )
 
 
+async def submit_job_entity_run(
+    run_id: str | None,
+    run_request: RunRequest,
+    run_request_index: int,
+    instance: DagsterInstance,
+    workspace_process_context: IWorkspaceProcessContext,
+    workspace: BaseWorkspaceRequestContext,
+    asset_graph: RemoteWorkspaceAssetGraph,
+    run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
+    debug_crash_flags: SingleInstigatorDebugCrashFlags,
+    logger: logging.Logger,
+) -> DagsterRun:
+    """Submits a run for a job-entity RunRequest. Unlike asset runs, this is a
+    traditional whole-job run with no asset subsetting.
+    """
+    from dagster._core.definitions.asset_key import AssetJobKey
+    from dagster._core.remote_representation.external import RemoteExecutionPlanSelector
+
+    job_name = check.not_none(run_request.job_name)
+    handle = asset_graph.get_repository_handle(AssetJobKey(job_name))
+
+    # the run may already exist if a previous tick was interrupted partway through
+    existing_run = instance.get_run_by_id(run_id) if run_id else None
+    if existing_run:
+        if existing_run.status != DagsterRunStatus.NOT_STARTED:
+            logger.warn(
+                f"Run {run_id} already submitted on a previously interrupted tick, skipping"
+            )
+            return existing_run
+        else:
+            logger.warn(
+                f"Run {run_id} already created on a previously interrupted tick, submitting"
+            )
+            run_to_submit = existing_run
+    else:
+        job_selector = JobSubsetSelector(
+            location_name=handle.location_name,
+            repository_name=handle.repository_name,
+            job_name=job_name,
+            op_selection=None,
+        )
+
+        if job_selector not in run_request_execution_data_cache:
+            remote_job, remote_execution_plan = await asyncio.gather(
+                RemoteJob.gen(workspace, job_selector),
+                RemoteExecutionPlan.gen(
+                    workspace,
+                    RemoteExecutionPlanSelector(
+                        job_selector=job_selector,
+                        run_config=(run_request.run_config or {}),
+                    ),
+                ),
+            )
+            run_request_execution_data_cache[job_selector] = RunRequestExecutionData(
+                check.not_none(remote_job),
+                check.not_none(remote_execution_plan),
+            )
+
+        execution_data = run_request_execution_data_cache[job_selector]
+
+        run_to_submit = instance.create_run(
+            job_name=job_name,
+            run_id=run_id,
+            run_config=run_request.run_config or {},
+            resolved_op_selection=None,
+            op_selection=None,
+            step_keys_to_execute=None,
+            status=DagsterRunStatus.NOT_STARTED,
+            tags=run_request.tags,
+            root_run_id=None,
+            parent_run_id=None,
+            job_snapshot=execution_data.remote_job.job_snapshot,
+            execution_plan_snapshot=execution_data.remote_execution_plan.execution_plan_snapshot,
+            parent_job_snapshot=execution_data.remote_job.parent_job_snapshot,
+            remote_job_origin=execution_data.remote_job.get_remote_origin(),
+            job_code_origin=execution_data.remote_job.get_python_origin(),
+            asset_selection=None,
+            asset_check_selection=None,
+            asset_graph=asset_graph,
+        )
+
+    check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+    check_for_debug_crash(debug_crash_flags, f"RUN_CREATED_{run_request_index}")
+
+    instance.submit_run(run_to_submit.run_id, workspace_process_context.create_request_context())
+
+    check_for_debug_crash(debug_crash_flags, "RUN_SUBMITTED")
+    check_for_debug_crash(debug_crash_flags, f"RUN_SUBMITTED_{run_request_index}")
+
+    logger.info(
+        f"Submitted run {run_to_submit.run_id} for job entity {job_name} with tags"
+        f" {run_request.tags}"
+    )
+
+    return run_to_submit
+
+
 async def submit_asset_run(
     run_id: str | None,
     run_request: RunRequest,
@@ -252,7 +349,7 @@ async def submit_asset_run(
     submits the existing run. If the run does not exist, creates a new run and submits it, ensuring
     that the created run targets the given asset selection.
     """
-    entity_keys: Sequence[EntityKey] = [
+    entity_keys: Sequence[AssetOrCheckKey] = [
         *(run_request.asset_selection or []),
         *(run_request.asset_check_keys or []),
     ]

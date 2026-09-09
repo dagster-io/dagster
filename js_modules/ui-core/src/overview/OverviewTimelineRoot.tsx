@@ -1,4 +1,4 @@
-import {Box, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui-components';
+import {Box, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useContext, useDeferredValue, useMemo} from 'react';
 
@@ -18,25 +18,13 @@ import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalSt
 import {filterJobSelectionByQuery} from '../job-selection/AntlrJobSelection';
 import {JobSelectionInput} from '../job-selection/input/JobSelectionInput';
 import {RunTimeline} from '../runs/RunTimeline';
+import {TimelineRangeControls} from '../runs/TimelineRangeControls';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {useRunsForTimeline} from '../runs/useRunsForTimeline';
 
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 const POLL_INTERVAL = 30 * 1000;
-
-const hourWindowToOffset = (hourWindow: HourWindow) => {
-  switch (hourWindow) {
-    case '1':
-      return ONE_HOUR;
-    case '6':
-      return 6 * ONE_HOUR;
-    case '12':
-      return 12 * ONE_HOUR;
-    case '24':
-      return 24 * ONE_HOUR;
-  }
-};
 
 type Props = {
   Header: React.ComponentType<{refreshState: RefreshState}>;
@@ -48,22 +36,25 @@ export function useTimelineRange({
   hourWindowStorageKey,
   hourWindowDefault = '12',
   lookaheadHours = LOOKAHEAD_HOURS,
+  windowMsOverride,
 }: {
   maxNowMs?: number;
   hourWindowStorageKey?: string;
   hourWindowDefault?: HourWindow;
   lookaheadHours?: number;
+  // Window size to use instead of the selected hour window, for views that offer a window
+  // shorter than an hour. Also sets the distance each paging step covers.
+  windowMsOverride?: number;
 }) {
   const [hourWindow, setHourWindow] = useHourWindow(hourWindowDefault, hourWindowStorageKey);
   const [now, setNow] = React.useState(() => maxNowMs || Date.now());
   const [offsetMsec, setOffsetMsec] = React.useState(() => 0);
 
+  const windowMs = windowMsOverride ?? Number(hourWindow) * ONE_HOUR;
+
   const rangeMs: [number, number] = React.useMemo(
-    () => [
-      now - Number(hourWindow) * ONE_HOUR + offsetMsec,
-      now + lookaheadHours * ONE_HOUR + offsetMsec,
-    ],
-    [hourWindow, now, lookaheadHours, offsetMsec],
+    () => [now - windowMs + offsetMsec, now + lookaheadHours * ONE_HOUR + offsetMsec],
+    [windowMs, now, lookaheadHours, offsetMsec],
   );
 
   useRefreshAtInterval({
@@ -74,18 +65,26 @@ export function useTimelineRange({
   });
 
   const onPageEarlier = React.useCallback(() => {
-    setOffsetMsec((current) => current - hourWindowToOffset(hourWindow));
-  }, [hourWindow]);
+    setOffsetMsec((current) => current - windowMs);
+  }, [windowMs]);
 
   const onPageLater = React.useCallback(() => {
-    setOffsetMsec((current) => current + hourWindowToOffset(hourWindow));
-  }, [hourWindow]);
+    setOffsetMsec((current) => current + windowMs);
+  }, [windowMs]);
 
   const onPageNow = React.useCallback(() => {
     setOffsetMsec(0);
   }, []);
 
-  return {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow};
+  return {
+    rangeMs,
+    offsetMsec,
+    hourWindow,
+    setHourWindow,
+    onPageEarlier,
+    onPageLater,
+    onPageNow,
+  };
 }
 
 export const OverviewTimelineRoot = ({Header}: Props) => {
@@ -177,21 +176,13 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
             <JobSelectionInput items={jobRows} value={jobSelection} onChange={setJobSelection} />
           )}
         </div>
-        <ButtonGroup<HourWindow>
-          activeItems={new Set([hourWindow])}
-          buttons={[
-            {id: '1', label: '1hr'},
-            {id: '6', label: '6hr'},
-            {id: '12', label: '12hr'},
-            {id: '24', label: '24hr'},
-          ]}
-          onClick={(hrWindow: HourWindow) => setHourWindow(hrWindow)}
+        <TimelineRangeControls
+          hourWindow={hourWindow}
+          onSelectHourWindow={setHourWindow}
+          onPageEarlier={onPageEarlier}
+          onPageNow={onPageNow}
+          onPageLater={onPageLater}
         />
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Button onClick={onPageEarlier}>&larr;</Button>
-          <Button onClick={onPageNow}>Now</Button>
-          <Button onClick={onPageLater}>&rarr;</Button>
-        </Box>
       </Box>
       <ErrorBoundary region="timeline">
         <RunTimeline loading={loading} rangeMs={rangeMs} rows={rows} />

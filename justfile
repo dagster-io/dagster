@@ -61,3 +61,58 @@ rebuild_ui:
 
 generate-graphql:
     uv run --active --no-project python scripts/generate_graphql.py
+
+# ---------------------------------------------------------------------------
+# Local development recipes
+# ---------------------------------------------------------------------------
+
+ruff:
+    ruff check --fix .
+    ruff format .
+
+unsafe_ruff:
+    ruff check --fix --unsafe-fixes .
+    ruff format .
+
+# Rebuild every ty env from scratch, then typecheck.
+rebuild_ty:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ulimit -Sn 4096
+    python scripts/run-ty.py --all --rebuild
+
+install_dev_python_modules:
+    python scripts/install_dev_python_modules.py -q
+
+install_dev_python_modules_verbose:
+    python scripts/install_dev_python_modules.py
+
+install_dev_python_modules_verbose_m1:
+    python scripts/install_dev_python_modules.py --include-prebuilt-grpcio-wheel
+
+# Fail if any dagster package is installed non-editably (dagster-hex/-hightouch are external).
+sanity_check:
+    @echo "Checking for prod installs - if any are listed below reinstall with 'uv pip install -e'"
+    @! (uv pip list --exclude-editable | grep -e dagster | grep -v dagster-hex | grep -v dagster-hightouch)
+
+rebuild_ui_with_profiling:
+    corepack enable
+    cd js_modules && yarn install && yarn build-with-profiling
+
+dev_install: install_dev_python_modules_verbose sanity_check rebuild_ui
+
+dev_install_quiet: install_dev_python_modules sanity_check rebuild_ui
+
+dev_install_m1_grpcio_wheel: install_dev_python_modules_verbose_m1 sanity_check rebuild_ui
+
+graphql_tests:
+    pytest python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
+
+check_manifest:
+    check-manifest python_modules/dagster
+    check-manifest python_modules/dagster-webserver
+    check-manifest python_modules/dagster-graphql
+    ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
+
+format_docs:
+    cd docs && yarn format

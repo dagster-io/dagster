@@ -1,0 +1,12 @@
+# alert_policies.yaml
+
+alert_policies:
+- description: Sends an email when a code location is successfully deployed.
+  event_types:
+  - CODE_LOCATION_DEPLOY_SUCCESS
+  name: code-location-deploy-success-email
+  notification_service:
+    email:
+      email_addresses:
+      - richard.hendricks@hooli.com
+      - nelson.bighetti@hooli.com

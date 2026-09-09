@@ -19,9 +19,12 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
   private onData: (data: DataType[]) => void;
   private onError?: (error: ErrorType) => void;
 
+  private maxPages?: number;
+
   private hasMoreData = true;
   private dataSoFar: DataType[] = [];
   private currentCursor: CursorType | undefined = undefined;
+  private pagesFetched = 0;
   private fetchPromise?: Promise<void>;
   private stopped: boolean = false;
 
@@ -29,14 +32,20 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
     fetchData,
     onData,
     onError,
+    initialCursor,
+    maxPages,
   }: {
     fetchData: FetcherFunction<DataType, CursorType, ErrorType>;
     onData: (data: DataType[]) => void;
     onError?: (error: ErrorType) => void;
+    initialCursor?: CursorType;
+    maxPages?: number;
   }) {
     this.fetchData = fetchData;
     this.onData = onData;
     this.onError = onError;
+    this.currentCursor = initialCursor;
+    this.maxPages = maxPages;
   }
 
   fetch = async () => {
@@ -50,7 +59,7 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
       // continue requesting with updated cursors + accumulating data until
       // stop() is called or hasMore=false.
       while (this.hasMoreData && !this.stopped) {
-        const isFirstPage = !this.currentCursor;
+        const isFirstPage = this.pagesFetched === 0;
         const {cursor, hasMore, data, error} = await this.fetchData(this.currentCursor);
         if (this.stopped) {
           break;
@@ -59,8 +68,9 @@ class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
           this.onError?.(error);
           break;
         }
+        this.pagesFetched += 1;
         this.currentCursor = cursor;
-        this.hasMoreData = hasMore;
+        this.hasMoreData = hasMore && (!this.maxPages || this.pagesFetched < this.maxPages);
 
         // Emit an onData event - note that we always call onData after loading
         // the first page, even if there is no data to display, so that consumers
@@ -93,11 +103,17 @@ export function useCursorAccumulatedQuery<
   query,
   variables,
   getResult,
+  initialCursor,
+  maxPages,
 }: {
   query: DocumentNode;
   variables: Omit<TVars, 'cursor'>;
   // Important: getResult must be memoized!
   getResult: (responseData: TQuery) => AccumulatingFetchResult<DataType, CursorType, ErrorType>;
+  // Cursor to send with the first request, for queries whose first page is already bounded.
+  initialCursor?: CursorType;
+  // Stop after this many requests, even if the server reports more data.
+  maxPages?: number;
 }) {
   const [fetched, setFetched] = useState<DataType[] | null>(null);
   const [error, setError] = useState<ErrorType | null>(null);
@@ -115,8 +131,10 @@ export function useCursorAccumulatedQuery<
       },
       onData: setFetched,
       onError: setError,
+      initialCursor,
+      maxPages,
     });
-  }, [client, query, variablesJSON, getResult]);
+  }, [client, query, variablesJSON, getResult, initialCursor, maxPages]);
 
   useEffect(() => {
     void fetch();

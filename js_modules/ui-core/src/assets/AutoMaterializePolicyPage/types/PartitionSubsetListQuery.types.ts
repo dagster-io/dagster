@@ -8,12 +8,17 @@ export type Incremental<T> =
 
 import * as Types from '../../../graphql/types';
 
+export type AssetJobKeyInput = {
+  jobName: string;
+};
+
 export type AssetKeyInput = {
   path: Array<string>;
 };
 
 export type PartitionSubsetListQueryVariables = Exact<{
-  assetKey: Types.AssetKeyInput;
+  assetKey?: Types.AssetKeyInput | null | undefined;
+  assetJobKey?: Types.AssetJobKeyInput | null | undefined;
   evaluationId: string;
   nodeUniqueId: string;
 }>;
@@ -23,4 +28,4 @@ export type PartitionSubsetListQuery = {
   truePartitionsForAutomationConditionEvaluationNode: Array<string>;
 };
 
-export const PartitionSubsetListQueryVersion = '9a560790b6c1828137f31532f5879cfb6611d9ca8c14b7f315464510b6a4bd75';
+export const PartitionSubsetListQueryVersion = 'acb33adfd087cf2bc4254fc30332ca01b34c64c116c0c470aa060b39bdbf6323';

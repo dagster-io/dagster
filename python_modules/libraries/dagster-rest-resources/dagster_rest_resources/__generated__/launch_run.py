@@ -34,6 +34,7 @@ class LaunchRunLaunchRunLaunchRunSuccess(BaseModel):
 class LaunchRunLaunchRunLaunchRunSuccessRun(BaseModel):
     run_id: str = Field(alias="runId")
     status: RunStatus
+    job_name: str = Field(alias="jobName")
 
 
 class LaunchRunLaunchRunInvalidStepError(BaseModel):

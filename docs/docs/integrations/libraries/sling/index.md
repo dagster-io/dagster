@@ -7,6 +7,7 @@ tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling
 pypi: https://pypi.org/project/dagster-sling
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/sling.png
 partnerlink: https://slingdata.io/
 canonicalUrl: '/integrations/libraries/sling'

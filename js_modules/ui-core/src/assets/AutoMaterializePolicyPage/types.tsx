@@ -75,6 +75,7 @@ export type SpecificPartitionAssetConditionEvaluation = {
 
 export type EvaluationHistoryStackItem = {
   evaluationID: string;
-  assetKeyPath: string[];
+  assetKeyPath?: string[];
   assetCheckName?: string;
+  jobName?: string;
 };

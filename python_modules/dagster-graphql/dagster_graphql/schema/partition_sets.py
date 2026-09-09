@@ -44,6 +44,7 @@ from dagster_graphql.schema.errors import (
     GraphenePipelineNotFoundError,
     GraphenePythonError,
     GrapheneUnauthorizedError,
+    GrapheneUnsupportedOperationError,
 )
 from dagster_graphql.schema.inputs import GrapheneRunsFilter
 from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
@@ -88,6 +89,7 @@ class GrapheneDeleteDynamicPartitionsResult(graphene.Union):
             GrapheneDeleteDynamicPartitionsSuccess,
             GrapheneUnauthorizedError,
             GraphenePythonError,
+            GrapheneUnsupportedOperationError,
         )
         name = "DeleteDynamicPartitionsResult"
 

@@ -15,6 +15,10 @@ class DockerBuildOutput(BaseModel, extra=Extra.forbid):
     strategy: Literal["docker"] = "docker"
     python_version: str | None = None
     image: str
+    # True when the image was produced by baking a PEX build into Docker (BuildStrategy.pex_docker).
+    # Propagated to the deploy document as `pex_bundle` so the server can identify (and, once PEX is
+    # deprecated, reject) PEX-origin deploys — the bundle is otherwise an ordinary image.
+    pex_bundle: bool = False
 
 
 class PexBuildOutput(BaseModel, extra=Extra.forbid):

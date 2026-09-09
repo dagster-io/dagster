@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetJobKey, AssetKey, EntityKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.schema.asset_condition_evaluations import (
@@ -13,7 +13,11 @@ from dagster_graphql.schema.asset_condition_evaluations import (
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
-from dagster_graphql.schema.inputs import GrapheneAssetCheckHandleInput, GrapheneAssetKeyInput
+from dagster_graphql.schema.inputs import (
+    GrapheneAssetCheckHandleInput,
+    GrapheneAssetJobKeyInput,
+    GrapheneAssetKeyInput,
+)
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -68,12 +72,16 @@ def fetch_asset_condition_evaluation_record_for_partition(
 
 
 def entity_key_from_graphql_input(
-    graphene_input: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
+    graphene_input: GrapheneAssetKeyInput
+    | GrapheneAssetCheckHandleInput
+    | GrapheneAssetJobKeyInput,
 ) -> EntityKey:
     # graphene_input is typed as a Graphene InputObjectType, but at runtime
     # graphql-core delivers InputObjectType values to resolvers as plain dicts.
     input_as_dict = cast("Mapping[str, Any]", graphene_input)
-    if "path" in input_as_dict:
+    if "jobName" in input_as_dict:
+        return AssetJobKey.from_graphql_input(input_as_dict)
+    elif "path" in input_as_dict:
         return AssetKey.from_graphql_input(input_as_dict)
     else:
         return AssetCheckKey.from_graphql_input(input_as_dict)
@@ -81,7 +89,9 @@ def entity_key_from_graphql_input(
 
 def fetch_true_partitions_for_evaluation_node(
     graphene_info: "ResolveInfo",
-    graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
+    graphene_entity_key: GrapheneAssetKeyInput
+    | GrapheneAssetCheckHandleInput
+    | GrapheneAssetJobKeyInput,
     evaluation_id: int,
     node_unique_id: str,
 ) -> Sequence[str]:
@@ -116,7 +126,9 @@ def fetch_true_partitions_for_evaluation_node(
 
 def fetch_asset_condition_evaluation_records_for_asset_key(
     graphene_info: "ResolveInfo",
-    graphene_entity_key: GrapheneAssetKeyInput | GrapheneAssetCheckHandleInput,
+    graphene_entity_key: GrapheneAssetKeyInput
+    | GrapheneAssetCheckHandleInput
+    | GrapheneAssetJobKeyInput,
     limit: int,
     cursor: str | None,
 ) -> (

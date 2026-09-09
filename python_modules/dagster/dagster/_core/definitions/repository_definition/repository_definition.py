@@ -438,7 +438,7 @@ class RepositoryDefinition:
                 *self.source_assets_by_key.values(),
                 *list(set(self.asset_checks_defs_by_key.values())),
             ],
-        )
+        ).with_job_nodes(self._repository_data.get_asset_job_nodes())
 
     def get_component_tree(self):
         return self._repository_data.get_component_tree()

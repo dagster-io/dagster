@@ -9,11 +9,22 @@
     inset 1px 1px 0 var(--color-keyline-default),
     inset -1px 0 0 var(--color-keyline-default) !important;
 }
+.veryCompactTable tr th:first-child,
+.veryCompactTable tr td:first-child {
+  padding-left: 8px;
+}
 
 .veryCompactTable tr:last-child td:last-child {
   box-shadow:
     inset -1px -1px 0 var(--color-keyline-default),
     inset 1px 1px 0 var(--color-keyline-default) !important;
+}
+
+.expandCollapseAll {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  padding: 4px 8px;
 }
 
 .evaluationRow {

@@ -133,6 +133,8 @@ This is particularly useful for teams that:
 - enforce policies that prohibit outbound connections to public endpoints from their VPCs
 - want to avoid managing firewall rules for [Dagster+ IP allowlists](/deployment/dagster-plus/management/dagster-ips)
 
+PrivateLink covers the agent's connection to the Dagster+ API. The agent also uploads code snapshots and compute logs to Dagster+-managed S3 buckets, listed in [Dagster+ IP addresses](/deployment/dagster-plus/management/dagster-ips). You can use an [AWS PrivateLink interface endpoint for S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html) as well; [contact the Dagster team](https://dagster.io/contact) to switch your organization to the regional-style S3 URLs these endpoints require.
+
 ### Metadata
 
 The following metadata is stored in the Dagster+ control plane:

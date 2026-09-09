@@ -33,6 +33,7 @@ query GetComponentTypes($locationName: String!) {
         description
         owners
         tags
+        produces
         isAppManaged
       }
     }
@@ -138,6 +139,9 @@ def test_returns_component_types_with_schemas():
         # Owners/tags from the component spec round-trip through.
         assert simple["owners"] == ["john@dagster.io", "jane@dagster.io"]
         assert simple["tags"] == ["a", "b", "c"]
+        # produces is wired through; SimpleAssetComponent declares none, so it
+        # serializes as an empty list (the field is populated end-to-end).
+        assert simple["produces"] == []
         assert simple["description"]  # present
         # SimpleAssetComponent.get_form_config() returns ComponentFormConfig(editable=True),
         # so its schema carries x-app-managed: true and the field surfaces here.

@@ -620,7 +620,7 @@ def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: P
     """Convert a pyproject.toml file to a dg.toml file."""
     pyproject_toml = tomlkit.parse(pyproject_toml_path.read_text(encoding="utf-8"))
     dg_config = get_toml_node(pyproject_toml, ("tool", "dg"), tomlkit.items.Table)
-    dg_toml_path.write_text(tomlkit.dumps(dg_config), encoding="utf-8")
+    dg_toml_path.write_text(tomlkit.dumps(dg_config.unwrap()), encoding="utf-8")
     delete_toml_node(pyproject_toml, ("tool", "dg"))
 
     # Delete the pyproject.toml file if it is empty after removing the dg section

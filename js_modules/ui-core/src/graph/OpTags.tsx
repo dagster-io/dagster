@@ -187,6 +187,7 @@ import shell from './kindtag-images/tool-shell-color.svg';
 import shopify from './kindtag-images/tool-shopify-color.svg';
 import slack from './kindtag-images/tool-slack-color.svg';
 import sling from './kindtag-images/tool-sling-color.svg';
+import slurm from './kindtag-images/tool-slurm-color.png';
 import snowflake from './kindtag-images/tool-snowflake-color.svg';
 import soda from './kindtag-images/tool-soda-color.svg';
 import spanner from './kindtag-images/tool-spanner-color.svg';
@@ -446,6 +447,7 @@ export type KnownTagType =
   | 'silver'
   | 'slack'
   | 'sling'
+  | 'slurm'
   | 'snowflake'
   | 'snowpark'
   | 'soda'
@@ -552,6 +554,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   slack: {
     icon: slack,
     content: 'Slack',
+  },
+  slurm: {
+    icon: slurm,
+    content: 'SLURM',
   },
   pytorch: {
     icon: pytorch,

@@ -1,4 +1,4 @@
-import {Box, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Icon, MiddleTruncate, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
 import clsx from 'clsx';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
@@ -14,9 +14,14 @@ import React, {
 } from 'react';
 
 import {SyntaxError} from './CustomErrorListener';
-import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
-import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
+import {SelectionAutoCompleteProvider, SuggestionJSXBase} from './SelectionAutoCompleteProvider';
+import {
+  ResultItem,
+  SelectionInputAutoCompleteResults,
+  isSelectableResult,
+} from './SelectionInputAutoCompleteResults';
 import inputStyles from './css/SelectionInput.module.css';
+import {MAX_RECENT_SUGGESTIONS, useRecentSelections} from './useRecentSelections';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
 import {upgradeSyntax} from '../asset-selection/syntaxUpgrader';
@@ -43,10 +48,43 @@ type SelectionAutoCompleteInputProps = {
   onSubmit?: (value: string) => void;
   className?: string;
 
+  // Providing a key enables the "recent searches" section shown when the input is empty.
+  recentSearchesKey?: string;
+
   wildcardAttributeName: string;
 };
 
 const emptyArray: SyntaxError[] = [];
+
+const DIVIDER: ResultItem = {type: 'divider'};
+
+const toRecentItem = (text: string): ResultItem => ({
+  type: 'recent',
+  text,
+  jsx: <SuggestionJSXBase icon="history" label={<MiddleTruncate text={text} />} />,
+});
+
+export const getNextSelectableIndex = (list: ResultItem[], current: number, delta: number) => {
+  if (!list.length) {
+    return -1;
+  }
+  let next: number;
+  if (current < 0) {
+    // With nothing selected, the first step lands on the first row going down and the
+    // last row going up.
+    next = delta > 0 ? -1 : 0;
+  } else {
+    next = current;
+  }
+  for (let i = 0; i < list.length; i++) {
+    next = (next + delta + list.length) % list.length;
+    const item = list[next];
+    if (item && isSelectableResult(item)) {
+      return next;
+    }
+  }
+  return -1;
+};
 export const SelectionAutoCompleteInput = ({
   id,
   value,
@@ -58,6 +96,7 @@ export const SelectionAutoCompleteInput = ({
   saveOnBlur = false,
   onErrorStateChange,
   wildcardAttributeName,
+  recentSearchesKey,
   className,
 }: SelectionAutoCompleteInputProps) => {
   const onSubmitRef = useUpdatingRef(onSubmit);
@@ -86,6 +125,7 @@ export const SelectionAutoCompleteInput = ({
       }
       onChange?.(nextValue);
       trackSelection(nextValue);
+      return nextValue;
     },
     [onChange, trackSelection, wildcardAttributeName],
   );
@@ -118,10 +158,34 @@ export const SelectionAutoCompleteInput = ({
 
   const focusRef = useRef(false);
 
+  const {recentSelections, addRecentSelection} = useRecentSelections(recentSearchesKey);
+
+  const displayList: ResultItem[] = useMemo(() => {
+    const suggestions = autoCompleteResults?.list ?? [];
+    if (innerValue.trim() !== '' || !recentSelections.length) {
+      return suggestions;
+    }
+    return [
+      ...recentSelections.slice(0, MAX_RECENT_SUGGESTIONS).map(toRecentItem),
+      DIVIDER,
+      ...suggestions,
+    ];
+  }, [autoCompleteResults, innerValue, recentSelections]);
+
+  // Memoized so the memoized results list doesn't re-render on every keystroke.
+  const results = useMemo(
+    () => ({
+      from: autoCompleteResults?.from ?? 0,
+      to: autoCompleteResults?.to ?? 0,
+      list: displayList,
+    }),
+    [autoCompleteResults, displayList],
+  );
+
   // Memoize the stringified results to avoid resetting the selected index down below
   const resultsJson = useMemo(() => {
-    return JSON.stringify(autoCompleteResults?.list.map((l) => l.text));
-  }, [autoCompleteResults]);
+    return JSON.stringify(displayList.map((l) => ('text' in l ? l.text : l.type)));
+  }, [displayList]);
 
   const prevJson = usePrevious(resultsJson);
   const prevAutoCompleteResults = usePrevious(autoCompleteResults);
@@ -135,10 +199,10 @@ export const SelectionAutoCompleteInput = ({
 
   // Handle hiding results
   useDangerousRenderEffect(() => {
-    if (!autoCompleteResults.list.length && !loading) {
+    if (!displayList.length && !loading) {
       showResults.current = false;
     }
-  }, [autoCompleteResults, loading]);
+  }, [displayList, loading]);
 
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
@@ -218,8 +282,7 @@ export const SelectionAutoCompleteInput = ({
   // in-progress expression often produces cascading parser errors that span
   // the current token and everything after it, which is noisy while the user
   // is still picking a suggestion.
-  const suppressErrors =
-    !!(loading || autoCompleteResults?.list.length) && showResults.current && !!onChange;
+  const suppressErrors = !!(loading || displayList.length) && showResults.current && !!onChange;
 
   const errorTooltip = useSelectionInputLintingAndHighlighting({
     cmInstance,
@@ -268,10 +331,31 @@ export const SelectionAutoCompleteInput = ({
     }
   });
 
-  const selectedItem = autoCompleteResults?.list[selectedIndexRef.current];
+  const selectedItem = displayList[selectedIndexRef.current];
+
+  const fillWithRecent = useCallback((text: string) => {
+    const editor = cmInstance.current;
+    if (editor) {
+      editor.setValue(text);
+      editor.focus();
+      editor.setCursor({line: 0, ch: text.length});
+    }
+  }, []);
 
   const onSelect = useCallback(
-    (suggestion: {text: string; trailingSpace?: boolean}) => {
+    (suggestion: ResultItem) => {
+      if (!isSelectableResult(suggestion)) {
+        return;
+      }
+      if ('type' in suggestion) {
+        fillWithRecent(suggestion.text);
+        onSelectionChange(suggestion.text);
+        onSubmitRef.current?.(suggestion.text);
+        addRecentSelection(suggestion.text);
+        // Must come last: focusing and moving the cursor both re-open the dropdown.
+        setShowResults({current: false});
+        return;
+      }
       if (autoCompleteResults && suggestion && cmInstance.current) {
         const editor = cmInstance.current;
         const insertText = suggestion.trailingSpace ? suggestion.text + ' ' : suggestion.text;
@@ -292,7 +376,14 @@ export const SelectionAutoCompleteInput = ({
         });
       }
     },
-    [autoCompleteResults],
+    [
+      autoCompleteResults,
+      fillWithRecent,
+      onSelectionChange,
+      onSubmitRef,
+      addRecentSelection,
+      setShowResults,
+    ],
   );
 
   const innerValueRef = useUpdatingRef(innerValue);
@@ -307,8 +398,14 @@ export const SelectionAutoCompleteInput = ({
         } else {
           e.stopPropagation();
           e.preventDefault();
-          onSelectionChange(innerValueRef.current);
-          onSubmitRef.current?.(innerValueRef.current);
+          // The committed value is syntax-upgraded, so replaying a recent search from
+          // history runs exactly what this search ran.
+          const committed = onSelectionChange(innerValueRef.current);
+          onSubmitRef.current?.(committed);
+          // A query that doesn't parse is about to be retyped; don't keep it.
+          if (!linter(committed).length) {
+            addRecentSelection(committed);
+          }
           setShowResults({current: false});
         }
       } else if (!showResults.current) {
@@ -317,19 +414,21 @@ export const SelectionAutoCompleteInput = ({
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((prev) => ({
-          current: (prev.current + 1) % (autoCompleteResults?.list.length ?? 0),
+          current: getNextSelectableIndex(displayList, prev.current, 1),
         }));
       } else if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((prev) => ({
-          current:
-            prev.current - 1 < 0 ? (autoCompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
+          current: getNextSelectableIndex(displayList, prev.current, -1),
         }));
       } else if (e.key === 'Tab') {
         e.preventDefault();
         e.stopPropagation();
-        if (selectedItem) {
+        if (selectedItem && 'type' in selectedItem && selectedItem.type === 'recent') {
+          // Tab fills in without running, as it does for suggestions. Enter runs it.
+          fillWithRecent(selectedItem.text);
+        } else if (selectedItem) {
           onSelect(selectedItem);
         }
       } else if (e.key === 'Escape') {
@@ -347,7 +446,10 @@ export const SelectionAutoCompleteInput = ({
       onSubmitRef,
       innerValueRef,
       setShowResults,
-      autoCompleteResults?.list.length,
+      addRecentSelection,
+      fillWithRecent,
+      linter,
+      displayList,
     ],
   );
 
@@ -428,7 +530,7 @@ export const SelectionAutoCompleteInput = ({
         content={
           <div ref={hintContainerRef} onKeyDown={handleKeyDown}>
             <SelectionInputAutoCompleteResults
-              results={autoCompleteResults}
+              results={results}
               width={width}
               selectedIndex={selectedIndexRef.current}
               onSelect={onSelect}
@@ -437,9 +539,7 @@ export const SelectionAutoCompleteInput = ({
           </div>
         }
         placement="bottom-start"
-        isOpen={
-          (loading || autoCompleteResults?.list.length ? showResults.current : false) && !disabled
-        }
+        isOpen={(loading || displayList.length ? showResults.current : false) && !disabled}
         targetTagName="div"
         canEscapeKeyClose={true}
       >

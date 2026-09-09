@@ -195,8 +195,8 @@ const config: Config = {
     footer: {
       logo: {
         alt: 'Dagster Logo',
-        src: 'img/dagster_labs-primary-horizontal.svg',
-        srcDark: 'img/dagster_labs-reversed-horizontal.svg',
+        src: 'img/dagster-logo.svg',
+        srcDark: 'img/dagster-logo-reversed.svg',
         href: '/',
       },
       links: [

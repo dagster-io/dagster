@@ -1,7 +1,6 @@
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import cast
 
 import pytest
 from azure.identity import ClientSecretCredential
@@ -126,19 +125,19 @@ def get_captured_logs_from_urls(
     assert logs_captured_data.external_stderr_url is not None
     assert logs_captured_data.external_stdout_url is not None
 
-    stderr = cast(
-        "bytes",
+    stderr = (
         BlobClient.from_blob_url(logs_captured_data.external_stderr_url, credential=credentials)
         .download_blob()
-        .readall(),
-    ).decode()
+        .readall()
+        .decode()
+    )
 
-    stdout = cast(
-        "bytes",
+    stdout = (
         BlobClient.from_blob_url(logs_captured_data.external_stdout_url, credential=credentials)
         .download_blob()
-        .readall(),
-    ).decode()
+        .readall()
+        .decode()
+    )
     return stdout, stderr
 
 
@@ -156,6 +155,6 @@ def get_captured_logs_from_run(
     stdout_blob = container_client.get_blob_client(stdout.name)
     stderr_blob = container_client.get_blob_client(stderr.name)
     # download content
-    stdout_content = cast("bytes", stdout_blob.download_blob().readall()).decode()
-    stderr_content = cast("bytes", stderr_blob.download_blob().readall()).decode()
+    stdout_content = stdout_blob.download_blob().readall().decode()
+    stderr_content = stderr_blob.download_blob().readall().decode()
     return stdout_content, stderr_content

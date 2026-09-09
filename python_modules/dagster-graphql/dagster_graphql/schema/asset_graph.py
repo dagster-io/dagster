@@ -916,7 +916,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> GrapheneAssetFreshnessInfo | None:
         if graphene_info.context.instance.legacy_freshness_policy_killswitch_enabled():
             return None
-        if self._asset_node_snap.legacy_freshness_policy:
+        # Read policies through the workspace-merged node rather than the singular node's
+        # snap, so a policy declared in a non-winning location is surfaced.
+        if self._remote_node.legacy_freshness_policy:
             return get_freshness_info(
                 asset_key=self._asset_node_snap.asset_key,
                 data_time_resolver=graphene_info.context.data_time_resolver,
@@ -926,8 +928,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_freshnessPolicy(self, graphene_info: ResolveInfo) -> GrapheneFreshnessPolicy | None:
         if graphene_info.context.instance.legacy_freshness_policy_killswitch_enabled():
             return None
-        if self._asset_node_snap.legacy_freshness_policy:
-            return GrapheneFreshnessPolicy(self._asset_node_snap.legacy_freshness_policy)
+        legacy_freshness_policy = self._remote_node.legacy_freshness_policy
+        if legacy_freshness_policy:
+            return GrapheneFreshnessPolicy(legacy_freshness_policy)
         return None
 
     async def resolve_freshnessStatusInfo(
@@ -935,7 +938,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> GrapheneFreshnessStatusInfo | None:
         from dagster_graphql.schema.asset_health import GrapheneAssetHealthFreshnessMeta
 
-        if not self._asset_node_snap.freshness_policy:
+        if not self._remote_node.freshness_policy:
             return None
 
         freshness_status, freshness_status_metadata = await get_freshness_status_and_metadata(
@@ -953,10 +956,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_internalFreshnessPolicy(
         self, graphene_info: ResolveInfo
     ) -> GrapheneInternalFreshnessPolicy | None:
-        if self._asset_node_snap.freshness_policy:
-            return GrapheneInternalFreshnessPolicy.from_policy(
-                self._asset_node_snap.freshness_policy
-            )
+        freshness_policy = self._remote_node.freshness_policy
+        if freshness_policy:
+            return GrapheneInternalFreshnessPolicy.from_policy(freshness_policy)
         return None
 
     def resolve_autoMaterializePolicy(

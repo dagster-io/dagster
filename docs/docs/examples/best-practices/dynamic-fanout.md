@@ -61,9 +61,9 @@ The second approach adds a second layer of parallelization by processing units w
 
 This enhanced approach provides two layers of parallelization:
 
-1. **Record-level parallelization**: Multiple sub-pipelines run simultaneously
-2. **Unit-level parallelization**: Within each sub-pipeline, units are processed using a multiprocessing pool
-3. **Automatic scaling**: Number of processes adapts to available CPU cores and workload size
+- **Record-level parallelization**: Multiple sub-pipelines run simultaneously
+- **Unit-level parallelization**: Within each sub-pipeline, units are processed using a multiprocessing pool
+- **Automatic scaling**: Number of processes adapts to available CPU cores and workload size
 
 | Processing layer | Parallelization | Performance benefit           |
 | ---------------- | --------------- | ----------------------------- |

@@ -49,6 +49,7 @@ export type WorkspacePipelineFragment = {
   isAssetJob: boolean;
   externalJobSource: string | null;
   pipelineSnapshotId: string;
+  automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
 };
 
 export type WorkspaceScheduleFragment = {
@@ -110,6 +111,7 @@ export type PartialWorkspaceRepositoryFragment = {
     isAssetJob: boolean;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
+    automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -194,6 +196,7 @@ export type PartialWorkspaceLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -300,6 +303,7 @@ export type PartialWorkspaceLocationNodeFragment = {
             isAssetJob: boolean;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
+            automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -580,6 +584,7 @@ export type WorkspaceLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -845,6 +850,10 @@ export type LocationWorkspaceQuery = {
                   isAssetJob: boolean;
                   externalJobSource: string | null;
                   pipelineSnapshotId: string;
+                  automationCondition: {
+                    __typename: 'AutomationCondition';
+                    label: string | null;
+                  } | null;
                 }>;
                 schedules: Array<{
                   __typename: 'Schedule';
@@ -1164,6 +1173,7 @@ export type WorkspaceLocationNodeFragment = {
             isAssetJob: boolean;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
+            automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -1307,6 +1317,7 @@ export type WorkspaceRepositoryLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -1441,6 +1452,7 @@ export type WorkspaceRepositoryFragment = {
     isAssetJob: boolean;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
+    automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -1557,7 +1569,7 @@ export type WorkspaceRepositoryFragment = {
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '13d0e674c559c7506419e36c9f30ecc793abeac06e93e1597c2bd5e5b78f7537';
+export const LocationWorkspaceQueryVersion = '8e4dff45086e9f3bdb86af2001e711d1c881d59d80266df3fc410ed599d16050';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 

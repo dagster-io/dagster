@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
 pypi: https://pypi.org/project/dagster-sigma
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/sigma.svg
 partnerlink: https://www.sigmacomputing.com/
 canonicalUrl: '/integrations/libraries/sigma'

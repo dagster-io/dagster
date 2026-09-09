@@ -3,6 +3,10 @@ query ListDeployments {
     deploymentName
     deploymentId
     deploymentType
+    deploymentStatus
+    agentType
+    isBranchDeployment
+    organizationName
   }
 }
 
@@ -15,7 +19,11 @@ query ListBranchDeployments(
       deploymentName
       deploymentId
       deploymentType
-    }
+      deploymentStatus
+      agentType
+      isBranchDeployment
+      organizationName
+      }
   }
 }
 
@@ -26,7 +34,11 @@ query GetDeployment($deploymentName: String!) {
       deploymentName
       deploymentId
       deploymentType
-    }
+      deploymentStatus
+      agentType
+      isBranchDeployment
+      organizationName
+      }
     ... on DeploymentNotFoundError {
       message
     }
@@ -67,7 +79,11 @@ mutation DeleteDeployment($deploymentId: Int!) {
       deploymentId
       deploymentName
       deploymentType
-    }
+      deploymentStatus
+      agentType
+      isBranchDeployment
+      organizationName
+      }
     ... on PythonError {
       message
     }

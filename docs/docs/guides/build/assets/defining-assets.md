@@ -81,7 +81,6 @@ import dagster as dg
 def context_asset(context: dg.AssetExecutionContext):
     context.log.info(f"My run ID is {context.run.run_id}")
     ...
-
 ```
 
 ## Asset code versions
@@ -93,7 +92,6 @@ Assets may be assigned a `code_version`. Versions let you help Dagster track wha
 def asset_with_version():
     with open("data/asset_with_version.json", "w") as f:
         json.dump(100, f)
-
 ```
 
 When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.

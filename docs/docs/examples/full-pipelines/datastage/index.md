@@ -26,7 +26,9 @@ To follow the steps in this guide, you'll need:
 - Familiarity with IBM DataStage
 
 :::note
+
 This example runs in demo mode and doesn't require the [`cpdctl`](https://github.com/IBM/cpdctl/) CLI. If you want to run this example against a real DataStage instance, follow the [IBM installation instructions](https://github.com/IBM/cpdctl/?tab=readme-ov-file#installation) and set `demo_mode: false` in the YAML configuration.
+
 :::
 
 ## Step 1: Set up your Dagster environment
@@ -65,7 +67,9 @@ dg dev
 ```
 
 :::note
+
 With `demo_mode: true` set in the YAML configuration, the project simulates a DataStage replication job locally without a `cpdctl` installation.
+
 :::
 
 ## Next steps

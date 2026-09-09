@@ -31,3 +31,6 @@ root_module = "databricks_delta"
 
 [tool.ruff]
 lint.extend-select = ["I"]
+
+[tool.uv]
+exclude-newer = "48h"

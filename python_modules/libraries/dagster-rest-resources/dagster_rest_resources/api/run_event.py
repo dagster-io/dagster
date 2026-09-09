@@ -11,7 +11,7 @@ from dagster_rest_resources.__generated__.get_run_events import (
     GetRunEventsLogsForRunEventConnectionEventsExecutionStepFailureEventErrorCauseCause,
 )
 from dagster_rest_resources.gql_client import IGraphQLClient
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 from dagster_rest_resources.schemas.run_event import (
     DgApiErrorInfo,
     DgApiRunEvent,
@@ -123,9 +123,9 @@ class DgApiRunEventApi:
                     has_more=result.has_more,  # ty: ignore[unresolved-attribute]
                 )
             case "RunNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching events: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error fetching events: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching events: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching events: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

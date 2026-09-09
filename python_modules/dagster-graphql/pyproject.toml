@@ -41,6 +41,7 @@ test-postgres = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-gql-v3"}, {group = "test-gql-v3-5"}],
 ]

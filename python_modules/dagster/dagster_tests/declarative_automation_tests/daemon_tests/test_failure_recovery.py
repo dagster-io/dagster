@@ -64,7 +64,10 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
     with get_grpc_workspace_request_context("five_runs_required") as workspace_context:
         sensors = _get_all_sensors(workspace_context.create_request_context())
         assert len(sensors) == 1
-        selector_id, origin_id = sensors[0].selector_id, sensors[0].get_remote_origin_id()
+        selector_id, origin_id = (
+            sensors[0].selector_id,
+            sensors[0].get_remote_origin_id(),
+        )
 
     with dg.instance_for_test() as instance:
         try:
@@ -107,7 +110,8 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
 
             # execute another tick, don't crash
             test_process = spawn_ctx.Process(
-                target=_execute, args=[instance.get_ref(), None, terminate, evaluation_time_2]
+                target=_execute,
+                args=[instance.get_ref(), None, terminate, evaluation_time_2],
             )
             test_process.start()
             wait_for_daemon_subprocess(test_process)
@@ -150,5 +154,65 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
                 }
                 assert len(run_ids_for_asset) == 1
                 assert evaluations[0].get_evaluation_with_run_ids().run_ids == run_ids_for_asset
+        finally:
+            cleanup_test_instance(instance)
+
+
+def _execute_job_scenario(
+    instance_ref: InstanceRef,
+    crash_location: str | None,
+    evaluation_time: datetime.datetime,
+) -> None:
+    with (
+        get_grpc_workspace_request_context(
+            "job_fires_immediately", instance_ref=instance_ref
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
+        try:
+            with freeze_time(evaluation_time):
+                _execute_ticks(
+                    context,
+                    executor,
+                    {crash_location: Exception("Oops!")} if crash_location else None,
+                )
+        finally:
+            cleanup_test_instance(context.instance)
+
+
+@pytest.mark.parametrize("crash_location", ["RUN_CREATED", "RUN_SUBMITTED"])
+def test_job_entity_run_failure_recovery(crash_location: str) -> None:
+    """A job-entity run interrupted mid-submission is resumed on the next tick and neither
+    lost nor duplicated -- exercising submit_job_entity_run's interrupted-tick branch. The
+    job fires on the first tick (all_job_root_assets_match(missing()) over a missing asset).
+    """
+    spawn_ctx = multiprocessing.get_context("spawn")
+    with dg.instance_for_test() as instance:
+        try:
+            time_1 = datetime.datetime(2024, 8, 16, 1, 35)
+            time_2 = time_1 + datetime.timedelta(seconds=35)
+
+            # tick 1: crash partway through submitting the job run
+            p = spawn_ctx.Process(
+                target=_execute_job_scenario,
+                args=[instance.get_ref(), crash_location, time_1],
+            )
+            p.start()
+            wait_for_daemon_subprocess(p)
+
+            # the failed tick reserved a run id (a run was created regardless of where we crashed)
+            assert len([r for r in instance.get_runs() if r.job_name == "my_job"]) == 1
+
+            # tick 2: resume, no crash
+            p = spawn_ctx.Process(
+                target=_execute_job_scenario, args=[instance.get_ref(), None, time_2]
+            )
+            p.start()
+            wait_for_daemon_subprocess(p)
+
+            # exactly one job run, and it was submitted (not stranded in NOT_STARTED)
+            job_runs = [r for r in instance.get_runs() if r.job_name == "my_job"]
+            assert len(job_runs) == 1
+            assert job_runs[0].status != dg.DagsterRunStatus.NOT_STARTED
         finally:
             cleanup_test_instance(instance)

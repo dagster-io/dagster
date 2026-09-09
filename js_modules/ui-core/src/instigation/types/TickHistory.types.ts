@@ -59,6 +59,7 @@ export type TickHistoryQuery = {
           instigationType: Types.InstigationType;
           skipReason: string | null;
           requestedAssetMaterializationCount: number;
+          requestedJobRunCount: number;
           runIds: Array<string>;
           originRunIds: Array<string>;
           logKey: Array<string> | null;
@@ -96,4 +97,46 @@ export type TickHistoryQuery = {
       };
 };
 
-export const TickHistoryQueryVersion = 'c7a49ebf0ce969829effc3c7234a7aada77643e14674507b4f75dd4b9aaaf538';
+export type TickTimelineQueryVariables = Exact<{
+  instigationSelector: Types.InstigationSelector;
+  afterTimestamp?: number | null | undefined;
+  cursor?: number | null | undefined;
+  limit?: number | null | undefined;
+  statuses?: Array<Types.InstigationTickStatus> | Types.InstigationTickStatus | null | undefined;
+}>;
+
+export type TickTimelineQuery = {
+  __typename: 'Query';
+  instigationStateOrError:
+    | {
+        __typename: 'InstigationState';
+        id: string;
+        instigationType: Types.InstigationType;
+        ticks: Array<{
+          __typename: 'InstigationTick';
+          id: string;
+          tickId: string;
+          status: Types.InstigationTickStatus;
+          timestamp: number;
+          endTimestamp: number | null;
+          instigationType: Types.InstigationType;
+          requestedAssetMaterializationCount: number;
+          runIds: Array<string>;
+        }>;
+      }
+    | {__typename: 'InstigationStateNotFoundError'}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      };
+};
+
+export const TickHistoryQueryVersion = 'ed93ec15eb533d05b50d44616bc0f4bba3255d6bbd2c36539c6fa783dc7f0298';
+
+export const TickTimelineQueryVersion = '90b9e80010fd9d09e0c169ff48c1b173131ac7f5f790e484d9260d46eb213d63';

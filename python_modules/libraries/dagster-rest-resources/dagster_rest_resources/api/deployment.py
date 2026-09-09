@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 from typing_extensions import assert_never
 
@@ -11,10 +12,23 @@ from dagster_rest_resources.schemas.deployment import (
     DgApiDeploymentSettings,
 )
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
     UnconfirmedProdDeletionError,
 )
+
+
+def _build_deployment(deployment: Any) -> DgApiDeployment:
+    return DgApiDeployment(
+        id=deployment.deployment_id,
+        name=deployment.deployment_name,
+        type=deployment.deployment_type,
+        status=deployment.deployment_status,
+        agent_type=deployment.agent_type,
+        is_branch_deployment=deployment.is_branch_deployment,
+        organization_name=deployment.organization_name,
+    )
 
 
 @dataclass(frozen=True)
@@ -23,10 +37,7 @@ class DgApiDeploymentApi:
 
     def list_deployments(self) -> DgApiDeploymentList:
         result = self._client.list_deployments()
-        deployments = [
-            DgApiDeployment(id=d.deployment_id, name=d.deployment_name, type=d.deployment_type)
-            for d in result.full_deployments
-        ]
+        deployments = [_build_deployment(d) for d in result.full_deployments]
         return DgApiDeploymentList(items=deployments, total=len(deployments))
 
     def list_branch_deployments(
@@ -35,10 +46,7 @@ class DgApiDeploymentApi:
         result = self._client.list_branch_deployments(
             limit=limit, pull_request_status=pull_request_status
         )
-        deployments = [
-            DgApiDeployment(id=d.deployment_id, name=d.deployment_name, type=d.deployment_type)
-            for d in result.branch_deployments.nodes
-        ]
+        deployments = [_build_deployment(d) for d in result.branch_deployments.nodes]
         return DgApiDeploymentList(items=deployments, total=len(deployments))
 
     def get_deployment(self, name: str) -> DgApiDeployment:
@@ -46,17 +54,13 @@ class DgApiDeploymentApi:
 
         match result.typename__:
             case "DagsterCloudDeployment":
-                return DgApiDeployment(
-                    id=result.deployment_id,  # ty: ignore[unresolved-attribute]
-                    name=result.deployment_name,  # ty: ignore[unresolved-attribute]
-                    type=result.deployment_type,  # ty: ignore[unresolved-attribute]
-                )
+                return _build_deployment(result)
             case "DeploymentNotFoundError":
-                raise DagsterPlusGraphqlError(f"Deployment not found: {name}")
+                raise DagsterPlusClientError(f"Deployment not found: {name}")
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error retrieving deployment: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error retrieving deployment: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error retrieving deployment: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -77,17 +81,17 @@ class DgApiDeploymentApi:
             case "DeploymentSettings":
                 return DgApiDeploymentSettings(settings=result.settings or {})  # ty: ignore[unresolved-attribute]
             case "DeploymentNotFoundError":
-                raise DagsterPlusGraphqlError("Deployment not found")
+                raise DagsterPlusClientError("Deployment not found")
             case "DuplicateDeploymentError":
-                raise DagsterPlusGraphqlError("Duplicate deployment error")
+                raise DagsterPlusClientError("Duplicate deployment error")
             case "DeleteFinalDeploymentError":
-                raise DagsterPlusGraphqlError("Cannot delete the final deployment")
+                raise DagsterPlusClientError("Cannot delete the final deployment")
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(
                     f"Error setting deployment settings: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(
+                raise DagsterPlusServerError(
                     f"Error setting deployment settings: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case _ as unreachable:
@@ -103,18 +107,14 @@ class DgApiDeploymentApi:
 
         match result.typename__:
             case "DagsterCloudDeployment":
-                return DgApiDeployment(
-                    id=result.deployment_id,  # ty: ignore[unresolved-attribute]
-                    name=result.deployment_name,  # ty: ignore[unresolved-attribute]
-                    type=result.deployment_type,  # ty: ignore[unresolved-attribute]
-                )
+                return _build_deployment(result)
             case "DeploymentNotFoundError":
-                raise DagsterPlusGraphqlError(f"Deployment not found: {name}")
+                raise DagsterPlusClientError(f"Deployment not found: {name}")
             case "DeleteFinalDeploymentError":
-                raise DagsterPlusGraphqlError("Cannot delete the final deployment")
+                raise DagsterPlusClientError("Cannot delete the final deployment")
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError("Unauthorized to delete deployment")
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error deleting deployment: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error deleting deployment: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)

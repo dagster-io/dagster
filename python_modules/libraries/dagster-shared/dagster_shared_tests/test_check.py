@@ -1548,7 +1548,7 @@ def test_failed():
         check.failed("some desc")
 
     with pytest.raises(CheckError, match="must be a string"):
-        check.failed(0)
+        check.failed(0)  # ty: ignore[invalid-argument-type]
 
 
 def test_not_implemented():
@@ -1556,7 +1556,7 @@ def test_not_implemented():
         check.not_implemented("some string")
 
     with pytest.raises(CheckError, match="desc argument must be a string"):
-        check.not_implemented(None)
+        check.not_implemented(None)  # ty: ignore[invalid-argument-type]
 
 
 def test_iterable():

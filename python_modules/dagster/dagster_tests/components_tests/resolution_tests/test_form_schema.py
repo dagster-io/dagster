@@ -14,6 +14,7 @@ from dagster.components.resolved.form_config import (
     APP_MANAGED,
     UNSET_DEFAULT_SENTINEL,
     ComponentFormConfig,
+    FormWidget,
 )
 from dagster.components.resolved.form_schema import split_form_schema
 from dagster.components.resolved.model import Resolver
@@ -188,6 +189,48 @@ def test_recurses_items_and_additional_properties():
     _, ui = split_form_schema(raw)
     assert ui["tags"]["items"] == {"ui:widget": "textarea"}
     assert ui["extra"]["additionalProperties"] == {"ui:placeholder": "value"}
+
+
+def test_field_widget_hint_emitted_as_ui_widget():
+    # Every value in the FormWidget vocabulary is emitted verbatim as ui:widget.
+    for widget in FormWidget:
+        extra = ComponentFormConfig(widget=widget).to_field_json_schema_extra()
+        assert extra["ui:widget"] == widget.value
+
+
+def test_field_widget_precedence():
+    # ``hidden`` wins over an explicit widget...
+    assert (
+        ComponentFormConfig(hidden=True, widget=FormWidget.CRON).to_field_json_schema_extra()[
+            "ui:widget"
+        ]
+        == "hidden"
+    )
+    # ...and an explicit widget wins over the ``multiline`` sugar.
+    assert (
+        ComponentFormConfig(widget=FormWidget.SECRET, multiline=True).to_field_json_schema_extra()[
+            "ui:widget"
+        ]
+        == "secret"
+    )
+
+
+def test_end_to_end_widget_hint_lifted_into_ui_schema():
+    """A ``widget`` hint round-trips through model_json_schema() into the uiSchema."""
+
+    @dataclass
+    class MyComponent(dg.Resolvable):
+        schedule: Annotated[
+            str,
+            Resolver.default(form_config=ComponentFormConfig(widget=FormWidget.CRON)),
+        ]
+
+    raw = MyComponent.model().model_json_schema()
+    data, ui = split_form_schema(raw)
+
+    assert ui["schedule"]["ui:widget"] == "cron"
+    # The hint is stripped from the data schema.
+    assert "ui:" not in repr(data)
 
 
 def test_end_to_end_real_model_schema():

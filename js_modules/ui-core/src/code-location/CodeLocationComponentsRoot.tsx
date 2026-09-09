@@ -1,12 +1,18 @@
-import {Box, Button, ButtonGroup, Icon} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
+import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
+import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
+import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
+import {AppManagedComponentRepoBindingSection} from '@shared/code-location/AppManagedComponentRepoBindingSection';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
+import {useAppManagedComponentRepoBinding} from '@shared/code-location/useAppManagedComponentRepoBinding';
 import {useContext, useState} from 'react';
 import {Redirect, useHistory, useLocation, useParams} from 'react-router-dom';
 
 import {CodeLocationComponentInstancesSubtab} from './CodeLocationComponentInstancesSubtab';
 import {CodeLocationComponentsCatalogSubtab} from './CodeLocationComponentsCatalogSubtab';
-import {useFeatureFlags} from '../app/useFeatureFlags';
+import {addComponentDisabledReason} from './appManagedComponentAddGate';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -21,7 +27,26 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
   const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
   const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
 
-  const {flagComponentInstanceUI} = useFeatureFlags();
+  const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
+  // Git-backed authoring needs a connected repo to open the PR against; without
+  // one the author action is disabled with a nudge to connect an integration.
+  const gitProviderConnected = useGitProviderConnected();
+  // Git-backed authoring commits to the location's bound repo, so a location
+  // with no binding has nowhere to write. Block it here rather than letting the
+  // form be filled in and rejected at submit.
+  const gitBackedEnabled = useGitBackedComponentAuthoringEnabled();
+  const isBranchDeployment = useIsBranchDeployment();
+  const {binding, loading: bindingLoading} = useAppManagedComponentRepoBinding(
+    repoAddress.location,
+  );
+
+  const addDisabledReason = addComponentDisabledReason({
+    isBranchDeployment,
+    gitProviderConnected,
+    gitBackedEnabled,
+    bindingLoading,
+    hasBinding: binding !== null,
+  });
 
   const params = useParams<{
     packageName?: string;
@@ -49,7 +74,7 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
 
   // When the Instances surface is gated off, send the user to Library so the
   // page still has something to render.
-  if (subTab === 'instances' && !flagComponentInstanceUI) {
+  if (subTab === 'instances' && !componentInstanceUIEnabled) {
     return <Redirect to={workspacePathFromAddress(repoAddress, '/components/library')} />;
   }
 
@@ -91,7 +116,7 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
           locationEntry={locationEntry}
         />
       </Box>
-      {flagComponentInstanceUI ? (
+      {componentInstanceUIEnabled ? (
         <Box
           padding={{horizontal: 24, vertical: 12}}
           border="bottom"
@@ -106,15 +131,21 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
             onClick={onSubTabClick}
           />
           {subTab === 'instances' ? (
-            <Button
-              intent="primary"
-              icon={<Icon name="add_circle" />}
-              onClick={() => setIsAddOpen(true)}
-            >
-              Add
-            </Button>
+            <Tooltip content={addDisabledReason ?? ''} canShow={!!addDisabledReason}>
+              <Button
+                intent="primary"
+                icon={<Icon name="add_circle" />}
+                disabled={!!addDisabledReason}
+                onClick={() => setIsAddOpen(true)}
+              >
+                Add
+              </Button>
+            </Tooltip>
           ) : null}
         </Box>
+      ) : null}
+      {componentInstanceUIEnabled && subTab === 'instances' ? (
+        <AppManagedComponentRepoBindingSection locationName={repoAddress.location} />
       ) : null}
       <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'auto'}}>
         {renderSubTab()}

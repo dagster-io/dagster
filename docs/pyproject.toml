@@ -64,6 +64,9 @@ test = [
     "pyspark[connect]>=3.4.0",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-sphinx = { path = "sphinx/_ext/dagster-sphinx", editable = true }
 sphinx-click = { path = "sphinx/_ext/sphinx-click", editable = true }

@@ -99,6 +99,7 @@ from dagster_sling import SlingConnectionResource, SlingResource, sling_assets
 
 # ...
 
+
 @sling_assets(replication_config=replication_config)
 def replicate_csv_to_snowflake(context, sling: SlingResource):
     yield from sling.replicate(context=context)

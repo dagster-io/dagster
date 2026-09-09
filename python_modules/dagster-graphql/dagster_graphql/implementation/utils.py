@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, TypeVar, Union, ca
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
+from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import (
     RemoteAssetCheckNode,
     RemoteAssetNode,
@@ -69,7 +69,7 @@ def require_permission_check(
         if iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            async def _async_fn(self, graphene_info, *args, **kwargs):
                 result = await fn(self, graphene_info, *args, **kwargs)
                 if not graphene_info.context.was_permission_checked(permission):
                     raise Exception(f"Permission {permission} was never checked during the request")
@@ -79,7 +79,7 @@ def require_permission_check(
         else:
 
             @functools.wraps(fn)
-            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            def _fn(self, graphene_info, *args, **kwargs):
                 result = fn(self, graphene_info, *args, **kwargs)
 
                 if not graphene_info.context.was_permission_checked(permission):
@@ -99,7 +99,7 @@ def check_permission(
         if iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            async def _async_fn(self, graphene_info, *args, **kwargs):
                 assert_permission(graphene_info, permission)
 
                 return await fn(self, graphene_info, *args, **kwargs)
@@ -108,7 +108,7 @@ def check_permission(
         else:
 
             @functools.wraps(fn)
-            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            def _fn(self, graphene_info, *args, **kwargs):
                 assert_permission(graphene_info, permission)
 
                 return fn(self, graphene_info, *args, **kwargs)
@@ -181,7 +181,9 @@ def has_permission_for_asset_graph(
         return False
 
     return all(
-        context.has_permission_for_selector(permission, entity_key) for entity_key in all_keys
+        context.has_permission_for_selector(permission, entity_key)
+        for entity_key in all_keys
+        if isinstance(entity_key, (AssetKey, AssetCheckKey))
     )
 
 

@@ -1,6 +1,6 @@
 import importlib
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from functools import cached_property
 from pathlib import Path
@@ -381,6 +381,13 @@ class ComponentTree(IHaveNew):
         else:
             return self.build_defs_at_path(loc)
 
+    def reload_with_state(self, changed_state_keys: Iterable[str]) -> Definitions:
+        """Invalidates the cached data for a set of state keys, then rebuilds the Definitions object."""
+        for key in changed_state_keys:
+            self.state_tracker.invalidate_by_defs_state_key(key)
+        self.state_tracker.invalidate_loc(ComponentRootLoc())
+        return self.build_defs()
+
     def find_decl_at_path(self, defs_path: ResolvableToComponentPath) -> ComponentDecl:
         """Loads a component declaration from the given path.
 
@@ -425,14 +432,12 @@ class ComponentTree(IHaveNew):
         self.state_tracker.mark_component_defs_state_key(loc, defs_state_key)
 
     @overload
-    def load_component(self, defs_path: Path | ComponentPath | str) -> Component: ...
+    def load_component(self, defs_path: ResolvableToComponentLoc) -> Component: ...
     @overload
-    def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: type[T]
-    ) -> T: ...
+    def load_component(self, defs_path: ResolvableToComponentLoc, expected_type: type[T]) -> T: ...
 
     def load_component(
-        self, defs_path: Path | ComponentPath | str, expected_type: type[T] | None = None
+        self, defs_path: ResolvableToComponentLoc, expected_type: type[T] | None = None
     ) -> Any:
         """Loads a component from the given path.
 
@@ -532,12 +537,13 @@ class ComponentTree(IHaveNew):
         of_type: type[TComponent],
     ) -> list[TComponent]:
         """Get all components from this context that are instance of the specified type.
-        Avoids loading components that are not of the specified type.
+        Avoids loading components that are not of the specified type. Includes both
+        file-based (``ComponentPath``) and UI-defined (``UIDefinitionsLoc``) instances.
         """
         return [
-            check.inst(self.load_component(check.inst(loc, ComponentPath)), of_type)
+            check.inst(self.load_component(loc), of_type)
             for loc, decl in self._component_decl_tree().items()
-            if isinstance(loc, ComponentPath) and safe_is_subclass(decl.component_type, of_type)
+            if safe_is_subclass(decl.component_type, of_type)
         ]
 
     def _has_loaded_component_at_loc(self, loc: ResolvableToComponentLoc) -> bool:

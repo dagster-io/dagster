@@ -122,12 +122,12 @@ By default, all ops will be sent to the default Celery queue named `dagster`.
 
 ```python
 @dg.op(
-  tags = {
-    'dagster-celery/queue': 'snowflake_queue',
-  }
+    tags={
+        "dagster-celery/queue": "snowflake_queue",
+    }
 )
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
 ```
 
 ### Celery priority
@@ -136,20 +136,21 @@ Users can set `dagster-celery/run_priority` on job tags to configure the baselin
 
 ```python
 @dg.op(
-  tags = {
-    'dagster-celery/priority': 2,
-  }
+    tags={
+        "dagster-celery/priority": 2,
+    }
 )
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    'dagster-celery/run_priority': 3,
-  }
+    tags={
+        "dagster-celery/run_priority": 3,
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 ### Configuring an External Message Broker

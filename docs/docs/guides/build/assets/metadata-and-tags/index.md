@@ -53,19 +53,34 @@ Keep in mind that tags must contain only strings as keys and values. Additionall
 
 Metadata can be attached to an asset at definition time, when the code is first imported, or at runtime when an asset is materialized.
 
-### At definition time \{#definition-time-metadata}
+### Definition metadata \{#definition-time-metadata}
 
 Using definition metadata to describe assets can make it easy to provide context for you and your team. This metadata could be descriptions of the assets, the types of assets, or links to relevant documentation.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/definition-metadata.py" language="python" />
 
+Definition metadata is attached to the asset (or op) definition when your code is loaded, and it's identical for every materialization until you change the code. Because it lives on the definition, it's available anywhere Dagster has access to the definition, including inside an [I/O manager](/guides/build/io-managers):
+
+- In <PyObject section="io-managers" module="dagster" object="IOManager" method="handle_output" displayText="handle_output" />, the definition metadata of the output being stored is on `context.definition_metadata`.
+- In <PyObject section="io-managers" module="dagster" object="IOManager" method="load_input" displayText="load_input" />, the definition metadata of the upstream asset being loaded is on `context.upstream_output.definition_metadata`. (`context.definition_metadata` in `load_input` refers only to metadata declared on the downstream <PyObject section="assets" module="dagster" object="AssetIn" /> or <PyObject section="ops" module="dagster" object="In" />, not the upstream asset.)
+
+For a code example, see [Accessing asset metadata in an I/O manager](/guides/build/io-managers/defining-a-custom-io-manager#accessing-metadata).
+
 To learn more about the different types of metadata you can attach, see the <PyObject section="metadata" module="dagster" object="MetadataValue" /> API docs.
 
 Some metadata keys will be given special treatment in the Dagster UI. See the [Standard metadata types](#standard-metadata-types) section for more information.
 
-### At runtime \{#runtime-metadata}
+### Runtime metadata \{#runtime-metadata}
 
-With runtime metadata, you can surface information about an asset's materialization, such as how many records were processed or when the materialization occurred. This allows you to update an asset's information when it changes and track historical metadata as a time series.
+With runtime metadata (also known as materialization metadata), you can surface information about an asset's materialization, such as how many records were processed or when the materialization occurred.
+
+Every materialization can produce different values (for example, the row count for that run), so Dagster stores the full history and renders numeric values as a time series in the UI. For more information, see [structured event logs](/guides/log-debug/logging#structured-event-logs).
+
+:::warning
+
+Since runtime materialization metadata is written to the event log, not passed to the I/O manager, it is not available from <PyObject section="io-managers" module="dagster" object="InputContext" />. An I/O manager cannot persist the metadata from `MaterializeResult` (or `Output`) and read it back when loading a downstream asset.
+
+:::
 
 To attach materialization metadata to an asset, returning a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object containing a `metadata` parameter. This parameter accepts a dictionary of key/value pairs, where keys must be a string.
 

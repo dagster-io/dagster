@@ -79,6 +79,8 @@ EXCLUDE_MISSING_RST = {
     # Library components
     "dagster_clickhouse.components.sql_component.component.ClickhouseQueryComponentBase",
     "dagster_snowflake.components.sql_component.component.SnowflakeConnectionComponentBase",
+    # dbt-on-Snowflake component - documented in the integration markdown, not the RST.
+    "dagster_snowflake.SnowflakeDbtProjectComponent",
     # Tableau component - validator uses internal path but it's exported at dagster_tableau.TableauComponent
     # and documented in RST. The mismatch is due to validator finding it at source path.
     "dagster_tableau.components.tableau_component.TableauComponent",

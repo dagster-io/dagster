@@ -1,6 +1,6 @@
 ---
-title: OpenAI Job
-description: Execute the OpenAI Fine-Tuning Job
+title: OpenAI job
+description: Execute the OpenAI fine-tuning job
 last_update:
   author: Dennis Hume
 sidebar_position: 50

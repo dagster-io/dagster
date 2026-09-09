@@ -1,4 +1,4 @@
-import {Page, Tab, Tabs} from '@dagster-io/ui-components';
+import {Box, Page, Tab, Tabs} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -18,7 +18,7 @@ import {useTrackPageView} from '../app/analytics';
 import {RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TicksTable} from '../instigation/TickHistory';
+import {TickStatusFilter, TicksTable, useTickStatusFilter} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {Loading} from '../ui/Loading';
@@ -44,6 +44,7 @@ export const ScheduleRoot = (props: Props) => {
   };
 
   const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
+  const {tickStatus, setTickStatus} = useTickStatusFilter();
 
   const queryResult = useQuery<ScheduleRootQuery, ScheduleRootQueryVariables>(SCHEDULE_ROOT_QUERY, {
     variables: {
@@ -111,7 +112,18 @@ export const ScheduleRoot = (props: Props) => {
             ) : null}
             {selectedTab === 'ticks' ? (
               <TicksTable
-                tabs={tabs}
+                actionBarComponents={
+                  <Box
+                    flex={{
+                      direction: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {tabs}
+                    <TickStatusFilter status={tickStatus} onChange={setTickStatus} />
+                  </Box>
+                }
                 tickResultType="runs"
                 repoAddress={repoAddress}
                 name={scheduleOrError.name}

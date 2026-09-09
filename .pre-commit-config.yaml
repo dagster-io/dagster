@@ -19,10 +19,10 @@ repos:
   # supplied by `scripts/run-ty.py`.
   - id: ty
     name: ty
-    entry: make quick_ty
+    entry: just quick-ty
     stages: [pre-push]
     # This means pre-commit will not try to install a new environment for this hook. It relies on
-    # having a pre-existing `make` installed (and scripts/run-ty.py).
+    # having a pre-existing `just` installed (and scripts/run-ty.py).
     language: system
     pass_filenames: false
     types: [python]

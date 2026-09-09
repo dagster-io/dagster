@@ -15,6 +15,10 @@ export type AssetCheckHandleInput = {
 
 export type AssetConditionEvaluationStatus = 'FALSE' | 'SKIPPED' | 'TRUE';
 
+export type AssetJobKeyInput = {
+  jobName: string;
+};
+
 export type AssetKeyInput = {
   path: Array<string>;
 };
@@ -27,9 +31,14 @@ export type EntityKeyFragment_AssetCheckhandle = {
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
 };
 
+export type EntityKeyFragment_AssetJobKey = {__typename: 'AssetJobKey'; jobName: string};
+
 export type EntityKeyFragment_AssetKey = {__typename: 'AssetKey'; path: Array<string>};
 
-export type EntityKeyFragment = EntityKeyFragment_AssetCheckhandle | EntityKeyFragment_AssetKey;
+export type EntityKeyFragment =
+  | EntityKeyFragment_AssetCheckhandle
+  | EntityKeyFragment_AssetJobKey
+  | EntityKeyFragment_AssetKey;
 
 export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -191,6 +200,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         name: string;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
+    | {__typename: 'AssetJobKey'; jobName: string}
     | {__typename: 'AssetKey'; path: Array<string>};
 };
 
@@ -208,6 +218,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         name: string;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
+    | {__typename: 'AssetJobKey'; jobName: string}
     | {__typename: 'AssetKey'; path: Array<string>};
   metadataEntries: Array<
     | {
@@ -374,6 +385,7 @@ export type PartitionedAssetConditionEvaluationNodeFragment = {
         name: string;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
+    | {__typename: 'AssetJobKey'; jobName: string}
     | {__typename: 'AssetKey'; path: Array<string>};
 };
 
@@ -403,6 +415,7 @@ export type NewEvaluationNodeFragment = {
         name: string;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
+    | {__typename: 'AssetJobKey'; jobName: string}
     | {__typename: 'AssetKey'; path: Array<string>};
   sinceMetadata: {
     __typename: 'SinceConditionMetadata';
@@ -443,6 +456,7 @@ export type AssetConditionEvaluationRecordFragment = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
+            | {__typename: 'AssetJobKey'; jobName: string}
             | {__typename: 'AssetKey'; path: Array<string>};
         }
       | {
@@ -630,6 +644,7 @@ export type AssetConditionEvaluationRecordFragment = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
+            | {__typename: 'AssetJobKey'; jobName: string}
             | {__typename: 'AssetKey'; path: Array<string>};
         }
       | {
@@ -646,6 +661,7 @@ export type AssetConditionEvaluationRecordFragment = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
+            | {__typename: 'AssetJobKey'; jobName: string}
             | {__typename: 'AssetKey'; path: Array<string>};
           metadataEntries: Array<
             | {
@@ -841,6 +857,7 @@ export type AssetConditionEvaluationRecordFragment = {
           name: string;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
+      | {__typename: 'AssetJobKey'; jobName: string}
       | {__typename: 'AssetKey'; path: Array<string>};
     sinceMetadata: {
       __typename: 'SinceConditionMetadata';
@@ -909,6 +926,7 @@ export type GetEvaluationsQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -1106,6 +1124,7 @@ export type GetEvaluationsQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -1122,6 +1141,7 @@ export type GetEvaluationsQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                   metadataEntries: Array<
                     | {
@@ -1327,6 +1347,7 @@ export type GetEvaluationsQuery = {
                   name: string;
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
+              | {__typename: 'AssetJobKey'; jobName: string}
               | {__typename: 'AssetKey'; path: Array<string>};
             sinceMetadata: {
               __typename: 'SinceConditionMetadata';
@@ -1345,6 +1366,7 @@ export type GetEvaluationsQuery = {
 export type GetSlimEvaluationsQueryVariables = Exact<{
   assetKey?: Types.AssetKeyInput | null | undefined;
   assetCheckKey?: Types.AssetCheckHandleInput | null | undefined;
+  assetJobKey?: Types.AssetJobKeyInput | null | undefined;
   limit: number;
   cursor?: string | null | undefined;
 }>;
@@ -1384,6 +1406,7 @@ export type GetSlimEvaluationsQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -1581,6 +1604,7 @@ export type GetSlimEvaluationsQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -1597,6 +1621,7 @@ export type GetSlimEvaluationsQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                   metadataEntries: Array<
                     | {
@@ -1802,6 +1827,7 @@ export type GetSlimEvaluationsQuery = {
                   name: string;
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
+              | {__typename: 'AssetJobKey'; jobName: string}
               | {__typename: 'AssetKey'; path: Array<string>};
             sinceMetadata: {
               __typename: 'SinceConditionMetadata';
@@ -1844,6 +1870,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
+            | {__typename: 'AssetJobKey'; jobName: string}
             | {__typename: 'AssetKey'; path: Array<string>};
         }
       | {
@@ -2031,6 +2058,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
+            | {__typename: 'AssetJobKey'; jobName: string}
             | {__typename: 'AssetKey'; path: Array<string>};
         }
       | {
@@ -2047,6 +2075,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 name: string;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
+            | {__typename: 'AssetJobKey'; jobName: string}
             | {__typename: 'AssetKey'; path: Array<string>};
           metadataEntries: Array<
             | {
@@ -2253,10 +2282,10 @@ export type GetAssetEvaluationDetailsQuery = {
   }>;
 };
 
-export const GetEvaluationsQueryVersion = '2348b2cff16099bec42d9140ab77c85e1433b5c88a3d8640883b8a86983671a9';
+export const GetEvaluationsQueryVersion = 'e084d699d592af22b704cbe90510c8c9f191d81d21998c051e91b6ef75db1b74';
 
-export const GetSlimEvaluationsQueryVersion = 'f581133a6e798d3b5e7182c79cb5af2ef40695ccb7fd12cef7d88ed1d5c80789';
+export const GetSlimEvaluationsQueryVersion = 'c309f47ccd22619a0252dfa3a51cbd4925724e24f5cc2275f55dae147f030d79';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = 'c72a1a3166f8d3e477aafcda3892116cdd0372d80a41ade6d73e99120ad4e9ef';
+export const GetEvaluationsSpecificPartitionQueryVersion = 'a3f5aea29ec1f1c9c643904824dbf6a1b6e1d3412c83add89d950c94624ebf0f';
 
 export const GetAssetEvaluationDetailsQueryVersion = 'd4538f5b4ae52ff2694f9ad6cb6e18fa265e4448107185fbc0601054064c9633';

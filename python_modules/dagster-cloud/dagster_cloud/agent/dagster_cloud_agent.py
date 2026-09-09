@@ -257,7 +257,8 @@ class DagsterCloudAgent:
         if memory_request:
             limits["memory_request"] = memory_request
 
-        self._utilization_metrics["resource_limits"][
+        # keyed dynamically by deployment type, which the TypedDict can't express
+        cast("dict[str, Any]", self._utilization_metrics["resource_limits"])[
             user_code_launcher.user_code_deployment_type.value
         ] = limits
 
@@ -883,7 +884,10 @@ class DagsterCloudAgent:
             return request.request_args.repository_origin.code_location_origin
         elif api_name == DagsterCloudApi.GET_EXTERNAL_NOTEBOOK_DATA:
             return request.request_args.code_location_origin
-        elif api_name == DagsterCloudApi.PING_LOCATION:
+        elif api_name in {
+            DagsterCloudApi.PING_LOCATION,
+            DagsterCloudApi.REFRESH_COMPONENT_STATE,
+        }:
             return RegisteredCodeLocationOrigin(request.request_args.location_name)
         else:
             return None
@@ -923,6 +927,23 @@ class DagsterCloudAgent:
         if api_name == DagsterCloudApi.PING_LOCATION:
             # Do nothing - this request only exists to bump TTL for the location
             return DagsterCloudApiSuccess()
+        elif api_name == DagsterCloudApi.REFRESH_COMPONENT_STATE:
+            client = self._get_grpc_client(
+                user_code_launcher, deployment_name, cast("str", location_name)
+            )
+            reply = client.refresh_component_state(
+                defs_state_keys=list(request.request_args.defs_state_keys),
+            )
+            # The reply carries either the serialized error or the serialized
+            # ``DefsStateInfo`` of the refreshed versions. Surface whichever is
+            # present so the caller can branch on it.
+            return DagsterCloudApiGrpcResponse(
+                serialized_response_or_error=(
+                    reply.serialized_error
+                    if reply.serialized_error
+                    else reply.serialized_defs_state_info
+                ),
+            )
         elif api_name == DagsterCloudApi.CHECK_FOR_WORKSPACE_UPDATES:
             # Dagster Cloud has requested that we upload new metadata for any out of date locations in
             # the workspace

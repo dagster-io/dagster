@@ -5,6 +5,7 @@ import {remark} from 'remark';
 import styles from './css/ComponentHeader.module.css';
 import strip from 'strip-markdown';
 
+import {useComponentBadge} from './ComponentBadgeContext';
 import ComponentTags from './ComponentTags';
 import {ComponentType} from './types';
 
@@ -15,6 +16,7 @@ interface Props {
 
 export default function ComponentHeader({config, descriptionStyle}: Props) {
   const {description, name} = config;
+  const renderBadge = useComponentBadge();
 
   // For truncated display, use only the first text block in the description.
   const displayedDescription = useMemo(
@@ -44,7 +46,10 @@ export default function ComponentHeader({config, descriptionStyle}: Props) {
           />
         </svg>
         <div className={styles.headingContent}>
-          <h1>{name}</h1>
+          <div className={styles.titleRow}>
+            <h1>{name}</h1>
+            {renderBadge(config)}
+          </div>
           <div className={styles.description}>
             <Markdown
               remarkPlugins={[remarkGfm]}

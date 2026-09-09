@@ -1,15 +1,26 @@
 dagsterCloud:
-  organization: "your-org"
   deployment: "staging"
-  apiToken:
-    secretName: dagster-cloud-agent-token
-    secretKey: DAGSTER_CLOUD_AGENT_TOKEN
+  agentTokenSecretName: dagster-cloud-agent-token
   branchDeployments: false
 
 workspace:
   serverTTL:
-    enabled: true
-    ttlSeconds: 14400
+    fullDeployments:
+      enabled: true
+      ttlSeconds: 14400
+  envSecrets:
+    - name: dagster-staging-env
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  runK8sConfig:
+    podSpecConfig:
+      nodeSelector:
+        cloud.google.com/gke-nodepool: "staging-pool"
 
 dagsterCloudAgent:
   replicas: 1
@@ -20,22 +31,6 @@ dagsterCloudAgent:
     limits:
       cpu: "1"
       memory: "2Gi"
-
-runLauncher:
-  type: K8sRunLauncher
-  config:
-    k8sRunLauncher:
-      envSecrets:
-        - name: dagster-staging-env
-      resources:
-        requests:
-          cpu: "1"
-          memory: "2Gi"
-        limits:
-          cpu: "2"
-          memory: "4Gi"
-      nodeSelector:
-        cloud.google.com/gke-nodepool: "staging-pool"
 
 serviceAccount:
   create: true
