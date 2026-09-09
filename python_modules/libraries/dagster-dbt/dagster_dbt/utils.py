@@ -201,7 +201,15 @@ def _select_unique_ids_from_manifest(
         **functions,
     )
 
-    child_map = manifest_json["child_map"]
+    # Manifests produced by early versions of dbt Fusion do not contain a child
+    # map. Fall back to building one, the same way `build_dbt_specs` does. The
+    # import is deferred to avoid a circular import: `asset_utils` imports this
+    # module at its top level.
+    child_map = manifest_json.get("child_map")
+    if not child_map:
+        from dagster_dbt.asset_utils import _build_child_map
+
+        child_map = _build_child_map(manifest_json)
 
     graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
 
