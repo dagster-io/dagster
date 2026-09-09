@@ -45,6 +45,7 @@ class AlertPolicyFields(BaseModel):
                 "AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionThresholdTarget",
                 "AlertPolicyFieldsAlertTargetsMetricMonitorFavoritesThresholdTarget",
                 "AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionViewThresholdTarget",
+                "AlertPolicyFieldsAlertTargetsMetricMonitorDeploymentThresholdTarget",
                 "AlertPolicyFieldsAlertTargetsCreditLimitTarget",
                 "AlertPolicyFieldsAlertTargetsLongRunningJobThresholdTarget",
                 "AlertPolicyFieldsAlertTargetsRunResultTarget",
@@ -216,6 +217,12 @@ class AlertPolicyFieldsAlertTargetsMetricMonitorAssetSelectionViewThresholdTarge
     BaseModel
 ):
     typename__: Literal["MetricMonitorAssetSelectionViewThresholdTarget"] = Field(
+        alias="__typename"
+    )
+
+
+class AlertPolicyFieldsAlertTargetsMetricMonitorDeploymentThresholdTarget(BaseModel):
+    typename__: Literal["MetricMonitorDeploymentThresholdTarget"] = Field(
         alias="__typename"
     )
 
