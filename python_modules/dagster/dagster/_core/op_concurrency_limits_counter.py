@@ -84,9 +84,14 @@ class GlobalOpConcurrencyLimitsCounter:
         pool_limits: Sequence[PoolLimit],
         slot_count_offset: int = 0,
         pool_granularity: PoolGranularity | None = None,
+        concurrency_info_by_key: dict[str, "ConcurrencyKeyInfo"] | None = None,
     ):
         self._root_pools_by_run = {}
-        self._concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = {}
+        # Callers that build several counters within one dequeue pass share this cache so each
+        # pool is fetched from storage at most once per pass.
+        self._concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = (
+            concurrency_info_by_key if concurrency_info_by_key is not None else {}
+        )
         self._launched_pool_counts = defaultdict(int)
         self._in_progress_pool_counts = defaultdict(int)
         self._slot_count_offset = slot_count_offset
@@ -145,7 +150,7 @@ class GlobalOpConcurrencyLimitsCounter:
 
     def _fetch_concurrency_info(self, instance: DagsterInstance, pool_names: set[str]):
         for pool_name in pool_names:
-            if pool_name is None:
+            if pool_name is None or pool_name in self._concurrency_info_by_key:
                 continue
 
             self._concurrency_info_by_key[pool_name] = (
