@@ -120,7 +120,7 @@ Using `define_dagstermill_asset`, we've created and returned a Dagster asset. Le
 
 - `name` - This argument names the asset, in this case `iris_kmeans_jupyter`
 - `notebook_path` - This argument tells Dagster where to find the notebook the asset should use as a source. In this case, that's our `/notebooks/iris-kmeans.ipynb` file.
-- `group_name` - This optional argument places the asset into a group named `template_tutorial`, which is helpful for organizating your assets in the UI.
+- `group_name` - This optional argument places the asset into a group named `template_tutorial`, which is helpful for organizing your assets in the UI.
 
 When materialized, the `iris_kmeans_jupyter` asset will execute the notebook (`/notebooks/iris-kmeans.ipynb`) and store the resulting `.ipynb` file in a persistent location.
 

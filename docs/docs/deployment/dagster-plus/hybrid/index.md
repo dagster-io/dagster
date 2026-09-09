@@ -31,7 +31,7 @@ To get started with a Hybrid deployment, you'll need to:
 
 :::note
 
-If you are migrating from from Dagster+ Serverless, see the [Dagster+ Serverless to Hybrid migration guide](/migration/serverless-to-hybrid).
+If you are migrating from Dagster+ Serverless, see the [Dagster+ Serverless to Hybrid migration guide](/migration/serverless-to-hybrid).
 
 :::
 
