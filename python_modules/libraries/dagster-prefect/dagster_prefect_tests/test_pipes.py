@@ -115,8 +115,15 @@ def test_failure_reports_the_prefect_message() -> None:
 
 
 def test_failure_without_a_message_still_names_the_state() -> None:
-    with pytest.raises(DagsterPipesExecutionError, match=r"finished as StateType\.CANCELLED"):
+    with pytest.raises(DagsterPipesExecutionError, match=r"finished as CANCELLED"):
         materialize_with(scripted_client(Cancelled()))
+
+
+def test_failure_without_a_message_or_name_does_not_repeat_the_state() -> None:
+    with pytest.raises(
+        DagsterPipesExecutionError, match=r"finished as CANCELLED: no details reported"
+    ):
+        materialize_with(scripted_client(State(type=StateType.CANCELLED, name="")))
 
 
 def test_injector_and_reader_can_be_overridden() -> None:
