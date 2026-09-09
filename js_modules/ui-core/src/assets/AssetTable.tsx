@@ -18,6 +18,7 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {AssetViewType} from './useAssetView';
 import {RefetchQueriesFunction} from '../apollo-client';
 import {useWipeMaterializations} from './useWipeMaterializations';
+import {LayoutContext} from '../app/LayoutProvider';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {InvalidSelectionQueryNotice} from '../pipelines/GraphNotices';
@@ -62,6 +63,12 @@ export const AssetTable = ({
     [assets, displayPathForAsset],
   );
   const displayKeys = useMemo(() => Object.keys(groupedByDisplayKey).sort(), [groupedByDisplayKey]);
+
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+  // Bulk selection is a desktop workflow. On a phone the checkboxes and the
+  // "Materialize selected" button stay hidden until Select mode is toggled on.
+  const [selectMode, setSelectMode] = React.useState(false);
+  const showSelection = !isMobileScreen || selectMode;
 
   const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(displayKeys);
@@ -140,6 +147,7 @@ export const AssetTable = ({
         onToggleFactory={onToggleFactory}
         onRefresh={() => refreshState.refetch()}
         showRepoColumn
+        showCheckboxColumn={showSelection}
         view={view}
         isLoading={isLoading}
         onChangeAssetSelection={onChangeAssetSelection}
@@ -159,9 +167,11 @@ export const AssetTable = ({
             background: Colors.backgroundDefault(),
             alignItems: 'flex-start',
             gap: 12,
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
+            // Desktop keeps the original two-column grid; mobile wraps the action
+            // bar and buttons so nothing is pushed offscreen on narrow viewports.
+            ...(isMobileScreen
+              ? {display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between'}
+              : {display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto'}),
           }}
         >
           <div style={{minWidth: 0, maxWidth: '100%'}}>{actionBarComponents}</div>
@@ -170,20 +180,35 @@ export const AssetTable = ({
             flex={{gap: 12, direction: 'row-reverse', alignItems: 'center'}}
           >
             <QueryRefreshCountdown refreshState={refreshState} />
-            <Box flex={{alignItems: 'center', gap: 8}}>
-              <LaunchAssetExecutionButton
-                scope={{
-                  selected: checkedAssets
-                    .filter((a): a is AssetWithDefinition => !!a.definition)
-                    .map((a) => ({...a.definition, assetKey: a.key})),
+            {isMobileScreen ? (
+              <Button
+                icon={<Icon name={selectMode ? 'close' : 'checklist'} />}
+                onClick={() => {
+                  if (selectMode) {
+                    onToggleAll(false);
+                  }
+                  setSelectMode(!selectMode);
                 }}
-                additionalDropdownOptions={extraDropdownOptions}
-              />
-              <MoreActionsDropdown
-                selected={checkedAssets}
-                clearSelection={() => onToggleAll(false)}
-              />
-            </Box>
+              >
+                {selectMode ? 'Done' : 'Select'}
+              </Button>
+            ) : null}
+            {showSelection ? (
+              <Box flex={{alignItems: 'center', gap: 8}}>
+                <LaunchAssetExecutionButton
+                  scope={{
+                    selected: checkedAssets
+                      .filter((a): a is AssetWithDefinition => !!a.definition)
+                      .map((a) => ({...a.definition, assetKey: a.key})),
+                  }}
+                  additionalDropdownOptions={extraDropdownOptions}
+                />
+                <MoreActionsDropdown
+                  selected={checkedAssets}
+                  clearSelection={() => onToggleAll(false)}
+                />
+              </Box>
+            ) : null}
           </Box>
         </div>
         {belowActionBarComponents}

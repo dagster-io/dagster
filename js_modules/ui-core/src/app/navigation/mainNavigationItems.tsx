@@ -1,6 +1,7 @@
 import {Icon, Popover, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import {FeatureFlag} from '@shared/FeatureFlags';
 import {
+  MatcherFn,
   assetsPathMatcher,
   automationPathMatcher,
   deploymentPathMatcher,
@@ -35,6 +36,18 @@ const onlyCommandKey = (event: KeyboardEvent) => {
   return event.metaKey && !event.shiftKey && !event.ctrlKey && !event.altKey;
 };
 
+const overviewPathMatcher: MatcherFn = (_, currentLocation) =>
+  currentLocation.pathname.startsWith('/overview');
+
+const runsPathMatcher: MatcherFn = (_, currentLocation) =>
+  currentLocation.pathname.startsWith('/runs');
+
+const automationMatcher: MatcherFn = (params, currentLocation) =>
+  automationPathMatcher(params, currentLocation) ||
+  // Special-case old Auto-materalize page, since with the new navigation we
+  // no longer have an "Overview" item to highlight.
+  currentLocation.pathname.startsWith('/overview/automation');
+
 export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] => {
   const {jobState} = config;
   return [
@@ -54,7 +67,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="timeline" />}
               label="Overview"
               href="/overview"
-              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/overview')}
+              isActive={overviewPathMatcher}
             />
           ),
         },
@@ -71,7 +84,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="runs" />}
               label="Runs"
               href="/runs"
-              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/runs')}
+              isActive={runsPathMatcher}
             />
           ),
         },
@@ -129,14 +142,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="schedule" />}
               label="Automation"
               href="/automation"
-              isActive={(params, currentLocation) => {
-                return (
-                  automationPathMatcher(params, currentLocation) ||
-                  // Special-case old Auto-materalize page, since with the new navigation we
-                  // no longer have an "Overview" item to highlight.
-                  currentLocation.pathname.startsWith('/overview/automation')
-                );
-              }}
+              isActive={automationMatcher}
             />
           ),
         },

@@ -5,3 +5,11 @@
     text-decoration: none;
   }
 }
+
+.compactCounts {
+  font-size: 12px;
+  color: var(--color-text-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

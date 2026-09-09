@@ -108,3 +108,15 @@
     flex-shrink: 0;
   }
 }
+
+@media (max-width: 768px) {
+  .tab {
+    padding-left: 4px;
+    padding-right: 4px;
+    min-height: 44px;
+  }
+
+  .tabs {
+    gap: 12px;
+  }
+}

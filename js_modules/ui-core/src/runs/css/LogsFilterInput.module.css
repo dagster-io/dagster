@@ -38,3 +38,10 @@
 .itemHighlight:hover {
   background-color: var(--color-background-blue);
 }
+
+/* Keep in sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .filterInput {
+    width: 100%;
+  }
+}

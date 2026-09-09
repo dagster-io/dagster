@@ -62,3 +62,54 @@
 .searchInput:focus {
   outline: none;
 }
+
+.closeButton {
+  display: none;
+}
+
+/* Phone: search is a full-screen mode rather than a floating box in the least
+   thumb-reachable third of the screen. The input is pinned at the top with a
+   close button; results fill the rest. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .backdrop {
+    padding-top: 0;
+    align-items: stretch;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .searchBox,
+  .searchBox.hasQueryString {
+    flex: none;
+    min-height: 56px;
+    padding: 6px 8px 6px 16px;
+    border-radius: 0;
+    box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+  }
+
+  .closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    min-width: 44px;
+    min-height: 44px;
+    margin-left: 4px;
+    border-radius: 8px;
+  }
+
+  .closeButton:hover {
+    background-color: var(--color-background-lighter);
+  }
+}

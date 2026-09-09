@@ -8,6 +8,7 @@ import {boxStyleFor} from './GanttChartLayout';
 import {RunGroupPanel} from './RunGroupPanel';
 import styles from './css/GanttStatusPanel.module.css';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {LayoutContext} from '../app/LayoutProvider';
 import {formatElapsedTimeWithoutMsec} from '../app/Util';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {IRunMetadataDict, IStepState} from '../runs/RunMetadataProvider';
@@ -37,6 +38,10 @@ export const GanttStatusPanel = React.memo(
     onHighlightStep,
   }: GanttStatusPanelProps) => {
     const selectedKeysSet = React.useMemo(() => new Set(selection.keys), [selection.keys]);
+    // On a phone the panel is the whole step view; empty groups ("Preparing (0)")
+    // would push the steps that matter below the fold.
+    const {isMobileScreen} = React.useContext(LayoutContext).nav;
+    const hideEmpty = isMobileScreen;
     const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
       const keys = Object.keys(metadata.steps);
       const preparing = [];
@@ -95,42 +100,50 @@ export const GanttStatusPanel = React.memo(
             metadata.exitedAt || metadata.startedProcessAt || metadata.startedPipelineAt || 0
           }
         />
-        <SidebarSection title={`Preparing (${preparing.length})`}>
-          <div>
-            {preparing.length === 0 ? (
-              <div className={styles.emptyNotice}>No steps are waiting to execute</div>
-            ) : (
-              preparing.map(renderStepItem)
-            )}
-          </div>
-        </SidebarSection>
-        <SidebarSection title={`Executing (${executing.length})`}>
-          <div>
-            {executing.length === 0 ? (
-              <div className={styles.emptyNotice}>No steps are executing</div>
-            ) : (
-              executing.map(renderStepItem)
-            )}
-          </div>
-        </SidebarSection>
-        <SidebarSection title={`Errored (${errored.length})`}>
-          <div>
-            {errored.length === 0 ? (
-              <div className={styles.emptyNotice}>No steps have errored</div>
-            ) : (
-              errored.map(renderStepItem)
-            )}
-          </div>
-        </SidebarSection>
-        <SidebarSection collapsedByDefault title={`Succeeded (${succeeded.length})`}>
-          <div>
-            {succeeded.length === 0 ? (
-              <div className={styles.emptyNotice}>No steps have succeeded</div>
-            ) : (
-              succeeded.map(renderStepItem)
-            )}
-          </div>
-        </SidebarSection>
+        {hideEmpty && preparing.length === 0 ? null : (
+          <SidebarSection title={`Preparing (${preparing.length})`}>
+            <div>
+              {preparing.length === 0 ? (
+                <div className={styles.emptyNotice}>No steps are waiting to execute</div>
+              ) : (
+                preparing.map(renderStepItem)
+              )}
+            </div>
+          </SidebarSection>
+        )}
+        {hideEmpty && executing.length === 0 ? null : (
+          <SidebarSection title={`Executing (${executing.length})`}>
+            <div>
+              {executing.length === 0 ? (
+                <div className={styles.emptyNotice}>No steps are executing</div>
+              ) : (
+                executing.map(renderStepItem)
+              )}
+            </div>
+          </SidebarSection>
+        )}
+        {hideEmpty && errored.length === 0 ? null : (
+          <SidebarSection title={`Errored (${errored.length})`}>
+            <div>
+              {errored.length === 0 ? (
+                <div className={styles.emptyNotice}>No steps have errored</div>
+              ) : (
+                errored.map(renderStepItem)
+              )}
+            </div>
+          </SidebarSection>
+        )}
+        {hideEmpty && succeeded.length === 0 ? null : (
+          <SidebarSection collapsedByDefault={!hideEmpty} title={`Succeeded (${succeeded.length})`}>
+            <div>
+              {succeeded.length === 0 ? (
+                <div className={styles.emptyNotice}>No steps have succeeded</div>
+              ) : (
+                succeeded.map(renderStepItem)
+              )}
+            </div>
+          </SidebarSection>
+        )}
         {notExecuted.length > 0 ? (
           <SidebarSection collapsedByDefault title={`Not executed (${notExecuted.length})`}>
             <div>{notExecuted.map(renderStepItem)}</div>

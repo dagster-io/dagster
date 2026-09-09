@@ -52,8 +52,12 @@ interface AssetRowProps {
   showCheckboxColumn: boolean;
   showRepoColumn: boolean;
   repoAddress: RepoAddress | null;
-  height: number;
+  // Undefined when the virtualizer measures the row instead of fixing its
+  // height — see `measureRef` below.
+  height: number | undefined;
   start: number;
+  measureRef?: (node: HTMLElement | null) => void;
+  dataIndex?: number;
   onRefresh: () => void;
   onChangeAssetSelection?: (selection: string) => void;
 }
@@ -73,6 +77,8 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     showRepoColumn,
     view = 'flat',
     onChangeAssetSelection,
+    measureRef,
+    dataIndex,
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
@@ -97,7 +103,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   const kinds = definition?.kinds;
 
   return (
-    <Row height={height} start={start}>
+    <Row height={height} start={start} ref={measureRef} data-index={dataIndex}>
       <Box
         border="bottom"
         className={styles.rowGrid}
@@ -140,18 +146,13 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
               </>
             )}
           </Box>
-          <div
-            style={{
-              maxWidth: '100%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <Text size={12} color="textLight">
-              {definition?.description}
-            </Text>
-          </div>
+          {definition?.description ? (
+            <div className={styles.description}>
+              <Text size={12} color="textLight">
+                {definition.description}
+              </Text>
+            </div>
+          ) : null}
         </RowCell>
         {showRepoColumn ? (
           <RowCell className={styles.cellRepo}>

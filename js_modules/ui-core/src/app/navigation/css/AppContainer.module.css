@@ -43,7 +43,8 @@
   padding: 16px 2px;
 }
 
-.mobileTopBar {
+.mobileTopBar,
+.drawerHeader {
   display: none;
 }
 
@@ -64,21 +65,30 @@
     box-shadow: inset 0 -1px 0 var(--color-keyline-default);
   }
 
-  .mobileTopBar svg {
+  .wordmark {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .wordmark svg {
     display: block;
     width: 112px;
     height: 28px;
   }
 
-  .menuButton {
+  .iconButton {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* 44px minimum touch target. */
+    min-width: 44px;
+    min-height: 44px;
     padding: 6px;
     border-radius: 8px;
   }
 
-  .menuButton:hover {
+  .iconButton:hover {
     background-color: var(--color-background-lighter);
   }
 
@@ -95,9 +105,10 @@
     top: 0;
     bottom: 0;
     left: 0;
-    width: var(--nav-width);
+    /* Narrower than the desktop sidebar so the page stays visible behind it. */
+    width: min(280px, 80vw);
     flex: none;
-    padding: 16px 4px 16px 16px;
+    padding: 0 4px 16px 16px;
     z-index: 31;
     background-color: var(--color-background-default);
     transform: translateX(-100%);
@@ -107,6 +118,13 @@
 
   .nav.mobileOpen {
     transform: translateX(0);
+  }
+
+  .drawerHeader {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 0;
+    margin-right: -4px;
   }
 
   .main,

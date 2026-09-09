@@ -22,6 +22,7 @@ import {
 import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
+import {LayoutContext} from '../app/LayoutProvider';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import styles from './css/VirtualizedCodeLocationRow.module.css';
 
@@ -53,6 +54,7 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
     const {locationEntry, locationStatus, index} = props;
     const {name} = locationStatus;
     const repoAddress = buildRepoAddress(DUNDER_REPO_NAME, name);
+    const {isMobileScreen} = React.useContext(LayoutContext).nav;
 
     return (
       <div ref={ref} data-index={index}>
@@ -77,10 +79,18 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
             </div>
           </RowCell>
           <RowCell className={styles.cellActions}>
-            <JoinedButtons>
-              <ReloadButton location={name} />
-              {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
-            </JoinedButtons>
+            {isMobileScreen ? (
+              locationEntry ? (
+                <CodeLocationMenu locationNode={locationEntry} reloadLocation={name} />
+              ) : (
+                <ReloadButton location={name} />
+              )
+            ) : (
+              <JoinedButtons>
+                <ReloadButton location={name} />
+                {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
+              </JoinedButtons>
+            )}
           </RowCell>
         </Box>
       </div>
@@ -99,6 +109,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
   (props: RepoRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {locationEntry, locationStatus, repository, index} = props;
     const repoAddress = buildRepoAddress(repository.name, repository.location.name);
+    const {isMobileScreen} = React.useContext(LayoutContext).nav;
 
     const allMetadata = [...locationEntry.displayMetadata, ...repository.displayMetadata];
 
@@ -112,9 +123,17 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
                   <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
                 </Link>
               </div>
-              <ImageName metadata={allMetadata} />
-              <ModuleOrPackageOrFile metadata={allMetadata} />
-              <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
+              {isMobileScreen ? null : (
+                <>
+                  <ImageName metadata={allMetadata} />
+                  <ModuleOrPackageOrFile metadata={allMetadata} />
+                </>
+              )}
+              <RepositoryCountTags
+                repo={repository}
+                repoAddress={repoAddress}
+                compact={isMobileScreen}
+              />
             </Box>
           </RowCell>
           <RowCell className={styles.cellStatus}>
@@ -128,10 +147,14 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
             </div>
           </RowCell>
           <RowCell className={styles.cellActions} style={{alignItems: 'flex-end'}}>
-            <JoinedButtons>
-              <ReloadButton location={locationStatus.name} />
-              <CodeLocationMenu locationNode={locationEntry} />
-            </JoinedButtons>
+            {isMobileScreen ? (
+              <CodeLocationMenu locationNode={locationEntry} reloadLocation={locationStatus.name} />
+            ) : (
+              <JoinedButtons>
+                <ReloadButton location={locationStatus.name} />
+                <CodeLocationMenu locationNode={locationEntry} />
+              </JoinedButtons>
+            )}
           </RowCell>
         </Box>
       </div>

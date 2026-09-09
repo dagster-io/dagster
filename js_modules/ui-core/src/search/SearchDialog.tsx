@@ -1,4 +1,4 @@
-import {Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {Colors, Icon, Spinner, UnstyledButton} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import Fuse from 'fuse.js';
 import debounce from 'lodash/debounce';
@@ -195,6 +195,15 @@ export const useSearchDialog = () => {
               value={queryString}
             />
             {loading ? <Spinner purpose="body-text" /> : null}
+            {/* Phone only (see css): the dialog is a full-screen mode there, so
+                it needs an explicit way out besides Escape or the backdrop. */}
+            <UnstyledButton
+              className={styles.closeButton}
+              onClick={() => dispatch({type: 'hide-dialog'})}
+              aria-label="Close search"
+            >
+              <Icon name="close" size={24} />
+            </UnstyledButton>
           </div>
           <SearchResults
             highlight={highlight}

@@ -1,0 +1,35 @@
+/* Shared mobile card-layout primitives for virtualized table rows.
+ * On desktop these classes are inert; below MOBILE_BREAKPOINT_PX each grid
+ * row collapses into a stacked card. The per-row grid-template-areas differ
+ * per table and stay in their own module; only the common reset lives here.
+ * Keep the max-width value in sync with MOBILE_BREAKPOINT_PX in
+ * ui-components breakpoints.ts. */
+
+/* Top-level definitions so `composes` resolves these local names even though
+ * their meaningful rules are media-scoped. Inert on desktop. */
+.mobileCardGrid {
+}
+
+.mobileHiddenHeader {
+}
+
+@media (max-width: 768px) {
+  .mobileCardGrid {
+    row-gap: 2px;
+  }
+
+  /* !important so the reset wins regardless of stylesheet import order and
+   * over the non-important cell styles from the shared table components.
+   * (`height: auto` stays per-row since it must override each grid's own
+   * `height: 100%` in the same module.) */
+  .mobileCardGrid > * {
+    box-shadow: none !important;
+    padding: 2px 8px !important;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .mobileHiddenHeader {
+    display: none !important;
+  }
+}

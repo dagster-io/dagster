@@ -10,10 +10,11 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {memo, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
+import {FailedStepSummary} from './FailedStepSummary';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
@@ -22,6 +23,7 @@ import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {runsPathWithFilters} from './RunsFilterInput';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {LayoutContext} from '../app/LayoutProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode} from '../gantt/GanttChart';
@@ -192,6 +194,7 @@ const RunWithData = ({
   selectionQuery,
   onSetLogsFilter,
   onSetSelectionQuery,
+  onShowStateDetails,
 }: RunWithDataProps) => {
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
@@ -278,6 +281,12 @@ const RunWithData = ({
 
   const [expandedPanel, setExpandedPanel] = useState<null | 'top' | 'bottom'>(null);
   const containerRef = useRef<SplitPanelContainerHandle>(null);
+
+  // On a phone the logs are the reason you opened the run, so they fill the
+  // screen by default and the step list / Gantt panel starts collapsed. The
+  // toolbar's expand control still opens it. A separate storage identifier keeps
+  // the desktop split untouched.
+  const {isMobileScreen} = useContext(LayoutContext).nav;
 
   useLayoutEffect(() => {
     if (containerRef.current) {
@@ -393,14 +402,22 @@ const RunWithData = ({
       <SplitPanelContainer
         ref={containerRef}
         axis="vertical"
-        identifier="run-gantt"
-        firstInitialPercent={35}
+        identifier={isMobileScreen ? 'run-gantt-mobile' : 'run-gantt'}
+        firstInitialPercent={isMobileScreen ? 0 : 35}
         firstMinSize={56}
         first={gantt(metadata)}
         secondMinSize={56}
         second={
           <ErrorBoundary region="logs">
             <div className={styles.logsContainer}>
+              {isMobileScreen && run?.status === RunStatus.FAILURE ? (
+                <FailedStepSummary
+                  logs={logs}
+                  metadata={metadata}
+                  onSelectStep={(stepKey) => onSetSelectionQuery(`name:"${stepKey}"`)}
+                  onShowDetails={onShowStateDetails}
+                />
+              ) : null}
               <LogsToolbar
                 logType={logType}
                 onSetLogType={setLogType}

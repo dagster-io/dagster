@@ -145,3 +145,30 @@
 .bp5-dark .dagster-popover .bp5-popover .bp5-popover-content {
   background-color: var(--color-tooltip-background);
 }
+
+/* Mobile: popovers, dropdown menus and filter panels are positioned against a
+   desktop-width trigger and can extend past the viewport edge (the code
+   locations filter is the clearest case). Constrain every floating layer to the
+   screen and let long content scroll inside it instead. Keep the max-width
+   value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  [data-radix-popper-content-wrapper] {
+    max-width: 100vw;
+  }
+
+  /* !important: several callers set an inline or desktop width on the content. */
+  [data-radix-popper-content-wrapper] .dagster-popover,
+  .dagster-popover.bp5-popover,
+  .dagster-popover .bp5-popover-content {
+    max-width: calc(100vw - 16px) !important;
+    max-height: 70vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  /* Menus carry a 180px desktop minimum that can push a nested popover wide. */
+  .dagster-popover .bp5-menu {
+    min-width: 0;
+    max-width: 100%;
+  }
+}

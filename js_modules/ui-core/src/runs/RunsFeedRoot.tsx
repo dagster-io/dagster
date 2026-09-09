@@ -183,10 +183,12 @@ export const RunsFeedRoot = () => {
         border="bottom"
         background={Colors.backgroundDefault()}
         padding={{left: 24, right: 20}}
-        flex={{direction: 'row', justifyContent: 'space-between'}}
+        flex={{direction: 'row', justifyContent: 'space-between', gap: 12}}
       >
-        {tabs}
-        <Box flex={{gap: 16, alignItems: 'center'}}>
+        {/* min-width: 0 lets the (horizontally scrollable) tab strip shrink on
+            narrow screens instead of running into the refresh countdown. */}
+        <div style={{minWidth: 0}}>{tabs}</div>
+        <Box flex={{gap: 16, alignItems: 'center', shrink: 0}}>
           <QueryRefreshCountdown refreshState={combinedRefreshState} />
         </Box>
       </Box>

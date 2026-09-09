@@ -1,0 +1,22 @@
+.container {
+  background-color: var(--color-background-red);
+  flex-shrink: 0;
+}
+
+.stepKey {
+  overflow-wrap: anywhere;
+}
+
+.message {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-red);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  /* Enough to read the exception; "Full error" opens the complete trace. */
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

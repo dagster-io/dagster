@@ -246,3 +246,18 @@
   z-index: 1;
   position: relative;
 }
+
+/* Touch targets. A default button is 32px tall, below the ~44px a finger can
+   reliably hit. Keep the max-width value in sync with MOBILE_BREAKPOINT_PX in
+   breakpoints.ts. */
+@media (max-width: 768px) {
+  .button {
+    min-height: 44px;
+  }
+
+  /* Icon-only buttons (no text child) are 32px wide on desktop. */
+  .button:not(:has(.buttonText)) {
+    min-width: 44px;
+    justify-content: center;
+  }
+}

@@ -51,6 +51,7 @@ import {AssetGraphQueryItem} from './types';
 import {AssetGraphFetchScope, useAssetGraphData, useFullAssetGraphData} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNavContext';
+import {LayoutContext} from '../app/LayoutProvider';
 import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
@@ -454,8 +455,12 @@ const AssetGraphExplorerWithData = ({
     [assetGraphData.nodes, selectGroup, selectAssetNode],
   );
 
+  // The sidebar has a 300px minimum, which on a phone leaves the graph panel —
+  // and the search input inside it — squeezed off the right edge. Start hidden
+  // on mobile; the toggle still brings it back.
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
   const [showSidebar, setShowSidebar] = React.useState(
-    viewType === 'global' || viewType === 'catalog',
+    !isMobileScreen && (viewType === 'global' || viewType === 'catalog'),
   );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {

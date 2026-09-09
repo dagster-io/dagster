@@ -1,10 +1,11 @@
 import {Box, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useDeferredValue, useMemo} from 'react';
+import {useContext, useDeferredValue, useMemo} from 'react';
 
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
 import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
+import {LayoutContext} from '../app/LayoutProvider';
 import {RefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
@@ -94,6 +95,7 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
     useTimelineRange({});
 
   const [groupRunsBy, setGroupRunsBy] = useGroupTimelineRunsBy();
+  const {isMobileScreen} = useContext(LayoutContext).nav;
 
   const {automations: allAutomations} = useAutomations();
 
@@ -160,8 +162,8 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
     <>
       <Header refreshState={refreshState} />
       <Box
-        padding={{horizontal: 24, vertical: 12}}
-        flex={{alignItems: 'center', gap: 16, wrap: 'wrap'}}
+        padding={isMobileScreen ? {horizontal: 12, vertical: 8} : {horizontal: 24, vertical: 12}}
+        flex={{alignItems: 'center', gap: isMobileScreen ? 8 : 16, wrap: 'wrap'}}
       >
         <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
         <div style={{flex: 1, display: 'flex', alignItems: 'center', minWidth: 120}}>
