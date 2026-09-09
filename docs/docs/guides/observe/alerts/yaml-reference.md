@@ -270,6 +270,10 @@ alert_targets:
 
 ### For metric monitor events
 
+#### Asset selection metric
+
+Monitors a metric aggregated over a selection of assets.
+
 ```yaml
 alert_targets:
   - metric_monitor_asset_selection_threshold_target:
@@ -282,6 +286,37 @@ alert_targets:
         min_allowed_value: 5 # At least one threshold required
         max_allowed_value: 100 # At least one threshold required
 ```
+
+#### Deployment capacity metric
+
+Monitors an Insights metric aggregated across the entire deployment against thresholds over a rolling lookback window. Intended for deployment capacity metrics such as queued runs (`__dagster_runs_queued`), runs in progress (`__dagster_runs_in_progress`), and run queue time (`__dagster_run_queue_time_ms`), typically with the `MAX` aggregation.
+
+```yaml
+alert_targets:
+  - metric_monitor_deployment_threshold_target:
+      metric_name: '__dagster_runs_queued'
+      lookback_window: 1 # Hours; values less than 1 are supported
+      aggregation_function: MAX # SUM, LATEST, MAX, MIN
+      thresholds:
+        max_allowed_value: 20 # At least one threshold required
+```
+
+| Field                          | Required | Description                                                                                                                     |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `metric_name`                  | Yes      | The name of the metric to monitor.                                                                                              |
+| `lookback_window`              | Yes      | The rolling time window in hours to aggregate the metric over. Fractional values are supported for sub-hour or sub-day windows. |
+| `aggregation_function`         | Yes      | The aggregation function to apply over the lookback window: `SUM`, `LATEST`, `MAX`, or `MIN`.                                   |
+| `thresholds.max_allowed_value` | No\*     | Alert if the aggregated value exceeds this value.                                                                               |
+| `thresholds.min_allowed_value` | No\*     | Alert if the aggregated value falls below this value.                                                                           |
+| `comparison_type`              | No       | `ABSOLUTE` (default) or `PERCENT_CHANGE`.                                                                                       |
+
+\*At least one of `max_allowed_value` or `min_allowed_value` is required. If both are set, the alert triggers when the aggregated value crosses either bound (above the max or below the min).
+
+Unlike the asset selection target, the deployment target evaluates a single deployment-wide value, so `combine_fn` is not used.
+
+`SUM` is accepted but not recommended for this target: because the lookback window rolls forward with each evaluation, a sum that hovers near the threshold can repeatedly trigger and resolve the alert as samples enter and leave the window. To alert on summed usage metrics, prefer the [`insights_deployment_threshold_target`](#deployment-wide-metric), which evaluates a fixed window.
+
+The lookback window rolls forward with each evaluation, so it also controls how long an alert stays open: the alert resolves once the samples that breached the threshold age out of the window, and a later breach opens a new alert. Choose a longer window to hold alerts open longer and suppress repeat notifications; choose a shorter one to be re-notified sooner if the condition recurs.
 
 ## Notification services
 
@@ -357,27 +392,29 @@ policy_options:
 
 ## Validation rules
 
-1. **Event type compatibility**: All event types in a single policy must belong to the same category (job, asset, schedule/sensor, infrastructure, or insights).
+1. **Event type compatibility:** All event types in a single policy must belong to the same category (job, asset, schedule/sensor, infrastructure, or insights).
 
-2. **Asset event exclusivity**: Asset-related events cannot be mixed:
+2. **Asset event exclusivity:** Asset-related events cannot be mixed:
 
    - Materialization/check events (`ASSET_MATERIALIZATION_*`, `ASSET_CHECK_*`, `ASSET_FRESHNESS_*`)
    - Health events (`ASSET_HEALTH_*`)
    - Schema events (`ASSET_TABLE_SCHEMA_CHANGE`)
 
-3. **Long-running job requirements**: `JOB_LONG_RUNNING` event type requires a `long_running_job_threshold_target` with `threshold_seconds` specified.
+3. **Long-running job requirements:** `JOB_LONG_RUNNING` event type requires a `long_running_job_threshold_target` with `threshold_seconds` specified.
 
-4. **Table schema change requirements**: `ASSET_TABLE_SCHEMA_CHANGE` event type requires at least one entry in `policy_options.table_schema_change_types`.
+4. **Table schema change requirements:** `ASSET_TABLE_SCHEMA_CHANGE` event type requires at least one entry in `policy_options.table_schema_change_types`.
 
-5. **Insights/Metric alert targets**: Policies with `INSIGHTS_*` or `METRIC_MONITOR_ALERT` event types require exactly one alert target.
+5. **Insights/Metric alert targets:** Policies with `INSIGHTS_*` or `METRIC_MONITOR_ALERT` event types require exactly one alert target.
 
-6. **Empty alert targets**: An empty `alert_targets: []` list means the policy applies to all entities of that type.
+6. **Metric monitor thresholds:** For `metric_monitor_*` targets, `lookback_window` must be greater than 0, at least one of `thresholds.max_allowed_value` or `thresholds.min_allowed_value` must be specified, and if both are specified, `max_allowed_value` must be greater than `min_allowed_value`.
 
-7. **Consecutive failure threshold**: Only valid for `TICK_FAILURE` events. Must be between 1 and 100.
+7. **Empty alert targets:** An empty `alert_targets: []` list means the policy applies to all entities of that type.
 
-8. **Renotify interval**: Only valid for `TICK_FAILURE`, `AGENT_UNAVAILABLE`, and `CODE_LOCATION_ERROR` events. Must be >= 1 minute.
+8. **Consecutive failure threshold:** Only valid for `TICK_FAILURE` events. Must be between 1 and 100.
 
-9. **Email owners notification**: Only valid for asset-related alerts where assets have owners defined.
+9. **Renotify interval:** Only valid for `TICK_FAILURE`, `AGENT_UNAVAILABLE`, and `CODE_LOCATION_ERROR` events. Must be >= 1 minute.
+
+10. **Email owners notification:** Only valid for asset-related alerts where assets have owners defined.
 
 ## Complete examples
 
@@ -518,6 +555,32 @@ alert_policies:
           aggregation_function: max
           asset_selection: '*'
           combine_fn: ANY
+    policy_options:
+      include_description_in_notification: true
+```
+
+### Deployment capacity monitoring
+
+Alert when the number of queued runs in the deployment exceeds 20 at any point in the last hour:
+
+```yaml
+alert_policies:
+  - name: run queue depth monitor
+    description: 'Alert when more than 20 runs are waiting in the queue'
+    event_types:
+      - METRIC_MONITOR_ALERT
+    notification_service:
+      slack:
+        slack_workspace_name: mycompany
+        slack_channel_name: data-platform-alerts
+    enabled: true
+    alert_targets:
+      - metric_monitor_deployment_threshold_target:
+          metric_name: __dagster_runs_queued
+          lookback_window: 1
+          thresholds:
+            max_allowed_value: 20
+          aggregation_function: MAX
     policy_options:
       include_description_in_notification: true
 ```
