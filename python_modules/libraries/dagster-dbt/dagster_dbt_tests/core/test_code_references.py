@@ -1,10 +1,12 @@
 import inspect
 import os
+import shutil
 from pathlib import Path
 from typing import Any
 
 import dagster as dg
 import pytest
+from dagster import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     AnchorBasedFilePathMapping,
@@ -19,7 +21,7 @@ from dagster_dbt import DbtCliResource, DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
+from dagster_dbt_tests.dbt_projects import test_asset_checks_path, test_jaffle_shop_path
 
 JAFFLE_SHOP_ROOT_PATH = os.path.normpath(test_jaffle_shop_path)
 
@@ -139,3 +141,63 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
         assert isinstance(source_reference, UrlCodeReference)
         line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]  # ty: ignore[unresolved-attribute]
         assert source_reference.url.endswith(f"test_code_references.py#L{line_no}")
+
+
+def test_code_references_do_not_conflict_across_distinct_project_copies(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """State-backed components (e.g. several DbtProjectComponent instances scoped over one
+    physical dbt project) each prepare their own local copy of the project. A source shared by
+    two such components resolves to a different absolute `dagster/code_references` path per
+    component even though the underlying declaration is unchanged, since the path is derived
+    from each component's own project_dir. That shouldn't be treated as a real metadata conflict.
+    """
+    # `dbt parse` doesn't need real data, just a value for the profile's env_var() call.
+    monkeypatch.setenv("DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH", "unused.duckdb")
+    manifest = (
+        DbtCliResource(project_dir=os.fspath(test_asset_checks_path))
+        .cli(["parse"])
+        .wait()
+        .get_artifact("manifest.json")
+    )
+
+    other_project_dir = tmp_path / "other_project_copy"
+    shutil.copytree(test_asset_checks_path, other_project_dir)
+
+    settings = DagsterDbtTranslatorSettings(enable_source_metadata=True, enable_code_references=True)
+
+    @dbt_assets(
+        manifest=manifest,
+        select="stg_customers",
+        dagster_dbt_translator=DagsterDbtTranslator(settings=settings),
+        project=DbtProject(project_dir=os.fspath(test_asset_checks_path)),
+    )
+    def project_a_assets(): ...
+
+    @dbt_assets(
+        manifest=manifest,
+        select="stg_customers_again",
+        dagster_dbt_translator=DagsterDbtTranslator(settings=settings),
+        project=DbtProject(project_dir=os.fspath(other_project_dir)),
+    )
+    def project_b_assets(): ...
+
+    # Resolves without raising "Conflicting metadata found on AssetDeps", even though the two
+    # components' code references point at different absolute paths for the same source.
+    Definitions(assets=[project_a_assets, project_b_assets]).resolve_asset_graph()
+
+    raw_customers_key = AssetKey(["jaffle_shop", "raw_customers"])
+    checked_at_least_one_dep = False
+    for assets_def in (project_a_assets, project_b_assets):
+        for spec in assets_def.specs:
+            for dep in spec.deps:
+                if dep.asset_key == raw_customers_key:
+                    checked_at_least_one_dep = True
+                    # Value-stable metadata survives...
+                    assert "dagster/table_name" in dep.metadata
+                    assert "dagster/storage_kind" in dep.metadata
+                    # ...but code references, which vary per project copy, are dropped from the
+                    # dep rather than causing a conflict.
+                    assert "dagster/code_references" not in dep.metadata
+    assert checked_at_least_one_dep

@@ -209,10 +209,21 @@ class DagsterDbtTranslator:
                 # code location fail to load. Only the value-stable dagster table metadata (table
                 # name, column schema, storage kind) is kept, so identical sources produce identical
                 # dep metadata.
+                #
+                # Code references are dropped for the same reason. State-backed components (e.g.
+                # several DbtProjectComponent instances scoped over one physical dbt project via
+                # `select`) each prepare their own local copy of the project, so an identical
+                # source's code reference resolves to a different absolute path per component even
+                # though the underlying declaration is unchanged. That path isn't a property of the
+                # data either, so it shouldn't be part of the identity check.
+                excluded_keys = {
+                    CodeReferencesMetadataSet._namespaced_key("code_references")
+                }
                 dep_metadata = {
                     key: value
                     for key, value in spec.metadata.items()
                     if not key.startswith(DAGSTER_DBT_METADATA_NAMESPACE)
+                    and key not in excluded_keys
                 }
 
             deps.append(
