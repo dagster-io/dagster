@@ -30,7 +30,10 @@ from dagster_dbt.asset_utils import (
     get_node,
 )
 from dagster_dbt.components.dbt_component_utils import (
+    BaseDbtTranslator,
     DagsterDbtComponentTranslatorSettings,
+    ShimDbtTranslator,
+    _remap_deps_for_overridden_keys,
     _set_resolution_context,
     build_op_spec,
     resolve_cli_args,
@@ -296,7 +299,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             An AssetSpec that represents the dbt node as a Dagster asset
 
         Example:
-            Override this method to add custom tags to all dbt models:
+            Override this method to add custom tags to all dbt models (no key change):
 
             .. code-block:: python
 
@@ -309,6 +312,24 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                         return base_spec.replace_attributes(
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
+
+            Override this method to prefix all asset keys. The framework
+            automatically remaps ``spec.deps`` so downstream lineage continues to
+            connect to the prefixed upstream keys:
+
+            .. code-block:: python
+
+                class PrefixedDbtProjectComponent(DbtProjectComponent):
+                    def get_asset_spec(self, manifest, unique_id, project):
+                        base_spec = super().get_asset_spec(manifest, unique_id, project)
+                        return base_spec.replace_attributes(
+                            key=base_spec.key.with_prefix("snowflake_dbt")
+                        )
+
+        Limitations:
+            * A single upstream cannot be split into multiple new keys (one base key
+              -> many new keys). Only the first mapping is applied to deps and a
+              warning is emitted. If you need split-mappings, build the deps manually.
         """
         return DagsterDbtTranslator.get_asset_spec(self.translator, manifest, unique_id, project)
 
@@ -469,13 +490,45 @@ class DbtProjectComponentTranslator(
     def get_asset_spec(
         self, manifest: Mapping[str, Any], unique_id: str, project: DbtProject | None
     ) -> dg.AssetSpec:
+        # Memoize the final (post-remap, post-translation) spec per (manifest, unique_id,
+        # project). Without this, `_remap_deps_for_overridden_keys` recursively calls
+        # `self.get_asset_spec(upstream_id)` and re-walks the upstream sub-DAG on every
+        # invocation, producing super-linear work on wide DAGs with shared ancestors.
+        # `DagsterDbtTranslator.get_asset_spec` (the `super` call below) is already
+        # memoized on its own `_resolved_specs`; this dict caches the layer added by
+        # this shim (override-remap + YAML translation) so the cost stays O(E).
+        if not hasattr(self, "_remapped_specs"):
+            self._remapped_specs = {}
+        memo_id = (id(manifest), unique_id, id(project))
+        cached = self._remapped_specs.get(memo_id)
+        if cached is not None:
+            return cached
+
         base_spec = super().get_asset_spec(manifest, unique_id, project)
+        # Only rewrite deps when a subclass actually overrode get_asset_spec; without
+        # an override, base_spec.deps already match the shim translator's keys (the
+        # YAML `translation` path stays on the shim recursion and is also correct).
+        # This mirrors the override-detection in
+        # `dagster.components.utils.translation._GeneratedComponentTranslator._shim_method`.
+        if type(self.component).get_asset_spec is not DbtProjectComponent.get_asset_spec:
+            base_spec = _remap_deps_for_overridden_keys(
+                base_spec,
+                shim_translator=ShimDbtTranslator(self),
+                base_translator=BaseDbtTranslator(
+                    self.component._base_translator  # noqa: SLF001  -- tightly coupled sibling
+                ),
+                manifest=manifest,
+                unique_id=unique_id,
+                project=project,
+            )
         if self.component.translation is None:
             spec = base_spec
         else:
             dbt_props = get_node(manifest, unique_id)
             spec = self.component.translation(base_spec, dbt_props)
-        return spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
+        result = spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
+        self._remapped_specs[memo_id] = result
+        return result
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:
