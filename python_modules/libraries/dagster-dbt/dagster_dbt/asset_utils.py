@@ -360,20 +360,35 @@ def build_dbt_asset_selection(
 
     from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 
-    return DbtManifestAssetSelection.build(
-        manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
-        select=dbt_assets_select,
-        exclude=dbt_assets_exclude,
-        selector=dbt_assets_selector,
-        project=dbt_project,
-    ) & DbtManifestAssetSelection.build(
+    requested_selection = DbtManifestAssetSelection.build(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
         select=dbt_select,
         exclude=dbt_exclude or DBT_DEFAULT_EXCLUDE,
         selector=dbt_selector or DBT_DEFAULT_SELECTOR,
         project=dbt_project,
+    )
+
+    # If the assets definition itself has a selection, we need to AND it with the requested
+    # selection. If it doesn't, save a pointless selector walk over the manifest and just
+    # return the requested selection directly.
+    if (
+        dbt_assets_select == DBT_DEFAULT_SELECT
+        and dbt_assets_exclude == DBT_DEFAULT_EXCLUDE
+        and dbt_assets_selector == DBT_DEFAULT_SELECTOR
+    ):
+        return requested_selection
+
+    return (
+        DbtManifestAssetSelection.build(
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator,
+            select=dbt_assets_select,
+            exclude=dbt_assets_exclude,
+            selector=dbt_assets_selector,
+            project=dbt_project,
+        )
+        & requested_selection
     )
 
 
