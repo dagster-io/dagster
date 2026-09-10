@@ -13,6 +13,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+from dagster_dbt.utils import select_unique_ids
 from dagster_shared.check.functions import ParameterCheckError
 
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
@@ -432,3 +433,56 @@ def test_dbt_asset_selection_selector_invalid(
             selector="fake_selector_does_not_exist",
         )
         def selected_dbt_assets(): ...
+
+
+def test_select_unique_ids_with_missing_child_map(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    """Early dbt Fusion manifests do not contain a child map.
+
+    Selection should fall back to a child map that covers every resource type,
+    including exposures, so graph selectors resolve the same unique ids as the
+    native child map.
+    """
+    manifest = copy.deepcopy(test_jaffle_shop_manifest)
+    manifest["exposures"]["exposure.jaffle_shop.my_exposure"] = {
+        "unique_id": "exposure.jaffle_shop.my_exposure",
+        "name": "my_exposure",
+        "resource_type": "exposure",
+        "type": "analysis",
+        "owner": {"name": "me", "email": "me@example.com"},
+        "depends_on": {"nodes": ["model.jaffle_shop.customers"]},
+        "description": "",
+        "labels": {},
+        "state": "active",
+        "fqn": ["jaffle_shop", "my_exposure"],
+        "package_name": "jaffle_shop",
+        "path": "exposures.yml",
+        "original_file_path": "exposures.yml",
+        "created_at": 1.0,
+        "parent_id": None,
+    }
+    manifest["child_map"]["model.jaffle_shop.customers"].append("exposure.jaffle_shop.my_exposure")
+    manifest["child_map"]["exposure.jaffle_shop.my_exposure"] = []
+
+    native = select_unique_ids(
+        select="+exposure:my_exposure",
+        exclude="",
+        selector="",
+        project=None,
+        manifest_json=manifest,
+    )
+
+    fusion = copy.deepcopy(manifest)
+    fusion["metadata"]["dbt_version"] = "2.0.0"
+    del fusion["child_map"]
+
+    fallback = select_unique_ids(
+        select="+exposure:my_exposure",
+        exclude="",
+        selector="",
+        project=None,
+        manifest_json=fusion,
+    )
+
+    assert fallback == native
