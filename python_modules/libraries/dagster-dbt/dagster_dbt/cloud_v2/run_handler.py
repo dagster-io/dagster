@@ -172,7 +172,12 @@ class DbtCloudJobRunResults:
 
             resource_type: str = dbt_resource_props["resource_type"]
             result_status: str = result["status"]
-            materialization: str = dbt_resource_props["config"]["materialized"]
+            # Fusion leaves "materialized" out of a seed's config entirely (it only
+            # writes the key for models and tests), while Core always sets it to the
+            # resource type for a seed. Falling back to resource_type here matches
+            # what Core would have written, and a seed can never end up read as
+            # "ephemeral" this way since seeds don't support that materialization.
+            materialization: str = dbt_resource_props["config"].get("materialized", resource_type)
 
             is_ephemeral = materialization == "ephemeral"
 

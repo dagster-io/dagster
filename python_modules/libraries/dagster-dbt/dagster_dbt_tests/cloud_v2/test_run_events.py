@@ -7,6 +7,8 @@ from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunResults
 
 from dagster_dbt_tests.cloud_v2.conftest import TEST_RUN_URL, get_sample_run_results_json
 
+SEED_UNIQUE_ID = "seed.jaffle_shop.raw_customers"
+
 
 def test_default_asset_events_from_run_results(
     workspace: DbtCloudWorkspace, fetch_workspace_data_api_mocks: responses.RequestsMock
@@ -67,3 +69,32 @@ def test_default_asset_events_from_run_results_missing_failures_key(
     # Without a `failures` count, we should not attach failed row count metadata.
     for check_eval in asset_check_evaluations:
         assert "dagster_dbt/failed_row_count" not in check_eval.metadata
+
+
+def test_default_asset_events_from_run_results_seed_missing_materialized_config(
+    workspace: DbtCloudWorkspace, fetch_workspace_data_api_mocks: responses.RequestsMock
+):
+    """Fusion doesn't write `config.materialized` for seeds at all (it only
+    sets that key for models and tests), unlike dbt Core, which always writes
+    it as the resource type. A manifest built by Fusion should translate the
+    same way a Core one does instead of raising.
+    """
+    run_results = DbtCloudJobRunResults.from_run_results_json(
+        run_results_json=get_sample_run_results_json()
+    )
+
+    manifest = copy.deepcopy(dict(workspace.get_or_fetch_workspace_data().manifest))
+    del manifest["nodes"][SEED_UNIQUE_ID]["config"]["materialized"]
+
+    events = list(
+        run_results.to_default_asset_events(client=workspace.get_client(), manifest=manifest)
+    )
+
+    asset_materializations = [event for event in events if isinstance(event, AssetMaterialization)]
+    asset_check_evaluations = [event for event in events if isinstance(event, AssetCheckEvaluation)]
+
+    # Same counts as the normal run: the seed still materializes, it just no
+    # longer needs its config to say so explicitly.
+    assert len(asset_materializations) == 8
+    assert len(asset_check_evaluations) == 20
+    assert any(mat.asset_key.path == ["raw_customers"] for mat in asset_materializations)
