@@ -20,6 +20,8 @@ from packaging import version
 
 from dagster_cloud.dagster_insights.bigquery.bigquery_utils import (
     build_bigquery_cost_metadata,
+    derive_invocation_time_bounds,
+    format_bigquery_timestamp,
     marker_asset_key_for_job,
 )
 from dagster_cloud.dagster_insights.insights_utils import (
@@ -149,6 +151,9 @@ def dbt_with_bigquery_insights(
     marker_asset_key = marker_asset_key_for_job(context.job_def)
     run_results_json = dbt_cli_invocation.get_artifact("run_results.json")
     invocation_id = run_results_json["metadata"]["invocation_id"]
+    creation_time_lower_bound, creation_time_upper_bound = derive_invocation_time_bounds(
+        run_results_json
+    )
 
     # backcompat-proof in case the invocation does not have an instantiated adapter on it
     adapter: BaseAdapter | None = getattr(dbt_cli_invocation, "adapter", None)
@@ -197,6 +202,8 @@ def dbt_with_bigquery_insights(
                     total_slot_ms AS slots_ms
                     FROM `{project}`.`region-{location.lower()}`.INFORMATION_SCHEMA.JOBS
                     WHERE query like '%{invocation_id}%'
+                    AND creation_time >= TIMESTAMP('{format_bigquery_timestamp(creation_time_lower_bound)}')
+                    AND creation_time <= TIMESTAMP('{format_bigquery_timestamp(creation_time_upper_bound)}')
                 """
             )
             for row in query_result:
