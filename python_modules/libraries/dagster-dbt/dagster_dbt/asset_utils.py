@@ -5,7 +5,7 @@ import tempfile
 import textwrap
 from argparse import ArgumentParser
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final  # noqa: UP035
 
@@ -31,8 +31,10 @@ from dagster import (
     define_asset_job,
     get_dagster_logger,
 )
+from dagster._annotations import beta_param
 from dagster._core.definitions.assets.definition.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
-from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.definitions.metadata import RawMetadataMapping, TableMetadataSet
+from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
@@ -377,6 +379,7 @@ def build_dbt_asset_selection(
     )
 
 
+@beta_param(param="owners")
 def build_schedule_from_dbt_selection(
     dbt_assets: Sequence[AssetsDefinition],
     job_name: str,
@@ -389,6 +392,10 @@ def build_schedule_from_dbt_selection(
     config: RunConfig | None = None,
     execution_timezone: str | None = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
+    metadata: RawMetadataMapping | None = None,
+    should_execute: Callable[[ScheduleEvaluationContext], bool] | None = None,
+    description: str | None = None,
+    owners: Sequence[str] | None = None,
 ) -> ScheduleDefinition:
     """Build a schedule to materialize a specified set of dbt resources from a dbt selection string.
 
@@ -408,6 +415,19 @@ def build_schedule_from_dbt_selection(
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will
+            immediately be active when starting Dagster. The default status can be overridden from
+            the Dagster UI or via the GraphQL API.
+        metadata (Optional[Mapping[str, Any]]): A set of metadata entries that annotate the
+            schedule. Values will be normalized to typed `MetadataValue` objects.
+        should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that
+            runs at schedule execution time to determine whether a schedule should execute or skip.
+            Takes a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True``
+            if the schedule should execute). Defaults to a function that always returns ``True``.
+        description (Optional[str]): A human-readable description of the schedule.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the schedule.
+            Each string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
 
     Returns:
         ScheduleDefinition: A definition to materialize the selected dbt resources on a cron schedule.
@@ -444,6 +464,10 @@ def build_schedule_from_dbt_selection(
         ),
         execution_timezone=execution_timezone,
         default_status=default_status,
+        metadata=metadata,
+        should_execute=should_execute,
+        description=description,
+        owners=owners,
     )
 
 
