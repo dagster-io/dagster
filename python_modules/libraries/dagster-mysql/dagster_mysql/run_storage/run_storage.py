@@ -91,7 +91,11 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self,
+        statement_timeout: int,
+        pool_recycle: int,
+        max_overflow: int,
+        pool_pre_ping: bool = True,
     ) -> None:
         # When running in dagster-webserver, hold 1 open connection
         # https://github.com/dagster-io/dagster/issues/3719
@@ -101,6 +105,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             pool_size=1,
             pool_recycle=pool_recycle,
             max_overflow=max_overflow,
+            pool_pre_ping=pool_pre_ping,
         )
 
     @property
