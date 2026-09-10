@@ -129,6 +129,17 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     default=None,
     type=click.INT,
 )
+@click.option(
+    "--db-pool-size",
+    help=(
+        "The number of connections to keep open in the sqlalchemy QueuePool. Note that 0 means "
+        "*no limit* (unlimited persistent connections), not disabled. To drop persistent "
+        "connections for pgBouncer transaction-mode pooling, set pool_mode: transaction in the "
+        "postgres storage config instead (uses a NullPool)."
+    ),
+    default=None,
+    type=click.INT,
+)
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
@@ -150,6 +161,7 @@ def dev_command(
     db_statement_timeout: int | None,
     db_pool_recycle: int | None,
     db_pool_max_overflow: int | None,
+    db_pool_size: int | None,
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -169,6 +181,7 @@ def dev_command(
         db_statement_timeout=db_statement_timeout,
         db_pool_recycle=db_pool_recycle,
         db_pool_max_overflow=db_pool_max_overflow,
+        db_pool_size=db_pool_size,
     )
 
 
@@ -186,6 +199,7 @@ def dev_command_impl(
     db_statement_timeout: int | None = None,
     db_pool_recycle: int | None = None,
     db_pool_max_overflow: int | None = None,
+    db_pool_size: int | None = None,
 ) -> None:
     # check if dagster-webserver installed, crash if not
     try:
@@ -267,6 +281,7 @@ def dev_command_impl(
                     if db_pool_max_overflow is not None
                     else []
                 )
+                + (["--db-pool-size", str(db_pool_size)] if db_pool_size is not None else [])
                 + ["--shutdown-pipe", str(webserver_read_fd)]
                 + args,
                 pass_fds=[webserver_read_fd],

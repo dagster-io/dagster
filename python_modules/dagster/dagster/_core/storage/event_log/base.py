@@ -330,7 +330,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Explicit lifecycle management."""
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int, pool_size: int = 1
     ) -> None:
         """Allows for optimizing database connection / use in the context of a long lived webserver process."""
 

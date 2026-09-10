@@ -36,6 +36,10 @@ class PostgresStorageConfig(TypedDict, total=False):
     postgres_url: str
     postgres_db: "PostgresStorageConfigDb"
     auth_provider: dict[str, object]
+    pool_size: int
+    max_overflow: int
+    pool_recycle: int
+    pool_mode: str
 
 
 class PostgresStorageConfigDb(TypedDict, total=False):
@@ -85,5 +89,9 @@ def pg_config() -> UserConfigSchema:
             ),
             is_required=False,
         ),
+        "pool_size": Field(IntSource, is_required=False),
+        "max_overflow": Field(IntSource, is_required=False),
+        "pool_recycle": Field(IntSource, is_required=False),
+        "pool_mode": Field(StringSource, is_required=False),
         "should_autocreate_tables": Field(bool, is_required=False, default_value=True),
     }
