@@ -48,3 +48,4 @@ def test_basic(project: DbtProject, fail: bool) -> None:
     else:
         assert n_materializations == n_assets
         assert n_check_evaluations == n_checks
+        assert all(check_evaluation.passed for check_evaluation in result.get_asset_check_evaluations())
