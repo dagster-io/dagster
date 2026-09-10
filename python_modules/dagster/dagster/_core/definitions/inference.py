@@ -5,7 +5,7 @@ from typing import Any
 from dagster_shared.record import record
 from docstring_parser import parse
 
-from dagster._core.decorator_utils import get_type_hints
+from dagster._core.decorator_utils import get_function_params, get_type_hints
 from dagster._core.definitions.utils import NoValueSentinel
 
 
@@ -103,8 +103,7 @@ def _infer_inputs_from_params(
 def infer_input_props(
     fn: Callable[..., Any], context_arg_provided: bool
 ) -> Sequence[InferredInputProps]:
-    sig = signature(fn)
-    params = list(sig.parameters.values())
+    params = list(get_function_params(fn))
     type_hints = get_type_hints(fn)
     descriptions = _infer_input_description_from_docstring(fn)
     params_to_infer = params[1:] if context_arg_provided else params
