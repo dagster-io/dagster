@@ -12,6 +12,7 @@ from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     ReadinessProbeWithEnabled,
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
+    UserDeploymentPodDisruptionBudget,
     UserDeployments,
 )
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
@@ -46,6 +47,16 @@ def subchart_helm_template() -> HelmTemplate:
         subchart_paths=[],
         output="templates/deployment-user.yaml",
         model=models.V1Deployment,
+    )
+
+
+@pytest.fixture(name="pdb_template")
+def pdb_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="charts/dagster-user-deployments/templates/pdb-user.yaml",
+        model=models.V1PodDisruptionBudget,
     )
 
 
@@ -1959,3 +1970,172 @@ def test_include_instance(subchart_template: HelmTemplate, include_instance: boo
         )
     else:
         assert "dagster-instance" not in volume_names
+
+
+def test_user_deployment_topology_spread_constraints(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.topologySpreadConstraints = kubernetes.TopologySpreadConstraints.parse_obj(
+        [
+            {
+                "maxSkew": 1,
+                "topologyKey": "topology.kubernetes.io/zone",
+                "whenUnsatisfiable": "ScheduleAnyway",
+                "labelSelector": {"matchLabels": {"deployment": "foo"}},
+            }
+        ]
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    constraints = dagster_user_deployment.spec.template.spec.topology_spread_constraints
+    assert len(constraints) == 1
+    assert constraints[0].max_skew == 1
+    assert constraints[0].topology_key == "topology.kubernetes.io/zone"
+    assert constraints[0].when_unsatisfiable == "ScheduleAnyway"
+    assert constraints[0].label_selector.match_labels == {"deployment": "foo"}
+
+
+def test_user_deployment_no_topology_spread_constraints(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[create_simple_user_deployment("foo")]
+        )
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    assert dagster_user_deployment.spec.template.spec.topology_spread_constraints is None
+
+
+def _create_user_deployment_with_pdb(
+    name: str, pdb: UserDeploymentPodDisruptionBudget
+) -> UserDeployment:
+    deployment = create_simple_user_deployment(name)
+    deployment.podDisruptionBudget = pdb
+    return deployment
+
+
+def test_user_deployment_pod_disruption_budget_max_unavailable(pdb_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[
+                _create_user_deployment_with_pdb(
+                    "foo",
+                    UserDeploymentPodDisruptionBudget.construct(enabled=True, maxUnavailable=1),
+                )
+            ]
+        )
+    )
+
+    [pdb] = pdb_template.render(helm_values)
+
+    assert pdb.metadata.name == "release-name-dagster-user-deployments-foo"
+    assert pdb.spec.max_unavailable == 1
+    assert pdb.spec.min_available is None
+    assert pdb.spec.selector.match_labels == {
+        "app.kubernetes.io/name": "dagster-user-deployments",
+        "app.kubernetes.io/instance": "release-name",
+        "component": "user-deployments",
+        "deployment": "foo",
+    }
+
+
+def test_user_deployment_pod_disruption_budget_min_available(pdb_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[
+                _create_user_deployment_with_pdb(
+                    "foo",
+                    UserDeploymentPodDisruptionBudget.construct(
+                        enabled=True,
+                        minAvailable="50%",
+                        unhealthyPodEvictionPolicy="AlwaysAllow",
+                    ),
+                )
+            ]
+        )
+    )
+
+    [pdb] = pdb_template.render(helm_values)
+
+    assert pdb.spec.min_available == "50%"
+    assert pdb.spec.max_unavailable is None
+    assert pdb.spec.unhealthy_pod_eviction_policy == "AlwaysAllow"
+
+
+def test_user_deployment_pod_disruption_budget_multiple_deployments(pdb_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[
+                _create_user_deployment_with_pdb(
+                    "foo",
+                    UserDeploymentPodDisruptionBudget.construct(enabled=True, maxUnavailable=1),
+                ),
+                create_simple_user_deployment("bar"),
+                _create_user_deployment_with_pdb(
+                    "baz", UserDeploymentPodDisruptionBudget.construct(enabled=True, minAvailable=1)
+                ),
+            ]
+        )
+    )
+
+    pdbs = pdb_template.render(helm_values)
+
+    assert len(pdbs) == 2
+    assert [pdb.spec.selector.match_labels["deployment"] for pdb in pdbs] == ["foo", "baz"]
+
+
+def test_user_deployment_pod_disruption_budget_disabled(full_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[
+                _create_user_deployment_with_pdb(
+                    "foo",
+                    UserDeploymentPodDisruptionBudget.construct(enabled=False, maxUnavailable=1),
+                ),
+                create_simple_user_deployment("bar"),
+            ]
+        )
+    )
+
+    k8s_objects = full_template.render(helm_values)
+
+    assert not [obj for obj in k8s_objects if obj["kind"] == "PodDisruptionBudget"]
+
+
+def test_user_deployment_pod_disruption_budget_min_available_and_max_unavailable_fails(
+    pdb_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[
+                _create_user_deployment_with_pdb(
+                    "foo",
+                    UserDeploymentPodDisruptionBudget.construct(
+                        enabled=True, minAvailable=1, maxUnavailable=1
+                    ),
+                )
+            ]
+        )
+    )
+
+    with pytest.raises(subprocess.CalledProcessError):
+        pdb_template.render(helm_values)
+
+
+def test_user_deployment_pod_disruption_budget_no_budget_fails(pdb_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[
+                _create_user_deployment_with_pdb(
+                    "foo", UserDeploymentPodDisruptionBudget.construct(enabled=True)
+                )
+            ]
+        )
+    )
+
+    with pytest.raises(subprocess.CalledProcessError):
+        pdb_template.render(helm_values)
