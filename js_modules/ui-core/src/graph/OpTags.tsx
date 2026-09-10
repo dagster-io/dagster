@@ -1113,6 +1113,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   prefect: {
     icon: prefect,
     content: 'Prefect',
+    blackAndWhite: true,
   },
   pydantic: {
     icon: pydantic,
