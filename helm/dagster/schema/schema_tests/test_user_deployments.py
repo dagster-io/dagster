@@ -1959,3 +1959,123 @@ def test_include_instance(subchart_template: HelmTemplate, include_instance: boo
         )
     else:
         assert "dagster-instance" not in volume_names
+
+
+@pytest.fixture(name="service_template")
+def service_helm_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="charts/dagster-user-deployments/templates/service-user.yaml",
+        model=models.V1Service,
+    )
+
+
+def _map_helm_values(deployments: dict[str, UserDeployment]) -> DagsterHelmValues:
+    return DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=deployments,
+        )
+    )
+
+
+def test_deployments_map_render(template: HelmTemplate):
+    # deployments provided as a name-keyed map; the key becomes each deployment's name.
+    deployments = {
+        "deployment-one": create_simple_user_deployment("deployment-one"),
+        "deployment-two": create_complex_user_deployment("deployment-two"),
+    }
+    user_deployments = template.render(_map_helm_values(deployments))
+
+    assert len(user_deployments) == len(deployments)
+
+    # Helm ranges maps in sorted-key order.
+    for user_deployment, name in zip(user_deployments, sorted(deployments)):
+        assert user_deployment.metadata.name.endswith(name)
+        assert user_deployment.metadata.labels["deployment"] == name
+        assert user_deployment.spec.template.metadata.labels["deployment"] == name
+
+
+def test_deployments_map_matches_list(template: HelmTemplate):
+    # The same deployment expressed as a single-entry list vs a single-entry map should
+    # render an identical Deployment (including the config checksum annotation).
+    list_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[create_complex_user_deployment("deployment-one")],
+        )
+    )
+    map_values = _map_helm_values(
+        {"deployment-one": create_complex_user_deployment("deployment-one")}
+    )
+
+    [from_list] = template.render(list_values)
+    [from_map] = template.render(map_values)
+
+    assert template.api_client.sanitize_for_serialization(
+        from_list
+    ) == template.api_client.sanitize_for_serialization(from_map)
+
+
+def test_deployments_map_key_wins_over_name(template: HelmTemplate):
+    # When both a map key and an entry-level `name` are present, the key is authoritative.
+    deployment = create_simple_user_deployment("ignored-name")
+    user_deployments = template.render(_map_helm_values({"key-name": deployment}))
+
+    [user_deployment] = user_deployments
+    assert user_deployment.metadata.name.endswith("key-name")
+    assert user_deployment.metadata.labels["deployment"] == "key-name"
+
+
+def test_deployments_map_service(service_template: HelmTemplate):
+    deployments = {
+        "deployment-one": create_simple_user_deployment("deployment-one"),
+        "deployment-two": create_simple_user_deployment("deployment-two"),
+    }
+    services = service_template.render(_map_helm_values(deployments))
+
+    assert len(services) == len(deployments)
+    for service, name in zip(services, sorted(deployments)):
+        assert service.metadata.name == name
+        assert service.spec.selector["deployment"] == name
+
+
+def test_deployments_map_configmap_env(user_deployment_configmap_template: HelmTemplate):
+    deployment = UserDeployment(
+        image=kubernetes.Image(repository="repo/a", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "a"],
+        port=3030,
+        env={"FOO": "bar"},
+    )
+    configmaps = user_deployment_configmap_template.render(_map_helm_values({"code-a": deployment}))
+
+    [configmap] = configmaps
+    assert configmap.metadata.name.endswith("-code-a-user-env")
+    assert configmap.data["FOO"] == "bar"
+
+
+def test_deployments_list_missing_name_fails(template: HelmTemplate, capfd):
+    # A list entry without a name is invalid (only the map form can omit it). The schema
+    # requires `name` for the array branch, so this fails at values-validation time; the
+    # template also guards it as a backstop when schema validation is skipped.
+    nameless = UserDeployment.construct(
+        image=kubernetes.Image(repository="repo/x", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "x"],
+        port=3030,
+    )
+    with pytest.raises(subprocess.CalledProcessError):
+        template.render(
+            DagsterHelmValues.construct(
+                dagsterUserDeployments=UserDeployments.construct(
+                    enabled=True,
+                    enableSubchart=True,
+                    deployments=[nameless],
+                )
+            )
+        )
+
+    _, err = capfd.readouterr()
+    assert "name is required" in err

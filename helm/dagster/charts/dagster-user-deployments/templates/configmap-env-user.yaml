@@ -1,4 +1,4 @@
-{{ range $deployment := .Values.deployments }}
+{{ range $deployment := (include "dagsterUserDeployments.deploymentsList" .Values.deployments | fromYamlArray) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
