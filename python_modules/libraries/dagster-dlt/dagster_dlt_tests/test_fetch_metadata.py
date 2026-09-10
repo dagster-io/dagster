@@ -127,3 +127,26 @@ def test_fetch_row_count_failure(dlt_pipeline: Pipeline):
             for asset_materialization in asset_materializations
         ]
         assert not any(["dagster/row_count" in metadata for metadata in metadatas]), str(metadatas)
+
+
+def test_extract_resource_metadata_does_not_mutate_dlt_schema(dlt_pipeline: Pipeline) -> None:
+    """Regression test for #34052: extracting table schema metadata must not pop keys
+    off the live dlt schema, or downstream runs re-derive columns from data and
+    `dataset()` sees them as incomplete.
+    """
+    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline)
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context)
+
+    res = materialize(
+        [example_pipeline_assets],
+        resources={"dlt_pipeline_resource": DagsterDltResource()},
+    )
+    assert res.success
+
+    repos = dlt_pipeline.default_schema.get_table("repos")
+    for col_name, column in repos["columns"].items():
+        assert column.get("name") == col_name, f"column {col_name} lost its inner name"
+        assert "data_type" in column, f"column {col_name} lost its data_type"
