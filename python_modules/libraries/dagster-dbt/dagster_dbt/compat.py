@@ -95,6 +95,8 @@ else:
             PartialSuccess = "partial success"
             Pass = "pass"
             RuntimeErr = "runtime error"
+            NoOp = "no-op"
+            Reused = "reused"
 
         class TestStatus(StrEnum):
             Pass = NodeStatus.Pass
@@ -103,5 +105,11 @@ else:
             Warn = NodeStatus.Warn
             Skipped = NodeStatus.Skipped
 
+
+# The statuses a refable node (model, seed, snapshot) can end on without having failed. `no-op`
+# (dbt 1.10+) and `reused` (dbt 1.12+) are terminal, non-error statuses meaning dbt deliberately
+# did not rebuild the node, so downstream nodes are free to run. Neither is a member of
+# `NodeStatus` on every dbt version dagster-dbt supports, hence the string literals.
+SUCCESSFUL_NODE_STATUSES: frozenset[str] = frozenset({"success", "no-op", "reused"})
 
 logging.getLogger().handlers = existing_root_logger_handlers

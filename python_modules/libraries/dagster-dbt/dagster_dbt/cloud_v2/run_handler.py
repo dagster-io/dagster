@@ -20,7 +20,7 @@ from requests.exceptions import RequestException
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudRun
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import REFABLE_NODE_TYPES, SUCCESSFUL_NODE_STATUSES, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
@@ -189,12 +189,13 @@ class DbtCloudJobRunResults:
 
             if (
                 resource_type in REFABLE_NODE_TYPES
-                and result_status == NodeStatus.Success
+                and result_status in SUCCESSFUL_NODE_STATUSES
                 and not is_ephemeral
             ):
                 spec = asset_specs[0]
                 metadata = {
                     **default_metadata,
+                    "status": result_status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
                         get_completed_at_timestamp(result=result)
                     ),
