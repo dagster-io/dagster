@@ -1,6 +1,9 @@
 from dagster._core.definitions.partitions.mapping.all import (
     AllPartitionMapping as AllPartitionMapping,
 )
+from dagster._core.definitions.partitions.mapping.dynamic import (
+    DynamicPartitionMapping as DynamicPartitionMapping,
+)
 from dagster._core.definitions.partitions.mapping.identity import (
     IdentityPartitionMapping as IdentityPartitionMapping,
 )
