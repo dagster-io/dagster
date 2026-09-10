@@ -284,3 +284,132 @@ def test_log_handler_emit_by_handlers_level():
 
     for k, v in test_extra.items():
         assert getattr(captured_record, k) == v
+
+
+def test_log_handler_extra_context_captured_in_metadata():
+    """Regression test for https://github.com/dagster-io/dagster/issues/29443.
+
+    When using context.log.info(msg, extra={...}), the extra dict was silently dropped.
+    It should be captured in dagster_meta['dagster_user_metadata'] and included in EventLogEntry.
+    """
+
+    class MockCaptureHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__()
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = MockCaptureHandler()
+
+    test_extra = {"foo": 1, "bar": "baz"}
+
+    with user_code_error_boundary(
+        dg.DagsterUserCodeExecutionError,
+        lambda: "Some Error Message",
+        log_manager=dg.DagsterLogManager(
+            dagster_handler=DagsterLogHandler(
+                metadata=_construct_log_handler_metadata(
+                    run_id="123456", job_name="job", step_key="some_step"
+                ),
+                loggers=[],
+                handlers=[capture_handler],
+            ),
+            managed_loggers=[logging.getLogger("python_log")],
+        ),
+    ):
+        python_log = logging.getLogger("python_log")
+        python_log.setLevel(logging.INFO)
+        python_log.info("test message", extra=test_extra)
+
+    assert len(capture_handler.captured) == 1
+    captured_record = capture_handler.captured[0]
+
+    # The extra dict should appear in dagster_meta as dagster_user_metadata
+    assert captured_record.dagster_meta.get("dagster_user_metadata") == test_extra
+
+    # Also verify it round-trips through construct_event_record
+    from dagster._core.events.log import construct_event_record
+    from dagster._utils.log import StructuredLoggerMessage
+
+    # Simulate what StructuredLoggerHandler does: creates a StructuredLoggerMessage
+    # from the captured record
+    logger_message = StructuredLoggerMessage(
+        name=captured_record.name,
+        message=captured_record.msg,
+        level=captured_record.levelno,
+        meta=captured_record.dagster_meta,
+        record=captured_record,
+    )
+    event_record = construct_event_record(logger_message)
+
+    # The extra context should be present in the EventLogEntry
+    assert event_record.dagster_user_metadata == test_extra
+
+
+def test_log_handler_excludes_internal_attrs_from_user_metadata():
+    """When logging a DagsterEvent (which injects dagster_event and dagster_event_batch_metadata
+    into the LogRecord via extra), those internal attrs must NOT leak into
+    dagster_user_metadata, or serialization of EventLogEntry will fail with a
+    SerializationError because DagsterEvent objects are not JSON-serializable.
+    """
+
+    class MockCaptureHandler(logging.Handler):
+        def __init__(self):
+            self.captured = []
+            super().__init__()
+
+        def emit(self, record):
+            self.captured.append(record)
+
+    capture_handler = MockCaptureHandler()
+
+    step_output_event = dg.DagsterEvent(
+        event_type_value="STEP_OUTPUT",
+        job_name="my_job",
+        step_key="op2",
+        node_handle=NodeHandle("op2", None),
+        step_kind_value="COMPUTE",
+        logging_tags={},
+        event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("op2", "result")),
+        message='Yielded output "result"',
+        pid=54348,
+    )
+
+    log_manager = dg.DagsterLogManager(
+        dagster_handler=DagsterLogHandler(
+            metadata=_construct_log_handler_metadata(
+                run_id="123456", job_name="job", step_key="some_step"
+            ),
+            loggers=[],
+            handlers=[capture_handler],
+        ),
+        managed_loggers=[],
+    )
+    log_manager.log_dagster_event(
+        level="info", msg="test event message", dagster_event=step_output_event
+    )
+
+    assert len(capture_handler.captured) >= 1
+    captured_record = capture_handler.captured[0]
+
+    # dagster_user_metadata should not contain internal dagster attrs
+    user_meta = captured_record.dagster_meta.get("dagster_user_metadata")
+    assert user_meta is None or "dagster_event" not in user_meta
+    assert user_meta is None or "dagster_event_batch_metadata" not in user_meta
+
+    # EventLogEntry should be serializable without error
+    from dagster._core.events.log import construct_event_record
+    from dagster._utils.log import StructuredLoggerMessage
+
+    logger_message = StructuredLoggerMessage(
+        name=captured_record.name,
+        message=captured_record.msg,
+        level=captured_record.levelno,
+        meta=captured_record.dagster_meta,
+        record=captured_record,
+    )
+    event_record = construct_event_record(logger_message)
+    # Should not raise SerializationError
+    event_record.to_json()
