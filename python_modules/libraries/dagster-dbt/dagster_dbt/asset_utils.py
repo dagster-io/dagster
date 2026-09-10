@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import shutil
 import tempfile
 import textwrap
@@ -1045,6 +1046,67 @@ def has_self_dependency(dbt_resource_props: Mapping[str, Any]) -> bool:
     return has_self_dependency
 
 
+def _resolve_ref_expr_to_upstream_unique_id(
+    manifest: Mapping[str, Any],
+    ref_expr: str,
+    upstream_unique_ids: AbstractSet[str],
+) -> str | None:
+    """Resolve a dbt ``ref(...)`` or ``source(...)`` expression string to the matching upstream
+    node's unique id, if present. The search is restricted to the test's upstream nodes to avoid
+    ambiguity, since the anchor node is always one of the test's dependencies.
+    """
+    if source_match := re.search(
+        r"source\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]",
+        ref_expr,
+    ):
+        source_name, table_name = source_match.group(1), source_match.group(2)
+        for unique_id in upstream_unique_ids:
+            dbt_resource_props = get_node(manifest, unique_id)
+            if (
+                dbt_resource_props["resource_type"] == "source"
+                and dbt_resource_props["source_name"] == source_name
+                and dbt_resource_props["name"] == table_name
+            ):
+                return unique_id
+        return None
+
+    if ref_match := re.search(
+        r"ref\(\s*(?:['\"]([^'\"]+)['\"]\s*,\s*)?['\"]([^'\"]+)['\"]",
+        ref_expr,
+    ):
+        ref_package, ref_name = ref_match.group(1), ref_match.group(2)
+        for unique_id in upstream_unique_ids:
+            dbt_resource_props = get_node(manifest, unique_id)
+            if (
+                dbt_resource_props["resource_type"] != "source"
+                and dbt_resource_props["name"] == ref_name
+                and (ref_package is None or dbt_resource_props["package_name"] == ref_package)
+            ):
+                return unique_id
+
+    return None
+
+
+def _get_attached_node_for_multi_dependency_test(
+    manifest: Mapping[str, Any],
+    test_resource_props: Mapping[str, Any],
+    upstream_unique_ids: AbstractSet[str],
+) -> str | None:
+    """Infer the anchor node that a multi-dependency generic test (e.g. a ``relationships`` test)
+    is defined on.
+
+    dbt attaches most generic tests to a node via ``attached_node``, but source tests are left
+    with ``attached_node = None``. dbt still records the anchor node the test is defined on in the
+    ``model`` kwarg of the test metadata (e.g. ``{{ get_where_subquery(source('my_source', 'foo'))
+    }}``), which we resolve against the test's upstream nodes.
+    """
+    kwargs = (test_resource_props.get("test_metadata") or {}).get("kwargs") or {}
+    if not (model_expr := kwargs.get("model")):
+        return None
+
+    return _resolve_ref_expr_to_upstream_unique_id(manifest, model_expr, upstream_unique_ids)
+
+
 def get_asset_check_key_for_test(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
@@ -1064,8 +1126,16 @@ def get_asset_check_key_for_test(
     if len(upstream_unique_ids) == 1:
         [attached_node_unique_id] = upstream_unique_ids
 
-    # If the test is singular, but has multiple dependencies, infer the attached node from
-    # from the dbt meta.
+    # Some multi-dependency generic tests (e.g. `relationships` tests defined on a source column)
+    # are not given an `attached_node` by dbt. In that case, infer the anchor node the test is
+    # defined on from the test metadata.
+    if not attached_node_unique_id and len(upstream_unique_ids) > 1:
+        attached_node_unique_id = _get_attached_node_for_multi_dependency_test(
+            manifest, test_resource_props, upstream_unique_ids
+        )
+
+    # The `meta.dagster.ref` escape hatch allows explicitly attaching a test to a node. This is
+    # useful for singular tests with multiple dependencies, or to override the inferred anchor.
     attached_node_ref = (
         (
             test_resource_props.get("config", {}).get("meta", {})
@@ -1096,6 +1166,26 @@ def get_asset_check_key_for_test(
             ):
                 attached_node_unique_id = unique_id
                 break
+
+        # Sources are not in `manifest["nodes"]`, so search them as well. This allows the ref
+        # escape hatch to attach a test to a source, e.g. for source `relationships` tests. A
+        # source is identified by its source name and table name, so we match `package` against
+        # the source name.
+        if not attached_node_unique_id:
+            matching_source_unique_ids = [
+                unique_id
+                for unique_id, dbt_resource_props in manifest["sources"].items()
+                if dbt_resource_props["name"] == ref_name
+                and (
+                    attached_node_ref.get("package") is None
+                    or dbt_resource_props["source_name"] == ref_package
+                )
+            ]
+            # When `package` (the source name) is omitted, the table name alone may match more
+            # than one source. Only attach when the match is unambiguous, otherwise we could
+            # silently attach the check to an unrelated source asset.
+            if len(matching_source_unique_ids) == 1:
+                [attached_node_unique_id] = matching_source_unique_ids
 
     if not attached_node_unique_id:
         return None

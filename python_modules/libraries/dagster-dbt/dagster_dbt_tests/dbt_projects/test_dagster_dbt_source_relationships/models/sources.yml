@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: my_source
+    schema: main
+    tables:
+      - name: foo
+        columns:
+          - name: id
+            data_tests:
+              - not_null
+          - name: bar_id
+            # A `relationships` test defined on a source column. This is a multi-dependency
+            # test (it depends on both `foo` and `bar`) that dbt does not attach to a node, so
+            # it must be inferred as an asset check on the `foo` source.
+            data_tests:
+              - relationships:
+                  to: source('my_source', 'bar')
+                  field: id
+      - name: bar
+        columns:
+          - name: id
+            data_tests:
+              - unique

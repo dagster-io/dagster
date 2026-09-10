@@ -18,6 +18,7 @@ from dagster_dbt_tests.dbt_projects import (
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
     test_dbt_source_freshness_path,
+    test_dbt_source_relationships_path,
     test_dbt_unit_tests_path,
     test_dependencies_path,
     test_duplicate_source_asset_key_path,
@@ -108,6 +109,11 @@ def test_asset_checks_manifest_fixture() -> dict[str, Any]:
         test_asset_checks_path,
         build_project=True,
     ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_source_relationships_manifest", scope="session")
+def test_dbt_source_relationships_manifest_fixture() -> dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_source_relationships_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_asset_key_exceptions_manifest", scope="session")
