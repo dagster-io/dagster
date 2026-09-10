@@ -286,6 +286,23 @@ def test_monitor_canceling(instance: DagsterInstance, logger: Logger):
     assert run.status == DagsterRunStatus.CANCELED
 
 
+def test_run_will_resume_with_canceling_run(instance: DagsterInstance):
+    # A started run that has not exhausted its resume attempts is resumable.
+    run = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED)
+    assert instance.run_will_resume(run.run_id)
+
+    # Once the user cancels the run it is no longer resumable, so the executor knows to
+    # forward the termination signal to in-flight steps instead of leaving them running.
+    report_canceling_event(instance, run, timestamp=time.time())
+    assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELING  # type: ignore
+    assert not instance.run_will_resume(run.run_id)
+
+
+def test_run_will_resume_with_canceled_run(instance: DagsterInstance):
+    run = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.CANCELED)
+    assert not instance.run_will_resume(run.run_id)
+
+
 def test_monitor_started(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
