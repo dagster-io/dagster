@@ -67,6 +67,7 @@ export const ExecutionTimeline = (props: Props) => {
           rangeMs={rangeMs}
           annotations={annotations}
           height={runs.length > 0 ? height : 0}
+          width={Math.max(0, width - LEFT_SIDE_SPACE_ALLOTTED)}
         />
       </div>
       {runs.length ? (

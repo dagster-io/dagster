@@ -27,8 +27,10 @@ import {RowObjectType, TimelineRow, TimelineRun} from './RunTimelineTypes';
 import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import styles from './css/RunTimeline.module.css';
+import {getTimeLabelStride} from './getTimeLabelStride';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {COMMON_COLLATOR} from '../app/Util';
+import {TimeContext} from '../app/time/TimeContext';
 import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -53,6 +55,12 @@ const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
+// Includes 16px horizontal padding. With 12px Geist Mono, measured localized labels
+// reach 42.4/52px for h23 and 66.4/88px for h12; round each up to the next 8px step.
+const MIN_TIME_LABEL_SPACING = {
+  hour: {dayPeriod: 72, twentyFourHour: 48},
+  minute: {dayPeriod: 96, twentyFourHour: 56},
+};
 
 export const CONSTANTS = {
   ROW_HEIGHT,
@@ -184,7 +192,12 @@ export const RunTimeline = (props: Props) => {
         Runs
       </Box>
       <div style={{position: 'relative'}}>
-        <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyObjects ? height : 0} />
+        <TimeDividers
+          interval={ONE_HOUR_MSEC}
+          rangeMs={rangeMs}
+          height={anyObjects ? height : 0}
+          width={Math.max(0, width - LEFT_SIDE_SPACE_ALLOTTED)}
+        />
       </div>
       {repoOrder.length ? (
         <div style={{overflow: 'hidden', position: 'relative'}}>
@@ -343,12 +356,14 @@ type TimeMarker = {
   key: string;
   label: React.ReactNode;
   left: number;
+  showLabel: boolean;
 };
 
 interface TimeDividersProps {
   height: number;
   interval: number;
   rangeMs: [number, number];
+  width: number;
   annotations?: {label: string; ms: number}[];
   now?: number;
 }
@@ -376,9 +391,21 @@ const timeOnlyOptions: Intl.DateTimeFormatOptions = {
 };
 
 export const TimeDividers = (props: TimeDividersProps) => {
-  const {interval, rangeMs, annotations, height, now: _now} = props;
+  const {interval, rangeMs, width, annotations, height, now: _now} = props;
   const [start, end] = rangeMs;
   const formatDateTime = useFormatDateTime();
+  const {
+    hourCycle: [storedHourCycle],
+  } = React.useContext(TimeContext);
+  const resolvedHourCycle =
+    storedHourCycle === 'Automatic'
+      ? Intl.DateTimeFormat(navigator.language, {hour: 'numeric'}).resolvedOptions().hourCycle
+      : storedHourCycle;
+  const clockFormat =
+    resolvedHourCycle === 'h23' || resolvedHourCycle === 'h24' ? 'twentyFourHour' : 'dayPeriod';
+  const labelFormat = interval < ONE_HOUR_MSEC ? 'minute' : 'hour';
+  const minLabelSpacing = MIN_TIME_LABEL_SPACING[labelFormat][clockFormat];
+  const timeLabelStride = getTimeLabelStride({interval, minLabelSpacing, rangeMs, width});
 
   // Create a cursor date at midnight in the user's timezone, to be used when
   // generating date and time markers.
@@ -441,7 +468,7 @@ export const TimeDividers = (props: TimeDividersProps) => {
 
     // Create boundary markers, then slice off any markers that would be offscreen.
     return timeBoundaries
-      .map((intervalStart) => {
+      .map((intervalStart, index) => {
         const date = new Date(intervalStart);
         const startLeftMsec = intervalStart - start;
         const left = Math.max(0, (startLeftMsec / totalTime) * 100);
@@ -454,10 +481,11 @@ export const TimeDividers = (props: TimeDividersProps) => {
           label,
           key: date.toString(),
           left,
+          showLabel: index % timeLabelStride === 0,
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, boundaryCursor, interval, formatDateTime]);
+  }, [end, start, boundaryCursor, interval, formatDateTime, timeLabelStride]);
 
   const now = _now || Date.now();
   const msToLeft = (ms: number) => `${(((ms - start) / (end - start)) * 100).toPrecision(3)}%`;
@@ -484,15 +512,17 @@ export const TimeDividers = (props: TimeDividersProps) => {
         ))}
       </div>
       <div className={styles.dividerLabels}>
-        {timeMarkers.map((marker) => (
-          <div
-            className={styles.timeLabel}
-            key={marker.key}
-            style={{left: `${marker.left.toPrecision(3)}%`}}
-          >
-            {marker.label}
-          </div>
-        ))}
+        {timeMarkers
+          .filter((marker) => marker.showLabel)
+          .map((marker) => (
+            <div
+              className={styles.timeLabel}
+              key={marker.key}
+              style={{left: `${marker.left.toPrecision(3)}%`}}
+            >
+              {marker.label}
+            </div>
+          ))}
       </div>
       <div className={styles.dividerLines}>
         <div

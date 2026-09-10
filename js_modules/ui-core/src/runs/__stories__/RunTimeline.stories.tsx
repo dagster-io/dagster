@@ -1,7 +1,9 @@
 import faker from 'faker';
 import {useMemo} from 'react';
 
+import {TimeContext, type TimeContextValue} from '../../app/time/TimeContext';
 import {RunStatus} from '../../graphql/types';
+import {ExecutionTimeline} from '../../instance/backfill/ExecutionTimeline';
 import {RunTimeline} from '../../runs/RunTimeline';
 import {generateRunMocks} from '../../testing/generateRunMocks';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
@@ -37,6 +39,51 @@ export const OneRow = () => {
 
   return <RunTimeline rows={rows} rangeMs={[sixHoursAgo, now]} />;
 };
+
+export const NarrowTwentyFourHourRange = () => {
+  const twentyFourHoursAgo = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, []);
+  const oneHourFromNow = useMemo(() => Date.now() + 60 * 60 * 1000, []);
+
+  return (
+    <div style={{width: '100%', maxWidth: 700}}>
+      <RunTimeline rows={[]} rangeMs={[twentyFourHoursAgo, oneHourFromNow]} />
+    </div>
+  );
+};
+
+const SUB_HOUR_RANGE_START = Date.UTC(2026, 7, 22, 8);
+const SUB_HOUR_RANGE_END = SUB_HOUR_RANGE_START + 4 * 60 * 60 * 1000;
+
+const timeContextValue = (hourCycle: 'h12' | 'h23') =>
+  ({
+    timezone: ['UTC', () => 'UTC', () => {}],
+    resolvedTimezone: 'UTC',
+    hourCycle: [hourCycle, () => hourCycle, () => {}],
+  }) as TimeContextValue;
+
+const NarrowSubHourExecutionTimeline = ({hourCycle}: {hourCycle: 'h12' | 'h23'}) => (
+  <TimeContext.Provider value={timeContextValue(hourCycle)}>
+    <div style={{width: '100%', maxWidth: 700}}>
+      <ExecutionTimeline
+        runs={[]}
+        rangeMs={[SUB_HOUR_RANGE_START, SUB_HOUR_RANGE_END]}
+        annotations={[
+          {label: 'Start', ms: SUB_HOUR_RANGE_START + 20 * 60 * 1000},
+          {label: 'End', ms: SUB_HOUR_RANGE_END - 20 * 60 * 1000},
+        ]}
+        now={SUB_HOUR_RANGE_START + 2.5 * 60 * 60 * 1000}
+      />
+    </div>
+  </TimeContext.Provider>
+);
+
+export const NarrowSubHourTwelveHourClock = () => (
+  <NarrowSubHourExecutionTimeline hourCycle="h12" />
+);
+
+export const NarrowSubHourTwentyFourHourClock = () => (
+  <NarrowSubHourExecutionTimeline hourCycle="h23" />
+);
 
 export const RowWithOverlappingRuns = () => {
   const sixHoursAgo = useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
