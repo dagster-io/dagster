@@ -13,7 +13,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
-from dagster_dbt.utils import select_unique_ids
+from dagster_dbt.utils import _build_selection_child_map, select_unique_ids
 from dagster_shared.check.functions import ParameterCheckError
 
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
@@ -486,3 +486,68 @@ def test_select_unique_ids_with_missing_child_map(
     )
 
     assert fallback == native
+
+
+@pytest.mark.parametrize(
+    ["manifest_fixture", "resource_type", "minimum_version"],
+    [
+        ("test_dbt_semantic_models_manifest", "saved_query", "1.7.0"),
+        ("test_dbt_unit_tests_manifest", "unit_test", "1.8.0"),
+        ("test_dbt_functions_manifest", "function", "1.11.0"),
+    ],
+)
+@pytest.mark.parametrize("child_map", [None, {}], ids=["missing", "empty"])
+def test_select_other_resources_with_missing_child_map(
+    request: pytest.FixtureRequest,
+    manifest_fixture: str,
+    resource_type: str,
+    minimum_version: str,
+    child_map: dict[str, list[str]] | None,
+) -> None:
+    from packaging.version import Version
+
+    if DBT_PYTHON_VERSION is None or DBT_PYTHON_VERSION < Version(minimum_version):
+        pytest.skip(f"{resource_type} requires dbt {minimum_version}")
+
+    manifest = copy.deepcopy(request.getfixturevalue(manifest_fixture))
+    container = "saved_queries" if resource_type == "saved_query" else f"{resource_type}s"
+    resource_ids = set(manifest[container])
+    assert resource_ids
+
+    fallback_manifest = copy.deepcopy(manifest)
+    if child_map is None:
+        del fallback_manifest["child_map"]
+    else:
+        fallback_manifest["child_map"] = child_map
+
+    # Cover direct selection, ancestor traversal and indirect test selection.
+    selections = [f"resource_type:{resource_type}", f"+resource_type:{resource_type}", "*"]
+    if resource_type == "unit_test":
+        selections.append(" ".join(resource["model"] for resource in manifest[container].values()))
+    for selection in selections:
+        native = select_unique_ids(
+            select=selection, exclude="", selector="", project=None, manifest_json=manifest
+        )
+        assert resource_ids <= native
+        fallback = select_unique_ids(
+            select=selection, exclude="", selector="", project=None, manifest_json=fallback_manifest
+        )
+        assert fallback == native
+
+
+@pytest.mark.parametrize("container", ["functions", "saved_queries", "unit_tests"])
+def test_selection_child_map_dependencies(container: str) -> None:
+    manifest = {
+        "nodes": {"model.project.parent": {}},
+        container: {
+            "resource.project.child": {
+                "depends_on": {"nodes": ["model.project.parent", "model.project.missing"]}
+            },
+        },
+    }
+
+    # Match dbt's native child map: preserve known edges without adding unknown parents.
+    assert _build_selection_child_map(manifest) == {
+        "model.project.parent": {"resource.project.child"},
+        "resource.project.child": set(),
+    }
