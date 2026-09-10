@@ -42,6 +42,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
 from dagster._time import create_datetime, datetime_from_timestamp
 from dagster_shared import seven
+from dagster_shared.check.functions import NotImplementedCheckError, ParameterCheckError
 from dagster_test.utils.data_factory import dagster_run as create_dagster_run
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
@@ -939,6 +940,24 @@ class TestRunStorage:
                 filters=dg.RunsFilter(updated_before=record_three.update_timestamp)
             )
         ] == [two]
+
+    def test_cursor_pagination_with_non_unique_order_by_raises(self, storage):
+        """Cursor pagination on a non-unique column is undefined and must raise ParameterCheckError."""
+        assert storage
+        self._skip_in_memory(storage)
+
+        with pytest.raises(ParameterCheckError, match="requires a unique sort column"):
+            storage.get_run_records(cursor=str(uuid4()), order_by="status")
+
+    def test_cursor_pagination_with_unique_non_id_order_by_raises(self, storage):
+        """Cursor pagination on a unique non-id column is not yet implemented."""
+        assert storage
+        self._skip_in_memory(storage)
+
+        with pytest.raises(
+            NotImplementedCheckError, match="Cursor pagination for this RunsTable unique column"
+        ):
+            storage.get_run_records(cursor=str(uuid4()), order_by="run_id")
 
     def test_fetch_records_by_create_timestamp(self, storage):
         assert storage
