@@ -23,6 +23,7 @@
 import gzip
 import re
 from io import BytesIO
+from typing import NamedTuple, Optional
 from urllib.parse import urlparse
 
 import boto3
@@ -32,6 +33,40 @@ from botocore.exceptions import WaiterError
 
 from dagster_aws.emr.types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
+
+# Default configuration for failure log retrieval
+DEFAULT_STDERR_LINES = 50
+DEFAULT_STDOUT_LINES = 20
+DEFAULT_LOG_WAIT_TIMEOUT = 600  # 10 minutes
+
+
+class FailureLogConfig(NamedTuple):
+    """Configuration for log retrieval on EMR step failure.
+
+    Args:
+        retrieve_logs: Whether to retrieve logs from S3 on failure. Defaults to True.
+        stderr_lines: Number of stderr lines to include in error message. Defaults to 50.
+        stdout_lines: Number of stdout lines to include in error message. Defaults to 20.
+        wait_timeout: Seconds to wait for logs to appear in S3. Defaults to 600.
+    """
+
+    retrieve_logs: bool = True
+    stderr_lines: int = DEFAULT_STDERR_LINES
+    stdout_lines: int = DEFAULT_STDOUT_LINES
+    wait_timeout: int = DEFAULT_LOG_WAIT_TIMEOUT
+
+
+class StepFailureDiagnostics(NamedTuple):
+    """Diagnostics information for a failed EMR step."""
+
+    step_id: str
+    cluster_id: str
+    state_change_reason: str
+    stderr_excerpt: Optional[str] = None
+    stdout_excerpt: Optional[str] = None
+    logs_s3_uri: Optional[str] = None
+    error_retrieving_logs: Optional[str] = None
+
 
 # if we can't create or find our own service role, use the one
 # created by the AWS console and CLI
@@ -43,7 +78,46 @@ _FALLBACK_INSTANCE_PROFILE = "EMR_EC2_DefaultRole"
 
 
 class EmrError(Exception):
-    pass
+    """Exception raised when an EMR operation fails.
+
+    Attributes:
+        diagnostics: Optional diagnostics information for step failures.
+    """
+
+    def __init__(
+        self,
+        message: str = "EMR operation failed",
+        diagnostics: Optional[StepFailureDiagnostics] = None,
+    ) -> None:
+        self.diagnostics = diagnostics
+        if diagnostics:
+            full_message = self._build_diagnostic_message(message, diagnostics)
+        else:
+            full_message = message
+        super().__init__(full_message)
+
+    @staticmethod
+    def _build_diagnostic_message(base_message: str, diagnostics: StepFailureDiagnostics) -> str:
+        parts = [base_message]
+        parts.append(f"\n\nCluster ID: {diagnostics.cluster_id}")
+        parts.append(f"Step ID: {diagnostics.step_id}")
+
+        if diagnostics.state_change_reason:
+            parts.append(f"Reason: {diagnostics.state_change_reason}")
+
+        if diagnostics.logs_s3_uri:
+            parts.append(f"Full logs: {diagnostics.logs_s3_uri}")
+
+        if diagnostics.error_retrieving_logs:
+            parts.append(f"Note: {diagnostics.error_retrieving_logs}")
+
+        if diagnostics.stderr_excerpt:
+            parts.append(f"\n--- stderr (last lines) ---\n{diagnostics.stderr_excerpt}")
+
+        if diagnostics.stdout_excerpt:
+            parts.append(f"\n--- stdout (last lines) ---\n{diagnostics.stdout_excerpt}")
+
+        return "\n".join(parts)
 
 
 class EmrJobRunner:
@@ -53,6 +127,7 @@ class EmrJobRunner:
         check_cluster_every=30,
         aws_access_key_id=None,
         aws_secret_access_key=None,
+        failure_log_config: Optional[FailureLogConfig] = None,
     ):
         """This object encapsulates various utilities for interacting with EMR clusters and invoking
         steps (jobs) on them.
@@ -68,6 +143,8 @@ class EmrJobRunner:
                 use the default boto3 credentials chain.
             aws_secret_access_key ([type], optional): AWS secret access key. Defaults to None, which
                 will use the default boto3 credentials chain.
+            failure_log_config (FailureLogConfig, optional): Configuration for log retrieval on
+                step failure. Defaults to FailureLogConfig() which enables log retrieval.
         """
         self.region = check.str_param(region, "region")
 
@@ -77,6 +154,7 @@ class EmrJobRunner:
         self.aws_secret_access_key = check.opt_str_param(
             aws_secret_access_key, "aws_secret_access_key"
         )
+        self.failure_log_config = failure_log_config or FailureLogConfig()
 
     def make_emr_client(self):
         """Creates a boto3 EMR client. Construction is wrapped in retries in case client connection
@@ -302,13 +380,103 @@ class EmrJobRunner:
                 # was it caused by IAM roles?
                 self._check_for_missing_default_iam_roles(log, cluster)
 
-                # TODO: extract logs here to surface failure reason
-                # See: https://github.com/dagster-io/dagster/issues/1954
+        # Retrieve failure diagnostics including logs
+        diagnostics = self._retrieve_step_failure_diagnostics(
+            log, cluster_id, emr_step_id, _get_reason(step)
+        )
 
         if step_state == EmrStepState.Failed:
-            log.error(f"EMR step {emr_step_id} failed")
+            log.error(
+                f"EMR step {emr_step_id} failed",
+                extra={
+                    "emr_step_id": diagnostics.step_id,
+                    "emr_cluster_id": diagnostics.cluster_id,
+                    "state_change_reason": diagnostics.state_change_reason,
+                    "stderr_excerpt": diagnostics.stderr_excerpt,
+                    "stdout_excerpt": diagnostics.stdout_excerpt,
+                    "logs_s3_uri": diagnostics.logs_s3_uri,
+                },
+            )
 
-        raise EmrError(f"EMR step {emr_step_id} failed")
+        raise EmrError(f"EMR step {emr_step_id} failed", diagnostics=diagnostics)
+
+    def _retrieve_step_failure_diagnostics(
+        self, log, cluster_id: str, step_id: str, state_change_reason: str
+    ) -> StepFailureDiagnostics:
+        """Retrieve diagnostics information for a failed EMR step.
+
+        Args:
+            log: DagsterLogManager for logging
+            cluster_id: EMR cluster ID
+            step_id: EMR step ID
+            state_change_reason: The reason for the step state change
+
+        Returns:
+            StepFailureDiagnostics with available information
+        """
+        stderr_excerpt: Optional[str] = None
+        stdout_excerpt: Optional[str] = None
+        logs_s3_uri: Optional[str] = None
+        error_retrieving_logs: Optional[str] = None
+
+        if not self.failure_log_config.retrieve_logs:
+            return StepFailureDiagnostics(
+                step_id=step_id,
+                cluster_id=cluster_id,
+                state_change_reason=state_change_reason,
+                error_retrieving_logs="Log retrieval disabled in configuration",
+            )
+
+        try:
+            log_bucket, log_key_prefix = self.log_location_for_cluster(cluster_id)
+            logs_s3_uri = f"s3://{log_bucket}/{log_key_prefix}{cluster_id}/steps/{step_id}/"
+
+            # Calculate waiter settings from timeout
+            waiter_delay = 30
+            waiter_max_attempts = max(1, self.failure_log_config.wait_timeout // waiter_delay)
+
+            stdout_log, stderr_log = self.retrieve_logs_for_step_id(
+                log,
+                cluster_id,
+                step_id,
+                waiter_delay=waiter_delay,
+                waiter_max_attempts=waiter_max_attempts,
+            )
+
+            # Extract last N lines as excerpts
+            if stderr_log:
+                stderr_lines = stderr_log.strip().split("\n")
+                stderr_excerpt = "\n".join(stderr_lines[-self.failure_log_config.stderr_lines :])
+            if stdout_log:
+                stdout_lines = stdout_log.strip().split("\n")
+                stdout_excerpt = "\n".join(stdout_lines[-self.failure_log_config.stdout_lines :])
+
+            log.info(
+                f"Retrieved failure logs for EMR step {step_id}",
+                extra={"logs_s3_uri": logs_s3_uri},
+            )
+
+        except EmrError as e:
+            if "Log URI not specified" in str(e):
+                error_retrieving_logs = "S3 logging not enabled for this cluster"
+            else:
+                error_retrieving_logs = f"Could not retrieve logs: {e}"
+            log.warning(error_retrieving_logs)
+        except Exception as e:
+            error_retrieving_logs = f"Error retrieving logs: {e}"
+            log.warning(
+                f"Unable to retrieve EMR step logs for {step_id} on cluster {cluster_id}: {e}"
+            )
+
+        return StepFailureDiagnostics(
+            step_id=step_id,
+            cluster_id=cluster_id,
+            state_change_reason=state_change_reason,
+            stderr_excerpt=stderr_excerpt,
+            stdout_excerpt=stdout_excerpt,
+            logs_s3_uri=logs_s3_uri,
+            error_retrieving_logs=error_retrieving_logs,
+        )
 
     def _check_for_missing_default_iam_roles(self, log, cluster):
         """If cluster couldn't start due to missing IAM roles, tell user what to do."""
@@ -353,25 +521,43 @@ class EmrJobRunner:
         log_key_prefix = log_uri_parsed.path.lstrip("/")
         return log_bucket, log_key_prefix
 
-    def retrieve_logs_for_step_id(self, log, cluster_id, step_id):
+    def retrieve_logs_for_step_id(
+        self, log, cluster_id, step_id, waiter_delay=30, waiter_max_attempts=20
+    ):
         """Retrieves stdout and stderr logs for the given step ID.
 
         Args:
             log (DagsterLogManager): Log manager, for logging
             cluster_id (str): EMR cluster ID
             step_id (str): EMR step ID for the job that was submitted.
+            waiter_delay (int): How long to wait between attempts to check S3 for the log file
+            waiter_max_attempts (int): Number of attempts before giving up on waiting
 
         Returns:
             (str, str): Tuple of stdout log string contents, and stderr log string contents
         """
         check.str_param(cluster_id, "cluster_id")
         check.str_param(step_id, "step_id")
+        check.int_param(waiter_delay, "waiter_delay")
+        check.int_param(waiter_max_attempts, "waiter_max_attempts")
 
         log_bucket, log_key_prefix = self.log_location_for_cluster(cluster_id)
 
         prefix = f"{log_key_prefix}{cluster_id}/steps/{step_id}"
-        stdout_log = self.wait_for_log(log, log_bucket, f"{prefix}/stdout.gz")
-        stderr_log = self.wait_for_log(log, log_bucket, f"{prefix}/stderr.gz")
+        stdout_log = self.wait_for_log(
+            log,
+            log_bucket,
+            f"{prefix}/stdout.gz",
+            waiter_delay=waiter_delay,
+            waiter_max_attempts=waiter_max_attempts,
+        )
+        stderr_log = self.wait_for_log(
+            log,
+            log_bucket,
+            f"{prefix}/stderr.gz",
+            waiter_delay=waiter_delay,
+            waiter_max_attempts=waiter_max_attempts,
+        )
         return stdout_log, stderr_log
 
     def wait_for_log(self, log, log_bucket, log_key, waiter_delay=30, waiter_max_attempts=20):
