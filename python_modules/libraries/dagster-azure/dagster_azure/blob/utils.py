@@ -4,7 +4,7 @@ from dagster_azure._constants import DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX
 
 try:
     # Centralise Azure imports here so we only need to warn in one place
-    from azure.core.exceptions import ResourceNotFoundError
+    from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
     from azure.storage.blob import BlobLeaseClient, BlobServiceClient, generate_blob_sas
 except ImportError:
     msg = (
@@ -41,6 +41,7 @@ def create_blob_client(
 __all__ = [
     "BlobLeaseClient",
     "BlobServiceClient",
+    "ResourceExistsError",
     "ResourceNotFoundError",
     "create_blob_client",
     "generate_blob_sas",
