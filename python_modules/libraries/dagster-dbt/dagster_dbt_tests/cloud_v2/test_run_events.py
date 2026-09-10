@@ -67,3 +67,29 @@ def test_default_asset_events_from_run_results_missing_failures_key(
     # Without a `failures` count, we should not attach failed row count metadata.
     for check_eval in asset_check_evaluations:
         assert "dagster_dbt/failed_row_count" not in check_eval.metadata
+
+
+def test_default_asset_events_from_run_results_missing_materialized_key(
+    workspace: DbtCloudWorkspace, fetch_workspace_data_api_mocks: responses.RequestsMock
+):
+    manifest = copy.deepcopy(dict(workspace.get_or_fetch_workspace_data().manifest))
+    for node in manifest["nodes"].values():
+        if node["resource_type"] == "seed":
+            node["config"].pop("materialized")
+
+    run_results = DbtCloudJobRunResults.from_run_results_json(
+        run_results_json=get_sample_run_results_json()
+    )
+
+    events = list(
+        run_results.to_default_asset_events(
+            client=workspace.get_client(),
+            manifest=manifest,
+        )
+    )
+
+    asset_materializations = [event for event in events if isinstance(event, AssetMaterialization)]
+    asset_check_evaluations = [event for event in events if isinstance(event, AssetCheckEvaluation)]
+
+    assert len(asset_materializations) == 8
+    assert len(asset_check_evaluations) == 20
