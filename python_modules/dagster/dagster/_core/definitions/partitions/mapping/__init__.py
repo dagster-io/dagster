@@ -28,5 +28,6 @@ from dagster._core.definitions.partitions.mapping.static import (
     StaticPartitionMapping as StaticPartitionMapping,
 )
 from dagster._core.definitions.partitions.mapping.time_window import (
+    LatestOverlappingTimeWindowPartitionMapping as LatestOverlappingTimeWindowPartitionMapping,
     TimeWindowPartitionMapping as TimeWindowPartitionMapping,
 )
