@@ -951,6 +951,84 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         assert run.run_id in str(override["command"])
 
 
+def test_launching_picks_latest_task_definition_revision(
+    ecs, instance_cm, workspace, job, remote_job
+):
+    """Family configs resolve to the latest active revision at each launch, without recreating
+    the launcher. Revision-pinned ARNs keep launching that exact revision.
+    """
+    container_name = "override_container"
+
+    revision_1 = ecs.register_task_definition(
+        family="override",
+        containerDefinitions=[{"name": container_name, "image": "hello:v1"}],
+        networkMode="bridge",
+        memory="512",
+        cpu="256",
+    )["taskDefinition"]
+    revision_1_arn = revision_1["taskDefinitionArn"]
+
+    with instance_cm({"task_definition": "override", "container_name": container_name}) as instance:
+        assert instance.run_launcher.task_definition == revision_1_arn
+
+        run_1 = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+        initial_tasks = ecs.list_tasks()["taskArns"]
+        instance.launch_run(run_1.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        assert task["taskDefinitionArn"] == revision_1_arn
+
+        # Register a new revision of the same family while the launcher stays alive
+        revision_2 = ecs.register_task_definition(
+            family="override",
+            containerDefinitions=[{"name": container_name, "image": "hello:v2"}],
+            networkMode="bridge",
+            memory="512",
+            cpu="256",
+        )["taskDefinition"]
+        revision_2_arn = revision_2["taskDefinitionArn"]
+        assert revision_2_arn != revision_1_arn
+        assert instance.run_launcher.task_definition == revision_2_arn
+
+        run_2 = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+        tasks_before_second_launch = ecs.list_tasks()["taskArns"]
+        instance.launch_run(run_2.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+        task_arn = next(iter(set(tasks).difference(tasks_before_second_launch)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        assert task["taskDefinitionArn"] == revision_2_arn
+
+    # A revision-pinned ARN keeps launching that exact revision even after a newer one exists
+    with instance_cm(
+        {"task_definition": revision_1_arn, "container_name": container_name}
+    ) as instance:
+        assert instance.run_launcher.task_definition == revision_1_arn
+
+        run_3 = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+        tasks_before_pinned_launch = ecs.list_tasks()["taskArns"]
+        instance.launch_run(run_3.run_id, workspace)
+
+        tasks = ecs.list_tasks()["taskArns"]
+        task_arn = next(iter(set(tasks).difference(tasks_before_pinned_launch)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        assert task["taskDefinitionArn"] == revision_1_arn
+
+
 def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
     initial_tasks = ecs.list_tasks()["taskArns"]
 

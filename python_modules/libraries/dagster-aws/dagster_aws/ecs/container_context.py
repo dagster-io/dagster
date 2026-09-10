@@ -348,7 +348,8 @@ class EcsContainerContext(
                     secrets=run_launcher.secrets,
                     secrets_tags=run_launcher.secrets_tags,
                     env_vars=run_launcher.env_vars,
-                    task_definition_arn=run_launcher.task_definition,  # run launcher converts this from short name to ARN in constructor
+                    # Resolves family → latest active revision ARN at access time
+                    task_definition_arn=run_launcher.task_definition,
                     run_resources=run_launcher.run_resources,
                     task_role_arn=run_launcher.task_role_arn,
                     execution_role_arn=run_launcher.execution_role_arn,
