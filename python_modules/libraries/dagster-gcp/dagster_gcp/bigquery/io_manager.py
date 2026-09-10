@@ -290,6 +290,24 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
                     )
                 }
             )
+
+        When using Pandas DataFrames, column names are uppercased before loading into BigQuery
+        and lowercased back on read by default. This is purely a historical default kept for
+        backwards compatibility with existing tables/pipelines -- BigQuery itself does not
+        require uppercase column names. Set ``uppercase_column_names=False`` to turn this off
+        and preserve the original casing of DataFrame column names on both write and read.
+
+        .. code-block:: python
+
+            defs = Definitions(
+                assets=[my_table],
+                resources={
+                    "io_manager": BigQueryIOManager(
+                        project=EnvVar("GCP_PROJECT"),
+                        uppercase_column_names=False,  # preserve DataFrame column casing as-is
+                    )
+                }
+            )
     """
 
     project: str = Field(description="The GCP project to use.")
@@ -335,6 +353,17 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     write_mode: BigQueryWriteMode = Field(
         default=BigQueryWriteMode.TRUNCATE,
         description="Write mode to use for non-partitioned table cleanup: truncate, append, or replace.",
+    )
+    uppercase_column_names: bool = Field(
+        default=True,
+        description=(
+            "When using Pandas DataFrames, whether to uppercase column names before loading "
+            "into BigQuery, and lowercase them back on read. BigQuery does not require "
+            "uppercase column names; this defaults to True only for backwards compatibility "
+            "with existing tables and pipelines that already rely on this behavior. Set to "
+            "False to disable uppercasing and preserve the original casing of DataFrame "
+            "column names on both write and read."
+        ),
     )
 
     @staticmethod

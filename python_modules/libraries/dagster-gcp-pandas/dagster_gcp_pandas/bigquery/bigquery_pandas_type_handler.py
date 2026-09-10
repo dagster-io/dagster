@@ -11,6 +11,19 @@ from dagster_gcp.bigquery.io_manager import (
 )
 
 
+def _should_uppercase_column_names(context: InputContext | OutputContext) -> bool:
+    """Whether to uppercase column names on write and lowercase them back on read.
+
+    Defaults to True for backwards compatibility with existing BigQuery tables/pipelines --
+    BigQuery itself does not require uppercase column names. Set the
+    ``uppercase_column_names`` config value to False on the BigQuery I/O manager to disable
+    this and preserve the DataFrame's original column casing on both write and read.
+    """
+    if not context.resource_config:
+        return True
+    return bool(context.resource_config.get("uppercase_column_names", True))
+
+
 class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load Pandas DataFrames as BigQuery tables.
 
@@ -50,10 +63,12 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
                 "Skipping BigQuery write for empty DataFrame. An empty table will not be created."
             )
         else:
-            with_uppercase_cols = obj.rename(columns=str.upper)
+            df_to_load = (
+                obj.rename(columns=str.upper) if _should_uppercase_column_names(context) else obj
+            )
 
             job = connection.load_table_from_dataframe(
-                dataframe=with_uppercase_cols,
+                dataframe=df_to_load,
                 destination=f"{table_slice.schema}.{table_slice.table}",
                 project=table_slice.database,
                 location=context.resource_config.get("location")
@@ -96,7 +111,8 @@ class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):
             timeout=context.resource_config.get("timeout") if context.resource_config else None,
         ).to_dataframe()
 
-        result.columns = map(str.lower, result.columns)
+        if _should_uppercase_column_names(context):
+            result.columns = map(str.lower, result.columns)
         return result
 
     @property
@@ -201,6 +217,18 @@ Examples:
     unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
     the base64 encoded key with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
 
+    By default, DataFrame column names are uppercased before loading into BigQuery and
+    lowercased back when read (this is only for backwards compatibility -- BigQuery does not
+    require uppercase column names). Set ``uppercase_column_names=False`` to turn this off and
+    preserve the original casing of your DataFrame's column names instead:
+
+    .. code-block:: python
+
+        bigquery_pandas_io_manager.configured({
+            "project": {"env": "GCP_PROJECT"},
+            "uppercase_column_names": False,
+        })
+
 """
 
 
@@ -291,6 +319,15 @@ class BigQueryPandasIOManager(BigQueryIOManager):
         After the run completes, the file will be deleted, and GOOGLE_APPLICATION_CREDENTIALS will be
         unset. The key must be base64 encoded to avoid issues with newlines in the keys. You can retrieve
         the base64 encoded key with this shell command: cat $GOOGLE_APPLICATION_CREDENTIALS | base64
+
+        By default, DataFrame column names are uppercased before loading into BigQuery and
+        lowercased back when read (this is only for backwards compatibility -- BigQuery does not
+        require uppercase column names). Set ``uppercase_column_names=False`` to turn this off and
+        preserve the original casing of your DataFrame's column names instead:
+
+        .. code-block:: python
+
+            BigQueryPandasIOManager(project=EnvVar("GCP_PROJECT"), uppercase_column_names=False)
 
     """
 
