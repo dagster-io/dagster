@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 from collections.abc import Collection, Mapping, Sequence
 from typing import Any, cast
 
@@ -59,6 +60,13 @@ from dagster_cloud.workspace.user_code_launcher.utils import (
 EcsServerHandleType = Service
 
 CONTAINER_NAME = "dagster"
+
+# TODO(cross-account service discovery): this is a conservative first guess, not a tuned value -
+# each tick costs one ListTasks + DescribeTasks + ListInstances per cross-account service, so this
+# trades staleness (how long a replaced task's DNS entry stays wrong for) against API load/cost at
+# scale. Flagging for discussion rather than picking unilaterally; happy to adjust based on
+# maintainer input.
+SERVICE_DISCOVERY_RECONCILE_INTERVAL_SECONDS = 300
 
 
 class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], ConfigurableClass):
@@ -195,6 +203,59 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
             service_discovery_role_arn=self.service_discovery_role_arn,
         )
         super().__init__(**kwargs)
+
+        self._service_discovery_reconcile_shutdown_event = threading.Event()
+        self._service_discovery_reconcile_thread: threading.Thread | None = None
+
+    def start(self, *args, **kwargs):
+        super().start(*args, **kwargs)
+
+        # Only cross-account setups need this - same-account services stay on ECS's native
+        # serviceRegistries path, which already handles task replacement automatically.
+        if self.service_discovery_role_arn:
+            self._service_discovery_reconcile_thread = threading.Thread(
+                target=self._service_discovery_reconcile_thread_target,
+                args=(self._service_discovery_reconcile_shutdown_event,),
+                name="service-discovery-reconcile",
+                daemon=True,
+            )
+            self._service_discovery_reconcile_thread.start()
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        if self._service_discovery_reconcile_thread:
+            self._service_discovery_reconcile_shutdown_event.set()
+            self._service_discovery_reconcile_thread.join()
+        super().__exit__(exception_type, exception_value, traceback)
+
+    def _service_discovery_reconcile_thread_target(self, shutdown_event: threading.Event):
+        while True:
+            shutdown_event.wait(SERVICE_DISCOVERY_RECONCILE_INTERVAL_SECONDS)
+            if shutdown_event.is_set():
+                break
+
+            try:
+                self._reconcile_service_discovery()
+            except Exception:
+                self._logger.exception("Error while reconciling service discovery instances")
+
+    def _reconcile_service_discovery(self):
+        # self._actual_entries is maintained by the base class's main reconcile loop; reusing it
+        # here means this only ever acts on locations that loop already considers up and running.
+        # TODO: only covers standalone gRPC server handles, not multipex/pex servers - didn't want
+        # to guess at multipex's tagging/lifecycle assumptions without maintainer input.
+        for deployment_name, location_name in list(self._actual_entries.keys()):
+            try:
+                for handle in self._get_standalone_dagster_server_handles_for_location(
+                    deployment_name, location_name
+                ):
+                    self.client.reconcile_service_discovery_instances(
+                        handle, port=get_code_server_port(), logger=self._logger
+                    )
+            except Exception:
+                self._logger.exception(
+                    "Error while reconciling service discovery instances for"
+                    f" {deployment_name}:{location_name}"
+                )
 
     @property
     def show_debug_cluster_info(self) -> bool:
@@ -574,7 +635,10 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
             f"Waiting for service {server_handle.name} to be ready for multipex server..."
         )
         task_arn = await self.client.wait_for_new_service(
-            server_handle, container_name=CONTAINER_NAME, logger=self._logger
+            server_handle,
+            container_name=CONTAINER_NAME,
+            port=multipex_endpoint.port,
+            logger=self._logger,
         )
         await self._wait_for_server_process(
             multipex_endpoint.create_multipex_client(),
@@ -615,7 +679,10 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
             f"Waiting for service {server_handle.name} to be ready for gRPC server..."
         )
         task_arn = await self.client.wait_for_new_service(
-            server_handle, container_name=CONTAINER_NAME, logger=self._logger
+            server_handle,
+            container_name=CONTAINER_NAME,
+            port=server_endpoint.port,
+            logger=self._logger,
         )
 
         multipex_client = None

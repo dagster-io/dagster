@@ -159,6 +159,236 @@ def test_create_service_tags(client, stubber):
     )
 
 
+def test_create_service_cross_account_skips_service_registries(client, stubber):
+    """serviceRegistries is omitted for cross-account clients (ecs:CreateService rejects it), but
+    still passed for same-account clients — see test_create_service_tags for that path.
+    """
+    arn = "arn:aws:ecs:us-east-1:1234567890:service/cluster-name/service-name"
+    client._service_discovery_role_arn = "arn:aws:iam::123456789012:role/cross-account-sd"
+
+    params_without_service_registries = [
+        "clientToken",
+        "cluster",
+        "desiredCount",
+        "launchType",
+        "networkConfiguration",
+        "serviceName",
+        "taskDefinition",
+        "enableExecuteCommand",
+        "propagateTags",
+    ]
+
+    stubber.add_response(
+        method="create_service",
+        service_response={"service": {"serviceArn": arn}},
+        expected_params=dict.fromkeys(params_without_service_registries, ANY),
+    )
+
+    # tags=None means self.taggable (and its list_account_settings call) is never reached, due
+    # to `if tags and self.taggable:`'s short-circuit — only create_service is stubbed here.
+    client._create_service(
+        service_name="fake",
+        service_registry_arn="fake",
+        task_definition_arn="fake",
+    )
+
+
+def test_reconcile_service_discovery_instances(client):
+    """Cross-account periodic reconciliation registers a task ECS started after initial
+    registration (e.g. a replacement after a health check failure) and deregisters an instance
+    whose task is gone - the gap _register_service_discovery_instances alone can't close.
+    """
+    client._service_discovery_role_arn = "arn:aws:iam::123456789012:role/cross-account-sd"
+    # Bypassing the constructor's cross-account setup (above) skips setting this - it's what
+    # `service_discovery` (the property _reconcile_service_discovery_instances reads through)
+    # checks to decide whether a session refresh is due.
+    client._sd_session_expires = None
+    StubService = namedtuple("StubService", "name service_discovery_arn")
+    service = StubService(
+        name="my_service",
+        service_discovery_arn="arn:aws:servicediscovery:us-east-1:123456789012:service/srv-fake",
+    )
+    live_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/live-task-id"
+
+    with (
+        mock.patch.object(
+            client.ecs, "list_tasks", return_value={"taskArns": [live_task_arn]}
+        ),
+        mock.patch.object(
+            client.ecs,
+            "describe_tasks",
+            return_value={
+                "tasks": [
+                    {
+                        "taskArn": live_task_arn,
+                        "attachments": [
+                            {"details": [{"name": "privateIPv4Address", "value": "10.0.0.5"}]}
+                        ],
+                    }
+                ]
+            },
+        ),
+        # "stale-task-id" is registered but has no corresponding live task - should be deregistered.
+        # "live-task-id" (derived from live_task_arn) is live but not yet registered - should be
+        # registered.
+        mock.patch.object(
+            client.service_discovery,
+            "list_instances",
+            return_value={"Instances": [{"Id": "stale-task-id"}]},
+        ),
+        mock.patch.object(
+            client.service_discovery, "register_instance", return_value={"OperationId": "reg-op"}
+        ) as mock_register,
+        mock.patch.object(
+            client.service_discovery,
+            "deregister_instance",
+            return_value={"OperationId": "dereg-op"},
+        ) as mock_deregister,
+        mock.patch.object(
+            client.service_discovery,
+            "get_operation",
+            return_value={"Operation": {"Status": "SUCCESS"}},
+        ),
+    ):
+        client.reconcile_service_discovery_instances(service, port=4000)
+
+        mock_register.assert_called_once()
+        assert mock_register.call_args.kwargs["ServiceId"] == "srv-fake"
+        assert mock_register.call_args.kwargs["InstanceId"] == "live-task-id"
+        assert mock_register.call_args.kwargs["Attributes"] == {
+            "AWS_INSTANCE_IPV4": "10.0.0.5",
+            "AWS_INSTANCE_PORT": "4000",
+        }
+
+        mock_deregister.assert_called_once_with(ServiceId="srv-fake", InstanceId="stale-task-id")
+
+
+def test_reconcile_service_discovery_instances_same_account_noop(client):
+    """No-ops entirely for same-account clients - ECS's native serviceRegistries path already
+    handles task replacement automatically, so this must never make any AWS calls for them.
+    """
+    StubService = namedtuple("StubService", "name service_discovery_arn")
+    service = StubService(
+        name="my_service",
+        service_discovery_arn="arn:aws:servicediscovery:us-east-1:123456789012:service/srv-fake",
+    )
+
+    with mock.patch.object(client.ecs, "list_tasks") as mock_list_tasks:
+        client.reconcile_service_discovery_instances(service)
+        mock_list_tasks.assert_not_called()
+
+
+def test_reconcile_service_discovery_instances_paginates_list_tasks(client):
+    """list_tasks must be fully paginated - a service with enough tasks to span multiple pages
+    must not have tasks on later pages treated as dead and deregistered from Cloud Map.
+    """
+    client._service_discovery_role_arn = "arn:aws:iam::123456789012:role/cross-account-sd"
+    client._sd_session_expires = None
+    StubService = namedtuple("StubService", "name service_discovery_arn")
+    service = StubService(
+        name="my_service",
+        service_discovery_arn="arn:aws:servicediscovery:us-east-1:123456789012:service/srv-fake",
+    )
+
+    page_1_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/page-1-task"
+    page_2_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/page-2-task"
+
+    def _fake_task(task_arn, ip):
+        return {
+            "taskArn": task_arn,
+            "attachments": [{"details": [{"name": "privateIPv4Address", "value": ip}]}],
+        }
+
+    all_tasks_by_arn = {
+        page_1_task_arn: _fake_task(page_1_task_arn, "10.0.0.1"),
+        page_2_task_arn: _fake_task(page_2_task_arn, "10.0.0.2"),
+    }
+
+    def _fake_describe_tasks(cluster, tasks):
+        # Respects the requested `tasks` ARNs, unlike a static return_value would - otherwise a
+        # pagination bug in list_tasks (only seeing page 1) would go unnoticed here too, since
+        # describe_tasks would silently hand back page 2's task anyway.
+        return {"tasks": [all_tasks_by_arn[task_arn] for task_arn in tasks]}
+
+    with (
+        mock.patch.object(
+            client.ecs,
+            "list_tasks",
+            # boto3's ECS ListTasks paginator token is "nextToken" (lowercase) - this must match
+            # exactly or the paginator silently treats the response as a single page regardless
+            # of whether the code under test is fixed or still buggy.
+            side_effect=[
+                {"taskArns": [page_1_task_arn], "nextToken": "next-page"},
+                {"taskArns": [page_2_task_arn]},
+            ],
+        ),
+        mock.patch.object(
+            client.ecs,
+            "describe_tasks",
+            side_effect=_fake_describe_tasks,
+        ),
+        # Both tasks are already registered - a pagination bug that only sees the first page
+        # would treat "page-2-task" as dead and incorrectly deregister it.
+        mock.patch.object(
+            client.service_discovery,
+            "list_instances",
+            return_value={"Instances": [{"Id": "page-1-task"}, {"Id": "page-2-task"}]},
+        ),
+        mock.patch.object(client.service_discovery, "register_instance") as mock_register,
+        mock.patch.object(client.service_discovery, "deregister_instance") as mock_deregister,
+    ):
+        client.reconcile_service_discovery_instances(service)
+
+        mock_register.assert_not_called()
+        mock_deregister.assert_not_called()
+
+
+def test_reconcile_service_discovery_instances_tolerates_describe_tasks_failures(client):
+    """DescribeTasks is eventually consistent - a task list_tasks just confirmed RUNNING can come
+    back in `failures` instead of `tasks` (e.g. "MISSING"). That must not be treated as
+    confirmation the task is dead, or a live code server gets deregistered from Cloud Map.
+    """
+    client._service_discovery_role_arn = "arn:aws:iam::123456789012:role/cross-account-sd"
+    client._sd_session_expires = None
+    StubService = namedtuple("StubService", "name service_discovery_arn")
+    service = StubService(
+        name="my_service",
+        service_discovery_arn="arn:aws:servicediscovery:us-east-1:123456789012:service/srv-fake",
+    )
+
+    live_task_arn = "arn:aws:ecs:us-east-1:123456789012:task/test/live-task-id"
+
+    with (
+        mock.patch.object(
+            client.ecs, "list_tasks", return_value={"taskArns": [live_task_arn]}
+        ),
+        # describe_tasks fails to describe this task even though list_tasks just confirmed it's
+        # RUNNING - a real, documented eventual-consistency behavior of the ECS API.
+        mock.patch.object(
+            client.ecs,
+            "describe_tasks",
+            return_value={
+                "tasks": [],
+                "failures": [{"arn": live_task_arn, "reason": "MISSING"}],
+            },
+        ),
+        # Already registered - must NOT be deregistered just because describe_tasks failed on it.
+        mock.patch.object(
+            client.service_discovery,
+            "list_instances",
+            return_value={"Instances": [{"Id": "live-task-id"}]},
+        ),
+        mock.patch.object(client.service_discovery, "register_instance") as mock_register,
+        mock.patch.object(client.service_discovery, "deregister_instance") as mock_deregister,
+    ):
+        client.reconcile_service_discovery_instances(service)
+
+        # Can't register it either - describe_tasks never gave us its IP - but that's a much
+        # smaller problem than incorrectly deregistering a live instance would be.
+        mock_register.assert_not_called()
+        mock_deregister.assert_not_called()
+
+
 def test_ecs_service_error():
     with pytest.raises(EcsServiceError) as ex:
         raise EcsServiceError(
@@ -215,7 +445,11 @@ def test_secrets(stubbed_client, stubbed_ecs):
 
 
 def test_wait_for_new_service_failure(client, stubber):
-    service = Service(arn="arn:aws:ecs:region:012345678910:cluster/boom", client=client)
+    service = Service(
+        arn="arn:aws:ecs:region:012345678910:cluster/boom",
+        client=client,
+        service_registry_arn="fake",
+    )
 
     failures = [
         {
@@ -287,7 +521,7 @@ def test_wait_for_new_service_failure(client, stubber):
     client.grace_period = 15
 
     async def _check_service_has_running_tasks(
-        service_name, container_name, logger=None
+        service_name, container_name, service_registry_arn=None, port=None, logger=None
     ) -> list[str]:
         return ["my_task"]
 

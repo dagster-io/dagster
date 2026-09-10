@@ -4,10 +4,11 @@ from dagster._utils.cached_method import cached_method
 
 
 class Service:
-    def __init__(self, client, arn):
+    def __init__(self, client, arn, service_registry_arn=None):
         self.client = client
         self.arn = self._long_arn(arn)
         self.name = arn.split("/")[-1]
+        self._service_registry_arn = service_registry_arn
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.arn == other.arn
@@ -41,15 +42,9 @@ class Service:
     @property
     @cached_method
     def service_discovery_arn(self):
-        service = self.client.ecs.describe_services(
-            cluster=self.client.cluster_name,
-            services=[self.arn],
-        ).get("services", [{}])[0]
-
-        registries = service.get("serviceRegistries") or [{}]
-        arn = registries[0].get("registryArn")
-
-        return arn
+        if self._service_registry_arn:
+            return self._service_registry_arn
+        return self.client._get_service_discovery_arn(self.name)
 
     @property
     @cached_method
