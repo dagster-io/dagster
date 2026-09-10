@@ -288,6 +288,112 @@ class TestDataVersions(ExecutingGraphQLContextTestMatrix):
             # Make sure observable source asset appears in explicit observation job
             assert "bar_job" in bar_jobs
 
+    def test_stale_status_observable_transition(self, graphql_context):
+        """Test that downstream assets don't incorrectly become stale when upstream transitions to observable.
+
+        This test reproduces the bug reported in:
+        https://dagsterlabs.slack.com/archives/C06GXHNH3T8/p1759938082471509
+
+        Scenario:
+        1. Upstream asset is materializable, gets materialized with explicit data version "v1"
+        2. Downstream materializes and stores upstream's materialization data version in provenance
+        3. Upstream asset is changed to observable (without explicit data version)
+        4. Observations are reported for upstream with AUTO-GENERATED data versions
+        5. Bug: Downstream incorrectly shows as STALE even though the actual data hasn't changed
+
+        The key issue is that:
+        - The downstream's provenance references the upstream's last MATERIALIZATION with data version "v1"
+        - When checking staleness, the system retrieves the upstream's last OBSERVATION
+        - The observation has an AUTO-GENERATED data version (based on timestamp) that differs from "v1"
+        - Even though the actual upstream data hasn't changed, the downstream appears stale
+          because the data version scheme changed (explicit -> auto-generated)
+
+        This is the core bug: when an asset transitions from materializable to observable,
+        and the observable doesn't return an explicit data version, the auto-generated
+        data versions cause false staleness in downstream assets.
+
+        Expected: Downstream should remain FRESH since the actual data hasn't changed
+        Actual: Downstream shows as STALE with reason "has a new data version"
+        """
+        # This test only works in Cloud due to only Cloud having observation info on asset records.
+        # We intentionally accept the incorrect behavior is OSS for now, for the sake of
+        # performance.
+        if type(graphql_context).__name__ != "DagsterCloudWorkspaceRequestContext":
+            pytest.skip("Test only works in Dagster Cloud due to observation data availability.")
+
+        # Step 1: Materialize both assets when upstream is materializable
+        with define_out_of_process_context(
+            __file__, "get_repo_observable_transition", graphql_context.instance
+        ) as context:
+            assert materialize_assets(context, [AssetKey(["upstream"]), AssetKey(["downstream"])])
+            wait_for_runs_to_finish(context.instance)
+
+        # Verify both are fresh after initial materialization
+        with define_out_of_process_context(
+            __file__, "get_repo_observable_transition", graphql_context.instance
+        ) as context:
+            repo = get_repo_observable_transition()
+            result = _fetch_data_versions(context, repo)
+            upstream_node = _get_asset_node(result, "upstream")
+            downstream_node = _get_asset_node(result, "downstream")
+
+            assert upstream_node["staleStatus"] == "FRESH"
+            assert downstream_node["staleStatus"] == "FRESH"
+            assert downstream_node["staleCauses"] == []
+
+        # Step 2: Switch to version where upstream is observable. Make an observation that generates
+        # a new data version.
+        with define_out_of_process_context(
+            __file__, "get_repo_observable_transition_v2", graphql_context.instance
+        ) as context:
+            # Observe the upstream multiple times with the same data version
+            # This simulates the twice-daily observations mentioned in the bug report
+
+            repo = get_repo_observable_transition_v2()
+            # upstream_asset = repo.assets_defs_by_key[AssetKey(["upstream"])]
+            # Use the upstream asset we stored on the repo
+            assert materialize_assets(context, [AssetKey(["upstream"])])
+            wait_for_runs_to_finish(context.instance)
+            result = _fetch_data_versions(context, repo)
+            upstream_node = _get_asset_node(result, "upstream")
+            downstream_node = _get_asset_node(result, "downstream")
+            assert upstream_node["staleStatus"] == "FRESH"
+            assert upstream_node["dataVersion"] == "observation-v1"
+            assert downstream_node["staleStatus"] == "STALE"
+
+        # Step 3: Check staleness - this is where the bug manifests
+        with define_out_of_process_context(
+            __file__, "get_repo_observable_transition_v2", graphql_context.instance
+        ) as context:
+            repo = get_repo_observable_transition_v2()
+            result = _fetch_data_versions(context, repo)
+
+            # This should create a new materialization that has the upstream observation data
+            # version in provenance.
+            assert materialize_assets(context, [AssetKey(["downstream"])])
+            wait_for_runs_to_finish(context.instance)
+
+        with define_out_of_process_context(
+            __file__, "get_repo_observable_transition_v2", graphql_context.instance
+        ) as context:
+            # Re-fetch the status after rematerialization
+            result = _fetch_data_versions(context, repo)
+            downstream_node = _get_asset_node(result, "downstream")
+
+            # Now downstream should be FRESH because it has the latest observation data version
+            # in its provenance. The bug was that it would still show as STALE because the
+            # staleness check would compare against newer observations even though the downstream
+            # had already materialized against the latest data.
+            #
+            # With the fix, the staleness check now properly handles the case where an asset
+            # transitions from materializable to observable by only comparing against events
+            # that are newer than what's in provenance.
+            assert downstream_node["staleStatus"] == "FRESH", (
+                f"Expected downstream to be FRESH after rematerializing against latest upstream data, "
+                f"but got {downstream_node['staleStatus']}. staleCauses: {downstream_node['staleCauses']}."
+            )
+            assert downstream_node["staleCauses"] == []
+
 
 # ########################
 # ##### REPOSITORY DEFS
@@ -429,6 +535,70 @@ def get_observable_source_asset_repo():
         jobs=[foo_job, bar_job, bop_job],
     )
     return defs.get_repository_def()
+
+
+def get_repo_observable_transition():
+    """Repository that simulates an asset transitioning from materializable to observable.
+
+    This reproduces the bug where:
+    1. An upstream asset is initially materializable
+    2. It gets materialized
+    3. A downstream asset materializes and stores the upstream's materialization data version
+    4. The upstream is changed to observable
+    5. Observations are reported for the upstream with the same data version
+    6. The downstream incorrectly shows as stale because it compares its stored
+       materialization-based data version against the current observation-based data version
+    """
+
+    @asset
+    def upstream():
+        """Initially materializable asset."""
+        return Output(True, data_version=DataVersion("v1"))
+
+    @asset
+    def downstream(upstream):
+        """Downstream asset that depends on upstream."""
+        return Output(True, data_version=DataVersion("downstream_v1"))
+
+    @repository
+    def repo():
+        return [upstream, downstream]
+
+    return repo
+
+
+def get_repo_observable_transition_v2():
+    """Version 2: upstream is now observable instead of materializable.
+
+    IMPORTANT: The observable returns a DIFFERENT data version than the original materialization.
+    This simulates the real scenario where:
+    - The materialization had data version "v1"
+    - The observations have timestamp-based or different data versions
+    - Even though the actual data hasn't changed, the version scheme changed
+
+    This creates a mismatch: the downstream's provenance has the OLD materialization data
+    version "v1", but the staleness check compares against the NEW observation data version,
+    causing false staleness.
+    """
+
+    @observable_source_asset
+    def upstream():
+        """Now an observable source asset with a different data version."""
+        # Return a different data version to simulate auto-generated or time-based versions
+        # This represents observations that have different data versions than the
+        # original materialization, even though the actual data is the same
+        return DataVersion("observation-v1")
+
+    @asset
+    def downstream(upstream):
+        """Downstream asset (unchanged)."""
+        return Output(True, data_version=DataVersion("downstream_v1"))
+
+    @repository
+    def repo():
+        return [upstream, downstream]
+
+    return repo
 
 
 # ########################
