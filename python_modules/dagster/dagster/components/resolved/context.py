@@ -1,3 +1,4 @@
+import os
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
@@ -210,8 +211,13 @@ class ResolutionContext:
 
     def resolve_source_relative_path(self, value: str) -> Path:
         path = Path(value)
-        if not self.source_position_tree or path.is_absolute():
-            # no source, can't transform
+        if path.is_absolute():
+            # collapse `..` segments without resolving symlinks or touching the filesystem,
+            # so a path like `{{ project_root }}/../sibling` becomes canonical even when
+            # the target does not yet exist on disk.
+            return Path(os.path.normpath(str(path)))
+        if not self.source_position_tree:
+            # no source, can't transform a relative path
             return path
 
         source_dir = Path(self.source_position_tree.position.filename).parent
