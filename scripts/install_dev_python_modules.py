@@ -87,6 +87,7 @@ def main(
         "python_modules/libraries/dagster-celery-k8s",
         "python_modules/libraries/dagster-github",
         "python_modules/libraries/dagster-mlflow",
+        "python_modules/libraries/dagster-mssql",
         "python_modules/libraries/dagster-msteams",
         "python_modules/libraries/dagster-mysql",
         "python_modules/libraries/dagster-looker",

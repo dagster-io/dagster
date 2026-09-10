@@ -22,7 +22,7 @@ from dagster._config import (
 )
 from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.config import mysql_config, pg_config
+from dagster._core.storage.config import mssql_config, mysql_config, pg_config
 from dagster._record import record
 from dagster._serdes import class_from_code_pointer
 from dagster._utils.concurrency import get_max_concurrency_limit_value
@@ -118,7 +118,7 @@ def dagster_instance_config(
         if len(dagster_config_dict["storage"]) != 1:
             raise DagsterInvalidConfigError(
                 f"Errors whilst loading dagster storage at {config_filename}, Expected one of:"
-                "['postgres', 'mysql', 'sqlite', 'custom']",
+                "['postgres', 'mysql', 'mssql', 'sqlite', 'custom']",
                 [],
                 dagster_config_dict["storage"],
             )
@@ -251,6 +251,7 @@ def storage_config_schema() -> Field:
             {
                 "postgres": Field(pg_config()),
                 "mysql": Field(mysql_config()),
+                "mssql": Field(mssql_config()),
                 "sqlite": Field({"base_dir": StringSource}),
                 "custom": Field(configurable_class_schema()),
             }

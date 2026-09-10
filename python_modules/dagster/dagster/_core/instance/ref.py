@@ -110,6 +110,30 @@ def configurable_storage_data(
             config_yaml=config_yaml,
         )
 
+    elif "mssql" in config_field:
+        config_yaml = yaml.dump(config_field["mssql"], default_flow_style=False)
+        storage_data = ConfigurableClassData(
+            module_name="dagster_mssql",
+            class_name="DagsterMSSQLStorage",
+            config_yaml=config_yaml,
+        )
+        # for backwards compatibility
+        run_storage_data = ConfigurableClassData(
+            module_name="dagster_mssql",
+            class_name="MSSQLRunStorage",
+            config_yaml=config_yaml,
+        )
+        event_storage_data = ConfigurableClassData(
+            module_name="dagster_mssql",
+            class_name="MSSQLEventLogStorage",
+            config_yaml=config_yaml,
+        )
+        schedule_storage_data = ConfigurableClassData(
+            module_name="dagster_mssql",
+            class_name="MSSQLScheduleStorage",
+            config_yaml=config_yaml,
+        )
+
     elif "mysql" in config_field:
         config_yaml = yaml.dump(config_field["mysql"], default_flow_style=False)
         storage_data = ConfigurableClassData(

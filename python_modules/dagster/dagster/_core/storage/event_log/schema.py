@@ -1,7 +1,12 @@
 import sqlalchemy as db
 from sqlalchemy.dialects import sqlite
 
-from dagster._core.storage.sql import MySQLCompatabilityTypes, get_sql_current_timestamp
+from dagster._core.storage.sql import (
+    MSSQL_INDEX_KEY_LENGTH,
+    MySQLCompatabilityTypes,
+    get_sql_current_timestamp,
+    mssql_text,
+)
 
 SqlEventLogStorageMetadata = db.MetaData()
 
@@ -16,11 +21,11 @@ SqlEventLogStorageTable = db.Table(
     ),
     db.Column("run_id", db.String(255)),
     db.Column("event", MySQLCompatabilityTypes.LongText, nullable=False),
-    db.Column("dagster_event_type", db.Text),
+    db.Column("dagster_event_type", mssql_text(64)),
     db.Column("timestamp", db.types.TIMESTAMP),
-    db.Column("step_key", db.Text),
-    db.Column("asset_key", db.Text),
-    db.Column("partition", db.Text),
+    db.Column("step_key", mssql_text(128)),
+    db.Column("asset_key", mssql_text(MSSQL_INDEX_KEY_LENGTH)),
+    db.Column("partition", mssql_text(128)),
 )
 
 SecondaryIndexMigrationTable = db.Table(
@@ -58,13 +63,13 @@ AssetKeyTable = db.Table(
     db.Column("asset_key", MySQLCompatabilityTypes.UniqueText, unique=True),
     db.Column("last_materialization", MySQLCompatabilityTypes.LongText),
     db.Column("last_run_id", db.String(255)),
-    db.Column("asset_details", db.Text),
+    db.Column("asset_details", mssql_text()),
     db.Column("wipe_timestamp", db.types.TIMESTAMP),  # guarded by secondary index check
     # last_materialization_timestamp contains timestamp for latest materialization or observation
     db.Column(
         "last_materialization_timestamp", db.types.TIMESTAMP
     ),  # guarded by secondary index check
-    db.Column("tags", db.TEXT),  # guarded by secondary index check
+    db.Column("tags", mssql_text()),  # guarded by secondary index check
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("cached_status_data", MySQLCompatabilityTypes.LongText),
 )
@@ -82,9 +87,9 @@ AssetEventTagsTable = db.Table(
         "event_id",
         db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite"),
     ),
-    db.Column("asset_key", db.Text, nullable=False),
-    db.Column("key", db.Text, nullable=False),
-    db.Column("value", db.Text),
+    db.Column("asset_key", mssql_text(MSSQL_INDEX_KEY_LENGTH), nullable=False),
+    db.Column("key", mssql_text(128), nullable=False),
+    db.Column("value", mssql_text(128)),
     db.Column("event_timestamp", db.types.TIMESTAMP),
 )
 
@@ -98,8 +103,8 @@ DynamicPartitionsTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("partitions_def_name", db.Text, nullable=False),
-    db.Column("partition", db.Text, nullable=False),
+    db.Column("partitions_def_name", mssql_text(128), nullable=False),
+    db.Column("partition", mssql_text(128), nullable=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
 
@@ -130,9 +135,9 @@ ConcurrencySlotsTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("concurrency_key", db.Text, nullable=False),
-    db.Column("run_id", db.Text),
-    db.Column("step_key", db.Text),
+    db.Column("concurrency_key", mssql_text(255), nullable=False),
+    db.Column("run_id", mssql_text(255)),
+    db.Column("step_key", mssql_text(128)),
     db.Column("deleted", db.Boolean, nullable=False, default=False),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )
@@ -146,9 +151,9 @@ PendingStepsTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("concurrency_key", db.Text, nullable=False),
-    db.Column("run_id", db.Text),
-    db.Column("step_key", db.Text),
+    db.Column("concurrency_key", mssql_text(255), nullable=False),
+    db.Column("run_id", mssql_text(255)),
+    db.Column("step_key", mssql_text(128)),
     db.Column("priority", db.Integer),
     db.Column("assigned_timestamp", db.DateTime),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
@@ -163,13 +168,15 @@ AssetCheckExecutionsTable = db.Table(
         primary_key=True,
         autoincrement=True,
     ),
-    db.Column("asset_key", db.Text),
-    db.Column("check_name", db.Text),
-    db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
+    db.Column("asset_key", mssql_text(MSSQL_INDEX_KEY_LENGTH)),
+    db.Column("check_name", mssql_text(128)),
+    db.Column(
+        "partition", mssql_text(128)
+    ),  # Currently unused. Planned for future partition support
     db.Column("run_id", db.String(255)),
     db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
     # Either an AssetCheckEvaluationPlanned or AssetCheckEvaluation event
-    db.Column("evaluation_event", db.Text),
+    db.Column("evaluation_event", mssql_text()),
     # Timestamp for an AssetCheckEvaluationPlanned, then replaced by timestamp for the AssetCheckEvaluation event
     db.Column("evaluation_event_timestamp", db.DateTime),
     db.Column(
@@ -198,6 +205,10 @@ db.Index(
 
 # This index doesn't enforce the uniqueness how we want it to because partition and run_id can be
 # null. Postgres and other dbms's consider each null value distinct.
+#
+# SQL Server is the exception: it considers null values *equal* in a unique index, so it
+# would allow only one row per (asset_key, check_name) with a null partition and reject the
+# rest. Filtering the nulls out of the index reproduces the behaviour of everything else.
 db.Index(
     "idx_asset_check_executions_unique",
     AssetCheckExecutionsTable.c.asset_key,
@@ -205,6 +216,12 @@ db.Index(
     AssetCheckExecutionsTable.c.run_id,
     AssetCheckExecutionsTable.c.partition,
     unique=True,
+    mssql_where=db.and_(
+        AssetCheckExecutionsTable.c.asset_key != None,  # noqa: E711
+        AssetCheckExecutionsTable.c.check_name != None,  # noqa: E711
+        AssetCheckExecutionsTable.c.run_id != None,  # noqa: E711
+        AssetCheckExecutionsTable.c.partition != None,  # noqa: E711
+    ),
     mysql_length={"asset_key": 64, "partition": 64, "check_name": 64},
 )
 
@@ -242,6 +259,7 @@ db.Index(
     SqlEventLogStorageTable.c.dagster_event_type,
     SqlEventLogStorageTable.c.id,
     postgresql_where=(SqlEventLogStorageTable.c.asset_key != None),  # noqa: E711
+    mssql_where=(SqlEventLogStorageTable.c.asset_key != None),  # noqa: E711
     mysql_length={"asset_key": 64, "dagster_event_type": 64},
 )
 db.Index(
@@ -251,6 +269,12 @@ db.Index(
     SqlEventLogStorageTable.c.partition,
     SqlEventLogStorageTable.c.id,
     postgresql_where=(
+        db.and_(
+            SqlEventLogStorageTable.c.asset_key != None,  # noqa: E711
+            SqlEventLogStorageTable.c.partition != None,  # noqa: E711
+        )
+    ),
+    mssql_where=(
         db.and_(
             SqlEventLogStorageTable.c.asset_key != None,  # noqa: E711
             SqlEventLogStorageTable.c.partition != None,  # noqa: E711
@@ -270,6 +294,12 @@ db.Index(
     PendingStepsTable.c.concurrency_key,
     PendingStepsTable.c.run_id,
     PendingStepsTable.c.step_key,
+    # run_id and step_key are nullable; see idx_asset_check_executions_unique above for
+    # why SQL Server needs the nulls filtered out of a unique index.
+    mssql_where=db.and_(
+        PendingStepsTable.c.run_id != None,  # noqa: E711
+        PendingStepsTable.c.step_key != None,  # noqa: E711
+    ),
     mysql_length={"concurrency_key": 255, "run_id": 255, "step_key": 32},
     unique=True,
 )

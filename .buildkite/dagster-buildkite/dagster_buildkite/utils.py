@@ -16,6 +16,21 @@ def wait_for_mysql_container(container_name: str, port: int = 3306) -> str:
     )
 
 
+def wait_for_mssql_container(container_name: str, port: int = 1433) -> str:
+    """Shell command that polls `sqlcmd` inside `container_name` until it succeeds, or
+    fails after ~180s. `docker compose up -d` returns long before sqlservr finishes
+    starting -- SQL Server takes appreciably longer than mysqld -- so tests that run
+    early would otherwise hit connection refused.
+    """
+    return (
+        rf"i=0; until docker exec {container_name} /opt/mssql-tools18/bin/sqlcmd "
+        rf"-S 127.0.0.1,{port} -U sa -P \"\$MSSQL_TEST_PASSWORD\" -C -Q 'SELECT 1' "
+        r">/dev/null 2>&1; do i=\$((i+1)); "
+        rf'if [ \$i -ge 90 ]; then echo "{container_name} not ready" >&2; exit 1; fi; '
+        r"sleep 2; done"
+    )
+
+
 # Preceding a line of BK output with "---" turns it into a section header.
 # The characters surrounding the `message` are ANSI escope sequences used to colorize the output.
 # Note that "\" is doubled below to insert a single literal backslash in the string.
