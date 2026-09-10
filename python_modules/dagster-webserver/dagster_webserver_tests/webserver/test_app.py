@@ -1,19 +1,26 @@
 import gc
+import os
+import sys
+from pathlib import Path
 
 import objgraph
 import pytest
 from dagster import (
+    DagsterInstance,
     __version__ as dagster_version,
     job,
     op,
 )
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_opts_to_load_target
 from dagster._core.events import DagsterEventType
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._serdes import unpack_value
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from dagster_shared.seven import json
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.version import __version__ as dagster_webserver_version
+from dagster_webserver.webserver import DagsterWebserver
 from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
@@ -84,6 +91,45 @@ def test_static_resources(test_client: TestClient):
     response = test_client.get("/vendor/graphiql/graphiql.min.css")
     assert response.status_code == 200, response.text
     assert response.headers["content-type"] != "text/html"
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="creating symlinks on Windows requires elevated privileges",
+)
+def test_static_resources_follow_symlinks(tmp_path: Path):
+    # Regression test for #33851: build environments such as Bazel materialize
+    # the bundled webapp/build/ tree by symlinking each file into a sandbox
+    # whose targets live outside the served directory. Starlette's StaticFiles
+    # rejects such symlinks unless follow_symlink=True is passed.
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    real_file = outside_dir / "main.css"
+    real_file.write_text("/* css */")
+
+    build_dir = tmp_path / "webapp" / "build"
+    static_subdir = build_dir / "static"
+    static_subdir.mkdir(parents=True)
+    os.symlink(real_file, static_subdir / "main.css")
+    (build_dir / "index.html").write_text("<html></html>")
+    (build_dir / "csp-header.txt").write_text("")
+
+    class _SymlinkAwareWebserver(DagsterWebserver):
+        def relative_path(self, rel: str) -> str:
+            return str(tmp_path / rel)
+
+    process_context = WorkspaceProcessContext(
+        instance=DagsterInstance.local_temp(),
+        version=dagster_version,
+        read_only=False,
+        workspace_load_target=workspace_opts_to_load_target(
+            WorkspaceOpts(empty_workspace=True),
+        ),
+    )
+    client = TestClient(_SymlinkAwareWebserver(process_context).create_asgi_app(debug=True))
+    response = client.get("/static/main.css")
+    assert response.status_code == 200, response.text
+    assert response.text == "/* css */"
 
 
 # https://graphql.org/learn/serving-over-http/
