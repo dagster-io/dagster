@@ -17,6 +17,7 @@ from dagster_dbt_tests.dbt_projects import (
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
+    test_dbt_snapshot_column_lineage_path,
     test_dbt_source_freshness_path,
     test_dbt_unit_tests_path,
     test_dependencies_path,
@@ -140,6 +141,13 @@ def test_dbt_semantic_models_manifest_fixture() -> dict[str, Any]:
     return _create_dbt_invocation(test_dbt_semantic_models_path, build_project=True).get_artifact(
         "manifest.json"
     )
+
+
+@pytest.fixture(name="test_dbt_snapshot_column_lineage_manifest", scope="session")
+def test_dbt_snapshot_column_lineage_manifest_fixture() -> dict[str, Any]:
+    return _create_dbt_invocation(
+        test_dbt_snapshot_column_lineage_path, build_project=True
+    ).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_dbt_source_freshness_manifest", scope="session")

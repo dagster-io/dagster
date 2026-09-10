@@ -1,9 +1,11 @@
+import hashlib
 import json
 import os
 import shutil
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
@@ -17,11 +19,14 @@ from dagster import (
     TableColumnDep,
     TableColumnLineage,
     TableSchema,
+    _check as check,
     materialize,
 )
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnConstraints
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.core import dbt_cli_event
+from dagster_dbt.core.dbt_cli_event import _get_compiled_sql
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_project import DbtProject
@@ -30,6 +35,7 @@ from sqlglot import Dialect
 
 from dagster_dbt_tests.conftest import _create_dbt_invocation
 from dagster_dbt_tests.dbt_projects import (
+    test_dbt_snapshot_column_lineage_path,
     test_dependencies_path,
     test_jaffle_shop_path,
     test_metadata_path,
@@ -939,3 +945,275 @@ def test_column_lineage_dependencies(
     assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
         str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
     )
+
+
+def test_get_compiled_sql_prefers_compiled_file(tmp_path: Path) -> None:
+    dbt_resource_props = {
+        "package_name": "my_project",
+        "original_file_path": "models/my_model.sql",
+        "compiled_code": "select 'from_manifest' as col",
+    }
+    compiled_path = tmp_path / "compiled" / "my_project" / "models"
+    compiled_path.mkdir(parents=True)
+    compiled_path.joinpath("my_model.sql").write_text("select 'from_file' as col")
+
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) == "select 'from_file' as col"
+
+
+def test_get_compiled_sql_falls_back_to_invocation_manifest(tmp_path: Path) -> None:
+    """Snapshots have no file under ``target/compiled/`` because dbt does not write one, so the
+    compiled code recorded in the manifest the invocation wrote must be used instead. The manifest
+    Dagster is configured with is frequently produced by ``dbt parse``, which does not compile and
+    leaves ``compiled_code`` null. See https://github.com/dagster-io/dagster/issues/34124.
+    """
+    unique_id = "snapshot.my_project.my_snapshot"
+    dbt_resource_props = {
+        "unique_id": unique_id,
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+        # As left by `dbt parse`.
+        "compiled_code": None,
+    }
+    tmp_path.joinpath("manifest.json").write_text(
+        json.dumps(
+            {"nodes": {unique_id: {"compiled_code": "select 'from_invocation_manifest' as col"}}}
+        )
+    )
+
+    assert (
+        _get_compiled_sql(dbt_resource_props, tmp_path)
+        == "select 'from_invocation_manifest' as col"
+    )
+
+
+def test_get_compiled_sql_prefers_invocation_manifest_over_configured_manifest(
+    tmp_path: Path,
+) -> None:
+    """The manifest Dagster is configured with may carry compiled code that predates the invocation,
+    e.g. when the run changes the compiled SQL through project edits, vars, target or state. Lineage
+    must describe the SQL the invocation actually ran, so the invocation's own manifest wins.
+    """
+    unique_id = "snapshot.my_project.my_snapshot"
+    dbt_resource_props = {
+        "unique_id": unique_id,
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+        "compiled_code": "select 'stale_configured_manifest' as col",
+    }
+    tmp_path.joinpath("manifest.json").write_text(
+        json.dumps(
+            {"nodes": {unique_id: {"compiled_code": "select 'from_invocation_manifest' as col"}}}
+        )
+    )
+
+    assert (
+        _get_compiled_sql(dbt_resource_props, tmp_path)
+        == "select 'from_invocation_manifest' as col"
+    )
+
+
+def test_get_compiled_sql_rereads_rewritten_invocation_manifest(tmp_path: Path) -> None:
+    """The invocation manifest is cached so that it is parsed once rather than once per node, but
+    invocations that pin ``target_path`` write the same path more than once. A rewrite must not be
+    served from the cache, or the second run emits the first run's lineage.
+
+    The rewrite here is made deliberately indistinguishable by ``stat``: the same file size, and the
+    same mtime down to the nanosecond. That is what a same-size rewrite looks like on a filesystem
+    whose timestamp granularity is coarser than the gap between the two writes, so the cache cannot
+    treat mtime and size as an identity for the file's contents.
+    """
+    unique_id = "snapshot.my_project.my_snapshot"
+    dbt_resource_props = {
+        "unique_id": unique_id,
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+        "compiled_code": None,
+    }
+    manifest_path = tmp_path / "manifest.json"
+
+    def write_manifest(compiled_code: str) -> None:
+        manifest_path.write_text(
+            json.dumps({"nodes": {unique_id: {"compiled_code": compiled_code}}})
+        )
+
+    write_manifest("select 'first_invocation' as col")
+    original_stat = manifest_path.stat()
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) == "select 'first_invocation' as col"
+
+    # The cached entry is keyed on a digest of the bytes it was parsed from.
+    cached_digest, _ = check.not_none(dbt_cli_event._compiled_code_cache)  # noqa: SLF001
+    assert cached_digest == hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+
+    # Same length as the first manifest, restored to the same mtime, so neither is distinguishable
+    # from the other by `stat`.
+    write_manifest("select 'third_invocation' as col")
+    os.utime(manifest_path, ns=(original_stat.st_atime_ns, original_stat.st_mtime_ns))
+    rewritten_stat = manifest_path.stat()
+    assert (rewritten_stat.st_size, rewritten_stat.st_mtime_ns) == (
+        original_stat.st_size,
+        original_stat.st_mtime_ns,
+    )
+
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) == "select 'third_invocation' as col"
+
+
+def test_get_compiled_sql_reuses_cached_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unchanged manifest is parsed once rather than once per node. Proven by making a second
+    parse impossible: with the manifest untouched, the cached mapping must be returned without
+    ``json`` being consulted again.
+    """
+    unique_id = "snapshot.my_project.my_snapshot"
+    dbt_resource_props = {
+        "unique_id": unique_id,
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+        "compiled_code": None,
+    }
+    tmp_path.joinpath("manifest.json").write_text(
+        json.dumps({"nodes": {unique_id: {"compiled_code": "select 'parsed_once' as col"}}})
+    )
+
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) == "select 'parsed_once' as col"
+
+    def fail_if_parsed(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("manifest was parsed again instead of being served from the cache")
+
+    # Patched on the module rather than on `json` itself, so nothing else in the process is affected.
+    monkeypatch.setattr(dbt_cli_event, "json", SimpleNamespace(loads=fail_if_parsed))
+
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) == "select 'parsed_once' as col"
+
+
+def test_get_compiled_sql_parses_the_bytes_it_digested(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The cache key and the parsed mapping must come from a single read of the manifest.
+
+    If the digest were computed from one read and the mapping parsed from another, a rewrite landing
+    between them would cache the replacement manifest's SQL under the previous manifest's digest, and
+    any later invocation whose manifest hashed to that digest would be served the wrong SQL. Simulated
+    by rewriting the file from inside the digest call, which is the point between the two reads.
+    """
+    unique_id = "snapshot.my_project.my_snapshot"
+    dbt_resource_props = {
+        "unique_id": unique_id,
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+        "compiled_code": None,
+    }
+    manifest_path = tmp_path / "manifest.json"
+
+    def write_manifest(compiled_code: str) -> None:
+        manifest_path.write_text(
+            json.dumps({"nodes": {unique_id: {"compiled_code": compiled_code}}})
+        )
+
+    write_manifest("select 'digested_manifest' as col")
+    digested_bytes = manifest_path.read_bytes()
+
+    sha256 = hashlib.sha256
+
+    def rewrite_manifest_then_digest(*args: Any, **kwargs: Any) -> "hashlib._Hash":
+        write_manifest("select 'rewritten_manifest' as col")
+        return sha256(*args, **kwargs)
+
+    monkeypatch.setattr(
+        dbt_cli_event, "hashlib", SimpleNamespace(sha256=rewrite_manifest_then_digest)
+    )
+
+    # The bytes that were digested are the bytes that get parsed, even though the file on disk has
+    # since been replaced.
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) == "select 'digested_manifest' as col"
+
+    # And the entry is stored under the digest of those same bytes, so it cannot be served for the
+    # manifest now on disk.
+    cached_digest, _ = check.not_none(dbt_cli_event._compiled_code_cache)  # noqa: SLF001
+    assert cached_digest == sha256(digested_bytes).hexdigest()
+
+
+def test_get_compiled_sql_falls_back_to_configured_manifest(tmp_path: Path) -> None:
+    """The invocation manifest is only written once the invocation finishes, so it may be absent
+    when a node's metadata is fetched mid-run. The configured manifest is the last resort.
+    """
+    dbt_resource_props = {
+        "unique_id": "snapshot.my_project.my_snapshot",
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+        "compiled_code": "select 'from_configured_manifest' as col",
+    }
+
+    assert (
+        _get_compiled_sql(dbt_resource_props, tmp_path)
+        == "select 'from_configured_manifest' as col"
+    )
+
+
+def test_get_compiled_sql_returns_none_when_unavailable(tmp_path: Path) -> None:
+    dbt_resource_props = {
+        "unique_id": "snapshot.my_project.my_snapshot",
+        "package_name": "my_project",
+        "original_file_path": "snapshots/my_snapshot.sql",
+    }
+
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) is None
+
+    # A manifest that has no compiled code for the node is also handled.
+    tmp_path.joinpath("manifest.json").write_text(json.dumps({"nodes": {}}))
+
+    assert _get_compiled_sql(dbt_resource_props, tmp_path) is None
+
+
+def test_column_lineage_snapshot(
+    test_dbt_snapshot_column_lineage_manifest: dict[str, Any],
+) -> None:
+    """Column lineage must be produced for dbt snapshots.
+
+    dbt intentionally does not write compiled snapshot SQL to ``target/compiled/`` (see
+    ``Compiler._write_node``), so resolving it only from that path raised ``FileNotFoundError``,
+    which was swallowed in ``_fetch_column_metadata``, leaving snapshots with no lineage at all.
+    See https://github.com/dagster-io/dagster/issues/34124.
+
+    Only the adapter path is exercised here (``.fetch_column_metadata()``, the repro in the
+    issue); the dbt-event-history path resolves compiled SQL through the same
+    ``_build_column_lineage_metadata`` call, and ``_get_compiled_sql`` is covered directly above.
+    """
+    dbt = DbtCliResource(project_dir=os.fspath(test_dbt_snapshot_column_lineage_path))
+
+    @dbt_assets(manifest=test_dbt_snapshot_column_lineage_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    column_lineage_by_asset_key = {
+        event.materialization.asset_key: TableMetadataSet.extract(
+            event.materialization.metadata
+        ).column_lineage
+        for event in result.get_asset_materialization_events()
+    }
+
+    snapshot_lineage = column_lineage_by_asset_key[AssetKey(["customers_snapshot"])]
+    assert snapshot_lineage is not None, (
+        f"Expected column lineage for the snapshot, got none: {column_lineage_by_asset_key}"
+    )
+
+    # The snapshot's own columns are derived from the model it selects from.
+    for column_name in ("customer_id", "first_name", "last_name"):
+        assert snapshot_lineage.deps_by_column[column_name] == [
+            TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name=column_name)
+        ]
+
+    # dbt adds its own bookkeeping columns to the snapshot relation. They are not selected in the
+    # compiled SQL, so they have no upstream dependencies. Asserted loosely because which columns
+    # dbt adds varies across the supported dbt versions.
+    for column_name, column_deps in snapshot_lineage.deps_by_column.items():
+        if column_name in ("customer_id", "first_name", "last_name"):
+            continue
+
+        assert column_name.startswith("dbt_"), (
+            f"Unexpected column `{column_name}` in snapshot column lineage"
+        )
+        assert column_deps == []
