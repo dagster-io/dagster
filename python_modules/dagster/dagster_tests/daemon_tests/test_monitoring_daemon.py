@@ -521,6 +521,54 @@ def test_long_running_termination_failure(
         )
 
 
+def test_max_runtime_tag_overrides_global_setting(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    logger: Logger,
+) -> None:
+    """A dagster/max_runtime tag replaces run_monitoring.max_runtime_seconds for that run.
+
+    The `instance` fixture sets max_runtime_seconds=750. A run tagged with a *larger* value must be
+    allowed to keep running past 750 seconds, proving the two limits are not intersected. See the
+    "Precedence of the tag over the deployment-wide setting" section of
+    docs/docs/deployment/execution/run-monitoring.md.
+    """
+    with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
+        initial = create_datetime(2021, 1, 1)
+        with freeze_time(initial):
+            longer_than_global_run = create_run_for_test(
+                instance,
+                job_name="foo",
+                status=DagsterRunStatus.STARTING,
+                tags={dg.MAX_RUNTIME_SECONDS_TAG: "2000"},
+            )
+        started_time = initial + datetime.timedelta(seconds=1)
+        with freeze_time(started_time):
+            report_started_event(instance, longer_than_global_run, started_time.timestamp())
+
+        record = instance.get_run_record_by_id(longer_than_global_run.run_id)
+        assert record is not None
+
+        workspace = workspace_context.create_request_context()
+        run_launcher = cast("MockRunLauncher", instance.run_launcher)
+
+        # Past the deployment-wide 750s limit but still within the tag's 2000s limit.
+        with freeze_time(started_time + datetime.timedelta(seconds=1000)):
+            monitor_started_run(instance, workspace, record, logger)
+            run = instance.get_run_by_id(longer_than_global_run.run_id)
+            assert run
+            assert run.status == DagsterRunStatus.STARTED
+            assert not run_launcher.termination_calls
+
+        # Past the tag's limit: now it is terminated.
+        with freeze_time(started_time + datetime.timedelta(seconds=2001)):
+            monitor_started_run(instance, workspace, record, logger)
+            assert len(run_launcher.termination_calls) == 1
+            run = instance.get_run_by_id(longer_than_global_run.run_id)
+            assert run
+            assert run.status == DagsterRunStatus.FAILURE
+
+
 def test_invalid_max_runtime_tag_value(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
