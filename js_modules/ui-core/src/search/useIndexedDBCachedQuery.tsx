@@ -23,8 +23,14 @@ export const KEY_PREFIX = 'indexdbQueryCache:';
 class CacheManager<TQuery> {
   private cache: ReturnType<typeof cache<CacheData<TQuery>>> | undefined;
   private key: string;
+  // In-memory mirror of the single entry we keep in IndexedDB, populated by the first read.
+  // Reads are served from here, so it must not outlive the entry it mirrors -- otherwise a
+  // caller can be handed data that has already been deleted on disk.
   private current?: CacheData<TQuery>;
-  private currentAwaitable?: Promise<TQuery | undefined>;
+  private currentAwaitable?: Promise<void>;
+  // Bumped by `clear`. A read that started before the clear landed is stale by the time it
+  // resolves and must not repopulate the mirror.
+  private generation = 0;
 
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
@@ -34,36 +40,48 @@ class CacheManager<TQuery> {
   }
 
   async get(version: number | string): Promise<TQuery | undefined> {
-    if (this.current) {
-      return this.current.data;
+    if (!this.current) {
+      if (!this.currentAwaitable) {
+        this.currentAwaitable = this.readFromCache();
+      }
+      await this.currentAwaitable;
     }
-    if (!this.currentAwaitable) {
-      this.currentAwaitable = new Promise(async (res) => {
-        if (!this.cache) {
-          res(undefined);
-          return;
-        }
-        if (await this.cache.has('cache')) {
-          const entry = await this.cache.get('cache');
-          const value = entry?.value;
-          if (value && version === value.version) {
-            this.current = value;
-            res(value.data);
-          } else {
-            res(undefined);
-          }
-        } else {
-          res(undefined);
-        }
-      });
+    const current = this.current;
+    // The version is checked on every read, not just on the read that populated `current`, so a
+    // caller asking for a different version never receives the entry cached for another one.
+    if (current && current.version === version) {
+      return current.data;
     }
-    return await this.currentAwaitable;
+    return undefined;
   }
 
+  private async readFromCache(): Promise<void> {
+    if (!this.cache) {
+      return;
+    }
+    const generation = this.generation;
+    try {
+      if (!(await this.cache.has('cache'))) {
+        return;
+      }
+      const value = (await this.cache.get('cache'))?.value;
+      // A `clear` may have landed while this read was suspended, in which case `value` is the
+      // entry that was just deleted and must not be written back into the mirror.
+      if (value && !this.current && generation === this.generation) {
+        this.current = value;
+      }
+    } catch {}
+  }
+
+  // Note that this deliberately does not refresh `current`. Managers are process-wide
+  // singletons per key with no lifecycle, so making writes visible to reads turns this into a
+  // write-through in-memory cache whose contents outlive the page state they came from. The
+  // window where `current` is older than IndexedDB is transient -- the only readers load once
+  // per instance, and a reload repopulates the mirror from disk.
   async set(data: TQuery, version: number | string): Promise<void> {
     if (
-      this.current?.data === data ||
-      (stringified(this.current?.data) === stringified(data) && this.current?.version === version)
+      this.current?.version === version &&
+      (this.current.data === data || stringified(this.current.data) === stringified(data))
     ) {
       return;
     }
@@ -74,6 +92,10 @@ class CacheManager<TQuery> {
   }
 
   async clear() {
+    this.generation += 1;
+    this.current = undefined;
+    // Resolve immediately rather than re-reading the entry we're about to delete.
+    this.currentAwaitable = Promise.resolve();
     if (!this.cache) {
       return;
     }
