@@ -646,7 +646,13 @@ class DbtCliResource(ConfigurableResource):
         dagster_dbt_translator = updated_params.dagster_dbt_translator
         selection_args = updated_params.selection_args
         indirect_selection = updated_params.indirect_selection
-        target_path = target_path or self._get_unique_target_path(context=context)
+        raw_target_path = target_path or self._get_unique_target_path(context=context)
+        if not isinstance(raw_target_path, Path):
+            raise ValueError(
+                f"The 'target_path' argument must be a pathlib.Path, not {type(raw_target_path).__name__!r}."
+                " Pass a Path object, for example: target_path=Path('target')."
+            )
+        target_path = raw_target_path
         project_dir = Path(
             updated_params.dbt_project.project_dir
             if updated_params.dbt_project
@@ -717,7 +723,22 @@ class DbtCliResource(ConfigurableResource):
             if self._cli_version.major < 2:
                 try:
                     adapter = self._initialize_dbt_core_adapter(args)
-                except:
+                except ModuleNotFoundError as e:
+                    if "dbt.adapters" in str(e):
+                        logger.warning(
+                            "A dbt adapter package could not be loaded. Please install the"
+                            " appropriate dbt adapter for your data platform (for example:"
+                            " dbt-postgres, dbt-bigquery, or dbt-snowflake). Some Dagster"
+                            " features that require a live connection to your data platform"
+                            " will be unavailable.\n\nOriginal error: %s",
+                            e,
+                        )
+                    else:
+                        logger.warning(
+                            "An error was encountered when creating a handle to the dbt adapter in Dagster.",
+                            exc_info=True,
+                        )
+                except Exception:
                     logger.warning(
                         "An error was encountered when creating a handle to the dbt adapter in Dagster.",
                         exc_info=True,

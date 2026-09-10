@@ -40,11 +40,19 @@ if TYPE_CHECKING:
     REFABLE_NODE_TYPES: list[str] = []
 else:
     if DBT_PYTHON_VERSION is not None:
-        from dbt.adapters.base.impl import (
-            BaseAdapter as BaseAdapter,
-            BaseColumn as BaseColumn,
-            BaseRelation as BaseRelation,
-        )
+        try:
+            from dbt.adapters.base.impl import (
+                BaseAdapter as BaseAdapter,
+                BaseColumn as BaseColumn,
+                BaseRelation as BaseRelation,
+            )
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "A dbt adapter package could not be found.\n\n"
+                "Please install the appropriate dbt adapter for your data platform "
+                "(for example: dbt-postgres, dbt-bigquery, or dbt-snowflake).\n\n"
+                f"Original error:\n{e}"
+            ) from e
         from dbt.contracts.results import NodeStatus, TestStatus
         from dbt.node_types import NodeType as NodeType
 
