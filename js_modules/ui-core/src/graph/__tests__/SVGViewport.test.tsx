@@ -141,9 +141,18 @@ describe('SVGViewport', () => {
   it('shifts position with shiftXY()', () => {
     const ref = createRef<SVGViewportRef>();
     render(<SVGViewport {...DEFAULT_PROPS} ref={ref} />);
-    const initialX = ref.current?.getViewport().left;
-    ref.current?.shiftXY(100, 50);
-    expect(ref.current?.getViewport().left).toBeLessThan(initialX as number);
+    const initialViewport = ref.current?.getViewport();
+    const initialScale = ref.current?.getScale();
+    act(() => {
+      ref.current?.shiftXY(100, 50);
+    });
+    expect(ref.current?.getViewport().left).toBeCloseTo(
+      (initialViewport?.left as number) - 100 / (initialScale as number),
+    );
+    expect(ref.current?.getViewport().top).toBeCloseTo(
+      (initialViewport?.top as number) - 50 / (initialScale as number),
+    );
+    expect(ref.current?.getScale()).toEqual(initialScale);
   });
 
   it('updates scale with adjustZoomRelativeToScreenPoint()', async () => {
