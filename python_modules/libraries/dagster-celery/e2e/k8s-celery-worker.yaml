@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  namespace: dagster
+  labels:
+    app: celery-worker
+    component: celery-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+        component: celery-worker
+    spec:
+      containers:
+        - name: celery-worker
+          image: dagster-celery-e2e:latest
+          imagePullPolicy: Never
+          command:
+            - dagster-celery
+            - worker
+            - start
+            - -A
+            - dagster_celery.app
+            # --config-yaml tells dagster-celery which broker/backend to use;
+            # it writes a dagster_celery_config.py at startup from this file.
+            - --config-yaml
+            - /opt/dagster/celery-config/celery.yaml
+            - --
+            - --concurrency
+            - "1"
+          env:
+            - name: DAGSTER_HOME
+              value: "/opt/dagster/dagster_home"
+            - name: DAGSTER_CELERY_BROKER_HOST
+              value: "dagster-rabbitmq"
+            - name: DAGSTER_POSTGRES_HOST
+              value: "dagster-postgresql"
+            - name: DAGSTER_POSTGRES_PORT
+              value: "5432"
+            - name: DAGSTER_POSTGRES_USER
+              value: "test"
+            # DAGSTER_PG_PASSWORD is the env var name referenced inside dagster.yaml from the ConfigMap
+            - name: DAGSTER_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dagster-postgresql-secret
+                  key: postgresql-password
+            - name: DAGSTER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dagster-postgresql-secret
+                  key: postgresql-password
+            - name: DAGSTER_POSTGRES_DB
+              value: "test"
+          volumeMounts:
+            - name: dagster-instance
+              mountPath: /opt/dagster/dagster_home/dagster.yaml
+              subPath: dagster.yaml
+            - name: celery-config
+              mountPath: /opt/dagster/celery-config
+      volumes:
+        - name: dagster-instance
+          configMap:
+            name: dagster-instance
+        - name: celery-config
+          configMap:
+            name: celery-worker-config
