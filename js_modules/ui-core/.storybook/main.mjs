@@ -1,4 +1,4 @@
-import path, {dirname, join} from 'path';
+import path, {dirname} from 'path';
 import {fileURLToPath} from 'url';
 import graphql from '@rollup/plugin-graphql';
 
@@ -7,7 +7,7 @@ import graphql from '@rollup/plugin-graphql';
  * It is needed in projects that use Yarn PnP or are set up within a monorepo.
  */
 function getAbsolutePath(value) {
-  return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))));
+  return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
 
 const config = {
