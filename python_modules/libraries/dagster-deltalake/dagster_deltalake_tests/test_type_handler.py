@@ -316,6 +316,29 @@ def test_static_partitioned_asset(tmp_path, io_manager):
     assert sorted(out_df["a"].to_pylist()) == ["2", "2", "2", "3", "3", "3"]
 
 
+def test_partitioned_asset_write_when_table_does_not_exist(tmp_path, io_manager):
+    """The first write to a partitioned asset hits the `_has_partitions` branch in
+    `handle_output` before the underlying Delta table has ever been created, so
+    `DeltaTable(...)` raises. That should be swallowed, keeping the default overwrite
+    mode, rather than propagating out of the run.
+    """
+    resource_defs = {"io_manager": io_manager}
+    table_path = os.path.join(tmp_path, "my_schema/static_partitioned")
+    assert not os.path.exists(table_path)
+
+    res = materialize(
+        [static_partitioned],
+        partition_key="red",
+        resources=resource_defs,
+        run_config={"ops": {"my_schema__static_partitioned": {"config": {"value": "1"}}}},
+    )
+
+    assert res.success
+    dt = DeltaTable(table_path)
+    out_df = dt.to_pyarrow_table()
+    assert out_df["a"].to_pylist() == ["1", "1", "1"]
+
+
 @asset(
     partitions_def=StaticPartitionsDefinition(["red", "yellow", "blue"]),
     key_prefix=["my_schema"],
