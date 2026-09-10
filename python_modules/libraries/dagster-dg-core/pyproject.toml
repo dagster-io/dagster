@@ -25,7 +25,11 @@ dependencies = [
     "setuptools",  # Needed to parse setup.cfg
     "packaging",
     "python-dotenv",
-    "typer>=0.15.1,<1.0",
+    # Capped below 0.26: that release vendored its own click fork (typer._click), so
+    # typer.rich_utils.rich_format_help no longer recognizes our click-based options and
+    # command groups and silently drops them from `dg --help` output. See
+    # https://github.com/dagster-io/dagster/issues/33893.
+    "typer>=0.15.1,<0.26",
     "dagster-shared==1!0+dev",
     "dagster-cloud-cli==1!0+dev",
 ]
