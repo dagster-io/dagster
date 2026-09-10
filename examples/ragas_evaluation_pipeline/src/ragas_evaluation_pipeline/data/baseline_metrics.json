@@ -1,0 +1,21 @@
+{
+  "baseline_run_id": "baseline-2026-06-01",
+  "dataset_id": "geo-facts-eval",
+  "dataset_semver": "1.0.0",
+  "corpus_hash": "09580818e273",
+  "index_version": "idx-2026-06-01",
+  "scorer": "deterministic",
+  "model_name": "simulated-extractive-qa",
+  "embedding_model": "keyword-overlap-v0",
+  "prompt_version": "prompt-v1",
+  "retrieval": {
+    "context_precision": 0.5,
+    "context_recall": 1.0,
+    "citation_coverage": 1.0
+  },
+  "generation": {
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.4444,
+    "answer_correctness": 0.8333
+  }
+}
