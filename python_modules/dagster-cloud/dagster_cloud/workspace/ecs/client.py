@@ -531,7 +531,7 @@ class Client:
         )
 
         if exit_code:
-            raise Exception(self.get_task_logs(task_arn))  # ty: ignore[missing-argument]
+            raise Exception(self.get_task_logs(task_arn, container_name=name))
 
         return True
 
