@@ -89,6 +89,62 @@ def test_concurrent_processes(project_dir):
         assert my_project.manifest_path.exists()
 
 
+def test_prepare_guards_deps_and_parse_with_the_same_lock(monkeypatch) -> None:
+    """Ensure deps cannot mutate dbt_packages while another process is parsing."""
+    # Keep the dependency marker out of the session-scoped project fixture so this
+    # test cannot cause later tests to invoke a real `dbt deps` command.
+    with copy_directory(test_jaffle_shop_path) as project_dir:
+        (Path(project_dir) / "packages.yml").write_text("packages: []\n", encoding="utf-8")
+        my_project = DbtProject(project_dir)
+        preparer = DagsterDbtProjectPreparer()
+        guarded_paths = []
+        guard_timeouts = []
+        prepared_steps = []
+
+        def record_guard(target_file_path, update_fn, *, guard_timeout_seconds, **kwargs) -> None:
+            guarded_paths.append(target_file_path)
+            guard_timeouts.append(guard_timeout_seconds)
+            update_fn(**kwargs)
+
+        monkeypatch.setattr(
+            "dagster_dbt.dbt_project.run_with_concurrent_update_guard", record_guard
+        )
+        monkeypatch.setattr(
+            preparer, "_prepare_packages", lambda project: prepared_steps.append("deps")
+        )
+        monkeypatch.setattr(
+            preparer, "_prepare_manifest", lambda project: prepared_steps.append("parse")
+        )
+
+        preparer.prepare(my_project)
+
+        assert guarded_paths == [my_project.manifest_path]
+        # deps and parse now share one guard. Preserve the former 60-second
+        # wait budget for each stage by allowing 120 seconds in total.
+        assert guard_timeouts == [120]
+        assert prepared_steps == ["deps", "parse"]
+
+
+def test_prepare_uses_configured_guard_timeout(monkeypatch) -> None:
+    with copy_directory(test_jaffle_shop_path) as project_dir:
+        my_project = DbtProject(project_dir)
+        preparer = DagsterDbtProjectPreparer(guard_timeout_seconds=15)
+        guard_timeouts = []
+
+        def record_guard(target_file_path, update_fn, *, guard_timeout_seconds, **kwargs) -> None:
+            guard_timeouts.append(guard_timeout_seconds)
+            update_fn(**kwargs)
+
+        monkeypatch.setattr(
+            "dagster_dbt.dbt_project.run_with_concurrent_update_guard", record_guard
+        )
+        monkeypatch.setattr(preparer, "_prepare_manifest", lambda project: None)
+
+        preparer.prepare(my_project)
+
+        assert guard_timeouts == [15]
+
+
 def test_invalidate_seeds_in_partial_parse(project_dir) -> None:
     """Test that seed file checksums are invalidated in partial_parse.msgpack after preparation.
 
