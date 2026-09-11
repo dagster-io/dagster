@@ -74,7 +74,7 @@ def test_default_asset_events_from_run_results_missing_failures_key(
         assert "dagster_dbt/failed_row_count" not in check_eval.metadata
 
 
-@pytest.mark.parametrize("status", ["no-op", "reused"])
+@pytest.mark.parametrize("status", ["no-op", "reused", "warn"])
 def test_default_asset_events_from_run_results_non_error_statuses(
     status: str,
     workspace: DbtCloudWorkspace,

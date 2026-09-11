@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetMaterialization
+from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization
 from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
@@ -56,11 +56,14 @@ def build_log_model_result(node_status: str) -> DbtCoreCliEventMessage:
     )
 
 
-@pytest.mark.parametrize("node_status", ["success", "no-op", "reused"])
+@pytest.mark.parametrize("node_status", ["success", "no-op", "reused", "warn"])
 def test_non_error_node_statuses_materialize(node_status: str) -> None:
-    """`no-op` (dbt 1.10+) and `reused` (dbt 1.12+) are terminal, non-error statuses meaning dbt
-    did not rebuild the node. They must materialize the asset rather than be treated as failures,
-    otherwise the missing materialization cascades to downstream assets.
+    """Statuses a refable node can end on without having failed must materialize the asset,
+    rather than be silently dropped.
+
+    `no-op` (dbt-core 1.10+) and `reused` (dbt-core 1.12+, and dbt Fusion's `Reused*` variants)
+    mean dbt deliberately did not rebuild the node. `warn` is what dbt Fusion serializes
+    `SucceededWithWarning` to -- the node did build, it just emitted a warning.
     """
     events = list(
         build_log_model_result(node_status).to_default_asset_events(
@@ -85,3 +88,65 @@ def test_error_node_statuses_do_not_materialize(node_status: str) -> None:
     )
 
     assert events == []
+
+
+WARNED_TEST_MANIFEST = {
+    "metadata": MANIFEST["metadata"],
+    "nodes": {
+        **MANIFEST["nodes"],
+        "test.pytest_dwh.unique_orders": {
+            "unique_id": "test.pytest_dwh.unique_orders",
+            "name": "unique_orders",
+            "resource_type": "test",
+            "materialized": "test",
+            "database": "dev",
+            "schema": "public",
+            "alias": "unique_orders",
+            "path": "unique_orders.sql",
+            "config": {"schema": "public"},
+            "description": "",
+            "depends_on": {"nodes": ["model.pytest_dwh.public__orders"]},
+            "attached_node": "model.pytest_dwh.public__orders",
+        },
+    },
+}
+
+
+def test_warn_on_a_test_is_still_a_warn_severity_check() -> None:
+    """`warn` means opposite things either side of the resource-type gate: a success for a
+    refable node, but a warn-severity check failure for a test. dbt serializes both to the same
+    string, so accepting `warn` for models must not leak into the test path.
+    """
+    event = DbtCoreCliEventMessage(
+        raw_event={
+            "data": {
+                "node_info": {
+                    "node_status": "warn",
+                    "node_name": "unique_orders",
+                    "resource_type": "test",
+                    "unique_id": "test.pytest_dwh.unique_orders",
+                    "node_started_at": "2025-03-10T12:53:36.820592",
+                    "node_finished_at": "2025-03-10T12:53:48.818126",
+                },
+                "status": "WARN",
+                "num_failures": 3,
+            },
+            "info": {
+                "invocation_id": "c630c6bf-633e-4612-8e46-2f170224066c",
+                "level": "warn",
+                "msg": "1 of 1 WARN 3",
+                "name": "LogTestResult",
+            },
+        },
+        event_history_metadata={},
+    )
+
+    events = list(event.to_default_asset_events(WARNED_TEST_MANIFEST, DagsterDbtTranslator()))
+
+    # No materialization: a test is not a refable node.
+    assert [e for e in events if isinstance(e, AssetMaterialization)] == []
+
+    evaluations = [e for e in events if isinstance(e, AssetCheckEvaluation)]
+    assert len(evaluations) == 1
+    assert evaluations[0].passed is False
+    assert evaluations[0].severity == AssetCheckSeverity.WARN
