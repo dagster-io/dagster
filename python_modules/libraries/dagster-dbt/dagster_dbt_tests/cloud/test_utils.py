@@ -29,7 +29,7 @@ def materializations_for(status: str) -> list[AssetMaterialization]:
     ]
 
 
-@pytest.mark.parametrize("status", ["success", "no-op", "reused"])
+@pytest.mark.parametrize("status", ["success", "no-op", "reused", "warn"])
 def test_non_error_statuses_materialize(status: str) -> None:
     """`no-op` (dbt-core 1.10+) and `reused` (dbt-core 1.12+) are terminal, non-error statuses
     meaning dbt did not rebuild the node, so the model should still be materialized.
