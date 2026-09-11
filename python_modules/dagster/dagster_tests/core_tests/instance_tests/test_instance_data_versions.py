@@ -89,7 +89,7 @@ def test_compute_logical_data_version():
         {dg.AssetKey(["beta"]): dg.DataVersion("1"), dg.AssetKey(["alpha"]): dg.DataVersion("2")},
     )
     hash_sig = sha256()
-    hash_sig.update(bytearray("".join(["foo", "2", "1"]), "utf8"))
+    hash_sig.update(bytearray("".join(f"{len(s)}:{s}" for s in ["foo", "2", "1"]), "utf8"))
     assert result == dg.DataVersion(hash_sig.hexdigest())
 
 
