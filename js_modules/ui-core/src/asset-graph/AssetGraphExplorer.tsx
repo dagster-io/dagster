@@ -459,6 +459,14 @@ const AssetGraphExplorerWithData = ({
     !isMobileScreen && (viewType === 'global' || viewType === 'catalog'),
   );
 
+  // Crossing into the phone breakpoint after mount (resize, rotation) must
+  // collapse the sidebar too; leaving it keeps whatever the user last chose.
+  React.useEffect(() => {
+    if (isMobileScreen) {
+      setShowSidebar(false);
+    }
+  }, [isMobileScreen]);
+
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
     // Include both an exact match and a wildcard descendant match so that
     // synthetic ancestor clusters (no asset has group_name === "marketing"

@@ -14,7 +14,7 @@ import {memo, useContext, useLayoutEffect, useMemo, useRef, useState} from 'reac
 import {Link} from 'react-router-dom';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {FailedStepSummary} from './FailedStepSummary';
+import {FailedStepSummary, StepFailureNode} from './FailedStepSummary';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
@@ -35,7 +35,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import styles from './css/Run.module.css';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {RunPageFragment} from './types/RunFragments.types';
 import {
   matchingComputeLogKeyFromStepKey,
   useComputeLogFileKeyForSelection,
@@ -84,16 +84,10 @@ export const Run = memo((props: RunProps) => {
   useDocumentTitle(documentTitle);
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
 
-  const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
-    const errorNode = logs.find(
-      (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    );
-
-    if (errorNode) {
-      showCustomAlert({
-        body: <PythonErrorInfo error={errorNode} />,
-      });
-    }
+  const onShowFailureNode = (node: StepFailureNode) => {
+    showCustomAlert({
+      body: <PythonErrorInfo error={node.error ?? node} />,
+    });
   };
 
   const onSetSelectionQuery = (query: string) => {
@@ -123,7 +117,7 @@ export const Run = memo((props: RunProps) => {
                   selectionQuery={selectionQuery}
                   onSetLogsFilter={setLogsFilter}
                   onSetSelectionQuery={onSetSelectionQuery}
-                  onShowStateDetails={onShowStateDetails}
+                  onShowFailureNode={onShowFailureNode}
                 />
               )}
             </RunMetadataProvider>
@@ -158,7 +152,7 @@ interface RunWithDataProps {
   metadata: IRunMetadataDict;
   onSetLogsFilter: (v: LogFilter) => void;
   onSetSelectionQuery: (query: string) => void;
-  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
+  onShowFailureNode: (node: StepFailureNode) => void;
 }
 
 const logTypeFromQuery = (queryLogType: string) => {
@@ -194,7 +188,7 @@ const RunWithData = ({
   selectionQuery,
   onSetLogsFilter,
   onSetSelectionQuery,
-  onShowStateDetails,
+  onShowFailureNode,
 }: RunWithDataProps) => {
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
@@ -415,7 +409,7 @@ const RunWithData = ({
                   logs={logs}
                   metadata={metadata}
                   onSelectStep={(stepKey) => onSetSelectionQuery(`name:"${stepKey}"`)}
-                  onShowDetails={onShowStateDetails}
+                  onShowDetails={onShowFailureNode}
                 />
               ) : null}
               <LogsToolbar

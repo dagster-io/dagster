@@ -5,13 +5,18 @@ import {LogsProviderLogs} from './LogsProvider';
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import styles from './css/FailedStepSummary.module.css';
 import {LogNode} from './types';
-import {RunDagsterRunEventFragment} from './types/RunFragments.types';
+
+/** The events that mark a step as failed in RunMetadataProvider. */
+export type StepFailureNode = Extract<
+  LogNode,
+  {__typename: 'ExecutionStepFailureEvent' | 'ResourceInitFailureEvent'}
+>;
 
 interface Props {
   logs: LogsProviderLogs;
   metadata: IRunMetadataDict;
   onSelectStep: (stepKey: string) => void;
-  onShowDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
+  onShowDetails: (failureNode: StepFailureNode) => void;
 }
 
 /**
@@ -26,7 +31,7 @@ export const FailedStepSummary = ({logs, metadata, onSelectStep, onShowDetails}:
     return null;
   }
 
-  const {stepKey, message, otherFailedCount, allNodes} = summary;
+  const {stepKey, message, otherFailedCount, failureNode} = summary;
 
   return (
     <Box
@@ -46,7 +51,13 @@ export const FailedStepSummary = ({logs, metadata, onSelectStep, onShowDetails}:
           {stepKey}
         </Text>
       ) : null}
-      {message ? <div className={styles.message}>{message}</div> : null}
+      {message ? (
+        <div className={styles.message}>{message}</div>
+      ) : stepKey ? (
+        <Text size={12} color="textLight">
+          Error details aren&apos;t in the loaded logs. Show step logs to see the full output.
+        </Text>
+      ) : null}
       {otherFailedCount > 0 ? (
         <Text size={12} color="textLight">
           {otherFailedCount} more failed {otherFailedCount === 1 ? 'step' : 'steps'}
@@ -57,12 +68,11 @@ export const FailedStepSummary = ({logs, metadata, onSelectStep, onShowDetails}:
           <Button icon={<Icon name="filter_alt" />} onClick={() => onSelectStep(stepKey)}>
             Show step logs
           </Button>
-          <Button
-            icon={<Icon name="open_in_new" />}
-            onClick={() => onShowDetails(stepKey, allNodes)}
-          >
-            Full error
-          </Button>
+          {failureNode ? (
+            <Button icon={<Icon name="open_in_new" />} onClick={() => onShowDetails(failureNode)}>
+              Full error
+            </Button>
+          ) : null}
         </Box>
       ) : null}
     </Box>
@@ -73,7 +83,7 @@ interface FailureSummary {
   stepKey: string | null;
   message: string | null;
   otherFailedCount: number;
-  allNodes: LogNode[];
+  failureNode: StepFailureNode | null;
 }
 
 const MAX_MESSAGE_CHARS = 280;
@@ -82,6 +92,9 @@ const firstLines = (text: string) => {
   const trimmed = text.trim();
   return trimmed.length > MAX_MESSAGE_CHARS ? `${trimmed.slice(0, MAX_MESSAGE_CHARS)}…` : trimmed;
 };
+
+const isStepFailureNode = (node: LogNode): node is StepFailureNode =>
+  node.__typename === 'ExecutionStepFailureEvent' || node.__typename === 'ResourceInitFailureEvent';
 
 export const summarizeFailure = (
   logs: LogsProviderLogs,
@@ -100,18 +113,18 @@ export const summarizeFailure = (
       (a, b) => (metadata.steps[a]?.end ?? 0) - (metadata.steps[b]?.end ?? 0),
     );
     const stepKey = sorted[0] as string;
-    const failureEvent = allNodes.find(
-      (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    );
-    const message =
-      failureEvent && failureEvent.__typename === 'ExecutionStepFailureEvent'
-        ? (failureEvent.error?.message ?? failureEvent.message)
-        : null;
+    // A step is FAILED after either event; the failure event may also be
+    // missing entirely when the logs are capped or still loading.
+    const failureNode =
+      allNodes.find(
+        (node): node is StepFailureNode => isStepFailureNode(node) && node.stepKey === stepKey,
+      ) ?? null;
+    const message = failureNode ? (failureNode.error?.message ?? failureNode.message) : null;
     return {
       stepKey,
       message: message ? firstLines(message) : null,
       otherFailedCount: failedSteps.length - 1,
-      allNodes,
+      failureNode,
     };
   }
 
@@ -122,7 +135,7 @@ export const summarizeFailure = (
       stepKey: null,
       message: message ? firstLines(message) : null,
       otherFailedCount: 0,
-      allNodes,
+      failureNode: null,
     };
   }
 
