@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.13.22 (core) / 0.29.22 (libraries)
+
+### New
+
+- Run dequeuing is now significantly faster when concurrency pools are in use and many runs are queued, as pool state is read once per dequeue pass rather than repeatedly.
+- In Dagster+, the MCP server's `launch_job_run` and `launch_asset_run` tools no longer require a code location and repository name. They are looked up from the job being launched.
+- [ui] The tick timeline now supports filtering to a time window, paging through history, and a live-updating view.
+- [dagster-dbt] Added support for dbt-core 1.12. (Thanks, [@jrbasso](https://github.com/jrbasso)!)
+- [dagster-looker] Now requires `python-liquid>=2.2.1` (previously `<2`).
+- [dagster-prefect] A new Prefect integration is available in preview. Launch Prefect deployments and background tasks from a Dagster asset with Dagster Pipes, including partition mapping and cancellation forwarding.
+
+### Bugfixes
+
+- In Dagster+, querying asset metrics by asset key no longer fails with a server error.
+
 ## 1.13.21 (core) / 0.29.21 (libraries)
 
 ### New
