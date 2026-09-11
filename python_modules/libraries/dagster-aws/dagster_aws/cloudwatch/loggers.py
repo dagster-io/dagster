@@ -172,7 +172,7 @@ class CloudwatchLogsHandler(logging.Handler):
                 self.retry(record)
             else:
                 logging.error(f"Cloudwatch logger: Service unavailable: {res}")
-        except self.client.exceptions.ServiceUnavailableException:
+        except self.client.exceptions.UnrecognizedClientException:
             if not retry:
                 self.retry(record)
             else:
