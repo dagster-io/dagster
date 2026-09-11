@@ -32,8 +32,15 @@ from dagster_dbt.asset_utils import (
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
+    get_node,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import (
+    MATERIALIZABLE_NODE_TYPES,
+    REFABLE_NODE_TYPES,
+    NodeStatus,
+    NodeType,
+    TestStatus,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
@@ -61,7 +68,7 @@ class CheckProperties(TypedDict):
 
 def _build_column_lineage_metadata(
     event_history_metadata: EventHistoryMetadata,
-    dbt_resource_props: dict[str, Any],
+    dbt_resource_props: Mapping[str, Any],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
     target_path: Path | None,
@@ -86,11 +93,13 @@ def _build_column_lineage_metadata(
     ):
         return {}
 
-    event_node_info: dict[str, Any] = dbt_resource_props
+    event_node_info: Mapping[str, Any] = dbt_resource_props
     unique_id: str = event_node_info["unique_id"]
 
     node_resource_type: str = event_node_info["resource_type"]
 
+    # non-refable nodes, such as dbt functions (UDFs), are not relations, so they do not have
+    # column lineage of their own
     if node_resource_type not in REFABLE_NODE_TYPES:
         return {}
 
@@ -140,8 +149,14 @@ def _build_column_lineage_metadata(
     sqlglot_column_names = set(optimized_node_ast.named_selects)
 
     # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
-    dbt_parent_resource_props_by_relation_name: dict[str, dict[str, Any]] = {}
+    dbt_parent_resource_props_by_relation_name: dict[str, Mapping[str, Any]] = {}
     for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
+        # a node may depend on a dbt function (UDF). functions are not relations, so they cannot
+        # contribute columns to the node's lineage, and they are stored outside of
+        # `manifest["nodes"]`.
+        if parent_unique_id in manifest.get("functions", {}):
+            continue
+
         is_resource_type_source = parent_unique_id.startswith("source")
         parent_dbt_resource_props = (
             manifest["sources"] if is_resource_type_source else manifest["nodes"]
@@ -270,7 +285,7 @@ class DbtCliEventMessage(ABC):
             or resource_props.get("config", {}).get("materialized")
         )
         return (
-            resource_props["resource_type"] in REFABLE_NODE_TYPES
+            resource_props["resource_type"] in MATERIALIZABLE_NODE_TYPES
             and materialized_type != "ephemeral"
             and self._get_node_status() == NodeStatus.Success
         )
@@ -282,8 +297,10 @@ class DbtCliEventMessage(ABC):
             and self._get_node_status() != NodeStatus.Skipped
         )
 
-    def _get_resource_props(self, unique_id: str, manifest: Mapping[str, Any]) -> dict[str, Any]:
-        return manifest["nodes"][unique_id]
+    def _get_resource_props(self, unique_id: str, manifest: Mapping[str, Any]) -> Mapping[str, Any]:
+        # note that dbt functions (UDFs) are not in `manifest["nodes"]`, so we can't index into it
+        # directly here
+        return get_node(manifest, unique_id)
 
     def _get_execution_duration_metadata(self) -> Mapping[str, float]:
         raw_started_at = self._raw_node_info.get("node_started_at")
@@ -492,7 +509,13 @@ class DbtCliEventMessage(ABC):
             logger.warning(message)
 
         for upstream_unique_id in resource_props["depends_on"]["nodes"]:
-            upstream_resource_props: dict[str, Any] = validated_manifest["nodes"].get(
+            # a test may depend on a dbt function (UDF), which is stored outside of
+            # `manifest["nodes"]`. functions are not relations, so a test result says nothing about
+            # them.
+            if upstream_unique_id in validated_manifest.get("functions", {}):
+                continue
+
+            upstream_resource_props: Mapping[str, Any] = validated_manifest["nodes"].get(
                 upstream_unique_id
             ) or validated_manifest["sources"].get(upstream_unique_id)
             upstream_asset_key = dagster_dbt_translator.get_asset_key(upstream_resource_props)
@@ -595,7 +618,14 @@ class DbtCoreCliEventMessage(DbtCliEventMessage):
             return False
 
         return self.raw_event["info"]["name"] in set(
-            ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
+            [
+                "LogSeedResult",
+                "LogModelResult",
+                "LogSnapshotResult",
+                "LogTestResult",
+                # emitted for dbt functions (UDFs) in dbt-core 1.11+
+                "LogFunctionResult",
+            ]
         ) and not unique_id.startswith("unit_test")
 
     def _get_check_passed(self) -> bool:

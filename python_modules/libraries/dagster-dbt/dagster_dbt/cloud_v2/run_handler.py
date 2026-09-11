@@ -17,10 +17,10 @@ from dagster._time import get_current_timestamp
 from dateutil import parser
 from requests.exceptions import RequestException
 
-from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
+from dagster_dbt.asset_utils import build_dbt_specs, find_node, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudRun
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import MATERIALIZABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
@@ -150,7 +150,8 @@ class DbtCloudJobRunResults:
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
-            dbt_resource_props: Mapping[str, Any] = manifest["nodes"].get(unique_id)
+            # note that dbt functions (UDFs) are not in `manifest["nodes"]`
+            dbt_resource_props = find_node(manifest, unique_id)
             if not dbt_resource_props:
                 logger.warning(
                     f"Unique ID {unique_id} not found in manifest. "
@@ -188,7 +189,7 @@ class DbtCloudJobRunResults:
             )
 
             if (
-                resource_type in REFABLE_NODE_TYPES
+                resource_type in MATERIALIZABLE_NODE_TYPES
                 and result_status == NodeStatus.Success
                 and not is_ephemeral
             ):

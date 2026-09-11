@@ -477,6 +477,37 @@ Ensure that the [`default_automation_condition_sensor` is enabled](/guides/autom
 
 Note that Dagster allows the optional specification of a [`code_version`](/guides/build/assets/defining-assets#asset-code-versions) for each asset definition, which is used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
 
+## Loading dbt functions as assets
+
+:::note
+
+`dbt-core` 1.11 or later is required to define [dbt functions](https://docs.getdbt.com/docs/build/udfs).
+
+:::
+
+dbt functions (user-defined functions, or UDFs) are loaded as assets, in the same way that models, seeds, and snapshots are. The asset key for a dbt function is the name of the function, and materializing the asset creates the function in your warehouse.
+
+When a dbt model calls a function, that function is an upstream dependency of the model, so Dagster materializes the function before the models that use it:
+
+```sql
+select
+  customer_id,
+  {{ function('is_positive_int') }}(customer_id) as has_valid_id
+
+from {{ ref('stg_customers') }}
+```
+
+To load only the functions in your dbt project, use dbt's `resource_type` selection method:
+
+```python
+@dbt_assets(
+    manifest=Path("target", "manifest.json"),
+    select="resource_type:function",
+)
+def my_dbt_functions(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream()
+```
+
 ## Loading dbt tests as asset checks
 
 :::note
