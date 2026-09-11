@@ -616,7 +616,6 @@ test = [
     { name = "dagster-spark", editable = "../dagster-spark" },
     { name = "dagster-test", editable = "../../dagster-test" },
     { name = "moto", extras = ["s3", "server", "glue", "emrserverless", "logs", "emrcontainers"], specifier = ">=5.0" },
-    { name = "pytest-cases" },
     { name = "pytest-rerunfailures" },
     { name = "requests-mock" },
     { name = "s3fs" },
