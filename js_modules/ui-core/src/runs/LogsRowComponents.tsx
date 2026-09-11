@@ -8,6 +8,7 @@ import {Link, useLocation} from 'react-router-dom';
 import {LogLevel} from './LogLevel';
 import {ColumnWidthsContext} from './LogsScrollingTableHeader';
 import styles from './css/LogsRowComponents.module.css';
+import {LayoutContext} from '../app/LayoutProvider';
 import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
@@ -53,7 +54,14 @@ export const StructuredContent = ({className, ...rest}: React.HTMLAttributes<HTM
 //
 export const OpColumn = (props: {stepKey: string | false | null}) => {
   const widths = React.useContext(ColumnWidthsContext);
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
   const parts = String(props.stepKey).split('.');
+
+  // Hidden on mobile so the log message keeps a usable width.
+  if (isMobileScreen) {
+    return null;
+  }
+
   return (
     <OpColumnContainer style={{width: widths.solid}}>
       {props.stepKey

@@ -64,3 +64,15 @@
 .table tr td :global(.BaseTag) {
   font-family: var(--font-family-default);
 }
+
+/* Mobile: table content (long repository/asset names) forces the table wider
+   than the screen and pushes the page out. Make the table its own horizontal
+   scroll container instead. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

@@ -58,3 +58,44 @@
   transition-property: opacity, transform;
   transition-timing-function: ease-in-out;
 }
+
+/* Mobile: dialogs set inline widths for desktop (e.g. `minWidth: 600px`) that
+   cannot fit a phone, so they overflow the viewport. Override those inline
+   values and shrink the container gutters. Keep the max-width value in sync
+   with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .dagster-portal .bp5-dialog-container {
+    grid-template-columns: 8px 1fr 8px;
+    grid-template-rows: minmax(8px, 1fr) auto minmax(8px, 2fr);
+  }
+
+  /* !important is required: these widths are set as inline styles by callers. */
+  .dagster-portal .bp5-dialog {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Long config/YAML bodies must scroll inside the dialog rather than push it
+     past the bottom of the screen. */
+  .dagster-portal .bp5-dialog > * {
+    min-height: 0;
+    max-width: 100%;
+  }
+}
+
+/* A config/YAML editor inside a dialog sizes itself to its longest line, which
+   on mobile pushes past the dialog and the viewport. Let it scroll internally. */
+@media (max-width: 768px) {
+  .dagster-portal .bp5-dialog .CodeMirror {
+    max-width: 100%;
+  }
+
+  .dagster-portal .bp5-dialog .CodeMirror-scroll {
+    max-width: 100%;
+    overflow-x: auto !important;
+  }
+}

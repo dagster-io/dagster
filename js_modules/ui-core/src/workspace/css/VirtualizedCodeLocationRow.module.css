@@ -1,4 +1,49 @@
 .rowGrid {
+  composes: mobileCardGrid from '../../ui/css/MobileTableCard.module.css';
   display: grid;
   grid-template-columns: 3fr 1fr 1fr 160px;
+}
+
+.tableHeader {
+  composes: mobileHiddenHeader from '../../ui/css/MobileTableCard.module.css';
+}
+
+/* Phone layout (see VirtualizedCodeLocationRow.tsx):
+     [name + one-line counts .........] [menu]
+     [status]                 [updated] [menu]
+   Reload lives in the menu; image/module metadata is desktop-only. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in ui-components
+   breakpoints.ts. */
+@media (max-width: 768px) {
+  .rowGrid {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'name name actions'
+      'status updated actions';
+    column-gap: 8px;
+    row-gap: 4px;
+    align-items: center;
+    padding: 8px 4px 8px 12px;
+  }
+
+  .cellName {
+    grid-area: name;
+    min-width: 0;
+  }
+
+  .cellStatus {
+    grid-area: status;
+  }
+
+  .cellUpdated {
+    grid-area: updated;
+    justify-self: end;
+    font-size: 12px;
+    color: var(--color-text-light);
+  }
+
+  .cellActions {
+    grid-area: actions;
+    align-items: center !important;
+  }
 }

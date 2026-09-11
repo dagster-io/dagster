@@ -22,6 +22,7 @@ import {
 import {DUNDER_REPO_NAME, buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {workspacePathFromAddress} from './workspacePath';
+import {LayoutContext} from '../app/LayoutProvider';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import styles from './css/VirtualizedCodeLocationRow.module.css';
 
@@ -53,11 +54,12 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
     const {locationEntry, locationStatus, index} = props;
     const {name} = locationStatus;
     const repoAddress = buildRepoAddress(DUNDER_REPO_NAME, name);
+    const {isMobileScreen} = React.useContext(LayoutContext).nav;
 
     return (
       <div ref={ref} data-index={index}>
         <Box border="bottom" className={styles.rowGrid}>
-          <RowCell>
+          <RowCell className={styles.cellName}>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
                 <Link to={workspacePathFromAddress(repoAddress)}>
@@ -66,21 +68,29 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
               </div>
             </Box>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellStatus}>
             <div>
               <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </div>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellUpdated}>
             <div style={{whiteSpace: 'nowrap'}}>
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell>
-            <JoinedButtons>
-              <ReloadButton location={name} />
-              {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
-            </JoinedButtons>
+          <RowCell className={styles.cellActions}>
+            {isMobileScreen ? (
+              locationEntry ? (
+                <CodeLocationMenu locationNode={locationEntry} reloadLocation={name} />
+              ) : (
+                <ReloadButton location={name} />
+              )
+            ) : (
+              <JoinedButtons>
+                <ReloadButton location={name} />
+                {locationEntry ? <CodeLocationMenu locationNode={locationEntry} /> : null}
+              </JoinedButtons>
+            )}
           </RowCell>
         </Box>
       </div>
@@ -99,39 +109,52 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
   (props: RepoRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {locationEntry, locationStatus, repository, index} = props;
     const repoAddress = buildRepoAddress(repository.name, repository.location.name);
+    const {isMobileScreen} = React.useContext(LayoutContext).nav;
 
     const allMetadata = [...locationEntry.displayMetadata, ...repository.displayMetadata];
 
     return (
       <div ref={ref} data-index={index}>
         <Box border="bottom" className={styles.rowGrid}>
-          <RowCell>
+          <RowCell className={styles.cellName}>
             <Box flex={{direction: 'column', gap: 4}}>
               <div style={{fontWeight: 500}}>
                 <Link to={workspacePathFromAddress(repoAddress)}>
                   <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
                 </Link>
               </div>
-              <ImageName metadata={allMetadata} />
-              <ModuleOrPackageOrFile metadata={allMetadata} />
-              <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
+              {isMobileScreen ? null : (
+                <>
+                  <ImageName metadata={allMetadata} />
+                  <ModuleOrPackageOrFile metadata={allMetadata} />
+                </>
+              )}
+              <RepositoryCountTags
+                repo={repository}
+                repoAddress={repoAddress}
+                compact={isMobileScreen}
+              />
             </Box>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellStatus}>
             <div>
               <LocationStatus locationStatus={locationStatus} locationOrError={locationEntry} />
             </div>
           </RowCell>
-          <RowCell>
+          <RowCell className={styles.cellUpdated}>
             <div style={{whiteSpace: 'nowrap'}}>
               <TimeFromNow unixTimestamp={locationStatus.updateTimestamp} />
             </div>
           </RowCell>
-          <RowCell style={{alignItems: 'flex-end'}}>
-            <JoinedButtons>
-              <ReloadButton location={locationStatus.name} />
-              <CodeLocationMenu locationNode={locationEntry} />
-            </JoinedButtons>
+          <RowCell className={styles.cellActions} style={{alignItems: 'flex-end'}}>
+            {isMobileScreen ? (
+              <CodeLocationMenu locationNode={locationEntry} reloadLocation={locationStatus.name} />
+            ) : (
+              <JoinedButtons>
+                <ReloadButton location={locationStatus.name} />
+                <CodeLocationMenu locationNode={locationEntry} />
+              </JoinedButtons>
+            )}
           </RowCell>
         </Box>
       </div>
@@ -141,7 +164,7 @@ export const VirtualizedCodeLocationRepositoryRow = React.forwardRef(
 
 export const VirtualizedCodeLocationHeader = () => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky className={styles.tableHeader}>
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>

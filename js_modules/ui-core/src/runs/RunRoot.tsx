@@ -8,7 +8,7 @@ import {
   PageHeader,
   Tag,
 } from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {useContext, useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
 import {Run} from './Run';
@@ -25,6 +25,7 @@ import {getExternalRunUrl, isExternalRun} from './externalRuns';
 import {gql, useQuery} from '../apollo-client';
 import {RunPageFragment} from './types/RunFragments.types';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {LayoutContext} from '../app/LayoutProvider';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
@@ -47,6 +48,9 @@ export const RunRoot = () => {
   const {data, loading} = queryResult;
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
+  // On a phone the header's action menu is a single caret; rendering it among
+  // the tags saves the extra line the PageHeader "right" slot would wrap onto.
+  const {isMobileScreen} = useContext(LayoutContext).nav;
   const snapshotID = run?.pipelineSnapshotId;
 
   const repoMatch = useRepositoryForRunWithParentSnapshot(run);
@@ -148,10 +152,11 @@ export const RunRoot = () => {
                     evaluationId={automaterializeTag.value}
                   />
                 ) : null}
+                {isMobileScreen ? <RunHeaderActions run={run} isJob={isJob} /> : null}
               </Box>
             ) : null
           }
-          right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
+          right={run && !isMobileScreen ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
       <RunById data={data} runId={runId} />

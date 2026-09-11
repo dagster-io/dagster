@@ -82,3 +82,33 @@
 .right > * {
   pointer-events: all;
 }
+
+/* Phone: keep the row on one line. The content truncates and the right-hand
+   controls keep their natural width (scrolling horizontally if they must)
+   rather than wrapping under the content, which made each row ~140px tall.
+   Keep the max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .listItem {
+    --spacing-left: 12px !important;
+    --spacing-right: 8px !important;
+    align-items: center;
+  }
+
+  .listItemAnchor {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .right {
+    flex: none;
+    align-self: center;
+    max-width: 60%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .right::-webkit-scrollbar {
+    display: none;
+  }
+}

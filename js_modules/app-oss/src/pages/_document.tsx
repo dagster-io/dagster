@@ -39,6 +39,7 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head nonce="NONCE-PLACEHOLDER">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script
           nonce="NONCE-PLACEHOLDER"
           dangerouslySetInnerHTML={{

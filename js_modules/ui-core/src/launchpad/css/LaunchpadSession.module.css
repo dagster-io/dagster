@@ -1,3 +1,20 @@
 .sessionSettingsSpacer {
   width: 5px;
 }
+
+.mobileLaunchBar {
+  flex-shrink: 0;
+  background-color: var(--color-background-default);
+}
+
+/* Keep in sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .mobileLaunchBar > * {
+    flex: 1;
+  }
+
+  .mobileLaunchBar button {
+    width: 100%;
+    justify-content: center;
+  }
+}

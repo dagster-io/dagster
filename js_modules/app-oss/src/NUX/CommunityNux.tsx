@@ -16,6 +16,8 @@ import {useStateWithStorage} from '@dagster-io/ui-core/hooks/useStateWithStorage
 import * as React from 'react';
 import isEmail from 'validator/lib/isEmail';
 
+import styles from './CommunityNux.module.css';
+
 export const CommunityNux = () => {
   const [didDismissCommunityNux, dissmissInBrowser] = useStateWithStorage(
     'communityNux',
@@ -96,12 +98,14 @@ const Form = ({dismiss, submit}: FormProps) => {
   return (
     <Box
       flex={{direction: 'column', gap: 16}}
-      style={{padding: '36px', width: '680px', background: Colors.backgroundDefault()}}
+      className={styles.form}
+      style={{padding: '36px', background: Colors.backgroundDefault()}}
     >
       <Box
         flex={{direction: 'row', gap: 24, alignItems: 'center'}}
         padding={{bottom: 24}}
         border="bottom"
+        className={styles.header}
       >
         <Box flex={{direction: 'column', gap: 8, alignItems: 'start', justifyContent: 'start'}}>
           <Heading size={20} weight={500}>
@@ -111,7 +115,7 @@ const Form = ({dismiss, submit}: FormProps) => {
             Connect with thousands of other data practitioners building with Dagster. Share
             knowledge, get help, and contribute to the open-source project.
           </Text>
-          <Box flex={{direction: 'row', gap: 8}}>
+          <Box flex={{direction: 'row', gap: 8}} className={styles.linkButtons}>
             <ExternalAnchorButton
               icon={<Icon name="slack" />}
               href="https://www.dagster.io/slack?utm_source=local-nux"
@@ -132,7 +136,15 @@ const Form = ({dismiss, submit}: FormProps) => {
             </ExternalAnchorButton>
           </Box>
         </Box>
-        <video autoPlay muted loop playsInline width={120} height={120}>
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          width={120}
+          height={120}
+          className={styles.headerVideo}
+        >
           <source src={`${process.env.PUBLIC_URL}/Dagster_world.mp4`} type="video/mp4" />
         </video>
       </Box>
@@ -165,7 +177,10 @@ const Form = ({dismiss, submit}: FormProps) => {
           <label htmlFor="newsletter">Sign up for the Dagster newsletter</label>
         </Box>
       </Box>
-      <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+      <Box
+        flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        className={styles.footer}
+      >
         <a href="https://dagster.io/privacy" target="_blank" rel="noreferrer">
           Privacy Policy
         </a>

@@ -30,3 +30,12 @@
 .sectionHeaderButton.collapsed :global(.iconGlobal[aria-label='arrow_drop_down']) {
   transform: rotate(-90deg);
 }
+
+/* Phone: the header is a tap target. Keep in sync with MOBILE_BREAKPOINT_PX in
+   ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .sectionHeaderButton {
+    height: auto;
+    min-height: 44px;
+  }
+}

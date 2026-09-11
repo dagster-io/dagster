@@ -1,5 +1,96 @@
 .rowGrid {
+  composes: mobileCardGrid from '../../ui/css/MobileTableCard.module.css';
   display: grid;
   grid-template-columns: 60px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(0, 1fr) 140px 170px 120px 132px;
   height: 100%;
+}
+
+.tableHeader {
+  composes: mobileHiddenHeader from '../../ui/css/MobileTableCard.module.css';
+}
+
+/* Two-line phone row (see RunsFeedRow.tsx):
+     [status] [target ..............] [menu]
+     [id - duration - time ..........] [menu]
+   Inert on desktop, where the grid row above is rendered instead. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in ui-components
+   breakpoints.ts. */
+.mobileRow {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .rowGrid,
+  .tableHeader {
+    display: none;
+  }
+
+  .mobileRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'status target menu'
+      'meta meta menu';
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: center;
+    padding: 6px 4px 6px 12px;
+    cursor: pointer;
+  }
+
+  .mobileRow:active {
+    background-color: var(--color-background-light);
+  }
+
+  .mobileStatus {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+  }
+
+  .mobileTarget {
+    grid-area: target;
+    min-width: 0;
+    overflow: hidden;
+    /* Tag collections wrap onto several lines on desktop; on a phone one line. */
+    max-height: 24px;
+  }
+
+  .mobileMeta {
+    grid-area: meta;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--color-text-light);
+  }
+
+  .mobileId {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+  }
+
+  .mobileMetaItem {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobileMetaItem > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobileMenu {
+    grid-area: menu;
+    align-self: center;
+  }
 }

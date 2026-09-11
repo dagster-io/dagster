@@ -42,3 +42,93 @@
   flex: 0 0 var(--nav-width-collapsed);
   padding: 16px 2px;
 }
+
+.mobileTopBar,
+.drawerHeader {
+  display: none;
+}
+
+/* Keep the max-width value in sync with MOBILE_BREAKPOINT_PX in
+   ui-components/src/components/breakpoints.ts. CSS custom properties cannot
+   be used inside media queries. */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .mobileTopBar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+  }
+
+  .wordmark {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .wordmark svg {
+    display: block;
+  }
+
+  .iconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px minimum touch target. */
+    min-width: 44px;
+    min-height: 44px;
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .iconButton:hover {
+    background-color: var(--color-background-lighter);
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background-color: var(--color-dialog-background);
+  }
+
+  .nav,
+  .nav.collapsed {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    /* Narrower than the desktop sidebar so the page stays visible behind it. */
+    width: min(280px, 80vw);
+    flex: none;
+    padding: 0 4px 16px 16px;
+    z-index: 31;
+    background-color: var(--color-background-default);
+    transform: translateX(-100%);
+    transition: transform 150ms ease;
+    box-shadow: inset -1px 0 0 var(--color-keyline-default);
+  }
+
+  .nav.mobileOpen {
+    transform: translateX(0);
+  }
+
+  .drawerHeader {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 0;
+    margin-right: -4px;
+  }
+
+  .main,
+  .container:has(.nav.collapsed) .main {
+    width: 100%;
+    min-height: 0;
+    flex: 1;
+  }
+}

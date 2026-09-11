@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Checkbox,
   Colors,
   Icon,
@@ -50,6 +51,7 @@ import {RunGraphQueryItem} from './toGraphQueryItems';
 import {useGanttChartMode} from './useGanttChartMode';
 import {AppContext} from '../app/AppContext';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {LayoutContext} from '../app/LayoutProvider';
 import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {useThrottledMemo} from '../hooks/useThrottledMemo';
@@ -104,6 +106,10 @@ interface GanttChartState {
 
 export const GanttChart = (props: GanttChartProps) => {
   const {graph, onSetSelection, options, selection, toolbarActions} = props;
+  // On mobile the step status panel is the default view, with a toggle to
+  // reach the timeline; the desktop mode/zoom controls are hidden.
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+  const [mobileView, setMobileView] = React.useState<'steps' | 'timeline'>('steps');
   const [mode, setMode] = useGanttChartMode();
   const [state, setState] = React.useState(() => ({
     ...DEFAULT_OPTIONS,
@@ -166,26 +172,37 @@ export const GanttChart = (props: GanttChartProps) => {
   return (
     <div className={styles.ganttChartContainer}>
       <OptionsContainer>
-        <GanttChartModeControl
-          value={state.mode}
-          onChange={onChangeMode}
-          hideTimedMode={state.hideTimedMode}
-        />
-        {state.mode === GanttChartMode.WATERFALL_TIMED && (
+        {isMobileScreen ? (
+          <Button
+            icon={<Icon name={mobileView === 'steps' ? 'gantt_waterfall' : 'checklist'} />}
+            onClick={() => setMobileView(mobileView === 'steps' ? 'timeline' : 'steps')}
+          >
+            {mobileView === 'steps' ? 'Timeline' : 'Steps'}
+          </Button>
+        ) : (
           <>
-            <OptionsSpacer />
-            <div style={{width: 200}}>
-              <ZoomSlider value={state.zoom} onChange={(v) => updateOptions({zoom: v})} />
-            </div>
-            <OptionsSpacer />
-            <Checkbox
-              style={{marginBottom: 0}}
-              label="Hide not started steps"
-              checked={state.hideWaiting}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                updateOptions({hideWaiting: e.target.checked})
-              }
+            <GanttChartModeControl
+              value={state.mode}
+              onChange={onChangeMode}
+              hideTimedMode={state.hideTimedMode}
             />
+            {state.mode === GanttChartMode.WATERFALL_TIMED && (
+              <>
+                <OptionsSpacer />
+                <div style={{width: 200}}>
+                  <ZoomSlider value={state.zoom} onChange={(v) => updateOptions({zoom: v})} />
+                </div>
+                <OptionsSpacer />
+                <Checkbox
+                  style={{marginBottom: 0}}
+                  label="Hide not started steps"
+                  checked={state.hideWaiting}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    updateOptions({hideWaiting: e.target.checked})
+                  }
+                />
+              </>
+            )}
           </>
         )}
         <div style={{flex: 1}} />
@@ -193,6 +210,7 @@ export const GanttChart = (props: GanttChartProps) => {
       </OptionsContainer>
       <GanttChartInner
         {...props}
+        mobileView={mobileView}
         options={{...state}}
         layout={layout}
         graph={graph}
@@ -212,6 +230,7 @@ type GanttChartInnerProps = GanttChartProps &
   GanttChartState & {
     graph: GraphQueryItem[];
     layout: GanttChartLayout;
+    mobileView: 'steps' | 'timeline';
     onUpdateQuery: (value: string) => void;
     onDoubleClickStep: (stepName: string) => void;
     onChange: () => void;
@@ -226,6 +245,7 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
   const animationRequest = React.useRef<number | null>(null);
 
   const {rootServerURI} = React.useContext(AppContext);
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
 
   const {availability, disabled, status} = React.useContext(WebSocketContext);
   const lostWebsocket = !disabled && availability === 'available' && status === WebSocket.CLOSED;
@@ -413,6 +433,22 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
       </div>
     </>
   );
+
+  // On mobile the step status panel is the default full-width view so failing
+  // steps can be found and re-executed easily; the toolbar toggle switches to
+  // the timeline.
+  if (isMobileScreen) {
+    return metadata && props.mobileView === 'steps' ? (
+      <GanttStatusPanel
+        {...props}
+        nowMs={nowMs}
+        metadata={metadata}
+        onHighlightStep={setHoveredNodeName}
+      />
+    ) : (
+      content
+    );
+  }
 
   return metadata ? (
     <SplitPanelContainer

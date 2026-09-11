@@ -10,14 +10,16 @@ export const HeaderRow = ({
   children,
   templateColumns,
   sticky = false,
+  className,
 }: {
   children: React.ReactNode;
   templateColumns: string;
   sticky?: boolean;
+  className?: string;
 }) => (
   <Box
     border="top-and-bottom"
-    className={clsx(styles.headerRow, sticky && styles.headerRowSticky)}
+    className={clsx(styles.headerRow, sticky && styles.headerRowSticky, className)}
     style={{gridTemplateColumns: templateColumns}}
   >
     {children}

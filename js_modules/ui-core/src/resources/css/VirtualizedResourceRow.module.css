@@ -3,3 +3,41 @@
   grid-template-columns: 1.5fr 1fr 1fr;
   height: 100%;
 }
+
+/* Phone: name and uses on one line, type beneath; the description is dropped.
+   Keep in sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .rowGrid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name uses'
+      'type type';
+    column-gap: 8px;
+    align-items: center;
+    padding: 4px 4px 4px 8px;
+  }
+
+  .rowGrid > * {
+    padding: 0 8px !important;
+    box-shadow: none !important;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .rowGrid > :nth-child(1) {
+    grid-area: name;
+  }
+
+  .rowGrid > :nth-child(1) > div > div:last-child {
+    display: none;
+  }
+
+  .rowGrid > :nth-child(2) {
+    grid-area: type;
+    font-size: 12px;
+  }
+
+  .rowGrid > :nth-child(3) {
+    grid-area: uses;
+  }
+}

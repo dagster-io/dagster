@@ -1,0 +1,38 @@
+.toolbar {
+}
+
+.expand {
+}
+
+/* Phone: two rows instead of three.
+     [Events | stdout | stderr]            [expand]
+     [Filter................] [Levels]
+   The second child is the filter input (structured) or the step picker
+   (compute logs); the spacer div is dropped. Keep the max-width value in sync
+   with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .toolbar {
+    gap: 8px !important;
+    padding: 8px 12px;
+  }
+
+  .toolbar > :nth-child(2) {
+    order: 2;
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .toolbar > :nth-child(3) {
+    order: 3;
+  }
+
+  /* The flex spacer between the filters and the expand control. */
+  .toolbar > div:empty {
+    display: none;
+  }
+
+  .expand {
+    order: 1;
+    margin-left: auto;
+  }
+}
