@@ -49,6 +49,7 @@ def test_asset_materializations(
         "invocation_id",
         "run_url",
         "execution_duration",
+        "status",
     }
     assert set(first_asset_mat.metadata.keys()) == expected_metadata_keys
 

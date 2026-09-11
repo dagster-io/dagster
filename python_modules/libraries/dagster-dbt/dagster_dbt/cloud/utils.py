@@ -13,6 +13,7 @@ from dagster import (
 from dagster._core.definitions.metadata import RawMetadataValue
 
 from dagster_dbt.cloud.types import DbtCloudOutput
+from dagster_dbt.compat import SUCCESSFUL_NODE_STATUSES
 from dagster_dbt.utils import ASSET_RESOURCE_TYPES, default_node_info_to_asset_key
 
 
@@ -110,7 +111,7 @@ def result_to_events(
 
     node_resource_type = _resource_type(unique_id)
 
-    if node_resource_type in ASSET_RESOURCE_TYPES and status == "success":
+    if node_resource_type in ASSET_RESOURCE_TYPES and status in SUCCESSFUL_NODE_STATUSES:
         if generate_asset_outputs:
             yield Output(
                 value=None,
