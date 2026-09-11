@@ -86,15 +86,29 @@ class DbtCloudJobRunHandler:
             return None
 
 
-def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
+def get_completed_at_timestamp(
+    result: Mapping[str, Any], fallback_timestamp: float | None = None
+) -> float:
     timing = result["timing"]
     if len(timing) == 0:
-        # as a fallback, use the current timestamp
-        return get_current_timestamp()
+        # Nodes that dbt did not actually build -- e.g. `no-op` and `reused` -- can have no
+        # timing entries. Fall back to a timestamp belonging to the run itself rather than to
+        # the current time: the polling sensor sorts an asset's events by this value, so a
+        # wall-clock fallback would make an older run look newer than a run that really did
+        # rebuild the node.
+        return fallback_timestamp if fallback_timestamp is not None else get_current_timestamp()
     # result["timing"] is a list of events in run_results.json
     # For successful models and passing tests,
     # the last item of that list includes the timing details of the execution.
     return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
+
+
+def get_run_generated_at_timestamp(run_results: Mapping[str, Any]) -> float:
+    """When the run's artifacts were generated, used as the completion timestamp for nodes
+    that dbt reported without any timing entries.
+    """
+    generated_at = run_results.get("metadata", {}).get("generated_at")
+    return parser.parse(generated_at).timestamp() if generated_at else get_current_timestamp()
 
 
 @record
@@ -148,6 +162,7 @@ class DbtCloudJobRunResults:
         run = DbtCloudRun.from_run_details(run_details=client.get_run_details(run_id=self.run_id))
 
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
+        generated_at_timestamp: float = get_run_generated_at_timestamp(self.run_results)
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
             dbt_resource_props: Mapping[str, Any] = manifest["nodes"].get(unique_id)
@@ -197,7 +212,9 @@ class DbtCloudJobRunResults:
                     **default_metadata,
                     "status": result_status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
-                        get_completed_at_timestamp(result=result)
+                        get_completed_at_timestamp(
+                            result=result, fallback_timestamp=generated_at_timestamp
+                        )
                     ),
                 }
                 if context and has_asset_def:
@@ -217,7 +234,9 @@ class DbtCloudJobRunResults:
                     **default_metadata,
                     "status": result_status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
-                        get_completed_at_timestamp(result=result)
+                        get_completed_at_timestamp(
+                            result=result, fallback_timestamp=generated_at_timestamp
+                        )
                     ),
                 }
                 failure_count = result.get("failures")
