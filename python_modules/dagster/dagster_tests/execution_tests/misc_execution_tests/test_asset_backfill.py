@@ -1460,7 +1460,7 @@ def test_do_not_rerequest_while_existing_run_in_progress():
     )
 
     # Run for 2023-01-01 exists and is in progress, but has not materialized
-    backfill_runs = instance.get_runs(dg.RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+    backfill_runs = instance.get_runs(dg.RunsFilter(backfill_id=backfill_id))
     assert len(backfill_runs) == 1
     assert backfill_runs[0].tags.get(PARTITION_NAME_TAG) == "2023-01-01"
     assert backfill_runs[0].status == DagsterRunStatus.NOT_STARTED
@@ -1477,7 +1477,7 @@ def test_do_not_rerequest_while_existing_run_in_progress():
     )
 
     # Confirm that no additional runs for 2023-01-02 are kicked off
-    assert len(instance.get_runs(dg.RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))) == 1
+    assert len(instance.get_runs(dg.RunsFilter(backfill_id=backfill_id))) == 1
 
 
 def make_backfill_data(

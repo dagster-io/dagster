@@ -29,7 +29,7 @@ from dagster._core.storage.dagster_run import (
     DagsterRunStatus,
     RunsFilter,
 )
-from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
+from dagster._core.storage.tags import USER_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -565,9 +565,7 @@ def cancel_backfill_runs_and_cancellation_complete(
         runs_to_cancel_in_iteration = instance.run_storage.get_runs(
             filters=RunsFilter(
                 statuses=[DagsterRunStatus.QUEUED],
-                tags={
-                    BACKFILL_ID_TAG: backfill_id,
-                },
+                backfill_id=backfill_id,
             ),
             limit=CANCELABLE_RUNS_BATCH_SIZE,
             ascending=True,
@@ -578,9 +576,7 @@ def cancel_backfill_runs_and_cancellation_complete(
             runs_to_cancel_in_iteration = instance.run_storage.get_runs(
                 filters=RunsFilter(
                     statuses=CANCELABLE_RUN_STATUSES,
-                    tags={
-                        BACKFILL_ID_TAG: backfill_id,
-                    },
+                    backfill_id=backfill_id,
                 ),
                 limit=CANCELABLE_RUNS_BATCH_SIZE,
                 ascending=True,
@@ -614,7 +610,7 @@ def cancel_backfill_runs_and_cancellation_complete(
     # then we want to wait for them to reach a terminal state before the backfill is marked CANCELED.
     run_waiting_to_cancel = instance.get_run_ids(
         RunsFilter(
-            tags={BACKFILL_ID_TAG: backfill_id},
+            backfill_id=backfill_id,
             statuses=NOT_FINISHED_STATUSES,
         ),
         limit=1,
