@@ -359,3 +359,65 @@ def test_owners_validation():
 
         @dg.job(owners=["not-an-email-or-team"])
         def job_with_invalid_owner(): ...
+
+
+def test_group_name():
+    @dg.job(group_name="operational")
+    def job_with_group(): ...
+
+    assert job_with_group.group_name == "operational"
+    assert job_with_group.specified_group_name == "operational"
+
+
+def test_group_name_defaults_to_default_group():
+    @dg.job
+    def job_without_group(): ...
+
+    assert job_without_group.group_name == "default"
+    assert job_without_group.specified_group_name is None
+
+
+def test_nested_group_name():
+    @dg.job(group_name="operational/maintenance")
+    def job_with_nested_group(): ...
+
+    assert job_with_nested_group.group_name == "operational/maintenance"
+
+
+def test_group_name_validation():
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not a valid job group name"):
+
+        @dg.job(group_name="not a valid group")
+        def job_with_invalid_group(): ...
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="Empty job group name was provided"):
+
+        @dg.job(group_name="")
+        def job_with_empty_group(): ...
+
+
+def test_group_name_preserved_on_copy():
+    @dg.job(group_name="operational")
+    def job_with_group(): ...
+
+    assert job_with_group.with_hooks(set()).group_name == "operational"
+
+
+def test_group_name_on_asset_job():
+    @dg.asset
+    def an_asset(): ...
+
+    defs = dg.Definitions(
+        assets=[an_asset],
+        jobs=[dg.define_asset_job("grouped_asset_job", group_name="analytics")],
+    )
+
+    assert defs.resolve_job_def("grouped_asset_job").group_name == "analytics"
+
+
+def test_group_name_on_graph_to_job():
+    @dg.graph
+    def a_graph():
+        return_one()
+
+    assert a_graph.to_job(group_name="operational").group_name == "operational"

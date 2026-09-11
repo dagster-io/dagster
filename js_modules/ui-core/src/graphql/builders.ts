@@ -2175,6 +2175,7 @@ type IPipelineSnapshot = {
   dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
   description: Maybe<Scalars['String']['output']>;
   graphName: Scalars['String']['output'];
+  groupName: Scalars['String']['output'];
   metadataEntries: Array<
     | AssetMetadataEntry
     | BoolMetadataEntry
@@ -2457,6 +2458,7 @@ type Job = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
+    groupName: Scalars['String']['output'];
     hasLaunchExecutionPermission: Scalars['Boolean']['output'];
     hasLaunchReexecutionPermission: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
@@ -3815,6 +3817,7 @@ type Pipeline = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
+    groupName: Scalars['String']['output'];
     hasLaunchExecutionPermission: Scalars['Boolean']['output'];
     hasLaunchReexecutionPermission: Scalars['Boolean']['output'];
     id: Scalars['ID']['output'];
@@ -4061,6 +4064,7 @@ type PipelineSnapshot = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     externalJobSource: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
+    groupName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
     metadataEntries: Array<
       | AssetMetadataEntry
@@ -10267,6 +10271,7 @@ export const buildIPipelineSnapshot = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'aveho',
     graphName:
       overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'ademptio',
+    groupName: overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'abbas',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     modes: overrides && overrides.hasOwnProperty('modes') ? overrides.modes! : [],
@@ -10804,6 +10809,8 @@ export const buildJob = (
         ? overrides.externalJobSource!
         : 'conculco',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'velum',
+    groupName:
+      overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'trepide',
     hasLaunchExecutionPermission:
       overrides && overrides.hasOwnProperty('hasLaunchExecutionPermission')
         ? overrides.hasLaunchExecutionPermission!
@@ -13149,6 +13156,8 @@ export const buildPipeline = (
         ? overrides.externalJobSource!
         : 'corpus',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'bibo',
+    groupName:
+      overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'sufficio',
     hasLaunchExecutionPermission:
       overrides && overrides.hasOwnProperty('hasLaunchExecutionPermission')
         ? overrides.hasLaunchExecutionPermission!
@@ -13594,6 +13603,7 @@ export const buildPipelineSnapshot = (
         ? overrides.externalJobSource!
         : 'conor',
     graphName: overrides && overrides.hasOwnProperty('graphName') ? overrides.graphName! : 'quam',
+    groupName: overrides && overrides.hasOwnProperty('groupName') ? overrides.groupName! : 'cunae',
     id:
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!

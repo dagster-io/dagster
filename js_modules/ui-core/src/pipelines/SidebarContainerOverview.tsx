@@ -10,6 +10,7 @@ import {
 import {gql} from '../apollo-client';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 import {breakOnUnderscores} from '../app/Util';
+import {DEFAULT_JOB_GROUP_NAME} from '../jobs/jobGroups';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {DefinitionOwners} from '../owners/DefinitionOwners';
@@ -86,6 +87,15 @@ export const SidebarContainerOverview = ({
           <Description description={container.description || 'No description provided'} />
         </Box>
       </SidebarSection>
+
+      {container.__typename === 'PipelineSnapshot' &&
+        container.groupName !== DEFAULT_JOB_GROUP_NAME && (
+          <SidebarSection title="Group">
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <Tag icon="asset_group">{container.groupName}</Tag>
+            </Box>
+          </SidebarSection>
+        )}
 
       {container.__typename === 'PipelineSnapshot' &&
         container.owners &&
@@ -170,6 +180,7 @@ export const SIDEBAR_ROOT_CONTAINER_FRAGMENT = gql`
     ... on PipelineSnapshot {
       pipelineSnapshotId
       parentSnapshotId
+      groupName
       metadataEntries {
         ...MetadataEntryFragment
       }

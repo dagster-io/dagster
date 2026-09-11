@@ -36,6 +36,10 @@ class RepresentedJob(ABC):
     def owners(self) -> Sequence[str] | None:
         return self._job_index.owners
 
+    @property
+    def group_name(self) -> str:
+        return self._job_index.group_name
+
     # Snapshot things
 
     @property

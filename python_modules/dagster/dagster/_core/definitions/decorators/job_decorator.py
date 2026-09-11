@@ -48,6 +48,7 @@ class _Job:
         partitions_def: Optional["PartitionsDefinition"] = None,
         input_values: Mapping[str, object] | None = None,
         owners: Sequence[str] | None = None,
+        group_name: str | None = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -67,6 +68,7 @@ class _Job:
         self.partitions_def = partitions_def
         self.input_values = input_values
         self._owners = owners
+        self._group_name = group_name
 
     def __call__(self, fn: Callable[..., Any]) -> JobDefinition:
         check.callable_param(fn, "fn")
@@ -121,6 +123,7 @@ class _Job:
             partitions_def=self.partitions_def,
             input_values=self.input_values,
             owners=self._owners,
+            group_name=self._group_name,
         )
         update_wrapper(job_def, fn)
         return job_def
@@ -147,6 +150,7 @@ def job(
     partitions_def: Optional["PartitionsDefinition"] = ...,
     input_values: Mapping[str, object] | None = ...,
     owners: Sequence[str] | None = ...,
+    group_name: str | None = ...,
 ) -> _Job: ...
 
 
@@ -169,6 +173,7 @@ def job(
     partitions_def: Optional["PartitionsDefinition"] = None,
     input_values: Mapping[str, object] | None = None,
     owners: Sequence[str] | None = None,
+    group_name: str | None = None,
 ) -> JobDefinition | _Job:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
@@ -233,6 +238,10 @@ def job(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the job.
             Each string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        group_name (Optional[str]): A string name used to organize this job alongside other jobs
+            into a group. Groups may be nested using `/` as a separator
+            (e.g. `"operational/maintenance"`). If not provided, the job belongs to the `default`
+            group.
 
     Examples:
         .. code-block:: python
@@ -270,4 +279,5 @@ def job(
         partitions_def=partitions_def,
         input_values=input_values,
         owners=owners,
+        group_name=group_name,
     )

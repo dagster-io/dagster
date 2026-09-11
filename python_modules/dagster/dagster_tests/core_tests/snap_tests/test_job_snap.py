@@ -653,3 +653,32 @@ def test_snap_non_serializable_condition_omitted(snap_cls):
     )
     assert snap.automation_condition is None
     assert "automation_condition" not in serialize_value(snap)
+
+
+def _make_grouped_job_def(group_name):
+    @op
+    def an_op(): ...
+
+    @job(group_name=group_name)
+    def a_job():
+        an_op()
+
+    return a_job
+
+
+@pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
+def test_snap_carries_group_name(snap_cls):
+    snap = snap_cls.from_job_def(_make_grouped_job_def("operational/maintenance"))
+    assert snap.group_name == "operational/maintenance"
+    assert deserialize_value(serialize_value(snap), snap_cls).group_name == (
+        "operational/maintenance"
+    )
+
+
+@pytest.mark.parametrize("snap_cls", JOB_SNAP_CLASSES)
+def test_ungrouped_job_snap_serialization_unchanged(snap_cls):
+    snap = snap_cls.from_job_def(_make_grouped_job_def(None))
+    assert snap.group_name is None
+    serialized = serialize_value(snap)
+    assert "group_name" not in serialized
+    assert deserialize_value(serialized, snap_cls).group_name is None

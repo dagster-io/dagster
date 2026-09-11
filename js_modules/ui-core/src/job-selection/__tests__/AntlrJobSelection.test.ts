@@ -10,6 +10,7 @@ const TEST_GRAPH: Job[] = [
       name: 'repo',
       location: 'location1',
     },
+    groupName: 'operational',
   },
   {
     name: 'B',
@@ -17,6 +18,7 @@ const TEST_GRAPH: Job[] = [
       name: 'repo',
       location: 'location2',
     },
+    groupName: 'operational/maintenance',
   },
   {
     name: 'B2',
@@ -24,6 +26,7 @@ const TEST_GRAPH: Job[] = [
       name: 'repo',
       location: 'location2',
     },
+    groupName: 'analytics',
   },
   {
     name: 'C',
@@ -71,6 +74,18 @@ describe('parseJobSelectionQuery', () => {
     it('should parse code location query', () => {
       assertQueryResult(`code_location:${buildRepoPathForHuman('repo', 'location1')}`, ['A', 'C']);
       assertQueryResult(`code_location:${buildRepoPathForHuman('repo', 'location2')}`, ['B', 'B2']);
+    });
+
+    it('should parse group query', () => {
+      assertQueryResult('group:operational', ['A']);
+      assertQueryResult('group:"operational/maintenance"', ['B']);
+      // jobs without a group are in the default group
+      assertQueryResult('group:default', ['C']);
+    });
+
+    it('should handle group wildcard queries', () => {
+      assertQueryResult('group:"operational*"', ['A', 'B']);
+      assertQueryResult('not group:"operational*"', ['B2', 'C']);
     });
 
     it('should handle name wildcard queries', () => {

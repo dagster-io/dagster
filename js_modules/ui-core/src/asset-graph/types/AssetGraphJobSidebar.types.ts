@@ -39,6 +39,7 @@ export type AssetGraphSidebarQuery = {
         id: string;
         pipelineSnapshotId: string;
         parentSnapshotId: string | null;
+        groupName: string;
         externalJobSource: string | null;
         name: string;
         description: string | null;
@@ -1353,4 +1354,4 @@ export type AssetGraphSidebarQuery = {
       };
 };
 
-export const AssetGraphSidebarQueryVersion = '423d6b155cc63752472fa9bde2ff75a6e872fa1c230473394bdf6057789ad9e8';
+export const AssetGraphSidebarQueryVersion = 'f8c1c08a08d79f1e74db8468226ad2ebfc6d1601415a1eaa964b53cb25f28b1c';
