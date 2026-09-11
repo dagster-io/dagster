@@ -9,6 +9,8 @@ import {
   LIVE_DATA_POLL_RATE_PLACEHOLDER,
   PREFIX_PLACEHOLDER,
   TELEMETRY_PLACEHOLDER,
+  UI_INTENT_PLACEHOLDER,
+  UI_LABEL_PLACEHOLDER,
 } from '../extractInitializationData';
 
 function getSecurityPolicy() {
@@ -34,6 +36,8 @@ export default function Document() {
     telemetryEnabled: TELEMETRY_PLACEHOLDER,
     liveDataPollRate: LIVE_DATA_POLL_RATE_PLACEHOLDER,
     instanceId: isDev ? 'dev' : INSTANCE_ID_PLACEHOLDER,
+    uiLabel: UI_LABEL_PLACEHOLDER,
+    uiIntent: UI_INTENT_PLACEHOLDER,
   };
   const prefix = getPrefix();
   return (

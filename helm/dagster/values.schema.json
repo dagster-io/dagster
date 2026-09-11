@@ -3099,6 +3099,50 @@
             "title": "Tolerations",
             "type": "array"
         },
+        "UI": {
+            "additionalProperties": false,
+            "properties": {
+                "label": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Label"
+                },
+                "intent": {
+                    "anyOf": [
+                        {
+                            "enum": [
+                                "none",
+                                "primary",
+                                "success",
+                                "warning",
+                                "danger"
+                            ],
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Intent"
+                }
+            },
+            "title": "UI",
+            "type": "object"
+        },
         "UserDeployment": {
             "properties": {
                 "name": {
@@ -4082,6 +4126,9 @@
         "telemetry": {
             "$ref": "#/$defs/Telemetry"
         },
+        "ui": {
+            "$ref": "#/$defs/UI"
+        },
         "serviceAccount": {
             "$ref": "#/$defs/ServiceAccount"
         },
@@ -4139,6 +4186,7 @@
         "busybox",
         "migrate",
         "telemetry",
+        "ui",
         "serviceAccount",
         "global",
         "retention"

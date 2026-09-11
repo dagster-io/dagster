@@ -33,6 +33,7 @@ class DagsterHelmValues(BaseModel, extra="allow"):
     busybox: subschema.Busybox
     migrate: subschema.Migrate
     telemetry: subschema.Telemetry
+    ui: subschema.UI
     serviceAccount: subschema.ServiceAccount
     global_: subschema.Global = Field(..., alias="global")
     retention: subschema.Retention
