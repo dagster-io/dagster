@@ -37,6 +37,23 @@ const DEFAULT_PROPS: SVGViewportProps = {
   children: () => <div style={{width: 500, height: 500}}>Mock Graph</div>,
 };
 
+// jsdom (as of the version this repo pins) has no PointerEvent constructor at
+// all, so `fireEvent.pointerDown` et al. can't fill in clientX/clientY/
+// pointerId/pointerType the way a real browser would. Build the event by hand
+// instead: a plain Event with those properties assigned is exactly what our
+// native `addEventListener('pointerdown', ...)` handlers read.
+function firePointerEvent(
+  el: Element,
+  type: 'pointerdown' | 'pointermove' | 'pointerup',
+  init: {pointerId: number; pointerType: string; clientX: number; clientY: number},
+) {
+  const event = new Event(type, {bubbles: true, cancelable: true});
+  Object.assign(event, init);
+  act(() => {
+    el.dispatchEvent(event);
+  });
+}
+
 describe('SVGViewport', () => {
   it('renders without crashing', () => {
     render(<SVGViewport {...DEFAULT_PROPS} />);
@@ -161,5 +178,115 @@ describe('SVGViewport', () => {
     });
     expect(ref.current?.getViewport().left).toBeGreaterThan(currentLeft as number);
     expect(ref.current?.getViewport().top).toBeGreaterThan(currentTop as number);
+  });
+
+  it('pans the viewport with a one-finger touch drag', async () => {
+    const ref = createRef<SVGViewportRef>();
+    act(() => {
+      render(<SVGViewport {...DEFAULT_PROPS} ref={ref} />);
+    });
+    const container = screen.getByTestId('svg-viewport-container');
+    const initialLeft = ref.current?.getViewport().left as number;
+    const initialTop = ref.current?.getViewport().top as number;
+    firePointerEvent(container, 'pointerdown', {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 50,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointermove', {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 80,
+      clientY: 70,
+    });
+    firePointerEvent(container, 'pointerup', {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 80,
+      clientY: 70,
+    });
+    await waitFor(() => {
+      // Dragging right/down moves the graph with the finger, so the visible
+      // region moves left/up in graph coordinates.
+      expect(ref.current?.getViewport().left).toBeLessThan(initialLeft);
+      expect(ref.current?.getViewport().top).toBeLessThan(initialTop);
+    });
+  });
+
+  it('does not pan on mouse pointer events (handled separately by onMouseDown)', async () => {
+    const ref = createRef<SVGViewportRef>();
+    act(() => {
+      render(<SVGViewport {...DEFAULT_PROPS} ref={ref} />);
+    });
+    const container = screen.getByTestId('svg-viewport-container');
+    const initialLeft = ref.current?.getViewport().left as number;
+    firePointerEvent(container, 'pointerdown', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 50,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointermove', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 80,
+      clientY: 70,
+    });
+    firePointerEvent(container, 'pointerup', {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientX: 80,
+      clientY: 70,
+    });
+    expect(ref.current?.getViewport().left).toEqual(initialLeft);
+  });
+
+  it('zooms the viewport with a two-finger pinch', async () => {
+    const ref = createRef<SVGViewportRef>();
+    act(() => {
+      render(<SVGViewport {...DEFAULT_PROPS} ref={ref} />);
+    });
+    const container = screen.getByTestId('svg-viewport-container');
+    const initialScale = ref.current?.getScale() as number;
+    firePointerEvent(container, 'pointerdown', {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 40,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointerdown', {
+      pointerId: 2,
+      pointerType: 'touch',
+      clientX: 60,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointermove', {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 20,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointermove', {
+      pointerId: 2,
+      pointerType: 'touch',
+      clientX: 80,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointerup', {
+      pointerId: 1,
+      pointerType: 'touch',
+      clientX: 20,
+      clientY: 50,
+    });
+    firePointerEvent(container, 'pointerup', {
+      pointerId: 2,
+      pointerType: 'touch',
+      clientX: 80,
+      clientY: 50,
+    });
+    await waitFor(() => {
+      expect(ref.current?.getScale()).toBeGreaterThan(initialScale);
+    });
   });
 });
