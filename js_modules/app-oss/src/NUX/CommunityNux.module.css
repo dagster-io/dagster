@@ -1,0 +1,41 @@
+/* The community NUX form is laid out for desktop by default (a fixed 680px
+   width, a side-by-side header with a video, and a row of three link
+   buttons). None of that fits a phone screen, so the dialog overflowed
+   horizontally and most of the content was unreachable.
+
+   Keep the max-width value in sync with MOBILE_BREAKPOINT_PX in
+   ui-components/src/components/breakpoints.ts. */
+.form {
+  width: 680px;
+  max-width: 100%;
+}
+
+.header {
+  flex-wrap: wrap;
+}
+
+.linkButtons {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .form {
+    width: 100%;
+    padding: 20px !important;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .headerVideo {
+    display: none;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+}
