@@ -108,8 +108,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # ensuring that the database will be created if it doesn't exist
         self._initialized_dbs = set()
 
-        # Ensure that multiple threads (like the event log watcher) interact safely with each other
-        self._db_lock = threading.Lock()
+        # Ensure that multiple threads (like the event log watcher) interact safely with each other.
+        # This must be re-entrant because managed Python logging can synchronously store an event
+        # while SQLite initialization is opening a connection on the same thread.
+        self._db_lock = threading.RLock()
 
         if not os.path.exists(self.path_for_shard(INDEX_SHARD_NAME)):
             conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
