@@ -562,6 +562,12 @@
     "PythonError",
     "ReportAssetCheckEvaluationsSuccess"
   ],
+  "ReportSensorTickAssetEventsResult": [
+    "UnauthorizedError",
+    "PythonError",
+    "ReportSensorTickAssetEventsSuccess",
+    "ReportSensorTickAssetEventsPartialFailure"
+  ],
   "ResumeBackfillResult": ["ResumeBackfillSuccess", "UnauthorizedError", "PythonError"],
   "CancelBackfillResult": ["CancelBackfillSuccess", "UnauthorizedError", "PythonError"],
   "LogTelemetryMutationResult": ["LogTelemetrySuccess", "PythonError"],

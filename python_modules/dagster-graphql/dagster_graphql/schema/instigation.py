@@ -25,6 +25,7 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.utils import is_valid_run_id
 from dagster._core.workspace.permissions import Permissions
+from dagster._serdes import serialize_value
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
@@ -428,6 +429,10 @@ class GrapheneTickEvaluation(graphene.ObjectType):
     skipReason = graphene.String()
     error = graphene.Field(GraphenePythonError)
     cursor = graphene.String()
+    # Serialized AssetMaterialization / AssetObservation / AssetCheckEvaluation objects
+    # (via dagster._serdes), so the client can round-trip them back to the
+    # reportSensorTickAssetEvents mutation without losing metadata.
+    assetEvents = graphene.List(graphene.NonNull(graphene.String))
 
     _execution_data: ScheduleExecutionData | SensorExecutionData | SerializableErrorInfo
 
@@ -465,6 +470,10 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             execution_data.dynamic_partitions_requests
             if isinstance(execution_data, SensorExecutionData)
             else None
+        )
+
+        self._asset_events = (
+            execution_data.asset_events if isinstance(execution_data, SensorExecutionData) else None
         )
 
         cursor = execution_data.cursor if isinstance(execution_data, SensorExecutionData) else None
@@ -506,6 +515,12 @@ class GrapheneTickEvaluation(graphene.ObjectType):
             GrapheneDynamicPartitionsRequest(request)
             for request in self._dynamic_partitions_requests
         ]
+
+    def resolve_assetEvents(self, _graphene_info: ResolveInfo):
+        if not self._asset_events:
+            return self._asset_events
+
+        return [serialize_value(asset_event) for asset_event in self._asset_events]
 
 
 class GrapheneRunRequest(graphene.ObjectType):
