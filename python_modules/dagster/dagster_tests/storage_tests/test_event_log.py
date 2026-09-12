@@ -518,3 +518,64 @@ def test_step_worker_failure_attempts():
     assert len(run_step_stats) == 1
     step_stat = run_step_stats[0]
     assert step_stat.attempts == 1
+
+
+def test_pending_steps_slots_column_migration():
+    from dagster._core.storage.event_log.sqlite import sqlite_event_log
+    from dagster._core.storage.sql import (
+        get_alembic_config,
+        run_alembic_downgrade,
+        run_alembic_upgrade,
+    )
+
+    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
+        alembic_config = get_alembic_config(sqlite_event_log.__file__)
+        run_id = make_new_run_id()
+
+        # populate the pending_steps table with weighted and unweighted claims
+        storage = ConcurrencyEnabledSqliteTestEventLogStorage(base_dir=tmpdir_path)
+        try:
+            assert storage.has_pending_steps_slots_col
+            storage.set_concurrency_slots("foo", 4)
+            assert storage.claim_concurrency_slot("foo", run_id, "heavy", slots=3).is_claimed
+            assert storage.claim_concurrency_slot("foo", run_id, "light").is_claimed
+
+            # downgrade drops the slots column but keeps the pending steps rows
+            with storage.index_connection() as conn:
+                run_alembic_downgrade(alembic_config, conn, rev="29b539ebc72a", run_id="index")
+        finally:
+            storage.dispose()
+
+        storage = ConcurrencyEnabledSqliteTestEventLogStorage(base_dir=tmpdir_path)
+        try:
+            assert not storage.has_pending_steps_slots_col
+            info = storage.get_concurrency_info("foo")
+            assert {step.step_key for step in info.pending_steps} == {"heavy", "light"}
+
+            # unweighted claims still work against the downgraded schema
+            assert not storage.claim_concurrency_slot("foo", run_id, "extra").is_claimed
+
+            # weighted claims raise, pointing at the migration
+            with pytest.raises(dg.DagsterInvalidInvocationError, match="dagster instance migrate"):
+                storage.claim_concurrency_slot("foo", run_id, "heavy_2", slots=2)
+
+            # freeing the previously-weighted step releases all of its slots
+            storage.free_concurrency_slot_for_step(run_id, "heavy")
+            assert storage.get_concurrency_info("foo").active_slot_count == 1
+            assert storage.claim_concurrency_slot("foo", run_id, "extra").is_claimed
+
+            # upgrade restores the slots column
+            with storage.index_connection() as conn:
+                run_alembic_upgrade(alembic_config, conn, run_id="index")
+        finally:
+            storage.dispose()
+
+        storage = ConcurrencyEnabledSqliteTestEventLogStorage(base_dir=tmpdir_path)
+        try:
+            assert storage.has_pending_steps_slots_col
+
+            # rows written before the upgrade have a NULL slots value, which reads as weight 1,
+            # so two of the four slots are held (light, extra) and a 2-slot claim fits
+            assert storage.claim_concurrency_slot("foo", run_id, "heavy_2", slots=2).is_claimed
+        finally:
+            storage.dispose()

@@ -150,7 +150,8 @@ class ExecutionPlanSnapshotErrorData(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"node_handle_id": "solid_handle_id"}, skip_when_none_fields={"pool"}
+    storage_field_names={"node_handle_id": "solid_handle_id"},
+    skip_when_none_fields={"pool", "pool_slots"},
 )
 class ExecutionStepSnap(
     NamedTuple(
@@ -165,6 +166,7 @@ class ExecutionStepSnap(
             ("tags", Mapping[str, str] | None),
             ("step_handle", StepHandleUnion | None),
             ("pool", str | None),
+            ("pool_slots", int | None),
         ],
     )
 ):
@@ -179,6 +181,7 @@ class ExecutionStepSnap(
         tags: Mapping[str, str] | None = None,
         step_handle: StepHandleUnion | None = None,
         pool: str | None = None,
+        pool_slots: int | None = None,
     ):
         return super().__new__(
             cls,
@@ -196,6 +199,7 @@ class ExecutionStepSnap(
             # snapshot may have been generated before concurrency_key was added as a separate
             # argument
             pool=check.opt_str_param(pool, "pool"),
+            pool_slots=check.opt_int_param(pool_slots, "pool_slots"),
         )
 
     @property
@@ -358,6 +362,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
         tags=execution_step.tags,
         step_handle=execution_step.handle,
         pool=execution_step.pool,
+        pool_slots=execution_step.pool_slots,
     )
 
 

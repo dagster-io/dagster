@@ -100,6 +100,7 @@ def asset(
     owners: Sequence[str] | None = ...,
     kinds: AbstractSet[str] | None = ...,
     pool: str | None = ...,
+    pool_slots: int | None = ...,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
@@ -189,6 +190,7 @@ def asset(
     owners: Sequence[str] | None = None,
     kinds: AbstractSet[str] | None = None,
     pool: str | None = None,
+    pool_slots: int | None = None,
     is_virtual: bool = False,
     **kwargs: Any,
 ) -> AssetsDefinition | Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -272,6 +274,8 @@ def asset(
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
         pool (Optional[str]): A string that identifies the concurrency pool that governs this asset's execution.
+        pool_slots (Optional[int]): The number of slots this asset occupies in its concurrency
+            pool while executing. Must be a positive integer. Defaults to 1.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
             Hidden parameter not exposed in the decorator signature, but passed in kwargs.
@@ -356,6 +360,7 @@ def asset(
         key=key,
         owners=owners,
         pool=pool,
+        pool_slots=pool_slots,
         is_virtual=is_virtual,
     )
 
@@ -432,6 +437,7 @@ class AssetDecoratorArgs(NamedTuple):
     check_specs: Sequence[AssetCheckSpec] | None
     owners: Sequence[str] | None
     pool: str | None
+    pool_slots: int | None
     is_virtual: bool
 
 
@@ -560,6 +566,7 @@ def create_assets_def_from_fn_and_decorator_args(
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
             pool=args.pool,
+            pool_slots=args.pool_slots,
             hooks=args.hooks,
         )
 
@@ -616,6 +623,7 @@ def multi_asset(
     specs: Sequence[AssetSpec] | None = None,
     check_specs: Sequence[AssetCheckSpec] | None = None,
     pool: str | None = None,
+    pool_slots: int | None = None,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
@@ -674,6 +682,8 @@ def multi_asset(
             execute in the decorated function after materializing the assets.
         pool (Optional[str]): A string that identifies the concurrency pool that governs this
             multi-asset's execution.
+        pool_slots (Optional[int]): The number of slots this multi-asset occupies in its
+            concurrency pool while executing. Must be a positive integer. Defaults to 1.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the
             multi_asset.
@@ -750,6 +760,7 @@ def multi_asset(
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
+        pool_slots=pool_slots,
         allow_arbitrary_check_specs=kwargs.get("allow_arbitrary_check_specs", False),
         hooks=check.opt_set_param(hooks, "hooks", of_type=HookDefinition),
     )

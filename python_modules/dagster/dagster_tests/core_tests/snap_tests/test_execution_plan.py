@@ -132,3 +132,43 @@ def test_execution_plan_snapshot_asset_check_keys():
         dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_check"),
         dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_other_check"),
     }
+
+
+def test_execution_plan_pool_slots_round_trip():
+    from dagster._core.execution.plan.plan import ExecutionPlan
+    from dagster._serdes import deserialize_value, serialize_value
+
+    @dg.op(pool="heavy", pool_slots=3)
+    def heavy_op():
+        pass
+
+    @dg.op(pool="light")
+    def light_op():
+        pass
+
+    @dg.job
+    def pool_job():
+        heavy_op()
+        light_op()
+
+    execution_plan = create_execution_plan(pool_job)
+    step = execution_plan.get_step_by_key("heavy_op")
+    assert step.pool == "heavy"
+    assert step.pool_slots == 3
+    assert execution_plan.get_step_by_key("light_op").pool_slots is None
+
+    plan_snapshot = snapshot_from_execution_plan(
+        execution_plan, pool_job.get_job_snapshot().snapshot_id
+    )
+
+    # the value survives serialization and plan rebuilds
+    serialized = serialize_value(plan_snapshot)
+    rebuilt_snapshot = deserialize_value(serialized, type(plan_snapshot))
+    rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("pool_job", rebuilt_snapshot)
+    assert rebuilt_plan.get_step_by_key("heavy_op").pool_slots == 3
+
+    # unset pool_slots is skipped during serialization, so existing snapshots are unchanged
+    light_step_snap = next(s for s in plan_snapshot.steps if s.key == "light_op")
+    assert light_step_snap.pool_slots is None
+    assert '"pool_slots": 3' in serialized
+    assert serialized.count('"pool_slots"') == 1
