@@ -187,7 +187,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         auto_observe_interval_minutes (Optional[float]): While the asset daemon is turned on, a run
             of the observation function for this asset will be launched at this interval. `observe_fn`
             must be provided.
-        freshness_policy (FreshnessPolicy): A constraint telling Dagster how often this asset is intended to be updated
+        legacy_freshness_policy (Optional[LegacyFreshnessPolicy]): A constraint telling Dagster how often this asset is intended to be updated
             with respect to its root data.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.

@@ -19,8 +19,6 @@ class PipesAzureBlobStorageContextInjector(PipesContextInjector):
     Args:
         container (str): The AzureBlobStorage container to write to.
         client (azure.storage.blob.BlobServiceClient): An Azure Blob Storage client.
-        key_prefix (Optional[str]): An optional prefix to use for the Azure Blob Storage key. Defaults to a random
-            string.
 
     """
 

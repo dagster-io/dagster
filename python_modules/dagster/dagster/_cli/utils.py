@@ -121,7 +121,6 @@ def get_instance_for_cli(
     the instance from. Requires DAGSTER_HOME to be set or instance_ref to be passed in.
 
     Parameters:
-    cli_command: The name of the command - optional, used for logging messages.
     instance_ref: For commands that delegate to other commands, they can pass in
         a serialized instance_ref object rather than loading it from a dagster.yaml file.
     logger: Customize any log messages emitted while creating the instance.
