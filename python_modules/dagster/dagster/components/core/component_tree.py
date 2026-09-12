@@ -398,6 +398,9 @@ class ComponentTree(IHaveNew):
             ComponentDecl: The component declaration loaded from the given path.
         """
         resolved_path = ComponentPath.from_resolvable(self.defs_module_path, defs_path)
+        cached = self.state_tracker.get_cache_data(resolved_path).component_decl
+        if cached is not None:
+            return cached
         decl = self._component_decl_tree().get(resolved_path)
         if decl is None:
             raise Exception(f"No component decl found for path {defs_path}")
@@ -463,9 +466,40 @@ class ComponentTree(IHaveNew):
         return component
 
     def _component_decl_tree(self) -> dict[ComponentLoc, ComponentDecl]:
-        """Constructs or returns the full component declaration tree from cache."""
+        """Materialize the full loc→decl map for the current component tree.
+
+        After the walk, cacheable child decls are seeded into the state tracker
+        so subsequent loads do not re-materialize the map once per loc (which
+        would be Θ(n²) for n components).
+
+        ``ComponentRootLoc`` and the unkeyed app-managed aggregate loc are
+        intentionally not seeded — those must stay freshly constructed so
+        app-managed discovery can pick up newly added or removed components.
+        """
         root_decl = self.find_root_decl()
-        return dict(root_decl.iterate_loc_component_decl_pairs())
+        tree = dict(root_decl.iterate_loc_component_decl_pairs())
+        self._seed_cacheable_component_decls(tree)
+        return tree
+
+    def _seed_cacheable_component_decls(self, tree: dict[ComponentLoc, ComponentDecl]) -> None:
+        """Store component_decl for locs that are safe to cache across loads.
+
+        Skips the synthetic root and the unkeyed app-managed listing wrapper so
+        those continue to be rebuilt by :meth:`find_root_decl`.
+        """
+        for loc, decl in tree.items():
+            if not self._is_cacheable_component_decl_loc(loc):
+                continue
+            if self.state_tracker.get_cache_data(loc).component_decl is None:
+                self.state_tracker.set_cache_data(loc, component_decl=decl)
+
+    @staticmethod
+    def _is_cacheable_component_decl_loc(loc: ComponentLoc) -> bool:
+        if isinstance(loc, ComponentRootLoc):
+            return False
+        if isinstance(loc, AppManagedDefinitionsLoc) and loc.instance_key is None:
+            return False
+        return True
 
     def _component_and_context_at_loc(
         self, loc: ResolvableToComponentLoc
