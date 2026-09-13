@@ -25,7 +25,7 @@ In Dagster+, run monitoring is always enabled and can be configured in [deployme
 
 When Dagster launches a run, the run stays in STARTING status until the run worker spins up and marks the run as STARTED. In the event that some failure causes the run worker to not spin up, the run might be stuck in STARTING status. The `start_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as failed.
 
-## Run cancelation timeouts
+## Run cancellation timeouts
 
 When Dagster terminates a run, the run moves into CANCELING status and sends a termination signal to the run worker. When the run worker cleans up its resources, it moves into CANCELED status. In the event that some failure causes the run worker to not spin down cleanly, the run might be stuck in CANCELING status. The `cancel_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as canceled.
 
