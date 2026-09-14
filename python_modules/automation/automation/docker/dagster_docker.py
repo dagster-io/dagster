@@ -11,6 +11,7 @@ from dagster_shared.yaml_utils import safe_load_yaml
 from automation.docker.ecr import ecr_image, get_aws_account_id, get_aws_region
 from automation.docker.utils import (
     execute_docker_build,
+    execute_docker_buildx_build_and_push,
     execute_docker_push,
     execute_docker_tag,
     python_version_image_tag,
@@ -202,6 +203,28 @@ class DagsterDockerImage(
                 docker_args=self._get_docker_args(dagster_version, python_version),
                 cwd=self.path,
                 platform=platform,
+            )
+
+    def build_and_push_multiplatform(
+        self,
+        dagster_version: str,
+        python_version: str,
+        tags: list[str],
+        platforms: list[str],
+    ) -> None:
+        """Build this image for several platforms and push it as one manifest list.
+
+        Unlike :py:meth:`build` followed by :py:meth:`push`, this publishes directly to
+        the registry. Leave last_updated.yaml unchanged because no local image is created.
+        """
+        check.str_param(python_version, "python_version")
+
+        with self.build_cm(self.path):
+            execute_docker_buildx_build_and_push(
+                tags=tags,
+                platforms=platforms,
+                docker_args=self._get_docker_args(dagster_version, python_version),
+                cwd=self.path,
             )
 
     def push(self, python_version: str, custom_tag: str | None = None) -> None:
