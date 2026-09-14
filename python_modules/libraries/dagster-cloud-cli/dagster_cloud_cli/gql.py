@@ -144,6 +144,20 @@ def fetch_agent_type(client: DagsterCloudGraphQLClient) -> DagsterPlusDeployment
     )
 
 
+DEPLOYMENT_NAME_QUERY = """
+query CliCurrentDeploymentName {
+    currentDeployment {
+        deploymentName
+    }
+}
+"""
+
+
+def fetch_deployment_name(client: DagsterCloudGraphQLClient) -> str:
+    """The deployment the client is pointed at, which may be encoded in the url rather than passed."""
+    return client.execute(DEPLOYMENT_NAME_QUERY)["data"]["currentDeployment"]["deploymentName"]
+
+
 WORKSPACE_ENTRIES_QUERY = """
 query CliWorkspaceEntries {
     workspace {
