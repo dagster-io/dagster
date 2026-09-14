@@ -1082,7 +1082,8 @@ test-dbt19 = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../../dagster" },
-    { name = "dbt-core", specifier = ">=1.7,<1.13" },
+    { name = "dbt-core", marker = "python_full_version < '3.14'", specifier = ">=1.7,<1.13" },
+    { name = "dbt-core", marker = "python_full_version >= '3.14'", specifier = ">=1.12,<1.13" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx" },
