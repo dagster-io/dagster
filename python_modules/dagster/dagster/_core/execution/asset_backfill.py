@@ -974,16 +974,20 @@ def backfill_is_complete(
         logger.info("Backfill has in progress runs. Backfill is still in progress.")
         return False
     # Condition 3 - if there are runs that will be retried, but have not yet been retried, the backfill is not complete
-    runs_waiting_to_retry = [
-        run.run_id
-        for run in instance.get_runs(
-            filters=RunsFilter(
-                tags={BACKFILL_ID_TAG: backfill_id, WILL_RETRY_TAG: "true"},
-                statuses=[DagsterRunStatus.FAILURE],
-            )
+    failed_runs = instance.get_runs(
+        filters=RunsFilter(
+            tags={BACKFILL_ID_TAG: backfill_id},
+            statuses=[DagsterRunStatus.FAILURE],
         )
-        if run.is_complete_and_waiting_to_retry
-    ]
+    )
+    runs_waiting_to_retry = []
+    for run in failed_runs:
+        # Failure status is stored before the retry decision, so a missing tag may still be in flight.
+        if instance.run_retries_enabled and run.tags.get(WILL_RETRY_TAG) is None:
+            logger.info(f"Run {run.run_id} has no retry decision. Backfill is still in progress.")
+            return False
+        elif run.is_complete_and_waiting_to_retry:
+            runs_waiting_to_retry.append(run.run_id)
     if len(runs_waiting_to_retry) > 0:
         num_runs_to_log = 20
         formatted_runs = "\n".join(runs_waiting_to_retry[:num_runs_to_log])

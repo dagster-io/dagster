@@ -50,6 +50,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.test_utils import environ, freeze_time, mock_workspace_from_repos
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp
@@ -1622,6 +1623,49 @@ def execute_asset_backfill_iteration_consume_generator(
         return result
 
     assert False
+
+
+@pytest.mark.parametrize(
+    ("run_retries_enabled", "retry_decision", "expected_complete"),
+    [
+        (True, None, False),
+        (True, "true", False),
+        (True, "false", True),
+        (False, None, True),
+    ],
+)
+def test_backfill_completion_waits_for_retry_decision(
+    run_retries_enabled: bool,
+    retry_decision: str | None,
+    expected_complete: bool,
+) -> None:
+    backfill_id = "backfill_id"
+    tags = {BACKFILL_ID_TAG: backfill_id}
+    if retry_decision is not None:
+        tags[WILL_RETRY_TAG] = retry_decision
+
+    with dg.instance_for_test(
+        overrides={"run_retries": {"enabled": run_retries_enabled}}
+    ) as instance:
+        instance.add_run(
+            dg.DagsterRun(
+                job_name="job",
+                status=DagsterRunStatus.FAILURE,
+                tags=tags,
+            )
+        )
+        backfill_data = MagicMock(spec=AssetBackfillData)
+        backfill_data.all_targeted_partitions_have_materialization_status.return_value = True
+
+        assert (
+            backfill_is_complete(
+                backfill_id,
+                backfill_data,
+                instance,
+                logging.getLogger("test"),
+            )
+            is expected_complete
+        )
 
 
 def run_backfill_to_completion(
