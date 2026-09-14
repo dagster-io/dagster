@@ -207,7 +207,6 @@ class DagsterDockerImage(
 
     def build_and_push_multiplatform(
         self,
-        timestamp: str,
         dagster_version: str,
         python_version: str,
         tags: list[str],
@@ -215,15 +214,12 @@ class DagsterDockerImage(
     ) -> None:
         """Build this image for several platforms and push it as one manifest list.
 
-        Unlike :py:meth:`build` followed by :py:meth:`push`, this cannot stage the image in
-        the local image store first, because that store holds one architecture per tag.
+        Unlike :py:meth:`build` followed by :py:meth:`push`, this publishes directly to
+        the registry. Leave last_updated.yaml unchanged because no local image is created.
         """
-        check.str_param(timestamp, "timestamp")
         check.str_param(python_version, "python_version")
 
         with self.build_cm(self.path):
-            self._set_last_updated_for_python_version(timestamp, python_version)
-
             execute_docker_buildx_build_and_push(
                 tags=tags,
                 platforms=platforms,

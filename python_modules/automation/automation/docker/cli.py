@@ -170,11 +170,10 @@ def push_ecr(name: str, dagster_version: str, set_latest: bool):
 @cli.command()
 @opt_push_name
 @opt_push_dagster_version
-@opt_build_timestamp
 @opt_set_latest
 @opt_publish_platforms
 def build_and_push_dockerhub(
-    name: str, dagster_version: str, timestamp: str, set_latest: bool, platforms: tuple[str, ...]
+    name: str, dagster_version: str, set_latest: bool, platforms: tuple[str, ...]
 ):
     """Build and push a multi-platform k8s image to Docker Hub as one manifest list.
 
@@ -190,7 +189,7 @@ def build_and_push_dockerhub(
 
     image = get_image(name)
     image.build_and_push_multiplatform(
-        timestamp, dagster_version, next(iter(image.python_versions)), tags, list(platforms)
+        dagster_version, next(iter(image.python_versions)), tags, list(platforms)
     )
 
 
