@@ -57,12 +57,16 @@ dagster-cloud-cli = { path = "../../python_modules/libraries/dagster-cloud-cli",
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.dagster]
-module_name = "quickstart_etl.definitions"
-code_location_name = "quickstart_etl"
+# A packaged install (e.g. a serverless PEX deploy) has no project directory, so
+# `load_from_defs_folder` cannot find the project config unless it ships in the wheel.
+[tool.hatch.build.targets.wheel]
+force-include = { "pyproject.toml" = "pyproject.toml" }
 
 [tool.dg]
 directory_type = "project"
 
 [tool.dg.project]
 root_module = "quickstart_etl"
+registry_modules = [
+    "quickstart_etl.components.*",
+]

@@ -363,6 +363,10 @@ sling_decorator   = { path = "../../examples/experimental/sling_decorator",   ed
 # Minimum version of Python on which code must run.
 python-version = "3.10"
 
+# `quickstart_etl` is a src-layout example that is not installed into this env, so its tests
+# cannot resolve the package by name without this.
+extra-paths = ["examples/quickstart_etl/src"]
+
 [tool.ty.rules]
 # Kept in lock-step with the other ty envs — the
 # `test_ty_config_consistency` lint asserts identical `[tool.ty.rules]`
