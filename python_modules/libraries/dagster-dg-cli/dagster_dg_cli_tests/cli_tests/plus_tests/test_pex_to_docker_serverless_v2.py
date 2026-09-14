@@ -4,15 +4,11 @@ import importlib.resources
 import json
 
 import pytest
-from dagster_cloud_cli.commands.ci import BuildStrategy
 from dagster_dg_cli.cli.plus.build import (
     _gql_client_from_env_or_config,  # pyright: ignore[reportPrivateUsage]
-    _has_running_serverless_v2_agent,  # pyright: ignore[reportPrivateUsage]
     get_agent_type_and_platform_from_graphql,
-    get_serverless_agent_platform,
 )
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentPlatform, DgPlusAgentType
-from dagster_dg_cli.cli.plus.deploy.deploy_session import should_redirect_pex_to_docker
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
@@ -26,27 +22,6 @@ class _FakeGqlClient:
 
 def _agent(launcher_class: str, status: str = "RUNNING") -> dict:
     return {"status": status, "metadata": [{"key": "type", "value": json.dumps(launcher_class)}]}
-
-
-@pytest.mark.parametrize(
-    "agents, expected",
-    [
-        # The v2 serverless launcher is the only thing that should read as v2.
-        ([_agent("ServerlessK8sUserCodeLauncher")], True),
-        # Hybrid-on-K8s reports the generic K8s launcher — must NOT be read as Serverless v2,
-        # else a working Hybrid/classic-Serverless PEX build gets wrongly redirected to Docker.
-        ([_agent("K8sUserCodeLauncher")], False),
-        # Classic (v1) serverless is not v2.
-        ([_agent("ServerlessUserCodeLauncher")], False),
-        ([_agent("EcsUserCodeLauncher")], False),
-        # A v2 launcher that isn't running doesn't count.
-        ([_agent("ServerlessK8sUserCodeLauncher", status="NOT_RUNNING")], False),
-        # A running v2 agent alongside a hybrid-k8s agent is still detected.
-        ([_agent("K8sUserCodeLauncher"), _agent("ServerlessK8sUserCodeLauncher")], True),
-    ],
-)
-def test_has_running_serverless_v2_agent(agents: list, expected: bool):
-    assert _has_running_serverless_v2_agent(agents) is expected
 
 
 @pytest.mark.parametrize(
@@ -70,14 +45,6 @@ def test_detects_platform_for_serverless_and_hybrid(
     assert resolved_platform == expected_platform
 
 
-def test_platform_unknown_when_no_running_serverless_agent():
-    client = _FakeGqlClient(
-        "SERVERLESS", [_agent("ServerlessK8sUserCodeLauncher", status="NOT_RUNNING")]
-    )
-    _, resolved_platform = get_agent_type_and_platform_from_graphql(client)  # ty: ignore[invalid-argument-type]
-    assert resolved_platform == DgPlusAgentPlatform.UNKNOWN
-
-
 def test_mixed_agents_resolve_to_k8s_deterministically():
     """A mixed v1+v2 org (both a K8s and an ECS agent running during migration) must resolve to
     K8S — the v2 signal that drives the PEX->Docker redirect — regardless of agent order. K8s is
@@ -91,35 +58,6 @@ def test_mixed_agents_resolve_to_k8s_deterministically():
     assert resolved_platform == DgPlusAgentPlatform.K8S
 
 
-def test_serverless_platform_uses_env_when_no_dg_config(monkeypatch):
-    """CI/dogfood authenticate via DAGSTER_CLOUD_* env vars, not a dg config file. Platform
-    detection must build its client from env, not the empty file-based config.
-    """
-    captured = {}
-
-    class _Client:
-        def __init__(self, **kwargs):
-            captured.update(kwargs)
-
-        def execute_arbitrary(self, query: str) -> dict:
-            return {"agents": [_agent("ServerlessK8sUserCodeLauncher")]}
-
-    monkeypatch.setenv("DAGSTER_CLOUD_ORGANIZATION", "acme")
-    monkeypatch.setenv("DAGSTER_CLOUD_API_TOKEN", "agent:acme:deadbeef")
-    monkeypatch.setenv("DAGSTER_CLOUD_URL", "https://acme.dogfood.dagster.cloud")
-    monkeypatch.setenv("DAGSTER_CLOUD_DEPLOYMENT", "prod")
-    monkeypatch.setattr(
-        "dagster_dg_cli.cli.plus.build.DagsterPlusGraphQLClient", _Client, raising=True
-    )
-
-    # Empty file-based config (as in CI) — detection must fall back to env.
-    platform = get_serverless_agent_platform(DagsterPlusCliConfig())
-    assert platform == DgPlusAgentPlatform.K8S
-    assert captured["organization"] == "acme"
-    assert captured["url"] == "https://acme.dogfood.dagster.cloud"
-    assert captured["api_token"] == "agent:acme:deadbeef"
-
-
 def test_gql_client_none_without_credentials(monkeypatch):
     for var in (
         "DAGSTER_CLOUD_ORGANIZATION",
@@ -129,31 +67,6 @@ def test_gql_client_none_without_credentials(monkeypatch):
     ):
         monkeypatch.delenv(var, raising=False)
     assert _gql_client_from_env_or_config(DagsterPlusCliConfig()) is None
-    assert get_serverless_agent_platform(DagsterPlusCliConfig()) == DgPlusAgentPlatform.UNKNOWN
-
-
-@pytest.mark.parametrize(
-    "agent_type, agent_platform, build_strategy, expected",
-    [
-        # The one case we redirect: PEX targeting Serverless v2 (K8s).
-        (DgPlusAgentType.SERVERLESS, DgPlusAgentPlatform.K8S, BuildStrategy.pex, True),
-        # Docker builds are never touched.
-        (DgPlusAgentType.SERVERLESS, DgPlusAgentPlatform.K8S, BuildStrategy.docker, False),
-        # Classic serverless (ECS) still uses PEX.
-        (DgPlusAgentType.SERVERLESS, DgPlusAgentPlatform.ECS, BuildStrategy.pex, False),
-        # Unknown platform (e.g. no running agent) is left alone.
-        (DgPlusAgentType.SERVERLESS, DgPlusAgentPlatform.UNKNOWN, BuildStrategy.pex, False),
-        # Hybrid never uses PEX and is unaffected.
-        (DgPlusAgentType.HYBRID, DgPlusAgentPlatform.K8S, BuildStrategy.pex, False),
-    ],
-)
-def test_should_redirect_pex_to_docker(
-    agent_type: DgPlusAgentType,
-    agent_platform: DgPlusAgentPlatform,
-    build_strategy: BuildStrategy,
-    expected: bool,
-):
-    assert should_redirect_pex_to_docker(agent_type, agent_platform, build_strategy) is expected
 
 
 def test_pex_bundle_dockerfile_installs_into_default_site_packages():

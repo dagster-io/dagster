@@ -708,6 +708,52 @@ def build(
     )
 
 
+# So support can turn the redirect off mid-migration without pinning back a release.
+DISABLE_PEX_DOCKER_REDIRECT_ENV_VAR = "DAGSTER_CLOUD_DISABLE_PEX_DOCKER_REDIRECT"
+
+
+def _resolve_build_strategy(
+    build_strategy: BuildStrategy,
+    url: str,
+    deployment_name: str,
+) -> BuildStrategy:
+    """Redirect a PEX build to a Docker build when the target registry is Harbor.
+
+    Harbor is what routes a location to the Kubernetes serverless agent, which has no PEX
+    runtime. Keyed on the registry rather than on which agents are running, because those two
+    diverge during a rollback: the tenant and its agent are deliberately left up while the
+    registry moves back to ECR, and such a build should stay a python executable.
+    """
+    if build_strategy != BuildStrategy.pex:
+        return build_strategy
+
+    if os.getenv(DISABLE_PEX_DOCKER_REDIRECT_ENV_VAR):
+        ui.warn(
+            f"{DISABLE_PEX_DOCKER_REDIRECT_ENV_VAR} is set - skipping the registry check and"
+            " building a python executable as requested."
+        )
+        return build_strategy
+
+    try:
+        registry_info = utils.get_registry_info(url, deployment_name)
+    except Exception as e:
+        ui.warn(
+            f"Could not determine the target registry ({e}); building a python executable. If"
+            " this deployment runs Serverless on Kubernetes the result will not be runnable -"
+            " rerun the build, or pass --build-strategy=docker."
+        )
+        return build_strategy
+
+    if not registry_info.get("is_harbor"):
+        return build_strategy
+
+    ui.print(
+        "Serverless on Kubernetes does not run python executables - building a Docker image"
+        " from the same PEX artifacts instead."
+    )
+    return BuildStrategy.pex_docker
+
+
 def build_impl(
     statedir: str,
     location_name: list[str],
@@ -744,6 +790,15 @@ def build_impl(
     ui.print("Going to build the following locations:")
     for name in locations:
         ui.print(f"- {name}")
+
+    if locations:
+        # All locations in a session share a deployment, so resolve the strategy once.
+        first_location = next(iter(locations.values()))
+        build_strategy = _resolve_build_strategy(
+            build_strategy,
+            first_location.url,
+            first_location.deployment_name,
+        )
 
     for name, location_state in locations.items():
         project_dir = location_state.project_dir
