@@ -8,7 +8,7 @@ version = "1!0+dev"
 description = "A Dagster integration for dbt"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster==1!0+dev",
     # Follow the version support constraints for dbt Core:
@@ -82,17 +82,19 @@ test-dbt18 = [
 ]
 # dbt-core 1.9+ allows protobuf>=5, so these factor groups co-resolve
 # cleanly with dagster's runtime grpcio chain on all Python versions.
+# dbt-core 1.9 through 1.11 pin mashumaro<3.15, which cannot build its unpackers
+# on py3.14 (fixed in mashumaro 3.17), so those forks are only feasible on py<3.14.
 test-dbt19 = [
-    "dbt-core==1.9.*",
-    "dbt-duckdb==1.9.*",
-    "dbt-snowflake==1.9.*",
-    "dbt-bigquery==1.9.*",
+    "dbt-core==1.9.*; python_version<'3.14'",
+    "dbt-duckdb==1.9.*; python_version<'3.14'",
+    "dbt-snowflake==1.9.*; python_version<'3.14'",
+    "dbt-bigquery==1.9.*; python_version<'3.14'",
 ]
 test-dbt110 = [
-    "dbt-core==1.10.*",
+    "dbt-core==1.10.*; python_version<'3.14'",
 ]
 test-dbt111 = [
-    "dbt-core==1.11.*",
+    "dbt-core==1.11.*; python_version<'3.14'",
 ]
 test-dbt112 = [
     "dbt-core==1.12.*",
@@ -119,6 +121,7 @@ conflicts = [
 environments = [
     "python_version >= '3.10' and python_version < '3.13'",
     "python_version >= '3.13' and python_version < '3.14'",
+    "python_version >= '3.14' and python_version < '3.15'",
 ]
 
 [tool.uv.sources]
