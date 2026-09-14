@@ -1407,6 +1407,57 @@ class TestRunStorage:
         assert len(runs_not_in_backfill) == 1
         assert runs_not_in_backfill[0].dagster_run.run_id == run_not_in_backfill_id
 
+    def test_get_runs_by_backfill_id(self, storage: RunStorage):
+        origin = self.fake_partition_set_origin("fake_partition_set")
+        backfill = PartitionBackfill(
+            "bf_one",
+            partition_set_origin=origin,
+            status=BulkActionStatus.REQUESTED,
+            partition_names=["a", "b"],
+            from_failure=False,
+            tags={},
+            backfill_timestamp=time.time(),
+        )
+        storage.add_backfill(backfill)
+
+        in_backfill_id = make_new_run_id()
+        storage.add_run(
+            create_dagster_run(
+                run_id=in_backfill_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: backfill.backfill_id},
+            )
+        )
+        other_backfill_id = make_new_run_id()
+        storage.add_run(
+            create_dagster_run(
+                run_id=other_backfill_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+                tags={BACKFILL_ID_TAG: "some_other_backfill"},
+            )
+        )
+        no_backfill_id = make_new_run_id()
+        storage.add_run(
+            create_dagster_run(
+                run_id=no_backfill_id,
+                job_name="some_pipeline",
+                status=DagsterRunStatus.SUCCESS,
+            )
+        )
+
+        runs = storage.get_runs(filters=dg.RunsFilter(backfill_id=backfill.backfill_id))
+        assert {r.run_id for r in runs} == {in_backfill_id}
+
+        # combines with other filters
+        runs = storage.get_runs(
+            filters=dg.RunsFilter(
+                backfill_id=backfill.backfill_id, statuses=[DagsterRunStatus.SUCCESS]
+            )
+        )
+        assert {r.run_id for r in runs} == {in_backfill_id}
+
     def test_backfill(self, storage: RunStorage):
         origin = self.fake_partition_set_origin("fake_partition_set")
         backfills = storage.get_backfills()
