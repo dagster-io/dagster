@@ -124,6 +124,8 @@ Using `define_dagstermill_asset`, we've created and returned a Dagster asset. Le
 
 When materialized, the `iris_kmeans_jupyter` asset will execute the notebook (`/notebooks/iris-kmeans.ipynb`) and store the resulting `.ipynb` file in a persistent location.
 
+If you want a notebook asset to persist a rendered HTML report instead, set `output_notebook_format="html"` on `define_dagstermill_asset`. You can optionally combine it with `output_notebook_html_no_input=True` to hide code cell inputs in the rendered report. This is useful when you want a browser-friendly artifact for sharing or remote storage rather than the executed notebook preview in Dagster.
+
 ## Step 3: Add a Dagster Definitions object and supply an I/O manager
 
 We want to execute our Dagster asset and save the resulting notebook to a persistent location. This is called materializing the asset and to do this, we need to add the asset to a Dagster <PyObject section="definitions" module="dagster" object="Definitions" /> object.
