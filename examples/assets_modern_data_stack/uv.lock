@@ -7,10 +7,6 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
     "python_full_version < '3.11'",
 ]
-conflicts = [[
-    { package = "assets-modern-data-stack", group = "test-pypi" },
-    { package = "assets-modern-data-stack", group = "test-source" },
-]]
 
 [options]
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
@@ -27,7 +23,7 @@ dependencies = [
     { name = "parsedatetime" },
     { name = "python-slugify" },
     { name = "pytimeparse" },
-    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/77/6f5df1c68bf056f5fdefc60ccc616303c6211e71cd6033c830c12735f605/agate-1.9.1.tar.gz", hash = "sha256:bc60880c2ee59636a2a80cd8603d63f995be64526abf3cbba12f00767bcd5b3d", size = 202303, upload-time = "2023-12-21T20:05:24.316Z" }
 wheels = [
@@ -53,7 +49,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mako" },
     { name = "sqlalchemy" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/13/8b084e0f2efb0275a1d534838844926f798bd766566b1375174e2448cd31/alembic-1.18.4.tar.gz", hash = "sha256:cb6e1fd84b6174ab8dbb2329f86d631ba9559dd78df550b57804d607672cedbc", size = 2056725, upload-time = "2026-02-10T16:00:47.195Z" }
@@ -108,51 +104,34 @@ version = "1!0+dev"
 source = { editable = "." }
 dependencies = [
     { name = "boto3" },
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-airbyte", version = "0.29.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-airbyte", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-airbyte" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-cloud", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../python_modules/dagster-cloud" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-dbt", version = "0.29.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-dbt", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-dbt" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-postgres", version = "0.29.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-postgres", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-postgres" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "dagster" },
+    { name = "dagster-airbyte" },
+    { name = "dagster-cloud" },
+    { name = "dagster-dbt" },
+    { name = "dagster-postgres" },
     { name = "dbt-core" },
     { name = "dbt-postgres" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pandas" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
 
 [package.dev-dependencies]
-test-pypi = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, extra = ["test"], marker = "extra == 'group-24-assets-modern-data-stack-test-pypi'" },
-    { name = "dagster-airbyte", version = "0.29.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-cloud", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-dbt", version = "0.29.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-graphql", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-pandas", version = "0.29.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-pipes", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-postgres", version = "0.29.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-shared", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-webserver", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
+dev = [
+    { name = "dagster", extra = ["test"] },
+    { name = "dagster-airbyte" },
+    { name = "dagster-cloud" },
+    { name = "dagster-dbt" },
+    { name = "dagster-dg-cli" },
+    { name = "dagster-graphql" },
+    { name = "dagster-pandas" },
+    { name = "dagster-pipes" },
+    { name = "dagster-postgres" },
+    { name = "dagster-shared" },
+    { name = "dagster-webserver" },
     { name = "pytest" },
-]
-test-source = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, extra = ["test"], marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-airbyte", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-airbyte" } },
-    { name = "dagster-cloud", version = "1!0+dev", source = { editable = "../../python_modules/dagster-cloud" } },
-    { name = "dagster-cloud-cli", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-cloud-cli" } },
-    { name = "dagster-dbt", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-dbt" } },
-    { name = "dagster-graphql", version = "1!0+dev", source = { editable = "../../python_modules/dagster-graphql" } },
-    { name = "dagster-pandas", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-pandas" } },
-    { name = "dagster-pipes", version = "1!0+dev", source = { editable = "../../python_modules/dagster-pipes" } },
-    { name = "dagster-postgres", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-postgres" } },
-    { name = "dagster-shared", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-shared" } },
-    { name = "dagster-webserver", version = "1!0+dev", source = { editable = "../../python_modules/dagster-webserver" } },
 ]
 
 [package.metadata]
@@ -171,11 +150,12 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-test-pypi = [
+dev = [
     { name = "dagster", extras = ["test"] },
     { name = "dagster-airbyte" },
     { name = "dagster-cloud" },
     { name = "dagster-dbt" },
+    { name = "dagster-dg-cli" },
     { name = "dagster-graphql" },
     { name = "dagster-pandas" },
     { name = "dagster-pipes" },
@@ -183,19 +163,6 @@ test-pypi = [
     { name = "dagster-shared" },
     { name = "dagster-webserver" },
     { name = "pytest" },
-]
-test-source = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-airbyte", editable = "../../python_modules/libraries/dagster-airbyte" },
-    { name = "dagster-cloud", editable = "../../python_modules/dagster-cloud" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dbt", editable = "../../python_modules/libraries/dagster-dbt" },
-    { name = "dagster-graphql", editable = "../../python_modules/dagster-graphql" },
-    { name = "dagster-pandas", editable = "../../python_modules/libraries/dagster-pandas" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-postgres", editable = "../../python_modules/libraries/dagster-postgres" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagster-webserver", editable = "../../python_modules/dagster-webserver" },
 ]
 
 [[package]]
@@ -310,7 +277,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -443,11 +410,23 @@ name = "click"
 version = "8.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/63/f9e1ea081ce35720d8b92acde70daaedace594dc93b693c869e0d5910718/click-8.3.3.tar.gz", hash = "sha256:398329ad4837b2ff7cbe1dd166a4c0f8900c3ca3a218de04466f38f6497f18a2", size = 328061, upload-time = "2026-04-22T15:11:27.506Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ae/44/c1221527f6a71a01ec6fbad7fa78f1d50dfa02217385cf0fa3eec7087d59/click-8.3.3-py3-none-any.whl", hash = "sha256:a2bf429bb3033c89fa4936ffb35d5cb471e3719e1f3c8a7c3fff0b8314305613", size = 110502, upload-time = "2026-04-22T15:11:25.044Z" },
+]
+
+[[package]]
+name = "click-aliases"
+version = "1.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/62/a67da6b561fad10792635cf504080f3d98b655683c4801570b22f95f3476/click_aliases-1.0.7.tar.gz", hash = "sha256:507d6a6cf9001bf8838fe7f58a37651a25cbc5cc25421c5aeab6727a9397f7b5", size = 3062, upload-time = "2026-07-09T16:58:36.498Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/87/27/83b5403ab6cfa9ee78e0251308e614df8536679348771575fcdb0e00db4a/click_aliases-1.0.7-py3-none-any.whl", hash = "sha256:f3dc828dbc76de4b6a7262a02049ad00e0107648f3a058df728d966e3fecd464", size = 3661, upload-time = "2026-07-09T16:58:35.675Z" },
 ]
 
 [[package]]
@@ -564,8 +543,8 @@ name = "cryptography"
 version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/ad/5d6702db60b1e40b41ef513b6967ff5848f307d50f8449baf1634f5908f1/cryptography-50.0.1.tar.gz", hash = "sha256:5dd9bda1c12b4162f6ff568eeb5e0ff956c28d14406e875cfe8a63a2d414ff20", size = 880381, upload-time = "2026-08-25T19:45:45.499Z" }
 wheels = [
@@ -616,41 +595,35 @@ wheels = [
 name = "dagster"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "alembic", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "antlr4-python3-runtime", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "click", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "coloredlogs", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-pipes", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-shared", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "docstring-parser", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "filelock", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "grpcio", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "grpcio-health-checking", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "jinja2", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "protobuf", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "psutil", marker = "(sys_platform == 'win32' and extra == 'group-24-assets-modern-data-stack-test-pypi') or (sys_platform == 'win32' and extra != 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "python-dotenv", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pytz", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pywin32", marker = "(sys_platform == 'win32' and extra == 'group-24-assets-modern-data-stack-test-pypi') or (sys_platform == 'win32' and extra != 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "rich", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "six", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "sqlalchemy", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "structlog", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tabulate", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tomli", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "toposort", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tqdm", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tzdata", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "universal-pathlib", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "watchdog", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "alembic" },
+    { name = "antlr4-python3-runtime" },
+    { name = "click" },
+    { name = "coloredlogs" },
+    { name = "dagster-pipes" },
+    { name = "dagster-shared" },
+    { name = "docstring-parser" },
+    { name = "filelock" },
+    { name = "grpcio" },
+    { name = "grpcio-health-checking" },
+    { name = "jinja2" },
+    { name = "protobuf" },
+    { name = "psutil", marker = "sys_platform == 'win32'" },
+    { name = "python-dotenv" },
+    { name = "pytz" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "six" },
+    { name = "sqlalchemy" },
+    { name = "structlog" },
+    { name = "tabulate" },
+    { name = "tomli" },
+    { name = "toposort" },
+    { name = "tqdm" },
+    { name = "tzdata" },
+    { name = "universal-pathlib" },
+    { name = "watchdog" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/71/1d/4e46f7060b1c206bc1303d7567de572d6f4f244e250ce7779d02d9c3579c/dagster-1.13.20.tar.gz", hash = "sha256:78b24bab6222e549cc072ebb1b1445348efba1d6c3e49b395408cf00b475e9ec", size = 3629314, upload-time = "2026-08-27T15:18:30.89Z" }
 wheels = [
@@ -661,7 +634,7 @@ wheels = [
 test = [
     { name = "docker" },
     { name = "grpcio-tools" },
-    { name = "morefs", extra = ["asynclocal"], marker = "extra == 'group-24-assets-modern-data-stack-test-pypi'" },
+    { name = "morefs", extra = ["asynclocal"] },
     { name = "mypy-protobuf" },
     { name = "objgraph" },
     { name = "psutil" },
@@ -680,213 +653,15 @@ test = [
     { name = "tox" },
     { name = "tox-uv" },
 ]
-
-[[package]]
-name = "dagster"
-version = "1!0+dev"
-source = { editable = "../../python_modules/dagster" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "alembic", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "antlr4-python3-runtime", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "click", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "coloredlogs", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-pipes", version = "1!0+dev", source = { editable = "../../python_modules/dagster-pipes" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-shared", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-shared" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "docstring-parser", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "filelock", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "grpcio", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "grpcio-health-checking", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "jinja2", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "protobuf", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "psutil", marker = "(sys_platform == 'win32' and extra == 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "python-dotenv", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pytz", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pywin32", marker = "(sys_platform == 'win32' and extra == 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "rich", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "six", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "sqlalchemy", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "structlog", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tabulate", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tomli", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "toposort", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tqdm", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tzdata", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "universal-pathlib", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "watchdog", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.optional-dependencies]
-test = [
-    { name = "docker" },
-    { name = "grpcio-tools" },
-    { name = "morefs", extra = ["asynclocal"], marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "mypy-protobuf" },
-    { name = "objgraph" },
-    { name = "psutil" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-mock" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-split" },
-    { name = "pytest-timeout" },
-    { name = "pytest-xdist" },
-    { name = "rapidfuzz" },
-    { name = "responses" },
-    { name = "ruff" },
-    { name = "syrupy" },
-    { name = "tox" },
-    { name = "tox-uv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0" },
-    { name = "antlr4-python3-runtime", specifier = "<4.14" },
-    { name = "boto3-stubs", extras = ["essential"], marker = "extra == 'ty'" },
-    { name = "click", specifier = ">=5.0,<9.0" },
-    { name = "coloredlogs", specifier = ">=6.1,<=14.0" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "docker", marker = "extra == 'docker'" },
-    { name = "docker", marker = "extra == 'test'" },
-    { name = "docstring-parser" },
-    { name = "duckdb", marker = "extra == 'test-components'" },
-    { name = "filelock" },
-    { name = "grpcio", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
-    { name = "grpcio", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
-    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0,<1.82" },
-    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2,<1.82" },
-    { name = "grpcio-tools", marker = "python_full_version >= '3.13' and extra == 'test'", specifier = ">=1.66.2" },
-    { name = "grpcio-tools", marker = "python_full_version < '3.13' and extra == 'test'", specifier = ">=1.44.0" },
-    { name = "jinja2" },
-    { name = "jsonschema", marker = "extra == 'test-components'" },
-    { name = "morefs", extras = ["asynclocal"], marker = "extra == 'test'" },
-    { name = "mypy", marker = "extra == 'mypy'", specifier = "==1.8.0" },
-    { name = "mypy-protobuf", marker = "extra == 'test'" },
-    { name = "objgraph", marker = "extra == 'test'" },
-    { name = "pandas", marker = "extra == 'test-components'", specifier = "<3.0.0" },
-    { name = "pandas-stubs", marker = "extra == 'pyright'" },
-    { name = "pandas-stubs", marker = "extra == 'ty'" },
-    { name = "protobuf", marker = "python_full_version < '3.11'", specifier = ">=3.20.0,<7" },
-    { name = "protobuf", marker = "python_full_version >= '3.11'", specifier = ">=4,<7" },
-    { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=1.0" },
-    { name = "psutil", marker = "extra == 'test'" },
-    { name = "pyright", marker = "extra == 'pyright'", specifier = "==1.1.389" },
-    { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
-    { name = "pytest-asyncio", marker = "extra == 'test'" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = "==5.0.0" },
-    { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.14.0" },
-    { name = "pytest-rerunfailures", marker = "extra == 'test'" },
-    { name = "pytest-split", marker = "extra == 'test'" },
-    { name = "pytest-timeout", marker = "extra == 'test'" },
-    { name = "pytest-xdist", marker = "extra == 'test'", specifier = "==3.6.1" },
-    { name = "python-dotenv" },
-    { name = "pytz" },
-    { name = "pywin32", marker = "sys_platform == 'win32'", specifier = "!=226" },
-    { name = "rapidfuzz", marker = "extra == 'test'" },
-    { name = "requests" },
-    { name = "responses", marker = "extra == 'test'", specifier = "<=0.23.1" },
-    { name = "rich" },
-    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.16.2" },
-    { name = "ruff", marker = "extra == 'test'", specifier = "==0.16.2" },
-    { name = "six" },
-    { name = "sqlalchemy", specifier = ">=1.0,<3" },
-    { name = "structlog" },
-    { name = "syrupy", marker = "extra == 'test'", specifier = ">=4.0.0" },
-    { name = "tabulate" },
-    { name = "tomli", specifier = "<3" },
-    { name = "tomlkit", marker = "extra == 'test-components'" },
-    { name = "toposort", specifier = ">=1.0" },
-    { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
-    { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
-    { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.74" },
-    { name = "types-backports", marker = "extra == 'pyright'" },
-    { name = "types-backports", marker = "extra == 'ty'" },
-    { name = "types-certifi", marker = "extra == 'pyright'" },
-    { name = "types-certifi", marker = "extra == 'ty'" },
-    { name = "types-chardet", marker = "extra == 'pyright'" },
-    { name = "types-chardet", marker = "extra == 'ty'" },
-    { name = "types-cryptography", marker = "extra == 'pyright'" },
-    { name = "types-cryptography", marker = "extra == 'ty'" },
-    { name = "types-freezegun", marker = "extra == 'ty'" },
-    { name = "types-mock", marker = "extra == 'pyright'" },
-    { name = "types-mock", marker = "extra == 'ty'" },
-    { name = "types-paramiko", marker = "extra == 'pyright'" },
-    { name = "types-paramiko", marker = "extra == 'ty'" },
-    { name = "types-protobuf", marker = "extra == 'ty'" },
-    { name = "types-pyopenssl", marker = "extra == 'pyright'" },
-    { name = "types-pyopenssl", marker = "extra == 'ty'" },
-    { name = "types-python-dateutil", marker = "extra == 'pyright'", specifier = "~=2.9.0.20240316" },
-    { name = "types-python-dateutil", marker = "extra == 'ty'", specifier = "~=2.9.0.20240316" },
-    { name = "types-pytz", marker = "extra == 'pyright'" },
-    { name = "types-pytz", marker = "extra == 'ty'" },
-    { name = "types-pyyaml", marker = "extra == 'pyright'" },
-    { name = "types-pyyaml", marker = "extra == 'ty'" },
-    { name = "types-redis", marker = "extra == 'ty'" },
-    { name = "types-requests", marker = "extra == 'pyright'" },
-    { name = "types-requests", marker = "extra == 'ty'" },
-    { name = "types-simplejson", marker = "extra == 'pyright'" },
-    { name = "types-simplejson", marker = "extra == 'ty'" },
-    { name = "types-six", marker = "extra == 'pyright'" },
-    { name = "types-six", marker = "extra == 'ty'" },
-    { name = "types-tabulate", marker = "extra == 'pyright'" },
-    { name = "types-tabulate", marker = "extra == 'ty'" },
-    { name = "types-toml", marker = "extra == 'pyright'" },
-    { name = "types-toml", marker = "extra == 'ty'" },
-    { name = "types-tzlocal", marker = "extra == 'pyright'" },
-    { name = "types-tzlocal", marker = "extra == 'ty'" },
-    { name = "tzdata" },
-    { name = "universal-pathlib", marker = "python_full_version < '3.12'" },
-    { name = "universal-pathlib", marker = "python_full_version >= '3.12'", specifier = ">=0.2.0" },
-    { name = "watchdog", specifier = ">=0.8.3,<7" },
-]
-provides-extras = ["docker", "test", "test-components", "mypy", "pyright", "ruff", "ty"]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "create-dagster", editable = "../../python_modules/libraries/create-dagster" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dg-core", editable = "../../python_modules/libraries/dagster-dg-core" },
-    { name = "dagster-graphql", editable = "../../python_modules/dagster-graphql" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagster-test", editable = "../../python_modules/dagster-test" },
-    { name = "dagster-webserver", editable = "../../python_modules/dagster-webserver" },
-]
-test-components = [
-    { name = "dagster-dg-cli", editable = "../../python_modules/libraries/dagster-dg-cli" },
-    { name = "dagster-rest-resources", editable = "../../python_modules/libraries/dagster-rest-resources" },
-]
-test-old-protobuf = [
-    { name = "protobuf", marker = "python_full_version < '3.11'", specifier = "<4" },
-    { name = "setuptools", marker = "python_full_version < '3.11'", specifier = "<82" },
-]
-test-sqlalchemy-1-3 = [{ name = "sqlalchemy", specifier = "<1.4" }]
-test-sqlalchemy-1-4 = [{ name = "sqlalchemy", specifier = "<2" }]
 
 [[package]]
 name = "dagster-airbyte"
 version = "0.29.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "python-dateutil", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "dagster" },
+    { name = "python-dateutil" },
+    { name = "requests" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/56/b1/d174f571a08c50fd33a36a6ca58fe35f60c3d9bc360195ee644222e4e196/dagster_airbyte-0.29.20.tar.gz", hash = "sha256:28260434c786e8dc4e42c273b7c3994cac7f7b5e973a6251e2e55d3c83f49504", size = 326347, upload-time = "2026-08-27T15:33:06.137Z" }
 wheels = [
@@ -894,65 +669,17 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-airbyte"
-version = "1!0+dev"
-source = { editable = "../../python_modules/libraries/dagster-airbyte" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "python-dateutil", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "dagster-managed-elements", marker = "extra == 'managed'", editable = "../../python_modules/libraries/dagster-managed-elements" },
-    { name = "python-dateutil" },
-    { name = "requests" },
-]
-provides-extras = ["managed"]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "create-dagster", editable = "../../python_modules/libraries/create-dagster" },
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dg-cli", editable = "../../python_modules/libraries/dagster-dg-cli" },
-    { name = "dagster-dg-core", extras = ["test"], editable = "../../python_modules/libraries/dagster-dg-core" },
-    { name = "dagster-graphql", editable = "../../python_modules/dagster-graphql" },
-    { name = "dagster-managed-elements", editable = "../../python_modules/libraries/dagster-managed-elements" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-rest-resources", editable = "../../python_modules/libraries/dagster-rest-resources" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagster-test", editable = "../../python_modules/dagster-test" },
-    { name = "pytest-rerunfailures" },
-    { name = "requests-mock" },
-]
-
-[[package]]
 name = "dagster-cloud"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-cloud-cli", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-shared", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pex", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "questionary", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "typer", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "dagster" },
+    { name = "dagster-cloud-cli" },
+    { name = "dagster-shared" },
+    { name = "pex" },
+    { name = "questionary" },
+    { name = "requests" },
+    { name = "typer" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/85/8f/9a1bd4bbedafd4f85b78e512197291a96bc6dc0ca5f26dd289163e756934/dagster_cloud-1.13.20.tar.gz", hash = "sha256:d599091bf9191793fa3f6aa561fd45c5ac18fbd7928d3f1fa24f498dc7757019", size = 749778, upload-time = "2026-08-27T15:18:55.737Z" }
 wheels = [
@@ -960,104 +687,22 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-cloud"
-version = "1!0+dev"
-source = { editable = "../../python_modules/dagster-cloud" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-cloud-cli", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-cloud-cli" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-shared", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-shared" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pex", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "questionary", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "typer", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "boto3", marker = "extra == 'ecs'" },
-    { name = "boto3", marker = "extra == 'pex'" },
-    { name = "boto3", marker = "extra == 'serverless'" },
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "dagster-aws", marker = "extra == 'ecs'", editable = "../../python_modules/libraries/dagster-aws" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-docker", marker = "extra == 'docker'", editable = "../../python_modules/libraries/dagster-docker" },
-    { name = "dagster-k8s", marker = "extra == 'kubernetes'", editable = "../../python_modules/libraries/dagster-k8s" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "docker", marker = "extra == 'docker'" },
-    { name = "kubernetes", marker = "extra == 'kubernetes'" },
-    { name = "pex", specifier = ">=2.1.132,<2.60.0" },
-    { name = "pyarrow", marker = "extra == 'insights'" },
-    { name = "questionary" },
-    { name = "requests" },
-    { name = "supervisor", marker = "extra == 'sandbox'" },
-    { name = "typer", specifier = ">=0.15.0" },
-]
-provides-extras = ["insights", "docker", "kubernetes", "ecs", "sandbox", "pex", "serverless"]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-aws", editable = "../../python_modules/libraries/dagster-aws" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dbt", editable = "../../python_modules/libraries/dagster-dbt" },
-    { name = "dagster-dg-cli", editable = "../../python_modules/libraries/dagster-dg-cli" },
-    { name = "dagster-docker", editable = "../../python_modules/libraries/dagster-docker" },
-    { name = "dagster-k8s", editable = "../../python_modules/libraries/dagster-k8s" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-rest-resources", editable = "../../python_modules/libraries/dagster-rest-resources" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagster-test", editable = "../../python_modules/dagster-test" },
-    { name = "dbt-bigquery", specifier = ">=1.9.0" },
-    { name = "dbt-core" },
-    { name = "dbt-duckdb" },
-    { name = "dbt-snowflake" },
-    { name = "docker" },
-    { name = "freezegun" },
-    { name = "isort" },
-    { name = "kubernetes" },
-    { name = "moto", extras = ["all"] },
-    { name = "mypy" },
-    { name = "pip" },
-    { name = "psutil" },
-    { name = "pylint" },
-    { name = "pytest" },
-    { name = "responses" },
-    { name = "syrupy" },
-    { name = "types-pyyaml" },
-    { name = "types-requests" },
-    { name = "wordcloud" },
-]
-
-[[package]]
 name = "dagster-cloud-cli"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "click", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-shared", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "github3-py", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "jinja2", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "packaging", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pyyaml", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "questionary", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "setuptools", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tomli", marker = "(python_full_version < '3.11' and extra == 'group-24-assets-modern-data-stack-test-pypi') or (python_full_version < '3.11' and extra != 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "typer", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "validators", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "click" },
+    { name = "dagster-shared" },
+    { name = "github3-py" },
+    { name = "jinja2" },
+    { name = "packaging" },
+    { name = "pyyaml" },
+    { name = "questionary" },
+    { name = "requests" },
+    { name = "setuptools" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typer" },
+    { name = "validators" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/db/c7/dbb688a0536589710a77a80c5f014d3102f1e4ffb0b1117ab4c31eb0a0e5/dagster_cloud_cli-1.13.20.tar.gz", hash = "sha256:5e57b2badae8c74827ef1be8390561d17df794880a7c2c838599eda8f1c81afd", size = 176641, upload-time = "2026-08-27T15:27:12.595Z" }
 wheels = [
@@ -1065,80 +710,22 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-cloud-cli"
-version = "1!0+dev"
-source = { editable = "../../python_modules/libraries/dagster-cloud-cli" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "click", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dagster-shared", version = "1!0+dev", source = { editable = "../../python_modules/libraries/dagster-shared" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "github3-py", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "jinja2", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "packaging", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pyyaml", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "questionary", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "setuptools", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tomli", marker = "(python_full_version < '3.11' and extra == 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "typer", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "validators", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "github3-py" },
-    { name = "jinja2" },
-    { name = "packaging", specifier = ">=20.9" },
-    { name = "pyyaml", specifier = ">=5.1" },
-    { name = "questionary" },
-    { name = "requests" },
-    { name = "setuptools" },
-    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=1.1.0" },
-    { name = "typer", specifier = ">=0.15.0" },
-    { name = "validators" },
-]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "freezegun" },
-    { name = "pex", specifier = ">=2.1.132,<2.60.0" },
-    { name = "pip" },
-    { name = "pytest", specifier = ">=8" },
-    { name = "pytest-mock", specifier = "==3.14.0" },
-    { name = "pytest-rerunfailures" },
-]
-
-[[package]]
 name = "dagster-dbt"
 version = "0.29.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dbt-core", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "gitpython", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "jinja2", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-24-assets-modern-data-stack-test-pypi') or (python_full_version < '3.11' and extra != 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-24-assets-modern-data-stack-test-pypi') or (python_full_version >= '3.11' and extra != 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "orjson", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "packaging", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "rich", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "sqlglot", extra = ["rs"], marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "typer", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "dagster" },
+    { name = "dbt-core" },
+    { name = "gitpython" },
+    { name = "jinja2" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "orjson" },
+    { name = "packaging" },
+    { name = "requests" },
+    { name = "rich" },
+    { name = "sqlglot", extra = ["rs"] },
+    { name = "typer" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/28/ae/d5cd2cf22cec167ca4cfbdf13a1d8e0df843d7679d9ab9e801293f60614f/dagster_dbt-0.29.20.tar.gz", hash = "sha256:a50daa4522db880363286006d46819028d80d9c5ad29ba40aef3580b86e28167", size = 918110, upload-time = "2026-08-27T15:38:39.773Z" }
 wheels = [
@@ -1146,101 +733,58 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-dbt"
-version = "1!0+dev"
-source = { editable = "../../python_modules/libraries/dagster-dbt" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
+name = "dagster-dg-cli"
+version = "1.13.20"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "dbt-core", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "gitpython", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "jinja2", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-24-assets-modern-data-stack-test-source') or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "orjson", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "packaging", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "requests", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "rich", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "sqlglot", extra = ["rs"], marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "typer", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "dbt-core", specifier = ">=1.7,<1.12" },
-    { name = "gitpython" },
-    { name = "jinja2" },
-    { name = "networkx" },
-    { name = "orjson" },
-    { name = "packaging" },
+    { name = "dagster" },
+    { name = "dagster-cloud-cli" },
+    { name = "dagster-dg-core" },
+    { name = "dagster-rest-resources" },
     { name = "requests" },
-    { name = "rich" },
-    { name = "sqlglot", extras = ["rs"], specifier = "<28.1.0" },
-    { name = "typer", specifier = ">=0.9.0" },
+    { name = "typer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c0/92/1a8b942b3b5893199be70e4e820f45b5b6d9ebe48efeaa514905b5a0734a/dagster_dg_cli-1.13.20.tar.gz", hash = "sha256:69988ffbdb364350c3941d454952e35ae828f1c695ca386a7acbf1a5fd0d8c9a", size = 518800, upload-time = "2026-08-27T15:33:56.821Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f4/86/dce8de8dd7fe28391fa4942881be0fb83b71f9d21808c69fd0f570e0904e/dagster_dg_cli-1.13.20-py3-none-any.whl", hash = "sha256:dea405be995b9ce278c25ad3bb7a8c2fb5b93261b28cc434e333281ce704c5cf", size = 192940, upload-time = "2026-08-27T15:33:55.656Z" },
 ]
 
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-cloud-cli", editable = "../../python_modules/libraries/dagster-cloud-cli" },
-    { name = "dagster-dg-cli", editable = "../../python_modules/libraries/dagster-dg-cli" },
-    { name = "dagster-dg-core", editable = "../../python_modules/libraries/dagster-dg-core" },
-    { name = "dagster-duckdb", editable = "../../python_modules/libraries/dagster-duckdb" },
-    { name = "dagster-duckdb-pandas", editable = "../../python_modules/libraries/dagster-duckdb-pandas" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-rest-resources", editable = "../../python_modules/libraries/dagster-rest-resources" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dbt-duckdb", specifier = "<1.9.2" },
-    { name = "duckdb", specifier = "<1.4.0" },
-    { name = "pytest-order" },
-    { name = "pytest-rerunfailures" },
+[[package]]
+name = "dagster-dg-core"
+version = "1.13.20"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "click-aliases" },
+    { name = "dagster-cloud-cli" },
+    { name = "dagster-shared" },
+    { name = "gql", extra = ["requests"] },
+    { name = "jinja2" },
+    { name = "jsonschema" },
+    { name = "markdown" },
+    { name = "packaging" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "setuptools" },
+    { name = "tomlkit" },
+    { name = "typer" },
+    { name = "typing-extensions" },
+    { name = "watchdog" },
+    { name = "yaspin" },
 ]
-test-dbt110 = [{ name = "dbt-core", specifier = "==1.10.*" }]
-test-dbt111 = [{ name = "dbt-core", specifier = "==1.11.*" }]
-test-dbt17 = [
-    { name = "dbt-bigquery", marker = "python_full_version < '3.13'", specifier = "==1.7.*" },
-    { name = "dbt-core", marker = "python_full_version < '3.13'", specifier = "==1.7.*,>=1.7.10" },
-    { name = "dbt-duckdb", marker = "python_full_version < '3.13'", specifier = "==1.7.*" },
-    { name = "dbt-snowflake", marker = "python_full_version < '3.13'", specifier = "==1.7.*" },
-    { name = "grpcio", marker = "python_full_version < '3.13'", specifier = "<1.62" },
-    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = "<1.62" },
-    { name = "grpcio-tools", marker = "python_full_version < '3.13'", specifier = "<1.62" },
-]
-test-dbt18 = [
-    { name = "dbt-bigquery", marker = "python_full_version < '3.13'", specifier = "==1.8.*" },
-    { name = "dbt-core", marker = "python_full_version < '3.13'", specifier = "==1.8.*" },
-    { name = "dbt-duckdb", marker = "python_full_version < '3.13'", specifier = "==1.8.*" },
-    { name = "dbt-snowflake", marker = "python_full_version < '3.13'", specifier = "==1.8.*" },
-    { name = "grpcio", marker = "python_full_version < '3.13'", specifier = "<1.62" },
-    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = "<1.62" },
-    { name = "grpcio-tools", marker = "python_full_version < '3.13'", specifier = "<1.62" },
-]
-test-dbt19 = [
-    { name = "dbt-bigquery", specifier = "==1.9.*" },
-    { name = "dbt-core", specifier = "==1.9.*" },
-    { name = "dbt-duckdb", specifier = "==1.9.*" },
-    { name = "dbt-snowflake", specifier = "==1.9.*" },
+sdist = { url = "https://files.pythonhosted.org/packages/5e/c2/2c4d1817d5fd307409478602a26d683fcf7381ab3689bc12948a8bbff0ac/dagster_dg_core-1.13.20.tar.gz", hash = "sha256:a9e978efddc56a341285c95ca8d8d0f6f42e475d9c4a5aeb6a707323e8eb43fe", size = 241393, upload-time = "2026-08-27T15:37:37.515Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1a/31/acdcd763d3f0ce99c73644f7a8c3af080cee6430580b7e8a2fe208d94368/dagster_dg_core-1.13.20-py3-none-any.whl", hash = "sha256:ac8a22baee924f5e3d35461b669227d386685861ebbfa8b7b52535772ae4db59", size = 47466, upload-time = "2026-08-27T15:37:36.01Z" },
 ]
 
 [[package]]
 name = "dagster-graphql"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "gql", extra = ["requests"], marker = "extra == 'group-24-assets-modern-data-stack-test-pypi'" },
+    { name = "dagster" },
+    { name = "gql", extra = ["requests"] },
     { name = "graphene" },
     { name = "requests" },
     { name = "starlette" },
@@ -1251,55 +795,11 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-graphql"
-version = "1!0+dev"
-source = { editable = "../../python_modules/dagster-graphql" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" } },
-    { name = "gql", extra = ["requests"], marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "graphene" },
-    { name = "requests" },
-    { name = "starlette" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "gql", extras = ["requests"], specifier = ">=3,<5" },
-    { name = "graphene", specifier = ">=3,<4" },
-    { name = "requests" },
-    { name = "starlette" },
-]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagster-test", editable = "../../python_modules/dagster-test" },
-]
-test-gql-v3 = [{ name = "gql", extras = ["requests"], specifier = "==3.0.0" }]
-test-gql-v3-5 = [{ name = "gql", extras = ["requests"], specifier = "==3.5.0" }]
-test-postgres = [{ name = "dagster-postgres", editable = "../../python_modules/libraries/dagster-postgres" }]
-
-[[package]]
 name = "dagster-pandas"
 version = "0.29.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
+    { name = "dagster" },
     { name = "pandas" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fa/23/6b21339f9fd32929f41fead2a8780946391671818bc7bd4d362fcfd5162c/dagster_pandas-0.29.20.tar.gz", hash = "sha256:c33dba5990f3f8160219e1ce5d11e38b7b1bb0a4a6b32f7d232e44ef72ff4f79", size = 325528, upload-time = "2026-08-27T15:37:04.802Z" }
@@ -1308,86 +808,21 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-pandas"
-version = "1!0+dev"
-source = { editable = "../../python_modules/libraries/dagster-pandas" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" } },
-    { name = "pandas" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "pandas", specifier = "<3.0.0" },
-]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagstermill", editable = "../../python_modules/libraries/dagstermill" },
-    { name = "matplotlib" },
-    { name = "scikit-learn", specifier = ">=0.19.0" },
-    { name = "tqdm" },
-]
-
-[[package]]
 name = "dagster-pipes"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 sdist = { url = "https://files.pythonhosted.org/packages/60/8a/5f3c72cfdef66a4ecce1b912221e27878424f73c63bf3f3c6d104da5ba37/dagster_pipes-1.13.20.tar.gz", hash = "sha256:ab014c94c851b5456b588f49c20ac554a5dcec6eb1c5a3c8b2eb286963248e22", size = 149683, upload-time = "2026-08-27T15:19:07.394Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/e0/cc518d3ba6d46a7c3a6eba5a968a295a65289afc1bb3bd67dc8b8b8a6780/dagster_pipes-1.13.20-py3-none-any.whl", hash = "sha256:d249a40895ed6cf155fc151686c47f8f901e2ab9c1f40bf9436c65e9e8d1c7b1", size = 20246, upload-time = "2026-08-27T15:19:06.225Z" },
 ]
 
 [[package]]
-name = "dagster-pipes"
-version = "1!0+dev"
-source = { editable = "../../python_modules/dagster-pipes" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-
-[package.metadata]
-requires-dist = [{ name = "google-cloud-storage", marker = "extra == 'stubs'" }]
-provides-extras = ["stubs"]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-]
-
-[[package]]
 name = "dagster-postgres"
 version = "0.29.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "psycopg2-binary", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "dagster" },
+    { name = "psycopg2-binary" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/31/d9/0de04f460fd3a8e6c824ad624ed5876254ca4bb2fd3a257f4fa86e7abc46/dagster_postgres-0.29.20.tar.gz", hash = "sha256:005d976d3d8976c6416461aee0556564e87075040dc95b6b5bdc176b15424d95", size = 406339, upload-time = "2026-08-27T15:33:45.649Z" }
 wheels = [
@@ -1395,59 +830,30 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-postgres"
-version = "1!0+dev"
-source = { editable = "../../python_modules/libraries/dagster-postgres" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
+name = "dagster-rest-resources"
+version = "0.29.20"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" }, marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "psycopg2-binary", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "dagster-shared" },
+    { name = "httpx" },
+    { name = "pydantic" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.12.0" },
-    { name = "azure-identity", marker = "extra == 'wif'", specifier = ">=1.12.0" },
-    { name = "boto3", marker = "extra == 'aws'", specifier = ">=1.26.0" },
-    { name = "boto3", marker = "extra == 'wif'", specifier = ">=1.26.0" },
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "google-auth", marker = "extra == 'gcp'", specifier = ">=2.0.0" },
-    { name = "google-auth", marker = "extra == 'wif'", specifier = ">=2.0.0" },
-    { name = "psycopg2-binary" },
+sdist = { url = "https://files.pythonhosted.org/packages/43/ce/274c50ac367d07d0dfa9bce654b1eb24a8b76588882146f7a528eb39dbab/dagster_rest_resources-0.29.20.tar.gz", hash = "sha256:d2c28d87fb582ffb9b3ae305da8cf75a93a63e2399856fb345199e54c86f4171", size = 142438, upload-time = "2026-08-27T15:29:14.126Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/ef/542a98164c376e8262e4fc368122d4787966451088ef32f4a99d2ada1fbc/dagster_rest_resources-0.29.20-py3-none-any.whl", hash = "sha256:10a23387009cae78fd97866d34aa826f39406891d48c9ffd2694566ef4ffc37c", size = 131437, upload-time = "2026-08-27T15:29:12.806Z" },
 ]
-provides-extras = ["azure", "gcp", "aws", "wif"]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "dagster-test", editable = "../../python_modules/dagster-test" },
-]
-test-sqlalchemy-1-3 = [{ name = "sqlalchemy", specifier = "<1.4" }]
 
 [[package]]
 name = "dagster-shared"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
-    { name = "packaging", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "platformdirs", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pydantic", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pyyaml", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tomlkit", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "typing-extensions", marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra != 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "packaging" },
+    { name = "platformdirs" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "tomlkit" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d0/aa/1727364b401f6dc893740f01fd2f079e7eb6b3ffc744de9f5791655d2c7f/dagster_shared-1.13.20.tar.gz", hash = "sha256:5901f837af644120fbd1282d891c5498b7a3901c7c928850eb4c9df97eb2c92c", size = 124095, upload-time = "2026-08-27T15:38:28.663Z" }
 wheels = [
@@ -1455,99 +861,19 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-shared"
-version = "1!0+dev"
-source = { editable = "../../python_modules/libraries/dagster-shared" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "packaging", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "platformdirs", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pydantic", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "pyyaml", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "tomlkit", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-    { name = "typing-extensions", marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "packaging", specifier = ">=20.9" },
-    { name = "platformdirs" },
-    { name = "pydantic", specifier = ">=2,<3.0.0" },
-    { name = "pyyaml", specifier = ">=5.1" },
-    { name = "tomlkit" },
-    { name = "typing-extensions", specifier = ">=4.11.0,<5" },
-]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "pytest" },
-    { name = "pytest-rerunfailures" },
-]
-
-[[package]]
 name = "dagster-webserver"
 version = "1.13.20"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
 dependencies = [
     { name = "click" },
-    { name = "dagster", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
-    { name = "dagster-graphql", version = "1.13.20", source = { registry = "https://pypi.org/simple" } },
+    { name = "dagster" },
+    { name = "dagster-graphql" },
     { name = "starlette" },
-    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-24-assets-modern-data-stack-test-pypi'" },
+    { name = "uvicorn", extra = ["standard"] },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f9/36/ac388e4bb98ad4a0efcf8d41be47a9995d62bbb917558afe104113bc6ccd/dagster_webserver-1.13.20.tar.gz", hash = "sha256:2e037d2d1e0b491dc8443d49ebb1171e49e16e4927c4d685c37c5c4998570e6a", size = 12383344, upload-time = "2026-08-27T15:27:00.194Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d8/80/c64314e603ea3f332e782c9fa41fceea9657e86077f884ddf0b6cc98b140/dagster_webserver-1.13.20-py3-none-any.whl", hash = "sha256:42aa4cd732b302b3f58afb2503b52ea06c4a40eeddf2626044eaa06f54f2e17c", size = 12532398, upload-time = "2026-08-27T15:26:57.63Z" },
-]
-
-[[package]]
-name = "dagster-webserver"
-version = "1!0+dev"
-source = { editable = "../../python_modules/dagster-webserver" }
-resolution-markers = [
-    "python_full_version >= '3.13'",
-    "python_full_version == '3.12.*'",
-    "python_full_version == '3.11.*'",
-    "python_full_version < '3.11'",
-]
-dependencies = [
-    { name = "click" },
-    { name = "dagster", version = "1!0+dev", source = { editable = "../../python_modules/dagster" } },
-    { name = "dagster-graphql", version = "1!0+dev", source = { editable = "../../python_modules/dagster-graphql" } },
-    { name = "starlette" },
-    { name = "uvicorn", extra = ["standard"], marker = "extra == 'group-24-assets-modern-data-stack-test-source'" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=7.0,<9.0" },
-    { name = "dagster", editable = "../../python_modules/dagster" },
-    { name = "dagster-graphql", editable = "../../python_modules/dagster-graphql" },
-    { name = "nbconvert", marker = "extra == 'notebook'" },
-    { name = "starlette", specifier = "!=0.36.0" },
-    { name = "uvicorn", extras = ["standard"] },
-]
-provides-extras = ["notebook"]
-
-[package.metadata.requires-dev]
-test = [
-    { name = "dagster", extras = ["test"], editable = "../../python_modules/dagster" },
-    { name = "dagster-graphql", editable = "../../python_modules/dagster-graphql" },
-    { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
-    { name = "dagster-shared", editable = "../../python_modules/libraries/dagster-shared" },
-    { name = "objgraph" },
-    { name = "starlette", extras = ["full"] },
 ]
 
 [[package]]
@@ -1609,8 +935,8 @@ dependencies = [
     { name = "jinja2" },
     { name = "jsonschema" },
     { name = "mashumaro", extra = ["msgpack"] },
-    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "packaging" },
     { name = "pathspec" },
     { name = "protobuf" },
@@ -1747,7 +1073,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1886,18 +1212,14 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b0/03/84359833f7e1d49a883e92777637c592306030e30cee5e2b1e6476f95c88/greenlet-3.5.0-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:29ea813b2e1f45fa9649a17853b2b5465c4072fbcb072e5af6cd3a288216574a", size = 283502, upload-time = "2026-04-27T12:20:55.213Z" },
     { url = "https://files.pythonhosted.org/packages/25/ce/6f9f008266273aa14a2e011945797ac5802b97b8b40efe7afe1ee6c1afc9/greenlet-3.5.0-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:804a70b328e706b785c6ef16187051c394a63dd1a906d89be24b6ad77759f13f", size = 600508, upload-time = "2026-04-27T12:52:37.876Z" },
     { url = "https://files.pythonhosted.org/packages/e0/6d/b0f3272c2368ea2c1aa19a5ad70db0be8f8dff6e6d3d1eb82efa00cbcf19/greenlet-3.5.0-cp310-cp310-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:884f649de075b84739713d41dd4dfd41e2b910bfb769c4a3ea02ec1da52cd9bb", size = 613283, upload-time = "2026-04-27T12:59:37.957Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/ae/1db979ff6ae7958d80b288f63d5f6c30df96682700ea9fc340ce994d94a1/greenlet-3.5.0-cp310-cp310-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:4d0eadc7e4d9ffb2af4247b606cae307be8e448911e5a0d0b16d72fc3d224cfd", size = 619894, upload-time = "2026-04-27T13:02:35.13Z" },
     { url = "https://files.pythonhosted.org/packages/ed/ac/0b509b6fb93551ce5a01612ee1acda7f7dda4bbb66c99aeb2ab403d205dc/greenlet-3.5.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4b28037cb07768933c54d81bfe47a85f9f402f57d7d69743b991a713b63954eb", size = 613418, upload-time = "2026-04-27T12:25:23.852Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/94/b0590e3d1978f02419f30502341c40d72f77eb0a2198119fe27df47714ee/greenlet-3.5.0-cp310-cp310-manylinux_2_39_riscv64.whl", hash = "sha256:f8c30c2225f40dd76c50790f0eb3b5c7c18431efb299e2782083e1981feed243", size = 415681, upload-time = "2026-04-27T13:05:11.494Z" },
     { url = "https://files.pythonhosted.org/packages/03/03/2b2b680ec87aaa97998fb5b8d76658d4d3560386864f17efab33ba7c2e24/greenlet-3.5.0-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:cda05425526240807408156b6960a17a79a0c760b813573b67027823be760977", size = 1572229, upload-time = "2026-04-27T12:53:23.509Z" },
     { url = "https://files.pythonhosted.org/packages/61/e4/42b259e7a19aff1a270a4bd82caf6353109ed6860c9454e18f37162b83ae/greenlet-3.5.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:9c615f869163e14bb1ced20322d8038fb680b08236521ac3f30cd4c1288785a0", size = 1639886, upload-time = "2026-04-27T12:25:22.325Z" },
     { url = "https://files.pythonhosted.org/packages/6f/b4/733ca47b883b67c57f90d3ecb21055c9ec753597d10754ac201644061f9d/greenlet-3.5.0-cp310-cp310-win_amd64.whl", hash = "sha256:ba8f0bdc2fae6ce915dfd0c16d2d00bca7e4247c1eae4416e06430e522137858", size = 237795, upload-time = "2026-04-27T12:21:40.118Z" },
     { url = "https://files.pythonhosted.org/packages/8b/0f/a91f143f356523ff682309732b175765a9bc2836fd7c081c2c67fedc1ad4/greenlet-3.5.0-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:8f1cc966c126639cd152fdaa52624d2655f492faa79e013fea161de3e6dda082", size = 284726, upload-time = "2026-04-27T12:20:51.402Z" },
     { url = "https://files.pythonhosted.org/packages/95/82/800646c7ffc5dbabd75ddd2f6b519bb898c0c9c969e5d0473bfe5d20bcce/greenlet-3.5.0-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:362624e6a8e5bca3b8233e45eef33903a100e9539a2b995c364d595dbc4018b3", size = 604264, upload-time = "2026-04-27T12:52:39.494Z" },
     { url = "https://files.pythonhosted.org/packages/ca/ac/354867c0bba812fc33b15bc55aedafedd0aee3c7dd91dfca22444157dc0c/greenlet-3.5.0-cp311-cp311-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:5ecd83806b0f4c2f53b1018e0005cd82269ea01d42befc0368730028d850ed1c", size = 616099, upload-time = "2026-04-27T12:59:39.623Z" },
-    { url = "https://files.pythonhosted.org/packages/c9/ab/192090c4a5b30df148c22bf4b8895457d739a7c7c5a7b9c41e5dd7f537f2/greenlet-3.5.0-cp311-cp311-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:fa94cb2288681e3a11645958f1871d48ee9211bd2f66628fdace505927d6e564", size = 623976, upload-time = "2026-04-27T13:02:37.363Z" },
     { url = "https://files.pythonhosted.org/packages/ff/b0/815bece7399e01cadb69014219eebd0042339875c59a59b0820a46ece356/greenlet-3.5.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0ff251e9a0279522e62f6176412869395a64ddf2b5c5f782ff609a8216a4e662", size = 615198, upload-time = "2026-04-27T12:25:25.928Z" },
-    { url = "https://files.pythonhosted.org/packages/24/11/05eb2b9b188c6df7d68a89c99134d644a7af616a40b9808e8e6ced315d5d/greenlet-3.5.0-cp311-cp311-manylinux_2_39_riscv64.whl", hash = "sha256:64d6ac45f7271f48e45f67c95b54ef73534c52ec041fcda8edf520c6d811f4bc", size = 418379, upload-time = "2026-04-27T13:05:12.755Z" },
     { url = "https://files.pythonhosted.org/packages/10/80/3b2c0a895d6698f6ddb31b07942ebfa982f3e30888bc5546a5b5990de8b2/greenlet-3.5.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:6d874e79afd41a96e11ff4c5d0bc90a80973e476fda1c2c64985667397df432b", size = 1574927, upload-time = "2026-04-27T12:53:25.81Z" },
     { url = "https://files.pythonhosted.org/packages/44/0e/f354af514a4c61454dbc68e44d47544a5a4d6317e30b77ddfa3a09f4c5f3/greenlet-3.5.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:0ed006e4b86c59de7467eb2601cd1b77b5a7d657d1ee55e30fe30d76451edba4", size = 1642683, upload-time = "2026-04-27T12:25:23.9Z" },
     { url = "https://files.pythonhosted.org/packages/fa/6a/87f38255201e993a1915265ebb80cd7c2c78b04a45744995abbf6b259fd8/greenlet-3.5.0-cp311-cp311-win_amd64.whl", hash = "sha256:703cb211b820dbffbbc55a16bfc6e4583a6e6e990f33a119d2cc8b83211119c8", size = 238115, upload-time = "2026-04-27T12:21:48.845Z" },
@@ -1905,9 +1227,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/32/f2ce6d4cac3e55bc6173f92dbe627e782e1850f89d986c3606feb63aafa7/greenlet-3.5.0-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:db2910d3c809444e0a20147361f343fe2798e106af8d9d8506f5305302655a9f", size = 286228, upload-time = "2026-04-27T12:20:34.421Z" },
     { url = "https://files.pythonhosted.org/packages/b7/aa/caed9e5adf742315fc7be2a84196373aab4816e540e38ba0d76cb7584d68/greenlet-3.5.0-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3ec9ea74e7268ace7f9aab1b1a4e730193fc661b39a993cd91c606c32d4a3628", size = 601775, upload-time = "2026-04-27T12:52:41.045Z" },
     { url = "https://files.pythonhosted.org/packages/c7/af/90ae08497400a941595d12774447f752d3dfe0fbb012e35b76bc5c0ff37e/greenlet-3.5.0-cp312-cp312-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:54d243512da35485fc7a6bf3c178fdda6327a9d6506fcdd62b1abd1e41b2927b", size = 614436, upload-time = "2026-04-27T12:59:41.595Z" },
-    { url = "https://files.pythonhosted.org/packages/3f/e9/4eeadf8cb3403ac274245ba75f07844abc7fa5f6787583fc9156ba741e0f/greenlet-3.5.0-cp312-cp312-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:41353ec2ecedf7aa8f682753a41919f8718031a6edac46b8d3dc7ed9e1ceb136", size = 620610, upload-time = "2026-04-27T13:02:39.194Z" },
     { url = "https://files.pythonhosted.org/packages/2b/e0/2e13df68f367e2f9960616927d60857dd7e56aaadd59a47c644216b2f920/greenlet-3.5.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9d280a7f5c331622c69f97eb167f33577ff2d1df282c41cd15907fc0a3ca198c", size = 611388, upload-time = "2026-04-27T12:25:28.008Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/ef/f913b3c0eb7d26d86a2401c5e1546c9d46b657efee724b06f6f4ac5d8824/greenlet-3.5.0-cp312-cp312-manylinux_2_39_riscv64.whl", hash = "sha256:58c1c374fe2b3d852f9b6b11a7dff4c85404e51b9a596fd9e89cf904eb09866d", size = 422775, upload-time = "2026-04-27T13:05:14.261Z" },
     { url = "https://files.pythonhosted.org/packages/82/f7/393c64055132ac0d488ef6be549253b7e6274194863967ddc0bc8f5b87b8/greenlet-3.5.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:1eb67d5adefb5bd2e182d42678a328979a209e4e82eb93575708185d31d1f588", size = 1570768, upload-time = "2026-04-27T12:53:28.099Z" },
     { url = "https://files.pythonhosted.org/packages/b8/4b/eaf7735253522cf56d1b74d672a58f54fc114702ceaf05def59aae72f6e1/greenlet-3.5.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:2628d6c86f6cb0cb45e0c3c54058bbec559f57eaae699447748cb3928150577e", size = 1635983, upload-time = "2026-04-27T12:25:26.903Z" },
     { url = "https://files.pythonhosted.org/packages/4c/fe/4fb3a0805bd5165da5ebf858da7cc01cce8061674106d2cf5bdab32cbfde/greenlet-3.5.0-cp312-cp312-win_amd64.whl", hash = "sha256:d4d9f0624c775f2dfc56ba54d515a8c771044346852a918b405914f6b19d7fd8", size = 238840, upload-time = "2026-04-27T12:23:54.806Z" },
@@ -1915,9 +1235,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/58/fc576f99037ce19c5aa16628e4c3226b6d1419f72a62c79f5f40576e6eb3/greenlet-3.5.0-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:5a5ed18de6a0f6cc7087f1563f6bd93fc7df1c19165ca01e9bde5a5dc281d106", size = 285066, upload-time = "2026-04-27T12:23:05.033Z" },
     { url = "https://files.pythonhosted.org/packages/4a/ba/b28ddbe6bfad6a8ac196ef0e8cff37bc65b79735995b9e410923fffeeb70/greenlet-3.5.0-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3a717fbc46d8a354fa675f7c1e813485b6ba3885f9bef0cd56e5ba27d758ff5b", size = 604414, upload-time = "2026-04-27T12:52:42.358Z" },
     { url = "https://files.pythonhosted.org/packages/09/06/4b69f8f0b67603a8be2790e55107a190b376f2627fe0eaf5695d85ffb3cd/greenlet-3.5.0-cp313-cp313-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:ddc090c5c1792b10246a78e8c2163ebbe04cf877f9d785c230a7b27b39ad038e", size = 617349, upload-time = "2026-04-27T12:59:43.32Z" },
-    { url = "https://files.pythonhosted.org/packages/6a/15/a643b4ecd09969e30b8a150d5919960caae0abe4f5af75ab040b1ab85e78/greenlet-3.5.0-cp313-cp313-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:4964101b8585c144cbda5532b1aa644255126c08a265dae90c16e7a0e63aaa9d", size = 623234, upload-time = "2026-04-27T13:02:40.611Z" },
     { url = "https://files.pythonhosted.org/packages/8a/17/a3918541fd0ddefe024a69de6d16aa7b46d36ac19562adaa63c7fa180eff/greenlet-3.5.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2094acd54b272cb6eae8c03dd87b3fa1820a4cef18d6889c378d503500a1dc13", size = 613927, upload-time = "2026-04-27T12:25:30.28Z" },
-    { url = "https://files.pythonhosted.org/packages/77/18/3b13d5ef1275b0ffaf933b05efa21408ac4ca95823c7411d79682e4fdcff/greenlet-3.5.0-cp313-cp313-manylinux_2_39_riscv64.whl", hash = "sha256:7022615368890680e67b9965d33f5773aade330d5343bbe25560135aaa849eae", size = 425243, upload-time = "2026-04-27T13:05:15.689Z" },
     { url = "https://files.pythonhosted.org/packages/ee/e1/bd0af6213c7dd33175d8a462d4c1fe1175124ebed4855bc1475a5b5242c2/greenlet-3.5.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:5e05ba267789ea87b5a155cf0e810b1ab88bf18e9e8740813945ceb8ee4350ba", size = 1570893, upload-time = "2026-04-27T12:53:29.483Z" },
     { url = "https://files.pythonhosted.org/packages/9b/2a/0789702f864f5382cb476b93d7a9c823c10472658102ccd65f415747d2e2/greenlet-3.5.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:0ecec963079cd58cbd14723582384f11f166fd58883c15dcbfb342e0bc9b5846", size = 1636060, upload-time = "2026-04-27T12:25:28.845Z" },
     { url = "https://files.pythonhosted.org/packages/b2/8f/22bf9df92bbff0eb07842b60f7e63bf7675a9742df628437a9f02d09137f/greenlet-3.5.0-cp313-cp313-win_amd64.whl", hash = "sha256:728d9667d8f2f586644b748dbd9bb67e50d6a9381767d1357714ea6825bb3bf5", size = 238740, upload-time = "2026-04-27T12:24:01.341Z" },
@@ -2051,6 +1369,19 @@ wheels = [
 ]
 
 [[package]]
+name = "httpcore"
+version = "1.0.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "certifi" },
+    { name = "h11" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/94/82699a10bca87a5556c9c59b5963f2d039dbd239f25bc2a63907a05a14cb/httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8", size = 85484, upload-time = "2025-04-24T22:06:22.219Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55", size = 78784, upload-time = "2025-04-24T22:06:20.566Z" },
+]
+
+[[package]]
 name = "httptools"
 version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2087,11 +1418,26 @@ wheels = [
 ]
 
 [[package]]
+name = "httpx"
+version = "0.28.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "certifi" },
+    { name = "httpcore" },
+    { name = "idna" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc", size = 141406, upload-time = "2024-12-06T15:37:23.222Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
+]
+
+[[package]]
 name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyreadline3", marker = "sys_platform == 'win32' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "pyreadline3", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/3f/2c29224acb2e2df4d2046e4c73ee2662023c58ff5b113c4c1adac0886c43/humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc", size = 360702, upload-time = "2021-09-17T21:40:43.31Z" }
 wheels = [
@@ -2204,6 +1550,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2a/12/b5fa2353e2754cd67fb9f83793fa48ff42c213a5da7e719869d2301f6ab8/mako-1.4.1.tar.gz", hash = "sha256:d7904710b662996425a21627710c4777c45053146942cf8a7aebf757c92b8c27", size = 410165, upload-time = "2026-08-05T06:10:56.611Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/54/12ed58d458474aaab5c3d180173e745a4fe131bb330370596876d19ff60f/mako-1.4.1-py3-none-any.whl", hash = "sha256:a359d9a94a541213958742b2698d0a7757bb83551767bc468a74b9905aba9617", size = 80010, upload-time = "2026-08-05T06:10:58.248Z" },
+]
+
+[[package]]
+name = "markdown"
+version = "3.10.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/6f/da4c6aea59b3001f2e8c0ec7497475aadaf3b021c10cab5b2858f0f32b26/markdown-3.10.3.tar.gz", hash = "sha256:3589362618f743188b4d955b874402bc814f4f83f544dc207719f4baa7d9c45f", size = 372596, upload-time = "2026-07-30T19:05:29.005Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/69/4a5af2bc115a9a33fefe51709749de8262be3f9ba063d1753a837cdbc49c/markdown-3.10.3-py3-none-any.whl", hash = "sha256:fa6c92a00a4a3c98b22728c64a935ae1928250ae65058a6ded814d2cc29a4cea", size = 110757, upload-time = "2026-07-30T19:05:27.883Z" },
 ]
 
 [[package]]
@@ -2748,8 +2103,8 @@ name = "pandas"
 version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "python-dateutil" },
     { name = "pytz" },
     { name = "tzdata" },
@@ -3165,7 +2520,7 @@ name = "pyjwt"
 version = "2.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3b/81/58d0ac84e1ef3a3843791d6954d94c0b33d526c75eeb1efbce9d0a4c4077/pyjwt-2.13.0.tar.gz", hash = "sha256:41571c89ca91598c79e8ef18a2d07367d4810fbbd6f637794879baf1b7703423", size = 107515, upload-time = "2026-05-21T19:54:36.618Z" }
 wheels = [
@@ -3236,7 +2591,7 @@ name = "pytest-cov"
 version = "5.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "coverage", extra = ["toml"], marker = "extra == 'group-24-assets-modern-data-stack-test-pypi' or extra == 'group-24-assets-modern-data-stack-test-source'" },
+    { name = "coverage", extra = ["toml"] },
     { name = "pytest" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/74/67/00efc8d11b630c56f15f4ad9c7f9223f1e5ec275aaae3fa9118c6a223ad2/pytest-cov-5.0.0.tar.gz", hash = "sha256:5837b58e9f6ebd335b0f8060eecce69b662415b16dc503883a02f45dfeb14857", size = 63042, upload-time = "2024-03-24T20:16:34.856Z" }
@@ -3521,7 +2876,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "rpds-py" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/22/f5/df4e9027acead3ecc63e50fe1e36aca1523e1719559c499951bb4b53188f/referencing-0.37.0.tar.gz", hash = "sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8", size = 78036, upload-time = "2025-10-13T15:30:48.871Z" }
 wheels = [
@@ -3721,7 +3076,7 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0f/37/6964b830433e654ec7485e45a00fc9a27cf868d622838f6b6d9c5ec0d532/scipy-1.15.3.tar.gz", hash = "sha256:eae3cf522bc7df64b42cad3925c876e1b0b6c35c1337c93e12c0f366f55b0eaf", size = 59419214, upload-time = "2025-05-08T16:13:05.955Z" }
 wheels = [
@@ -3782,7 +3137,7 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/97/5a3609c4f8d58b039179648e62dd220f89864f56f7357f5d4f45c29eb2cc/scipy-1.17.1.tar.gz", hash = "sha256:95d8e012d8cb8816c226aef832200b1d45109ed4464303e997c5b13122b297c0", size = 30573822, upload-time = "2026-02-23T00:26:24.851Z" }
 wheels = [
@@ -3882,7 +3237,7 @@ name = "sqlalchemy"
 version = "2.0.49"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "greenlet", marker = "platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "greenlet", marker = "platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/45/461788f35e0364a8da7bda51a1fe1b09762d0c32f12f63727998d85a873b/sqlalchemy-2.0.49.tar.gz", hash = "sha256:d15950a57a210e36dd4cec1aac22787e2a4d57ba9318233e2ef8b2daf9ff2d5f", size = 9898221, upload-time = "2026-04-03T16:38:11.704Z" }
@@ -4013,7 +3368,7 @@ name = "structlog"
 version = "25.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/52/9ba0f43b686e7f3ddfeaa78ac3af750292662284b3661e91ad5494f21dbc/structlog-25.5.0.tar.gz", hash = "sha256:098522a3bebed9153d4570c6d0288abf80a031dfdb2048d59a49e9dc2190fc98", size = 1460830, upload-time = "2025-10-27T08:28:23.028Z" }
 wheels = [
@@ -4039,6 +3394,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/46/58/8c37dea7bbf769b20d58e7ace7e5edfe65b849442b00ffcdd56be88697c6/tabulate-0.10.0.tar.gz", hash = "sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d", size = 91754, upload-time = "2026-03-04T18:55:34.402Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/55/db07de81b5c630da5cbf5c7df646580ca26dfaefa593667fc6f2fe016d2e/tabulate-0.10.0-py3-none-any.whl", hash = "sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3", size = 39814, upload-time = "2026-03-04T18:55:31.284Z" },
+]
+
+[[package]]
+name = "termcolor"
+version = "3.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/79/cf31d7a93a8fdc6aa0fbb665be84426a8c5a557d9240b6239e9e11e35fc5/termcolor-3.3.0.tar.gz", hash = "sha256:348871ca648ec6a9a983a13ab626c0acce02f515b9e1983332b17af7979521c5", size = 14434, upload-time = "2025-12-29T12:55:21.882Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/d1/8bb87d21e9aeb323cc03034f5eaf2c8f69841e40e4853c2627edf8111ed3/termcolor-3.3.0-py3-none-any.whl", hash = "sha256:cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5", size = 7734, upload-time = "2025-12-29T12:55:20.718Z" },
 ]
 
 [[package]]
@@ -4167,7 +3531,7 @@ name = "tqdm"
 version = "4.67.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-24-assets-modern-data-stack-test-pypi' and extra == 'group-24-assets-modern-data-stack-test-source')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
@@ -4649,6 +4013,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/43/68/8c5b36aa5178900b37387937bc2c2fe0e9505537f713495472dcf6f6fccc/yarl-1.23.0-cp313-cp313t-win_amd64.whl", hash = "sha256:dd00607bffbf30250fe108065f07453ec124dbf223420f57f5e749b04295e090", size = 94932, upload-time = "2026-03-01T22:06:39.579Z" },
     { url = "https://files.pythonhosted.org/packages/c6/cc/d79ba8292f51f81f4dc533a8ccfb9fc6992cabf0998ed3245de7589dc07c/yarl-1.23.0-cp313-cp313t-win_arm64.whl", hash = "sha256:ac09d42f48f80c9ee1635b2fcaa819496a44502737660d3c0f2ade7526d29144", size = 84786, upload-time = "2026-03-01T22:06:41.988Z" },
     { url = "https://files.pythonhosted.org/packages/69/68/c8739671f5699c7dc470580a4f821ef37c32c4cb0b047ce223a7f115757f/yarl-1.23.0-py3-none-any.whl", hash = "sha256:a2df6afe50dea8ae15fa34c9f824a3ee958d785fd5d089063d960bae1daa0a3f", size = 48288, upload-time = "2026-03-01T22:07:51.388Z" },
+]
+
+[[package]]
+name = "yaspin"
+version = "3.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "termcolor" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8d/c5/826a862dcfcb9e85321f96d6f1b4b96b3b9bf37df6f63dce9cffd0b17053/yaspin-3.4.0.tar.gz", hash = "sha256:a83a81ac7a9d161e116fb668a7e4d10d87fb18d02b4b08a17b7e472f465f3c90", size = 42396, upload-time = "2025-12-06T12:33:51.889Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/93/6f/7403e6ae864a0a7f1cdd8814d39690062766e141339127f2b3469201ff6f/yaspin-3.4.0-py3-none-any.whl", hash = "sha256:2a40572a38d39846d0df0a421733459481b7da17789f7a2618c3181bb0a82819", size = 21822, upload-time = "2025-12-06T12:33:50.633Z" },
 ]
 
 [[package]]
