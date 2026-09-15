@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
+from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataValue
 from dagster._core.definitions.partitions.context import partition_loading_context
@@ -14,6 +15,7 @@ from dagster._core.definitions.partitions.utils import (
     has_one_dimension_time_window_partitioning,
     time_window_for_partition_key_range,
 )
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._utils.warnings import normalize_renamed_param
@@ -70,6 +72,7 @@ class InputContext:
         partition_key: str | None = None,
         asset_partitions_subset: PartitionsSubset | None = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
+        asset_spec: AssetSpec | None = None,
         instance: DagsterInstance | None = None,
         # deprecated
         metadata: ArbitraryMetadataMapping | None = None,
@@ -98,6 +101,7 @@ class InputContext:
 
         self._asset_partitions_subset = asset_partitions_subset
         self._asset_partitions_def = asset_partitions_def
+        self._asset_spec = asset_spec
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -299,6 +303,23 @@ class InputContext:
                 )
 
         return self._asset_partitions_def
+
+    @public
+    @property
+    def asset_spec(self) -> AssetSpec:
+        """The ``AssetSpec`` of the upstream asset that is being loaded as an input."""
+        if self._asset_spec is None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_spec, but it was not provided when constructing the"
+                " InputContext"
+            )
+        return self._asset_spec
+
+    @public
+    @property
+    def asset_group_name(self) -> str:
+        """The group name of the upstream asset that is being loaded as an input."""
+        return self.asset_spec.group_name or DEFAULT_GROUP_NAME
 
     @property
     def step_context(self) -> "StepExecutionContext":
@@ -572,6 +593,7 @@ def build_input_context(
     partition_key: str | None = None,
     asset_partition_key_range: PartitionKeyRange | None = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
+    asset_spec: AssetSpec | None = None,
     instance: DagsterInstance | None = None,
     # deprecated
     metadata: ArbitraryMetadataMapping | None = None,
@@ -604,6 +626,7 @@ def build_input_context(
             to load.
         asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
             being loaded.
+        asset_spec (Optional[AssetSpec]): The AssetSpec of the asset being loaded.
 
     Examples:
         .. code-block:: python
@@ -642,6 +665,7 @@ def build_input_context(
     asset_partitions_def = check.opt_inst_param(
         asset_partitions_def, "asset_partitions_def", PartitionsDefinition
     )
+    asset_spec = check.opt_inst_param(asset_spec, "asset_spec", AssetSpec)
     if partition_key and asset_key and asset_partition_key_range is None:
         asset_partition_key_range = PartitionKeyRange(partition_key, partition_key)
     if asset_partitions_def and asset_partition_key_range:
@@ -670,6 +694,7 @@ def build_input_context(
         partition_key=partition_key,
         asset_partitions_subset=asset_partitions_subset,
         asset_partitions_def=asset_partitions_def,
+        asset_spec=asset_spec,
         instance=instance,
     )
 

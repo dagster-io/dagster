@@ -1,6 +1,7 @@
 from typing import Any
 
 import dagster as dg
+import pytest
 from dagster import OutputContext
 from dagster._core.execution.context.input import InputContext
 
@@ -107,3 +108,52 @@ def test_output_context_with_explicit_partitions_def():
     assert tw.start.month == 1
     assert tw.start.day == 15
     assert tw.end.day == 16
+
+
+def test_asset_group_name_on_io_manager_contexts():
+    seen = {}
+
+    class TestIOManager(dg.IOManager):
+        def handle_output(self, context: OutputContext, obj: object):
+            seen["output"] = context.asset_group_name
+
+        def load_input(self, context: InputContext) -> Any:
+            seen["input"] = context.asset_group_name
+            seen["input_spec_key"] = context.asset_spec.key
+            return 1
+
+    @dg.asset(group_name="analytics")
+    def upstream() -> int:
+        return 1
+
+    @dg.asset
+    def downstream(upstream: int) -> int:
+        return upstream + 1
+
+    assert dg.materialize([upstream, downstream], resources={"io_manager": TestIOManager()}).success
+    assert seen == {
+        "output": "default",
+        "input": "analytics",
+        "input_spec_key": dg.AssetKey("upstream"),
+    }
+
+
+def test_build_input_context_asset_spec():
+    asset_spec = dg.AssetSpec(key="key", group_name="group")
+
+    context = dg.build_input_context(asset_spec=asset_spec)
+    assert context.asset_spec == asset_spec
+    assert context.asset_group_name == "group"
+
+
+def test_input_context_asset_spec_not_provided():
+    context = dg.build_input_context()
+    with pytest.raises(dg.DagsterInvariantViolationError, match="asset_spec"):
+        _ = context.asset_spec
+
+
+def test_asset_group_name_defaults_for_ungrouped_spec():
+    spec = dg.AssetSpec(key="ungrouped")
+
+    assert dg.build_input_context(asset_spec=spec).asset_group_name == "default"
+    assert dg.build_output_context(asset_spec=spec).asset_group_name == "default"
