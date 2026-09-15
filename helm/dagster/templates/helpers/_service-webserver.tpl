@@ -5,6 +5,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "dagster.webserver.fullname" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
     component: {{ include "dagster.webserver.componentName" . }}

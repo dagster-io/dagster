@@ -3,6 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ template "dagster.fullname" $ -}}-{{- $deployment.name }}-user-env
+  namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ template "dagster.name" $ }}
     chart: {{ template "dagster.chart" $ }}
