@@ -818,6 +818,37 @@ def test_check_run_health_surfaces_container_termination_reason(kubeconfig_file)
             assert "OOMKilled" in health.msg
             assert "exit code 137" in health.msg
 
+            # An init container that never let the run worker start is reported too.
+            mock_k8s_client_core_api.list_namespaced_pod.return_value = mock.Mock(
+                items=[
+                    V1Pod(
+                        metadata=V1ObjectMeta(name="dagster-run-abc-xyz"),
+                        status=V1PodStatus(
+                            init_container_statuses=[
+                                V1ContainerStatus(
+                                    name="check-db-ready",
+                                    image="fake_init_image",
+                                    image_id="fake_init_image_id",
+                                    ready=False,
+                                    restart_count=0,
+                                    state=V1ContainerState(
+                                        terminated=V1ContainerStateTerminated(
+                                            exit_code=1, reason="Error"
+                                        )
+                                    ),
+                                )
+                            ]
+                        ),
+                    )
+                ]
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+
+            assert health.status == WorkerStatus.FAILED
+            assert "check-db-ready" in health.msg
+            assert "exit code 1: Error" in health.msg
+
             # A pod with no termination info leaves the original message untouched.
             mock_k8s_client_core_api.list_namespaced_pod.return_value = mock.Mock(items=[])
             health = k8s_run_launcher.check_run_worker_health(started_run)

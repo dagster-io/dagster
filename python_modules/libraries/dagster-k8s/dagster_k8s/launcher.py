@@ -434,7 +434,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             for pod in self._api_client.get_pods_in_job(job_name=job_name, namespace=namespace):
                 if not pod.status:
                     continue
-                for container_status in pod.status.container_statuses or []:
+                container_statuses = (pod.status.init_container_statuses or []) + (
+                    pod.status.container_statuses or []
+                )
+                for container_status in container_statuses:
                     state = container_status.state
                     last_state = container_status.last_state
                     terminated = (state and state.terminated) or (
