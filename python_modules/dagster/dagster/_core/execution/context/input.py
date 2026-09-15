@@ -593,8 +593,8 @@ def build_input_context(
     partition_key: str | None = None,
     asset_partition_key_range: PartitionKeyRange | None = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
-    asset_spec: AssetSpec | None = None,
     instance: DagsterInstance | None = None,
+    asset_spec: AssetSpec | None = None,
     # deprecated
     metadata: ArbitraryMetadataMapping | None = None,
 ) -> "InputContext":
