@@ -427,6 +427,32 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         return full_msg
 
+    def _get_container_termination_detail(self, job_name: str, namespace: str | None) -> str:
+        """Best-effort summary of why the run worker's containers terminated, e.g. ``OOMKilled``."""
+        try:
+            details = []
+            for pod in self._api_client.get_pods_in_job(job_name=job_name, namespace=namespace):
+                if not pod.status:
+                    continue
+                for container_status in pod.status.container_statuses or []:
+                    state = container_status.state
+                    last_state = container_status.last_state
+                    terminated = (state and state.terminated) or (
+                        last_state and last_state.terminated
+                    )
+                    if terminated and terminated.reason:
+                        details.append(
+                            f"Container '{container_status.name}' in pod"
+                            f" '{pod.metadata.name}' terminated with exit code"
+                            f" {terminated.exit_code}: {terminated.reason}."
+                        )
+            return (" " + " ".join(details)) if details else ""
+        except Exception:
+            logging.exception(
+                f"Error trying to get container termination reasons for k8s job {job_name}"
+            )
+            return ""
+
     def check_run_worker_health(self, run: DagsterRun):
         container_context = self.get_container_context_for_run(run)
 
@@ -457,11 +483,17 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             and inactive_job_with_finished_pods
         ):
             return CheckRunHealthResult(
-                WorkerStatus.FAILED, "Run has not completed but K8s job has no active pods"
+                WorkerStatus.FAILED,
+                "Run has not completed but K8s job has no active pods."
+                + self._get_container_termination_detail(job_name, container_context.namespace),
             )
 
         if status.succeeded:
             return CheckRunHealthResult(WorkerStatus.SUCCESS)
         if status.failed and not status.active:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+            return CheckRunHealthResult(
+                WorkerStatus.FAILED,
+                "K8s job failed."
+                + self._get_container_termination_detail(job_name, container_context.namespace),
+            )
         return CheckRunHealthResult(WorkerStatus.RUNNING)
