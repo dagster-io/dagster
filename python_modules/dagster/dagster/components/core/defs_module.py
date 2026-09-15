@@ -553,9 +553,9 @@ def load_yaml_component_from_path(context: ComponentLoadContext, component_def_p
 
 # When we remove component.yaml, we can remove this function for just a defs.yaml check
 def find_defs_or_component_yaml(path: Path) -> Path | None:
-    # Check for defs.yaml has precedence, component.yaml is deprecated
+    # Check for defs.yaml/.yml has precedence, component.yaml is deprecated
     return next(
-        (p for p in (path / "defs.yaml", path / "component.yaml") if p.exists()),
+        (p for p in (path / "defs.yaml", path / "defs.yml", path / "component.yaml") if p.exists()),
         None,
     )
 

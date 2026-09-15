@@ -205,17 +205,18 @@ def dev_command_impl(
 
     dagster_home_path = os.getenv("DAGSTER_HOME")
 
-    dagster_yaml_path = os.path.join(os.getcwd(), "dagster.yaml")
+    cwd = Path.cwd()
+    dagster_yaml_path = cwd / "dagster.yaml"
+    if not dagster_yaml_path.exists():
+        dagster_yaml_path = cwd / "dagster.yml"
 
-    has_local_dagster_yaml = os.path.exists(dagster_yaml_path)
-    if dagster_home_path:
-        if has_local_dagster_yaml and Path(os.getcwd()) != Path(dagster_home_path):
-            logger.warning(
-                "Found a dagster instance configuration value (dagster.yaml) in the current"
-                " folder, but your DAGSTER_HOME environment variable is set to"
-                f" {dagster_home_path}. The dagster.yaml file will not be used to configure Dagster"
-                " unless it is placed in the same folder as DAGSTER_HOME."
-            )
+    if dagster_home_path and dagster_yaml_path.exists() and cwd != Path(dagster_home_path):
+        logger.warning(
+            f"Found a dagster instance configuration value ({dagster_yaml_path.name}) in the current"
+            " folder, but your DAGSTER_HOME environment variable is set to"
+            f" {dagster_home_path}. The {dagster_yaml_path.name} file will not be used to configure Dagster"
+            " unless it is placed in the same folder as DAGSTER_HOME."
+        )
 
     # Set up windows interrupt signals to raise KeyboardInterrupt. Note that these handlers are
     # not used if we are using the shutdown pipe.

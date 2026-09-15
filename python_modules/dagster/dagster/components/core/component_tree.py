@@ -43,6 +43,7 @@ from dagster.components.core.defs_module import (
     PythonFileComponent,
     ResolvableToComponentLoc,
     ResolvableToComponentPath,
+    find_defs_or_component_yaml,
 )
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
@@ -602,7 +603,9 @@ class ComponentTree(IHaveNew):
             if isinstance(child_decl, ComponentLoaderDecl):
                 name = str(child_decl.loc.instance_key)
             elif isinstance(child_decl, YamlDecl):
-                file_path = file_path / "defs.yaml"
+                yaml_file = find_defs_or_component_yaml(child_decl.loc.file_path)
+                yaml_filename = yaml_file.name if yaml_file else "defs.yaml"
+                file_path = file_path / yaml_filename
                 component_type_name = child_decl.component_type.__name__
 
                 if child_decl.loc.instance_key is not None and len(decls) > 1:
