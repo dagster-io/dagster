@@ -1117,6 +1117,10 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("python_modules/libraries/dagster-dbt/kitchen-sink"),
             skip_run_fn=_get_dbt_cloud_only_skip_reason,
             name="dagster-dbt-cloud-live",
+            # The dbt Cloud trial account this suite drives is shared and caps concurrent
+            # runs, so let one build at a time have it.
+            concurrency=1,
+            concurrency_group="dagster-dbt-cloud-kitchen-sink",
             env_vars=[
                 "KS_DBT_CLOUD_ACCOUNT_ID",
                 "KS_DBT_CLOUD_ACCESS_URL",

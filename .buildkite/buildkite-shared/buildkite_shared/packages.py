@@ -186,6 +186,8 @@ class PackageSpec:
     timeout_in_minutes: int | None = None
     queue: BuildkiteQueue | None = None
     resources: ResourceRequests | None = None
+    concurrency: int | None = None
+    concurrency_group: str | None = None
     env_vars: list[str] | None = None
 
     # Pre/post commands
@@ -458,8 +460,16 @@ class PackageSpec:
                     skip_reason=skip_reason,
                     pytest_args=pytest_args,
                     section_header=self._section_header(tox_env),
-                    concurrency=factor.concurrency if factor else None,
-                    concurrency_group=(factor.concurrency_group if factor else None),
+                    concurrency=(
+                        factor.concurrency
+                        if factor and factor.concurrency is not None
+                        else self.concurrency
+                    ),
+                    concurrency_group=(
+                        factor.concurrency_group
+                        if factor and factor.concurrency_group is not None
+                        else self.concurrency_group
+                    ),
                     resources=(
                         factor.resources
                         if factor and factor.resources is not None
@@ -545,8 +555,16 @@ class PackageSpec:
                 skip_reason=skip_reason,
                 pytest_args=pytest_args,
                 section_header=self._section_header(tox_env),
-                concurrency=factor.concurrency if factor else None,
-                concurrency_group=(factor.concurrency_group if factor else None),
+                concurrency=(
+                    factor.concurrency
+                    if factor and factor.concurrency is not None
+                    else self.concurrency
+                ),
+                concurrency_group=(
+                    factor.concurrency_group
+                    if factor and factor.concurrency_group is not None
+                    else self.concurrency_group
+                ),
                 resources=(
                     factor.resources if factor and factor.resources is not None else self.resources
                 ),

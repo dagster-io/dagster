@@ -29,6 +29,7 @@ test = [
     "dagster-pandas",
     "dagster-dbt",
     "pytest",
+    "pytest-rerunfailures",
 ]
 
 [tool.uv]
