@@ -341,10 +341,13 @@ class BuildConfig:
 
     @classmethod
     def from_raw(cls, raw: Mapping[str, str]) -> Self:
+        repeat = raw.get("repeat", "1")
+        if not re.fullmatch(r"[1-9][0-9]*", repeat):
+            raise ValueError(f"REPEAT must be a positive integer, got {repeat!r}")
         return cls(
             no_skip=bool(raw.get("no_skip")),
             step_filter=raw.get("step_filter"),
-            repeat=int(raw.get("repeat", "1")),
+            repeat=int(repeat),
             refresh_durations=bool(raw.get("refresh_durations")),
         )
 
@@ -361,10 +364,12 @@ class BuildConfig:
            the commit message) override env var values. This is how developers manually
            control builds via commit messages.
 
-        For message magic strings, VALUE can be omitted (equivalent to "TRUE"). VAR and
-        VALUE must contain only letters, numbers, and underscores.
+        For message magic strings, VALUE can be omitted (equivalent to "TRUE"). VAR must
+        contain only letters, numbers, and underscores. VALUE may contain anything but
+        `]` and is stripped of surrounding whitespace, so step labels carrying hyphens,
+        dots or spaces are expressible.
 
-        Example: a commit message of "Fix bug [STEP_FILTER=integration] [REPEAT=5]"
+        Example: a commit message of "Fix bug [STEP_FILTER=dagster-cloud-cli] [REPEAT=5]"
         sets the step_filter and repeat config params.
         """
         field_names = {field.name for field in cls.__dataclass_fields__.values()}
@@ -379,14 +384,14 @@ class BuildConfig:
 
         # Override layer: pull config from message magic strings.
         buildkite_message = env.get("BUILDKITE_MESSAGE", "")
-        pattern = r"\[([A-Za-z0-9_]+)(?:=([A-Za-z0-9_]+))?\]"
+        pattern = r"\[([A-Za-z0-9_]+)(?:=([^\]]+))?\]"
         matches: list[tuple[str, str]] = re.findall(pattern, buildkite_message)
         for var, value in matches:
             var_norm = var.lower()
             if var_norm not in field_names:
                 logging.warning(f"Ignoring unrecognized param in message: {var}")
                 continue
-            norm_value = value or "TRUE"
+            norm_value = value.strip() or "TRUE"
             logging.info(f"Extracted param from message: {var}={norm_value}")
             params[var_norm] = norm_value
 
