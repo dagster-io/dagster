@@ -14,8 +14,10 @@ from itertools import chain, cycle
 from unittest import mock
 
 import pytest
+from botocore.exceptions import ClientError
 from botocore.stub import ANY, Stubber
 from dagster_cloud.workspace.ecs.client import (
+    SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS,
     Client,
     Service,
     ServiceDiscoveryError,
@@ -837,3 +839,124 @@ def test_reconcile_deregister_tolerates_instance_already_gone(cross_account_clie
     ):
         client._deregister_service_discovery_instances(service_id="srv-fake", instance_ids=["t1"])
     get_operation.assert_not_called()
+
+
+def _resource_in_use():
+    return ClientError(
+        {"Error": {"Code": "ResourceInUse", "Message": "service has instances"}}, "DeleteService"
+    )
+
+
+def test_delete_service_retries_when_a_task_is_registered_during_teardown(
+    cross_account_client, moto_namespace_id, caplog
+):
+    """The reconcile thread (this agent's or another replica's) can register a task between
+    delete_service's list_instances and its Cloud Map delete_service. Cloud Map then rejects
+    the delete with ResourceInUse. The ECS service is already gone at that point, so the
+    teardown must deregister again and retry rather than leave the Cloud Map service behind.
+    """
+    client = cross_account_client
+    sd_service_id = _create_cloud_map_service_with_instance(client, moto_namespace_id)
+    service = Service(arn="arn:aws:ecs:us-east-1:123456789012:service/test/svc", client=client)
+    real_delete = client.service_discovery.delete_service
+
+    def _delete_with_late_registration(**kwargs):
+        # First attempt: a reconcile pass lands a new instance just before the delete, which
+        # moto does not reject on its own.
+        if delete.call_count == 1:
+            client.service_discovery.register_instance(
+                ServiceId=sd_service_id,
+                InstanceId="t2",
+                Attributes={"AWS_INSTANCE_IPV4": "10.0.0.6"},
+            )
+            raise _resource_in_use()
+        return real_delete(**kwargs)
+
+    with (
+        mock.patch.object(client.ecs, "update_service"),
+        mock.patch.object(client.ecs, "delete_service"),
+        mock.patch.object(
+            client.service_discovery,
+            "deregister_instance",
+            wraps=client.service_discovery.deregister_instance,
+        ) as deregister,
+        mock.patch.object(
+            client.service_discovery, "delete_service", side_effect=_delete_with_late_registration
+        ) as delete,
+    ):
+        client.delete_service(service)
+
+    assert delete.call_count == 2
+    assert deregister.call_args_list == [
+        mock.call(ServiceId=sd_service_id, InstanceId="t1"),
+        mock.call(ServiceId=sd_service_id, InstanceId="t2"),
+    ]
+    assert client.get_service_discovery_arn("svc") is None, "Cloud Map service should be deleted"
+    assert f"Cloud Map service {sd_service_id} still has instances registered" in caplog.text
+
+
+def test_delete_service_gives_up_after_repeated_resource_in_use(
+    cross_account_client, moto_namespace_id
+):
+    """A bounded number of retries: if Cloud Map keeps refusing, the error propagates rather
+    than looping forever.
+    """
+    client = cross_account_client
+    _create_cloud_map_service_with_instance(client, moto_namespace_id)
+    service = Service(arn="arn:aws:ecs:us-east-1:123456789012:service/test/svc", client=client)
+
+    with (
+        mock.patch.object(client.ecs, "update_service"),
+        mock.patch.object(client.ecs, "delete_service"),
+        mock.patch.object(
+            client.service_discovery, "delete_service", side_effect=_resource_in_use()
+        ) as delete,
+        pytest.raises(ClientError, match="ResourceInUse"),
+    ):
+        client.delete_service(service)
+
+    assert delete.call_count == SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS
+
+
+def test_delete_service_does_not_retry_other_cloud_map_errors(
+    cross_account_client, moto_namespace_id
+):
+    client = cross_account_client
+    _create_cloud_map_service_with_instance(client, moto_namespace_id)
+    service = Service(arn="arn:aws:ecs:us-east-1:123456789012:service/test/svc", client=client)
+    access_denied = ClientError(
+        {"Error": {"Code": "AccessDeniedException", "Message": "no"}}, "DeleteService"
+    )
+
+    with (
+        mock.patch.object(client.ecs, "update_service"),
+        mock.patch.object(client.ecs, "delete_service"),
+        mock.patch.object(
+            client.service_discovery, "delete_service", side_effect=access_denied
+        ) as delete,
+        pytest.raises(ClientError, match="AccessDeniedException"),
+    ):
+        client.delete_service(service)
+
+    assert delete.call_count == 1
+
+
+def test_reconcile_register_tolerates_service_deleted_underneath(cross_account_client, caplog):
+    """The other side of the teardown race: delete_service removed the Cloud Map service after
+    the reconcile pass looked it up. That is expected and must not be logged as a failure.
+    """
+    caplog.set_level("DEBUG")
+
+    def _service_gone(cloud_map):
+        cloud_map.register.side_effect = ClientError(
+            {"Error": {"Code": "ServiceNotFound", "Message": "gone"}}, "RegisterInstance"
+        )
+
+    _reconcile(
+        cross_account_client,
+        live_tasks=[_fake_task("new", "10.0.0.7")],
+        registered_ids=[],
+        before_run=_service_gone,
+    )
+    assert "Failed to register" not in caplog.text
+    assert "was deleted during reconciliation; skipping registration" in caplog.text

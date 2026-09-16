@@ -31,6 +31,9 @@ DEFAULT_SERVICE_DISCOVERY_OPERATION_TIMEOUT_SECONDS = 120
 SERVICE_DISCOVERY_OPERATION_POLL_INTERVAL_SECONDS = 2
 # Cross-account only: how often a cache miss may reload the namespace's Cloud Map service listing.
 SERVICE_DISCOVERY_ARN_CACHE_MIN_REFRESH_INTERVAL_SECONDS = 30
+# How many times delete_service deregisters instances and retries deleting the Cloud Map service
+# when Cloud Map rejects the delete because an instance was registered in between.
+SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS = 3
 
 # Values defined by the AWS Cloud Map and ECS APIs.
 CLOUD_MAP_OPERATION_STATUS_SUCCESS = "SUCCESS"
@@ -477,40 +480,36 @@ class Client:
             service.hostname,
         )
         if service_discovery_id:
-            # Unregister dangling ecs tasks from service discovery
-            instances_paginator = self.service_discovery.get_paginator("list_instances")
-            instances = instances_paginator.paginate(
-                ServiceId=service_discovery_id,
-            ).build_full_result()["Instances"]
-            deregister_operation_ids = []
-            for instance in instances:
-                try:
-                    resp = self.service_discovery.deregister_instance(
-                        ServiceId=service_discovery_id, InstanceId=instance["Id"]
-                    )
-                except botocore.exceptions.ClientError as error:
-                    # The cross-account reconcile thread may have deregistered it between our
-                    # list_instances call and this one; that is not a failure.
-                    if error.response["Error"]["Code"] == "InstanceNotFound":
-                        continue
-                    raise
-                deregister_operation_ids.append(resp["OperationId"])
+            self._delete_service_discovery_service(service_discovery_id, logger=logger)
 
-            # wait for instances to complete deregistering
-            for operation_id in deregister_operation_ids:
-                status = ""
-                while status != "SUCCESS":
-                    status = self.service_discovery.get_operation(OperationId=operation_id)[
-                        "Operation"
-                    ]["Status"]
-                    if status == "FAIL":
-                        raise Exception("deregister operation failed")
-                    time.sleep(2)
+    def _delete_service_discovery_service(self, service_discovery_id: str, logger) -> None:
+        """Deregisters every instance of a Cloud Map service, then deletes the service.
 
-            # delete service discovery
-            self.service_discovery.delete_service(
-                Id=service_discovery_id,
+        Cloud Map refuses to delete a service that still has instances (ResourceInUse). In
+        cross-account mode the reconcile thread, of this agent or of another replica, can register
+        a task between our list_instances and delete_service calls, so on ResourceInUse we
+        deregister again and retry, up to SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS times.
+        """
+        for attempt in range(1, SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS + 1):
+            self._deregister_service_discovery_instances(
+                service_id=service_discovery_id,
+                instance_ids=self._list_service_discovery_instance_ids(service_discovery_id),
+                logger=logger,
             )
+            try:
+                self.service_discovery.delete_service(Id=service_discovery_id)
+                return
+            except botocore.exceptions.ClientError as error:
+                if (
+                    error.response["Error"]["Code"] != "ResourceInUse"
+                    or attempt == SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS
+                ):
+                    raise
+                logger.warning(
+                    f"Cloud Map service {service_discovery_id} still has instances registered"
+                    f" (attempt {attempt} of {SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS});"
+                    " deregistering them and retrying the delete"
+                )
 
     def list_services(self, tags=None, logger=None):
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
@@ -1089,6 +1088,19 @@ class Client:
                     service_registry_arn=service_registry_arn,
                     logger=logger,
                 )
+            except botocore.exceptions.ClientError as error:
+                if error.response["Error"]["Code"] == "ServiceNotFound":
+                    # delete_service removed the Cloud Map service after we looked it up: the code
+                    # server is being torn down, so there is nothing to register into.
+                    logger.debug(
+                        f"Cloud Map service {service_id} for {service.name} was deleted during"
+                        " reconciliation; skipping registration"
+                    )
+                else:
+                    logger.exception(
+                        f"Failed to register {len(tasks_to_register)} task(s) of {service.name}"
+                        f" with Cloud Map service {service_id}; will retry on the next pass"
+                    )
             except Exception:
                 logger.exception(
                     f"Failed to register {len(tasks_to_register)} task(s) of {service.name} with"
