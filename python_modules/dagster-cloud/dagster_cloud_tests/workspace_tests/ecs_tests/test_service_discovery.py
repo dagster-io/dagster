@@ -241,13 +241,15 @@ def _reconcile(
             ],
         }
 
-    list_tasks_kwargs = (
-        {"side_effect": list_tasks_pages}
+    list_tasks_patch = (
+        mock.patch.object(client.ecs, "list_tasks", side_effect=list_tasks_pages)
         if list_tasks_pages is not None
-        else {"return_value": {"taskArns": list(tasks_by_arn)}}
+        else mock.patch.object(
+            client.ecs, "list_tasks", return_value={"taskArns": list(tasks_by_arn)}
+        )
     )
     with (
-        mock.patch.object(client.ecs, "list_tasks", **list_tasks_kwargs),
+        list_tasks_patch,
         mock.patch.object(client.ecs, "describe_tasks", side_effect=_describe_tasks) as describe,
         _patch_cloud_map(client, registered_ids=registered_ids) as cloud_map,
     ):
