@@ -214,13 +214,8 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
         self._service_discovery_reconcile_thread: threading.Thread | None = None
 
     def start(self, *args, **kwargs):
-        # start() is the agent's "begin background work" hook: the base class starts its own
-        # reconcile and metrics threads here, after the instance is fully constructed. The agent
-        # CLI calls it once, right before entering the request loop.
         super().start(*args, **kwargs)
 
-        # Only cross-account setups need this. Same-account services stay on ECS's native
-        # serviceRegistries path, which keeps Cloud Map in sync with task replacement itself.
         if self.client.uses_cross_account_service_discovery:
             self._logger.info(
                 "Starting service discovery reconciliation thread (every"

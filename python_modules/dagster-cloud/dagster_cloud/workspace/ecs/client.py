@@ -69,10 +69,7 @@ class EcsServiceError(Exception):
 
 
 class ServiceDiscoveryError(Exception):
-    """The agent could not register or deregister a code server in AWS Cloud Map.
-
-    Only raised when Client.uses_cross_account_service_discovery is True.
-    """
+    """The agent could not register or deregister a code server in AWS Cloud Map."""
 
 
 class ServiceDiscoveryOperationError(ServiceDiscoveryError):
@@ -187,10 +184,10 @@ class Client:
         """True when the Cloud Map namespace belongs to a different AWS account than the agent.
 
         ECS cannot register services into such a namespace, so the agent registers code server
-        tasks in it directly (see _register_service_discovery_instances). In this mode
-        the agent registers and deregisters code server tasks in Cloud Map itself: once at startup
-        (_register_service_discovery_instances) and periodically after that
-        (reconcile_service_discovery_instances, driven by a thread in EcsUserCodeLauncher).
+        tasks in it directly. In this mode  the agent registers and deregisters code server
+        tasks in Cloud Map itself: once at startup (_register_service_discovery_instances) and
+        periodically after that (reconcile_service_discovery_instances, driven by a thread in
+        EcsUserCodeLauncher).
 
         Decided in the constructor by comparing the account in the namespace's ARN with the
         agent's own identity. A namespace in the agent's account always keeps ECS-native
@@ -687,7 +684,7 @@ class Client:
             client=self,
             arn=arn,
             # A cross-account handle carries its Cloud Map ARN because ECS did not attach one.
-            # Same-account handles keep reading it from the ECS service, as they always have.
+            # Same-account handles read it from the ECS service.
             service_registry_arn=(
                 service_registry_arn if self.uses_cross_account_service_discovery else None
             ),
@@ -706,7 +703,6 @@ class Client:
                 running_tasks = await self.check_service_has_running_tasks(
                     service_name,
                     container_name,
-                    # Only needed in cross-account mode; avoids a Cloud Map lookup otherwise.
                     service_registry_arn=(
                         service.service_discovery_arn
                         if self.uses_cross_account_service_discovery
@@ -836,9 +832,6 @@ class Client:
 
                 if all_tasks_running:
                     if service_registry_arn and self.uses_cross_account_service_discovery:
-                        # Blocking Cloud Map calls plus polling. The launcher starts code servers
-                        # concurrently with asyncio.gather, so run this off the event loop rather
-                        # than stalling every other server that is starting up.
                         await asyncio.to_thread(
                             self._register_service_discovery_instances,
                             tasks=tasks,
@@ -870,11 +863,9 @@ class Client:
         )
 
     # ---- Cross-account service discovery -------------------------------------------------------
-    # Only used when uses_cross_account_service_discovery is True
 
     @staticmethod
     def _instance_id_for_task_arn(task_arn: str) -> str:
-        # Cloud Map instance ids are the ECS task id, the same convention ECS-native registration uses.
         return task_arn.split("/")[-1]
 
     @staticmethod
@@ -965,14 +956,7 @@ class Client:
         service_registry_arn: str,
         logger=None,
     ) -> None:
-        """Registers each task's private IP as an instance of the Cloud Map service.
-
-        All RegisterInstance calls are issued first and then awaited together, so N tasks cost one
-        round of polling rather than N sequential ones. Raises ServiceDiscoveryError if a task has
-        no usable address and ServiceDiscoveryOperationError if any registration fails or times
-        out; callers on the startup path let that fail the code server, the reconciliation path
-        logs it and retries on its next pass.
-        """
+        """Registers each task's private IP as an instance of the Cloud Map service."""
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
         service_id = self._service_discovery_id_from_arn(service_registry_arn)
 
@@ -1055,7 +1039,6 @@ class Client:
             return
         service_id = self._service_discovery_id_from_arn(service_registry_arn)
 
-        # A ListTasks page holds at most 100 ARNs and DescribeTasks accepts at most 100 per call
         live_tasks: list[Mapping[str, Any]] = []
         # DescribeTasks is eventually consistent: a task ListTasks just reported RUNNING can come
         # back under "failures" (for example MISSING). Treat those as still alive rather than
@@ -1182,12 +1165,7 @@ class Client:
                     return service["Id"]
 
     def get_service_discovery_arn(self, service_name: str) -> str | None:
-        """ARN of the Cloud Map service with this name in the agent's namespace, or None.
-
-        Cross-account mode only; same-account services read the registry ECS attached to them.
-        Cached per client. A miss reloads the whole namespace listing, at most once every
-        SERVICE_DISCOVERY_ARN_CACHE_MIN_REFRESH_INTERVAL_SECONDS.
-        """
+        """ARN of the Cloud Map service with this name in the agent's namespace, or None."""
         arn = self._service_discovery_arns_by_name.get(service_name)
         if arn is None and self._service_discovery_arn_cache_may_refresh():
             self._refresh_service_discovery_arn_cache()

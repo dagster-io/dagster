@@ -42,6 +42,11 @@ class Service:
     @property
     @cached_method
     def service_discovery_arn(self):
+        # The client passes _service_registry_arn in when it just created the Cloud
+        # Map service, so there is no cache miss.
+        # The name-based lookup below is for Service objects rebuilt later from a
+        # listing; its cache refreshes at most every 30s, so a brand-new service
+        # could come back as None.
         if self._service_registry_arn:
             return self._service_registry_arn
 
