@@ -44,7 +44,20 @@ class Service:
     def service_discovery_arn(self):
         if self._service_registry_arn:
             return self._service_registry_arn
-        return self.client._get_service_discovery_arn(self.name)
+
+        if self.client.uses_cross_account_service_discovery:
+            # ECS could not attach the registry, so ask Cloud Map for the service by name.
+            return self.client.get_service_discovery_arn(self.name)
+
+        service = self.client.ecs.describe_services(
+            cluster=self.client.cluster_name,
+            services=[self.arn],
+        ).get("services", [{}])[0]
+
+        registries = service.get("serviceRegistries") or [{}]
+        arn = registries[0].get("registryArn")
+
+        return arn
 
     @property
     @cached_method
