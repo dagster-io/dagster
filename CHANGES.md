@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.13.23 (core) / 0.29.23 (libraries)
+
+### New
+
+- In Dagster+, alert policies can now target deployment capacity metrics — queued runs and in-progress runs — evaluated over a rolling window with aggregations such as max.
+- In Dagster+ Serverless, fast deploys now build a Docker image instead of a Python executable when the target environment cannot run one: Serverless on Kubernetes, or a Harbor image registry. Set `DAGSTER_CLOUD_DISABLE_PEX_DOCKER_REDIRECT` to opt out.
+- Component definition files can now use the `.yml` extension in addition to `.yaml`, as can `dagster.yaml` and `workspace.yaml`. `.yaml` still takes precedence when both are present.
+- The `dagster-k8s`, `dagster-celery-k8s`, and `user-code-example` images are now published as multi-platform images supporting both amd64 and arm64.
+- [cli] `dagster project from-example` now produces a components-layout project that installs with `uv sync` outside the Dagster repo.
+- [ui] Updated the Prefect kind tag icon, which now adapts to dark mode.
+
+### Bugfixes
+
+- [ui] Fixed an issue where pages that refresh automatically stopped polling after a failed request.
+- [ui] Fixed an issue where the Catalog assets folder tree could jump back to the top while scrolling.
+- [dagster-dbt] The dbt Cloud client now tolerates a trailing slash in `access_url`, treats deleting an already-deleted job as success, and includes dbt Cloud's error response body when logging request failures.
+- [dagster-prefect] Failure messages now name the Prefect run state consistently across Python versions.
+
 ## 1.13.22 (core) / 0.29.22 (libraries)
 
 ### New
