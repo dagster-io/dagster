@@ -115,6 +115,11 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
             "service_discovery_reconcile_interval",
             DEFAULT_SERVICE_DISCOVERY_RECONCILE_INTERVAL_SECONDS,
         )
+        check.invariant(
+            self.service_discovery_reconcile_interval_seconds > 0,
+            "service_discovery_reconcile_interval must be a positive number of seconds, got"
+            f" {self.service_discovery_reconcile_interval_seconds}",
+        )
 
         self.cluster = cluster
         self.subnets = subnets

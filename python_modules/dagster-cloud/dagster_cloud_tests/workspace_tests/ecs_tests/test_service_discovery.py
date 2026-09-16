@@ -735,6 +735,47 @@ def test_service_discovery_arn_cross_account_is_looked_up_by_name_and_cached(cro
         assert list_services.call_count == 2, "a miss after the window reloads once"
 
 
+def test_service_discovery_arn_cache_refresh_keeps_names_seeded_meanwhile(cross_account_client):
+    """_create_service seeds the cache with the service it just created. A refresh running on the
+    reconcile thread at the same time works from a listing fetched before that create, so it
+    must merge into the cache rather than replace it, or the new name is lost until the next
+    reload and the reconcile pass warns that the service does not exist.
+    """
+    client = cross_account_client
+
+    def _list_services_while_a_service_is_created(**kwargs):
+        # The create lands while the listing is in flight: seed the cache the way _create_service
+        # does, then return the snapshot that predates it.
+        client._service_discovery_arns_by_name["new"] = "arn:new"
+        return {"Services": [{"Name": "old", "Arn": "arn:old", "Id": "srv-old"}]}
+
+    with mock.patch.object(
+        client.service_discovery,
+        "list_services",
+        side_effect=_list_services_while_a_service_is_created,
+    ):
+        assert client.get_service_discovery_arn("old") == "arn:old"
+    assert client.get_service_discovery_arn("new") == "arn:new"
+
+
+def test_delete_service_removes_the_name_from_the_arn_cache(
+    cross_account_client, moto_namespace_id
+):
+    """The refresh only ever adds names, so delete_service is what removes one."""
+    client = cross_account_client
+    _create_cloud_map_service_with_instance(client, moto_namespace_id)
+    service = Service(arn="arn:aws:ecs:us-east-1:123456789012:service/test/svc", client=client)
+    client._service_discovery_arns_by_name["svc"] = SD_SERVICE_ARN
+
+    with (
+        mock.patch.object(client.ecs, "update_service"),
+        mock.patch.object(client.ecs, "delete_service"),
+    ):
+        client.delete_service(service)
+
+    assert "svc" not in client._service_discovery_arns_by_name
+
+
 def test_service_tags_cross_account_resolve_through_cloud_map_by_name(cross_account_client):
     """Ownership and cleanup checks in the launcher read a handle's tags off its Cloud Map
     service. Cross-account handles have no ECS-attached registry, so the lookup goes by name.

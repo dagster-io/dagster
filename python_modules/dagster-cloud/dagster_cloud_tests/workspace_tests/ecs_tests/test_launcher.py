@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from unittest import mock
 
 import pytest
+from dagster._check import CheckError
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import merge_dicts
 from dagster_cloud.workspace.ecs import EcsUserCodeLauncher
@@ -110,6 +111,18 @@ def test_reconcile_interval_config(config, expected_seconds):
     with ecs_agent_instance(config) as instance:
         launcher = instance.user_code_launcher
         assert launcher.service_discovery_reconcile_interval_seconds == expected_seconds
+
+
+@pytest.mark.parametrize("interval", [0, -5])
+def test_reconcile_interval_must_be_positive(interval):
+    """Event.wait(0) or a negative wait returns immediately, which would make the reconcile loop
+    hammer ECS and Cloud Map. Reject it when the launcher is built rather than at first tick.
+    """
+    with (
+        ecs_agent_instance({"service_discovery_reconcile_interval": interval}) as instance,
+        pytest.raises(CheckError, match="must be a positive number of seconds"),
+    ):
+        instance.user_code_launcher  # noqa: B018
 
 
 def test_cross_account_starts_and_stops_reconcile_thread(agent_in_other_account):

@@ -481,6 +481,8 @@ class Client:
         )
         if service_discovery_id:
             self._delete_service_discovery_service(service_discovery_id, logger=logger)
+            # The refresh only adds names (see get_service_discovery_arn), so drop this one here.
+            self._service_discovery_arns_by_name.pop(service.name, None)
 
     def _delete_service_discovery_service(self, service_discovery_id: str, logger) -> None:
         """Deregisters every instance of a Cloud Map service, then deletes the service.
@@ -1209,7 +1211,10 @@ class Client:
             for service in page["Services"]:
                 if service.get("Arn"):
                     arns_by_name[service["Name"]] = service["Arn"]
-        self._service_discovery_arns_by_name = arns_by_name
+        # Merge rather than replace: _create_service may have seeded a name while the listing
+        # above was in flight, and that name would be missing from this (older) snapshot. Names
+        # are removed by delete_service, not here.
+        self._service_discovery_arns_by_name.update(arns_by_name)
         self._service_discovery_arns_refreshed_at = time.time()
 
     def _infer_assign_public_ip(self):
