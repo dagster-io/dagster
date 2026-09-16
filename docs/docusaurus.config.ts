@@ -72,6 +72,11 @@ const config: Config = {
       disableSwitch: false,
       respectPrefersColorScheme: true,
     },
+    mermaid: {
+      // Mermaid 12 switched its defaults to the ELK layout engine and the "neo"
+      // look; keep the previous rendering so existing diagrams don't re-layout.
+      options: {layout: 'dagre', look: 'classic'},
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
