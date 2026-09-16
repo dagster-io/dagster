@@ -776,6 +776,11 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
+                    if container_name in initcontainers and pod.status.phase == "Pending":
+                        # An init container may restart while the pod is initializing.
+                        # Do not mark it as exited before a retry succeeds or the pod fails.
+                        self.sleeper(wait_time_between_attempts)
+                        continue
                     tail_lines = int(
                         os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
                     )
@@ -789,6 +794,12 @@ class DagsterKubernetesClient:
                     )
 
                     self.logger(msg)
+                    if container_name in initcontainers and pod.status.phase == "Failed":
+                        # Later init containers and regular containers cannot start after
+                        # a terminal init failure, so waiting for their exit would hang.
+                        raise DagsterK8sError(
+                            f'Init container "{container_name}" failed in pod {pod_name}:\n{msg}'
+                        )
                     error_logs.append(msg)
                 elif container_name in initcontainers:
                     self.logger(
