@@ -813,9 +813,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         #     ],
         #     pytest_extra_cmds=airflow_extra_cmds,
         #     pytest_tox_factors=[
-        #         ToxFactor("default-airflow2"),
-        #         ToxFactor("localdb-airflow2"),
-        #         ToxFactor("persistentdb-airflow2"),
+        #         ToxFactor("default"),
+        #         ToxFactor("localdb"),
+        #         ToxFactor("persistentdb"),
         #     ],
         # ),
         PackageSpec(
