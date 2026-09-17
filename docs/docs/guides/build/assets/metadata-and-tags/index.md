@@ -29,6 +29,9 @@ In a large organization, it's important to know which individuals and teams are 
 
 :::tip
 With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/observe/alerts) for more information.
+
+You can also grant permissions to users and teams that apply to the definitions they own. For more information, see [User roles and permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#owned-definitions).
+
 :::
 
 ## Organizing assets with groups \{#groups}
