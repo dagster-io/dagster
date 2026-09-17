@@ -4,10 +4,11 @@ from dagster._utils.cached_method import cached_method
 
 
 class Service:
-    def __init__(self, client, arn):
+    def __init__(self, client, arn, service_registry_arn=None):
         self.client = client
         self.arn = self._long_arn(arn)
         self.name = arn.split("/")[-1]
+        self._service_registry_arn = service_registry_arn
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.arn == other.arn
@@ -41,6 +42,18 @@ class Service:
     @property
     @cached_method
     def service_discovery_arn(self):
+        # The client passes _service_registry_arn in when it just created the Cloud
+        # Map service, so there is no cache miss.
+        # The name-based lookup below is for Service objects rebuilt later from a
+        # listing; its cache refreshes at most every 30s, so a brand-new service
+        # could come back as None.
+        if self._service_registry_arn:
+            return self._service_registry_arn
+
+        if self.client.uses_cross_account_service_discovery:
+            # ECS could not attach the registry, so ask Cloud Map for the service by name.
+            return self.client.get_service_discovery_arn(self.name)
+
         service = self.client.ecs.describe_services(
             cluster=self.client.cluster_name,
             services=[self.arn],
