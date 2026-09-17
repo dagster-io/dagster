@@ -714,7 +714,7 @@ def test_failed_init_container_does_not_wait_for_unstarted_containers(
     mock_client.core_api.list_namespaced_pod.return_value = pods
     mock_client.retrieve_pod_logs = mock.MagicMock(return_value="init logs")
 
-    with pytest.raises(DagsterK8sError, match='Init container "init" failed') as exc_info:
+    with pytest.raises(DagsterK8sError, match='Container "init" failed') as exc_info:
         mock_client.wait_for_pod(
             pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
         )
@@ -776,7 +776,7 @@ def test_failed_init_container_waits_for_terminal_pod_or_recovers(wait_for_state
         mock_client.retrieve_pod_logs.assert_not_called()
         assert mock_client.core_api.list_namespaced_pod.call_count == 4
     else:
-        with pytest.raises(DagsterK8sError, match='Init container "init" failed'):
+        with pytest.raises(DagsterK8sError, match='Container "init" failed'):
             mock_client.wait_for_pod(
                 pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
             )
@@ -829,6 +829,392 @@ def test_failed_native_sidecar_preserves_aggregated_error(wait_for_state, phase)
     mock_client.retrieve_pod_logs.assert_called_once_with(
         "a_pod", "namespace", container_name="sidecar", tail_lines=100
     )
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+def test_failed_pod_preserves_sidecar_and_main_errors(wait_for_state):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=5))
+    sidecar = _create_status(
+        name="sidecar",
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=137, message="sidecar stopped")
+        ),
+        ready=False,
+    )
+    main = _create_status(
+        name="main",
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=1, message="main failed")
+        ),
+        ready=False,
+    )
+    pods = _pod_list_for_container_status(main, init_container_statuses=[sidecar])
+    pods.items[0].status.phase = "Failed"
+    mock_client.core_api.list_namespaced_pod.return_value = pods
+    mock_client.retrieve_pod_logs = mock.MagicMock(side_effect=["sidecar logs", "main logs"])
+
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(
+            pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+        )
+
+    assert str(exc_info.value) == (
+        "Pod a_pod terminated but some containers exited with errors:\n"
+        'Container "sidecar" failed with message: "sidecar stopped". '
+        'Last 100 log lines: "sidecar logs"\n\n'
+        'Container "main" failed with message: "main failed". '
+        'Last 100 log lines: "main logs"'
+    )
+    assert mock_client.retrieve_pod_logs.call_args_list == [
+        mock.call("a_pod", "namespace", container_name="sidecar", tail_lines=100),
+        mock.call("a_pod", "namespace", container_name="main", tail_lines=100),
+    ]
+    mock_client.sleeper.assert_not_called()
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+@pytest.mark.parametrize("main_state", ["missing", "waiting", "terminated"])
+@pytest.mark.parametrize("ignored", ["sidecar", "main", None])
+def test_failed_pod_collects_init_errors_without_waiting(wait_for_state, main_state, ignored):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=8))
+
+    def failed(name):
+        return _create_status(
+            name=name,
+            state=V1ContainerState(
+                terminated=V1ContainerStateTerminated(exit_code=1, message=f"{name} failed")
+            ),
+            ready=False,
+        )
+
+    waiting = V1ContainerState(
+        waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+    )
+    pods = _pod_list_for_container_status(
+        failed("main")
+        if main_state == "terminated"
+        else _create_status(name="main", state=waiting, ready=False),
+        init_container_statuses=[
+            _create_status(
+                name="completed-init",
+                state=V1ContainerState(terminated=V1ContainerStateTerminated(exit_code=0)),
+                ready=False,
+            ),
+            failed("sidecar"),
+            failed("init"),
+            _create_status(name="next-init", state=waiting, ready=False),
+        ],
+    )
+    pods.items[0].status.phase = "Failed"
+    if main_state == "missing":
+        pods.items[0].status.container_statuses = None
+    mock_client.core_api.list_namespaced_pod.return_value = pods
+    mock_client.retrieve_pod_logs = mock.MagicMock(
+        side_effect=lambda *args, **kwargs: f"{kwargs['container_name']} logs"
+    )
+
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(
+            pod_name="a_pod",
+            namespace="namespace",
+            wait_for_state=wait_for_state,
+            ignore_containers={ignored} if ignored else None,
+        )
+
+    failed_names = ["sidecar", "init"] + (["main"] if main_state == "terminated" else [])
+    failed_names = [name for name in failed_names if name != ignored]
+    assert str(exc_info.value) == (
+        "Pod a_pod terminated but some containers exited with errors:\n"
+        + "\n\n".join(
+            f'Container "{name}" failed with message: "{name} failed". '
+            f'Last 100 log lines: "{name} logs"'
+            for name in failed_names
+        )
+    )
+    assert mock_client.retrieve_pod_logs.call_args_list == [
+        mock.call("a_pod", "namespace", container_name=name, tail_lines=100)
+        for name in failed_names
+    ]
+    mock_client.sleeper.assert_not_called()
+
+
+def test_failed_pod_collects_previously_ready_sidecar_error():
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=6))
+    waiting = _create_status(
+        name="main",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    initial = _pod_list_for_container_status(
+        waiting, init_container_statuses=[_ready_running_status(name="sidecar")]
+    )
+    initial.items[0].status.phase = "Pending"
+    final = _pod_list_for_container_status(
+        waiting,
+        init_container_statuses=[
+            _create_status(
+                name=name,
+                state=V1ContainerState(
+                    terminated=V1ContainerStateTerminated(exit_code=1, message=f"{name} failed")
+                ),
+                ready=False,
+            )
+            for name in ["sidecar", "init"]
+        ],
+    )
+    final.items[0].status.phase = "Failed"
+    mock_client.core_api.list_namespaced_pod.side_effect = [initial, initial, final, final]
+    mock_client.retrieve_pod_logs = mock.MagicMock(return_value="logs")
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(pod_name="a_pod", namespace="namespace")
+    assert 'Container "sidecar" failed' in str(exc_info.value)
+    assert 'Container "init" failed' in str(exc_info.value)
+    assert mock_client.retrieve_pod_logs.call_count == 2
+    mock_client.sleeper.assert_not_called()
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+def test_failed_init_log_read_error_is_not_swallowed(wait_for_state):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=4))
+    pods = V1PodList(
+        items=[
+            V1Pod(
+                status=V1PodStatus(
+                    phase="Failed",
+                    init_container_statuses=[
+                        _create_status(
+                            name="init",
+                            state=V1ContainerState(
+                                terminated=V1ContainerStateTerminated(exit_code=1)
+                            ),
+                            ready=False,
+                        )
+                    ],
+                )
+            )
+        ]
+    )
+    mock_client.core_api.list_namespaced_pod.return_value = pods
+    error = kubernetes.client.rest.ApiException(status=500, reason="synthetic log read error")
+    mock_client.core_api.read_namespaced_pod_log.side_effect = error
+    with pytest.raises(kubernetes.client.rest.ApiException) as exc_info:
+        mock_client.wait_for_pod(
+            pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+        )
+    assert exc_info.value is error
+    mock_client.core_api.read_namespaced_pod_log.assert_called_once()
+    mock_client.sleeper.assert_not_called()
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+@pytest.mark.parametrize("ready", [False, True])
+@pytest.mark.parametrize("prior_status_disappears", [False, True])
+def test_failed_pod_waits_for_running_main_diagnostics(
+    wait_for_state, ready, prior_status_disappears
+):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=12))
+    sidecar = _create_status(
+        name="sidecar",
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=137, message="sidecar stopped")
+        ),
+        ready=False,
+    )
+    running = _create_status(
+        name="main", state=V1ContainerState(running=V1ContainerStateRunning()), ready=False
+    )
+    init_statuses = [sidecar]
+    if prior_status_disappears:
+        init_statuses.insert(
+            0,
+            _create_status(
+                name="completed-init",
+                state=V1ContainerState(terminated=V1ContainerStateTerminated(exit_code=0)),
+                ready=False,
+            ),
+        )
+    initial = _pod_list_for_container_status(running, init_container_statuses=init_statuses)
+    initial.items[0].status.phase = "Running"
+    evicting = _pod_list_for_container_status(
+        _create_status(name="main", state=running.state, ready=ready),
+        init_container_statuses=[sidecar],
+    )
+    evicting.items[0].status.phase = "Failed"
+    final = _pod_list_for_container_status(
+        _create_status(
+            name="main",
+            state=V1ContainerState(
+                terminated=V1ContainerStateTerminated(exit_code=1, message="main failed")
+            ),
+            ready=False,
+        ),
+        init_container_statuses=[sidecar],
+    )
+    final.items[0].status.phase = "Failed"
+    snapshots = [initial] * (3 if prior_status_disappears else 2) + [evicting, final]
+    mock_client.core_api.list_namespaced_pod.side_effect = snapshots
+    mock_client.retrieve_pod_logs = mock.MagicMock(side_effect=["sidecar logs", "main logs"])
+
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(
+            pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+        )
+
+    assert str(exc_info.value) == (
+        "Pod a_pod terminated but some containers exited with errors:\n"
+        'Container "sidecar" failed with message: "sidecar stopped". '
+        'Last 100 log lines: "sidecar logs"\n\n'
+        'Container "main" failed with message: "main failed". '
+        'Last 100 log lines: "main logs"'
+    )
+    assert mock_client.retrieve_pod_logs.call_args_list == [
+        mock.call("a_pod", "namespace", container_name="sidecar", tail_lines=100),
+        mock.call("a_pod", "namespace", container_name="main", tail_lines=100),
+    ]
+    assert mock_client.core_api.list_namespaced_pod.call_count == len(snapshots)
+    mock_client.sleeper.assert_called_once()
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+@pytest.mark.parametrize("main_state", ["missing", "waiting"])
+def test_failed_pod_preserves_errors_when_selection_exhausted(wait_for_state, main_state):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=6))
+    sidecar = _create_status(
+        name="sidecar",
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=137, message="sidecar stopped")
+        ),
+        ready=False,
+    )
+    waiting = _create_status(
+        name="main",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    # Synthetic selection boundary: the error was collected before Failed filters
+    # unstarted statuses. This is separate from the eviction sequence above.
+    initial = _pod_list_for_container_status(waiting, init_container_statuses=[sidecar])
+    initial.items[0].status.phase = "Running"
+    final = _pod_list_for_container_status(waiting, init_container_statuses=[sidecar])
+    final.items[0].status.phase = "Failed"
+    if main_state == "missing":
+        final.items[0].status.container_statuses = None
+    mock_client.core_api.list_namespaced_pod.side_effect = [initial, initial, final]
+    mock_client.retrieve_pod_logs = mock.MagicMock(return_value="sidecar logs")
+
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(
+            pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+        )
+
+    assert str(exc_info.value) == (
+        "Pod a_pod terminated but some containers exited with errors:\n"
+        'Container "sidecar" failed with message: "sidecar stopped". '
+        'Last 100 log lines: "sidecar logs"'
+    )
+    mock_client.retrieve_pod_logs.assert_called_once_with(
+        "a_pod", "namespace", container_name="sidecar", tail_lines=100
+    )
+    assert mock_client.core_api.list_namespaced_pod.call_count == 3
+    mock_client.sleeper.assert_not_called()
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+@pytest.mark.parametrize("sidecar_ready", [False, True])
+def test_failed_pod_collects_init_error_before_waiting_for_sidecar(wait_for_state, sidecar_ready):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=20))
+    waiting = _create_status(
+        name="main",
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+        ready=False,
+    )
+    sidecar = _create_status(
+        name="sidecar",
+        state=V1ContainerState(running=V1ContainerStateRunning()),
+        ready=sidecar_ready,
+    )
+    init = _create_status(
+        name="init",
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=1, message="init failed")
+        ),
+        ready=False,
+    )
+    failing = _pod_list_for_container_status(waiting, init_container_statuses=[sidecar, init])
+    failing.items[0].status.phase = "Failed"
+    stopped = _pod_list_for_container_status(
+        waiting,
+        init_container_statuses=[
+            _create_status(
+                name="sidecar",
+                state=V1ContainerState(
+                    terminated=V1ContainerStateTerminated(exit_code=137, message="sidecar stopped")
+                ),
+                ready=False,
+            ),
+            init,
+        ],
+    )
+    stopped.items[0].status.phase = "Failed"
+    mock_client.core_api.list_namespaced_pod.side_effect = [failing] * 5 + [stopped] * 2
+    mock_client.retrieve_pod_logs = mock.MagicMock(side_effect=["init logs", "sidecar logs"])
+
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(
+            pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+        )
+
+    assert str(exc_info.value) == (
+        "Pod a_pod terminated but some containers exited with errors:\n"
+        'Container "init" failed with message: "init failed". '
+        'Last 100 log lines: "init logs"\n\n'
+        'Container "sidecar" failed with message: "sidecar stopped". '
+        'Last 100 log lines: "sidecar logs"'
+    )
+    assert mock_client.retrieve_pod_logs.call_args_list == [
+        mock.call("a_pod", "namespace", container_name="init", tail_lines=100),
+        mock.call("a_pod", "namespace", container_name="sidecar", tail_lines=100),
+    ]
+    assert mock_client.core_api.list_namespaced_pod.call_count == 6
+    assert mock_client.sleeper.call_count == 3
+
+
+@pytest.mark.parametrize("wait_for_state", list(WaitForPodState))
+@pytest.mark.parametrize("all_statuses_disappear", [False, True])
+def test_missing_unfinished_status_does_not_become_success(wait_for_state, all_statuses_disappear):
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=8))
+    init = _create_status(
+        name="init",
+        state=V1ContainerState(terminated=V1ContainerStateTerminated(exit_code=0)),
+        ready=False,
+    )
+    main = _create_status(
+        name="main", state=V1ContainerState(running=V1ContainerStateRunning()), ready=False
+    )
+    initial = _pod_list_for_container_status(main, init_container_statuses=[init])
+    initial.items[0].status.phase = "Running"
+    missing = _pod_list_for_container_status(main, init_container_statuses=[init])
+    missing.items[0].status.phase = "Running"
+    missing.items[0].status.container_statuses = None
+    if all_statuses_disappear:
+        missing.items[0].status.init_container_statuses = None
+    mock_client.core_api.list_namespaced_pod.side_effect = [initial, initial, missing]
+    mock_client.retrieve_pod_logs = mock.MagicMock()
+
+    # Preserve the existing failure for an incomplete snapshot. Error aggregation
+    # must not turn an unobserved main-container termination into successful completion.
+    with pytest.raises(StopIteration):
+        mock_client.wait_for_pod(
+            pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+        )
+    mock_client.retrieve_pod_logs.assert_not_called()
+    assert mock_client.core_api.list_namespaced_pod.call_count == 3
 
 
 def test_wait_for_termination_ready_then_terminate():
