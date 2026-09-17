@@ -176,6 +176,12 @@ def init_mock():
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def api_mock():
+    with patch("wandb.Api") as mock:
+        yield mock
+
+
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
     init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
