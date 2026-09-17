@@ -19,6 +19,9 @@ from dagster_buildkite.steps.test_project import test_project_depends_fn
 from dagster_buildkite.utils import wait_for_mysql_container
 
 _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111", "dbt112"]
+# dbt-core before 1.12 pins mashumaro<3.15, which cannot build its unpackers on Python
+# 3.14 (fixed in mashumaro 3.17).
+_DAGSTER_DBT_PY314_INCOMPATIBLE_DEPS_FACTORS = {"dbt17", "dbt18", "dbt19", "dbt110", "dbt111"}
 _DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
 _DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST = "dagster_dbt_tests/core/test_asset_checks.py"
 _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
@@ -433,6 +436,21 @@ def _unsupported_dagster_python_versions(
     return []
 
 
+def _unsupported_dagster_dbt_python_versions(
+    tox_factor: ToxFactor | None,
+) -> list[AvailablePythonVersion]:
+    deps_factor = tox_factor.factor.split("-")[0] if tox_factor else ""
+
+    # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
+    if deps_factor == "dbt17":
+        return [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
+
+    if deps_factor in _DAGSTER_DBT_PY314_INCOMPATIBLE_DEPS_FACTORS:
+        return [AvailablePythonVersion.V3_14]
+
+    return []
+
+
 def test_subfolders(tests_folder_name: str) -> Iterable[str]:
     tests_path = (
         Path(__file__).parent
@@ -727,15 +745,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                     for deps_factor in _DAGSTER_DBT_DEPS_FACTORS
                 ],
             ],
-            # dbt-core 1.7's protobuf<5 constraint conflicts with the grpc requirement for Python 3.13+
-            # dbt-core is incompatible with Python 3.14
-            unsupported_python_versions=(
-                lambda tox_factor: (
-                    [AvailablePythonVersion.V3_13, AvailablePythonVersion.V3_14]
-                    if tox_factor and tox_factor.factor.startswith("dbt17")
-                    else [AvailablePythonVersion.V3_14]
-                )
-            ),
+            unsupported_python_versions=_unsupported_dagster_dbt_python_versions,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-dbt/"),
