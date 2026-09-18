@@ -478,6 +478,7 @@ class InstanceRef(
             "sensors",
             "schedules",
             "nux",
+            "ui",
             "auto_materialize",
             "concurrency",
             "freshness",

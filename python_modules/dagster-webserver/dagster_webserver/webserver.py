@@ -49,6 +49,15 @@ TRequestContext = TypeVar("TRequestContext", bound=BaseWorkspaceRequestContext)
 TProcessContext = TypeVar("TProcessContext", bound=IWorkspaceProcessContext)
 
 
+def _json_for_script_tag(value: object) -> str:
+    """Serialize an operator-supplied value for embedding in a JSON <script> body.
+
+    json.dumps does not escape "<", so a value containing "</script>" would otherwise close
+    the tag early.
+    """
+    return json.dumps(value).replace("<", "\\u003c")
+
+
 class DagsterWebserver(
     GraphQLServer[TRequestContext],
     Generic[TProcessContext, TRequestContext],
@@ -237,6 +246,10 @@ class DagsterWebserver(
                         content = content.replace(
                             "__LIVE_DATA_POLL_RATE__", str(self._live_data_poll_rate)
                         )
+
+                    content = content.replace(
+                        '"__UI_LABEL__"', _json_for_script_tag(context.instance.ui_label)
+                    ).replace('"__UI_INTENT__"', _json_for_script_tag(context.instance.ui_intent))
                     return HTMLResponse(content, headers=headers)
             except FileNotFoundError:
                 raise Exception(
