@@ -75,22 +75,26 @@ class StorageMethods:
         statement_timeout: int,
         pool_recycle: int,
         max_overflow: int,
+        pool_size: int = 1,
     ) -> None:
         if self._schedule_storage:
             self._schedule_storage.optimize_for_webserver(
                 statement_timeout=statement_timeout,
                 pool_recycle=pool_recycle,
                 max_overflow=max_overflow,
+                pool_size=pool_size,
             )
         self._run_storage.optimize_for_webserver(
             statement_timeout=statement_timeout,
             pool_recycle=pool_recycle,
             max_overflow=max_overflow,
+            pool_size=pool_size,
         )
         self._event_storage.optimize_for_webserver(
             statement_timeout=statement_timeout,
             pool_recycle=pool_recycle,
             max_overflow=max_overflow,
+            pool_size=pool_size,
         )
 
     def reindex(self, print_fn: PrintFn = lambda _: None) -> None:
