@@ -20,9 +20,14 @@ from dagster._utils.merger import merge_dicts
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, get_job_name_from_run_id
 from kubernetes import __version__ as kubernetes_version
+from kubernetes.client.models.v1_container_state import V1ContainerState
+from kubernetes.client.models.v1_container_state_terminated import V1ContainerStateTerminated
+from kubernetes.client.models.v1_container_status import V1ContainerStatus
 from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.models.v1_job_status import V1JobStatus
 from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+from kubernetes.client.models.v1_pod import V1Pod
+from kubernetes.client.models.v1_pod_status import V1PodStatus
 
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event
@@ -623,6 +628,8 @@ def test_check_run_health(kubeconfig_file):
 
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
+    mock_k8s_client_core_api = mock.Mock(spec_set=["list_namespaced_pod"])
+    mock_k8s_client_core_api.list_namespaced_pod.return_value = mock.Mock(items=[])
 
     k8s_run_launcher = K8sRunLauncher(
         service_account_name="webserver-admin",
@@ -633,6 +640,7 @@ def test_check_run_health(kubeconfig_file):
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
+        k8s_client_core_api=mock_k8s_client_core_api,
         labels=labels,
     )
 
@@ -736,6 +744,123 @@ def test_check_run_health(kubeconfig_file):
                 health.status == WorkerStatus.UNKNOWN
                 and health.msg == f"Job {finished_k8s_job_name} could not be found"
             )
+
+
+def test_check_run_health_surfaces_container_termination_reason(kubeconfig_file):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job_status"])
+    mock_k8s_client_core_api = mock.Mock(spec_set=["list_namespaced_pod"])
+
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+        k8s_client_core_api=mock_k8s_client_core_api,
+    )
+
+    recon_job = reconstructable(fake_job)
+    repo_def = recon_job.repository.get_definition()
+    loadable_target_origin = LoadableTargetOrigin(python_file=__file__)
+
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, loadable_target_origin) as workspace:
+            location = workspace.get_code_location(workspace.code_location_names[0])
+            fake_remote_job = remote_job_from_recon_job(
+                recon_job,
+                op_selection=None,
+                repository_handle=RepositoryHandle.from_location(
+                    repository_name=repo_def.name, code_location=location
+                ),
+            )
+            started_run = create_run_for_test(
+                instance,
+                job_name="demo_job",
+                remote_job_origin=fake_remote_job.get_remote_origin(),
+                job_code_origin=fake_remote_job.get_python_origin(),
+                status=DagsterRunStatus.STARTED,
+            )
+            k8s_run_launcher.register_instance(instance)
+
+            mock_k8s_client_batch_api.read_namespaced_job_status.return_value = V1Job(
+                status=V1JobStatus(failed=1, succeeded=0, active=0)
+            )
+            mock_k8s_client_core_api.list_namespaced_pod.return_value = mock.Mock(
+                items=[
+                    V1Pod(
+                        metadata=V1ObjectMeta(name="dagster-run-abc-xyz"),
+                        status=V1PodStatus(
+                            container_statuses=[
+                                V1ContainerStatus(
+                                    name="dagster",
+                                    image="fake_job_image",
+                                    image_id="fake_job_image_id",
+                                    ready=False,
+                                    restart_count=0,
+                                    last_state=V1ContainerState(
+                                        terminated=V1ContainerStateTerminated(
+                                            exit_code=137, reason="OOMKilled"
+                                        )
+                                    ),
+                                )
+                            ]
+                        ),
+                    )
+                ]
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+
+            assert health.status == WorkerStatus.FAILED
+            assert "OOMKilled" in health.msg
+            assert "exit code 137" in health.msg
+
+            # An init container that never let the run worker start is reported too.
+            mock_k8s_client_core_api.list_namespaced_pod.return_value = mock.Mock(
+                items=[
+                    V1Pod(
+                        metadata=V1ObjectMeta(name="dagster-run-abc-xyz"),
+                        status=V1PodStatus(
+                            init_container_statuses=[
+                                V1ContainerStatus(
+                                    name="check-db-ready",
+                                    image="fake_init_image",
+                                    image_id="fake_init_image_id",
+                                    ready=False,
+                                    restart_count=0,
+                                    state=V1ContainerState(
+                                        terminated=V1ContainerStateTerminated(
+                                            exit_code=1, reason="Error"
+                                        )
+                                    ),
+                                )
+                            ]
+                        ),
+                    )
+                ]
+            )
+
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+
+            assert health.status == WorkerStatus.FAILED
+            assert "check-db-ready" in health.msg
+            assert "exit code 1: Error" in health.msg
+
+            # A pod with no termination info leaves the original message untouched.
+            mock_k8s_client_core_api.list_namespaced_pod.return_value = mock.Mock(items=[])
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.FAILED
+            assert health.msg == "Run has not completed but K8s job has no active pods."
+
+            # Failing to read pods must not break the health check.
+            mock_k8s_client_core_api.list_namespaced_pod.side_effect = (
+                kubernetes.client.rest.ApiException(status=403, reason="Forbidden")
+            )
+            health = k8s_run_launcher.check_run_worker_health(started_run)
+            assert health.status == WorkerStatus.FAILED
 
 
 def test_get_run_worker_debug_info(kubeconfig_file):
