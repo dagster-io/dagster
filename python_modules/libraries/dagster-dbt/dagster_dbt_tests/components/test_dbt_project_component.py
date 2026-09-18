@@ -973,3 +973,41 @@ def test_include_metadata_without_insights_does_not_call_with_insights(dbt_path:
         comp._get_dbt_event_iterator(context, mock_dbt)  # noqa: SLF001
     mock_iterator.with_insights.assert_not_called()
     mock_iterator.fetch_column_metadata.assert_called_once()
+
+
+def test_defs_state_key_folds_in_op_name(dbt_path: Path) -> None:
+    """Two DbtProjectComponent instances against the same project_dir get
+    distinct defs_state_config keys when they configure distinct op names.
+
+    Regression test for the collision that triggers DuplicateDefsStateKeyWarning
+    when multiple slices (silver / gold / report) share one dbt project.
+    """
+    no_op = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path)},
+    )
+    silver = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), "op": {"name": "dbt_silver"}},
+    )
+    gold = load_component_for_test(
+        DbtProjectComponent,
+        {"project": str(dbt_path), "op": {"name": "dbt_gold"}},
+    )
+
+    no_op_key = no_op.defs_state_config.key
+    silver_key = silver.defs_state_config.key
+    gold_key = gold.defs_state_config.key
+
+    # Backward compat: instances without an explicit op name keep the
+    # legacy key format (no `[<op_name>]` suffix).
+    assert no_op_key.startswith("DbtProjectComponent[")
+    assert not no_op_key.endswith("][]")
+    assert "][" not in no_op_key.rstrip("]")
+
+    # Explicit op names produce distinct suffixed keys.
+    assert silver_key != gold_key
+    assert silver_key != no_op_key
+    assert gold_key != no_op_key
+    assert silver_key.endswith("[dbt_silver]")
+    assert gold_key.endswith("[dbt_gold]")
