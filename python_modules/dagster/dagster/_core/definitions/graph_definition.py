@@ -620,6 +620,7 @@ class GraphDefinition(NodeDefinition):
         run_tags: Mapping[str, object] | None = None,
         _asset_selection_data: AssetSelectionData | None = None,
         owners: Sequence[str] | None = None,
+        group_name: str | None = None,
         automation_condition: "AutomationCondition | None" = None,
     ) -> "JobDefinition":
         """Make this graph in to an executable Job by providing remaining components required for execution.
@@ -678,6 +679,10 @@ class GraphDefinition(NodeDefinition):
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of a job.
             owners (Optional[Sequence[str]]): A sequence of strings identifying the owners of the job.
+            group_name (Optional[str]): A string name used to organize this job alongside other
+                jobs into a group. Groups may be nested using `/` as a separator
+                (e.g. `"operational/maintenance"`). If not provided, the job belongs to the
+                `default` group.
             automation_condition (Optional[AutomationCondition]): An experimental, job-scoped
                 automation condition. Only supported for asset jobs; generally set via
                 `define_asset_job` rather than here.
@@ -708,6 +713,7 @@ class GraphDefinition(NodeDefinition):
             _subset_selection_data=_asset_selection_data,
             _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
             owners=owners,
+            group_name=group_name,
             _automation_condition=automation_condition,
         ).get_subset(op_selection=op_selection)
 
