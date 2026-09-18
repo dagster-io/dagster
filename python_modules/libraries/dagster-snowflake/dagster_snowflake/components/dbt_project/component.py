@@ -70,8 +70,9 @@ from dagster_dbt.asset_utils import (
 from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
     get_completed_at_timestamp,
+    get_run_generated_at_timestamp,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import REFABLE_NODE_TYPES, SUCCESSFUL_NODE_STATUSES, NodeType, TestStatus
 from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
     _set_resolution_context,
@@ -920,6 +921,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
         op_mode = context is not None
         translator = validate_translator(self.translator)
         invocation_id = run_results.get("metadata", {}).get("invocation_id")
+        generated_at_timestamp = get_run_generated_at_timestamp(run_results)
 
         for result in run_results.get("results", []):
             unique_id = result["unique_id"]
@@ -938,7 +940,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
             if (
                 resource_type in REFABLE_NODE_TYPES
-                and status == NodeStatus.Success
+                and status in SUCCESSFUL_NODE_STATUSES
                 and not is_ephemeral
             ):
                 asset_key = translator.get_asset_spec(manifest, unique_id, None).key
@@ -949,8 +951,9 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     continue
                 metadata = {
                     **default_metadata,
+                    "status": status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: dg.MetadataValue.timestamp(
-                        get_completed_at_timestamp(result)
+                        get_completed_at_timestamp(result, generated_at_timestamp)
                     ),
                 }
                 # Extra metadata only applies during op execution (the sensor skips it).
@@ -991,7 +994,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     **default_metadata,
                     "status": status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: dg.MetadataValue.timestamp(
-                        get_completed_at_timestamp(result)
+                        get_completed_at_timestamp(result, generated_at_timestamp)
                     ),
                 }
                 if result.get("failures") is not None:
@@ -1055,7 +1058,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
             props = nodes.get(unique_id)
             if not props or props.get("resource_type") not in REFABLE_NODE_TYPES:
                 continue
-            if result.get("status") != NodeStatus.Success:
+            if result.get("status") not in SUCCESSFUL_NODE_STATUSES:
                 continue
             if props.get("config", {}).get("materialized") == "ephemeral":
                 continue
