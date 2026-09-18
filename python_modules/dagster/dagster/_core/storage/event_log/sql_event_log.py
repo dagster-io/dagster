@@ -120,6 +120,8 @@ if TYPE_CHECKING:
 
 MIN_ASSET_ROWS = 25
 DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
+# Bound both bind parameters and wipe-predicate depth on older SQLite versions.
+PLANNED_MATERIALIZATION_BATCH_SIZE = 200
 
 
 def get_max_event_records_limit() -> int:
@@ -3469,6 +3471,72 @@ class SqlEventLogStorage(EventLogStorage):
             storage_id=records[0].storage_id,
             run_id=records[0].run_id,
         )
+
+    def get_latest_planned_materialization_info_for_keys(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, PlannedMaterializationInfo | None]:
+        check.sequence_param(asset_keys, "asset_keys", AssetKey)
+        keys = list(dict.fromkeys(asset_keys))
+        records_by_key: dict[AssetKey, PlannedMaterializationInfo | None] = dict.fromkeys(keys)
+        for offset in range(0, len(keys), PLANNED_MATERIALIZATION_BATCH_SIZE):
+            batch = keys[offset : offset + PLANNED_MATERIALIZATION_BATCH_SIZE]
+            # SQL collation equality need not match AssetKey equality. Keep a separate
+            # aggregate for each request and return its ordinal, not the stored key.
+            # UNION ALL bounds this to 200 per-key aggregates in one statement (below SQLite's
+            # compound-select and bind limits), without merging SQL-equivalent requests.
+            latest_queries = []
+            for index, (key, details) in enumerate(zip(batch, self._get_assets_details(batch))):
+                latest_query = db_select(
+                    [
+                        db.literal(index).label("key_index"),
+                        db.func.max(SqlEventLogStorageTable.c.id).label("latest_id"),
+                    ]
+                ).where(
+                    db.and_(
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        SqlEventLogStorageTable.c.asset_key == key.to_string(),
+                    )
+                )
+                # Apply only this request's wipe before MAX, as in the singular API.
+                # A wipe for an equivalent key must not filter this request's rows.
+                if details and details.last_wipe_timestamp:
+                    latest_query = latest_query.where(
+                        SqlEventLogStorageTable.c.timestamp
+                        > datetime.fromtimestamp(details.last_wipe_timestamp, timezone.utc).replace(
+                            tzinfo=None
+                        )
+                    )
+                latest_queries.append(latest_query)
+            latest = db_subquery(db.union_all(*latest_queries))
+            query = db_select(
+                [
+                    latest.c.key_index,
+                    SqlEventLogStorageTable.c.id,
+                    SqlEventLogStorageTable.c.event,
+                ]
+            ).select_from(
+                SqlEventLogStorageTable.join(
+                    latest, SqlEventLogStorageTable.c.id == latest.c.latest_id
+                )
+            )
+            # Asset events live in the index even for run-sharded SQLite storage.
+            with self.index_connection() as conn, db_result(conn, query) as result:
+                rows = result.fetchall()
+            for key_index, row_id, json_str in rows:
+                try:
+                    event_record = deserialize_value(json_str, NamedTuple)  # ty: ignore[no-matching-overload]
+                    if not isinstance(event_record, EventLogEntry):
+                        logging.warning(
+                            "Could not resolve event record as EventLogEntry for id `%s`.", row_id
+                        )
+                        continue
+                    records_by_key[batch[key_index]] = PlannedMaterializationInfo(
+                        storage_id=row_id, run_id=event_record.run_id
+                    )
+                except seven.JSONDecodeError:
+                    logging.warning("Could not parse event record id `%s`.", row_id)
+        return records_by_key
 
     def _get_partition_data_versions(
         self,

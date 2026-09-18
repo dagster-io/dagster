@@ -544,6 +544,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, partition
         )
 
+    def get_latest_planned_materialization_info_for_keys(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, PlannedMaterializationInfo | None]:
+        return self._storage.event_log_storage.get_latest_planned_materialization_info_for_keys(
+            asset_keys
+        )
+
     def get_updated_data_version_partitions(
         self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
     ) -> set[str]:
