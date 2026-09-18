@@ -91,9 +91,10 @@ def build_and_validate_named_ins(
 
     asset_input_params = get_function_params_without_context_or_config_or_resources(fn)
 
-    # e.g. def fn(a, b, *, c)
+    # e.g. def fn(a, b, *, c) or def fn(*, a, b)
+    _named_input_param_kinds = {Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY}
     single_asset_input_params = [
-        param for param in asset_input_params if param.kind == Parameter.POSITIONAL_OR_KEYWORD
+        param for param in asset_input_params if param.kind in _named_input_param_kinds
     ]
     single_asset_input_param_names = {param.name for param in single_asset_input_params}
     # e.g. def fn(**kwargs)
