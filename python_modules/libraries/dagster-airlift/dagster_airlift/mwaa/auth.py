@@ -38,7 +38,7 @@ class MwaaSessionAuthBackend(AirflowAuthBackend):
     uses the token to authenticate to the MWAA web server.
 
     Args:
-        mwaa_session (boto3.Session): The boto3 MWAA session
+        mwaa_client (Any): The boto3 MWAA client
         env_name (str): The name of the MWAA environment
 
     Examples:

@@ -233,7 +233,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """Check to see if storage contains a pipeline snapshot.
 
         Args:
-            pipeline_snapshot_id (str): The id of the run.
+            job_snapshot_id (str): The id of the run.
 
         Returns:
             bool
