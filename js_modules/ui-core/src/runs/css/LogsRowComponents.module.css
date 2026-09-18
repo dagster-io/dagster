@@ -90,3 +90,65 @@
   color: var(--color-text-light);
   padding: 4px;
 }
+
+/* On mobile a log entry stacks instead of forming columns: the timestamp and
+   event type sit on a header line, and the message — the only part anyone reads
+   — gets the full width beneath it. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    max-height: none;
+    padding-bottom: 6px;
+  }
+
+  /* Row types differ in which children they render (compute-log rows carry a
+     level tag where structured rows carry a message). Anything not explicitly
+     placed below gets its own full-width line, so it can never stretch column 1
+     and push the level tag off the right edge. Must precede the specific
+     placements — same specificity, so source order decides. */
+  .row > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  /* The column containers take an inline width from ColumnWidthsContext. Pin
+     each one to a cell explicitly: auto-placement varies with which columns a
+     given row type renders. */
+  .timestampColumnContainer,
+  .eventTypeColumnContainer {
+    width: auto !important;
+  }
+
+  .timestampColumnContainer {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .eventTypeColumnContainer {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 4px 4px 4px 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .opColumnContainer {
+    display: none;
+  }
+
+  /* The event-type tag and the message live inside this container as a flex
+     row. Stacking them gives the message the full width of the screen, which is
+     the whole point of the mobile log layout. */
+  .structuredContent {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    border-left: none;
+    padding: 0 12px;
+  }
+}

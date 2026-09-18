@@ -122,3 +122,25 @@
 .disabled * {
   color: var(--color-text-light) !important;
 }
+
+/* Mobile: this input sits in toolbars beside 44px buttons, so match that height
+   rather than the desktop 32px. `min-width: 0` lets it shrink inside a flex row
+   instead of overflowing the viewport, and CodeMirror's negative scroll margins
+   are clipped so they cannot extend past the container. Keep the max-width
+   value in sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .inputDiv {
+    min-height: 44px;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .inputDiv :global(.CodeMirror-scroll) {
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+}

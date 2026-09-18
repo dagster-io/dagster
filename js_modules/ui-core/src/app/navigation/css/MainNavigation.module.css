@@ -178,3 +178,18 @@
   white-space: nowrap;
   max-width: 100%;
 }
+
+/* Phone drawer: every item is a 44px tap target. Keep the max-width value in
+   sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .itemContainer {
+    min-height: 44px;
+  }
+
+  .link,
+  .itemButton {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}

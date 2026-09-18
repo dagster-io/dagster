@@ -111,3 +111,12 @@
   flex-direction: column;
   justify-content: center;
 }
+
+/* Touch targets: inputs default to 32px, which is both hard to tap and visibly
+   shorter than the 44px buttons they sit beside on mobile toolbars. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .input {
+    min-height: 44px;
+  }
+}

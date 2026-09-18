@@ -508,6 +508,142 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Touch support: one finger pans, two fingers pinch-zoom around the midpoint.
+    // Built on Pointer Events rather than Touch Events: Windows touchscreens (and
+    // some other digitizer/browser combos) reliably deliver pointerdown/move/up
+    // with pointerType 'touch' but do NOT always fire the legacy touchstart/
+    // touchmove/touchend events, so a Touch-Events-only implementation can end up
+    // never running at all on those devices. Pointer Events are supported
+    // uniformly across touch, pen, and mouse in all browsers we target, so mouse
+    // input is explicitly excluded here to avoid double-handling with onMouseDown.
+    useEffect(() => {
+      const container = element.current;
+      if (!container) {
+        return;
+      }
+
+      const inZoomControl = (e: PointerEvent) =>
+        e.target instanceof HTMLElement && e.target.closest('#zoom-slider-container');
+
+      const pointers = new Map<number, Point>();
+
+      const pointFor = (e: PointerEvent): Point => {
+        const rect = container.getBoundingClientRect();
+        return {x: e.clientX - rect.left, y: e.clientY - rect.top};
+      };
+
+      const gesture = () => {
+        const points = Array.from(pointers.values());
+        if (points.length >= 2) {
+          const [a, b] = points as [Point, Point];
+          return {
+            center: {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2},
+            distance: Math.hypot(b.x - a.x, b.y - a.y),
+          };
+        }
+        return points.length === 1 ? {center: points[0] as Point, distance: 0} : null;
+      };
+
+      let last: {center: Point; distance: number} | null = null;
+      let startScale = 1;
+      let travel = 0;
+
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType === 'mouse' || inZoomControl(e)) {
+          return;
+        }
+        cancelAnimations();
+        // Claim the gesture as early and explicitly as possible: on some
+        // Windows touchscreens, a stationary press otherwise races against the
+        // OS-level "press and hold to right-click" gesture, which can win and
+        // swallow the whole interaction before any pointermove is delivered.
+        e.preventDefault();
+        try {
+          // Not implemented in jsdom (tests); some browsers/hardware can also
+          // throw here for edge-case pointer ids. Capture is a nice-to-have
+          // for reliable tracking off-element, not required for panning to
+          // work, so never let a failure here abort the rest of the handler.
+          container.setPointerCapture?.(e.pointerId);
+        } catch {
+          // ignore
+        }
+        pointers.set(e.pointerId, pointFor(e));
+        last = gesture();
+        startScale = viewportStateRef.current.scale;
+        if (pointers.size === 1) {
+          travel = 0;
+        }
+        mergeViewportState({isClickHeld: true});
+      };
+
+      const onPointerMove = (e: PointerEvent) => {
+        if (!pointers.has(e.pointerId)) {
+          return;
+        }
+        pointers.set(e.pointerId, pointFor(e));
+        const next = gesture();
+        if (!last || !next) {
+          return;
+        }
+        e.preventDefault();
+        const delta = {x: next.center.x - last.center.x, y: next.center.y - last.center.y};
+        travel += Math.abs(delta.x) + Math.abs(delta.y);
+
+        if (last.distance > 0 && next.distance > 0) {
+          const targetScale = startScale * (next.distance / last.distance);
+          const clamped = Math.max(getMinZoom(), Math.min(getMaxZoom(), targetScale));
+          adjustZoomRelativeToScreenPoint(clamped, next.center);
+          startScale = clamped;
+        }
+        shiftXY(delta.x, delta.y);
+        last = next;
+      };
+
+      const onPointerUp = (e: PointerEvent) => {
+        if (!pointers.has(e.pointerId)) {
+          return;
+        }
+        pointers.delete(e.pointerId);
+        try {
+          if (container.hasPointerCapture?.(e.pointerId)) {
+            container.releasePointerCapture?.(e.pointerId);
+          }
+        } catch {
+          // ignore
+        }
+        // Re-baseline on the remaining fingers so lifting one finger of a pinch
+        // does not cause the graph to jump.
+        last = gesture();
+        startScale = viewportStateRef.current.scale;
+        if (pointers.size === 0) {
+          mergeViewportState({isClickHeld: false});
+          if (travel > 5) {
+            // A drag, not a tap: swallow the click the browser synthesizes on release.
+            e.preventDefault();
+          }
+        }
+      };
+
+      container.addEventListener('pointerdown', onPointerDown);
+      container.addEventListener('pointermove', onPointerMove);
+      container.addEventListener('pointerup', onPointerUp);
+      container.addEventListener('pointercancel', onPointerUp);
+      return () => {
+        container.removeEventListener('pointerdown', onPointerDown);
+        container.removeEventListener('pointermove', onPointerMove);
+        container.removeEventListener('pointerup', onPointerUp);
+        container.removeEventListener('pointercancel', onPointerUp);
+      };
+    }, [
+      adjustZoomRelativeToScreenPoint,
+      cancelAnimations,
+      getMaxZoom,
+      getMinZoom,
+      mergeViewportState,
+      shiftXY,
+      viewportStateRef,
+    ]);
+
     const {x, y, scale, isClickHeld, isExporting} = viewportState;
     const dotsize = Math.max(7, 22 * scale);
 
@@ -684,6 +820,17 @@ const SVGViewportStyles: React.CSSProperties = {
   position: 'relative',
   overflow: 'hidden',
   userSelect: 'none',
+  // Without this, the browser's own native touch scrolling/pinch-zoom runs
+  // at the same time as our JS-driven pan/zoom above, compounding into a
+  // doubled, drifting, or "off center" transform instead of tracking the
+  // finger 1:1.
+  touchAction: 'none',
+  // Windows' WISP touch stack (the source of "press and hold to right-click",
+  // a system-level touch setting independent of the browser) historically
+  // looked at this old IE/Edge property rather than the standard touch-action
+  // to know a page wants to own a touch gesture itself. Inert (and harmless)
+  // in browsers that don't recognize it.
+  ['msTouchAction' as any]: 'none',
   outline: 'none',
   background: `url("data:image/svg+xml;utf8,<svg width='30px' height='30px' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'><circle fill='rgba(103, 116, 138, 0.20)' cx='5' cy='5' r='5' /></svg>") repeat`,
 };

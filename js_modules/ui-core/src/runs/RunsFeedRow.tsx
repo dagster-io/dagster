@@ -11,7 +11,7 @@ import {
   Text,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
@@ -27,6 +27,7 @@ import {RunFilterToken} from './RunsFilterInput';
 import styles from './css/RunsFeedRow.module.css';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
+import {LayoutContext} from '../app/LayoutProvider';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
@@ -75,6 +76,7 @@ export const RunsFeedRow = ({
   );
 
   const [isHovered, setIsHovered] = React.useState(false);
+  const history = useHistory();
 
   const runTime: RunTimeFragment = {
     id: entry.id,
@@ -89,6 +91,82 @@ export const RunsFeedRow = ({
   const partitionTag =
     entry.__typename === 'Run' ? entry.tags.find((t) => t.key === DagsterTag.Partition) : null;
 
+  // A phone row answers "what ran, did it work, when, how long". Bulk selection,
+  // the launcher, tag chips and the "View" button are desktop concerns: dropping
+  // them makes the row two dense lines, so a screenful is nine runs instead of
+  // three. Tags and config stay reachable from the actions menu.
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+
+  const runPath =
+    entry.__typename === 'PartitionBackfill' ? getBackfillPath(entry.id) : `/runs/${entry.id}`;
+
+  if (isMobileScreen) {
+    // The row itself opens the run; taps on inner links/buttons keep their own behaviour.
+    const onRowClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target instanceof Element && e.target.closest('a, button, input, [role="button"]')) {
+        return;
+      }
+      history.push(runPath);
+    };
+
+    return (
+      <Box className={styles.mobileRow} border="bottom" onClick={onRowClick}>
+        <div className={styles.mobileStatus}>
+          {entry.__typename === 'PartitionBackfill' ? (
+            <RunStatusTag status={entry.runStatus} />
+          ) : (
+            <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
+          )}
+        </div>
+        <div className={styles.mobileTarget}>
+          {entry.__typename === 'Run' ? (
+            <RunTargetLink
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              run={{...entry, pipelineName: entry.jobName!}}
+              repoAddress={repoAddress}
+              extraTags={[]}
+            />
+          ) : (
+            <BackfillTarget
+              backfill={entry}
+              repoAddress={null}
+              useTags={true}
+              onShowPartitions={() => onShowDialog({type: 'partitions', backfillId: entry.id})}
+            />
+          )}
+        </div>
+        <div className={styles.mobileMeta}>
+          <Link to={runPath} className={styles.mobileId}>
+            <Icon
+              name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'}
+              size={16}
+            />
+            <Text size={12} family="mono">
+              {titleForRun(entry)}
+            </Text>
+          </Link>
+          <span className={styles.mobileMetaItem}>
+            <RunStateSummary run={runTime} />
+          </span>
+          <span className={styles.mobileMetaItem}>
+            <RunTime run={runTime} />
+          </span>
+          {isReexecution ? <Icon name="cached" size={16} /> : null}
+        </div>
+        <div className={styles.mobileMenu}>
+          {entry.__typename === 'PartitionBackfill' ? (
+            <BackfillActionsMenu
+              backfill={{...entry, status: entry.backfillStatus}}
+              refetch={refetch}
+            />
+          ) : (
+            <RunActionsMenu run={entry} onAddTag={onAddTag} iconOnly />
+          )}
+        </div>
+      </Box>
+    );
+  }
+
   return (
     <Box
       className={styles.rowGrid}
@@ -96,19 +174,13 @@ export const RunsFeedRow = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <RowCell>
+      <RowCell className={styles.cellCheckbox}>
         <Checkbox checked={!!checked} onChange={onChange} />
       </RowCell>
 
-      <RowCell>
+      <RowCell className={styles.cellId}>
         <Box flex={{direction: 'column', gap: 5}}>
-          <Link
-            to={
-              entry.__typename === 'PartitionBackfill'
-                ? getBackfillPath(entry.id)
-                : `/runs/${entry.id}`
-            }
-          >
+          <Link to={runPath}>
             <Box flex={{gap: 4, alignItems: 'center'}}>
               <Icon name={entry.__typename === 'PartitionBackfill' ? 'run_with_subruns' : 'run'} />
               <Text size={14} family="mono">
@@ -144,7 +216,10 @@ export const RunsFeedRow = ({
           </Box>
         </Box>
       </RowCell>
-      <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
+      <RowCell
+        className={styles.cellTarget}
+        style={{flexDirection: 'row', alignItems: 'flex-start'}}
+      >
         {entry.__typename === 'Run' ? (
           <RunTargetLink
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -165,10 +240,10 @@ export const RunsFeedRow = ({
           />
         )}
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellCreatedBy}>
         <CreatedByTagCell tags={entry.tags || []} onAddTag={onAddTag} repoAddress={repoAddress} />
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellStatus}>
         <div>
           {entry.__typename === 'PartitionBackfill' ? (
             <RunStatusTag status={entry.runStatus} />
@@ -177,7 +252,7 @@ export const RunsFeedRow = ({
           )}
         </div>
       </RowCell>
-      <RowCell style={{flexDirection: 'column', gap: 4}}>
+      <RowCell className={styles.cellTime} style={{flexDirection: 'column', gap: 4}}>
         <RunTime run={runTime} />
         {isReexecution ? (
           <div>
@@ -185,10 +260,10 @@ export const RunsFeedRow = ({
           </div>
         ) : null}
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellDuration}>
         <RunStateSummary run={runTime} />
       </RowCell>
-      <RowCell>
+      <RowCell className={styles.cellMenu}>
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
             backfill={{...entry, status: entry.backfillStatus}}
@@ -208,7 +283,7 @@ const TEMPLATE_COLUMNS =
 
 export const RunsFeedTableHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky className={styles.tableHeader}>
       <HeaderCell>
         <div style={{position: 'relative', top: '-1px'}}>{checkbox}</div>
       </HeaderCell>

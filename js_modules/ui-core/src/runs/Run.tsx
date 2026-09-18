@@ -10,10 +10,11 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {memo, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
+import {FailedStepSummary, StepFailureNode} from './FailedStepSummary';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
@@ -22,6 +23,7 @@ import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {runsPathWithFilters} from './RunsFilterInput';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {LayoutContext} from '../app/LayoutProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode} from '../gantt/GanttChart';
@@ -33,7 +35,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import styles from './css/Run.module.css';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {RunPageFragment} from './types/RunFragments.types';
 import {
   matchingComputeLogKeyFromStepKey,
   useComputeLogFileKeyForSelection,
@@ -82,16 +84,10 @@ export const Run = memo((props: RunProps) => {
   useDocumentTitle(documentTitle);
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
 
-  const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
-    const errorNode = logs.find(
-      (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
-    );
-
-    if (errorNode) {
-      showCustomAlert({
-        body: <PythonErrorInfo error={errorNode} />,
-      });
-    }
+  const onShowFailureNode = (node: StepFailureNode) => {
+    showCustomAlert({
+      body: <PythonErrorInfo error={node.error ?? node} />,
+    });
   };
 
   const onSetSelectionQuery = (query: string) => {
@@ -121,7 +117,7 @@ export const Run = memo((props: RunProps) => {
                   selectionQuery={selectionQuery}
                   onSetLogsFilter={setLogsFilter}
                   onSetSelectionQuery={onSetSelectionQuery}
-                  onShowStateDetails={onShowStateDetails}
+                  onShowFailureNode={onShowFailureNode}
                 />
               )}
             </RunMetadataProvider>
@@ -156,7 +152,7 @@ interface RunWithDataProps {
   metadata: IRunMetadataDict;
   onSetLogsFilter: (v: LogFilter) => void;
   onSetSelectionQuery: (query: string) => void;
-  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
+  onShowFailureNode: (node: StepFailureNode) => void;
 }
 
 const logTypeFromQuery = (queryLogType: string) => {
@@ -192,6 +188,7 @@ const RunWithData = ({
   selectionQuery,
   onSetLogsFilter,
   onSetSelectionQuery,
+  onShowFailureNode,
 }: RunWithDataProps) => {
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',
@@ -279,6 +276,12 @@ const RunWithData = ({
   const [expandedPanel, setExpandedPanel] = useState<null | 'top' | 'bottom'>(null);
   const containerRef = useRef<SplitPanelContainerHandle>(null);
 
+  // On a phone the logs are the reason you opened the run, so they fill the
+  // screen by default and the step list / Gantt panel starts collapsed. The
+  // toolbar's expand control still opens it. A separate storage identifier keeps
+  // the desktop split untouched.
+  const {isMobileScreen} = useContext(LayoutContext).nav;
+
   useLayoutEffect(() => {
     if (containerRef.current) {
       const size = containerRef.current.getSize();
@@ -319,7 +322,7 @@ const RunWithData = ({
               mode: GanttChartMode.WATERFALL_TIMED,
             }}
             toolbarActions={
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 12, wrap: 'wrap'}}>
                 <Tooltip content={isTopExpanded ? 'Collapse' : 'Expand'}>
                   <Button
                     icon={<Icon name={isTopExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
@@ -393,14 +396,22 @@ const RunWithData = ({
       <SplitPanelContainer
         ref={containerRef}
         axis="vertical"
-        identifier="run-gantt"
-        firstInitialPercent={35}
+        identifier={isMobileScreen ? 'run-gantt-mobile' : 'run-gantt'}
+        firstInitialPercent={isMobileScreen ? 0 : 35}
         firstMinSize={56}
         first={gantt(metadata)}
         secondMinSize={56}
         second={
           <ErrorBoundary region="logs">
             <div className={styles.logsContainer}>
+              {isMobileScreen && run?.status === RunStatus.FAILURE ? (
+                <FailedStepSummary
+                  logs={logs}
+                  metadata={metadata}
+                  onSelectStep={(stepKey) => onSetSelectionQuery(`name:"${stepKey}"`)}
+                  onShowDetails={onShowFailureNode}
+                />
+              ) : null}
               <LogsToolbar
                 logType={logType}
                 onSetLogType={setLogType}

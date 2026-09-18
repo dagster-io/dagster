@@ -16,6 +16,7 @@ import {LogLevel} from './LogLevel';
 import {LogsFilterInput} from './LogsFilterInput';
 import {LogFilter, LogFilterValue} from './LogsProvider';
 import {IRunMetadataDict, extractLogCaptureStepsFromLegacySteps} from './RunMetadataProvider';
+import styles from './css/LogsToolbar.module.css';
 import {getRunFilterProviders} from './getRunFilterProviders';
 import {EnabledRunLogLevelsKey, validateLogLevels} from './useQueryPersistedLogFilter';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
@@ -81,7 +82,7 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
   );
 
   return (
-    <OptionsContainer style={{gap: 12}}>
+    <OptionsContainer style={{gap: 12}} className={styles.toolbar}>
       <ButtonGroup
         activeItems={activeItems}
         buttons={[
@@ -109,12 +110,15 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
       )}
       {children}
       {toggleExpanded ? (
-        <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
-          <Button
-            icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
-            onClick={toggleExpanded}
-          />
-        </Tooltip>
+        <div className={styles.expand}>
+          <Tooltip content={isSectionExpanded ? 'Collapse' : 'Expand'}>
+            <Button
+              icon={<Icon name={isSectionExpanded ? 'collapse_arrows' : 'expand_arrows'} />}
+              onClick={toggleExpanded}
+              aria-label={isSectionExpanded ? 'Collapse logs' : 'Expand logs'}
+            />
+          </Tooltip>
+        </div>
       ) : null}
     </OptionsContainer>
   );

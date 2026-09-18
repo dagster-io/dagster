@@ -1,3 +1,4 @@
+import {MOBILE_BREAKPOINT_PX, SMALL_SCREEN_BREAKPOINT_PX} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
@@ -24,6 +25,7 @@ type LayoutContextValue = {
     canOpen: boolean;
     isOpen: boolean;
     isSmallScreen: boolean;
+    isMobileScreen: boolean;
     open: () => void;
     close: () => void;
     setCanOpen: (canOpen: boolean) => void;
@@ -35,6 +37,7 @@ export const LayoutContext = React.createContext<LayoutContextValue>({
     canOpen: true,
     isOpen: false,
     isSmallScreen: false,
+    isMobileScreen: false,
     open: () => {},
     close: () => {},
     setCanOpen: (_canOpen: boolean) => {},
@@ -56,7 +59,8 @@ export const LayoutProvider = (props: {children: React.ReactNode}) => {
 
   const [navOpenIfSmallScreen, setNavOpenIfSmallScreen] = React.useState(false);
   const location = useLocation();
-  const isSmallScreen = useMatchMedia('(max-width: 1440px)');
+  const isSmallScreen = useMatchMedia(`(max-width: ${SMALL_SCREEN_BREAKPOINT_PX}px)`);
+  const isMobileScreen = useMatchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`);
 
   const open = React.useCallback(() => {
     setNavOpenIfSmallScreen(true);
@@ -85,13 +89,14 @@ export const LayoutProvider = (props: {children: React.ReactNode}) => {
       nav: {
         isOpen: canOpen && isOpen,
         isSmallScreen,
+        isMobileScreen,
         open,
         close,
         canOpen,
         setCanOpen,
       },
     }),
-    [isOpen, isSmallScreen, open, close, canOpen, setCanOpen],
+    [isOpen, isSmallScreen, isMobileScreen, open, close, canOpen, setCanOpen],
   );
 
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;

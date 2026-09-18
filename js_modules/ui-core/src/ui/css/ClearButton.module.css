@@ -23,3 +23,11 @@
     outline: none;
   }
 }
+
+/* Keep in sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .clearButton {
+    padding: 14px;
+    margin: -14px -10px -14px -14px;
+  }
+}

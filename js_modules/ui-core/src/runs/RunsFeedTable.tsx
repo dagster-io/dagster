@@ -11,7 +11,7 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunBulkActionsMenu} from './RunActionsMenu';
@@ -25,6 +25,7 @@ import {
   RunsFeedTableEntryFragment_Run,
 } from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
+import {LayoutContext} from '../app/LayoutProvider';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
@@ -47,6 +48,9 @@ interface RunsFeedTableProps {
   emptyState?: () => React.ReactNode;
   scroll?: boolean;
 }
+
+// Keep in sync with the mobile card layout in css/RunsFeedRow.module.css.
+const MOBILE_ROW_HEIGHT = 68;
 
 // Potentially other modals in the future
 export type RunsFeedDialogState =
@@ -73,10 +77,14 @@ export const RunsFeedTable = ({
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
   const [dialog, setDialog] = useState<null | RunsFeedDialogState>(null);
 
+  // The row stacks into three lines below MOBILE_BREAKPOINT_PX (see
+  // css/RunsFeedRow.module.css), which does not fit the desktop height.
+  const {isMobileScreen} = useContext(LayoutContext).nav;
+
   const rowVirtualizer = useVirtualizer({
     count: entries.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 84,
+    estimateSize: () => (isMobileScreen ? MOBILE_ROW_HEIGHT : 84),
     overscan: 15,
   });
 
@@ -109,7 +117,7 @@ export const RunsFeedTable = ({
   const actionBar = (
     <Box flex={{direction: 'column', gap: 8}}>
       <Box
-        flex={{justifyContent: 'space-between'}}
+        flex={{justifyContent: 'space-between', wrap: 'wrap', gap: 8}}
         style={{width: '100%'}}
         padding={{left: 24, right: 12}}
       >
@@ -133,26 +141,29 @@ export const RunsFeedTable = ({
             }}
           />
           {terminateAllRunsButton}
-          <RunBulkActionsMenu
-            clearSelection={() => onToggleAll(false)}
-            selected={selectedRuns}
-            notice={
-              backfillsExcluded ? (
-                <Alert
-                  intent="warning"
-                  title={
-                    <Box flex={{direction: 'column'}}>
-                      <Text size={14}>Bulk actions are currently only supported for runs.</Text>
-                      <Text size={14}>
-                        {numberFormatter.format(backfillsExcluded)}&nbsp;
-                        {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being excluded
-                      </Text>
-                    </Box>
-                  }
-                />
-              ) : null
-            }
-          />
+          {isMobileScreen ? null : (
+            <RunBulkActionsMenu
+              clearSelection={() => onToggleAll(false)}
+              selected={selectedRuns}
+              notice={
+                backfillsExcluded ? (
+                  <Alert
+                    intent="warning"
+                    title={
+                      <Box flex={{direction: 'column'}}>
+                        <Text size={14}>Bulk actions are currently only supported for runs.</Text>
+                        <Text size={14}>
+                          {numberFormatter.format(backfillsExcluded)}&nbsp;
+                          {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being
+                          excluded
+                        </Text>
+                      </Box>
+                    }
+                  />
+                ) : null
+              }
+            />
+          )}
         </Box>
       </Box>
       {belowActionBarComponents ? (

@@ -43,3 +43,15 @@
   padding: 8px 24px;
   color: var(--color-text-light);
 }
+
+/* Phone: step rows are tap targets. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+@media (max-width: 768px) {
+  .stepItemContainer {
+    min-height: 44px;
+    height: auto;
+    line-height: 20px;
+    padding: 0 16px 0 12px;
+    font-size: 13px;
+  }
+}

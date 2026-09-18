@@ -7,6 +7,15 @@
   z-index: 2;
 }
 
+/* Log entries stack rather than form columns on mobile (see
+   LogsRowComponents.module.css), so there are no columns left to label. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .headersContainer {
+    display: none;
+  }
+}
+
 .headerContainer {
   flex-shrink: 0;
   position: relative;

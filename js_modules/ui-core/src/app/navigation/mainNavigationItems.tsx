@@ -1,6 +1,7 @@
 import {Icon, Popover, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
 import {FeatureFlag} from '@shared/FeatureFlags';
 import {
+  MatcherFn,
   assetsPathMatcher,
   automationPathMatcher,
   deploymentPathMatcher,
@@ -15,6 +16,7 @@ import styles from './css/MainNavigation.module.css';
 import {useSearchDialog} from '../../search/SearchDialog';
 import {JobStateForNav} from '../AppTopNav/useJobStateForNav';
 import {HelpMenuContents} from '../HelpMenu';
+import {LayoutContext} from '../LayoutProvider';
 import {NavCollapseContext} from './NavCollapseProvider';
 import {NavItemContent} from './NavItemContent';
 import {NavItemWithLink} from './NavItemWithLink';
@@ -33,6 +35,18 @@ const onlyAltKey = (event: KeyboardEvent) => {
 const onlyCommandKey = (event: KeyboardEvent) => {
   return event.metaKey && !event.shiftKey && !event.ctrlKey && !event.altKey;
 };
+
+const overviewPathMatcher: MatcherFn = (_, currentLocation) =>
+  currentLocation.pathname.startsWith('/overview');
+
+const runsPathMatcher: MatcherFn = (_, currentLocation) =>
+  currentLocation.pathname.startsWith('/runs');
+
+const automationMatcher: MatcherFn = (params, currentLocation) =>
+  automationPathMatcher(params, currentLocation) ||
+  // Special-case old Auto-materalize page, since with the new navigation we
+  // no longer have an "Overview" item to highlight.
+  currentLocation.pathname.startsWith('/overview/automation');
 
 export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] => {
   const {jobState} = config;
@@ -53,7 +67,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="timeline" />}
               label="Overview"
               href="/overview"
-              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/overview')}
+              isActive={overviewPathMatcher}
             />
           ),
         },
@@ -70,7 +84,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="runs" />}
               label="Runs"
               href="/runs"
-              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/runs')}
+              isActive={runsPathMatcher}
             />
           ),
         },
@@ -128,14 +142,7 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="schedule" />}
               label="Automation"
               href="/automation"
-              isActive={(params, currentLocation) => {
-                return (
-                  automationPathMatcher(params, currentLocation) ||
-                  // Special-case old Auto-materalize page, since with the new navigation we
-                  // no longer have an "Overview" item to highlight.
-                  currentLocation.pathname.startsWith('/overview/automation')
-                );
-              }}
+              isActive={automationMatcher}
             />
           ),
         },
@@ -209,6 +216,12 @@ const SupportItem = () => {
 
 const CollapseItem = () => {
   const {isCollapsed, toggleCollapsed} = useContext(NavCollapseContext);
+  const {isMobileScreen} = useContext(LayoutContext).nav;
+
+  // On mobile the nav is an overlay drawer and cannot be collapsed.
+  if (isMobileScreen) {
+    return null;
+  }
 
   return (
     <ShortcutHandler
@@ -233,6 +246,15 @@ const SearchItem = () => {
   const {openSearch, overlay} = useSearchDialog();
   const {isCollapsed} = useContext(NavCollapseContext);
 
+  // On mobile the nav drawer overlays the page, so close it before showing search.
+  const {nav} = useContext(LayoutContext);
+  const onOpenSearch = () => {
+    if (nav.isMobileScreen) {
+      nav.close();
+    }
+    openSearch();
+  };
+
   return (
     <>
       <ShortcutHandler
@@ -240,10 +262,10 @@ const SearchItem = () => {
           return event.code === 'Slash' || (onlyCommandKey(event) && event.code === 'KeyK');
         }}
         shortcutLabel="/ or ⌘K"
-        onShortcut={() => openSearch()}
+        onShortcut={() => onOpenSearch()}
       >
         <Tooltip content="Search" placement="right" canShow={isCollapsed}>
-          <UnstyledButton onClick={() => openSearch()} className={styles.itemButton}>
+          <UnstyledButton onClick={() => onOpenSearch()} className={styles.itemButton}>
             <NavItemContent icon={<Icon name="search" />} label="Search" collapsed={isCollapsed} />
           </UnstyledButton>
         </Tooltip>
@@ -258,15 +280,24 @@ const SettingsItem = () => {
   const {isCollapsed} = useContext(NavCollapseContext);
   const visibleFlags = useVisibleFeatureFlagRows();
 
+  // On mobile the nav drawer overlays the page, so close it before showing settings.
+  const {nav} = useContext(LayoutContext);
+  const onOpen = () => {
+    if (nav.isMobileScreen) {
+      nav.close();
+    }
+    setIsOpen(true);
+  };
+
   return (
     <>
       <ShortcutHandler
         shortcutFilter={(event: KeyboardEvent) => onlyAltKey(event) && event.code === 'KeyU'}
         shortcutLabel="⌥U"
-        onShortcut={() => setIsOpen(true)}
+        onShortcut={() => onOpen()}
       >
         <Tooltip content="Settings" placement="right" canShow={isCollapsed}>
-          <UnstyledButton onClick={() => setIsOpen(true)} className={styles.itemButton}>
+          <UnstyledButton onClick={() => onOpen()} className={styles.itemButton}>
             <NavItemContent
               icon={<Icon name="settings" />}
               label="Settings"

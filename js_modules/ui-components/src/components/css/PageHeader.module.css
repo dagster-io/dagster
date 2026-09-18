@@ -9,3 +9,17 @@
   height: auto;
   min-height: 30px;
 }
+
+/* The right-hand action slot sits beside the title on desktop. At phone width
+   there is no room for both, so it wraps onto its own line instead of being
+   clipped by the viewport edge. Keep the max-width value in sync with
+   MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .titleRow {
+    flex-wrap: wrap;
+  }
+
+  .titleRow > * {
+    min-width: 0;
+  }
+}

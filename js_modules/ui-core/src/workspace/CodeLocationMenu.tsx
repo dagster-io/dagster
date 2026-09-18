@@ -12,12 +12,17 @@ import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useMemo, useState} from 'react';
 import * as yaml from 'yaml';
 
+import {ReloadRepositoryLocationButton} from '../nav/ReloadRepositoryLocationButton';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 
 export const CodeLocationMenu = ({
   locationNode,
+  reloadLocation,
 }: {
   locationNode: WorkspaceRepositoryLocationNode;
+  // When set, a "Reload" item is added to the menu (the phone rows drop the
+  // standalone Reload button, a rare administrative action, to stay compact).
+  reloadLocation?: string;
 }) => {
   const [configIsOpen, setConfigIsOpen] = useState(false);
   const [libsIsOpen, setLibsIsOpen] = useState(false);
@@ -46,6 +51,19 @@ export const CodeLocationMenu = ({
         position="bottom-left"
         content={
           <Menu>
+            {reloadLocation ? (
+              <ReloadRepositoryLocationButton
+                location={reloadLocation}
+                ChildComponent={({tryReload, reloading, hasReloadPermission}) => (
+                  <MenuItem
+                    icon="code_location_reload"
+                    text={reloading ? 'Reloading…' : 'Reload'}
+                    disabled={!hasReloadPermission || reloading}
+                    onClick={() => tryReload()}
+                  />
+                )}
+              />
+            ) : null}
             <MenuItem icon="info" text="View configuration" onClick={() => setConfigIsOpen(true)} />
             {libsMenuItem}
           </Menu>

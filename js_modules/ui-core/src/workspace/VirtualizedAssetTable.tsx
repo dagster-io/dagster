@@ -8,10 +8,14 @@ import {
   VirtualizedAssetRow,
 } from './VirtualizedAssetRow';
 import {buildRepoAddress} from './buildRepoAddress';
+import {LayoutContext} from '../app/LayoutProvider';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
+
+// Keep in sync with the mobile card layout in css/VirtualizedAssetRow.module.css.
+const MOBILE_ROW_HEIGHT = 60;
 
 type Row =
   | {type: 'asset'; path: string[]; displayKey: string; asset: AssetTableFragment}
@@ -26,6 +30,8 @@ interface Props {
   onToggleFactory: (path: string) => (values: {checked: boolean; shiftKey: boolean}) => void;
   onRefresh: () => void;
   showRepoColumn: boolean;
+  // Defaults to true; the phone catalog hides checkboxes until "Select" is on.
+  showCheckboxColumn?: boolean;
   view?: AssetViewType;
   isLoading?: boolean;
   onChangeAssetSelection?: (selection: string) => void;
@@ -40,6 +46,7 @@ export const VirtualizedAssetTable = (props: Props) => {
     onToggleFactory,
     onRefresh,
     showRepoColumn,
+    showCheckboxColumn = true,
     view = 'flat',
     isLoading,
     onChangeAssetSelection,
@@ -63,10 +70,17 @@ export const VirtualizedAssetTable = (props: Props) => {
     });
   }, [prefixPath, groups, isLoading]);
 
+  // The row stacks into a card below MOBILE_BREAKPOINT_PX (see
+  // css/VirtualizedAssetRow.module.css), and its height then depends on the
+  // content — status, kind tags, partition counts, freshness timers. A fixed
+  // height clips whichever asset happens to carry the most metadata, so mobile
+  // measures each row instead.
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 64,
+    estimateSize: () => (isMobileScreen ? MOBILE_ROW_HEIGHT : 64),
     overscan: 5,
   });
 
@@ -116,10 +130,12 @@ export const VirtualizedAssetTable = (props: Props) => {
                 path={row.path}
                 definition={row.type === 'asset' ? row.asset.definition : null}
                 repoAddress={repoAddress()}
-                showCheckboxColumn
+                showCheckboxColumn={showCheckboxColumn}
                 showRepoColumn={showRepoColumn}
-                height={size}
+                height={isMobileScreen ? undefined : size}
                 start={start}
+                measureRef={isMobileScreen ? rowVirtualizer.measureElement : undefined}
+                dataIndex={index}
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
