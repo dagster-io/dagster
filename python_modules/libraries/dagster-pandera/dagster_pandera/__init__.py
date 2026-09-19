@@ -1,25 +1,10 @@
 import itertools
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
+from typing import TYPE_CHECKING, Callable, Union  # noqa: UP035
 
 import pandas as pd
-
-# NOTE: Pandera supports multiple dataframe libraries. Most of the alternatives
-# to pandas implement a pandas-like API wrapper around an underlying library
-# that can handle big data (a weakness of pandas). Typically this means the
-# data is only partly loaded into memory, or is distributed across multiple
-# nodes. Because Dagster types perform runtime validation within a single
-# Python process, it's not clear at present how to interface the more complex
-# validation computations on distributed dataframes with Dagster Types.
-# Therefore, for the time being dagster-pandera only supports pandas dataframes.
-# However, some commented-out scaffolding has been left in place for support of
-# alternatives in the future. These sections are marked with:
-# "TODO: pending alternative dataframe support"
 import pandera as pa
-
-# Currently assume pandas support (prefer pandera.pandas, fallback to main pandera for old versions)
-# TODO: pending alternative dataframe support
 import pandera.pandas as pa_pd
 
 # Try polars support
@@ -53,13 +38,13 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_pandera.version import __version__
 
 # Set up valid classes based on available imports
 if pa_pd and pa_pl and pl:
-    # TODO: pending alternative dataframe support
     VALID_DATAFRAME_CLASSES = (pd.DataFrame, pl.DataFrame)
     VALID_SCHEMA_CLASSES = (pa_pd.DataFrameSchema, pa_pl.DataFrameSchema)
     VALID_SCHEMA_MODEL_CLASSES = (pa_pd.DataFrameModel, pa_pl.DataFrameModel)
@@ -118,6 +103,11 @@ def pandera_schema_to_dagster_type(
     - `num_failures` total number of validation errors.
     - `failure_sample` a table containing up to the first 10 validation errors.
 
+    Only pandera pandas and polars schemas are supported; other pandera backends
+    raise `TypeError`. Polars `LazyFrame` values are rejected at type check time
+    because pandera silently skips value-level checks on LazyFrames. Call
+    `.collect()` before returning.
+
     Args:
         schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]])
 
@@ -130,7 +120,9 @@ def pandera_schema_to_dagster_type(
         or (isinstance(schema, type) and issubclass(schema, VALID_SCHEMA_MODEL_CLASSES))
     ):
         raise TypeError(
-            "schema must be a pandera `DataFrameSchema` or a subclass of a pandera `DataFrameModel`"
+            "schema must be a pandera pandas or polars `DataFrameSchema`, or a "
+            "subclass of a pandera pandas or polars `DataFrameModel`. Only pandas "
+            "and polars are supported."
         )
 
     name = _extract_name_from_pandera_schema(schema)
@@ -149,7 +141,27 @@ def pandera_schema_to_dagster_type(
         metadata={
             "schema": MetadataValue.table_schema(tschema),
         },
-        typing_type=pd.DataFrame,  # TODO: pending alternative dataframe support
+        typing_type=_resolve_typing_type(norm_schema),
+    )
+
+
+_LAZYFRAME_REJECTED_MSG = (
+    "polars `LazyFrame` is not supported. pandera silently skips value-level "
+    "checks on LazyFrames. Call `.collect()` before returning."
+)
+
+
+# Polars-aware IO managers dispatch on DagsterType.typing_type. We use a
+# single class (pl.DataFrame) rather than Union because IO managers like
+# DbIOManager call issubclass() on it, which raises TypeError on Union types.
+def _resolve_typing_type(schema: object) -> type:
+    if isinstance(schema, pa_pd.DataFrameSchema):
+        return pd.DataFrame
+    if pa_pl is not None and pl is not None and isinstance(schema, pa_pl.DataFrameSchema):
+        return pl.DataFrame
+    raise DagsterInvalidDefinitionError(
+        f"Unsupported pandera schema backend for {type(schema).__name__!r}; "
+        "dagster-pandera currently supports pandera.pandas and pandera.polars schemas only."
     )
 
 
@@ -177,10 +189,13 @@ def _pandera_schema_to_type_check_fn(
     table_schema: TableSchema,
 ) -> Callable[[TypeCheckContext, object], TypeCheck]:
     def type_check_fn(_context, value: object) -> TypeCheck:
+        # Reject polars LazyFrame early. pandera silently skips value-level
+        # checks on LazyFrames, so we refuse rather than validate partially.
+        if pl is not None and isinstance(value, pl.LazyFrame):
+            return TypeCheck(success=False, description=_LAZYFRAME_REJECTED_MSG)
         if isinstance(value, VALID_DATAFRAME_CLASSES):
             try:
                 # `lazy` instructs pandera to capture every (not just the first) validation error
-                # TODO: pending alternative dataframe support
                 if isinstance(schema, pa_pd.DataFrameSchema):
                     df = check.inst(value, pd.DataFrame, "Must be a pandas DataFrame.")
                     schema.validate(df, lazy=True)
