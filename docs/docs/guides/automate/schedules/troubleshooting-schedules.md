@@ -67,7 +67,7 @@ If the schedule interval is correctly configured but runs aren't being created, 
 2. Click the **Daemons** tab.
 3. Locate the **Scheduler** row.
 
-The daemon process periodically sends out a hearbeat from the scheduler. If the scheduler daemon has a status of **Not running**, this indicates that there's an issue with your daemon deployment. If the daemon ran into an error that resulted in an exception, this error will often display in this tab.
+The daemon process periodically sends out a heartbeat from the scheduler. If the scheduler daemon has a status of **Not running**, this indicates that there's an issue with your daemon deployment. If the daemon ran into an error that resulted in an exception, this error will often display in this tab.
 
 If there isn't a clear error on this page or if the daemon should be sending heartbeats but isn't, move on to the next step.
 

@@ -18,7 +18,7 @@ When an exception occurs during op execution, Dagster provides tools to retry th
 | <PyObject section="ops" module="dagster" object="RetryRequested" /> | An exception that can be thrown from the body of an op to request a retry     |
 | <PyObject section="ops" module="dagster" object="RetryPolicy"  />   | A declarative policy to attach which will have retries requested on exception |
 | <PyObject section="ops" module="dagster" object="Backoff"  />       | Modification to delay between retries based on attempt number                 |
-| <PyObject section="ops" module="dagster" object="Jitter"  />        | Random modification to delay beween retries                                   |
+| <PyObject section="ops" module="dagster" object="Jitter"  />        | Random modification to delay between retries                                   |
 
 ## Overview
 
