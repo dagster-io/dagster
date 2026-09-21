@@ -1,10 +1,12 @@
 import tempfile
+import textwrap
 from pathlib import Path
 from typing import cast
 
 import dagster as dg
 import pytest
 from dagster import ComponentLoadContext
+from dagster._core.errors import DagsterImportError
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.storage.defs_state.blob_storage_state_storage import UPathDefsStateStorage
@@ -263,3 +265,56 @@ def test_component_tree_snap_with_app_managed_components() -> None:
         fs_leaf = fs_leaves[0]
         assert fs_leaf.full_type_name == typename
         assert fs_leaf.defs_state_key == "SnapTestStateBackedComponent[fs_key]"
+
+
+def test_load_from_defs_folder_root_module_not_importable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    # A project whose package was never installed fails in the deferred @definitions load,
+    # past the file-pointer loader's import-error guidance. The error raised here has to
+    # stand in for that guidance, and must not swallow unrelated import failures.
+    def scaffold(root: Path, pkg_name: str, defs_init: str = "") -> Path:
+        pkg_dir = root / "src" / pkg_name
+        (pkg_dir / "defs").mkdir(parents=True)
+        (pkg_dir / "__init__.py").write_text("", encoding="utf-8")
+        (pkg_dir / "defs" / "__init__.py").write_text(defs_init, encoding="utf-8")
+        (root / "pyproject.toml").write_text(
+            textwrap.dedent(f"""
+                [project]
+                name = "{pkg_name}"
+                version = "0.1.0"
+
+                [tool.dg.project]
+                root_module = "{pkg_name}"
+            """).strip(),
+            encoding="utf-8",
+        )
+        return pkg_dir
+
+    uninstalled = tmp_path / "uninstalled"
+    pkg_dir = scaffold(uninstalled, "uninstalled_pkg")
+
+    with pytest.raises(DagsterImportError) as exc_info:
+        dg.load_from_defs_folder(path_within_project=uninstalled)
+
+    message = str(exc_info.value)
+    assert "uninstalled_pkg" in message
+    assert "not installed" in message
+    assert "pip install -e ." in message
+    # The source is on disk but unimportable, so the error points at the fix that actually
+    # works. `--working-directory` is deliberately not suggested: it only covers the file
+    # import, which has already returned by the time this runs.
+    assert str(pkg_dir) in message
+    assert str(pkg_dir.parent) in message
+    assert "PYTHONPATH" in message
+
+    # An unrelated missing import from inside the defs module is not the project's install
+    # problem, so it must surface unchanged.
+    importable = tmp_path / "importable"
+    scaffold(importable, "importable_pkg", defs_init="import a_module_that_does_not_exist\n")
+    monkeypatch.syspath_prepend(str(importable / "src"))
+
+    with pytest.raises(ModuleNotFoundError) as raw_exc_info:
+        dg.load_from_defs_folder(path_within_project=importable)
+    assert raw_exc_info.value.name == "a_module_that_does_not_exist"
+    assert not isinstance(raw_exc_info.value, DagsterImportError)

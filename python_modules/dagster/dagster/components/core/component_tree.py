@@ -20,7 +20,7 @@ from typing_extensions import Self, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
-from dagster._core.errors import DagsterError
+from dagster._core.errors import DagsterError, DagsterImportError
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree_state import ComponentTreeStateTracker
 from dagster.components.core.context import ComponentDeclLoadContext, ComponentLoadContext
@@ -54,6 +54,31 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=Component)
 TComponent = TypeVar("TComponent", bound=Component)
+
+
+def _root_module_not_importable_error(module_name: str, project_root: Path) -> DagsterImportError:
+    """Actionable error for a project whose root module isn't importable.
+
+    The file-pointer loader's own import-error guidance can't fire here: ``@definitions``
+    defers this import until after that error boundary has exited.
+    """
+    lines = [
+        f"Could not import module `{module_name}` while loading the Dagster project at"
+        f" {project_root}.",
+        "",
+        "This usually means the project package is not installed in the environment Dagster is"
+        f" running in. Install it from {project_root}, for example with `uv sync` or"
+        " `pip install -e .`.",
+    ]
+    for source_dir in (project_root / "src" / module_name, project_root / module_name):
+        if source_dir.is_dir():
+            lines += [
+                "",
+                f"The package source was found at {source_dir} but is not importable. To load the"
+                f" project without installing it, add {source_dir.parent} to PYTHONPATH.",
+            ]
+            break
+    return DagsterImportError("\n".join(lines))
 
 
 @record
@@ -178,7 +203,15 @@ class ComponentTree(IHaveNew):
         )
         defs_module_name = get_canonical_defs_module_name(defs_module_name, root_module_name)
 
-        defs_module = importlib.import_module(defs_module_name)
+        root_module = defs_module_name.split(".")[0]
+        try:
+            defs_module = importlib.import_module(defs_module_name)
+        except ModuleNotFoundError as e:
+            # Only the project's own root module gets the install hint; a missing third-party
+            # import from inside the defs module should surface as-is.
+            if e.name == root_module:
+                raise _root_module_not_importable_error(root_module, project_root) from e
+            raise
 
         code_location_name = project.get("code_location_name") or project_root.name
 
