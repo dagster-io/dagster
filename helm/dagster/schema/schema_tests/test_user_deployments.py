@@ -6,13 +6,16 @@ import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
+from pydantic import ValidationError
 from schema.charts.dagster.subschema.global_ import Global
+from schema.charts.dagster.subschema.service_account import ServiceAccount
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     ReadinessProbeWithEnabled,
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
     UserDeployments,
+    normalize_deployments,
 )
 from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.charts.utils import kubernetes
@@ -1724,3 +1727,247 @@ def test_include_instance(subchart_template: HelmTemplate, include_instance: boo
         )
     else:
         assert "dagster-instance" not in volume_names
+
+
+# ---------------------------------------------------------------------------------------
+# `deployments` dict format
+#
+# `deployments` can be provided either as the original list of objects (each requiring its
+# own `name`) or as a dict keyed by deployment name, where the key becomes each deployment's
+# `name`. The tests below cover the Python-side normalization (`normalize_deployments`), the
+# JSON schema (`name` required for the list form, not required for the dict form, enforced by
+# Helm itself via `values.schema.json`), and the Helm template logic (rendering the dict form
+# through the real `dagster-user-deployments.deployments` helper, including that manifest
+# ordering is stable across renders even though Go map iteration order is randomized).
+# ---------------------------------------------------------------------------------------
+
+
+def test_normalize_deployments_passes_through_list_unchanged():
+    deployments = [create_simple_user_deployment("foo")]
+
+    assert normalize_deployments(deployments) is deployments
+
+
+def test_normalize_deployments_dict_injects_name_from_key():
+    result = normalize_deployments(
+        {
+            "foo": {
+                "image": {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"},
+                "port": 3030,
+            }
+        }
+    )
+
+    assert len(result) == 1
+    assert isinstance(result[0], UserDeployment)
+    assert result[0].name == "foo"
+
+
+def test_normalize_deployments_dict_key_overrides_explicit_name():
+    # The dict key always wins over a `name` given inside the value, matching the Helm
+    # template's `merge (dict "name" $name)` behavior (dst wins on conflict).
+    result = normalize_deployments(
+        {
+            "foo": {
+                "name": "some-other-name",
+                "image": {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"},
+                "port": 3030,
+            }
+        }
+    )
+
+    assert len(result) == 1
+    assert result[0].name == "foo"
+
+
+def test_normalize_deployments_dict_preserves_key_order():
+    result = normalize_deployments(
+        {
+            "zebra": {
+                "image": {"repository": "repo/zebra", "tag": "tag1", "pullPolicy": "Always"},
+                "port": 3030,
+            },
+            "apple": {
+                "image": {"repository": "repo/apple", "tag": "tag1", "pullPolicy": "Always"},
+                "port": 3031,
+            },
+        }
+    )
+
+    assert [deployment.name for deployment in result] == ["zebra", "apple"]
+
+
+def test_user_deployments_accepts_dict_format():
+    """`UserDeployments` (the `dagster-user-deployments` section of the umbrella `dagster`
+    chart) validates and normalizes dict-format `deployments`."""
+    values = UserDeployments(
+        enabled=True,
+        enableSubchart=True,
+        imagePullSecrets=[],
+        deployments={
+            "foo": {
+                "image": {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"},
+                "port": 3030,
+            }
+        },
+    )
+
+    assert isinstance(values.deployments, list)
+    assert len(values.deployments) == 1
+    assert values.deployments[0].name == "foo"
+
+
+def test_user_deployments_array_format_still_requires_name():
+    # The array form has no key to source `name` from, so the Python model (like the JSON
+    # schema) must keep requiring it explicitly, even now that the dict form exists.
+    with pytest.raises(ValidationError):
+        UserDeployments(
+            enabled=True,
+            enableSubchart=True,
+            imagePullSecrets=[],
+            deployments=[
+                {
+                    "image": {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"},
+                    "port": 3030,
+                }
+            ],
+        )
+
+
+def test_dagster_user_deployments_helm_values_accepts_dict_format():
+    """`DagsterUserDeploymentsHelmValues` (the standalone `dagster-user-deployments` subchart's
+    own values, used when it's deployed outside the umbrella `dagster` chart) also has to
+    accept dict-format `deployments` -- it's a separate Pydantic model from `UserDeployments`
+    above, so dict support isn't inherited automatically. Uses the real constructor (not
+    `.construct()`) so the `deployments` field_validator actually runs."""
+    values = DagsterUserDeploymentsHelmValues(
+        dagsterHome="/opt/dagster/dagster_home",
+        postgresqlSecretName="dagster-postgresql-secret",
+        celeryConfigSecretName="dagster-celery-config-secret",
+        includeInstance=False,
+        deployments={
+            "foo": {
+                "image": {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"},
+                "port": 3030,
+            }
+        },
+        imagePullSecrets=[],
+        serviceAccount=ServiceAccount(create=True, name="", annotations={}),
+        **{
+            "global": Global(
+                postgresqlSecretName="",
+                dagsterHome="",
+                serviceAccountName="",
+                celeryConfigSecretName="",
+                dagsterInstanceConfigMap="",
+            )
+        },
+    )
+
+    assert isinstance(values.deployments, list)
+    assert len(values.deployments) == 1
+    assert values.deployments[0].name == "foo"
+
+
+def test_deployments_dict_format_renders_identically_to_array_format(
+    subchart_template: HelmTemplate,
+):
+    """Rendering the same logical deployment as a dict entry (name from the key) or as an
+    array entry (name given explicitly) should produce byte-identical Deployment specs, aside
+    from where `name` came from."""
+    image = {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"}
+
+    array_deployments = subchart_template.render(
+        values_dict={
+            "deployments": [
+                {"name": "foo", "image": image, "dagsterApiGrpcArgs": ["-m", "foo"], "port": 3030}
+            ]
+        }
+    )
+    dict_deployments = subchart_template.render(
+        values_dict={
+            "deployments": {
+                "foo": {"image": image, "dagsterApiGrpcArgs": ["-m", "foo"], "port": 3030}
+            }
+        }
+    )
+
+    # Array format wholesale-replaces the chart's own default `deployments`, but dict format
+    # deep-merges with it (both are maps), so the dict-format render also includes the
+    # chart's default deployment -- select the one we actually care about from each.
+    [array_deployment] = [
+        d for d in array_deployments if d.metadata.name.endswith("-foo")
+    ]
+    [dict_deployment] = [d for d in dict_deployments if d.metadata.name.endswith("-foo")]
+
+    assert array_deployment.metadata.name == dict_deployment.metadata.name
+    assert array_deployment.spec == dict_deployment.spec
+
+    array_checksum = array_deployment.spec.template.metadata.annotations[
+        "checksum/dagster-user-deployment"
+    ]
+    dict_checksum = dict_deployment.spec.template.metadata.annotations[
+        "checksum/dagster-user-deployment"
+    ]
+    assert array_checksum == dict_checksum
+
+
+def test_deployments_dict_format_renders_in_stable_sorted_order(subchart_template: HelmTemplate):
+    """Go map iteration order is randomized, so the Helm template helper must sort dict keys
+    before ranging over them -- otherwise manifest order (and thus rendered output) would
+    change from run to run, causing spurious diffs for GitOps tooling."""
+    image = {"repository": "repo/x", "tag": "tag1", "pullPolicy": "Always"}
+    values_dict = {
+        "deployments": {
+            "zebra": {"image": image, "port": 3030},
+            "apple": {"image": image, "port": 3031},
+            "mango": {"image": image, "port": 3032},
+        }
+    }
+
+    for _ in range(5):
+        deployments = subchart_template.render(values_dict=values_dict)
+        names = [d.metadata.name for d in deployments]
+        assert names == sorted(names)
+
+
+def test_deployments_array_format_missing_name_rejected(subchart_template: HelmTemplate, capfd):
+    # Regression test: array-format `deployments` must still require `name` in
+    # `values.schema.json`. A prior revision of the dict-format support accidentally dropped
+    # `name` from `required` for both the array and dict forms, since they shared one JSON
+    # schema definition.
+    with pytest.raises(subprocess.CalledProcessError):
+        subchart_template.render(
+            values_dict={
+                "deployments": [
+                    {
+                        "image": {
+                            "repository": "repo/foo",
+                            "tag": "tag1",
+                            "pullPolicy": "Always",
+                        },
+                        "port": 3030,
+                    }
+                ]
+            }
+        )
+
+    _, err = capfd.readouterr()
+    assert "missing property 'name'" in err
+
+
+def test_deployments_dict_format_missing_name_accepted(subchart_template: HelmTemplate):
+    # The dict form must NOT require `name` in `values.schema.json`, since it comes from the
+    # dict key rather than the value.
+    deployments = subchart_template.render(
+        values_dict={
+            "deployments": {
+                "foo": {
+                    "image": {"repository": "repo/foo", "tag": "tag1", "pullPolicy": "Always"},
+                    "port": 3030,
+                }
+            }
+        }
+    )
+
+    assert any(d.metadata.name.endswith("-foo") for d in deployments)
