@@ -296,15 +296,9 @@ def test_external_assets_with_dependencies() -> None:
     }
 
 
-def test_create_unexecutable_external_asset_from_heterogeneous_partitions() -> None:
-    """create_unexecutable_external_asset_from_assets_def must succeed for a multi-asset with
-    heterogeneous partitions_defs (e.g. one daily spec and one monthly spec).
-
-    Regression test: previously the heterogeneous-partitions check in AssetsDefinition.__init__
-    required can_subset=True, but unexecutable assets always have node_def=None which requires
-    can_subset=False — making the two constraints mutually exclusive and causing
-    DagsterInvalidDefinitionError. The fix relaxes the heterogeneous-partition check so it only
-    applies to executable assets (those with a node_def).
+def test_heterogeneous_partitions_in_unexecutable_external_asset() -> None:
+    """A multi-asset whose specs have different partitions_defs must survive conversion to an
+    unexecutable external asset, which happens whenever it is an unselected dependency of a job.
     """
     daily = dg.DailyPartitionsDefinition(start_date="2024-01-01")
     monthly = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
@@ -316,12 +310,23 @@ def test_create_unexecutable_external_asset_from_heterogeneous_partitions() -> N
         ],
         can_subset=True,
     )
-    def mixed_partition_assets(context: dg.AssetExecutionContext): ...
+    def mixed_partition_assets(context: AssetExecutionContext):
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
 
     external = create_unexecutable_external_asset_from_assets_def(mixed_partition_assets)
-
     assert not external.is_executable
-    assert dg.AssetKey("daily_asset") in external.keys
-    assert dg.AssetKey("monthly_asset") in external.keys
-    assert external.get_asset_spec(dg.AssetKey("daily_asset")).partitions_def == daily
-    assert external.get_asset_spec(dg.AssetKey("monthly_asset")).partitions_def == monthly
+    assert external.keys == {AssetKey("daily_asset"), AssetKey("monthly_asset")}
+    assert external.get_asset_spec(AssetKey("daily_asset")).partitions_def == daily
+    assert external.get_asset_spec(AssetKey("monthly_asset")).partitions_def == monthly
+
+    # An unpartitioned downstream asset depending on both specs forces the conversion above during
+    # job resolution, which is how this surfaces in practice.
+    @dg.asset(deps=["daily_asset", "monthly_asset"])
+    def downstream() -> None: ...
+
+    defs = Definitions(assets=[mixed_partition_assets, downstream])
+    assert defs.resolve_all_job_defs()
+
+    result = dg.materialize([mixed_partition_assets, downstream], selection=[downstream])
+    assert result.success
