@@ -10,7 +10,6 @@ from typing_extensions import NotRequired, TypedDict
 
 DEFAULT_TIMEOUT_IN_MIN = 35
 
-DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
 SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
 BASE_IMAGE_NAME = "buildkite-test"
@@ -441,32 +440,24 @@ class CommandStepBuilder:
 
         sidecars = []
         if self._requires_docker:
-            # Determine docker image based on queue (GKE vs EKS)
-            queue = self._step.get("agents", {}).get("queue", "")
-            is_gke = "gke" in queue
-            if is_gke:
-                docker_image = "us-central1-docker.pkg.dev/dagster-production/buildkite-images/docker:29.4.3-dind"
-            else:
-                docker_image = "public.ecr.aws/docker/library/docker:29.4.3-dind"
+            docker_image = "public.ecr.aws/docker/library/docker:29.4.3-dind"
 
             # Bump max-concurrent-downloads/uploads from default 3 to 10 to
             # parallelize layer pulls. The dockerd-entrypoint.sh of the
             # docker:dind image execs `dockerd` with whatever args are
             # passed, so these forward through cleanly.
+            #
+            # --registry-mirror routes docker.io pulls through the in-cluster
+            # Docker Hub mirror to avoid Docker Hub 5xx flakes and rate limits.
+            # The mirror is a `registry:2` Deployment in the buildkite-agent
+            # namespace; see infra/k8s/buildkite/overlays/buildkite-eks/
+            # dockerhub-mirror.yaml. dockerd transparently falls back to
+            # registry-1.docker.io if the mirror is unreachable.
             dind_args = [
                 "--max-concurrent-downloads=10",
                 "--max-concurrent-uploads=10",
+                "--registry-mirror=http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000",
             ]
-            if not is_gke:
-                # Route docker.io pulls through the in-cluster Docker Hub
-                # mirror to avoid Docker Hub 5xx flakes and rate limits. The
-                # mirror is a `registry:2` Deployment in the buildkite-agent
-                # namespace; see infra/k8s/buildkite/overlays/buildkite-eks/
-                # dockerhub-mirror.yaml. dockerd transparently falls back to
-                # registry-1.docker.io if the mirror is unreachable.
-                dind_args.append(
-                    "--registry-mirror=http://dockerhub-mirror.buildkite-agent.svc.cluster.local:5000"
-                )
 
             dind_volume_mounts = [
                 {
@@ -657,75 +648,38 @@ class CommandStepBuilder:
         }
 
     def build(self) -> CommandStepConfiguration:
-        assert "agents" in self._step
-        on_k8s = self._step["agents"]["queue"] == BuildkiteQueue.KUBERNETES_EKS
-        # Note: `self._requires_docker` is k8s-only. On non-k8s queues docker is
-        # provided by the host agent regardless of the flag, so we don't gate.
-
-        if not on_k8s and self._k8s_secrets:
-            raise Exception(
-                "Specified a kubernetes secret on a non-kubernetes queue. Please call .on_queue(BuildkiteQueue.KUBERNETES_EKS) if you want to run on k8s"
+        # We take the image that we were going to run in docker and instead
+        # launch it as a pod directly on k8s. To do this we need to patch the
+        # image that buildkite will actually run during the test step to match.
+        # `buildkite-agent bootstrap` (the entrypoint that ends up getting run,
+        # via some volume mounting magic) depends on a BUILDKITE_SHELL variable
+        # to actually execute the specified command (like "terraform fmt -check
+        # -recursive"). Some images require /bin/bash, others don't have it, so
+        # there's some setting munging done in _base_k8s_settings as well.
+        if self._docker_settings:
+            k8s_settings = self._base_k8s_settings()
+            # Propagate concrete env vars set via .with_env({...}) into
+            # the pod's container env. Intentionally do NOT auto-pickup
+            # KEY=value entries from self._docker_settings["environment"]:
+            # that list holds docker-plugin-specific settings like
+            # `DOCKER_CONFIG=/tmp/.docker` (added by with_ecr_passthru())
+            # which have no meaning on k8s and actively break ECR auth
+            # here — EKS pods get ECR auth via the ecr-docker-login
+            # initContainer writing /work/.docker/config.json, not via
+            # DOCKER_CONFIG redirection.
+            container_env = k8s_settings["podSpec"]["containers"][0]["env"]
+            container_env.extend({"name": k, "value": v} for k, v in self._env.items())
+            self._step["plugins"] = [{"kubernetes": k8s_settings}]
+        if self._secrets:
+            # SM_PLUGIN runs as a buildkite-agent bootstrap hook inside
+            # the user container under agent-stack-k8s; exported env vars
+            # are visible to subsequent command hooks. setdefault guards
+            # the unusual case where a step has _secrets without
+            # _docker_settings.
+            self._step.setdefault("plugins", []).append(
+                {SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}}
             )
 
-        if on_k8s:
-            # for k8s we take the image that we were going to run in docker
-            # and instead launch it as a pod directly on k8s. to do this
-            # we need to patch the image that buildkite will actually run
-            # during the test step to match. `buildkite-agent bootstrap` (which
-            # is the entrypoint that ends up getting run (via some volume mounting
-            # magic) depends on a BUILDKITE_SHELL variable to actually execute
-            # the specified command (like "terraform fmt -check -recursive"). some
-            # images require /bin/bash, others don't have it, so there's some setting
-            # munging done below as well.
-            if self._docker_settings:
-                k8s_settings = self._base_k8s_settings()
-                # Propagate concrete env vars set via .with_env({...}) into
-                # the pod's container env. Intentionally do NOT auto-pickup
-                # KEY=value entries from self._docker_settings["environment"]:
-                # that list holds docker-plugin-specific settings like
-                # `DOCKER_CONFIG=/tmp/.docker` (added by with_ecr_passthru())
-                # which have no meaning on k8s and actively break ECR auth
-                # here — EKS pods get ECR auth via the ecr-docker-login
-                # initContainer writing /work/.docker/config.json, not via
-                # DOCKER_CONFIG redirection.
-                container_env = k8s_settings["podSpec"]["containers"][0]["env"]
-                container_env.extend({"name": k, "value": v} for k, v in self._env.items())
-                self._step["plugins"] = [{"kubernetes": k8s_settings}]
-            if self._secrets:
-                # SM_PLUGIN runs as a buildkite-agent bootstrap hook inside
-                # the user container under agent-stack-k8s; exported env vars
-                # are visible to subsequent command hooks. setdefault guards
-                # the unusual case where a step has _secrets without
-                # _docker_settings.
-                self._step.setdefault("plugins", []).append(
-                    {SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}}
-                )
-
-            return self._step
-
-        # adding SM and DOCKER plugin in build allows secrets to be passed to docker envs
-        assert "plugins" in self._step
-        self._step["plugins"].append({SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}})
-        if self._docker_settings:
-            env_list = self._docker_settings.setdefault("environment", [])
-            for secret in self._secrets.keys():
-                env_list.append(secret)
-            for k, v in self._env.items():
-                env_list.append(f"{k}={v}")
-
-            # we need to dedup the env vars to make sure that the ones we set
-            # aren't overridden by the ones that are already set in the parent env
-            # the last one wins. Use split("=", 1) so values containing "="
-            # (e.g. JSON, query strings) don't blow up the unpacking.
-            envvar_map = {}
-            for ev in env_list:
-                k, v = ev.split("=", 1) if "=" in ev else (ev, None)
-                envvar_map[k] = v
-            self._docker_settings["environment"] = [
-                f"{k}={v}" if v is not None else k for k, v in envvar_map.items()
-            ]
-            assert "plugins" in self._step
-            self._step["plugins"].append({DOCKER_PLUGIN: self._docker_settings})
         return self._step
 
 
