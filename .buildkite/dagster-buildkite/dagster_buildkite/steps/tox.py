@@ -6,7 +6,6 @@ from pathlib import Path
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
     CommandStepConfiguration,
     ResourceRequests,
 )
@@ -35,7 +34,6 @@ def build_tox_step(
     env: list[str] | None = None,
     depends_on: list[str] | Sequence[str] | None = None,
     timeout_in_minutes: int | None = None,
-    queue: BuildkiteQueue | None = None,
     skip_reason: str | None = None,
     pytest_args: list[str] | None = None,
     concurrency: int | None = None,
@@ -67,7 +65,6 @@ def build_tox_step(
         with_docker=True,
         image="test",
         python_version=resolved_python_version,
-        queue=queue,
         depends_on=depends_on,
         skip_reason=skip_reason,
         pytest_args=pytest_args,

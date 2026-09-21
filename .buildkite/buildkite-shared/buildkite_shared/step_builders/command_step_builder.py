@@ -1,6 +1,5 @@
 import os
 from collections.abc import Callable, Mapping, Sequence
-from enum import StrEnum
 from typing import Any, Self
 
 from buildkite_shared.python_version import AvailablePythonVersion
@@ -12,6 +11,7 @@ DEFAULT_TIMEOUT_IN_MIN = 35
 
 ECR_PLUGIN = "ecr#v2.7.0"
 SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
+KUBERNETES_EKS_QUEUE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
 BASE_IMAGE_NAME = "buildkite-test"
 BASE_IMAGE_TAG = "2026-05-04T142331"
 BUILDKITE_TEST_IMAGE_PY_SLIM = "buildkite-test-image-py-slim:prod-1777949196"
@@ -72,14 +72,6 @@ class ResourceRequests:
         # ephemeral_storage, which must be sized to cover it plus the agent's
         # checkout / build artifacts.
         return self._docker_storage_size
-
-
-class BuildkiteQueue(StrEnum):
-    KUBERNETES_EKS = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
-
-    @classmethod
-    def contains(cls, value: str) -> bool:
-        return isinstance(value, cls)
 
 
 class CommandStepConfiguration(TypedDict, closed=True):
@@ -168,7 +160,7 @@ class CommandStepBuilder:
             ]
 
         self._step = {
-            "agents": {"queue": BuildkiteQueue.KUBERNETES_EKS.value},
+            "agents": {"queue": KUBERNETES_EKS_QUEUE},
             "key": key,
             "label": make_label(key, label_emojis),
             "timeout_in_minutes": timeout_in_minutes,
@@ -305,10 +297,6 @@ class CommandStepBuilder:
     def with_timeout(self, num_minutes: int | None) -> Self:
         if num_minutes is not None:
             self._step["timeout_in_minutes"] = num_minutes
-        return self
-
-    def on_queue(self, queue: BuildkiteQueue) -> Self:
-        self._step["agents"]["queue"] = queue.value
         return self
 
     def with_kubernetes_secret(self, secret: str) -> Self:

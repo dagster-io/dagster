@@ -6,7 +6,7 @@ from pathlib import Path
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.packages import PackageSpec, build_steps_from_package_specs
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
+from buildkite_shared.step_builders.command_step_builder import ResourceRequests
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.tox import ToxFactor
 from buildkite_shared.utils import (
@@ -286,7 +286,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # snippets in all python versions since we are testing the core code exercised by the
             # snippets against all supported python versions.
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             pytest_tox_factors=[
                 ToxFactor("all"),
                 ToxFactor("integrations"),
@@ -388,7 +387,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("examples/airlift-federation-tutorial"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             # Two airflow standalone stacks + dagster share one pod. 2 vCPU starved
             # the SQLite writers under load (scheduler died with "database is
             # locked", failing test_load_metrics); 4 vCPU matches the old c5.xlarge
@@ -451,15 +449,12 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
 
 def tox_factors_for_folder(
     tests_folder_name: str,
-    queue_overrides: Mapping[str, BuildkiteQueue] | None = None,
     resources_overrides: Mapping[str, ResourceRequests] | None = None,
 ) -> list[ToxFactor]:
-    queues = queue_overrides or {}
     resources = resources_overrides or {}
     return [
         ToxFactor(
             f"{tests_folder_name}__{subfolder_name}",
-            queue=queues.get(subfolder_name),
             resources=resources.get(subfolder_name),
         )
         for subfolder_name in test_subfolders(tests_folder_name)
@@ -921,7 +916,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse"),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -930,7 +924,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -939,7 +932,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-polars"),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -1104,7 +1096,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             # One airflow standalone stack + dagster per split carries the same
             # SQLite-lock risk as the federation tutorial, so match its 4 vCPU
             # sizing (#24950).

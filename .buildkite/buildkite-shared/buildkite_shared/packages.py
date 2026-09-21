@@ -8,11 +8,7 @@ from typing import TypeAlias, cast
 
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
-    ResourceRequests,
-    StepBuilderMutator,
-)
+from buildkite_shared.step_builders.command_step_builder import ResourceRequests, StepBuilderMutator
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
@@ -184,7 +180,6 @@ class PackageSpec:
 
     # Per-step config
     timeout_in_minutes: int | None = None
-    queue: BuildkiteQueue | None = None
     resources: ResourceRequests | None = None
     concurrency: int | None = None
     concurrency_group: str | None = None
@@ -455,7 +450,6 @@ class PackageSpec:
                     image=resolved_image,
                     python_version=py_version if resolved_image == "test" else None,
                     ecr_account_ids=self.ecr_account_ids,
-                    queue=(factor.queue if factor and factor.queue else self.queue),
                     depends_on=dependencies,
                     skip_reason=skip_reason,
                     pytest_args=pytest_args,
@@ -550,7 +544,6 @@ class PackageSpec:
                 image=resolved_image,
                 python_version=py_version if resolved_image == "test" else None,
                 ecr_account_ids=self.ecr_account_ids,
-                queue=(factor.queue if factor and factor.queue else self.queue),
                 depends_on=dependencies,
                 skip_reason=skip_reason,
                 pytest_args=pytest_args,

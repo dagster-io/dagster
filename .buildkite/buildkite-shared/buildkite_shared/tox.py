@@ -5,7 +5,6 @@ from typing import Literal
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
     CommandStepBuilder,
     CommandStepConfiguration,
     ResourceRequests,
@@ -33,7 +32,6 @@ class ToxFactor:
     concurrency_group: str | None = None
     pytest_args: list[str] | None = None
     label_suffix: str | None = None
-    queue: BuildkiteQueue | None = None
     resources: ResourceRequests | None = None
     soft_fail: bool = False
     # Overrides the PackageSpec-level image when set. Useful for packages that
@@ -64,7 +62,6 @@ def build_tox_step(
     image: ToxImage = "test",
     python_version: AvailablePythonVersion | None = None,
     ecr_account_ids: list[str | None] | None = None,
-    queue: BuildkiteQueue | None = None,
     depends_on: str | Sequence[str] | None = None,
     skip_reason: str | None = None,
     pytest_args: list[str] | None = None,
@@ -142,8 +139,6 @@ def build_tox_step(
     builder.depends_on(depends_on)
     builder.skip(skip_reason)
 
-    if queue is not None:
-        builder.on_queue(queue)
     if resources is not None:
         builder.resources(resources)
     if with_docker:
