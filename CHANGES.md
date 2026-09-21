@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.13.24 (core) / 0.29.24 (libraries)
+
+### New
+
+- Loading a project whose root module is not importable now raises an error explaining that the project package is likely not installed, instead of a bare `ModuleNotFoundError`.
+- [dagster-cloud] The ECS agent now supports cross-account service discovery. When the Cloud Map namespace lives in a different AWS account from the agent, the agent registers code server tasks in Cloud Map directly and reconciles them on an interval, configurable with the new `service_discovery_reconcile_interval` option (default 300 seconds). Same-account deployments are unchanged.
+- [dagster-dbt] `fetch_column_metadata()` now emits column lineage for dbt snapshots on dbt 1.12 and later, and no longer logs a warning and traceback for them on earlier versions.
+
+### Bugfixes
+
+- Fixed a bug where a job that included a `@multi_asset` with `can_subset=True` and specs using different partitions definitions failed to resolve with `DagsterInvalidDefinitionError` when one of its unselected dependencies was converted to an external asset. (Thanks, [@Terroface](https://github.com/Terroface)!)
+- Fixed `--use-ssl` being silently ignored when connecting to a gRPC code server via `--grpc-port` or `--grpc-socket`, which caused an insecure channel to be used. Also fixed `dagster dev --use-legacy-code-server-behavior` silently dropping `--package-name` and `--autoload-defs-module-name` when launching the webserver and daemon.
+- Fixed a bug where a callable object with a custom `__signature__` had its type hints read from `__call__` instead, causing resource parameters to be misinterpreted as asset inputs or dropped from a sensor's required resources.
+- [ui] Fixed an issue where asset health and other live data could remain stale after a failed refresh until the page was reloaded.
+- [dagster-airflow] Fixed a bug where every Airflow task log line was written twice to the compute logs on Airflow 2.9 and later.
+- [dagster-dbt] Fixed an `AttributeError` raised when a `DbtProject`'s `project_dir` was a string rather than a `Path`, which could happen after the project was round-tripped through Dagster metadata.
+- [dagster-dbt] Fixed the type annotation of `build_schedule_from_dbt_selection` so that non-string `tags` values, which already worked at runtime, no longer fail type checking, matching `define_asset_job`.
+- [dagster-k8s] Fixed a bug where a Dagster Pipes Kubernetes run whose pod had a failing init container would hang until the wait timed out (a day by default) instead of failing with the init container's error.
+
+### Documentation
+
+- Added a guide on code-backed and UI-managed alert policies in Dagster+.
+- Added documentation for owner-scoped RBAC in Dagster+.
+- Added a page on asset groups and nested groups, and corrected the asset selection syntax reference to note that wildcard matching is not limited to the `key` filter.
+
 ## 1.13.23 (core) / 0.29.23 (libraries)
 
 ### New
