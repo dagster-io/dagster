@@ -9,7 +9,6 @@ from typing_extensions import NotRequired, TypedDict
 
 DEFAULT_TIMEOUT_IN_MIN = 35
 
-ECR_PLUGIN = "ecr#v2.7.0"
 SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
 KUBERNETES_EKS_QUEUE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
 BASE_IMAGE_NAME = "buildkite-test"
@@ -194,14 +193,11 @@ class CommandStepBuilder:
         self._image_settings = {"image": f"{account_id}.dkr.ecr.{region}.amazonaws.com/{image}"}
         return self
 
-    def on_specific_image(
-        self, image: str, extra_docker_plugin_args: dict[str, object] = {}
-    ) -> Self:
-        settings = {"image": image, **extra_docker_plugin_args}
+    def on_specific_image(self, image: str) -> Self:
         if self._image_settings:
-            self._image_settings.update(settings)
+            self._image_settings["image"] = image
         else:
-            self._image_settings = settings
+            self._image_settings = {"image": image}
         return self
 
     def on_test_image(
@@ -211,7 +207,7 @@ class CommandStepBuilder:
     ) -> Self:
         return self.on_python_image(
             image=f"buildkite-test:py{ver}-{image_version}",
-        ).with_ecr_login()
+        )
 
     def on_integration_slim_image(self) -> Self:
         return self.on_python_image(image=BUILDKITE_TEST_IMAGE_PY_SLIM)
@@ -221,25 +217,10 @@ class CommandStepBuilder:
         ver: str = AvailablePythonVersion.get_cloud().value,
         image_name: str = BASE_IMAGE_NAME,
         image_version: str = BASE_IMAGE_TAG,
-        ecr_account_ids: list[str | None] = [AWS_ACCOUNT_ID],
     ) -> Self:
         return self.on_python_image(
             image=f"{image_name}:py{ver}-{image_version}",
-        ).with_ecr_login(ecr_account_ids)
-
-    def with_ecr_login(self, ecr_account_ids: list[str | None] = [AWS_ACCOUNT_ID]) -> Self:
-        assert "plugins" in self._step
-        self._step["plugins"].append(
-            {
-                ECR_PLUGIN: {
-                    "login": True,
-                    "no-include-email": True,
-                    "account_ids": ecr_account_ids,
-                    "region": "us-west-2",
-                }
-            }
         )
-        return self
 
     def with_artifact_paths(self, *paths: str) -> Self:
         if "artifact_paths" not in self._step:
@@ -556,6 +537,10 @@ class CommandStepBuilder:
             # pod's container env.
             container_env = k8s_settings["podSpec"]["containers"][0]["env"]
             container_env.extend({"name": k, "value": v} for k, v in self._env.items())
+            # Note: this REPLACES the plugin list rather than appending, so any
+            # plugin added before build() is discarded. Steps that pass a
+            # ready-made `kubernetes` plugin to the constructor and never call
+            # an `on_*_image` method keep theirs, because this branch is skipped.
             self._step["plugins"] = [{"kubernetes": k8s_settings}]
         if self._secrets:
             # SM_PLUGIN runs as a buildkite-agent bootstrap hook inside

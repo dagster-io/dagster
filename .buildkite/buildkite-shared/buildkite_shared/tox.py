@@ -60,7 +60,6 @@ def build_tox_step(
     extra_commands_post: list[str] | None = None,
     image: ToxImage = "test",
     python_version: AvailablePythonVersion | None = None,
-    ecr_account_ids: list[str | None] | None = None,
     depends_on: str | Sequence[str] | None = None,
     skip_reason: str | None = None,
     pytest_args: list[str] | None = None,
@@ -80,7 +79,7 @@ def build_tox_step(
 
     image controls which CommandStepBuilder image method is invoked:
       - "test":             .on_test_image(python_version.value)
-      - "integration":      .on_integration_image(ecr_account_ids=ecr_account_ids)
+      - "integration":      .on_integration_image()
       - "integration_slim": .on_integration_slim_image()
 
     command_wrapper, if provided, wraps the rendered `tox ...` command string before it
@@ -127,8 +126,6 @@ def build_tox_step(
         builder.on_test_image(resolved_version.value)
     elif image == "integration":
         integration_kwargs: dict[str, object] = {}
-        if ecr_account_ids is not None:
-            integration_kwargs["ecr_account_ids"] = ecr_account_ids
         builder.on_integration_image(**integration_kwargs)  # type: ignore[arg-type]
     elif image == "integration_slim":
         builder.on_integration_slim_image()

@@ -140,7 +140,7 @@ class PackageSpec:
 
     Image selection:
       * `image="test"` (default): `.on_test_image(python_version)`.
-      * `image="integration"`: `.on_integration_image(ecr_account_ids=ecr_account_ids)`.
+      * `image="integration"`: `.on_integration_image()`.
       * `image="integration_slim"`: `.on_integration_slim_image()`.
 
     Group wrapping: `is_group=None` (default) wraps in a GroupStep only when
@@ -202,7 +202,6 @@ class PackageSpec:
     # Image / docker
     image: ToxImage = "test"
     with_docker: bool = True
-    ecr_account_ids: list[str | None] | None = None
 
     # Group wrapping
     is_group: bool | None = None
@@ -446,7 +445,6 @@ class PackageSpec:
                     extra_commands_post_cd=extra_post_cd,
                     image=resolved_image,
                     python_version=py_version if resolved_image == "test" else None,
-                    ecr_account_ids=self.ecr_account_ids,
                     depends_on=dependencies,
                     skip_reason=skip_reason,
                     pytest_args=pytest_args,
@@ -538,7 +536,6 @@ class PackageSpec:
                 extra_commands_post_cd=extra_post_cd,
                 image=resolved_image,
                 python_version=py_version if resolved_image == "test" else None,
-                ecr_account_ids=self.ecr_account_ids,
                 depends_on=dependencies,
                 skip_reason=skip_reason,
                 pytest_args=pytest_args,

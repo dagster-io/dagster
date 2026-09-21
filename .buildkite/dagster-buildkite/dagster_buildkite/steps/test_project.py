@@ -70,7 +70,6 @@ def build_test_project_steps() -> list[GroupStepConfiguration]:
         .on_python_image(
             image=f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
         )
-        .with_ecr_login()
         .with_docker()  # build.sh runs `docker build`; final step `docker push`
         .build()
         for version in py_versions
