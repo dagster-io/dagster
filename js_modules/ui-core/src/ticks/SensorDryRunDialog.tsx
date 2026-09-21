@@ -4,29 +4,32 @@ import {
   ButtonLink,
   Colors,
   Dialog,
-  DialogBody,
   DialogFooter,
+  Heading,
   Icon,
+  ListItem,
+  MiddleTruncate,
   NonIdealState,
   Spinner,
-  Subheading,
   Tag,
   TextInput,
   Tooltip,
   showToast,
 } from '@dagster-io/ui-components';
-import {useCallback, useMemo, useState} from 'react';
-import styled from 'styled-components';
+import {ReactNode, useCallback, useMemo, useState} from 'react';
+import {Link} from 'react-router-dom';
 
-import {RunRequestTable} from './DryRunRequestTable';
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
 import {RUN_REQUEST_FRAGMENT} from './RunRequestFragment';
 import {gql, useMutation} from '../apollo-client';
+import styles from './css/SensorDryRunDialog.module.css';
+import {RunRequestFragment} from './types/RunRequestFragment.types';
 import {
   SensorDryRunMutation,
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
@@ -44,14 +47,17 @@ import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from '../partitions/types/CreatePartitionDialog.types';
+import {RunConfigDialog} from '../runs/RunConfigDialog';
 import {SET_CURSOR_MUTATION} from '../sensors/EditCursorDialog';
 import {
   SetSensorCursorMutation,
   SetSensorCursorMutationVariables,
 } from '../sensors/types/EditCursorDialog.types';
 import {testId} from '../testing/testId';
+import {CopyIconButton} from '../ui/CopyButton';
 import {buildExecutionParamsListSensor} from '../util/buildExecutionParamsList';
 import {RepoAddress} from '../workspace/types';
+import {workspacePipelinePath} from '../workspace/workspacePath';
 
 export type SensorDryRunInstigationTick = Extract<
   SensorDryRunMutation['sensorDryRun'],
@@ -73,7 +79,7 @@ export const SensorDryRunDialog = (props: Props) => {
     <Dialog
       isOpen={isOpen}
       onClose={onClose}
-      style={{width: '70vw', display: 'flex'}}
+      style={{width: '70vw', minWidth: 500, maxWidth: 900, display: 'flex'}}
       icon="preview_tick"
       title={`Preview tick result for ${name}`}
     >
@@ -84,6 +90,11 @@ export const SensorDryRunDialog = (props: Props) => {
 
 const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
   const trackEvent = useTrackEvent();
+
+  const {
+    permissions: {canEditDynamicPartitions},
+    disabledReasons: {canEditDynamicPartitions: canEditDynamicPartitionsDisabledReason},
+  } = usePermissionsForLocation(repoAddress.location);
 
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
@@ -147,6 +158,11 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           title: 'Sensor not found',
           body: `Could not find a sensor named: ${name}`,
         });
+      } else if (data?.__typename === 'UnauthorizedError') {
+        showCustomAlert({
+          title: 'Unauthorized',
+          body: 'You do not have permission to dry run this sensor.',
+        });
       } else {
         setError(data);
       }
@@ -159,6 +175,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const onCommitTickResult = useCallback(async () => {
     const cursor = sensorExecutionData?.evaluationResult?.cursor;
     if (!cursor) {
+      showToast({message: 'Tick result committed', intent: 'success'});
+      onClose();
       return;
     }
     const {data} = await setCursorMutation({
@@ -166,6 +184,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
       showToast({message: 'Cursor value updated', intent: 'success'});
+      onClose();
     } else if (data?.setSensorCursor) {
       const error = data.setSensorCursor;
       showToast({
@@ -194,7 +213,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         ),
       });
     }
-  }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation]);
+  }, [sensorExecutionData?.evaluationResult?.cursor, sensorSelector, setCursorMutation, onClose]);
 
   const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
 
@@ -210,17 +229,29 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       return;
     }
 
+    if (dynamicPartitionRequests?.length && !canEditDynamicPartitions) {
+      showCustomAlert({
+        title: 'Insufficient permissions',
+        body:
+          canEditDynamicPartitionsDisabledReason ||
+          'You do not have permission to create or delete dynamic partitions for this code location.',
+      });
+      return;
+    }
+
     trackEvent('launch-all-sensor');
     setLaunching(true);
 
     try {
       if (dynamicPartitionRequests?.length) {
+        const partitionErrors: Array<{title: string; body: ReactNode}> = [];
+
         await Promise.all(
           dynamicPartitionRequests.map(async (request) => {
             if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
               await Promise.all(
                 (request.partitionKeys || []).map(async (partitionKey) => {
-                  await createPartition({
+                  const result = await createPartition({
                     variables: {
                       repositorySelector: {
                         repositoryName: repoAddress.name,
@@ -230,10 +261,31 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                       partitionKey,
                     },
                   });
+                  const data = result.data?.addDynamicPartition;
+                  switch (data?.__typename) {
+                    case 'AddDynamicPartitionSuccess':
+                    // matches the daemon, which skips partitions that already exist
+                    case 'DuplicateDynamicPartitionError':
+                      return;
+                    case 'UnauthorizedError':
+                      partitionErrors.push({
+                        title: 'Insufficient permissions',
+                        body:
+                          data.message ??
+                          'You do not have permission to create dynamic partitions.',
+                      });
+                      return;
+                    case 'PythonError':
+                      partitionErrors.push({
+                        title: 'Could not add partition',
+                        body: <PythonErrorInfo error={data} />,
+                      });
+                      return;
+                  }
                 }),
               );
             } else if (request.partitionKeys && request.partitionKeys.length) {
-              await deletePartition({
+              const result = await deletePartition({
                 variables: {
                   repositorySelector: {
                     repositoryName: repoAddress.name,
@@ -243,9 +295,34 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                   partitionKeys: request.partitionKeys,
                 },
               });
+              const data = result.data?.deleteDynamicPartitions;
+              switch (data?.__typename) {
+                case 'DeleteDynamicPartitionsSuccess':
+                  return;
+                case 'UnauthorizedError':
+                  partitionErrors.push({
+                    title: 'Insufficient permissions',
+                    body:
+                      data.message ?? 'You do not have permission to delete dynamic partitions.',
+                  });
+                  return;
+                case 'PythonError':
+                  partitionErrors.push({
+                    title: 'Could not delete partitions',
+                    body: <PythonErrorInfo error={data} />,
+                  });
+                  return;
+              }
             }
           }),
         );
+
+        const firstPartitionError = partitionErrors[0];
+        if (firstPartitionError) {
+          showCustomAlert({title: firstPartitionError.title, body: firstPartitionError.body});
+          setLaunching(false);
+          return;
+        }
       }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
@@ -259,6 +336,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     onClose();
   }, [
     canApply,
+    canEditDynamicPartitions,
+    canEditDynamicPartitionsDisabledReason,
     createPartition,
     deletePartition,
     dynamicPartitionRequests,
@@ -301,7 +380,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
-      const didSkip = !error && numRunRequests === 0;
+      const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
+      const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
 
       if (error) {
         return (
@@ -375,12 +455,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     canApply,
     onApply,
     submitTest,
+    dynamicPartitionRequests?.length,
   ]);
 
   const content = useMemo(() => {
     if (launching) {
       return (
-        <Box flex={{direction: 'row', gap: 8, justifyContent: 'center', alignItems: 'center'}}>
+        <Box
+          padding={{vertical: 16, horizontal: 20}}
+          flex={{direction: 'row', gap: 8, justifyContent: 'center', alignItems: 'center'}}
+        >
           <Spinner purpose="body-text" />
           <div>Launching runs</div>
         </Box>
@@ -389,109 +473,118 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     if (sensorExecutionData || error) {
       const runRequests = sensorExecutionData?.evaluationResult?.runRequests;
       const numRunRequests = runRequests?.length || 0;
-      const didSkip = !error && numRunRequests === 0;
       const dynamicPartitionRequests =
         sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
+      const hasDynamicPartitionRequests = (dynamicPartitionRequests?.length || 0) > 0;
+      const didSkip = !error && numRunRequests === 0 && !hasDynamicPartitionRequests;
       return (
-        <Box flex={{direction: 'column', gap: 8}}>
-          <Grid>
-            <div>
-              <Subheading>Result</Subheading>
-              <Box flex={{grow: 1, alignItems: 'center'}}>
-                <div>
-                  {error ? (
-                    <Tag intent="danger">Failed</Tag>
-                  ) : numRunRequests ? (
-                    <Tag intent="success">{numRunRequests} run requests</Tag>
-                  ) : (
-                    <Tag intent="warning">Skipped</Tag>
-                  )}
-                </div>
-              </Box>
-            </div>
-            <div>
-              <Subheading>Used cursor value</Subheading>
-              <pre>{cursor?.length ? cursor : 'None'}</pre>
-            </div>
-          </Grid>
-          <Box>
-            {error ? (
+        <Box flex={{direction: 'column'}}>
+          <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 12}}>
+            <Box flex={{direction: 'column', gap: 4}}>
+              <label className={styles.summaryLabel}>Result</label>
               <div>
-                <PythonErrorInfo error={error} />
+                {error ? (
+                  <Tag intent="danger">Failed</Tag>
+                ) : numRunRequests || hasDynamicPartitionRequests ? (
+                  <Tag intent="success">
+                    {[
+                      numRunRequests
+                        ? `${numRunRequests} run ${numRunRequests === 1 ? 'request' : 'requests'}`
+                        : null,
+                      hasDynamicPartitionRequests ? 'dynamic partition requests' : null,
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </Tag>
+                ) : (
+                  <Tag intent="warning">Skipped</Tag>
+                )}
               </div>
-            ) : null}
-            {didSkip ? (
-              <Box flex={{direction: 'column', gap: 8}}>
-                <Subheading style={{marginBottom: 8}}>Requested runs (0)</Subheading>
-                <div>
-                  <SkipReasonNonIdealStateWrapper>
-                    <NonIdealState
-                      icon="missing"
-                      title="No runs requested"
-                      description={
-                        <>
-                          <span>
-                            The sensor function was successfully evaluated but didn&apos;t return
-                            any run requests.
-                          </span>
-                          <span>
-                            <br />
-                            Skip reason:{' '}
-                            {sensorExecutionData?.evaluationResult?.skipReason
-                              ? `"${sensorExecutionData.evaluationResult.skipReason}"`
-                              : 'No skip reason was output'}
-                          </span>
-                        </>
-                      }
-                    />
-                  </SkipReasonNonIdealStateWrapper>
-                </div>
-              </Box>
-            ) : null}
-            {numRunRequests && runRequests ? (
-              <Box flex={{direction: 'column', gap: 8}}>
-                <Subheading>Requested runs ({numRunRequests})</Subheading>
-                <RunRequestTable
-                  runRequests={runRequests}
-                  name={name}
-                  jobName={jobName}
-                  isJob={true}
-                  repoAddress={repoAddress}
-                />
-              </Box>
-            ) : null}
-            {dynamicPartitionRequests?.length ? (
-              <div style={{marginTop: '24px'}}>
-                <DynamicPartitionRequests requests={dynamicPartitionRequests} />
-              </div>
-            ) : null}
+            </Box>
+            <Box flex={{direction: 'column', gap: 4}}>
+              <label className={styles.summaryLabel}>Used cursor value</label>
+              {cursor?.length ? <CursorValueBlock value={cursor} /> : <span>None</span>}
+            </Box>
+            <Box flex={{direction: 'column', gap: 4}}>
+              <label className={styles.summaryLabel}>Computed cursor value</label>
+              {sensorExecutionData?.evaluationResult?.cursor?.length ? (
+                <CursorValueBlock value={sensorExecutionData.evaluationResult.cursor} />
+              ) : (
+                <span>{error ? 'Error' : 'None'}</span>
+              )}
+            </Box>
           </Box>
-
-          <ComputedCursorGrid>
-            <Subheading>Computed cursor value</Subheading>
-            <pre>
-              {sensorExecutionData?.evaluationResult?.cursor?.length
-                ? sensorExecutionData?.evaluationResult.cursor
-                : error
-                  ? 'Error'
-                  : 'None'}
-            </pre>
-          </ComputedCursorGrid>
+          {error ? (
+            <Box padding={{horizontal: 20, bottom: 16}}>
+              <PythonErrorInfo error={error} />
+            </Box>
+          ) : null}
+          {didSkip ? (
+            <Box padding={{horizontal: 20, bottom: 16}} flex={{direction: 'column', gap: 8}}>
+              <Heading size={14} weight={600} style={{marginBottom: 8}}>
+                Requested runs (0)
+              </Heading>
+              <NonIdealState
+                icon="missing"
+                title="No runs requested"
+                description={
+                  <>
+                    <span>
+                      The sensor function was successfully evaluated but didn&apos;t return any run
+                      requests.
+                    </span>
+                    <span>
+                      <br />
+                      Skip reason:{' '}
+                      {sensorExecutionData?.evaluationResult?.skipReason
+                        ? `"${sensorExecutionData.evaluationResult.skipReason}"`
+                        : 'No skip reason was output'}
+                    </span>
+                  </>
+                }
+              />
+            </Box>
+          ) : null}
+          {numRunRequests && runRequests ? (
+            <Box flex={{direction: 'column'}}>
+              <Box padding={{horizontal: 20, bottom: 12}} border="bottom">
+                <Heading size={14} weight={600}>
+                  Requested runs ({numRunRequests})
+                </Heading>
+              </Box>
+              <RunRequestList
+                runRequests={runRequests}
+                jobName={jobName}
+                repoAddress={repoAddress}
+              />
+            </Box>
+          ) : null}
+          {dynamicPartitionRequests?.length ? (
+            <Box padding={{horizontal: 20, top: 16}}>
+              <DynamicPartitionRequests requests={dynamicPartitionRequests} />
+            </Box>
+          ) : null}
         </Box>
       );
     }
     if (submitting) {
       return (
-        <Box flex={{direction: 'row', gap: 8, justifyContent: 'center', alignItems: 'center'}}>
+        <Box
+          padding={{vertical: 16, horizontal: 20}}
+          flex={{direction: 'row', gap: 8, justifyContent: 'center', alignItems: 'center'}}
+        >
           <Spinner purpose="body-text" />
           <div>Evaluating sensor</div>
         </Box>
       );
     } else {
       return (
-        <Box flex={{direction: 'column', gap: 8}}>
-          <div>Cursor value (optional)</div>
+        <Box padding={{vertical: 16, horizontal: 20}} flex={{direction: 'column', gap: 8}}>
+          <label className={styles.summaryLabel} htmlFor="cursor-input">
+            Cursor value (optional)
+          </label>
           <TextInput
+            id="cursor-input"
             value={cursor}
             onChange={(e) => setCursor(e.target.value)}
             data-testid={testId('cursor-input')}
@@ -511,13 +604,11 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         </Box>
       );
     }
-  }, [sensorExecutionData, error, submitting, launching, name, jobName, repoAddress, cursor]);
+  }, [sensorExecutionData, error, submitting, launching, jobName, repoAddress, cursor]);
 
   return (
     <>
-      <DialogBody>
-        <div style={{minHeight: '300px'}}>{content}</div>
-      </DialogBody>
+      <div className={styles.dialogContent}>{content}</div>
       <DialogFooter topBorder left={leftButtons}>
         {rightButtons}
       </DialogFooter>
@@ -558,43 +649,71 @@ export const EVALUATE_SENSOR_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const Grid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  padding-bottom: 12px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  ${Subheading} {
-    padding-bottom: 4px;
-    display: block;
-  }
-  pre {
-    margin: 0;
-  }
-  button {
-    margin-top: 4px;
-  }
-`;
+const CursorValueBlock = ({value}: {value: string}) => (
+  <div className={styles.cursorValueWrapper}>
+    <pre>{value}</pre>
+    <CopyIconButton value={value} iconColor={Colors.textLight()} />
+  </div>
+);
 
-const ComputedCursorGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  padding-bottom: 12px;
-  ${Subheading} {
-    padding-bottom: 4px;
-    display: block;
-  }
-  pre {
-    margin: 0;
-  }
-  button {
-    margin-top: 4px;
-  }
-`;
+const RunRequestList = ({
+  runRequests,
+  jobName,
+  repoAddress,
+}: {
+  runRequests: RunRequestFragment[];
+  jobName: string;
+  repoAddress: RepoAddress;
+}) => {
+  const [selectedRequest, setSelectedRequest] = useState<RunRequestFragment | null>(null);
 
-const SkipReasonNonIdealStateWrapper = styled.div`
-  .dagster-non-ideal-state {
-    margin: auto !important;
-    width: unset !important;
-    max-width: unset !important;
-  }
-`;
+  return (
+    <>
+      {runRequests.map((request, index) => {
+        const pipelineName = request.jobName ?? jobName;
+        const href = workspacePipelinePath({
+          repoName: repoAddress.name,
+          repoLocation: repoAddress.location,
+          pipelineName,
+          isJob: true,
+        });
+        return (
+          <ListItem
+            key={index}
+            index={index}
+            href={href}
+            renderLink={(props) => <Link to={props.href ?? ''} {...props} />}
+            padding={{vertical: 8, horizontal: 20}}
+            left={
+              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                <Icon name="job" />
+                <MiddleTruncate text={pipelineName} />
+              </Box>
+            }
+            right={
+              <Box padding={{left: 12}}>
+                <ButtonLink
+                  onClick={() => setSelectedRequest(request)}
+                  data-testid={testId(`preview-${request.runKey || ''}`)}
+                >
+                  Preview
+                </ButtonLink>
+              </Box>
+            }
+          />
+        );
+      })}
+      <RunConfigDialog
+        isOpen={!!selectedRequest}
+        onClose={() => setSelectedRequest(null)}
+        mode={null}
+        runConfigYaml={selectedRequest?.runConfigYaml ?? ''}
+        tags={selectedRequest?.tags}
+        isJob
+        jobName={jobName}
+        request={selectedRequest ?? undefined}
+        repoAddress={repoAddress}
+      />
+    </>
+  );
+};

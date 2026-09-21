@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 from dagster import (
     AssetDep,
@@ -8,7 +8,7 @@ from dagster import (
     AssetSpec,
     _check as check,
 )
-from dagster._annotations import deprecated, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._record import record
@@ -64,9 +64,9 @@ class LookerInstanceData:
         }
 
         return LookerInstanceData(
-            explores_by_id=explores_by_id,
-            dashboards_by_id=dashboards_by_id,
-            users_by_id=users_by_id,
+            explores_by_id=cast("dict[str, LookmlModelExplore]", explores_by_id),
+            dashboards_by_id=cast("dict[str, Dashboard]", dashboards_by_id),
+            users_by_id=cast("dict[str, User]", users_by_id),
         )
 
 
@@ -135,13 +135,6 @@ class LookerApiTranslatorStructureData:
 
 
 class DagsterLookerApiTranslator:
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
-    )
-    def get_view_asset_key(self, looker_structure: LookerApiTranslatorStructureData) -> AssetKey:
-        return self.get_asset_spec(looker_structure).key
-
     def get_view_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
         lookml_view = check.inst(looker_structure.data, LookmlView)
         deps: list[AssetDep] = []
@@ -158,13 +151,6 @@ class DagsterLookerApiTranslator:
             metadata={},
             deps=deps if deps else None,
         )
-
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
-    )
-    def get_explore_asset_key(self, looker_structure: LookerApiTranslatorStructureData) -> AssetKey:
-        return self.get_explore_asset_spec(looker_structure).key
 
     def get_explore_asset_spec(
         self, looker_structure: LookerApiTranslatorStructureData
@@ -229,15 +215,6 @@ class DagsterLookerApiTranslator:
         else:
             check.assert_never(lookml_explore)
 
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
-    )
-    def get_dashboard_asset_key(
-        self, looker_structure: LookerApiTranslatorStructureData
-    ) -> AssetKey:
-        return self.get_asset_spec(looker_structure).key
-
     def get_dashboard_asset_spec(
         self, looker_structure: LookerApiTranslatorStructureData
     ) -> AssetSpec:
@@ -276,6 +253,7 @@ class DagsterLookerApiTranslator:
 
     @public
     def get_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
+        """Returns the :py:class:`AssetSpec` representing a given Looker structure."""
         if looker_structure.structure_type == LookerStructureType.VIEW:
             return self.get_view_asset_spec(looker_structure)
         if looker_structure.structure_type == LookerStructureType.EXPLORE:
@@ -284,11 +262,3 @@ class DagsterLookerApiTranslator:
             return self.get_dashboard_asset_spec(looker_structure)
         else:
             check.assert_never(looker_structure.structure_type)
-
-    @deprecated(
-        breaking_version="1.10",
-        additional_warn_text="Use `DagsterLookerApiTranslator.get_asset_spec().key` instead",
-    )
-    @public
-    def get_asset_key(self, looker_structure: LookerApiTranslatorStructureData) -> AssetKey:
-        return self.get_asset_spec(looker_structure).key

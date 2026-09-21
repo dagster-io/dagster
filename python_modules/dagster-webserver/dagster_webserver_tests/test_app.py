@@ -62,7 +62,7 @@ def test_create_app_with_workspace_and_scheduler():
             temp_dir=temp_dir,
             overrides={
                 "scheduler": {
-                    "module": "dagster.utils.test",
+                    "module": "dagster._utils.test",
                     "class": "FilesystemTestScheduler",
                     "config": {"base_dir": temp_dir},
                 }

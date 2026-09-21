@@ -60,7 +60,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 SHARED_BUILDKITE_SNOWFLAKE_CONF: Mapping[str, Any] = {
     "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
     "user": "BUILDKITE",
-    "password": os.getenv("SNOWFLAKE_BUILDKITE_PASSWORD", ""),
+    "private_key": os.getenv("SNOWFLAKE_BUILDKITE_PRIVATE_KEY", ""),
     "warehouse": "BUILDKITE",
 }
 
@@ -71,7 +71,7 @@ pythonic_snowflake_io_manager = SnowflakePySparkIOManager(
     database=DATABASE,
     account=EnvVar("SNOWFLAKE_ACCOUNT"),
     user="BUILDKITE",
-    password=EnvVar("SNOWFLAKE_BUILDKITE_PASSWORD"),
+    private_key=EnvVar("SNOWFLAKE_BUILDKITE_PRIVATE_KEY"),
     warehouse="BUILDKITE",
 )
 old_snowflake_io_manager = snowflake_pyspark_io_manager.configured(
@@ -120,6 +120,38 @@ def test_handle_output(spark):
         }
 
         assert mock_save.call_count == 1
+
+
+def test_handle_output_empty_dataframe(spark):
+    with patch("pyspark.sql.readwriter.DataFrameWriter.save") as mock_save:
+        handler = SnowflakePySparkTypeHandler()
+        schema = StructType(
+            [StructField("col1", StringType(), True), StructField("col2", StringType(), True)]
+        )
+        df = spark.createDataFrame([], schema)
+
+        output_context = build_output_context(resource_config=resource_config)
+
+        metadata = handler.handle_output(
+            output_context,
+            TableSlice(
+                table="my_table",
+                schema="my_schema",
+                database="my_db",
+                columns=None,
+                partition_dimensions=None,
+            ),
+            df,
+            None,
+        )
+
+        assert metadata == {
+            "dataframe_columns": MetadataValue.table_schema(
+                TableSchema(columns=[TableColumn("col1", "string"), TableColumn("col2", "string")])
+            ),
+        }
+
+        assert mock_save.call_count == 0
 
 
 def test_load_input(spark):
@@ -289,7 +321,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -306,7 +338,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
         assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -323,7 +355,7 @@ def test_time_window_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -391,7 +423,7 @@ def test_static_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -408,7 +440,7 @@ def test_static_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -425,7 +457,7 @@ def test_static_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -505,7 +537,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert out_df["A"].tolist() == ["1", "1", "1"]
 
@@ -522,7 +554,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -539,7 +571,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2", "3", "3", "3"]
 
@@ -556,7 +588,7 @@ def test_multi_partitioned_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3", "4", "4", "4"]
 
@@ -616,7 +648,7 @@ def test_dynamic_partitions(spark, io_manager):
         resource_defs = {"io_manager": io_manager, "fs_io": fs_io_manager}
 
         with instance_for_test() as instance:
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["apple"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -632,11 +664,11 @@ def test_dynamic_partitions(spark, io_manager):
                     .execute(
                         f"SELECT * FROM {snowflake_table_path}",
                     )
-                    .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                    .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
                 )
                 assert out_df["A"].tolist() == ["1", "1", "1"]
 
-            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # pyright: ignore[reportArgumentType]
+            instance.add_dynamic_partitions(dynamic_fruits.name, ["orange"])  # ty: ignore[invalid-argument-type]
 
             materialize(
                 [dynamic_partitioned, downstream_partitioned],
@@ -652,7 +684,7 @@ def test_dynamic_partitions(spark, io_manager):
                     .execute(
                         f"SELECT * FROM {snowflake_table_path}",
                     )
-                    .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                    .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
                 )
                 assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]
 
@@ -670,7 +702,7 @@ def test_dynamic_partitions(spark, io_manager):
                     .execute(
                         f"SELECT * FROM {snowflake_table_path}",
                     )
-                    .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                    .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
                 )
                 assert sorted(out_df["A"].tolist()) == ["2", "2", "2", "3", "3", "3"]
 
@@ -753,7 +785,7 @@ def test_self_dependent_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1"]
 
@@ -774,6 +806,6 @@ def test_self_dependent_asset(spark, io_manager):
                 .execute(
                     f"SELECT * FROM {snowflake_table_path}",
                 )
-                .fetch_pandas_all()  # pyright: ignore[reportOptionalMemberAccess]
+                .fetch_pandas_all()  # ty: ignore[unresolved-attribute]
             )
             assert sorted(out_df["A"].tolist()) == ["1", "1", "1", "2", "2", "2"]

@@ -8,7 +8,7 @@ from kitchen_sink_tests.integration_tests.conftest import (
 )
 
 
-@pytest.fixture(name="dagster_dev_cmd")
+@pytest.fixture(name="dagster_dev_cmd", scope="module")
 def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_dagster_multi_code_locations", "-C", str(makefile_dir())]
 

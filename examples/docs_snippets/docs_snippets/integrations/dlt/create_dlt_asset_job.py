@@ -1,6 +1,6 @@
 from dagster_dlt import DagsterDltResource, dlt_assets
 from dlt import pipeline
-from dlt_sources.github import github_reactions
+from dlt_sources.github import github_reactions  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

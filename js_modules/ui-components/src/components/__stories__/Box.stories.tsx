@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import React from 'react';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -20,7 +20,7 @@ export default {
 export const Padding = () => {
   const spacings: Spacing[] = [0, 2, 4, 8, 12, 16, 20, 24, 32, 48, 64];
   return (
-    <Box flex={{direction: 'row', gap: 2}}>
+    <Box flex={{direction: 'row', gap: 2, alignItems: 'flex-start'}}>
       {spacings.map((spacing) => (
         <Box key={`${spacing}`} background={Colors.backgroundGray()} padding={spacing}>
           {spacing}
@@ -144,7 +144,6 @@ export const JustifyContent = () => {
   );
 };
 
-const ExampleText = styled.span`
-  font-size: 12px;
-  text-transform: uppercase;
-`;
+const ExampleText = ({children}: {children: React.ReactNode}) => (
+  <span style={{fontSize: 12, textTransform: 'uppercase'}}>{children}</span>
+);

@@ -18,6 +18,7 @@ def test_comment_stories(comments, stories, expected):
     comments = DataFrame(comments, columns=["id", "parent", "user_id"])
     stories = DataFrame(stories, columns=["id"])
     result = comment_stories(stories=stories, comments=comments)
+    assert isinstance(result, DataFrame)
     expected = DataFrame(expected, columns=["comment_id", "story_id", "commenter_id"]).set_index(
         "comment_id"
     )

@@ -85,11 +85,14 @@ def check_yaml(
             continue
 
         defs_yaml_path = component_dir / "defs.yaml"
+        defs_yml_path = component_dir / "defs.yml"
         component_yaml_path = component_dir / "component.yaml"
 
         yaml_path = (
             defs_yaml_path
             if defs_yaml_path.exists()
+            else defs_yml_path
+            if defs_yml_path.exists()
             else component_yaml_path
             if component_yaml_path.exists()
             else None
@@ -144,8 +147,9 @@ def check_yaml(
                 top_level_errs = list(
                     top_level_component_validator.iter_errors(component_doc_tree.value)
                 )
-                for err in top_level_errs:
-                    validation_errors.append(ErrorInput(None, err, component_doc_tree))
+                validation_errors.extend(
+                    ErrorInput(None, err, component_doc_tree) for err in top_level_errs
+                )
                 if top_level_errs:
                     continue
 
@@ -173,8 +177,10 @@ def check_yaml(
             json_schema = component_registry.get(key).component_schema or {}
 
             v = Draft202012Validator(json_schema)
-            for err in v.iter_errors(component_doc_tree.value.get("attributes", {})):
-                validation_errors.append(ErrorInput(key, err, component_doc_tree))
+            validation_errors.extend(
+                ErrorInput(key, err, component_doc_tree)
+                for err in v.iter_errors(component_doc_tree.value.get("attributes", {}))
+            )
         except KeyError:
             # No matching component type found
             validation_errors.append(

@@ -15,12 +15,16 @@ import {useMemo, useState} from 'react';
 
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {InstigationTickStatus} from '../graphql/types';
+import {labelForRequestedMaterializationsAndJobRuns} from '../instigation/InstigationUtils';
 import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 
 export type TickResultType = 'runs' | 'materializations';
 
 type PropsForMaterializations = {
-  tick: Pick<HistoryTickFragment, 'status' | 'requestedAssetMaterializationCount' | 'error'>;
+  tick: Pick<
+    HistoryTickFragment,
+    'status' | 'requestedAssetMaterializationCount' | 'requestedJobRunCount' | 'error'
+  >;
   tickResultType: 'materializations';
   isStuckStarted?: boolean;
 };
@@ -89,16 +93,20 @@ export const TickStatusTag = ({
           </Box>
         );
       case InstigationTickStatus.SUCCESS:
-        const count =
+        // automation ticks may also request whole-job runs, which are not
+        // materializations and are counted separately
+        const successLabel =
           tickResultType === 'materializations'
-            ? tick.requestedAssetMaterializationCount
-            : tick.runIds.length;
-        const successTag = (
-          <Tag intent="success">
-            {count} {requestedItem}
-            {ifPlural(count, '', 's')} requested
-          </Tag>
-        );
+            ? labelForRequestedMaterializationsAndJobRuns(
+                tick.requestedAssetMaterializationCount,
+                tick.requestedJobRunCount,
+              )
+            : `${tick.runIds.length} ${requestedItem}${ifPlural(
+                tick.runIds.length,
+                '',
+                's',
+              )} requested`;
+        const successTag = <Tag intent="success">{successLabel}</Tag>;
         if ('runKeys' in tick && tick.runKeys.length > tick.runIds.length) {
           const message = `${tick.runKeys.length} runs requested, but ${
             tick.runKeys.length - tick.runIds.length

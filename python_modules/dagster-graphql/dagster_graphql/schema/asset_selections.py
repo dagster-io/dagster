@@ -67,7 +67,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
             repo = graphene_info.context.get_repository(self._repository_handle)
             self._resolved_keys = sorted(self._asset_selection.resolve(repo.asset_graph), key=str)
 
-        return self._resolved_keys
+        return self._resolved_keys  # ty: ignore[invalid-return-type]
 
     def _get_resolved_and_sorted_checks(
         self, graphene_info: ResolveInfo
@@ -79,7 +79,7 @@ class GrapheneAssetSelection(graphene.ObjectType):
                 self._asset_selection.resolve_checks(repo.asset_graph), key=str
             )
 
-        return self._resolved_checks
+        return self._resolved_checks  # ty: ignore[invalid-return-type]
 
     @capture_error
     def resolve_assetsOrError(self, graphene_info) -> "GrapheneAssetConnection":

@@ -1,0 +1,24 @@
+.suggestWithIconWrapper {
+  position: relative;
+}
+
+.suggestWithIconWrapper > :first-child {
+  position: absolute;
+  left: 8px;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.suggestWithIconWrapper input {
+  padding-left: 28px;
+}
+
+.suggestRightElement {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  height: 100%;
+}

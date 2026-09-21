@@ -1,6 +1,6 @@
 import {buildMaterializationEvent, buildRun} from '../../graphql/builders';
 import {RunStatus} from '../../graphql/types';
-import {shouldDisplayRunFailure} from '../Utils';
+import {shouldDisplayRunFailure, tokenForAssetKey, tokenToAssetKey} from '../Utils';
 
 describe('shouldDisplayRunFailure', () => {
   it('should return false if the latest materialization is from the latest run', () => {
@@ -34,5 +34,29 @@ describe('shouldDisplayRunFailure', () => {
         buildMaterializationEvent({runId: '1', timestamp: `1673300000000`}),
       ),
     ).toEqual(true);
+  });
+});
+
+describe('tokenForAssetKey / tokenToAssetKey', () => {
+  it('produces distinct tokens for components with and without slashes', () => {
+    expect(tokenForAssetKey({path: ['foo', 'bar']})).toBe('foo/bar');
+    expect(tokenForAssetKey({path: ['foo/bar']})).toBe('foo\\/bar');
+    expect(tokenForAssetKey({path: ['foo', 'bar']})).not.toBe(
+      tokenForAssetKey({path: ['foo/bar']}),
+    );
+  });
+
+  it('round-trips via tokenToAssetKey', () => {
+    const cases: string[][] = [
+      ['foo'],
+      ['foo', 'bar'],
+      ['foo/bar'],
+      ['a', 'b/c', 'd'],
+      ['a\\b'],
+      ['', 'empty'],
+    ];
+    for (const path of cases) {
+      expect(tokenToAssetKey(tokenForAssetKey({path})).path).toEqual(path);
+    }
   });
 });

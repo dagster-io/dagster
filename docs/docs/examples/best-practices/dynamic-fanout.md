@@ -4,7 +4,7 @@ description: How to implement dynamic fanout patterns for parallel processing.
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Output.png
 ---
 
 In this example, we'll explore how to implement dynamic fanout patterns in Dagster. Dynamic fanout is useful when you need to process a variable number of items in parallel, where the exact count isn't known until runtime. This is particularly valuable for data processing pipelines that need to handle varying workloads efficiently.
@@ -61,9 +61,9 @@ The second approach adds a second layer of parallelization by processing units w
 
 This enhanced approach provides two layers of parallelization:
 
-1. **Record-level parallelization**: Multiple sub-pipelines run simultaneously
-2. **Unit-level parallelization**: Within each sub-pipeline, units are processed using a multiprocessing pool
-3. **Automatic scaling**: Number of processes adapts to available CPU cores and workload size
+- **Record-level parallelization**: Multiple sub-pipelines run simultaneously
+- **Unit-level parallelization**: Within each sub-pipeline, units are processed using a multiprocessing pool
+- **Automatic scaling**: Number of processes adapts to available CPU cores and workload size
 
 | Processing layer | Parallelization | Performance benefit           |
 | ---------------- | --------------- | ----------------------------- |

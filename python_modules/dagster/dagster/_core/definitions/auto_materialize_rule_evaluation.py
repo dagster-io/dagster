@@ -106,7 +106,7 @@ class WaitingOnAssetsRuleEvaluationData(
 class BackcompatNullSerializer(NamedTupleSerializer):
     """Unpacks an arbitrary object into None."""
 
-    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def unpack(  # ty: ignore[invalid-method-override]
         self,
         unpacked_dict: dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,
@@ -120,7 +120,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     AutomationConditionEvaluationWithRunIds.
     """
 
-    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def unpack(  # ty: ignore[invalid-method-override]
         self,
         unpacked_dict: dict[str, UnpackedValue],
         whitelist_map: WhitelistMap,

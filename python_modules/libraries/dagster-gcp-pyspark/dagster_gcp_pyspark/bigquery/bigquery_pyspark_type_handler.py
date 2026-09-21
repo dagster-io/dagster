@@ -58,14 +58,19 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     """
 
-    def handle_output(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def handle_output(  # ty: ignore[invalid-method-override]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
-        options = _get_bigquery_write_options(context.resource_config, table_slice)
+        if obj.isEmpty():
+            context.log.warning(
+                "Skipping BigQuery write for empty DataFrame. An empty table will not be created."
+            )
+        else:
+            options = _get_bigquery_write_options(context.resource_config, table_slice)
 
-        with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
+            with_uppercase_cols = obj.toDF(*[c.upper() for c in obj.columns])
 
-        with_uppercase_cols.write.format("bigquery").options(**options).mode("append").save()
+            with_uppercase_cols.write.format("bigquery").options(**options).mode("append").save()
 
         return {
             "dataframe_columns": MetadataValue.table_schema(
@@ -78,9 +83,9 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # ty: ignore[invalid-method-override]
         options = _get_bigquery_read_options(table_slice)
-        spark = SparkSession.builder.getOrCreate()  # type: ignore
+        spark = SparkSession.builder.getOrCreate()
 
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))

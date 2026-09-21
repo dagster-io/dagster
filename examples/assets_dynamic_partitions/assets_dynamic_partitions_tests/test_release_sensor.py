@@ -3,7 +3,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 from assets_dynamic_partitions.release_sensor import release_sensor
-from dagster import DagsterInstance, SkipReason, build_sensor_context
+from dagster import DagsterInstance, SensorResult, SkipReason, build_sensor_context
 
 
 def test_release_sensor_no_new_releases():
@@ -29,6 +29,9 @@ def test_release_sensor_new_release():
         with patch("requests.get") as mock:
             mock.return_value = MagicMock(ok=True, content=json.dumps([{"tag_name": "1.1.0"}]))
             result = release_sensor(build_sensor_context(instance=instance))
+            assert isinstance(result, SensorResult)
+            assert result.run_requests is not None
+            assert result.dynamic_partitions_requests is not None
             assert len(result.run_requests) == 1
             assert result.run_requests[0].partition_key == "1.1.0"
             assert len(result.dynamic_partitions_requests) == 1
@@ -49,6 +52,9 @@ def test_release_sensor_new_release_with_cursor():
                 ok=True, content=json.dumps([{"tag_name": "1.1.0"}, {"tag_name": "1.2.0"}])
             )
             result = release_sensor(build_sensor_context(instance=instance, cursor="1.1.0"))
+            assert isinstance(result, SensorResult)
+            assert result.run_requests is not None
+            assert result.dynamic_partitions_requests is not None
             assert len(result.run_requests) == 1
             assert result.run_requests[0].partition_key == "1.2.0"
             assert len(result.dynamic_partitions_requests) == 1

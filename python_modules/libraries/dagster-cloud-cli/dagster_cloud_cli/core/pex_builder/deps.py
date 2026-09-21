@@ -16,9 +16,11 @@ from dataclasses import dataclass
 import click
 from dagster_shared.utils import find_uv_workspace_root
 from packaging import version
+from packaging.requirements import InvalidRequirement, Requirement
+from packaging.utils import canonicalize_name
 
 try:
-    import tomllib  # pyright: ignore[reportMissingImports]
+    import tomllib  # ty: ignore[unresolved-import]
 except ImportError:
     # Python < 3.11 fallback
     import tomli as tomllib
@@ -139,6 +141,15 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
     return local_package_paths, deps_lines
 
 
+# TEMP (protobuf<7 compat): grpcio-health-checking 1.82.0 ships grpc_health/v1/health_pb2
+# generated with protobuf-7 gencode, which the protobuf runtime-version guard rejects against
+# the protobuf<7 runtime that dagster pins — the code server then crashes on import. The deps
+# pex resolves from PyPI, so it pulls 1.82.0 regardless of what the resolved dagster's metadata
+# says; force it here so every serverless build is compatible. Remove once dagster's protobuf<7
+# cap is lifted.
+_EXTRA_BUILD_CONSTRAINTS = ["grpcio-health-checking<1.82"]
+
+
 def get_deps_requirements(
     code_directory, python_version: version.Version
 ) -> tuple[LocalPackages, DepsRequirements]:
@@ -148,8 +159,15 @@ def get_deps_requirements(
 
     local_package_paths, deps_lines = collect_requirements(code_directory, python_interpreter)
 
+    # Skip the extra constraints when the project uses hash-pinned requirements: pip's
+    # --require-hashes mode rejects any unhashed requirement, and a hash-pinned project is
+    # already fully version-locked (immune to the upstream drift these constraints guard against).
+    extra_constraints = (
+        [] if any("--hash" in line for line in deps_lines) else _EXTRA_BUILD_CONSTRAINTS
+    )
+
     deps_requirements_text = "\n".join(
-        sorted(set(deps_lines)) + [""]
+        sorted(set(deps_lines) | set(extra_constraints)) + [""]
     )  # empty string adds trailing newline
 
     ui.print(f"List of local packages: {local_package_paths}")
@@ -417,19 +435,15 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
     except Exception as e:
         raise ValueError(f"Error parsing pyproject.toml: {e}")
 
-    lines = []
-
     # Handle dependencies in [project] section (PEP 621)
     project_section = pyproject_data.get("project", {})
     dependencies = project_section.get("dependencies", [])
-    for dep in dependencies:
-        lines.append(str(dep))
+    lines = [str(dep) for dep in dependencies]
 
     # Handle optional dependencies in [project.optional-dependencies]
     optional_deps = project_section.get("optional-dependencies", {})
     for group_deps in optional_deps.values():
-        for dep in group_deps:
-            lines.append(str(dep))
+        lines.extend(str(dep) for dep in group_deps)
 
     # Handle legacy [tool.poetry.dependencies] for Poetry projects
     poetry_section = pyproject_data.get("tool", {}).get("poetry", {})
@@ -460,19 +474,39 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
             else:
                 lines.append(dep_name)
 
-    # Handle [tool.uv.sources] - resolve workspace and path dependencies to local paths
+    # Handle [tool.uv.sources] - resolve workspace and path dependencies to local paths.
+    # Match by canonical package name so version specifiers and extras in the requirement
+    # line don't defeat the lookup. Skip entries gated on a `group =` qualifier: pex builds
+    # have no active group context, so group-conditional sources must not be applied
+    # (otherwise a test-only local-path override would leak into the production deps pex).
     uv_sources = pyproject_data.get("tool", {}).get("uv", {}).get("sources", {})
     if uv_sources:
+        sources_by_canonical = {
+            canonicalize_name(name): cfg for name, cfg in uv_sources.items() if "group" not in cfg
+        }
         resolved_lines = []
         for line in lines:
-            source_config = uv_sources.get(line)
+            try:
+                package_name = canonicalize_name(Requirement(line).name)
+            except InvalidRequirement:
+                ui.print(
+                    f"[uv.sources] could not parse requirement line {line!r}; "
+                    "passing through unchanged"
+                )
+                resolved_lines.append(line)
+                continue
+            source_config = sources_by_canonical.get(package_name)
             if source_config:
                 if source_config.get("workspace"):
-                    resolved_path = _resolve_uv_workspace_dep(line, code_directory)
+                    resolved_path = _resolve_uv_workspace_dep(package_name, code_directory)
                     if resolved_path:
+                        ui.print(
+                            f"[uv.sources] resolved {line!r} to workspace path {resolved_path}"
+                        )
                         resolved_lines.append(resolved_path)
                         continue
                 elif "path" in source_config:
+                    ui.print(f"[uv.sources] resolved {line!r} to path {source_config['path']}")
                     resolved_lines.append(source_config["path"])
                     continue
             resolved_lines.append(line)

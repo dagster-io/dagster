@@ -93,7 +93,7 @@ def get_last_updated_timestamp_unreliable_source() -> TimestampMetadataValue:
     if random.random() < 0.3 and len(latest_observations.records) > 1:
         return check.not_none(latest_observations.records[0].asset_observation).metadata[
             "dagster/last_updated_timestamp"
-        ]  # type: ignore
+        ]
     else:
         now = get_current_datetime()
         rounded_minute = max(math.floor((now.minute - 1) / 3) * 3, 0)

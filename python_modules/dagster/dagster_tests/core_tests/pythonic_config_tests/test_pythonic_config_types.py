@@ -103,7 +103,7 @@ def test_struct_config_persmissive_cached_method() -> None:
             calls["plus"] += 1
             return self.x + self.y
 
-    plus_config = PlusConfig(x=1, y=2, z=10)  # type: ignore
+    plus_config = PlusConfig(x=1, y=2, z=10)
 
     assert plus_config.plus() == 3
     assert calls["plus"] == 1
@@ -438,11 +438,11 @@ def test_discriminated_unions() -> None:
     @dg.op
     def a_struct_config_op(config: OpConfigWithUnion):
         if config.pet.pet_type == "cat":
-            assert config.pet.meows == 2
+            assert config.pet.meows == 2  # ty: ignore[unresolved-attribute]
         elif config.pet.pet_type == "dog":
-            assert config.pet.barks == 3.0
+            assert config.pet.barks == 3.0  # ty: ignore[unresolved-attribute]
         elif config.pet.pet_type == "lizard":
-            assert config.pet.scales
+            assert config.pet.scales  # ty: ignore[unresolved-attribute]
         assert config.n == 4
 
         executed["yes"] = True
@@ -496,6 +496,71 @@ def test_discriminated_unions() -> None:
                 }
             }
         )
+
+
+def test_discriminated_unions_with_default() -> None:
+    class Cat(dg.Config):
+        pet_type: Literal["cat"] = "cat"
+        meows: int = 2
+
+    class Dog(dg.Config):
+        pet_type: Literal["dog"] = "dog"
+        barks: float = 3.0
+
+    class OpConfigWithUnion(dg.Config):
+        pet: Cat | Dog = pydantic.Field(default=Dog(), discriminator="pet_type")
+
+    # The Pydantic default is propagated into the config schema as an optional
+    # field with a Selector-shaped default value
+    fields = OpConfigWithUnion.to_fields_dict()
+    assert not fields["pet"].is_required
+    assert fields["pet"].default_value == {"dog": {"barks": 3.0}}
+
+    executed = {}
+
+    @dg.op
+    def a_struct_config_op(config: OpConfigWithUnion):
+        executed["pet"] = config.pet
+
+    @dg.job
+    def a_job():
+        a_struct_config_op()
+
+    # No config provided: the default is used
+    a_job.execute_in_process()
+    assert executed["pet"] == Dog()
+
+    # Explicit config still overrides the default
+    a_job.execute_in_process(
+        {"ops": {"a_struct_config_op": {"config": {"pet": {"cat": {"meows": 5}}}}}}
+    )
+    assert executed["pet"] == Cat(meows=5)
+
+    # default_factory defaults are propagated as well
+    class OpConfigWithFactoryDefault(dg.Config):
+        pet: Cat | Dog = pydantic.Field(default_factory=Dog, discriminator="pet_type")
+
+    fields = OpConfigWithFactoryDefault.to_fields_dict()
+    assert not fields["pet"].is_required
+    assert fields["pet"].default_value == {"dog": {"barks": 3.0}}
+
+    # A union without a default stays required, with no config default
+    class OpConfigRequired(dg.Config):
+        pet: Cat | Dog = pydantic.Field(..., discriminator="pet_type")
+
+    fields = OpConfigRequired.to_fields_dict()
+    assert fields["pet"].is_required
+    assert not fields["pet"].default_provided
+
+    # An explicit default of None (accepted by Pydantic even on a non-Optional
+    # annotation) makes the field optional but is not propagated as a config
+    # default, since None is not a valid Selector value
+    class OpConfigNoneDefault(dg.Config):
+        pet: Cat | Dog = pydantic.Field(default=None, discriminator="pet_type")  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+
+    fields = OpConfigNoneDefault.to_fields_dict()
+    assert not fields["pet"].is_required
+    assert not fields["pet"].default_provided
 
 
 def test_nested_discriminated_unions() -> None:
@@ -809,7 +874,7 @@ def test_literal_in_resource_config() -> None:
     a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="bar")})
 
     with pytest.raises(pydantic.ValidationError):
-        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})  # type: ignore
+        a_job.execute_in_process(resources={"my_resource": MyResource(a_literal="baz")})
 
 
 def test_enum_complex() -> None:
@@ -997,12 +1062,12 @@ def test_permissive_extra_field_via_dot():
     class ExtraConfig(PermissiveConfig):
         foo: int
 
-    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
-    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])  # type: ignore
+    conf = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
+    conf1 = ExtraConfig(foo=10, bar="hello", baz=[1, 2, 3])
     assert conf == conf1
     assert conf.foo == 10
-    assert conf.bar == "hello"
-    assert conf.baz == [1, 2, 3]
+    assert conf.bar == "hello"  # ty: ignore[unresolved-attribute]
+    assert conf.baz == [1, 2, 3]  # ty: ignore[unresolved-attribute]
     # confirm it's in dict and convert_to_config_dictionary
     expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
     assert conf.model_dump() == expected

@@ -1,7 +1,9 @@
 import pandas as pd
 import polars as pl
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.io_manager.polars import PolarsIcebergIOManager
+from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
+from dagster_iceberg.io_manager.polars import (
+    PolarsIcebergIOManager,  # ty: ignore[unresolved-import]
+)
 
 from dagster import Definitions, asset
 

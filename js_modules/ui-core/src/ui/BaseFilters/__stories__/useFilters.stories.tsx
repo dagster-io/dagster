@@ -14,7 +14,7 @@ export default {
 };
 
 const TestComponent = () => {
-  const [userState, setUserState] = useState<Set<any>>(new Set());
+  const [userState, setUserState] = useState<Set<string>>(new Set());
   const userFilter = useStaticSetFilter({
     name: 'User',
     icon: 'account_circle',
@@ -40,7 +40,7 @@ const TestComponent = () => {
     getStringValue: (value) => value,
   });
 
-  const [testState, setTestState] = useState<Set<any>>(new Set());
+  const [testState, setTestState] = useState<Set<string>>(new Set());
   const testFilter = useStaticSetFilter({
     name: 'Test set filter',
     icon: 'account_tree',
@@ -63,7 +63,7 @@ const TestComponent = () => {
     getStringValue: (value) => value,
   });
 
-  const [deploymentState, setDeploymentState] = useState<Set<any>>(new Set());
+  const [deploymentState, setDeploymentState] = useState<Set<string>>(new Set());
   const deploymentFilter = useStaticSetFilter({
     name: 'Deployment',
     icon: 'workspaces',

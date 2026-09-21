@@ -1,8 +1,16 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type RepositoryLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
+export type RepositoryLocationLoadStatus = 'LOADED' | 'LOADING';
+
+export type RepositoryLocationStatusQueryVariables = Exact<{[key: string]: never}>;
 
 export type RepositoryLocationStatusQuery = {
   __typename: 'Query';
@@ -50,7 +58,7 @@ export type RepositoryLocationStatusQuery = {
       };
 };
 
-export type ReloadWorkspaceMutationVariables = Types.Exact<{[key: string]: never}>;
+export type ReloadWorkspaceMutationVariables = Exact<{[key: string]: never}>;
 
 export type ReloadWorkspaceMutation = {
   __typename: 'Mutation';
@@ -100,8 +108,8 @@ export type ReloadWorkspaceMutation = {
       };
 };
 
-export type ReloadRepositoryLocationMutationVariables = Types.Exact<{
-  location: Types.Scalars['String']['input'];
+export type ReloadRepositoryLocationMutationVariables = Exact<{
+  location: string;
 }>;
 
 export type ReloadRepositoryLocationMutation = {

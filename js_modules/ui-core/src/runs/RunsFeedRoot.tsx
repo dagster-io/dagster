@@ -14,14 +14,8 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from './RunsFilterInput';
-import {SCHEDULED_RUNS_LIST_QUERY, ScheduledRunList} from './ScheduledRunList';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
-import {
-  ScheduledRunsListQuery,
-  ScheduledRunsListQueryVariables,
-} from './types/ScheduledRunList.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
-import {useQuery} from '../apollo-client';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -32,7 +26,6 @@ import {useTrackPageView} from '../app/analytics';
 import {RunsFeedView} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
-import {Loading} from '../ui/Loading';
 
 const filters: RunFilterTokenType[] = [
   'tag',
@@ -85,26 +78,15 @@ export const RunsFeedRoot = () => {
   });
 
   const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(currentTab, filter);
-  const isScheduled = currentTab === 'scheduled';
   const isShowingViewOption = ['all', 'failed'].includes(currentTab);
 
   const {entries, paginationProps, queryResult} = useRunsFeedEntries({
     view: isShowingViewOption || currentTab === 'backfills' ? view : RunsFeedView.RUNS,
-    skip: isScheduled,
     filter,
+    skip: false,
   });
 
-  const scheduledQueryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
-    SCHEDULED_RUNS_LIST_QUERY,
-    {
-      notifyOnNetworkStatusChange: true,
-      skip: !isScheduled,
-    },
-  );
-  const refreshState = useQueryRefreshAtInterval(
-    isScheduled ? scheduledQueryResult : queryResult,
-    FIFTEEN_SECONDS,
-  );
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
   const combinedRefreshState = useMergedRefresh(countRefreshState, refreshState);
   const {error} = queryResult;
@@ -147,14 +129,6 @@ export const RunsFeedRoot = () => {
   }
 
   function content() {
-    if (currentTab === 'scheduled') {
-      return (
-        <Loading queryResult={scheduledQueryResult} allowStaleData>
-          {(result) => <ScheduledRunList result={result} />}
-        </Loading>
-      );
-    }
-
     if (error) {
       return <RunsFeedError error={error} />;
     }

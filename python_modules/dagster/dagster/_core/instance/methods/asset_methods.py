@@ -150,7 +150,7 @@ class AssetMethods:
         from dagster._core.instance.utils import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 
         self._event_storage_impl.wipe_asset_partitions(asset_key, partition_keys)
-        self.report_dagster_event(  # type: ignore[attr-defined]
+        self.report_dagster_event(  # ty: ignore[unresolved-attribute]
             DagsterEvent(
                 event_type_value=DagsterEventType.ASSET_WIPED.value,
                 event_specific_data=AssetWipedData(
@@ -160,6 +160,13 @@ class AssetMethods:
             ),
             run_id=RUNLESS_RUN_ID,
         )
+
+    @property
+    def supports_wipe_on_delete_for_multipartitioned_assets(self) -> bool:
+        """Whether deleting dynamic partitions may also wipe multi-partitioned assets that use
+        the definition as a dimension. Not supported in OSS.
+        """
+        return False
 
     def get_event_tags_for_asset(
         self,
@@ -317,7 +324,7 @@ class AssetMethods:
                 " AssetMaterialization, AssetObservation, AssetCheckEvaluation, FreshnessStateEvaluation or FreshnessStateChange"
             )
 
-        return self.report_dagster_event(  # type: ignore[attr-defined]
+        return self.report_dagster_event(  # ty: ignore[unresolved-attribute]
             run_id=RUNLESS_RUN_ID,
             dagster_event=DagsterEvent(
                 event_type_value=event_type_value,
@@ -393,7 +400,7 @@ class AssetMethods:
         if is_source is True:
             # this is a source asset, fetch latest observation record
             return next(
-                iter(self.fetch_observations(records_filter, limit=1).records),  # type: ignore[attr-defined]
+                iter(self.fetch_observations(records_filter, limit=1).records),  # ty: ignore[unresolved-attribute]
                 None,
             )
 
@@ -418,7 +425,7 @@ class AssetMethods:
             if materialization:
                 return materialization
             return next(
-                iter(self.fetch_observations(records_filter, limit=1).records),  # type: ignore[attr-defined]
+                iter(self.fetch_observations(records_filter, limit=1).records),  # ty: ignore[unresolved-attribute]
                 None,
             )
 
@@ -574,7 +581,7 @@ class AssetMethods:
         asset_key: AssetKey,
         partition_keys: Sequence[str],
         partitions_def: "PartitionsDefinition",
-    ) -> Mapping[str, "AssetPartitionStatus"] | None:
+    ) -> Mapping[str, "AssetPartitionStatus | None"] | None:
         """Get the current status of provided partition_keys for the provided asset.
         Moved from AssetDomain.get_status_by_partition().
 
@@ -680,7 +687,7 @@ class AssetMethods:
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage_impl.wipe_asset(asset_key)
-            self.report_dagster_event(  # type: ignore[attr-defined]
+            self.report_dagster_event(  # ty: ignore[unresolved-attribute]
                 DagsterEvent(
                     event_type_value=DagsterEventType.ASSET_WIPED.value,
                     event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),

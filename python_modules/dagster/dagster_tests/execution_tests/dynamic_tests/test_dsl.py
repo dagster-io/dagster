@@ -85,7 +85,7 @@ def test_composite_multi_out():
 
     @dg.job
     def composite_multi():
-        one, numbers = multi_out()  # pyright: ignore[reportGeneralTypeIssues]
+        one, numbers = multi_out()  # ty: ignore[not-iterable]
         echo(one)
         numbers.map(echo)
 

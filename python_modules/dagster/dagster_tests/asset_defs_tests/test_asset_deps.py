@@ -36,7 +36,7 @@ def test_instantiation_with_asset_dep():
     og_dep = dg.AssetDep("upstream", partition_mapping=partition_mapping)
 
     with pytest.raises(ParameterCheckError):
-        assert dg.AssetDep(og_dep) == dg.AssetDep("upstream")  # pyright: ignore[reportArgumentType]
+        assert dg.AssetDep(og_dep) == dg.AssetDep("upstream")  # ty: ignore[invalid-argument-type]
 
 
 def test_multi_asset_errors():
@@ -90,7 +90,7 @@ def test_from_coercible():
     # Test bad type
     with pytest.raises(ParameterCheckError, match='Param "asset" is not one of'):
         # full error msg: Param "asset" is not one of ['AssetKey', 'AssetSpec', 'AssetsDefinition', 'SourceAsset', 'str']. Got 1 which is type <class 'int'>.
-        AssetDep.from_coercible(1)  # pyright: ignore[reportArgumentType]
+        AssetDep.from_coercible(1)  # ty: ignore[invalid-argument-type]
 
 
 ### Tests for deps parameter on @asset and @multi_asset
@@ -114,8 +114,8 @@ def test_single_asset_deps_via_asset_dep():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -131,8 +131,8 @@ def test_single_asset_deps_via_assets_definition():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -148,8 +148,8 @@ def test_single_asset_deps_via_string():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -165,8 +165,8 @@ def test_single_asset_deps_via_asset_key():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -189,10 +189,10 @@ def test_single_asset_deps_via_mixed_types():
     def downstream():
         return None
 
-    assert len(downstream.input_names) == 3  # pyright: ignore[reportArgumentType]
-    assert downstream.op.ins["via_definition"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert downstream.op.ins["via_string"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(downstream.input_names) == 3  # ty: ignore[invalid-argument-type]
+    assert downstream.op.ins["via_definition"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert downstream.op.ins["via_string"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [via_definition, via_string, via_asset_key, downstream],
@@ -215,16 +215,16 @@ def test_multi_asset_deps_via_string():
     def depends_on_one_sub_asset():
         return None
 
-    assert len(depends_on_one_sub_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_one_sub_asset.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     @dg.asset(deps=["asset_1", "asset_2"])
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_both_sub_assets.input_names) == 2  # ty: ignore[invalid-argument-type]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [a_multi_asset, depends_on_one_sub_asset, depends_on_both_sub_assets],
@@ -247,16 +247,16 @@ def test_multi_asset_deps_via_key():
     def depends_on_one_sub_asset():
         return None
 
-    assert len(depends_on_one_sub_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_one_sub_asset.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     @dg.asset(deps=[dg.AssetKey("asset_1"), dg.AssetKey("asset_2")])
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_both_sub_assets.input_names) == 2  # ty: ignore[invalid-argument-type]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [a_multi_asset, depends_on_one_sub_asset, depends_on_both_sub_assets],
@@ -279,9 +279,9 @@ def test_multi_asset_deps_via_mixed_types():
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_both_sub_assets.input_names) == 2  # ty: ignore[invalid-argument-type]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -303,9 +303,9 @@ def test_multi_asset_deps_with_set():
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_both_sub_assets.input_names) == 2  # ty: ignore[invalid-argument-type]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -327,9 +327,9 @@ def test_multi_asset_deps_via_assets_definition():
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_both_sub_assets.input_names) == 2  # ty: ignore[invalid-argument-type]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -346,8 +346,8 @@ def test_multi_asset_downstream_deps_via_assets_definition():
     def asset_2():
         return None, None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -363,8 +363,8 @@ def test_multi_asset_downstream_deps_via_string():
     def asset_2():
         return None, None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -382,8 +382,8 @@ def test_multi_asset_downstream_deps_via_asset_key():
     def asset_2():
         return None, None
 
-    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(asset_2.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -409,10 +409,10 @@ def test_multi_asset_downstream_deps_via_mixed_types():
     def downstream():
         return None, None
 
-    assert len(downstream.input_names) == 3  # pyright: ignore[reportArgumentType]
-    assert downstream.op.ins["via_definition"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert downstream.op.ins["via_string"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(downstream.input_names) == 3  # ty: ignore[invalid-argument-type]
+    assert downstream.op.ins["via_definition"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert downstream.op.ins["via_string"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [via_definition, via_string, via_asset_key, downstream],
@@ -428,8 +428,8 @@ def test_source_asset_deps_via_assets_definition():
     def depends_on_source_asset():
         return None
 
-    assert len(depends_on_source_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_source_asset.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -442,8 +442,8 @@ def test_source_asset_deps_via_string():
     def depends_on_source_asset():
         return None
 
-    assert len(depends_on_source_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_source_asset.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -456,8 +456,8 @@ def test_source_asset_deps_via_key():
     def depends_on_source_asset():
         return None
 
-    assert len(depends_on_source_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(depends_on_source_asset.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -478,9 +478,9 @@ def test_interop():
     def interop_asset(value_asset: int):
         assert value_asset == 1
 
-    assert len(interop_asset.input_names) == 2  # pyright: ignore[reportArgumentType]
-    assert interop_asset.op.ins["no_value_asset"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
-    assert interop_asset.op.ins["value_asset"].dagster_type.kind == DagsterTypeKind.SCALAR  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(interop_asset.input_names) == 2  # ty: ignore[invalid-argument-type]
+    assert interop_asset.op.ins["no_value_asset"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
+    assert interop_asset.op.ins["value_asset"].dagster_type.kind == DagsterTypeKind.SCALAR  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [no_value_asset, value_asset, interop_asset],
@@ -511,7 +511,7 @@ def test_bad_types():
         match='Param "asset" is not one of ',
     ):
 
-        @dg.asset(deps=[not_an_asset])  # pyright: ignore[reportArgumentType]
+        @dg.asset(deps=[not_an_asset])  # ty: ignore[invalid-argument-type]
         def my_asset():
             return None
 
@@ -534,7 +534,7 @@ def test_dep_via_deps_and_fn():
 
             @dg.asset(
                 deps=[dg.AssetDep(the_upstream_asset)],
-                ins={"the_upstream_asset": dg.AssetIn(**param_dict)},
+                ins={"the_upstream_asset": dg.AssetIn(**param_dict)},  # ty: ignore[invalid-argument-type]
             )
             def _(the_upstream_asset):
                 return None
@@ -604,7 +604,7 @@ def test_multi_asset_specs_deps_and_fn():
 
             @dg.multi_asset(
                 specs=[dg.AssetSpec("the_asset", deps=[dg.AssetDep(the_upstream_asset)])],
-                ins={"the_upstream_asset": dg.AssetIn(**param_dict)},
+                ins={"the_upstream_asset": dg.AssetIn(**param_dict)},  # ty: ignore[invalid-argument-type]
             )
             def _(the_upstream_asset):
                 return None
@@ -679,8 +679,8 @@ def test_duplicate_deps():
     def the_downstream_asset():
         return None
 
-    assert len(the_downstream_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
-    assert the_downstream_asset.op.ins["the_upstream_asset"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert len(the_downstream_asset.input_names) == 1  # ty: ignore[invalid-argument-type]
+    assert the_downstream_asset.op.ins["the_upstream_asset"].dagster_type.is_nothing  # ty: ignore[unresolved-attribute]
 
     res = dg.materialize(
         [the_downstream_asset, the_upstream_asset],

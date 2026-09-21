@@ -15,7 +15,6 @@ from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 class EnvVarScope(str, Enum):
@@ -96,6 +95,8 @@ def create_env_command(
     **global_options: object,
 ) -> None:
     """Create or update an environment variable in Dagster Plus."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     if not env_value and not from_local_env:
         raise click.UsageError(
             "Environment variable value is required. You can either directly provide this value or use the --from-local-env flag to pull the value from your shell environment or project .env file."
@@ -134,12 +135,17 @@ def create_env_command(
         EnvVarScope.BRANCH,
         EnvVarScope.LOCAL,
     }
-    gql_client = DagsterPlusGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient(
+        url=config.organization_url,
+        api_token=config.user_token,
+        organization=config.organization,
+        deployment=config.default_deployment,
+    )
 
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
     scope_text = f" in {', '.join(sorted(active_scopes))} scope"
 
-    existing_secrets = gql_client.execute(
+    existing_secrets = gql_client.execute_arbitrary(
         gql.GET_SECRETS_FOR_SCOPES_QUERY,
         variables={
             "locationName": None if global_ else dg_context.project_name,
@@ -197,7 +203,7 @@ def create_env_command(
                 abort=True,
             )
 
-    gql_client.execute(
+    gql_client.execute_arbitrary(
         gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
         variables={
             "secretName": env_name,

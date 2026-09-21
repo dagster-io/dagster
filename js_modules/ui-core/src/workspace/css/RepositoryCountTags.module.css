@@ -1,0 +1,7 @@
+.countLink {
+  &:hover,
+  &:active {
+    outline: none;
+    text-decoration: none;
+  }
+}

@@ -14,9 +14,9 @@ def glue_pipes_asset(
 ):
     return pipes_glue_client.run(
         context=context,
-        job_name="Example Job",
-        arguments={"some_parameter_value": "1"},
-    ).get_materialize_result()
+        job_name="Example Job",  # ty: ignore[unknown-argument]
+        arguments={"some_parameter_value": "1"},  # ty: ignore[unknown-argument]
+    ).get_materialize_result()  # ty: ignore[missing-argument]
 
 
 defs = dg.Definitions(

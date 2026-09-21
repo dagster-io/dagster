@@ -20,7 +20,10 @@ from dagster._time import get_current_timestamp
 from dagster._utils import process_is_alive
 from dagster_azure.blob.utils import create_blob_client
 
-AZURE_CLI_IMAGE = "mcr.microsoft.com/azure-cli:latest"
+# Pin to a specific tag for reproducibility and to avoid silent CLI behavior
+# changes between test runs. MCR is more reliable than docker.io, but :latest
+# can still surface upstream auth/identity changes mid-run.
+AZURE_CLI_IMAGE = "mcr.microsoft.com/azure-cli:2.67.0"
 
 
 def integration_test_dir() -> Path:
@@ -158,7 +161,7 @@ def setup_azure_env_file(
     }
     # this creates a file and writes the additional env vars to it
     file_path = Path(azure_tmp_dir) / "env_vars"
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         for key, value in additional_env_vars.items():
             f.write(f"{key}={value}\n")
 

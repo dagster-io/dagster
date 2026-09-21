@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Iterator
+from collections.abc import Set as AbstractSet
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -32,7 +32,9 @@ class DagsterTypeLoader(ABC):
         pass
 
     def construct_from_config_value(
-        self, _context: "DagsterTypeLoaderContext", config_value: object
+        self,
+        context: "DagsterTypeLoaderContext",
+        config_value: object,
     ) -> object:
         """How to create a runtime value from config data."""
         return config_value
@@ -43,7 +45,7 @@ class DagsterTypeLoader(ABC):
     def get_resource_requirements(
         self, type_display_name: str
     ) -> Iterator[ResourceRequirement]:
-        for resource_key in sorted(list(self.required_resource_keys())):
+        for resource_key in sorted(self.required_resource_keys()):
             yield TypeLoaderResourceRequirement(
                 key=resource_key, type_display_name=type_display_name
             )
@@ -112,7 +114,7 @@ def dagster_type_loader(
         missing_positional = validate_expected_params(params, EXPECTED_POSITIONALS)
         if missing_positional:
             raise DagsterInvalidDefinitionError(
-                f"@dagster_type_loader '{func.__name__}' decorated function does not have required"
+                f"@dagster_type_loader '{func.__name__}' decorated function does not have required"  # ty: ignore[unresolved-attribute]
                 f" positional parameter '{missing_positional}'. @dagster_type_loader decorated"
                 " functions should only have keyword arguments that match input names and a first"
                 " positional parameter named 'context'."

@@ -36,7 +36,7 @@ from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.utils import DaemonErrorCapture
+from dagster._daemon.utils import DaemonErrorCapture, shuffled_round_robin_by_key
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
@@ -368,7 +368,12 @@ def launch_scheduled_runs(
         yield
         return
 
-    for schedule in running_schedules.values():
+    # Round-robin across code locations so a single code location with many schedules
+    # cannot consistently push schedules from other code locations to the back of the
+    # thread pool queue.
+    for schedule in shuffled_round_robin_by_key(
+        running_schedules.values(), key=lambda s: s.handle.location_name
+    ):
         error_info = None
         try:
             schedule_state = all_schedule_states.get(schedule.selector_id)
@@ -552,7 +557,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     schedule_debug_crash_flags: SingleInstigatorDebugCrashFlags | None,
     submit_threadpool_executor: ThreadPoolExecutor | None,
     in_memory_last_iteration_timestamp: float | None,
-) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
+) -> Generator[SerializableErrorInfo | ScheduleIterationTimes | None, None, None]:
     schedule_state = check.inst_param(schedule_state, "schedule_state", InstigatorState)
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     instance = workspace_process_context.instance
@@ -861,7 +866,7 @@ def _schedule_runs_at_time(
     tick_context: _ScheduleLaunchContext,
     submit_threadpool_executor: ThreadPoolExecutor | None,
     debug_crash_flags: SingleInstigatorDebugCrashFlags | None = None,
-) -> Generator[None | SerializableErrorInfo | ScheduleIterationTimes, None, None]:
+) -> Generator[SerializableErrorInfo | ScheduleIterationTimes | None, None, None]:
     instance = workspace_process_context.instance
     repository_handle = remote_schedule.handle.repository_handle
 

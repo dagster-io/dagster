@@ -91,7 +91,7 @@ if not os.path.exists(manifest_path):
         UserWarning,
         stacklevel=2,
     )
-    dbt_transform_assets: list[Any] = []  # type: ignore[assignment]
+    dbt_transform_assets: list[Any] = []
 else:
 
     @dbt_assets(

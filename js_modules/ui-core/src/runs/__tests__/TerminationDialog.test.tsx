@@ -68,7 +68,7 @@ describe('TerminationDialog', () => {
     mocks,
     propOverrides,
   }: {
-    mocks?: any;
+    mocks?: MockedResponse[];
     propOverrides?: Partial<TerminationDialogProps>;
   }) => {
     const props = {

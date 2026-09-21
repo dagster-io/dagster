@@ -54,7 +54,7 @@ def test_reexecute_asset_subset():
         assert materializations[0].asset_key == dg.AssetKey("my_asset")
 
         run = instance.get_run_by_id(result.run_id)
-        assert run.asset_selection == {dg.AssetKey("my_asset")}  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.asset_selection == {dg.AssetKey("my_asset")}  # ty: ignore[unresolved-attribute]
 
         reexecution_result = dg.execute_job(
             dg.reconstructable(get_asset_selection_job),
@@ -67,7 +67,7 @@ def test_reexecute_asset_subset():
         assert len(materializations) == 1
         assert materializations[0].asset_key == dg.AssetKey("my_asset")
         run = instance.get_run_by_id(reexecution_result.run_id)
-        assert run.asset_selection == {dg.AssetKey("my_asset")}  # pyright: ignore[reportOptionalMemberAccess]
+        assert run.asset_selection == {dg.AssetKey("my_asset")}  # ty: ignore[unresolved-attribute]
 
 
 def test_execute_job_with_op_selection_single_clause():

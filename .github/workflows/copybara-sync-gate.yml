@@ -1,0 +1,109 @@
+# Copybara Sync Gate (OSS)
+#
+# Prevents merging OSS PRs while unsynced internal→OSS changes exist.
+# Without this gate, the Copybara OSS→internal sync of this commit would
+# overwrite those internal changes, silently reverting them.
+#
+# Required status check: the job name "copybara-sync-gate".
+#
+# Works with GitHub merge queue: the pull_request trigger provides a
+# passthrough (instant success) so the PR can enter the merge queue. The
+# real check runs on the merge_group trigger at merge time, polling for
+# up to 10 minutes if the sync is behind.
+#
+# Prerequisites:
+#   - Repository secret ELEMENTL_DEVTOOLS_PAT: a GitHub PAT with read
+#     access to dagster-io/internal (needed to check internal commit history).
+
+name: Copybara Sync Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  copybara-sync-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for internal-to-OSS sync to catch up
+        if: github.event_name == 'merge_group'
+        env:
+          GH_TOKEN: ${{ secrets.ELEMENTL_DEVTOOLS_PAT }}
+        run: |
+          set -euo pipefail
+
+          check_sync() {
+            # Find the last internal commit that was synced to OSS.
+            # Copybara labels synced commits with "Internal-RevId: <internal-hash>".
+            LAST_SYNCED=$(gh api "repos/${{ github.repository }}/commits" \
+              --method GET -f sha=master -f per_page=100 \
+              --jq 'map(select(.commit.message | test("Internal-RevId:"))) | .[0].commit.message' \
+            | grep -oP 'Internal-RevId: \K[a-f0-9]+')
+
+            if [ -z "$LAST_SYNCED" ]; then
+              echo "Could not find any Internal-RevId in the last 100 OSS commits"
+              return 1
+            fi
+
+            # Check how many internal commits are ahead of the last synced one.
+            COMPARE=$(gh api "repos/dagster-io/internal/compare/${LAST_SYNCED}...master")
+            AHEAD=$(echo "$COMPARE" | jq '.ahead_by')
+
+            if [ "$AHEAD" -eq 0 ]; then
+              echo "Internal-to-OSS sync is caught up"
+              return 0
+            fi
+
+            # Filter out commits that originated from OSS (noops for this direction).
+            # Then check if any remaining commits touch dagster-oss/.
+            UNSYNCED_SHAS=$(echo "$COMPARE" | jq -r \
+              '[.commits[] | select(.commit.message | test("Dagster-RevId:") | not)] | .[].sha')
+
+            if [ -z "$UNSYNCED_SHAS" ]; then
+              echo "All $AHEAD ahead commits originated from OSS — sync is effectively caught up"
+              return 0
+            fi
+
+            # Check if any unsynced commits touch dagster-oss/.
+            BLOCKING=0
+            for SHA in $UNSYNCED_SHAS; do
+              TOUCHES_OSS=$(gh api "repos/dagster-io/internal/commits/$SHA" \
+                --jq '[.files[].filename | select(startswith("dagster-oss/"))] | length')
+              if [ "$TOUCHES_OSS" -gt 0 ]; then
+                BLOCKING=$((BLOCKING + 1))
+              fi
+            done
+
+            if [ "$BLOCKING" -eq 0 ]; then
+              echo "No unsynced internal commits touch dagster-oss/ — safe to merge"
+              return 0
+            fi
+
+            echo "$BLOCKING unsynced internal commit(s) touch dagster-oss/"
+            return 1
+          }
+
+          MAX_ATTEMPTS=30  # 10 minutes at 20s intervals
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            if check_sync; then
+              echo "Sync gate passed"
+              exit 0
+            fi
+
+            if [ "$i" -eq 1 ]; then
+              echo "Waiting for copybara internal-to-public sync to complete..."
+            fi
+
+            if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+              echo "::error::Internal-to-OSS sync did not catch up within 10 minutes."
+              echo "::error::Merging this PR risks having internal changes silently reverted."
+              echo "::error::Check the 'copybara: internal to public' Buildkite pipeline."
+              exit 1
+            fi
+
+            sleep 20
+          done

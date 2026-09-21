@@ -1,4 +1,5 @@
 import logging
+import logging.handlers
 import socket
 
 from dagster import Field, IntSource, StringSource, logger
@@ -67,7 +68,7 @@ def papertrail_logger(init_context):
     log_format = "%(asctime)s %(hostname)s " + name + ": %(message)s"
 
     formatter = logging.Formatter(log_format, datefmt="%b %d %H:%M:%S")
-    handler = logging.handlers.SysLogHandler(address=(papertrail_address, papertrail_port))  # pyright: ignore[reportAttributeAccessIssue]
+    handler = logging.handlers.SysLogHandler(address=(papertrail_address, papertrail_port))
     handler.addFilter(ContextFilter())
     handler.setFormatter(formatter)
 

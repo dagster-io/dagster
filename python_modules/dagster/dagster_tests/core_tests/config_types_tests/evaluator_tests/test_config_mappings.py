@@ -73,7 +73,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "ops" at the root.'
+        'Missing required config entry "ops" at the root. You must provide this value in your run config.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -82,7 +82,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "ops" at the root.'
+        'Missing required config entry "ops" at the root. You must provide this value in your run config.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -92,7 +92,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "do_stuff" at path root:ops.'
+        'Missing required config entry "do_stuff" at path root:ops. You must provide this value in your run config.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -102,7 +102,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "config" at path root:ops:do_stuff.'
+        'Missing required config entry "config" at path root:ops:do_stuff. You must provide this value in your run config.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 
@@ -112,7 +112,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message.startswith(
-        'Missing required config entry "override_str" at path root:ops:do_stuff:config.'
+        'Missing required config entry "override_str" at path root:ops:do_stuff:config. You must provide this value in your run config.'
     )
     assert str(expected_suggested_config) in exc_info.value.errors[0].message
 

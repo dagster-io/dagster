@@ -20,7 +20,7 @@ from dagster.components.scaffold.scaffold import (
 
 
 class ComponentDumper(yaml.Dumper):
-    def write_line_break(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def write_line_break(self) -> None:  # ty: ignore[invalid-method-override]
         # add an extra line break between top-level keys
         if self.indent == 0:
             super().write_line_break()
@@ -47,7 +47,7 @@ def scaffold_component(
             )
             f.writelines([""])
     elif request.scaffold_format == "python":
-        with open(request.target_path / "component.py", "w") as f:
+        with open(request.target_path / "component.py", "w", encoding="utf-8") as f:
             fqtn = request.type_name
             check.invariant("." in fqtn, "Component must be a fully qualified type name")
             module_path, class_name = (
@@ -113,10 +113,12 @@ def scaffold_object(
 
     if isinstance(obj, type) and issubclass(obj, Component) and not append:
         defs_yaml_path = path / "defs.yaml"
+        defs_yml_path = path / "defs.yml"
         component_py_path = path / "component.py"
-        if not (defs_yaml_path.exists() or component_py_path.exists()):
+        if not (defs_yaml_path.exists() or defs_yml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a defs.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {defs_yaml_path} or {component_py_path}."
+                f"Currently all components require a defs.yaml, defs.yml, or component.py file. "
+                f"Please ensure your implementation of scaffold writes this file at {defs_yaml_path} or {component_py_path}."
             )
 
 

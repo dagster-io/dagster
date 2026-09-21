@@ -71,7 +71,7 @@ class PandasColumn:
                 )
         else:
             for constraint in self.constraints:
-                constraint.validate(dataframe, self.name)  # pyright: ignore[reportAttributeAccessIssue]
+                constraint.validate(dataframe, self.name)  # ty: ignore[unresolved-attribute]
 
     @staticmethod
     def exists(name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None):

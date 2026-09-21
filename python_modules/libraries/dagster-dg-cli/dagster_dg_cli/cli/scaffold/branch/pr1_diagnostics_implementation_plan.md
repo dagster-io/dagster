@@ -84,7 +84,7 @@ Create a comprehensive diagnostics system for `dg scaffold branch` that provides
 - Performance metrics available for each phase
 - Privacy-safe (no API keys in logs)
 - Minimal performance impact when diagnostics disabled
-- Tests pass with `make ruff` and `make quick_pyright`
+- Tests pass with `just ruff` and `just quick-ty`
 - CLAUDE.md documentation is updated with new module information
 
 ## Implementation Notes

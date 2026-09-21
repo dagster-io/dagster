@@ -75,7 +75,7 @@ load_iris = LoadToLakehouseOperator(
     columns_for_min=["sepal_length_cm"],
 )
 run_dbt_model = BashOperator(task_id="build_dbt_models", bash_command=f"dbt build {args}", dag=dag)
-load_iris >> run_dbt_model  # type: ignore
+load_iris >> run_dbt_model
 
 spark_dag = DAG(
     dag_id="spark_dag",

@@ -9,7 +9,7 @@ Example Usage
 import os
 import subprocess
 
-import modal
+import modal  # ty: ignore[unresolved-import]
 
 app = modal.App(
     image=modal.Image.debian_slim(python_version="3.10").pip_install(

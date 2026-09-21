@@ -1,10 +1,10 @@
 import {Box, Colors} from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from './TypeWithTooltip';
 import {gql} from '../apollo-client';
 import {TypeListFragment} from './types/TypeList.types';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
+import styles from './css/TypeList.module.css';
 
 interface ITypeListProps {
   isGraph: boolean;
@@ -40,13 +40,13 @@ export const TypeList = (props: ITypeListProps) => {
           <SidebarSection key={idx} title={title} collapsedByDefault={collapsedByDefault}>
             <Box padding={{vertical: 16, horizontal: 24}}>
               {typesForSection.length ? (
-                <StyledUL>
+                <ul className={styles.styledUL}>
                   {typesForSection.map((type, i) => (
-                    <TypeLI key={i}>
+                    <li className={styles.typeLI} key={i}>
                       <TypeWithTooltip type={type} />
-                    </TypeLI>
+                    </li>
                   ))}
-                </StyledUL>
+                </ul>
               ) : (
                 <div style={{color: Colors.textLight(), fontSize: '12px'}}>None</div>
               )}
@@ -66,16 +66,4 @@ export const TYPE_LIST_FRAGMENT = gql`
   }
 
   ${DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT}
-`;
-
-const StyledUL = styled.ul`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-`;
-
-const TypeLI = styled.li`
-  list-style-type: none;
 `;

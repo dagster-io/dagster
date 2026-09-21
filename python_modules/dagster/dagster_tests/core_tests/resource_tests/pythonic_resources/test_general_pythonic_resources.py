@@ -83,7 +83,7 @@ def test_invalid_config() -> None:
     with pytest.raises(
         ValidationError,
     ):
-        MyResource(foo="why")  # type: ignore
+        MyResource(foo="why")
 
 
 def test_caching_within_resource():
@@ -179,7 +179,7 @@ def test_abc_resource():
 
     # Can't instantiate abstract class
     with pytest.raises(TypeError):
-        Writer()  # pyright: ignore[reportAbstractUsage]
+        Writer()
 
     @dg.job(resource_defs={"writer": PrefixedWriterResource(prefix="greeting: ")})
     def prefixed_job():
@@ -204,7 +204,7 @@ def test_yield_in_resource_function():
     class ResourceWithCleanup(ConfigurableResourceFactory[bool]):
         idx: int
 
-        def create_resource(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
+        def create_resource(self, context):
             called.append(f"creation_{self.idx}")
             yield True
             called.append(f"cleanup_{self.idx}")
@@ -276,10 +276,10 @@ class AnIOManagerImplementation(dg.IOManager):
     def __init__(self, a_config_value: str):
         self.a_config_value = a_config_value
 
-    def load_input(self, _):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, _):  # ty: ignore[invalid-method-override]
         pass
 
-    def handle_output(self, _, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def handle_output(self, _, obj):  # ty: ignore[invalid-method-override]
         pass
 
 
@@ -316,7 +316,7 @@ def test_io_manager_factory_class():
     class AnIOManagerFactory(dg.ConfigurableIOManagerFactory):
         a_config_value: str
 
-        def create_io_manager(self, _) -> dg.IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def create_io_manager(self, _) -> dg.IOManager:  # ty: ignore[invalid-method-override]
             """Implement as one would implement a @io_manager decorator function."""
             return AnIOManagerImplementation(self.a_config_value)
 
@@ -504,7 +504,7 @@ def test_resources_which_return():
     assert completed["yes"]
 
     str_resource_partial = StringResource.configure_at_launch()
-    my_resource = MyResource(string_from_resource=str_resource_partial)  # pyright: ignore[reportArgumentType]
+    my_resource = MyResource(string_from_resource=str_resource_partial)
 
     defs = dg.Definitions(
         assets=[my_asset],
@@ -584,17 +584,17 @@ def test_nested_config_class_with_runtime_config(
     )
 
     class ParentResource(dg.ConfigurableResource):
-        child: ChildResource  # pyright: ignore[reportInvalidTypeForm]
+        child: ChildResource  # ty: ignore[invalid-type-form]
 
     @dg.asset
     def test_asset(
-        child: ChildResource,  # pyright: ignore[reportInvalidTypeForm]
+        child: ChildResource,  # ty: ignore[invalid-type-form]
         parent: ParentResource,
     ) -> None:
         assert child.date == "2025-01-21"
         assert parent.child.date == "2025-01-21"
 
-    child = ChildResource.configure_at_launch()
+    child = ChildResource.configure_at_launch()  # ty: ignore[unresolved-attribute]
     dg.materialize(
         [test_asset],
         resources={
@@ -914,7 +914,7 @@ def test_from_resource_context_and_to_config_empty() -> None:
 
     @dg.resource(config_schema=NoConfigResource.to_config_schema())
     def string_resource_function_style(context: InitResourceContext) -> str:
-        return NoConfigResource.from_resource_context(context).get_string()  # type: ignore  # (??)
+        return NoConfigResource.from_resource_context(context).get_string()  # (??)
 
     assert string_resource_function_style(dg.build_init_resource_context()) == "foo"
 
@@ -934,7 +934,7 @@ def test_context_on_resource_basic() -> None:
     # Can access context after binding one
     ContextUsingResource().with_replaced_resource_context(
         dg.build_init_resource_context()
-    ).access_context()
+    ).access_context()  # ty: ignore[unresolved-attribute]
 
     @dg.asset
     def my_test_asset(context_using: ContextUsingResource) -> None:
@@ -978,7 +978,7 @@ def test_context_on_resource_use_instance() -> None:
             assert (
                 OutputDirResource(output_dir=None)
                 .with_replaced_resource_context(dg.build_init_resource_context(instance=instance))
-                .get_effective_output_dir()
+                .get_effective_output_dir()  # ty: ignore[unresolved-attribute]
                 == "/tmp"
             )
 

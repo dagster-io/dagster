@@ -61,7 +61,7 @@ class JsonLogFormatter(logging.Formatter):
             elif k == LOG_RECORD_METADATA_ATTR:
                 # Events objects are not always JSON-serializable, so need to pack them first
                 json_serializable_event = pack_value(v[LOG_RECORD_EVENT_ATTR])
-                json_serializable_dagster_meta = DagsterLogRecordMetadata(
+                json_serializable_dagster_meta = DagsterLogRecordMetadata(  # ty: ignore[missing-typed-dict-key]
                     **{**v, "dagster_event": json_serializable_event}
                 )
                 dict_to_dump[LOG_RECORD_METADATA_ATTR] = json_serializable_dagster_meta
@@ -97,8 +97,7 @@ def json_console_logger(init_context: "InitLoggerContext") -> logging.Logger:
     Example:
         .. code-block:: python
 
-            from dagster import op, job
-            from dagster.loggers import json_console_logger
+            from dagster import op, job, json_console_logger
 
             @op
             def hello_op(context):

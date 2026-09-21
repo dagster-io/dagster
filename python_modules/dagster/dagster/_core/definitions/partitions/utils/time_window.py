@@ -68,7 +68,7 @@ class PartitionTimeWindowStatus:
             and self.status == other.status
         )
 
-    __hash__ = None  # pyright: ignore[reportAssignmentType]
+    __hash__ = None
 
 
 @whitelist_for_serdes(
@@ -111,7 +111,7 @@ class PersistedTimeWindow(
         return self._asdict()["end"].timestamp
 
     @cached_property
-    def start(self) -> datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def start(self) -> datetime:  # ty: ignore[invalid-named-tuple-override]
         start_timestamp_with_timezone = self._asdict()["start"]
         return datetime.fromtimestamp(
             start_timestamp_with_timezone.timestamp,
@@ -119,7 +119,7 @@ class PersistedTimeWindow(
         )
 
     @cached_property
-    def end(self) -> datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
+    def end(self) -> datetime:  # ty: ignore[invalid-named-tuple-override]
         end_timestamp_with_timezone = self._asdict()["end"]
         return datetime.fromtimestamp(
             end_timestamp_with_timezone.timestamp,

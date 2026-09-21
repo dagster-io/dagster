@@ -70,7 +70,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 We will set up a few non-default Pipes components to streamline the otherwise challenging problem of orchestrating Spark jobs.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/scalaspark/dagster_code.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -90,7 +90,7 @@ Our example Spark workload (based on the [official example](https://github.com/a
 
 First, create a new file named `Example.scala` in the `src/main/scala/org/examples` directory, then add the following code to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/Example.scala" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/scalaspark/Example.scala" />
 
 - Note how `PipesCliArgsParamsLoader` is used to load the CLI arguments passed by Dagster. This information will be used to automatically configure `PipesS3MessageWriter` and `PipesS3ContextLoader`.
 
@@ -113,7 +113,7 @@ rootProject.name = 'external_scala'
 
 ```
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/build.gradle" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/scalaspark/build.gradle" />
 
 - We are using the `shadow` plugin to create the JAR, since our dependencies must be bundled in the JAR.
 
@@ -126,11 +126,11 @@ rootProject.name = 'external_scala'
 
 2. Create a `Dockerfile`. Notice that `./gradlew build` will run as part of `docker build`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/Dockerfile" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/scalaspark/Dockerfile" />
 
 3. Create a `docker-compose.yml`. Don't forget to update the environment variables `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/scalaspark/docker-compose.yml" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/scalaspark/docker-compose.yml" />
 
 4. Start the Dagster dev instance inside Docker:
 

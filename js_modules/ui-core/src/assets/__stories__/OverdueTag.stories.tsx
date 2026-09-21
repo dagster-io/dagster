@@ -2,11 +2,14 @@ import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
 
 import {createAppCache} from '../../app/AppCache';
+import {AssetBaseData} from '../../asset-data/AssetBaseDataProvider';
+import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {
   buildAssetFreshnessInfo,
   buildAssetKey,
   buildAssetNode,
   buildFreshnessPolicy,
+  buildMaterializationEvent,
   buildQuery,
 } from '../../graphql/builders';
 import {OVERDUE_POPOVER_QUERY, OverdueTag} from '../OverdueTag';
@@ -22,13 +25,29 @@ const TEST_LAG_MINUTES = 4 * 60 + 30;
 const TEST_TIME = Date.now();
 const LAST_MATERIALIZATION_TIME = TEST_TIME - 4 * 60 * 1000;
 
-// const mockLiveData = {
-//   ...LiveDataForNodeMaterializedAndOverdue,
-//   lastMaterialization: {
-//     ...LiveDataForNodeMaterializedAndOverdue.lastMaterialization!,
-//     timestamp: `${LAST_MATERIALIZATION_TIME}`,
-//   },
-// };
+const ASSET_KEY = {path: ['inp8'], __typename: 'AssetKey' as const};
+
+function seedBaseData(freshnessInfo: {currentMinutesLate: number | null}) {
+  const key = tokenForAssetKey(ASSET_KEY);
+  AssetBaseData.manager._updateCache({
+    [key]: {
+      stepKey: 'inp8',
+      unstartedRunIds: [],
+      inProgressRunIds: [],
+      lastMaterialization: buildMaterializationEvent({
+        runId: 'ABCDEF',
+        timestamp: `${LAST_MATERIALIZATION_TIME}`,
+      }),
+      lastMaterializationRunStatus: null,
+      lastObservation: null,
+      runWhichFailedToMaterialize: null,
+      assetChecks: [],
+      freshnessInfo: buildAssetFreshnessInfo(freshnessInfo),
+      partitionStats: null,
+      opNames: [],
+    },
+  });
+}
 
 function buildOverduePopoverMock(
   policy: ReturnType<typeof buildFreshnessPolicy>,
@@ -92,6 +111,8 @@ export const OverdueCronSchedule = () => {
     currentLagMinutes: TEST_LAG_MINUTES,
   };
 
+  seedBaseData(freshnessInfo);
+
   return (
     <MockedProvider
       cache={createAppCache()}
@@ -118,6 +139,8 @@ export const OverdueNoSchedule = () => {
     currentMinutesLate: Math.max(0, TEST_LAG_MINUTES - mockFreshnessPolicy.maximumLagMinutes),
     currentLagMinutes: TEST_LAG_MINUTES,
   };
+
+  seedBaseData(freshnessInfo);
 
   return (
     <MockedProvider
@@ -146,6 +169,8 @@ export const OverdueNoUpstreams = () => {
     currentMinutesLate: Math.max(0, currentLagMinutes - mockFreshnessPolicy.maximumLagMinutes),
     currentLagMinutes,
   };
+
+  seedBaseData(freshnessInfo);
 
   return (
     <MockedProvider
@@ -192,6 +217,8 @@ export const Fresh = () => {
     currentMinutesLate: 0,
     currentLagMinutes: TEST_LAG_MINUTES,
   };
+
+  seedBaseData(freshnessInfo);
 
   return (
     <MockedProvider

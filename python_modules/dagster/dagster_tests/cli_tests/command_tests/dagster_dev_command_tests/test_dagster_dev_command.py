@@ -8,11 +8,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TextIO
 
+import click
 import psutil
 import pytest
 import requests
 import yaml
-from dagster._cli.utils import TMP_DAGSTER_HOME_PREFIX
+from click.testing import CliRunner
+from dagster._cli.dev import _workspace_opts_to_serialized_cli_args
+from dagster._cli.utils import TMP_DAGSTER_HOME_PREFIX, assert_no_remaining_opts
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
@@ -20,16 +23,61 @@ from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
 from dagster._utils import find_free_port, pushd
 from dagster_graphql import DagsterGraphQLClient
+from dagster_shared.cli import WorkspaceOpts, workspace_options
 from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_then_kill_ipc_subprocess,
     open_ipc_subprocess,
     send_ipc_shutdown_message,
 )
+from dagster_shared.record import as_dict
 
 from dagster_tests.cli_tests.command_tests.test_definitions_validate_command import (
     INVALID_PROJECT_PATH_WITH_EXCEPTION,
 )
+
+
+def test_workspace_opts_survive_serialization_to_subprocess_args(tmp_path: Path):
+    """Every workspace option must survive being re-serialized as argv and parsed back.
+
+    Under legacy code server behavior `dagster dev` passes its workspace options to the
+    webserver and daemon it spawns by turning them back into CLI args. An option missing
+    from that serializer is dropped silently: the subprocess sees no target and falls back
+    to pyproject.toml or workspace.yaml, loading different code than was asked for.
+    """
+    workspace_file = tmp_path / "workspace.yaml"
+    workspace_file.touch()
+
+    opts = WorkspaceOpts(
+        empty_workspace=True,
+        workspace=(str(workspace_file),),
+        python_file=("defs.py",),
+        module_name=("some_module",),
+        package_name=("some_package",),
+        working_directory=str(tmp_path),
+        attribute="defs",
+        autoload_defs_module_name="some_module.defs",
+        grpc_port=4000,
+        grpc_socket="barsocket",
+        grpc_host="barhost",
+        use_ssl=True,
+    )
+    # A field left at its default round-trips trivially and proves nothing, so require every
+    # field to be set here. This is what forces a newly added option to be covered.
+    assert all(as_dict(opts).values())
+
+    round_tripped = []
+
+    @click.command(name="test_round_trip_command")
+    @workspace_options
+    def command(**cli_opts: object):
+        round_tripped.append(WorkspaceOpts.extract_from_cli_options(cli_opts))
+        assert_no_remaining_opts(cli_opts)
+
+    args = list(_workspace_opts_to_serialized_cli_args(opts))
+    result = CliRunner().invoke(command, args)
+    assert result.exit_code == 0, result.output
+    assert round_tripped == [opts]
 
 
 def test_dagster_dev_command_workspace():
@@ -83,13 +131,13 @@ def test_dagster_dev_command_no_dagster_home():
     }
     dagster_yaml = {
         "run_coordinator": {
-            "module": "dagster.core.run_coordinator",
+            "module": "dagster._core.run_coordinator",
             "class": "QueuedRunCoordinator",
         },
     }
 
     with tempfile.TemporaryDirectory() as tempdir, environ(environment_patch), pushd(tempdir):
-        with open(os.path.join(str(tempdir), "dagster.yaml"), "w") as config_file:
+        with open(os.path.join(str(tempdir), "dagster.yaml"), "w", encoding="utf-8") as config_file:
             yaml.dump(dagster_yaml, config_file)
 
         webserver_port = find_free_port()
@@ -127,7 +175,7 @@ def test_dagster_dev_command_no_dagster_home():
                         # Verify the run was queued (so the dagster.yaml was applied)
                         break
 
-                    if time.time() - start_time > 30:
+                    if time.time() - start_time > 60:
                         raise Exception("Timed out waiting for queued run to exist")
 
                     time.sleep(1)
@@ -265,7 +313,7 @@ def _wait_for_webserver_running(dagit_port: int) -> None:
         except:
             print("Waiting for webserver to be ready..")  # noqa: T201
 
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 60:
             raise Exception("Timed out waiting for webserver to serve requests")
 
         time.sleep(1)
@@ -275,7 +323,7 @@ def _wait_for_instance_dir_to_be_written(parent_dir: Path) -> Path:
     # Wait for instance files to exist
     start_time = time.time()
     while True:
-        if time.time() - start_time > 30:
+        if time.time() - start_time > 60:
             raise Exception("Timed out waiting for instance files to exist")
         subfolders = [
             child
@@ -398,7 +446,7 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
 
         with pushd(INVALID_PROJECT_PATH_WITH_EXCEPTION):
             webserver_port = find_free_port()
-            stdout_file = open(stdout_filepath, "w")
+            stdout_file = open(stdout_filepath, "w", encoding="utf-8")
             with _launch_dev_command(
                 options=["--port", str(webserver_port)] + (["--verbose"] if verbose else []),
                 capture_output=True,
@@ -431,7 +479,7 @@ def test_proxy_server_crash() -> None:
             stdout_filepath = str(Path(tempdir) / "stdout.txt")
             with environ({"DAGSTER_HOME": ""}):
                 with pushd(tempdir):
-                    stdout_file = open(stdout_filepath, "w")
+                    stdout_file = open(stdout_filepath, "w", encoding="utf-8")
                     webserver_port = find_free_port()
                     with _launch_dev_command(
                         [

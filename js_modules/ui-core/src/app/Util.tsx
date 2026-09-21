@@ -151,13 +151,13 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
     const r = (await fn(arg, ...rest)) as R;
     cache.set(key, r);
     return r;
-  }) as any;
+  }) as unknown as U;
 }
 
 export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R>>(
   fn: U,
   key: string,
-  hashFn?: (...args: Parameters<U>) => any,
+  hashFn?: (...args: Parameters<U>) => string,
 ): U & {
   isCached: (...args: Parameters<U>) => Promise<boolean>;
   clearEntry: (...args: Parameters<U>) => Promise<void>;
@@ -213,7 +213,10 @@ export const indexedDBAsyncMemoize = <R, U extends (...args: any[]) => Promise<R
         reject(e);
       }
     });
-  }) as any;
+  }) as unknown as U & {
+    isCached: (...args: Parameters<U>) => Promise<boolean>;
+    clearEntry: (...args: Parameters<U>) => Promise<void>;
+  };
   ret.isCached = async (...args: Parameters<U>) => {
     const hashKey = await genHashKey(...args);
     if (!lru) {

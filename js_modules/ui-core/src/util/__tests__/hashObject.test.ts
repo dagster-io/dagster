@@ -63,8 +63,8 @@ describe('hashObject', () => {
 
   // Test with deeply nested structures
   test('handles deeply nested structures', () => {
-    let deepObj: any = {value: 'deep'};
-    const deepObjCopy: any = {value: 'deep'};
+    let deepObj: Record<string, unknown> = {value: 'deep'};
+    const deepObjCopy: Record<string, unknown> = {value: 'deep'};
 
     // Create a deeply nested object
     for (let i = 0; i < 100; i++) {

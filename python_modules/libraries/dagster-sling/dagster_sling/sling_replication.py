@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, TypeAlias, cast
 
 import dagster._check as check
-import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 SlingReplicationParam: TypeAlias = Mapping[str, Any] | str | Path
 
@@ -16,7 +16,7 @@ def read_replication_path(replication_path: Path) -> Mapping[str, Any]:
     This function is cached to ensure that we don't read the same path multiple times, which
     creates multiple copies of the parsed manifest in memory.
     """
-    return cast("Mapping[str, Any]", yaml.safe_load(replication_path.read_bytes()))
+    return cast("Mapping[str, Any]", safe_load_yaml(replication_path.read_bytes()))
 
 
 def validate_replication(replication: SlingReplicationParam | None) -> Mapping[str, Any]:

@@ -1,27 +1,16 @@
-import {Colors} from '@dagster-io/ui-components';
-import styled, {css} from 'styled-components';
+import {Button} from '@dagster-io/ui-components';
+import clsx from 'clsx';
+import {ComponentProps} from 'react';
 
-import {AnchorButton} from '../ui/AnchorButton';
+import styles from './css/ActivatableButton.module.css';
 
-export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
-  color: ${Colors.textLight()};
+export {styles as activatableButtonStyles};
 
-  &&:hover {
-    color: ${Colors.textLight()};
-  }
+type ActivatableButtonProps = {$active: boolean} & ComponentProps<typeof Button>;
 
-  ${({$active}) =>
-    $active
-      ? css`
-          background-color: ${Colors.backgroundLighterHover()};
-          color: ${Colors.textDefault()};
-
-          &&:hover {
-            background-color: ${Colors.backgroundLighterHover()};
-            color: ${Colors.textDefault()};
-          }
-        `
-      : css`
-          background-color: ${Colors.backgroundDefault()};
-        `}
-`;
+export const ActivatableButton = ({$active, className, ...rest}: ActivatableButtonProps) => (
+  <Button
+    className={clsx(styles.activatableButton, $active ? styles.active : styles.inactive, className)}
+    {...rest}
+  />
+);

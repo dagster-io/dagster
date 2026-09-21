@@ -1,11 +1,13 @@
-import {WorkspaceLocationAssetsFetcher} from './WorkspaceLocationAssetsFetcher';
+import {
+  RawWorkspaceAssetsResponse,
+  WorkspaceLocationAssetsFetcher,
+} from './WorkspaceLocationAssetsFetcher';
 import {WorkspaceLocationDataFetcher} from './WorkspaceLocationDataFetcher';
 import {WorkspaceStatusPoller} from './WorkspaceStatusPoller';
 import {ApolloClient} from '../../apollo-client';
 import {
   CodeLocationStatusQuery,
   LocationStatusEntryFragment,
-  LocationWorkspaceAssetsQuery,
   LocationWorkspaceQuery,
 } from './types/WorkspaceQueries.types';
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
@@ -13,7 +15,7 @@ import {useGetData} from '../../search/useIndexedDBCachedQuery';
 type Data = Partial<{
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   locationEntries: Record<string, LocationWorkspaceQuery>;
-  assetEntries: Record<string, LocationWorkspaceAssetsQuery>;
+  assetEntries: Record<string, RawWorkspaceAssetsResponse>;
 }>;
 export class WorkspaceManager {
   private statusPoller: WorkspaceStatusPoller;
@@ -33,6 +35,7 @@ export class WorkspaceManager {
     readonly getData: ReturnType<typeof useGetData>;
     readonly setData: (data: Data) => void;
     readonly setCodeLocationStatusAtom: (status: CodeLocationStatusQuery) => void;
+    readonly shouldUseAssetManifest: boolean;
   }) {
     this.client = args.client;
     this.localCacheIdPrefix = args.localCacheIdPrefix;
@@ -60,6 +63,7 @@ export class WorkspaceManager {
         localCacheIdPrefix: this.localCacheIdPrefix,
         getData: this.getData,
         statusPoller: this.statusPoller,
+        shouldUseAssetManifest: args.shouldUseAssetManifest,
       }),
     };
 

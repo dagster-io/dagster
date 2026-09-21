@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_cloud_cli import ui
 
@@ -20,7 +20,7 @@ def get_locations(dagster_cloud_yaml_file) -> list[Location]:
 
     with open(dagster_cloud_yaml_file, encoding="utf-8") as yaml_file:
         workspace_contents = yaml_file.read()
-        workspace_contents_yaml = yaml.safe_load(workspace_contents)
+        workspace_contents_yaml = safe_load_yaml(workspace_contents)
 
         locations = []
         for location in workspace_contents_yaml["locations"]:

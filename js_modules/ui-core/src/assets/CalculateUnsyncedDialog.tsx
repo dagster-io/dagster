@@ -3,21 +3,24 @@ import {
   Button,
   Checkbox,
   Colors,
+  Container,
   Dialog,
   DialogBody,
   DialogFooter,
   Icon,
+  Inner,
   MiddleTruncate,
+  Row,
   Spinner,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {isAssetMissing, isAssetStale} from './Stale';
 import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import styles from './css/CalculateUnsyncedDialog.module.css';
 import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {
@@ -26,7 +29,6 @@ import {
 } from './types/CalculateUnsyncedDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 export const CalculateUnsyncedDialog = React.memo(
   ({
@@ -98,7 +100,7 @@ export const CalculateUnsyncedDialog = React.memo(
       if (unsynced.length) {
         return (
           <>
-            <RowGrid border="bottom" padding={{bottom: 8}}>
+            <Box className={styles.rowGrid} border="bottom" padding={{bottom: 8}}>
               <Checkbox
                 id="check-all"
                 checked={checked.size === unsynced.length}
@@ -115,21 +117,21 @@ export const CalculateUnsyncedDialog = React.memo(
               <label htmlFor="check-all" style={{color: Colors.textLight(), cursor: 'pointer'}}>
                 Asset Name
               </label>
-            </RowGrid>
+            </Box>
             <Container ref={containerRef} style={{maxHeight: '400px'}}>
-              <Inner $totalHeight={totalHeight}>
+              <Inner totalHeight={totalHeight}>
                 {items.map(({index, key, size, start}) => {
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   const item = unsynced[index]!;
                   return (
                     <Row
-                      $height={size}
-                      $start={start}
+                      height={size}
+                      start={start}
                       data-key={key}
                       key={key}
                       ref={virtualizer.measureElement}
                     >
-                      <RowGrid border="bottom">
+                      <Box className={styles.rowGrid} border="bottom">
                         <Checkbox
                           id={`checkbox-${key}`}
                           checked={checked.has(item)}
@@ -153,7 +155,7 @@ export const CalculateUnsyncedDialog = React.memo(
                             <Icon name="open_in_new" color={Colors.linkDefault()} />
                           </Link>
                         </Box>
-                      </RowGrid>
+                      </Box>
                     </Row>
                   );
                 })}
@@ -214,14 +216,4 @@ const ASSET_STALE_STATUS_QUERY = gql`
       }
     }
   }
-`;
-
-const TEMPLATE_COLUMNS = '20px minmax(0, 1fr)';
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  gap: 8px;
-  height: 100%;
-  align-items: center;
 `;

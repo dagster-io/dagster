@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,7 @@ from dagster_test.dg_utils.utils import (
 )
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_check_defs_workspace_context_success():
     dagster_git_repo_dir = str(discover_repo_root(Path(__file__)))
@@ -60,6 +62,24 @@ def test_check_defs_project_context_failure():
         (Path("src") / "foo_bar" / "defs" / "__init__.py").write_text("invalid")
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_check_defs_project_context_with_definitions_py():
+    """Test that dg check defs works when project uses definitions.py instead of defs/ directory."""
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        # Remove the default defs/ directory and create definitions.py instead
+        defs_dir = Path("src") / "foo_bar" / "defs"
+        if defs_dir.exists():
+            shutil.rmtree(defs_dir)
+
+        definitions_file = Path("src") / "foo_bar" / "definitions.py"
+        definitions_file.write_text(
+            "from dagster import Definitions\ndefs = Definitions()\n", encoding="utf-8"
+        )
+
+        result = runner.invoke("check", "defs", "--no-check-yaml")
+        assert_runner_result(result)
 
 
 def test_implicit_yaml_check_from_dg_check_defs_in_project_context() -> None:

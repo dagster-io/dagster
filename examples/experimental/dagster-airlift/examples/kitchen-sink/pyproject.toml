@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=69.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "kitchen-sink"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster==1!0+dev",
     "dagster-webserver==1!0+dev",
@@ -14,4 +15,5 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest"]
 
-[tool.setuptools.packages.find]
+[tool.hatch.build.targets.wheel]
+bypass-selection = true

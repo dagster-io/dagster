@@ -1,0 +1,6 @@
+{
+  "assetNodeOrError": {
+    "__typename": "AssetNotFoundError",
+    "message": "Asset not found: nonexistent/asset"
+  }
+}

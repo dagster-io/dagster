@@ -9,13 +9,13 @@ This guide provides instructions for deploying Dagster on Amazon Web Services (A
 
 ## Hosting Dagster on EC2
 
-To host Dagster on a bare VM or in Docker on EC2, see "[Running Dagster as a service](/deployment/oss/deployment-options/deploying-dagster-as-a-service).
+To host Dagster on a bare VM or in Docker on EC2, see [Running Dagster as a service](/deployment/oss/deployment-options/deploying-dagster-as-a-service).
 
 ## Using RDS for run and event log storage
 
 You can use a hosted RDS PostgreSQL database for your Dagster run/events data by configuring your `dagster.yaml` file:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster-pg.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/oss/dagster-pg.yaml" />
 
 In this case, you'll want to ensure that:
 
@@ -90,19 +90,21 @@ You can also use job tags to customize the CPU, memory, or ephemeral storage of 
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    "ecs/cpu": "256",
-    "ecs/memory": "512",
-    "ecs/ephemeral_storage": "40",
-  }
+    tags={
+        "ecs/cpu": "256",
+        "ecs/memory": "512",
+        "ecs/ephemeral_storage": "40",
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 If these tags are set, they will override any defaults set on the run launcher.
@@ -141,23 +143,25 @@ You can also use the `ecs/run_task_kwargs` tag to customize the ECS task of ever
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    "ecs/run_task_kwargs": {
-      "capacityProviderStrategy": [
-        {
-          "capacityProvider": "FARGATE_SPOT",
+    tags={
+        "ecs/run_task_kwargs": {
+            "capacityProviderStrategy": [
+                {
+                    "capacityProvider": "FARGATE_SPOT",
+                },
+            ],
         },
-      ],
-    },
-  }
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) for the full set of available arguments to `run_task`. Additionally, note that:
@@ -176,19 +180,21 @@ Use the `ecs/task_overrides` tag to set task-level overrides. For example:
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags={
-    "ecs/task_overrides": {
-      "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
-    },
-  }
+    tags={
+        "ecs/task_overrides": {
+            "executionRoleArn": "arn:aws:iam::123456789012:role/my-execution-role",
+        },
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 #### Container overrides
@@ -198,21 +204,23 @@ Use the `ecs/container_overrides` tag to set container-level overrides. For exam
 ```py
 import dagster as dg
 
+
 @dg.op()
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags={
-    "ecs/container_overrides": {
-      "resourceRequirements": [
-        {"type": "GPU", "value": "1"},
-      ],
-    },
-  }
+    tags={
+        "ecs/container_overrides": {
+            "resourceRequirements": [
+                {"type": "GPU", "value": "1"},
+            ],
+        },
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 :::note
@@ -222,6 +230,99 @@ Using the `ecs/container_overrides` tag requires dagster version `1.12.9` or hig
 The run launcher will always override the `name` and `command` fields of the container, so you cannot override these values. If you use the `ecs/cpu` or `ecs/memory` tags together with `ecs/container_overrides`, the values from the dedicated tags will be merged together, with values from `ecs/container_overrides` breaking any ties.
 
 :::
+
+### Launching steps as ECS tasks
+
+By default, Dagster runs execute all steps in a single ECS task. The <PyObject section="libraries" integration="aws" module="dagster_aws" object="ecs.ecs_executor" /> can be used to launch each step in its own ECS task, allowing you to allocate different resources for each step.
+
+To use the `ecs_executor`, set it as the default executor for your code location:
+
+```python
+import dagster as dg
+from dagster_aws.ecs import ecs_executor
+
+
+@dg.asset
+def raw_data(): ...
+
+
+@dg.asset(deps=[raw_data])
+def processed_data(): ...
+
+
+@dg.definitions
+def defs() -> dg.Definitions:
+    return dg.Definitions(
+        assets=[raw_data, processed_data],
+        executor=ecs_executor,
+    )
+```
+
+Then configure the executor with run config:
+
+```yaml
+execution:
+  config:
+    cpu: 1024
+    memory: 2048
+    ephemeral_storage: 10
+    max_concurrent: 4
+    task_overrides:
+      containerOverrides:
+        - name: run
+          environment:
+            - name: MY_ENV_VAR
+              value: 'my_value'
+```
+
+`max_concurrent` limits the number of ECS tasks that will execute concurrently for one run. By default there is no limit — it will be maximally parallel as allowed by the DAG. Note that this is not a global limit.
+
+Configuration set on the ECS tasks created by the `EcsRunLauncher` will also be set on the tasks created by the `ecs_executor`.
+
+:::note
+
+Using the `ecs_executor` requires that the run be launched via the `EcsRunLauncher`. The executor inherits networking, cluster, and task definition configuration from the current ECS task.
+
+:::
+
+#### Per-step resource configuration
+
+You can use `op_tags` on assets (or `tags` on ops) to customize the resources for individual steps:
+
+```python
+import dagster as dg
+from dagster_aws.ecs import ecs_executor
+
+
+@dg.asset(op_tags={"ecs/cpu": "256", "ecs/memory": "512"})
+def light_asset(): ...
+
+
+@dg.asset(
+    deps=[light_asset],
+    op_tags={"ecs/cpu": "4096", "ecs/memory": "16384", "ecs/ephemeral_storage": "40"},
+)
+def heavy_asset(): ...
+
+
+@dg.definitions
+def defs() -> dg.Definitions:
+    return dg.Definitions(
+        assets=[light_asset, heavy_asset],
+        executor=ecs_executor,
+    )
+```
+
+The following tags are supported:
+
+| Tag                       | Description                                                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ecs/cpu`                 | CPU units for the step's ECS task (e.g. `"256"`, `"1024"`, `"4096"`)                                                                                                         |
+| `ecs/memory`              | Memory in MiB for the step's ECS task (e.g. `"512"`, `"2048"`, `"16384"`)                                                                                                    |
+| `ecs/ephemeral_storage`   | Ephemeral storage in GiB for the step's ECS task                                                                                                                             |
+| `ecs/task_overrides`      | JSON string of [task override](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskOverride.html) configuration                                                |
+| `ecs/container_overrides` | JSON string of [container override](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerOverride.html) configuration                                      |
+| `ecs/run_task_kwargs`     | JSON string of additional arguments for the boto3 [`run_task`](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) call |
 
 ### Secrets management in ECS
 
@@ -263,11 +364,11 @@ To enable parallel computation (e.g., with the multiprocessing or Dagster celery
 
 You'll need to use <PyObject section="libraries" integration="aws" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.py" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/oss/deployment_options/aws/io_manager.py" />
 
 Then, add the following YAML block in your job's config:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/deployment/oss/deployment_options/aws/io_manager.yaml" />
 
 The resource uses `boto` under the hood. If you're accessing your private buckets, you'll need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow [one of the other boto authentication methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 

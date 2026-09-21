@@ -54,7 +54,7 @@ To test a function decorated by the <PyObject section="schedules-sensors" module
 Let's say we want to test the `configurable_job_schedule` in this example:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedules.py"
   startAfter="start_run_config_schedule"
   endBefore="end_run_config_schedule"
   title="src/<project_name>/defs/assets.py"
@@ -63,7 +63,7 @@ Let's say we want to test the `configurable_job_schedule` in this example:
 To test this schedule, we used <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" /> to construct a <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> to provide to the `context` parameter:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedule_examples.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedule_examples.py"
   startAfter="start_test_cron_schedule_context"
   endBefore="end_test_cron_schedule_context"
   title="tests/test_assets.py"
@@ -78,7 +78,7 @@ For schedules that utilize [resources](/guides/build/external-resources), you ca
 Let's say we want to test the `process_data_schedule` in this example:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py"
   startAfter="start_new_resource_on_schedule"
   endBefore="end_new_resource_on_schedule"
   title="src/<project_name>/defs/assets.py"
@@ -88,18 +88,9 @@ Let's say we want to test the `process_data_schedule` in this example:
 In the test for this schedule, we provided the `date_formatter` resource to the schedule when we invoked its function:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py"
   startAfter="start_test_resource_on_schedule"
   endBefore="end_test_resource_on_schedule"
   title="tests/test_assets.py"
   dedent="4"
 />
-
-## APIs in this guide
-
-| Name                                                                                         | Description                                                                           |
-| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />        | Decorator that defines a schedule that executes according to a given cron schedule.   |
-| <PyObject section="execution" module="dagster" object="validate_run_config" />               | A function that validates a provided run config blob against a job.                   |
-| <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" />    | A function that constructs a `ScheduleEvaluationContext`, typically used for testing. |
-| <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> | The context passed to the schedule definition execution function.                     |

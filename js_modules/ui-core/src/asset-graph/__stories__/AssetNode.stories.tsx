@@ -19,9 +19,10 @@ import {AllAssetNodeFacets} from '../AssetNodeFacets';
 import {AssetNodeFacetsPicker} from '../AssetNodeFacetsPicker';
 import {AssetNodeFacet} from '../AssetNodeFacetsUtil';
 import {AssetNodeLink} from '../ForeignNode';
-import {tokenForAssetKey} from '../Utils';
+import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../Utils';
 import * as Mocks from '../__fixtures__/AssetNode.fixtures';
 import {getAssetNodeDimensions} from '../layout';
+import {AssetNodeFragment} from '../types/AssetNode.types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -31,9 +32,9 @@ export default {
 
 interface AssetNodeScenario {
   title: string;
-  liveData: any;
+  liveData: LiveDataForNodeWithStaleData | undefined;
   healthData?: AssetHealthFragment;
-  definition: any;
+  definition: AssetNodeFragment;
   expectedText: string[];
 }
 
@@ -43,12 +44,11 @@ function SetCacheEntry({
   healthData,
 }: {
   assetKey: ReturnType<typeof buildAssetKey>;
-  liveData: any;
+  liveData: LiveDataForNodeWithStaleData | undefined;
   healthData?: AssetHealthFragment;
 }) {
   const key = tokenForAssetKey(assetKey);
 
-  // // Set up live data cache if available
   if (liveData) {
     const entry = {[key]: liveData};
     AssetBaseData.manager._updateCache(entry);
@@ -56,7 +56,7 @@ function SetCacheEntry({
     const staleEntry = {
       [key]: buildAssetNode({
         assetKey,
-        staleCauses: liveData.staleCauses.map((cause: any) => buildStaleCause(cause)),
+        staleCauses: liveData.staleCauses.map((cause) => buildStaleCause(cause)),
         staleStatus: liveData.staleStatus,
       }),
     };
@@ -69,7 +69,7 @@ function SetCacheEntry({
   return null;
 }
 
-export const LiveStates = () => {
+const LiveStatesComponent = () => {
   const [assetHealthEnabled, setAssetHealthEnabled] = useState(true);
   const [facets, setFacets] = useState<Set<AssetNodeFacet>>(new Set(AllAssetNodeFacets));
 
@@ -171,7 +171,10 @@ export const LiveStates = () => {
       </AssetLiveDataProvider>
     </MockedProvider>
   );
-  return;
+};
+
+export const LiveStates = {
+  render: () => <LiveStatesComponent />,
 };
 
 export const Links = () => {
@@ -184,7 +187,7 @@ export const Links = () => {
   );
 };
 
-export const PartnerTags = () => {
+const PartnerTagsComponent = () => {
   const caseWithComputeKind = (computeKind: string) => {
     const def = {...Mocks.AssetNodeFragmentBasic, kinds: [computeKind]};
     const liveData = Mocks.LiveDataForNodeMaterialized;
@@ -231,4 +234,8 @@ export const PartnerTags = () => {
       </AssetLiveDataProvider>
     </MockedProvider>
   );
+};
+
+export const PartnerTags = {
+  render: () => <PartnerTagsComponent />,
 };

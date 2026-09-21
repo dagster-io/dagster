@@ -3,13 +3,14 @@ import {useMemo} from 'react';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
+import {WorkspaceContext} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {CodeLocationDefinitionsRoot} from '../CodeLocationDefinitionsRoot';
 import {
+  buildEmptyWorkspaceLocationEntry,
   buildSampleOpsRootQuery,
   buildSampleRepository,
-  buildSampleRepositoryAssetsQuery,
   buildSampleRepositoryGraphsQuery,
 } from '../__fixtures__/CodeLocationPages.fixtures';
 
@@ -24,7 +25,6 @@ export const Default = () => {
   const locationName = 'bar';
   const repoAddress = buildRepoAddress(repoName, locationName);
 
-  // const now = useMemo(() => Date.now() / 1000, []);
   const repository = buildSampleRepository({
     name: repoName,
     jobCount: 500,
@@ -33,11 +33,15 @@ export const Default = () => {
     resourceCount: 100,
   });
 
+  const locationEntry = buildEmptyWorkspaceLocationEntry({
+    time: Date.now() / 1000,
+    locationName,
+  });
+
   const mocks = useMemo(
     () => [
       buildSampleOpsRootQuery({repoAddress, opCount: 500}),
       buildSampleRepositoryGraphsQuery({repoAddress, jobCount: 500, opCount: 500}),
-      buildSampleRepositoryAssetsQuery({repoAddress, groupCount: 10, assetsPerGroup: 100}),
     ],
     [repoAddress],
   );
@@ -46,12 +50,29 @@ export const Default = () => {
     <RecoilRoot>
       <MemoryRouter initialEntries={[workspacePathFromAddress(repoAddress, '/jobs')]}>
         <MockedProvider mocks={mocks}>
-          <div style={{height: '500px', overflow: 'hidden'}}>
-            <CodeLocationDefinitionsRoot
-              repoAddress={buildRepoAddress(repoName, locationName)}
-              repository={repository}
-            />
-          </div>
+          <WorkspaceContext.Provider
+            value={{
+              allRepos: [],
+              visibleRepos: [],
+              data: {},
+              refetch: async () => {},
+              toggleVisible: () => {},
+              loadingNonAssets: false,
+              loadingAssets: false,
+              assetEntries: {},
+              locationEntries: [locationEntry],
+              locationStatuses: {},
+              setVisible: () => {},
+              setHidden: () => {},
+            }}
+          >
+            <div style={{height: '500px', overflow: 'hidden'}}>
+              <CodeLocationDefinitionsRoot
+                repoAddress={buildRepoAddress(repoName, locationName)}
+                repository={repository}
+              />
+            </div>
+          </WorkspaceContext.Provider>
         </MockedProvider>
       </MemoryRouter>
     </RecoilRoot>

@@ -1,6 +1,6 @@
 import os
 
-from databricks.connect import DatabricksSession
+from databricks.connect import DatabricksSession  # ty: ignore[unresolved-import]
 from pyspark.sql import SparkSession
 
 import dagster as dg

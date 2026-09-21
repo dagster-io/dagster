@@ -18,7 +18,9 @@ jest.mock('../../performance/TraceContext', () => ({
 
 describe('AssetHealthDataProvider integration tests', () => {
   let useAssetHealthData: any;
+
   let useAssetsHealthDataWithoutGateCheck: any;
+
   let __resetForJest: any;
 
   beforeAll(() => {

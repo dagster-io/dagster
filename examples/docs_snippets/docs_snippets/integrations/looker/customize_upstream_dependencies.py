@@ -26,7 +26,7 @@ class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
         return default_spec.replace_attributes(
             deps=["my_upstream_asset"]
             if looker_structure.structure_type == LookerStructureType.VIEW
-            and looker_structure.data.view_name == "my_looker_view"
+            and looker_structure.data.view_name == "my_looker_view"  # ty: ignore[unresolved-attribute]
             else ...
         )
 

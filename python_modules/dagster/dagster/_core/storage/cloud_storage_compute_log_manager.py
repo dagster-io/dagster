@@ -154,7 +154,7 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
     def subscribe(
         self, log_key: Sequence[str], cursor: str | None = None
     ) -> CapturedLogSubscription:
-        subscription = CapturedLogSubscription(self, log_key, cursor)
+        subscription = CapturedLogSubscription(self, log_key, cursor)  # ty: ignore[invalid-argument-type]
         self.on_subscribe(subscription)
         return subscription
 

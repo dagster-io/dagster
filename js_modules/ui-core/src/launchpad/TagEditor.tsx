@@ -9,7 +9,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import {Dispatch, SetStateAction, useEffect, useState} from 'react';
-import styled from 'styled-components';
 
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
@@ -17,6 +16,7 @@ import {ExecutionTag} from '../graphql/types';
 import {RunTag} from '../runs/RunTag';
 import {useCopyAction} from '../runs/RunTags';
 import {TagAction} from '../ui/TagActions';
+import styles from './css/TagEditor.module.css';
 
 interface ITagEditorProps {
   tagsFromDefinition?: PipelineRunTag[];
@@ -152,7 +152,7 @@ export const EditableTagList = ({
           <Box margin={{left: 2}} style={{fontSize: '13px', fontWeight: 500}}>
             Tags from definition:
           </Box>
-          <TagList>
+          <div className={styles.tagList}>
             {tagsFromDefinition.map((tag, idx) => {
               const {key} = tag;
               const anyOverride = editState.some((editable) => editable.key === key);
@@ -167,7 +167,7 @@ export const EditableTagList = ({
               }
               return <RunTag tag={tag} key={key} actions={[copyAction]} />;
             })}
-          </TagList>
+          </div>
         </Box>
       ) : null}
       <Box flex={{direction: 'column', gap: 12}}>
@@ -225,8 +225,8 @@ export const TagContainer = ({
   actions,
 }: ITagContainerProps) => {
   return (
-    <Container>
-      <TagList>
+    <div className={styles.container}>
+      <div className={styles.tagList}>
         {tagsFromDefinition
           ? tagsFromDefinition.map((tag, idx) => {
               const {key} = tag;
@@ -246,20 +246,7 @@ export const TagContainer = ({
         {tagsFromSession.map((tag, idx) => (
           <RunTag tag={tag} key={idx} actions={actions} />
         ))}
-      </TagList>
-    </Container>
+      </div>
+    </div>
   );
 };
-
-const Container = styled.div`
-  align-items: flex-start;
-  display: flex;
-  flex-direction: row;
-`;
-
-const TagList = styled.div`
-  display: flex;
-  flex: 1;
-  flex-wrap: wrap;
-  gap: 4px;
-`;

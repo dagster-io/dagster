@@ -2,19 +2,18 @@ import {
   Box,
   Button,
   ButtonGroup,
-  Caption,
-  Colors,
   Icon,
-  Mono,
   Tag,
+  Text,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import dayjs from 'dayjs';
 import uniqBy from 'lodash/uniqBy';
+import * as React from 'react';
 import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetPartitionMetadataPlots, AssetTimeMetadataPlots} from './AssetEventMetadataPlots';
 import {AssetKey} from './types';
@@ -41,6 +40,7 @@ import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.typ
 import {titleForRun} from '../runs/RunUtils';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/AssetEventMetadataEntriesTable.module.css';
 
 type TableEvent = Pick<
   | AssetObservationFragment
@@ -67,6 +67,8 @@ interface Props {
   hideEntriesShownOnOverview?: boolean;
   displayedByDefault?: number;
   emptyState?: React.ReactNode;
+  renderMetadataKeyExtra?: (label: string) => React.ReactNode | null;
+  renderMetadataValueExtra?: (entry: MetadataEntryLabelOnly) => React.ReactNode | null;
 }
 
 /**
@@ -88,6 +90,8 @@ export const AssetEventMetadataEntriesTable = ({
   displayedByDefault = 100,
   emptyState,
   repoAddress,
+  renderMetadataKeyExtra,
+  renderMetadataValueExtra,
 }: Props) => {
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
@@ -196,7 +200,7 @@ export const AssetEventMetadataEntriesTable = ({
         </Box>
       )}
       {view === 'table' ? (
-        <AssetEventMetadataScrollContainer>
+        <div className={styles.assetEventMetadataScrollContainer}>
           <StyledTableWithHeader>
             {showHeader && (
               <thead>
@@ -212,7 +216,9 @@ export const AssetEventMetadataEntriesTable = ({
               {filteredRows.length === 0 && (
                 <tr>
                   <td colSpan={4}>
-                    <Caption color={Colors.textLight()}>No metadata entries</Caption>
+                    <Text size={12} color="textLight">
+                      No metadata entries
+                    </Text>
                   </td>
                 </tr>
               )}
@@ -221,7 +227,12 @@ export const AssetEventMetadataEntriesTable = ({
                 .map(({entry, timestamp, runId, icon, tooltip}) => (
                   <tr key={`metadata-${timestamp}-${entry.label}`}>
                     <td>
-                      <Mono>{entry.label}</Mono>
+                      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                        <Text size={14} family="mono">
+                          {entry.label}
+                        </Text>
+                        {renderMetadataKeyExtra?.(entry.label)}
+                      </Box>
                     </td>
                     {showTimestamps && (
                       <td>
@@ -236,9 +247,19 @@ export const AssetEventMetadataEntriesTable = ({
                       </td>
                     )}
                     <td>
-                      <Mono>
-                        <MetadataEntry entry={entry} expandSmallValues={true} />
-                      </Mono>
+                      <Box
+                        flex={{
+                          direction: 'row',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}
+                      >
+                        <Text size={14} family="mono">
+                          <MetadataEntry entry={entry} expandSmallValues={true} />
+                        </Text>
+                        {renderMetadataValueExtra?.(entry)}
+                      </Box>
                     </td>
                     {showDescriptions && (
                       <td style={{opacity: 0.7}}>
@@ -267,7 +288,7 @@ export const AssetEventMetadataEntriesTable = ({
               <Button onClick={() => setDisplayedCount(displayedByDefault)}>Show less</Button>
             </Box>
           ) : undefined}
-        </AssetEventMetadataScrollContainer>
+        </div>
       ) : null}
       {view === 'plots' ? (
         plotView === 'partition' ? (
@@ -293,48 +314,16 @@ const ObservedInRun = ({
     <Box>
       {`Observed in run `}
       <Link to={`/runs/${runId}?timestamp=${timestamp}`}>
-        <Mono>{titleForRun({id: runId})}</Mono>
+        <Text size={14} family="mono">
+          {titleForRun({id: runId})}
+        </Text>
       </Link>
     </Box>
-    <Caption>
+    <Text size={12}>
       {`(${dayjs(Number(timestamp)).from(Number(relativeTo), true /* withoutSuffix */)} later)`}
-    </Caption>
+    </Text>
   </>
 );
-
-const AssetEventMetadataScrollContainer = styled.div`
-  width: 100%;
-  overflow-x: auto;
-`;
-
-export const StyledTableWithHeader = styled.table`
-  /** -2 accounts for the left and right border, which are not taken into account
-  * and cause a tiny amount of horizontal scrolling at all times. */
-  width: calc(100% - 2px);
-  border-spacing: 0;
-  border-collapse: collapse;
-
-  & > thead > tr > td {
-    color: ${Colors.textLighter()};
-    font-size: 12px;
-    line-height: 16px;
-  }
-
-  & > tbody > tr > td,
-  & > thead > tr > td {
-    border: 1px solid ${Colors.keylineDefault()};
-    padding: 8px 12px;
-    font-size: 14px;
-    line-height: 20px;
-    vertical-align: top;
-
-    &:first-child {
-      max-width: 300px;
-      word-wrap: break-word;
-      width: 25%;
-    }
-  }
-`;
 
 function isEntryHidden(
   entry: MetadataEntryLabelOnly,
@@ -361,3 +350,12 @@ function isEntryHidden(
   }
   return false;
 }
+
+export const StyledTableWithHeader = React.forwardRef<
+  HTMLTableElement,
+  React.ComponentPropsWithoutRef<'table'>
+>((props, ref) => {
+  return (
+    <table {...props} ref={ref} className={clsx(styles.styledTableWithHeader, props.className)} />
+  );
+});

@@ -10,11 +10,11 @@ jest.mock('./ui/markdownToPlaintext');
 
 const ignoredErrors = ['ReactDOM.render is no longer supported in React 18'];
 
-function bind(method: 'warn' | 'error', original: any) {
+function bind(method: 'warn' | 'error', original: typeof console.warn) {
   console[method] = (msg) =>
     ignoredErrors.every((error) => !msg.toString().includes(error)) && original(msg);
 }
-function unbind(method: 'warn' | 'error', original: any) {
+function unbind(method: 'warn' | 'error', original: typeof console.warn) {
   console[method] = original;
 }
 const originalWarn = console.warn.bind(console.warn);
@@ -31,15 +31,15 @@ afterAll(() => {
 global.ResizeObserver = ResizeObserver;
 
 interface MockMessageEvent extends Event {
-  data: any;
+  data: unknown;
 }
 
 class MockBroadcastChannel {
   name: string = '';
   listeners: Array<(event: MockMessageEvent) => void> = [];
 
-  onmessage: ((this: MockBroadcastChannel, ev: MockMessageEvent) => any) | null = null;
-  onmessageerror: ((this: MockBroadcastChannel, ev: MockMessageEvent) => any) | null = null;
+  onmessage: ((this: MockBroadcastChannel, ev: MockMessageEvent) => void) | null = null;
+  onmessageerror: ((this: MockBroadcastChannel, ev: MockMessageEvent) => void) | null = null;
 
   private static _instancesByName: Record<string, MockBroadcastChannel> = {};
 
@@ -53,8 +53,8 @@ class MockBroadcastChannel {
     return MockBroadcastChannel._instancesByName[name]!;
   }
 
-  postMessage(message: any): void {
-    const event: MockMessageEvent = {type: 'message', data: message} as any;
+  postMessage(message: unknown): void {
+    const event = {type: 'message', data: message} as unknown as MockMessageEvent;
     this.listeners.forEach((listener) => listener(event));
     if (this.onmessage) {
       this.onmessage(event);
@@ -99,7 +99,8 @@ class MockBroadcastChannel {
   }
 }
 
-(global as any).BroadcastChannel = MockBroadcastChannel;
+(global as unknown as {BroadcastChannel: typeof MockBroadcastChannel}).BroadcastChannel =
+  MockBroadcastChannel;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('fast-text-encoding');

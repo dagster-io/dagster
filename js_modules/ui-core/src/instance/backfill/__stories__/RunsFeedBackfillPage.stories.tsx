@@ -23,7 +23,7 @@ export default {
 
 const Template = ({mocks}: {mocks: MockedResponse[]}) => (
   <RecoilRoot>
-    <AnalyticsContext.Provider value={{page: () => {}} as any}>
+    <AnalyticsContext.Provider value={{page: () => {}, track: () => {}}}>
       <MemoryRouter initialEntries={['/runs/b/1']}>
         <MockedProvider mocks={mocks}>
           <Route path="/runs/b/:backfillId">

@@ -10,8 +10,16 @@ import dagster as dg
 import pytest
 import sqlalchemy
 import sqlalchemy as db
+import sqlalchemy.exc
 from dagster import DagsterInstance
-from dagster._core.events import EngineEventData, SerializableErrorInfo, StepRetryData
+from dagster._core.events import (
+    AssetMaterializationPlannedData,
+    DagsterEvent,
+    DagsterEventType,
+    EngineEventData,
+    SerializableErrorInfo,
+    StepRetryData,
+)
 from dagster._core.execution.stats import (
     StepEventStatus,
     build_run_stats_from_events,
@@ -19,6 +27,7 @@ from dagster._core.execution.stats import (
     build_run_step_stats_snapshot_from_events,
 )
 from dagster._core.storage.event_log import (
+    AssetKeyTable,
     ConsolidatedSqliteEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
@@ -30,6 +39,7 @@ from dagster._core.storage.sql import create_engine
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
 from dagster._core.utils import make_new_run_id
+from dagster._serdes import serialize_value
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy.engine import Connection
@@ -37,6 +47,7 @@ from sqlalchemy.engine import Connection
 from dagster_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     _synthesize_events,
+    one_asset_op,
 )
 
 
@@ -93,7 +104,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8"
         ) as fd:
             fd.write("some nonsense")
-        with pytest.raises(sqlalchemy.exc.DatabaseError):  # pyright: ignore[reportAttributeAccessIssue]
+        with pytest.raises(sqlalchemy.exc.DatabaseError):
             storage.get_logs_for_run("foo")
 
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
@@ -135,9 +146,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
         tmpdir_path = storage._base_dir  # noqa: SLF001
         ctx = multiprocessing.get_context("spawn")
         exceptions = ctx.Queue()
-        ps = []
-        for _ in range(5):
-            ps.append(ctx.Process(target=self.cmd, args=(exceptions, tmpdir_path)))
+        ps = [ctx.Process(target=self.cmd, args=(exceptions, tmpdir_path)) for _ in range(5)]
         for p in ps:
             p.start()
 
@@ -164,7 +173,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
                 temp_dir=tmpdir_path,
                 overrides={
                     "event_log_storage": {
-                        "module": "dagster.core.storage.event_log",
+                        "module": "dagster._core.storage.event_log",
                         "class": "ConsolidatedSqliteEventLogStorage",
                         "config": {"base_dir": tmpdir_path},
                     }
@@ -217,6 +226,54 @@ class TestLegacyStorage(TestEventLogStorage):
     @pytest.mark.parametrize("dagster_event_type", ["dummy"])
     def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):
         pytest.skip("skip this since legacy storage is harder to mock.patch")
+
+
+def test_get_latest_materialization_ignores_stale_cached_row_after_wipe():
+    # Regression test for https://github.com/dagster-io/dagster/issues/15806. Rows wiped by older
+    # versions of wipe_asset retain the pre-wipe materialization in the `last_materialization`
+    # column. A planned event stored after the wipe bumps the row past the wipe filter; ensure
+    # the stale cached materialization is still not returned.
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        with dg.instance_for_test(temp_dir=tmpdir_path) as instance:
+            storage = instance.event_log_storage
+            assert isinstance(storage, SqliteEventLogStorage)
+            asset_key = dg.AssetKey("asset_1")
+
+            _synthesize_events(one_asset_op, run_id=make_new_run_id(), instance=instance)
+            record = storage.get_asset_records([asset_key])[
+                0
+            ].asset_entry.last_materialization_record
+            assert record is not None
+
+            storage.wipe_asset(asset_key)
+
+            # simulate a legacy wiped row by restoring the stale cached materialization
+            with storage.index_connection() as conn:
+                conn.execute(
+                    AssetKeyTable.update()
+                    .values(last_materialization=serialize_value(record))
+                    .where(AssetKeyTable.c.asset_key == asset_key.to_string())
+                )
+
+            storage.store_event(
+                dg.EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=make_new_run_id(),
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(asset_key),
+                    ),
+                )
+            )
+
+            assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+            asset_records = storage.get_asset_records([asset_key])
+            assert len(asset_records) == 1
+            assert asset_records[0].asset_entry.last_materialization_record is None
 
 
 def _insert_slots(conn: Connection, concurrency_key: str, num: int, delete_num: int = 0):

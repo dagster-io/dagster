@@ -1,6 +1,6 @@
 import datetime
 
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, get_dagster_adhoc_job_name
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import (
     DbtCloudEnvironment,
     DbtCloudJob,
@@ -14,6 +14,7 @@ def test_cloud_job_apis(
     workspace: DbtCloudWorkspace,
     project_id: int,
     environment_id: int,
+    adhoc_job_namespace: str,
 ) -> None:
     """Tests that we can create / destroy a dagster job."""
     client = workspace.get_client()
@@ -23,12 +24,12 @@ def test_cloud_job_apis(
     environment = DbtCloudEnvironment.from_environment_details(
         environment_details=client.get_environment_details(environment_id=environment_id)
     )
-    job_name = get_dagster_adhoc_job_name(
-        project_id=project.id,
-        project_name=project.name,
-        environment_id=environment.id,
-        environment_name=environment.name,
-    )
+    assert project.id == project_id
+    assert environment.id == environment_id
+
+    # Scoped to this build's namespace so a concurrent build's cleanup can't delete
+    # the job out from under this test, and so this build's teardown reclaims it.
+    job_name = f"{adhoc_job_namespace}__CLIENT_TEST"
     created_job = DbtCloudJob.from_job_details(
         job_details=client.create_job(
             project_id=project_id,

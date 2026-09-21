@@ -120,7 +120,7 @@ def test_job_based_defs(
             assert asset_metadata["foo"].value == "baz"
 
 
-@pytest.fixture(name="dagster_dev_cmd")
+@pytest.fixture(name="dagster_dev_cmd", scope="module")
 def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_job_based_defs", "-C", str(makefile_dir())]
 

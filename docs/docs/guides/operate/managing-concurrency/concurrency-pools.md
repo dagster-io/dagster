@@ -57,3 +57,21 @@ concurrency:
 ```
 
 Without this granularity set, the default granularity is set to the `op`. This means that for a pool `foo` with a limit `1`, we enforce that only one op is executing at a given time across all runs, but the number of runs in progress is unaffected by the pool limit.
+
+## Cleaning up concurrency slots from cancelled runs
+
+:::warning
+
+By default, Dagster does not automatically free concurrency pool slots when a run is cancelled or fails. If a run is cancelled while holding a concurrency slot, that slot remains occupied indefinitely, blocking future runs from claiming it. With a pool limit of 1, a single cancelled run will permanently deadlock all future runs for that pool.
+
+:::
+
+To prevent this, enable automatic slot cleanup by configuring `free_slots_after_run_end_seconds` in your [run monitoring settings](/deployment/execution/run-monitoring#freeing-concurrency-slots-after-run-completion):
+
+```yaml
+run_monitoring:
+  enabled: true
+  free_slots_after_run_end_seconds: 300
+```
+
+This setting is strongly recommended whenever you use concurrency pools. See [Troubleshooting concurrency issues](/guides/operate/managing-concurrency/troubleshooting-concurrency#runs-blocked-by-op-concurrency-limits-from-cancelled-runs) for recovery steps if you are already experiencing a deadlock.

@@ -1,0 +1,172 @@
+query GetRun($runId: ID!) {
+  runOrError(runId: $runId) {
+    __typename
+    ... on Run {
+      runId
+      status
+      creationTime
+      startTime
+      endTime
+      jobName
+      runConfigYaml
+      tags {
+        key
+        value
+      }
+      stats {
+        ... on RunStatsSnapshot {
+          stepsSucceeded
+          stepsFailed
+          materializations
+          expectations
+        }
+      }
+    }
+    ... on RunNotFoundError {
+      runId
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+query ListRuns($filter: RunsFilter, $cursor: String, $limit: Int) {
+  runsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+    __typename
+    ... on Runs {
+      results {
+        runId
+        status
+        creationTime
+        startTime
+        endTime
+        jobName
+        tags {
+          key
+          value
+        }
+      }
+      count
+    }
+    ... on InvalidPipelineRunsFilterError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+mutation TerminateRun($runId: String!, $terminatePolicy: TerminateRunPolicy) {
+  terminateRun(runId: $runId, terminatePolicy: $terminatePolicy) {
+    __typename
+    ... on TerminateRunSuccess {
+      run {
+        runId
+        status
+      }
+    }
+    ... on TerminateRunFailure {
+      message
+    }
+    ... on RunNotFoundError {
+      runId
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+mutation RerunRun($reexecutionParams: ReexecutionParams!) {
+  launchRunReexecution(reexecutionParams: $reexecutionParams) {
+    __typename
+    ... on LaunchRunSuccess {
+      run {
+        runId
+        status
+        jobName
+        rootRunId
+        parentRunId
+      }
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      pipelineName
+      message
+    }
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on InvalidSubsetError {
+      message
+    }
+    ... on RunConflict {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}
+
+mutation RerunBackfill($reexecutionParams: ReexecutionParams) {
+  reexecutePartitionBackfill(reexecutionParams: $reexecutionParams) {
+    __typename
+    ... on LaunchBackfillSuccess {
+      backfillId
+      launchedRunIds
+    }
+    ... on RunConfigValidationInvalid {
+      errors {
+        message
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      pipelineName
+      message
+    }
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on InvalidSubsetError {
+      message
+    }
+    ... on RunConflict {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+  }
+}

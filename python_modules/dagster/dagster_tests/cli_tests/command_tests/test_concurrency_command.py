@@ -13,7 +13,7 @@ def mock_instance_runner():
             temp_dir=dagster_home_temp,
             overrides={
                 "event_log_storage": {
-                    "module": "dagster.utils.test",
+                    "module": "dagster._utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": dagster_home_temp},
                 }

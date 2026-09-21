@@ -91,7 +91,7 @@ class MaterializeResult(AssetResult, Generic[T], IHaveNew, LegacyNamedTupleMixin
         check_results: Sequence[AssetCheckResult] | None = None,
         data_version: DataVersion | None = None,
         tags: Mapping[str, str] | None = None,
-        value: T = NoValueSentinel,
+        value: T = NoValueSentinel,  # ty: ignore[invalid-parameter-default]
     ):
         return super().__new__(
             cls,

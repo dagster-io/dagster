@@ -22,7 +22,7 @@ def daily_story_summary(
     This aggregates all Hacker News stories into coherent summaries without moving data out of Snowflake.
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         cursor.execute(f"""
             CREATE OR REPLACE TABLE {schema}.daily_story_summary AS

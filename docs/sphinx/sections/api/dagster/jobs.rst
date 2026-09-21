@@ -1,5 +1,6 @@
+####
 Jobs
-====
+####
 
 A ``Job`` binds a ``Graph`` and the resources it needs to be executable.
 
@@ -11,8 +12,10 @@ Jobs are created by calling :py:meth:`GraphDefinition.to_job` on a graph instanc
 
 .. autoclass:: JobDefinition
 
+********************
 Reconstructable jobs
--------------------------
+********************
+
 .. autoclass:: reconstructable
    :noindex:
 

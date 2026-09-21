@@ -95,6 +95,7 @@ The following highlights are described in more detail below:
 - [Interactions and queries](#interactions-and-queries)
 - [Runs](#runs)
 - [Ingress](#ingress)
+- [Private connectivity (AWS PrivateLink)](#private-connectivity-aws-privatelink)
 - [Metadata](#metadata)
 
 ### Interactions and queries
@@ -121,6 +122,18 @@ By default, the run worker also uploads the compute logs (raw `stdout` and `stde
 ### Ingress
 
 No ingress is required from Dagster+ to user environments. All network requests are outbound from user environments to Dagster+.
+
+### Private connectivity (AWS PrivateLink)
+
+For organizations that require strict network isolation, Dagster+ supports [AWS PrivateLink](https://aws.amazon.com/privatelink/). When PrivateLink is enabled, your Dagster+ agent communicates with the Dagster+ control plane entirely over the AWS private network. No traffic traverses the public internet.
+
+This is particularly useful for teams that:
+
+- operate in highly regulated industries (financial services, healthcare, government)
+- enforce policies that prohibit outbound connections to public endpoints from their VPCs
+- want to avoid managing firewall rules for [Dagster+ IP allowlists](/deployment/dagster-plus/management/dagster-ips)
+
+PrivateLink covers the agent's connection to the Dagster+ API. The agent also uploads code snapshots and compute logs to Dagster+-managed S3 buckets, listed in [Dagster+ IP addresses](/deployment/dagster-plus/management/dagster-ips). You can use an [AWS PrivateLink interface endpoint for S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/privatelink-interface-endpoints.html) as well; [contact the Dagster team](https://dagster.io/contact) to switch your organization to the regional-style S3 URLs these endpoints require.
 
 ### Metadata
 

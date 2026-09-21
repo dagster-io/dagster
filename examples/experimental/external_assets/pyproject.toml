@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "external_assets"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.15"
 dependencies = [
     "dagster>=1.5.1",
     "dagster-k8s>=0.21.1",

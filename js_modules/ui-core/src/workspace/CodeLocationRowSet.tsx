@@ -2,21 +2,21 @@ import {
   Box,
   Button,
   ButtonLink,
-  CaptionMono,
   Colors,
   FontFamily,
   Icon,
   MiddleTruncate,
   Tag,
+  Text,
   Tooltip,
   UnstyledButton,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
-import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext/WorkspaceContext';
 import {useCopyToClipboard} from '../app/browser';
+import styles from './css/CodeLocationRowSet.module.css';
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
@@ -47,34 +47,23 @@ export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragmen
 
   if (imageKV) {
     return (
-      <ImageNameBox>
+      <Box className={styles.imageNameBox}>
         <span style={{fontWeight: 500}}>image: </span>
         <span style={{marginRight: '4px'}}>
-          <CaptionMono>{imageKV.value}</CaptionMono>
+          <Text size={12} family="mono">
+            {imageKV.value}
+          </Text>
         </span>
         <Tooltip content={didCopy ? 'Copied!' : 'Click to copy image string'} placement="top">
           <UnstyledButton onClick={onClick}>
             <Icon name={didCopy ? 'done' : 'copy'} size={12} />
           </UnstyledButton>
         </Tooltip>
-      </ImageNameBox>
+      </Box>
     );
   }
   return null;
 };
-
-const ImageNameBox = styled(Box)`
-  width: 100%;
-  color: ${Colors.textLight()};
-  font-size: 12px;
-
-  .bp5-popover-target {
-    display: inline;
-    overflow: hidden;
-    position: relative;
-    top: 1px;
-  }
-`;
 
 export const ModuleOrPackageOrFile = ({
   metadata,

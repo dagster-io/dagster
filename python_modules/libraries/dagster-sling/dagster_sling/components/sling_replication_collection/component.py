@@ -250,7 +250,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
 
 
 class SlingComponentTranslator(
-    create_component_translator_cls(SlingReplicationCollectionComponent, DagsterSlingTranslator),
+    create_component_translator_cls(SlingReplicationCollectionComponent, DagsterSlingTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[SlingReplicationCollectionComponent],
 ):
     def __init__(

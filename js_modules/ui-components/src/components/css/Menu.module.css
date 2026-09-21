@@ -81,9 +81,9 @@
   color: var(--menu-item-text-color);
 }
 
-/* Active state (selected item) */
-.menuItemActive,
-.menuItemActive:hover {
+/* Active state (selected item) — extra class for specificity over :hover:not(.menuItemDisabled) */
+.menuItem.menuItemActive,
+.menuItem.menuItemActive:hover {
   background-color: var(--color-background-blue);
   color: var(--color-text-default);
 }

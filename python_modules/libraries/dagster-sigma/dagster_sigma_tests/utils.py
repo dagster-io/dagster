@@ -20,4 +20,4 @@ class RequestToMock:
 
 
 def get_requests(responses: aioresponses) -> list[RequestToMock]:
-    return [RequestToMock(value[0].kwargs) for value in responses.requests.values()]
+    return [RequestToMock(value[0].kwargs) for value in responses.requests.values()]  # ty: ignore[unresolved-attribute]

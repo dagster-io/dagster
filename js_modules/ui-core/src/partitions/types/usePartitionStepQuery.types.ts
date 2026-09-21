@@ -1,11 +1,48 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type PartitionStepLoaderQueryVariables = Types.Exact<{
+export type ExecutionTag = {
+  key: string;
+  value: string;
+};
+
+export type RunStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'FAILURE'
+  | 'MANAGED'
+  | 'NOT_STARTED'
+  | 'QUEUED'
+  | 'STARTED'
+  | 'STARTING'
+  | 'SUCCESS';
+
+export type RunsFilter = {
+  createdAfter?: number | null | undefined;
+  createdBefore?: number | null | undefined;
+  mode?: string | null | undefined;
+  pipelineName?: string | null | undefined;
+  runIds?: Array<string | null | undefined> | null | undefined;
+  snapshotId?: string | null | undefined;
+  statuses?: Array<RunStatus> | null | undefined;
+  tags?: Array<ExecutionTag> | null | undefined;
+  updatedAfter?: number | null | undefined;
+  updatedBefore?: number | null | undefined;
+};
+
+export type StepEventStatus = 'FAILURE' | 'IN_PROGRESS' | 'SKIPPED' | 'SUCCESS';
+
+export type PartitionStepLoaderQueryVariables = Exact<{
   filter: Types.RunsFilter;
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: string | null | undefined;
+  limit?: number | null | undefined;
 }>;
 
 export type PartitionStepLoaderQuery = {

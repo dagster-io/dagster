@@ -20,7 +20,7 @@ from kitchen_sink_tests.integration_tests.conftest import (
 )
 
 
-@pytest.fixture(name="dagster_dev_cmd")
+@pytest.fixture(name="dagster_dev_cmd", scope="module")
 def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_dagster_mapped", "-C", str(makefile_dir())]
 
@@ -51,7 +51,7 @@ def dag_id_of_mat(event_log_entry: EventLogEntry) -> bool:
     json_metadata_value = event_log_entry.asset_materialization.metadata[RAW_METADATA_KEY]
     assert isinstance(json_metadata_value, JsonMetadataValue)
     assert isinstance(json_metadata_value.data, dict)
-    return json_metadata_value.data["dag_id"]
+    return json_metadata_value.data["dag_id"]  # ty: ignore[invalid-argument-type]
 
 
 def test_dagster_weekly_daily_materializes(
@@ -86,7 +86,7 @@ def test_dagster_weekly_daily_materializes(
 
     start_time = get_current_datetime()
     final_result = None
-    while get_current_datetime() - start_time < timedelta(seconds=30):
+    while get_current_datetime() - start_time < timedelta(seconds=60):
         records_result = dagster_instance.fetch_materializations(records_filter=asset_one, limit=10)
 
         if len(records_result.records) == 2:

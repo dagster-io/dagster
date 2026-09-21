@@ -116,7 +116,7 @@ class AnyChecksCondition(ChecksAutomationCondition):
     def operator_type(self) -> OperatorType:
         return "or"
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # ty: ignore[invalid-method-override]
         true_subset = context.get_empty_subset()
 
         coroutines = [
@@ -152,7 +152,7 @@ class AllChecksCondition(ChecksAutomationCondition):
     def operator_type(self) -> OperatorType:
         return "and"
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # ty: ignore[invalid-method-override]
         check_results = []
         true_subset = context.candidate_subset
 

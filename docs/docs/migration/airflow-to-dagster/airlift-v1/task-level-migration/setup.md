@@ -14,7 +14,7 @@ In order the complete this tutorial, you'll need to:
 - Install Dagster and the tutorial example code
 - Set up a local Airflow instance
 
-## Create a virtual environment
+## Step 1: Create a virtual environment
 
 First, create a fresh virtual environment using `uv` and activate it:
 
@@ -24,7 +24,7 @@ uv venv
 source .venv/bin/activate
 ```
 
-## Install Dagster and the tutorial example code
+## Step 2: Install Dagster and the tutorial example code
 
 Next, install Dagster and verify that the `dagster` CLI is available:
 
@@ -56,7 +56,7 @@ tutorial_example
 │   ├── dags.py: The Airflow DAG definition
 ```
 
-## Set up a local Airflow instance
+## Step 3: Set up a local Airflow instance
 
 This tutorial involves running a local Airflow instance, which you can do by following commands from the root of the `airlift-migration-tutorial` directory.
 
@@ -86,4 +86,4 @@ You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, ma
 
 ## Next steps
 
-In the next step, "[Peer your Airflow instance with a Dagster code location](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer)", we'll peer our Dagster installation with our Airflow instance.
+In the next step, [Peer your Airflow instance with a Dagster code location](/migration/airflow-to-dagster/airlift-v1/task-level-migration/peer), we'll peer our Dagster installation with our Airflow instance.

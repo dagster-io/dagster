@@ -1,4 +1,5 @@
 import {Box} from '../Box';
+import {Intent} from '../Intent';
 import {Tag} from '../Tag';
 
 // eslint-disable-next-line import/no-default-export
@@ -7,7 +8,7 @@ export default {
   component: Tag,
 };
 
-const INTENTS = ['none', 'primary', 'success', 'warning', 'danger'] as any[];
+const INTENTS: Intent[] = ['none', 'primary', 'success', 'warning', 'danger'];
 
 export const Basic = () => {
   return (

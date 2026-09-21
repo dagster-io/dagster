@@ -134,7 +134,7 @@ export class LiveDataThread<T> {
     } catch (e) {
       console.error(e);
 
-      if ((e as any)?.message?.includes('500')) {
+      if (e instanceof Error && e.message?.includes('500')) {
         // Mark these keys as fetched so that we don't retry them until after the poll interval rather than retrying them immediately.
         // This is preferable because if the keys failed to fetch it's likely due to a timeout due to the query being too expensive and retrying it
         // will not make it more likely to succeed and it would add more load to the database.

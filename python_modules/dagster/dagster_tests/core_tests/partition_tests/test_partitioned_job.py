@@ -128,7 +128,7 @@ def test_dict_partitioned_config_tags():
 
     @dg.dynamic_partitioned_config(
         partition_fn,
-        tags_for_partition_key_fn=lambda key: {"foo": {"bar": key}},  # pyright: ignore[reportArgumentType]
+        tags_for_partition_key_fn=lambda key: {"foo": {"bar": key}},  # ty: ignore[invalid-argument-type]
     )
     def my_dynamic_partitioned_config(_partition_key):
         return RUN_CONFIG

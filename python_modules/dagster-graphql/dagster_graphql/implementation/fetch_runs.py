@@ -23,7 +23,10 @@ from dagster_graphql.implementation.utils import get_query_limit_with_default
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.asset_graph import GrapheneAssetLatestInfo
-    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+    from dagster_graphql.schema.errors import (
+        GrapheneRunGroupNotFoundError,
+        GrapheneRunNotFoundError,
+    )
     from dagster_graphql.schema.execution import GrapheneExecutionPlan
     from dagster_graphql.schema.logs.events import GrapheneRunStepStats
     from dagster_graphql.schema.pipelines.config import GraphenePipelineConfigValidationValid
@@ -83,7 +86,9 @@ def get_run_tags(
     )
 
 
-def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
+def get_run_group(
+    graphene_info: "ResolveInfo", run_id: str
+) -> "GrapheneRunGroup | GrapheneRunGroupNotFoundError":
     from dagster_graphql.schema.errors import GrapheneRunGroupNotFoundError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.runs import GrapheneRunGroup
@@ -107,6 +112,20 @@ def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGrou
     )
 
 
+def get_default_run_records_limit(
+    instance: DagsterInstance, filters: RunsFilter | None, limit: int | None
+) -> int | None:
+    """Apply the instance's default run-records page size unless the caller already
+    asked for a specific page or supplied an explicit ``run_ids`` list (so the result
+    is bounded by their input).
+    """
+    if limit is not None:
+        return limit
+    if filters is not None and filters.run_ids:
+        return None
+    return instance.get_default_graphql_run_records_limit()
+
+
 def get_runs(
     graphene_info: "ResolveInfo",
     filters: RunsFilter | None,
@@ -120,6 +139,7 @@ def get_runs(
     check.opt_int_param(limit, "limit")
 
     instance = graphene_info.context.instance
+    limit = get_default_run_records_limit(instance, filters, limit)
 
     return [
         GrapheneRun(record)

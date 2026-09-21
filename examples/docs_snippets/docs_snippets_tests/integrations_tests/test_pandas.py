@@ -1,0 +1,24 @@
+import pytest
+
+from docs_snippets.integrations.pandas.core_trip import core_trip
+from docs_snippets.integrations.pandas.custom_column_constraint import (
+    custom_column_constraint_trip,
+)
+from docs_snippets.integrations.pandas.shape_constrained_trip import (
+    shape_constrained_trip,
+)
+from docs_snippets.integrations.pandas.summary_stats import summary_stats_trip
+
+
+@pytest.mark.parametrize(
+    "job",
+    [
+        custom_column_constraint_trip,
+        shape_constrained_trip,
+        summary_stats_trip,
+        core_trip,
+    ],
+)
+def test_guide_pipelines_success(job):
+    result = job.execute_in_process()
+    assert result.success

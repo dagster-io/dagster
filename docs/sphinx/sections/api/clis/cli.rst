@@ -1,7 +1,16 @@
+###########
 Dagster CLI
-===========
+###########
 
 .. currentmodule:: dagster
+
+.. raw:: text
+
+   :::warning Superseded feature
+
+   The `dagster` CLI has been superseded by the [`dg` CLI](https://docs.dagster.io/api/clis/dg-cli/dg-cli-reference). While it is still available, we recommend using `dg` commands for new projects and workflows. See the [dg CLI reference](https://docs.dagster.io/api/clis/dg-cli/dg-cli-reference) for details.
+
+   :::
 
 .. click:: dagster._cli.asset:asset_cli
    :prog: dagster asset

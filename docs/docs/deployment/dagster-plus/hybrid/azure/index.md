@@ -1,13 +1,12 @@
 ---
 description: Deploy Dagster+ on Azure using AKS, ACR, Azure Blob Storage, and Azure Key Vault.
 sidebar_position: 5000
-title: Microsoft Azure
+title: Deploying Dagster+ hybrid on Azure
+sidebar_label: Microsoft Azure
 canonicalUrl: '/deployment/dagster-plus/hybrid/azure'
 slug: '/deployment/dagster-plus/hybrid/azure'
 tags: [dagster-plus-feature]
 ---
-
-# Deploying Dagster+ hybrid on Azure
 
 This guide will walk you through deploying Dagster+ on Azure. We'll start from a brand new organization in Dagster+ and finish with a full hybrid deployment of Dagster+ using Azure infrastructure.
 

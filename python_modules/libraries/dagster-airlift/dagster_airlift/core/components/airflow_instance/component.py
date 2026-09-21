@@ -237,7 +237,7 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
     mappings: Sequence[AirflowDagMapping] | None = None
     source_code_retrieval_enabled: bool | None = None
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.local_filesystem
     )
 
     @property
@@ -261,7 +261,7 @@ class AirflowInstanceComponent(StateBackedComponent, Resolvable):
             source_code_retrieval_enabled=self.source_code_retrieval_enabled,
             retrieval_filter=self.filter or AirflowFilter(),
         )
-        state_path.write_text(serialize_value(state))
+        state_path.write_text(serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: ComponentLoadContext, state_path: Path | None

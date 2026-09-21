@@ -21,7 +21,7 @@ def adhoc_request_sensor(context: dg.SensorEvaluationContext):
 
             # if the file is new or has been modified since the last run, add it to the request queue
             if filename not in previous_state or previous_state[filename] != last_modified:
-                with open(file_path) as f:
+                with open(file_path, encoding="utf-8") as f:
                     request_config = json.load(f)
 
                 runs_to_request.append(

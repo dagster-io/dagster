@@ -6,7 +6,7 @@ title: Use Components within an existing project
 
 :::note
 
-This guide shows how to add Components to an existing Dagster project without fully migrating to the Components architecture. If you want to fully migrate your project to be Components-compatible, see "[Converting an existing project](/guides/build/projects/moving-to-components/migrating-project)".
+This guide shows how to add Components to an existing Dagster project without fully migrating to the Components architecture. If you want to fully migrate your project to be Components-compatible, see [Converting an existing project](/guides/build/projects/moving-to-components/migrating-project).
 
 :::
 

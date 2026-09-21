@@ -86,7 +86,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,

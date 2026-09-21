@@ -10,7 +10,6 @@ import {
   AssetHealthQuery,
   AssetHealthQueryVariables,
 } from '../../asset-data/types/AssetHealthDataProvider.types';
-import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
 import {
   buildAsset,
   buildAssetConnection,
@@ -45,7 +44,7 @@ jest.mock('../../util/idb-lru-cache', () => {
   };
 
   return {
-    cache: (...args: any[]) => {
+    cache: (...args: unknown[]) => {
       mockedCache.constructorArgs = args;
       return mockedCache;
     },
@@ -102,13 +101,7 @@ jest.mock('@shared/assets/useFavoriteAssets', () => ({
 }));
 
 jest.mock('../../asset-selection/input/useAssetSelectionInput', () => {
-  const mock: typeof useAssetSelectionInput = ({
-    assets,
-    assetsLoading,
-  }: {
-    assets: any;
-    assetsLoading?: boolean;
-  }) => {
+  const mock = ({assets, assetsLoading}: {assets: unknown[]; assetsLoading?: boolean}) => {
     return {
       filterInput: <div />,
       fetchResult: {loading: false},

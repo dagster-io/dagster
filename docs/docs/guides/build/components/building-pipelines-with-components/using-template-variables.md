@@ -128,7 +128,7 @@ class MyComponent(dg.Component):
 **Wrong context type**:
 ```python
 # ❌ Invalid: Wrong context type
-@dg.template_var  
+@dg.template_var
 def invalid_context(context: dict) -> str:
     return "value"
 ```

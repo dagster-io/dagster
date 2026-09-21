@@ -29,17 +29,11 @@ If you are just getting started with the Power BI integration, we recommend usin
 - How to materialize Power BI semantic models from Dagster.
 - How to customize how Power BI semantic models are materialized.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster` and `dagster-powerbi` libraries installed in your environment
-- Familiarity with asset definitions and the Dagster asset graph
-- Familiarity with Dagster resources
-- Familiarity with Power BI concepts, like semantic models, data sources, reports, and dashboards
 - A Power BI workspace
 - A service principal configured to access Power BI, or an API access token. For more information, see [Embed Power BI content with service principal and an application secret](https://learn.microsoft.com/en-us/power-bi/developer/embedded/embed-service-principal) in the Power BI documentation.
-
-</details>
 
 ## Set up your environment
 
@@ -61,7 +55,7 @@ If you encounter issues with the scanner APIs, you may disable them using `load_
 
 ## Customize asset definition metadata for Power BI assets
 
-By default, Dagster will generate asset specs for each Power BI asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Power BI asset type.
+By default, Dagster will generate asset specs for each Power BI asset based on its type, and populate default metadata. You can further customize asset properties by passing an instance of a custom <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Power BI asset type.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/power-bi/customize-power-bi-asset-defs.py" />
 

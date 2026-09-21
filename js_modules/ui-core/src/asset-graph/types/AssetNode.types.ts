@@ -1,16 +1,29 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
 
 export type AssetNodeFragment = {
   __typename: 'AssetNode';
   id: string;
   graphName: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
-  opVersion: string | null;
   description: string | null;
   computeKind: string | null;
   isPartitioned: boolean;

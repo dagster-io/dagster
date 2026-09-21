@@ -63,6 +63,7 @@ class DefsFile(BaseModel):
     requirements: Optional[DefsFileRequirementsModel] = None
     post_processing: Optional[Mapping[str, Any]] = None
 
+
 class DefsFileRequirementsModel(BaseModel):
     """Describes dependencies for a component to load."""
 

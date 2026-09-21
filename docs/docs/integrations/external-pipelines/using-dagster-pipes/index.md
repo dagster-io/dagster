@@ -19,7 +19,3 @@ To get there, you'll:
 This guide focuses on using an out-of-the-box <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" /> resource. For further customization with the subprocess invocation, use <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="open_dagster_pipes"/> approach instead. Refer to [Customizing Dagster Pipes protocols](/integrations/external-pipelines/dagster-pipes-details-and-customization) for more info.
 
 :::
-
-## Ready to get started?
-
-You can get started by [creating a Dagster asset that executes a subprocess](/integrations/external-pipelines/using-dagster-pipes/create-subprocess-asset).

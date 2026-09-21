@@ -65,7 +65,7 @@ def b() -> None: ...
 @dg.multi_asset(
     specs=[
         dg.AssetSpec("a_checked", skippable=True),
-        dg.AssetSpec("c_checked", deps="b_checked", skippable=True),
+        dg.AssetSpec("c_checked", deps=["b_checked"], skippable=True),
         dg.AssetSpec("d_checked", deps=["a_checked", "b_checked"], skippable=True),
     ],
     check_specs=[
@@ -452,9 +452,11 @@ def test_create_reexecuted_run_from_multi_asset_check_failure(
 
     assert _get_materialized_keys(instance, failed_run.run_id) == {
         dg.AssetKey("a_checked"),
+        dg.AssetKey("b_checked"),
     }
     assert _get_checked_keys(instance, failed_run.run_id) == {
         dg.AssetCheckKey(dg.AssetKey("a_checked"), "good"),
+        dg.AssetCheckKey(dg.AssetKey("b_checked"), "good"),
     }
     run = instance.create_reexecuted_run(
         parent_run=failed_run,
@@ -470,12 +472,10 @@ def test_create_reexecuted_run_from_multi_asset_check_failure(
 
     assert run.status == DagsterRunStatus.SUCCESS
     assert _get_materialized_keys(instance, run.run_id) == {
-        dg.AssetKey("b_checked"),
         dg.AssetKey("c_checked"),
         dg.AssetKey("d_checked"),
     }
     assert _get_checked_keys(instance, run.run_id) == {
-        dg.AssetCheckKey(dg.AssetKey("b_checked"), "good"),
         dg.AssetCheckKey(dg.AssetKey("c_checked"), "good"),
         dg.AssetCheckKey(dg.AssetKey("d_checked"), "good"),
     }

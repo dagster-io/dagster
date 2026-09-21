@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from sphinx.application import Sphinx
 from sphinx.util.docutils import docutils_namespace
+from sphinx.util.inventory import InventoryFile
 
 
 class TestMdxBuilder:
@@ -64,6 +65,23 @@ class TestMdxBuilder:
         # Check that dummy_module.mdx is generated
         dummy_module_file = built_docs / "dummy_module.mdx"
         assert dummy_module_file.exists(), "dummy_module.mdx file was not generated"
+
+    def test_objects_inventory_generated(self, built_docs):
+        """Test that the MDX build also writes a correct Sphinx objects inventory."""
+        objects_inv = built_docs / "objects.inv"
+        assert objects_inv.exists(), "objects.inv file was not generated"
+        assert objects_inv.read_bytes().startswith(b"# Sphinx inventory version 2\n")
+
+        with objects_inv.open("rb") as stream:
+            inventory = InventoryFile.load(stream, uri="", joinfunc=lambda base, uri: uri)
+
+        module_entry = inventory["py:module"]["dummy_module"]
+        assert module_entry.uri == "dummy_module/#module-dummy_module"
+        assert ".mdx" not in module_entry.uri
+
+        function_entry = inventory["py:function"]["dummy_module.get_car_summary"]
+        assert function_entry.uri.startswith("dummy_module/#")
+        assert ".mdx" not in function_entry.uri
 
     def test_index_mdx_content(self, built_docs):
         """Test the content of the generated index.mdx file."""

@@ -1,14 +1,27 @@
 import gc
 import time
 from contextlib import contextmanager
+from unittest.mock import patch
 
 import objgraph
 import pytest
-import yaml
+from dagster import AssetKey, AssetMaterialization, EventLogEntry
+from dagster._core.events import (
+    AssetWipedData,
+    DagsterEvent,
+    DagsterEventType,
+    StepMaterializationData,
+)
+from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
 from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.schema import SecondaryIndexMigrationTable
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
+from dagster_shared.yaml_utils import safe_load_yaml
+from sqlalchemy.engine import Connection
+from sqlalchemy.pool import QueuePool
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.event_log_storage import (
@@ -133,10 +146,91 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
                     db_name: test
         """
 
-        with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
+        with instance_for_test(overrides=safe_load_yaml(url_cfg)) as from_url_instance:
             from_url = from_url_instance._event_storage  # noqa: SLF001
 
-            with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
+            with instance_for_test(overrides=safe_load_yaml(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.postgres_url == from_explicit.postgres_url  # pyright: ignore[reportAttributeAccessIssue]
+                assert from_url.postgres_url == from_explicit.postgres_url  # ty: ignore[unresolved-attribute]
+
+
+def test_has_table_returns_connection_to_pool(conn_string):
+    # Mirrors the webserver's pooling, where a connection left checked out by has_table()
+    # starves every other event log query until cyclic GC happens to reclaim it.
+    with _clean_storage(conn_string) as storage:
+        storage.optimize_for_webserver(statement_timeout=5000, pool_recycle=3600, max_overflow=0)
+        engine = storage._engine  # noqa: SLF001
+        pool = engine.pool
+        assert isinstance(pool, QueuePool)
+        assert pool.size() == 1
+
+        # Retain every Connection so refcounting cannot return one to the pool and hide a leak.
+        retained_connections: list[Connection] = []
+        engine_connect = engine.connect
+
+        def connect_and_retain() -> Connection:
+            connection = engine_connect()
+            retained_connections.append(connection)
+            return connection
+
+        try:
+            with patch.object(engine, "connect", side_effect=connect_and_retain):
+                for _ in range(2):
+                    assert storage.has_table("event_logs")
+                    assert pool.checkedout() == 0
+        finally:
+            for connection in retained_connections:
+                connection.close()
+
+
+def test_all_asset_keys_excludes_wiped_asset_on_legacy_index_path(conn_string):
+    # Regression test for the legacy (pre-ASSET_KEY_INDEX_COLS-migration) read path, where wiped
+    # assets are filtered by comparing the wipe timestamp against the latest event log timestamp.
+    # The ASSET_WIPED event stored immediately after a wipe (and any other event type that does
+    # not update last_materialization_timestamp on the migrated path) must not make the wiped
+    # asset appear live.
+    asset_key = AssetKey(["asset_one"])
+    with _clean_storage(conn_string) as storage:
+        # simulate a storage that has not run the ASSET_KEY_INDEX_COLS data migration
+        with storage.index_connection() as conn:
+            conn.execute(SecondaryIndexMigrationTable.delete())
+        storage._secondary_index_cache.clear()  # noqa: SLF001
+        assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)
+
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=make_new_run_id(),
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION.value,
+                    "nonce",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key=asset_key)
+                    ),
+                ),
+            )
+        )
+        assert asset_key in storage.all_asset_keys()
+
+        storage.wipe_asset(asset_key)
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=RUNLESS_RUN_ID,
+                timestamp=time.time(),
+                dagster_event=DagsterEvent(
+                    event_type_value=DagsterEventType.ASSET_WIPED.value,
+                    job_name=RUNLESS_JOB_NAME,
+                    event_specific_data=AssetWipedData(asset_key=asset_key, partition_keys=None),
+                ),
+            )
+        )
+
+        assert asset_key not in storage.all_asset_keys()
+        assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None

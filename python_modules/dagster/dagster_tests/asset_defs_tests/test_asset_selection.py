@@ -20,6 +20,7 @@ from dagster._core.definitions.asset_selection import (
     DagsterInvalidAssetSelectionError,
     DownstreamAssetSelection,
     GroupsAssetSelection,
+    JobAssetSelection,
     KeyPrefixesAssetSelection,
     KeysAssetSelection,
     KeyWildCardAssetSelection,
@@ -27,6 +28,8 @@ from dagster._core.definitions.asset_selection import (
     ParentSourcesAssetSelection,
     RequiredNeighborsAssetSelection,
     RootsAssetSelection,
+    ScheduleNameAssetSelection,
+    SensorNameAssetSelection,
     SinksAssetSelection,
     StatusAssetSelection,
     SubtractAssetSelection,
@@ -39,6 +42,7 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import MAX_NUM
+from dagster._core.test_utils import mock_workspace_from_repos
 from dagster_shared.check import CheckError
 from dagster_shared.serdes.serdes import _WHITELIST_MAP
 
@@ -516,47 +520,47 @@ def test_asset_selection_type_checking():
     invalid_argument = "invalid_argument"
 
     with pytest.raises(CheckError):
-        AssetChecksForAssetKeysSelection(selected_asset_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
+        AssetChecksForAssetKeysSelection(selected_asset_keys=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = AssetChecksForAssetKeysSelection(selected_asset_keys=valid_asset_key_sequence)
     assert isinstance(test, AssetChecksForAssetKeysSelection)
 
     with pytest.raises(CheckError):
-        AssetCheckKeysSelection(selected_asset_check_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
+        AssetCheckKeysSelection(selected_asset_check_keys=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = AssetCheckKeysSelection(selected_asset_check_keys=valid_asset_check_key_sequence)
     assert isinstance(test, AssetCheckKeysSelection)
 
     with pytest.raises(CheckError):
-        AndAssetSelection(operands=invalid_argument)  # pyright: ignore[reportArgumentType]
+        AndAssetSelection(operands=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = AndAssetSelection(operands=valid_asset_selection_sequence)
     assert isinstance(test, AndAssetSelection)
 
     with pytest.raises(CheckError):
-        OrAssetSelection(operands=invalid_argument)  # pyright: ignore[reportArgumentType]
+        OrAssetSelection(operands=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = OrAssetSelection(operands=valid_asset_selection_sequence)
     assert isinstance(test, OrAssetSelection)
 
     with pytest.raises(CheckError):
-        SubtractAssetSelection(left=invalid_argument, right=invalid_argument)  # pyright: ignore[reportArgumentType]
+        SubtractAssetSelection(left=invalid_argument, right=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = SubtractAssetSelection(left=valid_asset_selection, right=valid_asset_selection)
     assert isinstance(test, SubtractAssetSelection)
 
     with pytest.raises(CheckError):
-        SinksAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
+        SinksAssetSelection(child=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = SinksAssetSelection(child=valid_asset_selection)
     assert isinstance(test, SinksAssetSelection)
 
     with pytest.raises(CheckError):
-        RequiredNeighborsAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
+        RequiredNeighborsAssetSelection(child=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = RequiredNeighborsAssetSelection(child=valid_asset_selection)
     assert isinstance(test, RequiredNeighborsAssetSelection)
 
     with pytest.raises(CheckError):
-        RootsAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
+        RootsAssetSelection(child=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = RootsAssetSelection(child=valid_asset_selection)
     assert isinstance(test, RootsAssetSelection)
 
     with pytest.raises(CheckError):
-        DownstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # pyright: ignore[reportArgumentType]
+        DownstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # ty: ignore[invalid-argument-type]
     test = DownstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
     assert isinstance(test, DownstreamAssetSelection)
 
@@ -564,7 +568,7 @@ def test_asset_selection_type_checking():
     assert isinstance(test, GroupsAssetSelection)
 
     with pytest.raises(CheckError):
-        KeysAssetSelection(selected_keys=invalid_argument)  # pyright: ignore[reportArgumentType]
+        KeysAssetSelection(selected_keys=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = KeysAssetSelection(selected_keys=valid_asset_key_sequence)
     assert isinstance(test, KeysAssetSelection)
 
@@ -580,12 +584,12 @@ def test_asset_selection_type_checking():
     assert isinstance(test, KeyPrefixesAssetSelection)
 
     with pytest.raises(CheckError):
-        UpstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # pyright: ignore[reportArgumentType]
+        UpstreamAssetSelection(child=invalid_argument, depth=0, include_self=False)  # ty: ignore[invalid-argument-type]
     test = UpstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
     assert isinstance(test, UpstreamAssetSelection)
 
     with pytest.raises(CheckError):
-        ParentSourcesAssetSelection(child=invalid_argument)  # pyright: ignore[reportArgumentType]
+        ParentSourcesAssetSelection(child=invalid_argument)  # ty: ignore[invalid-argument-type]
     test = ParentSourcesAssetSelection(child=valid_asset_selection)
     assert isinstance(test, ParentSourcesAssetSelection)
 
@@ -623,7 +627,7 @@ def test_to_serializable_asset_selection():
     @dg.asset
     def asset2(): ...
 
-    @dg.asset_check(asset=asset1)  # pyright: ignore[reportArgumentType]
+    @dg.asset_check(asset=asset1)
     def check1(): ...
 
     asset_graph = AssetGraph.from_assets([asset1, asset2, check1])
@@ -1019,6 +1023,140 @@ def test_code_location() -> None:
         remote_repo.asset_graph,
         allow_missing=False,
     ) == {dg.AssetKey("my_asset")}
+
+
+def test_job() -> None:
+    @dg.asset
+    def asset_a(): ...
+
+    @dg.asset
+    def asset_b(): ...
+
+    @dg.asset
+    def asset_c(): ...
+
+    job_ab = dg.define_asset_job("job_ab", selection=[asset_a, asset_b])
+
+    @dg.repository
+    def repo():
+        return [asset_a, asset_b, asset_c, job_ab]
+
+    asset_graph = mock_workspace_from_repos([repo]).asset_graph
+
+    selection = JobAssetSelection(selected_job="job_ab")
+    assert selection.resolve_inner(asset_graph, allow_missing=False) == {
+        dg.AssetKey("asset_a"),
+        dg.AssetKey("asset_b"),
+    }
+
+    # Unknown job resolves to empty set.
+    assert (
+        JobAssetSelection(selected_job="not_a_job").resolve_inner(asset_graph, allow_missing=False)
+        == set()
+    )
+
+    # None resolves to empty set.
+    assert JobAssetSelection(selected_job=None).resolve_inner(asset_graph, allow_missing=False) == (
+        set()
+    )
+
+    # Cannot be resolved against an in-process asset graph.
+    with pytest.raises(CheckError):
+        selection.resolve([asset_a, asset_b, asset_c])
+
+
+def test_schedule_name() -> None:
+    @dg.asset
+    def asset_a(): ...
+
+    @dg.asset
+    def asset_b(): ...
+
+    @dg.asset
+    def asset_c(): ...
+
+    job_ab = dg.define_asset_job("job_ab", selection=[asset_a, asset_b])
+    my_schedule = dg.ScheduleDefinition(name="my_schedule", cron_schedule="0 0 * * *", job=job_ab)
+
+    @dg.repository
+    def repo():
+        return [asset_a, asset_b, asset_c, job_ab, my_schedule]
+
+    asset_graph = mock_workspace_from_repos([repo]).asset_graph
+
+    selection = ScheduleNameAssetSelection(selected_schedule="my_schedule")
+    assert selection.resolve_inner(asset_graph, allow_missing=False) == {
+        dg.AssetKey("asset_a"),
+        dg.AssetKey("asset_b"),
+    }
+
+    # Unknown schedule resolves to empty set.
+    assert (
+        ScheduleNameAssetSelection(selected_schedule="not_a_schedule").resolve_inner(
+            asset_graph, allow_missing=False
+        )
+        == set()
+    )
+
+    # None resolves to empty set.
+    assert (
+        ScheduleNameAssetSelection(selected_schedule=None).resolve_inner(
+            asset_graph, allow_missing=False
+        )
+        == set()
+    )
+
+    # Cannot be resolved against an in-process asset graph.
+    with pytest.raises(CheckError):
+        selection.resolve([asset_a, asset_b, asset_c])
+
+
+def test_sensor_name() -> None:
+    @dg.asset
+    def asset_a(): ...
+
+    @dg.asset
+    def asset_b(): ...
+
+    @dg.asset
+    def asset_c(): ...
+
+    job_ab = dg.define_asset_job("job_ab", selection=[asset_a, asset_b])
+
+    @dg.sensor(job=job_ab)
+    def my_sensor(): ...
+
+    @dg.repository
+    def repo():
+        return [asset_a, asset_b, asset_c, job_ab, my_sensor]
+
+    asset_graph = mock_workspace_from_repos([repo]).asset_graph
+
+    selection = SensorNameAssetSelection(selected_sensor="my_sensor")
+    assert selection.resolve_inner(asset_graph, allow_missing=False) == {
+        dg.AssetKey("asset_a"),
+        dg.AssetKey("asset_b"),
+    }
+
+    # Unknown sensor resolves to empty set.
+    assert (
+        SensorNameAssetSelection(selected_sensor="not_a_sensor").resolve_inner(
+            asset_graph, allow_missing=False
+        )
+        == set()
+    )
+
+    # None resolves to empty set.
+    assert (
+        SensorNameAssetSelection(selected_sensor=None).resolve_inner(
+            asset_graph, allow_missing=False
+        )
+        == set()
+    )
+
+    # Cannot be resolved against an in-process asset graph.
+    with pytest.raises(CheckError):
+        selection.resolve([asset_a, asset_b, asset_c])
 
 
 def test_column() -> None:

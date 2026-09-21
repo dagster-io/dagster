@@ -29,15 +29,15 @@ export const BackfillOpJobPartitionsTable = ({
     : null;
 
   const inProgress = useMemo(
-    () => results.filter((result) => inProgressStatuses.has(result.runStatus as any)),
+    () => results.filter((result) => result.runStatus && inProgressStatuses.has(result.runStatus)),
     [results],
   );
   const succeeded = useMemo(
-    () => results.filter((result) => successStatuses.has(result.runStatus as any)),
+    () => results.filter((result) => result.runStatus && successStatuses.has(result.runStatus)),
     [results],
   );
   const failed = useMemo(
-    () => results.filter((result) => failedStatuses.has(result.runStatus as any)),
+    () => results.filter((result) => result.runStatus && failedStatuses.has(result.runStatus)),
     [results],
   );
 

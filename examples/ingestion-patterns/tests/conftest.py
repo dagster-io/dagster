@@ -40,25 +40,24 @@ class MockKafkaConsumerResource(dg.ConfigurableResource):
         context: dg.AssetExecutionContext | None = None,
     ) -> list[dict[str, Any]]:
         """Return mock Kafka messages."""
-        messages = []
         base_time = datetime.now()
-        for i in range(min(10, max_records)):
-            messages.append(
-                {
-                    "offset": i,
-                    "partition": 0,
-                    "timestamp": int((base_time.timestamp() + i * 60) * 1000),
-                    "key": f"key-{i:03d}",
-                    "value": json.dumps(
-                        {
-                            "event_id": f"event-{i:03d}",
-                            "event_type": "transaction",
-                            "amount": 100 + i * 5,
-                            "timestamp": (base_time + timedelta(minutes=i)).isoformat(),
-                        }
-                    ),
-                }
-            )
+        messages = [
+            {
+                "offset": i,
+                "partition": 0,
+                "timestamp": int((base_time.timestamp() + i * 60) * 1000),
+                "key": f"key-{i:03d}",
+                "value": json.dumps(
+                    {
+                        "event_id": f"event-{i:03d}",
+                        "event_type": "transaction",
+                        "amount": 100 + i * 5,
+                        "timestamp": (base_time + timedelta(minutes=i)).isoformat(),
+                    }
+                ),
+            }
+            for i in range(min(10, max_records))
+        ]
         return messages
 
 

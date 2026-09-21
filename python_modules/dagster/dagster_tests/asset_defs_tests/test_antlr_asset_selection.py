@@ -9,10 +9,17 @@ from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionPar
 )
 from dagster._core.definitions.asset_selection import (
     AssetSelection,
+    AutomationTypeAssetSelection,
     ChangedInBranchAssetSelection,
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    GroupWildCardAssetSelection,
+    IsAttributeAssetSelection,
+    JobAssetSelection,
+    PartitionsAssetSelection,
+    ScheduleNameAssetSelection,
+    SensorNameAssetSelection,
     StatusAssetSelection,
     TableNameAssetSelection,
 )
@@ -57,6 +64,14 @@ from dagster._core.definitions.asset_selection import (
         (
             "kind:my_kind",
             "(start (expr (traversalAllowedExpr (attributeExpr kind : (value my_kind)))) <EOF>)",
+        ),
+        (
+            "is:external",
+            "(start (expr (traversalAllowedExpr (attributeExpr is : (value external)))) <EOF>)",
+        ),
+        (
+            "is:materializable",
+            "(start (expr (traversalAllowedExpr (attributeExpr is : (value materializable)))) <EOF>)",
         ),
         (
             "code_location:my_location",
@@ -110,6 +125,8 @@ def test_antlr_tree(selection_str, expected_tree_str) -> None:
         "owner:owner@owner.com",
         "owner:<none>",
         "key:<fake>",
+        "is:nonsense",
+        "is:observable",
     ],
 )
 def test_antlr_tree_invalid(selection_str):
@@ -190,9 +207,25 @@ def test_antlr_tree_invalid(selection_str):
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
         ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
         (
+            "group:marketing/foo/bar",
+            AssetSelection.groups("marketing/foo/bar", include_sources=True),
+        ),
+        (
+            'group:"marketing/*"',
+            GroupWildCardAssetSelection(
+                selected_group_wildcard="marketing/*", include_sources=True
+            ),
+        ),
+        (
+            'group:"*"',
+            GroupWildCardAssetSelection(selected_group_wildcard="*", include_sources=True),
+        ),
+        (
             "kind:my_kind",
             AssetSelection.kind("my_kind", include_sources=True),
         ),
+        ("is:external", IsAttributeAssetSelection(attribute="external")),
+        ("is:materializable", IsAttributeAssetSelection(attribute="materializable")),
         (
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),
@@ -202,6 +235,14 @@ def test_antlr_tree_invalid(selection_str):
         ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
         ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),
         ("changed_in_branch:any", ChangedInBranchAssetSelection(selected_changed_in_branch="any")),
+        ("partitions:static", PartitionsAssetSelection(selected_partitions="static")),
+        (
+            "automation_type:sensor/run_status",
+            AutomationTypeAssetSelection(selected_automation_type="sensor/run_status"),
+        ),
+        ("sensor:my_sensor", SensorNameAssetSelection(selected_sensor="my_sensor")),
+        ("schedule:my_schedule", ScheduleNameAssetSelection(selected_schedule="my_schedule")),
+        ("job:my_job", JobAssetSelection(selected_job="my_job")),
         ('tag:"<null>"', AssetSelection.tag("<null>", "", include_sources=True)),
         ('tag:""', AssetSelection.tag("", "", include_sources=True)),
         ('tag:"fake"=""', AssetSelection.tag("fake", "", include_sources=True)),
@@ -222,6 +263,14 @@ def test_antlr_tree_invalid(selection_str):
             "changed_in_branch:<null>",
             ChangedInBranchAssetSelection(selected_changed_in_branch=None),
         ),
+        ("partitions:<null>", PartitionsAssetSelection(selected_partitions=None)),
+        (
+            "automation_type:<null>",
+            AutomationTypeAssetSelection(selected_automation_type=None),
+        ),
+        ("sensor:<null>", SensorNameAssetSelection(selected_sensor=None)),
+        ("schedule:<null>", ScheduleNameAssetSelection(selected_schedule=None)),
+        ("job:<null>", JobAssetSelection(selected_job=None)),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets) -> None:
@@ -259,7 +308,7 @@ def test_full_test_coverage() -> None:
 
     all_selection_strings_we_are_testing = [
         selection_str
-        for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]  # pyright: ignore[reportFunctionMemberAccess]
+        for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]  # ty: ignore[unresolved-attribute]
     ]
 
     for name in names:
@@ -272,3 +321,71 @@ def test_full_test_coverage() -> None:
         ), (
             f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"
         )
+
+
+def test_partitions_asset_selection_resolve() -> None:
+    from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
+    from dagster._core.definitions.partitions.definition.dynamic import DynamicPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.multi import MultiPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.static import StaticPartitionsDefinition
+    from dagster._core.definitions.partitions.definition.time_window import (
+        TimeWindowPartitionsDefinition,
+    )
+
+    @dg.asset
+    def unpartitioned(): ...
+
+    @dg.asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def static_partitioned(): ...
+
+    @dg.asset(partitions_def=DynamicPartitionsDefinition(name="dynamic"))
+    def dynamic_partitioned(): ...
+
+    @dg.asset(
+        partitions_def=TimeWindowPartitionsDefinition(
+            start="2020-01-01", cron_schedule="@daily", fmt="%Y-%m-%d"
+        )
+    )
+    def time_partitioned(): ...
+
+    @dg.asset(partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01"))
+    def daily_partitioned(): ...
+
+    @dg.asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "date": dg.DailyPartitionsDefinition(start_date="2020-01-01"),
+                "color": StaticPartitionsDefinition(["red", "blue"]),
+            }
+        )
+    )
+    def multi_partitioned(): ...
+
+    asset_graph = AssetGraph.from_assets(
+        [
+            unpartitioned,
+            static_partitioned,
+            dynamic_partitioned,
+            time_partitioned,
+            daily_partitioned,
+            multi_partitioned,
+        ]
+    )
+
+    assert PartitionsAssetSelection(selected_partitions="none").resolve(asset_graph) == {
+        dg.AssetKey("unpartitioned")
+    }
+    assert PartitionsAssetSelection(selected_partitions="static").resolve(asset_graph) == {
+        dg.AssetKey("static_partitioned")
+    }
+    assert PartitionsAssetSelection(selected_partitions="dynamic").resolve(asset_graph) == {
+        dg.AssetKey("dynamic_partitioned")
+    }
+    # time includes subclasses like DailyPartitionsDefinition
+    assert PartitionsAssetSelection(selected_partitions="time").resolve(asset_graph) == {
+        dg.AssetKey("time_partitioned"),
+        dg.AssetKey("daily_partitioned"),
+    }
+    assert PartitionsAssetSelection(selected_partitions="multipartitions").resolve(asset_graph) == {
+        dg.AssetKey("multi_partitioned")
+    }

@@ -44,8 +44,10 @@ def test_check_detects_uniqueness_issues(sample_customer_data_with_issues):
     """Test that uniqueness check detects duplicate IDs."""
     # The fixture has duplicate customer_id values
     result = check_uniqueness_customer_id(None, sample_customer_data_with_issues)
+    assert isinstance(result, dg.AssetCheckResult)
 
     assert not result.passed, "Check should fail due to duplicate IDs"
+    assert result.description is not None
     assert "duplicate" in result.description.lower()
 
 
@@ -53,6 +55,7 @@ def test_check_detects_completeness_issues(sample_customer_data_with_issues):
     """Test that completeness check detects missing emails."""
     # The fixture has null email values
     result = check_completeness_email(None, sample_customer_data_with_issues)
+    assert isinstance(result, dg.AssetCheckResult)
 
     # Completeness is 75% (3/4), below 95% threshold
     assert not result.passed, "Check should fail due to missing emails"
@@ -61,6 +64,7 @@ def test_check_detects_completeness_issues(sample_customer_data_with_issues):
 def test_check_detects_validity_issues(sample_customer_data_with_issues):
     """Test that validity check detects invalid email formats."""
     result = check_validity_email(None, sample_customer_data_with_issues)
+    assert isinstance(result, dg.AssetCheckResult)
 
     # Only 2 of 4 emails are valid format (50%), below 90% threshold
     assert not result.passed, "Check should fail due to invalid emails"
@@ -69,6 +73,7 @@ def test_check_detects_validity_issues(sample_customer_data_with_issues):
 def test_check_detects_accuracy_issues(sample_customer_data_with_issues):
     """Test that accuracy check detects suspicious names."""
     result = check_accuracy_names(None, sample_customer_data_with_issues)
+    assert isinstance(result, dg.AssetCheckResult)
 
     # The fixture has "TEST USER" and "N/A" names
     assert not result.passed, "Check should fail due to suspicious names"
@@ -77,6 +82,7 @@ def test_check_detects_accuracy_issues(sample_customer_data_with_issues):
 def test_check_detects_consistency_issues(sample_customer_data_with_issues):
     """Test that consistency check detects non-standard region codes."""
     result = check_consistency_region(None, sample_customer_data_with_issues)
+    assert isinstance(result, dg.AssetCheckResult)
 
     # The fixture has "Europe" instead of "EU"
     assert not result.passed, "Check should fail due to inconsistent region"
@@ -85,6 +91,7 @@ def test_check_detects_consistency_issues(sample_customer_data_with_issues):
 def test_check_detects_integrity_issues(sample_customer_data, sample_order_data_with_issues):
     """Test that integrity check detects invalid foreign key references."""
     result = check_integrity_customer_ref(None, sample_order_data_with_issues, sample_customer_data)
+    assert isinstance(result, dg.AssetCheckResult)
 
     # The fixture has "CUST-INVALID" which doesn't exist in customers
     assert not result.passed, "Check should fail due to invalid customer reference"
@@ -93,8 +100,22 @@ def test_check_detects_integrity_issues(sample_customer_data, sample_order_data_
 def test_check_passes_with_clean_data(sample_customer_data):
     """Test that checks pass with clean data."""
     # All checks should pass with clean data
-    assert check_accuracy_names(None, sample_customer_data).passed
-    assert check_completeness_email(None, sample_customer_data).passed
-    assert check_validity_email(None, sample_customer_data).passed
-    assert check_uniqueness_customer_id(None, sample_customer_data).passed
-    assert check_consistency_region(None, sample_customer_data).passed
+    result = check_accuracy_names(None, sample_customer_data)
+    assert isinstance(result, dg.AssetCheckResult)
+    assert result.passed
+
+    result = check_completeness_email(None, sample_customer_data)
+    assert isinstance(result, dg.AssetCheckResult)
+    assert result.passed
+
+    result = check_validity_email(None, sample_customer_data)
+    assert isinstance(result, dg.AssetCheckResult)
+    assert result.passed
+
+    result = check_uniqueness_customer_id(None, sample_customer_data)
+    assert isinstance(result, dg.AssetCheckResult)
+    assert result.passed
+
+    result = check_consistency_region(None, sample_customer_data)
+    assert isinstance(result, dg.AssetCheckResult)
+    assert result.passed

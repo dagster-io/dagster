@@ -38,7 +38,7 @@ To run the examples, you'll need to:
    </TabItem>
 </Tabs>
 
-- Configure GCP authentication for applications. If you don't have this set up already, refer to the [GCP authentication guide](https://cloud.google.com/docs/authentication/gcloud)
+- Configure GCP authentication for applications. If you don't have this set up already, see the [GCP authentication guide](https://cloud.google.com/docs/authentication/gcloud)
 - In GCP, you'll need:
   - An existing project with a Dataproc cluster.
   - Prepared infrastructure such as GCS buckets, IAM roles, and other resources required for your Dataproc job.
@@ -55,11 +55,11 @@ dataproc:pip.packages: 'dagster-pipes,google-cloud-storage'
 
 `google-cloud-storage` is an optional dependency required for passing Pipes messages from the Dataproc job to Dagster.
 
-## Step 2: Add dagster-pipes to the Dataproc job script
+## Step 2: Add `dagster-pipes` to the Dataproc job script
 
 Call `open_dagster_pipes` in the Dataproc script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/gcp/dataproc_job/script.py" />
 
 :::tip
 
@@ -67,7 +67,7 @@ The metadata format shown above (`{"raw_value": value, "type": type}`) is part o
 
 :::
 
-## Step 3: Create an asset using the PipesDataprocJobClient to launch the job
+## Step 3: Create an asset using the `PipesDataprocJobClient` to launch the job
 
 import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 
@@ -76,7 +76,7 @@ import ScaffoldAsset from '@site/docs/partials/\_ScaffoldAsset.md';
 In the Dagster asset/op code, use the `PipesDataprocJobClient` resource to launch the job:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/gcp/dataproc_job/dagster_code.py"
   startAfter="start_asset_marker"
   endBefore="end_asset_marker"
   title="src/<project_name>/defs/assets.py"
@@ -91,7 +91,7 @@ Setting `include_stdtio_in_messages=True` in the `PipesDataprocJobClient` constr
 Next, add the `PipesDataprocJobClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/gcp/dataproc_job/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/gcp/dataproc_job/dagster_code.py"
   startAfter="start_definitions_marker"
   endBefore="end_definitions_marker"
   title="src/<project_name>/defs/resources.py"

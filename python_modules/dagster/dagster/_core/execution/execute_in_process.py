@@ -189,7 +189,7 @@ def _check_top_level_inputs_for_node(
     parent_handle: NodeHandle | None,
 ) -> None:
     if isinstance(node.definition, GraphDefinition):
-        graph_def = cast("GraphDefinition", node.definition)
+        graph_def = node.definition
         for input_mapping in graph_def.input_mappings:
             next_node = graph_def.node_named(input_mapping.maps_to.node_name)
             input_name = input_mapping.maps_to.input_name

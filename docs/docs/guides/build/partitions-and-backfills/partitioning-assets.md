@@ -27,13 +27,13 @@ We recommend limiting the number of partitions for each asset to 100,000 or fewe
 
 A common use case for partitioning is to process data that can be divided into time intervals, such as daily logs or monthly reports.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/time_based_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 ## Partitions with predefined categories \{#static-partitions}
 
 Sometimes you have a set of predefined categories for your data. For instance, you might want to process data separately for different regions.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/static_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/static_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 {/* TODO: Link to Backfill page to explain how to backfill regional sales data */}
 
@@ -41,7 +41,7 @@ Sometimes you have a set of predefined categories for your data. For instance, y
 
 Two-dimensional partitioning allows you to partition data along two different axes simultaneously. This is useful when you need to process data that can be categorized in multiple ways. For example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/two_dimensional_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 
@@ -56,7 +56,7 @@ Sometimes you don't know the partitions in advance. For example, you might want 
 
 Consider this example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/dynamic_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 In this example:
 
@@ -73,7 +73,7 @@ In this example:
 - The <PyObject section="partitions" module="dagster" object="TimeWindowPartitionsDefinition" /> creates a partition using the `cron_schedule`, but excludes the defined holidays
 - The `market_data` asset is partition by the cron schedule (every Monday through Friday), except for the holidays listed
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/custom_calendar_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioning/custom_calendar_partitioning.py" language="python" title="src/<project_name>/defs/assets.py"/>
 
 ## Materializing partitioned assets
 

@@ -4,7 +4,13 @@ description: Learn how to configure the state storage backend for state-backed c
 sidebar_position: 300
 ---
 
-When using the `VERSIONED_STATE_STORAGE` state management strategy, you need to configure a state storage backend in your Dagster instance. Under the hood, you are just configuring a [UPath](https://github.com/fsspec/universal_pathlib) to your specific storage backend under which all state files will be stored.
+When using the `VERSIONED_STATE_STORAGE` state management strategy on OSS, you need to configure a state storage backend in your Dagster instance. Under the hood, you are just configuring a [UPath](https://github.com/fsspec/universal_pathlib) to your specific storage backend under which all state files will be stored.
+
+:::tip Dagster+ users
+
+In Dagster+, `VERSIONED_STATE_STORAGE` is fully managed. State is stored in a Dagster-managed S3 bucket, so no `dagster.yaml` configuration is needed. To enable it, set `management_type: VERSIONED_STATE_STORAGE` on the component.
+
+:::
 
 ## Instance configuration
 

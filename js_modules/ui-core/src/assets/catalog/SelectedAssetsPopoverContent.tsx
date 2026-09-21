@@ -52,7 +52,7 @@ export const SelectedAssetsPopoverContent = <T extends string>({
   return (
     <div style={{width: '400px', overflow: 'hidden'}}>
       <Container ref={parentRef} style={{maxHeight: '240px'}}>
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           <div
             style={{
               position: 'absolute',

@@ -2,34 +2,25 @@ from collections.abc import Iterable
 from typing import AbstractSet  # noqa: UP035
 
 import dagster as dg
-import pytest
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    AutoMaterializePolicy,
-    DagsterInstance,
-    Definitions,
-    _check as check,
-)
+from dagster import AssetExecutionContext, AssetKey, DagsterInstance, Definitions
 from dagster._core.definitions.external_asset import (
     create_external_asset_from_source_asset,
-    external_assets_from_specs,
+    create_unexecutable_external_asset_from_assets_def,
 )
+
+
+def _assets_def_for_specs(*specs: dg.AssetSpec) -> dg.AssetsDefinition:
+    defs = dg.Definitions(assets=list(specs))
+    return defs.resolve_assets_def(specs[0].key)
 
 
 def test_external_asset_basic_creation() -> None:
-    assets_def = next(
-        iter(
-            external_assets_from_specs(
-                specs=[
-                    dg.AssetSpec(
-                        key="external_asset_one",
-                        description="desc",
-                        metadata={"user_metadata": "value"},
-                        group_name="a_group",
-                    )
-                ]
-            )
+    assets_def = _assets_def_for_specs(
+        dg.AssetSpec(
+            key="external_asset_one",
+            description="desc",
+            metadata={"user_metadata": "value"},
+            group_name="a_group",
         )
     )
     assert isinstance(assets_def, dg.AssetsDefinition)
@@ -46,17 +37,11 @@ def test_external_asset_basic_creation() -> None:
 
 
 def test_external_asset_tags_owners() -> None:
-    assets_def = next(
-        iter(
-            external_assets_from_specs(
-                specs=[
-                    dg.AssetSpec(
-                        key="external_asset_one",
-                        tags={"foo": "bar", "baz": "qux"},
-                        owners=["ben@dagsterlabs.com"],
-                    )
-                ]
-            )
+    assets_def = _assets_def_for_specs(
+        dg.AssetSpec(
+            key="external_asset_one",
+            tags={"foo": "bar", "baz": "qux"},
+            owners=["ben@dagsterlabs.com"],
         )
     )
     assert isinstance(assets_def, dg.AssetsDefinition)
@@ -67,51 +52,42 @@ def test_external_asset_tags_owners() -> None:
 
 def test_external_asset_with_hyphens() -> None:
     key = dg.AssetKey(["with-hyphen", "external_asset_one"])
-    assets_def = next(
-        iter(
-            external_assets_from_specs(
-                specs=[
-                    dg.AssetSpec(
-                        key=key,
-                    )
-                ]
-            )
-        )
-    )
+    assets_def = _assets_def_for_specs(dg.AssetSpec(key=key))
     assert isinstance(assets_def, dg.AssetsDefinition)
     assert assets_def.key == key
 
 
 def test_multi_external_asset_basic_creation() -> None:
-    for assets_def in external_assets_from_specs(
-        specs=[
-            dg.AssetSpec(
-                key="external_asset_one",
-                description="desc",
-                metadata={"user_metadata": "value"},
-                group_name="a_group",
-            ),
-            dg.AssetSpec(
-                key=dg.AssetKey(["value", "another_spec"]),
-                description="desc",
-                metadata={"user_metadata": "value"},
-                group_name="a_group",
-            ),
-        ]
-    ):
-        assert isinstance(assets_def, dg.AssetsDefinition)
+    assets_def = _assets_def_for_specs(
+        dg.AssetSpec(
+            key="external_asset_one",
+            description="desc",
+            metadata={"user_metadata": "value"},
+            group_name="a_group",
+        ),
+        dg.AssetSpec(
+            key=dg.AssetKey(["value", "another_spec"]),
+            description="desc",
+            metadata={"user_metadata": "value"},
+            group_name="a_group",
+        ),
+    )
+    for key in [dg.AssetKey("external_asset_one"), dg.AssetKey(["value", "another_spec"])]:
+        assert key in assets_def.keys
+    assert not assets_def.is_executable
 
 
-def test_invalid_external_asset_creation() -> None:
-    invalid_specs = [
-        dg.AssetSpec("invalid_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
-        dg.AssetSpec("invalid_asset2", code_version="ksjdfljs"),
-        dg.AssetSpec("invalid_asset2", skippable=True),
+def test_direct_external_asset_creation_allows_ignored_fields() -> None:
+    specs = [
+        dg.AssetSpec("external_asset1", auto_materialize_policy=dg.AutoMaterializePolicy.eager()),
+        dg.AssetSpec("external_asset2", code_version="ksjdfljs"),
+        dg.AssetSpec("external_asset3", skippable=True),
     ]
 
-    for invalid_spec in invalid_specs:
-        with pytest.raises(check.CheckError):
-            external_assets_from_specs(specs=[invalid_spec])
+    defs = dg.Definitions(assets=specs)
+
+    for spec in specs:
+        assert defs.resolve_assets_def(spec.key)
 
 
 def test_normal_asset_materializeable() -> None:
@@ -123,19 +99,12 @@ def test_normal_asset_materializeable() -> None:
 
 def test_external_asset_creation_with_deps() -> None:
     asset_two = dg.AssetSpec("external_asset_two")
-    assets_def = next(
-        iter(
-            external_assets_from_specs(
-                [
-                    dg.AssetSpec(
-                        "external_asset_one",
-                        deps=[asset_two.key],  # todo remove key when asset deps accepts it
-                    )
-                ]
-            )
+    assets_def = _assets_def_for_specs(
+        dg.AssetSpec(
+            "external_asset_one",
+            deps=[asset_two.key],  # todo remove key when asset deps accepts it
         )
     )
-    assert isinstance(assets_def, dg.AssetsDefinition)
 
     expected_key = dg.AssetKey(["external_asset_one"])
 
@@ -255,19 +224,13 @@ def test_how_partitioned_source_assets_are_backwards_compatible() -> None:
 
 
 def test_observable_source_asset_decorator() -> None:
-    freshness_policy = dg.LegacyFreshnessPolicy(maximum_lag_minutes=30)
-
-    @dg.observable_source_asset(legacy_freshness_policy=freshness_policy)
+    @dg.observable_source_asset
     def an_observable_source_asset() -> dg.DataVersion:
         return dg.DataVersion("foo")
 
     assets_def = create_external_asset_from_source_asset(an_observable_source_asset)
     assert assets_def.is_executable
     assert assets_def.is_observable
-    assert (
-        assets_def.legacy_freshness_policies_by_key[an_observable_source_asset.key]
-        == freshness_policy
-    )
     defs = dg.Definitions(assets=[assets_def])
 
     instance = DagsterInstance.ephemeral()
@@ -325,9 +288,45 @@ def test_external_assets_with_dependencies() -> None:
     upstream_asset = dg.AssetSpec("upstream_asset")
     downstream_asset = dg.AssetSpec("downstream_asset", deps=[upstream_asset])
 
-    defs = dg.Definitions(assets=external_assets_from_specs([upstream_asset, downstream_asset]))
+    defs = dg.Definitions(assets=[upstream_asset, downstream_asset])
     assert defs
 
     assert defs.resolve_asset_graph().asset_dep_graph["upstream"][downstream_asset.key] == {
         upstream_asset.key
     }
+
+
+def test_heterogeneous_partitions_in_unexecutable_external_asset() -> None:
+    """A multi-asset whose specs have different partitions_defs must survive conversion to an
+    unexecutable external asset, which happens whenever it is an unselected dependency of a job.
+    """
+    daily = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    monthly = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("daily_asset", partitions_def=daily),
+            dg.AssetSpec("monthly_asset", partitions_def=monthly),
+        ],
+        can_subset=True,
+    )
+    def mixed_partition_assets(context: AssetExecutionContext):
+        for key in context.selected_asset_keys:
+            yield dg.MaterializeResult(asset_key=key)
+
+    external = create_unexecutable_external_asset_from_assets_def(mixed_partition_assets)
+    assert not external.is_executable
+    assert external.keys == {AssetKey("daily_asset"), AssetKey("monthly_asset")}
+    assert external.get_asset_spec(AssetKey("daily_asset")).partitions_def == daily
+    assert external.get_asset_spec(AssetKey("monthly_asset")).partitions_def == monthly
+
+    # An unpartitioned downstream asset depending on both specs forces the conversion above during
+    # job resolution, which is how this surfaces in practice.
+    @dg.asset(deps=["daily_asset", "monthly_asset"])
+    def downstream() -> None: ...
+
+    defs = Definitions(assets=[mixed_partition_assets, downstream])
+    assert defs.resolve_all_job_defs()
+
+    result = dg.materialize([mixed_partition_assets, downstream], selection=[downstream])
+    assert result.success

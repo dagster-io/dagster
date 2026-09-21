@@ -7,7 +7,7 @@ from dagster_snowflake.components.sql_component.component import (
 )
 
 
-class MockSqlConnectionComponent(SnowflakeConnectionComponent):
+class MockSqlConnectionComponent(SnowflakeConnectionComponent):  # ty: ignore[invalid-base]
     """Mock Snowflake resource that uses mock connection."""
 
     def connect_and_execute(self, sql: str) -> None:

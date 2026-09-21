@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import cast
 from unittest import mock
 
 import dagster as dg
@@ -114,12 +113,14 @@ def test_tags_multi_dimensional_partitions():
         asset2_records = instance.fetch_materializations(asset2.key, limit=1000).records
         materializations = sorted(
             [*asset1_records, *asset2_records],
-            key=lambda x: x.event_log_entry.dagster_event.asset_key,  # type: ignore
+            key=lambda x: x.event_log_entry.dagster_event.asset_key,
         )
         assert len(materializations) == 2
 
         for materialization in materializations:
-            assert materialization.event_log_entry.dagster_event.partition == dg.MultiPartitionKey(
+            dagster_event = materialization.event_log_entry.dagster_event
+            assert dagster_event is not None
+            assert dagster_event.partition == dg.MultiPartitionKey(
                 {"abc": "a", "date": "2021-06-01"}
             )
 
@@ -349,7 +350,7 @@ def test_keys_with_dimension_value_with_dynamic():
     )
 
     with dg.instance_for_test() as instance:
-        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])  # pyright: ignore[reportArgumentType]
+        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])  # ty: ignore[invalid-argument-type]
 
         with partition_loading_context(
             effective_dt=datetime(year=2015, month=1, day=5), dynamic_partitions_store=instance
@@ -383,6 +384,54 @@ def test_keys_with_dimension_value_with_dynamic():
                     ("d", "2015-01-01"),
                 ]
             ]
+
+
+def test_keys_with_dimension_values_matches_singular_and_reads_other_dimension_once():
+    daily_partitions_def = dg.DailyPartitionsDefinition(start_date="2015-01-01")
+    dynamic_partitions_def = dg.DynamicPartitionsDefinition(name="dummy")
+    multipartitions_def = dg.MultiPartitionsDefinition(
+        {
+            "date": daily_partitions_def,
+            "dynamic": dynamic_partitions_def,
+        }
+    )
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions(dynamic_partitions_def.name, ["a", "b", "c", "d"])  # ty: ignore[invalid-argument-type]
+
+        date_keys = ["2015-01-01", "2015-01-02", "2015-01-03"]
+        with partition_loading_context(
+            effective_dt=datetime(year=2015, month=1, day=5), dynamic_partitions_store=instance
+        ):
+            batched = multipartitions_def.get_multipartition_keys_with_dimension_values(
+                dimension_name="date",
+                dimension_partition_keys=date_keys,
+            )
+            one_at_a_time = [
+                key
+                for date_key in date_keys
+                for key in multipartitions_def.get_multipartition_keys_with_dimension_value(
+                    dimension_name="date",
+                    dimension_partition_key=date_key,
+                )
+            ]
+
+        assert batched == one_at_a_time
+
+        # the dynamic dimension is read once, not once per given key
+        spy = mock.Mock(wraps=instance.get_dynamic_partitions)
+        with (
+            mock.patch.object(instance, "get_dynamic_partitions", spy),
+            partition_loading_context(
+                effective_dt=datetime(year=2015, month=1, day=5), dynamic_partitions_store=instance
+            ),
+        ):
+            multipartitions_def.get_multipartition_keys_with_dimension_values(
+                dimension_name="date",
+                dimension_partition_keys=date_keys,
+            )
+
+        assert spy.call_count == 1
 
 
 def test_keys_with_dimension_value_with_dynamic_without_instance():
@@ -443,6 +492,44 @@ def test_dynamic_dimension_in_multipartitioned_asset():
 
         assert dynamic_multipartitioned_job.execute_in_process(
             instance=instance, partition_key="1|a"
+        ).success
+
+
+def test_io_manager_output_context_with_time_and_dynamic_multipartition():
+    # Regression test for https://github.com/dagster-io/dagster/issues/33815:
+    # OutputContext.asset_partition_key_range (and asset_partitions_time_window which calls it)
+    # must establish a partition_loading_context so DynamicPartitionsDefinition can resolve keys.
+    multipartitions_def = dg.MultiPartitionsDefinition(
+        {
+            "date": dg.DailyPartitionsDefinition(start_date="2020-01-01"),
+            "dynamic": dg.DynamicPartitionsDefinition(name="advertisers"),
+        }
+    )
+
+    class MyIOManager(dg.IOManager):
+        def handle_output(self, context, obj):
+            assert context.asset_partition_key_range == dg.PartitionKeyRange(
+                "2020-01-01|advertiser1", "2020-01-01|advertiser1"
+            )
+            assert context.asset_partitions_time_window == dg.TimeWindow(
+                start=create_datetime(year=2020, month=1, day=1),
+                end=create_datetime(year=2020, month=1, day=2),
+            )
+
+        def load_input(self, context):
+            return 1
+
+    @dg.asset(partitions_def=multipartitions_def, io_manager_key="my_io_manager")
+    def my_asset(context):
+        return 1
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("advertisers", ["advertiser1"])
+        assert dg.materialize(
+            [my_asset],
+            partition_key=dg.MultiPartitionKey({"date": "2020-01-01", "dynamic": "advertiser1"}),
+            resources={"my_io_manager": MyIOManager()},
+            instance=instance,
         ).success
 
 
@@ -730,7 +817,7 @@ def test_basic_pagination():
     ]
     for i, key in enumerate(paginated_results.results):
         assert isinstance(key, dg.MultiPartitionKey)
-        assert cast("dg.MultiPartitionKey", key).keys_by_dimension == expected_keys[i]
+        assert key.keys_by_dimension == expected_keys[i]
 
     paginated_results2 = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
@@ -752,7 +839,7 @@ def test_basic_pagination():
     ]
     for i, key in enumerate(paginated_results2.results):
         assert isinstance(key, dg.MultiPartitionKey)
-        assert cast("dg.MultiPartitionKey", key).keys_by_dimension == expected_keys2[i]
+        assert key.keys_by_dimension == expected_keys2[i]
 
 
 def test_reverse_pagination():
@@ -781,7 +868,7 @@ def test_reverse_pagination():
     ]
     for i, key in enumerate(paginated_results.results):
         assert isinstance(key, dg.MultiPartitionKey)
-        assert cast("dg.MultiPartitionKey", key).keys_by_dimension == expected_keys[i]
+        assert key.keys_by_dimension == expected_keys[i]
 
     paginated_results2 = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
@@ -803,7 +890,7 @@ def test_reverse_pagination():
     ]
     for i, key in enumerate(paginated_results2.results):
         assert isinstance(key, dg.MultiPartitionKey)
-        assert cast("dg.MultiPartitionKey", key).keys_by_dimension == expected_keys2[i]
+        assert key.keys_by_dimension == expected_keys2[i]
 
 
 def test_pagination_accumulation():
@@ -837,10 +924,13 @@ def test_pagination_accumulation():
 
     expected_combinations = []
     for a_val in ["a1", "a2", "a3", "a4"]:
-        for b_val in ["b1", "b2", "b3", "b4", "b5"]:
-            expected_combinations.append({"dim_a": a_val, "dim_b": b_val})
+        expected_combinations.extend(
+            {"dim_a": a_val, "dim_b": b_val} for b_val in ["b1", "b2", "b3", "b4", "b5"]
+        )
 
-    result_dicts = [key.keys_by_dimension for key in all_results]
+    result_dicts = [
+        key.keys_by_dimension for key in all_results if isinstance(key, dg.MultiPartitionKey)
+    ]
     for expected in expected_combinations:
         assert expected in result_dicts
     assert len(result_dicts) == len(expected_combinations)

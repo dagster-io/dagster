@@ -11,9 +11,9 @@ def test_build_pyspark_zip(tmp_path):
     os.mkdir(root)
     os.mkdir(root / "foo")
     os.mkdir(root / "foo/bar")
-    with open(root / "foo/bar/baz.txt", "w") as f:
+    with open(root / "foo/bar/baz.txt", "w", encoding="utf-8") as f:
         f.write("hello world")
-    with open(root / "foo/baz.txt", "w") as f:
+    with open(root / "foo/baz.txt", "w", encoding="utf-8") as f:
         f.write("hello world")
     build_pyspark_zip(str(zip_path), str(root), exclude=[r".*/bar/.*"])
     with zipfile.ZipFile(zip_path, "r") as zf:

@@ -3,6 +3,7 @@ title: Deployment overview
 description: Deploying Dagster OSS, Dagster+ Hybrid, and Dagster+ Serverless.
 canonicalUrl: '/deployment'
 slug: '/deployment'
+sidebar_position: 1
 ---
 
 You can deploy Dagster with Dagster+ or Dagster open source (OSS).

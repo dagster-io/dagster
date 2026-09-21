@@ -29,7 +29,7 @@ class MyPartitionedComponent:
         return dg.Definitions(
             assets=[
                 my_partitioned_asset.with_attributes(
-                    partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01")
+                    partitions_def=dg.DailyPartitionsDefinition(start_date="2020-01-01")  # ty: ignore[unknown-argument]
                 )
             ]
         )

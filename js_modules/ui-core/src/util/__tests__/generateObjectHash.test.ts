@@ -59,7 +59,7 @@ describe('generateObjectHashStream', () => {
 
   test('handles empty objects and arrays', () => {
     const emptyObj = {};
-    const emptyArr: any[] = [];
+    const emptyArr: unknown[] = [];
 
     const hashObj = generateObjectHashStream(emptyObj);
     const hashArr = generateObjectHashStream(emptyArr);

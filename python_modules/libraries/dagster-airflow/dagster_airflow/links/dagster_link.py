@@ -10,9 +10,9 @@ LINK_FMT = "https://dagster.cloud/{organization_id}/{deployment_name}/runs/{run_
     )
 )
 class DagsterLink(BaseOperatorLink):
-    name = "Dagster Cloud"  # type: ignore  # (airflow 1 compat)
+    name = "Dagster Cloud"
 
-    def get_link(self, operator, dttm):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_link(self, operator, dttm):  # ty: ignore[invalid-method-override]
         ti = TaskInstance(task=operator, execution_date=dttm)
         run_id = ti.xcom_pull(task_ids=operator.task_id, key="run_id")
         organization_id = ti.xcom_pull(task_ids=operator.task_id, key="organization_id")

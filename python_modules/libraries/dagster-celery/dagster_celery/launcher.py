@@ -43,7 +43,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
     starts runs as Celery tasks.
     """
 
-    _instance: DagsterInstance  # pyright: ignore[reportIncompatibleMethodOverride]
+    _instance: DagsterInstance
     celery: Celery
 
     def __init__(
@@ -129,7 +129,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
             set_exit_code_on_failure=True,
         )
 
-        task = create_resume_job_task(args)
+        task = create_resume_job_task(self.celery)
         task_signature = task.si(
             execute_job_args_packed=pack_value(args),
         )

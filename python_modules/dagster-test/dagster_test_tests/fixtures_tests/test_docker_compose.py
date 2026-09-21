@@ -3,6 +3,7 @@ import subprocess
 
 import pytest
 import yaml
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.fixtures.docker_compose import (
     connect_container_to_network,
     disconnect_container_from_network,
@@ -21,7 +22,7 @@ def environ(monkeypatch, test_id):
 def other_docker_compose_yml(tmpdir):
     original = os.path.join(os.path.dirname(__file__), "docker-compose.yml")
     with open(original, encoding="utf8") as f:
-        docker_compose_yml = yaml.safe_load(f)
+        docker_compose_yml = safe_load_yaml(f)
 
     docker_compose_yml["services"]["server"]["container_name"] = "other_server"
 

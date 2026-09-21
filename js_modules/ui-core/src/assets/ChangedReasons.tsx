@@ -2,17 +2,17 @@ import {
   BaseTag,
   Box,
   Colors,
+  Heading,
   Icon,
   Popover,
-  Subtitle2,
   Tag,
   ifPlural,
 } from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput, ChangeReason} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
+import styles from './css/ChangedReasons.module.css';
 
 export const ChangedReasonsTag = ({
   changedReasons,
@@ -73,10 +73,10 @@ export const ChangedReasonsPopover = ({
       content={
         <Box flex={{direction: 'column'}}>
           <Box padding={{horizontal: 12, vertical: 8}} border="bottom">
-            <Subtitle2>
+            <Heading size={14} weight={600}>
               {numberFormatter.format(modifiedChanges.length)}{' '}
               {ifPlural(modifiedChanges.length, 'change', 'changes')} in this branch
-            </Subtitle2>
+            </Heading>
           </Box>
           {modifiedChanges.map((change) => {
             return (
@@ -109,28 +109,7 @@ export const MinimalNodeChangedDot = ({
 }) => {
   return (
     <ChangedReasonsPopover changedReasons={changedReasons} assetKey={assetKey}>
-      <MinimalNodeChangedDotContainer />
+      <div className={styles.minimalNodeChangedDotContainer} />
     </ChangedReasonsPopover>
   );
 };
-
-const MinimalNodeChangedDotContainer = styled.div`
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background-color: ${Colors.backgroundCyan()};
-  &:after {
-    display: block;
-    position: absolute;
-    content: ' ';
-    left: 5px;
-    top: 5px;
-    height: 10px;
-    width: 10px;
-    border-radius: 50%;
-    background-color: ${Colors.accentCyan()};
-  }
-`;

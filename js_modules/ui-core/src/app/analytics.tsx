@@ -1,4 +1,4 @@
-import {createContext, useCallback, useContext, useLayoutEffect} from 'react';
+import {createContext, useCallback, useContext, useLayoutEffect, useMemo} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
 
@@ -10,7 +10,11 @@ export const currentPageAtom = atom<{path: string; specificPath: string}>({
 export interface GenericAnalytics {
   group?: (groupId: string, traits?: Record<string, any>) => void;
   identify?: (userId: string, traits?: Record<string, any>) => void;
-  page: (path: string, specificPath: string) => void;
+  page: (
+    path: string,
+    specificPath: string,
+    properties?: Record<string, string | undefined>,
+  ) => void;
   track: (eventName: string, properties?: Record<string, any>) => void;
 }
 
@@ -42,9 +46,13 @@ export const dummyAnalytics = () => ({
       console.log('[Identify]', id, traits);
     }
   },
-  page: (path: string, specificPath: string) => {
+  page: (
+    path: string,
+    specificPath: string,
+    properties: Record<string, string | undefined> = {},
+  ) => {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('[Pageview]', {path, specificPath});
+      console.log('[Pageview]', {path, specificPath, ...properties});
     }
   },
   track: (eventName: string, properties?: Record<string, any>) => {
@@ -54,22 +62,26 @@ export const dummyAnalytics = () => ({
   },
 });
 
-export const useTrackPageView = () => {
+export const useTrackPageView = (memoizedProperties?: Record<string, string | undefined>) => {
   const analytics = useAnalytics();
   const match = useRouteMatch();
   const {pathname: specificPath} = useLocation();
   const {path} = match;
 
   useLayoutEffect(() => {
-    // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
-      analytics.page(path, specificPath);
+      analytics.page(path, specificPath, memoizedProperties);
     }, PAGEVIEW_DELAY);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [analytics, path, specificPath]);
+  }, [analytics, path, specificPath, memoizedProperties]);
+};
+
+export const useTrackAssetPageView = (assetView: string | undefined) => {
+  const properties = useMemo(() => (assetView ? {assetView} : undefined), [assetView]);
+  useTrackPageView(properties);
 };
 
 export const useTrackEvent = () => {

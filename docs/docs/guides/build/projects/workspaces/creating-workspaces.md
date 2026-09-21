@@ -101,3 +101,5 @@ Finally, let's load our two projects with `dg dev`. When you run `dg dev` from t
 
 {/* TODO - replace screenshot */}
 ![](/images/guides/build/projects-and-components/setting-up-a-workspace/two-projects.png)
+
+With multiple projects loaded as separate code locations, you can define [asset dependencies across code locations](/guides/build/assets/defining-assets-with-asset-dependencies#defining-asset-dependencies-across-code-locations) to build data pipelines that span projects.

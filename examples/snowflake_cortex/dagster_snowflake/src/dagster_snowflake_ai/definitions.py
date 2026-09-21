@@ -9,7 +9,7 @@ dbt_assets_list = (
 )
 
 defs = dg.Definitions(
-    assets=[*assets.all_assets, *dbt_assets_list, *assets.dynamic_table_assets],
+    assets=[*assets.all_assets, *dbt_assets_list, *assets.dynamic_table_assets],  # ty: ignore[invalid-argument-type]
     resources=resources.resources,
     jobs=[
         jobs.daily_intelligence_job,

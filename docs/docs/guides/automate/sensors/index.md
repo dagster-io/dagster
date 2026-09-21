@@ -28,16 +28,6 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 
 :::
 
-<details>
-  <summary>Prerequisites</summary>
-
-To follow the steps in this guide, you'll need:
-
-- Familiarity with [assets](/guides/build/assets)
-- Familiarity with [jobs](/guides/build/jobs)
-
-</details>
-
 ## Basic sensor
 
 Sensors are defined with the `@sensor` decorator. The following example includes a `check_for_new_files` function that simulates finding new files. In a real scenario, this function would check an actual system or directory.
@@ -51,7 +41,7 @@ You can scaffold assets and sensors from the command line with the `dg scaffold`
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/simple-sensor-example.py"
+  path="docs_snippets/docs_snippets/guides/automate/simple-sensor-example.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -71,8 +61,7 @@ It's important to note that this interval represents a minimum interval between 
 ```python
 # Sensor will be evaluated at least every 30 seconds
 @dg.sensor(job=my_job, minimum_interval_seconds=30)
-def new_file_sensor():
-  ...
+def new_file_sensor(): ...
 ```
 
 In this example, if the `new_file_sensor`'s evaluation function takes less than a second to run, you can expect the sensor to run consistently around every 30 seconds. However, if the evaluation function takes longer, the interval between evaluations will be longer.
@@ -94,7 +83,7 @@ When dealing with a large number of events, you may want to implement a cursor t
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/automation/sensor-cursor.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensor-cursor.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
 />
@@ -102,9 +91,11 @@ The following example demonstrates how you might use a cursor to only create `Ru
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 
 :::note
+
 The preceding example uses both a `run_key` and a cursor, which means that if the cursor is reset but the files don't change, new runs won't be launched. This is because the run keys associated with the files won't change.
 
 If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunRequest`s.
+
 :::
 
 ## Accessing tags from upstream job runs
@@ -113,6 +104,7 @@ When working with sensors in Dagster, you might need to access tags from upstrea
 
 ```python
 from dagster import sensor, AssetKey, RunRequest
+
 
 @sensor(asset_key=AssetKey("my_asset"))
 def my_asset_sensor(context, asset_event):
@@ -127,11 +119,3 @@ def my_asset_sensor(context, asset_event):
         )
     return None
 ```
-
-## Next steps
-
-By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.
-
-- Run pipelines on a [schedule](/guides/automate/schedules)
-- Trigger cross-job dependencies with [asset sensors](/guides/automate/asset-sensors)
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to sensors

@@ -59,4 +59,5 @@ attributes:
     enable_dbt_selection_by_name: true
     enable_source_tests_as_checks: true
     enable_source_metadata: true
+    enable_dbt_views_as_virtual_assets: true
   prepare_if_dev: true

@@ -3,9 +3,18 @@ from typing import TYPE_CHECKING, Any
 
 import graphene
 from dagster._core.definitions.selector import ScheduleSelector
+from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.utils import capture_error
-from dagster_graphql.schema.errors import GraphenePythonError, GrapheneScheduleNotFoundError
+from dagster_graphql.implementation.utils import (
+    assert_permission_for_schedule,
+    capture_error,
+    require_permission_check,
+)
+from dagster_graphql.schema.errors import (
+    GraphenePythonError,
+    GrapheneScheduleNotFoundError,
+    GrapheneUnauthorizedError,
+)
 from dagster_graphql.schema.inputs import GrapheneScheduleSelector
 from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
 
@@ -19,6 +28,7 @@ class GrapheneScheduleDryRunResult(graphene.Union):
             GrapheneDryRunInstigationTick,
             GraphenePythonError,
             GrapheneScheduleNotFoundError,
+            GrapheneUnauthorizedError,
         )
         name = "ScheduleDryRunResult"
 
@@ -36,12 +46,13 @@ class GrapheneScheduleDryRunMutation(graphene.Mutation):
         name = "ScheduleDryRunMutation"
 
     @capture_error
+    @require_permission_check(Permissions.SCHEDULE_DRY_RUN)
     def mutate(
         self, graphene_info: "ResolveInfo", selector_data: Mapping[str, Any], timestamp: float
     ):
-        return GrapheneDryRunInstigationTick(
-            selector=ScheduleSelector.from_graphql_input(selector_data), timestamp=timestamp
-        )
+        selector = ScheduleSelector.from_graphql_input(selector_data)
+        assert_permission_for_schedule(graphene_info, Permissions.SCHEDULE_DRY_RUN, selector)
+        return GrapheneDryRunInstigationTick(selector=selector, timestamp=timestamp)
 
 
 types = [

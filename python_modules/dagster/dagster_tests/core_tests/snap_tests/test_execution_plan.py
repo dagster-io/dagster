@@ -106,3 +106,29 @@ def test_create_noop_execution_plan_with_tags(snapshot):
             )
         )
     )
+
+
+def test_execution_plan_snapshot_asset_check_keys():
+    @dg.asset
+    def my_asset():
+        return 1
+
+    @dg.asset_check(asset=my_asset)
+    def my_check():
+        return dg.AssetCheckResult(passed=True)
+
+    @dg.asset_check(asset=my_asset)
+    def my_other_check():
+        return dg.AssetCheckResult(passed=True)
+
+    defs = dg.Definitions(assets=[my_asset], asset_checks=[my_check, my_other_check])
+    job_def = defs.get_implicit_global_asset_job_def()
+
+    execution_plan = create_execution_plan(job_def)
+    snapshot = snapshot_from_execution_plan(execution_plan, job_def.get_job_snapshot().snapshot_id)
+
+    assert snapshot.asset_selection == {dg.AssetKey("my_asset")}
+    assert snapshot.asset_check_keys == {
+        dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_check"),
+        dg.AssetCheckKey(dg.AssetKey("my_asset"), "my_other_check"),
+    }

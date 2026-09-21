@@ -4,10 +4,14 @@ import typing
 
 from dagster._utils.typing_api import (
     flatten_unions,
+    get_mapping_key_value_types,
     get_optional_inner_type,
+    get_sequence_inner_type,
     is_closed_python_dict_type,
     is_closed_python_list_type,
+    is_closed_python_mapping_type,
     is_closed_python_optional_type,
+    is_closed_python_sequence_type,
     is_closed_python_set_type,
     is_closed_python_tuple_type,
     is_typing_type,
@@ -22,7 +26,7 @@ def test_closed_python_dict():
     assert is_closed_python_dict_type(typing.Dict[str, typing.List]) is True
     assert is_closed_python_dict_type(typing.Dict[str, typing.Dict]) is True
     assert is_closed_python_dict_type(typing.Dict[str, typing.Dict[str, typing.Dict]]) is True
-    assert is_closed_python_dict_type(typing.Dict[str, typing.Dict | None]) is True
+    assert is_closed_python_dict_type(typing.Dict[str, typing.Dict | None]) is True  # ty: ignore[unsupported-operator]
 
     assert is_closed_python_dict_type(dict) is False
     assert is_closed_python_dict_type(typing.Dict) is False
@@ -54,7 +58,7 @@ def test_closed_tuple_type():
     assert is_closed_python_tuple_type(typing.Tuple[str, typing.List]) is True
     assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict]) is True
     assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict[str, typing.Dict]]) is True
-    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict | None]) is True
+    assert is_closed_python_tuple_type(typing.Tuple[str, typing.Dict | None]) is True  # ty: ignore[unsupported-operator]
 
     assert is_closed_python_tuple_type(tuple) is False
     assert is_closed_python_tuple_type(typing.Tuple) is False
@@ -82,7 +86,7 @@ def test_closed_set_type():
     assert is_closed_python_set_type(typing.Set[typing.List]) is True
     assert is_closed_python_set_type(typing.Set[typing.Dict]) is True
     assert is_closed_python_set_type(typing.Set[typing.Dict[str, typing.Dict]]) is True
-    assert is_closed_python_set_type(typing.Set[typing.Dict | None]) is True
+    assert is_closed_python_set_type(typing.Set[typing.Dict | None]) is True  # ty: ignore[unsupported-operator]
 
 
 def test_closed_list_type():
@@ -100,6 +104,38 @@ def test_closed_list_type():
     assert is_closed_python_list_type(typing.Tuple[int, str]) is False
 
 
+def test_closed_mapping_type():
+    assert is_closed_python_mapping_type(typing.Mapping[str, typing.Any]) is True
+    assert is_closed_python_mapping_type(typing.Mapping[str, int]) is True
+
+    assert is_closed_python_mapping_type(typing.Mapping) is False
+    assert is_closed_python_mapping_type(dict) is False
+    assert is_closed_python_mapping_type(typing.Dict[str, int]) is False
+    assert is_closed_python_mapping_type(None) is False
+    assert is_closed_python_mapping_type(1) is False
+
+
+def test_closed_sequence_type():
+    assert is_closed_python_sequence_type(typing.Sequence[int]) is True
+    assert is_closed_python_sequence_type(typing.Sequence[str]) is True
+
+    assert is_closed_python_sequence_type(typing.Sequence) is False
+    assert is_closed_python_sequence_type(list) is False
+    assert is_closed_python_sequence_type(typing.List[int]) is False
+    assert is_closed_python_sequence_type(None) is False
+    assert is_closed_python_sequence_type(1) is False
+
+
+def test_get_mapping_key_value_types():
+    assert get_mapping_key_value_types(typing.Mapping[str, typing.Any]) == (str, typing.Any)
+    assert get_mapping_key_value_types(typing.Mapping[str, int]) == (str, int)
+
+
+def test_get_sequence_inner_type():
+    assert get_sequence_inner_type(typing.Sequence[int]) is int
+    assert get_sequence_inner_type(typing.Sequence[str]) is str
+
+
 def test_is_typing_type():
     assert is_typing_type("foobar") is False
     assert is_typing_type(1) is False
@@ -114,7 +150,7 @@ def test_is_typing_type():
     assert is_typing_type(typing.Dict[str, typing.Dict[str, typing.Dict]]) is True
     assert is_typing_type(typing.Dict[str, typing.Dict]) is True
     assert is_typing_type(typing.Dict[str, typing.List]) is True
-    assert is_typing_type(typing.Dict[str, typing.Dict | None]) is True
+    assert is_typing_type(typing.Dict[str, typing.Dict | None]) is True  # ty: ignore[unsupported-operator]
     assert is_typing_type(typing.Dict[str, typing.Tuple]) is True
     assert is_typing_type(typing.List) is True
     assert is_typing_type(typing.List[int]) is True
@@ -125,15 +161,21 @@ def test_is_typing_type():
     assert is_typing_type(typing.Set[typing.Dict[str, typing.Dict]]) is True
     assert is_typing_type(typing.Set[typing.Dict]) is True
     assert is_typing_type(typing.Set[typing.List]) is True
-    assert is_typing_type(typing.Set[typing.Dict | None]) is True
+    assert is_typing_type(typing.Set[typing.Dict | None]) is True  # ty: ignore[unsupported-operator]
     assert is_typing_type(typing.Set[typing.Tuple]) is True
     assert is_typing_type(typing.Tuple) is True
     assert is_typing_type(typing.Tuple[int, str]) is True
     assert is_typing_type(typing.Tuple[str, typing.Dict[str, typing.Dict]]) is True
     assert is_typing_type(typing.Tuple[str, typing.Dict]) is True
     assert is_typing_type(typing.Tuple[str, typing.List]) is True
-    assert is_typing_type(typing.Tuple[str, typing.Dict | None]) is True
+    assert is_typing_type(typing.Tuple[str, typing.Dict | None]) is True  # ty: ignore[unsupported-operator]
     assert is_typing_type(typing.Tuple[str, typing.Tuple]) is True
+    assert is_typing_type(typing.Mapping) is True
+    assert is_typing_type(typing.Mapping[str, typing.Any]) is True
+    assert is_typing_type(typing.Mapping[str, int]) is True
+    assert is_typing_type(typing.Sequence) is True
+    assert is_typing_type(typing.Sequence[int]) is True
+    assert is_typing_type(typing.Sequence[str]) is True
 
 
 def test_flatten_unions() -> None:
@@ -151,7 +193,7 @@ def test_flatten_unions() -> None:
         float,
         int,
     }
-    assert flatten_unions(typing.Any) == {typing.Any}  # type: ignore
+    assert flatten_unions(typing.Any) == {typing.Any}
 
     # Python 3.10+ pipe syntax (creates types.UnionType instead of typing.Union)
     assert flatten_unions(str | float) == {str, float}

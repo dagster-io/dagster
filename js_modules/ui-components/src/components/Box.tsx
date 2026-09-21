@@ -1,8 +1,8 @@
 import clsx from 'clsx';
 import {HTMLAttributes, forwardRef} from 'react';
 
-import styles from './Box.module.css';
 import {Colors} from './Color';
+import styles from './css/Box.module.css';
 import {
   AlignItems,
   BorderSetting,

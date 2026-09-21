@@ -57,7 +57,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
 
     @property
     def _config(self):
-        return self.dict()
+        return self.model_dump()
 
     def handle_output(self, context: OutputContext, obj: PandasDataFrame | SparkDataFrame):
         schema, table = context.asset_key.path[-2], context.asset_key.path[-1]

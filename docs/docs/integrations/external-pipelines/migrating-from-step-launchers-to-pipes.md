@@ -22,7 +22,7 @@ When deciding to migrate from step launchers to Dagster Pipes, consider the foll
 
 To migrate from step launchers to Dagster Pipes, you will have to perform the following steps.
 
-### **1. Implement new CI/CD pipelines to prepare your Spark runtime environment**
+### Step 1: Implement new CI/CD pipelines to prepare your Spark runtime environment
 
 Alternatively, this can be done from Dagster jobs, but either way, you will need to manage the Spark runtime yourself.
 
@@ -37,22 +37,22 @@ The process of packaging the Python dependencies and scripts should be automated
 
 It's also possible to run Java or Scala Spark jobs with Dagster Pipes, but currently there is no official Pipes implementation for these languages. Therefore, forwarding Dagster events from these jobs is not yet supported officially (although it can be done with some custom code).
 
-### **2. Update your Dagster code**
+### Step 2: Update your Dagster code
 
 The goal is to keep the same observability and orchestration features while moving compute to an external script. Suppose you have existing code using step launchers similar to this:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/old_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/old_code.py" />
 
 The corresponding Pipes code will instead have two components: the Dagster asset definition, and the external PySpark job.
 
 Let's start with the PySpark job. The upstream asset will invoke the following script:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/upstream_asset_script.py" />
+<CodeExample path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/upstream_asset_script.py" />
 
 Now, we have to run this script from Dagster. First, let's factor the boilerplate EMR config into a reusable function:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/utils.py"
+  path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/utils.py"
   startAfter="start_emr_config_marker"
   endBefore="end_emr_config_marker"
 />
@@ -60,7 +60,7 @@ Now, we have to run this script from Dagster. First, let's factor the boilerplat
 Now, the asset body will be as follows:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py"
+  path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/new_code.py"
   endBefore="after_upstream_marker"
 />
 
@@ -71,27 +71,27 @@ Let's continue to migrating the second `downstream` asset.
 Since we can't use IO Managers in scripts launched by Pipes, we would have to either make a CLI argument parser or use the handy `extras` feature provided by Pipes in order to pass this `"path"` value to the job. We will demonstrate the latter approach. The `downstream` asset turns into:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py"
+  path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/new_code.py"
   startAfter="after_upstream_marker"
   endBefore="after_downstream_marker"
 />
 
 Now, let's access the `path` value in the PySpark job:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/downstream_asset_script.py" />
+<CodeExample path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/downstream_asset_script.py" />
 
 Finally, provide the required resources to `Definitions`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py"
+  path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/new_code.py"
   startAfter="after_downstream_marker"
 />
 
-# Conclusion
+## Conclusion
 
 In this guide, we have demonstrated how to migrate from using step launchers to using Dagster Pipes. We have shown how to launch PySpark jobs on AWS EMR using `PipesEMRClient` and how to pass small pieces of data between assets using Dagster's metadata and Pipes extras.
 
-# Supplementary
+## Additional resources
 
 - [Dagster Pipes](/integrations/external-pipelines)
 - [GitHub discussion](https://github.com/dagster-io/dagster/discussions/25685) on the topic
@@ -104,7 +104,7 @@ In this guide, we have demonstrated how to migrate from using step launchers to 
 **Heads up!** As an alternative to storing paths with an `IOManager`, the following utility function can be used to retrieve logged metadata values from upstream assets:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/utils.py"
+  path="docs_snippets/docs_snippets/migration/from_step_launchers_to_pipes/utils.py"
   startAfter="start_metadata_marker"
   endBefore="end_metadata_marker"
 />

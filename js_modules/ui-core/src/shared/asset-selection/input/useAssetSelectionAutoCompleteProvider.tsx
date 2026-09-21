@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 
 import {AssetGraphQueryItem} from '../../../asset-graph/types';
+import {useAutomationNames} from '../../../asset-selection/input/useAutomationNames';
 import {attributeToIcon, getAttributesMap} from '../../../asset-selection/input/util';
 import {createSelectionAutoComplete} from '../../../selection/SelectionAutoComplete';
 import {
@@ -11,7 +12,12 @@ import {
 export function useAssetSelectionAutoCompleteProvider(
   assets: AssetGraphQueryItem[],
 ): Pick<SelectionAutoCompleteProvider, 'useAutoComplete'> {
-  const attributesMap = useMemo(() => getAttributesMap(assets), [assets]);
+  const {sensorNames, scheduleNames} = useAutomationNames();
+
+  const attributesMap = useMemo(
+    () => getAttributesMap(assets, {sensorNames, scheduleNames}),
+    [assets, sensorNames, scheduleNames],
+  );
 
   const baseProvider = useMemo(
     () =>

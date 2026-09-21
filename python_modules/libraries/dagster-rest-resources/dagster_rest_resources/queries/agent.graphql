@@ -1,0 +1,12 @@
+query ListAgents {
+  agents {
+    id
+    agentLabel
+    status
+    lastHeartbeatTime
+    metadata {
+      key
+      value
+    }
+  }
+}

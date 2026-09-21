@@ -112,6 +112,7 @@ def main():
     # Signal successful completion
     dbutils.notebook.exit("success")
 
+
 if __name__ == "__main__":
     main()
 ```

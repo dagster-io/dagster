@@ -9,6 +9,7 @@ export type AppContextValue = {
   telemetryEnabled: boolean;
   statusPolling?: Set<DeploymentStatusType>;
   localCacheIdPrefix?: string;
+  shouldUseAssetManifestForWorkspace?: boolean;
 };
 
 export const AppContext = createContext<AppContextValue>({

@@ -6,14 +6,18 @@ sidebar_position: 4000
 
 For assets that produce database tables, column-level lineage can be a powerful tool for improving collaboration and debugging issues. Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform.
 
-## How it works
-
 Emitted as materialization metadata, column lineage can be:
 
 - Specified on assets defined in Dagster
 - Enabled for assets loaded from integrations like dbt
 
-Dagster uses this metadata to display the column's upstream and downstream dependencies, accessible via the asset's details page in the Dagster UI. **Note**: Viewing column-level lineage in the UI is a Dagster+ feature.
+Dagster uses this metadata to display the column's upstream and downstream dependencies, accessible via the asset's details page in the Dagster UI.
+
+:::note
+
+Viewing column-level lineage in the UI is a Dagster+ feature.
+
+:::
 
 ## Enabling column-level lineage
 
@@ -28,7 +32,7 @@ To enable column-level lineage on Dagster assets that produce database tables, y
 
 Let's take a look at an example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/metadata-tags/asset_column_lineage.py" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/metadata-tags/asset_column_lineage.py" title="src/<project_name>/defs/assets.py" />
 
 When materialized, the `my_asset` asset will create two columns: `new_column_foo` and `new_column_qux`.
 

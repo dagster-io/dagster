@@ -8,6 +8,7 @@ from dagster._core.definitions.assets.definition.asset_spec import (
 )
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import normalize_metadata
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import beta_warning
@@ -221,12 +222,17 @@ def resolve_stub_assets_defs(assets_defs: list[AssetsDefinition]) -> list[Assets
             if not dep_metadata:
                 continue
 
-            # metadata set, but conflicts
-            if metadata and dep_metadata != metadata:
-                raise DagsterInvalidDefinitionError(
-                    f"Conflicting metadata found on AssetDeps referencing {key.to_string()}: {metadata} != {dep_metadata}. "
-                    "All metadata for AssetDeps referencing a given key must be identical or empty."
-                )
+            if metadata:
+                # normalize metadata to avoid comparing python objects
+                normalized_dep_metadata = normalize_metadata(dep_metadata, allow_invalid=True)
+                normalized_metadata = normalize_metadata(metadata, allow_invalid=True)
+
+                # metadata set, but conflicts
+                if normalized_metadata != normalized_dep_metadata:
+                    raise DagsterInvalidDefinitionError(
+                        f"Conflicting metadata found on AssetDeps referencing {key.to_string()}: {metadata} != {dep_metadata}. "
+                        "All metadata for AssetDeps referencing a given key must be identical or empty."
+                    )
             metadata = dict(dep_metadata)
 
         # add in flag to indicate that this is a stub asset

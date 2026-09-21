@@ -1,6 +1,5 @@
 import os
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, cast
 
 import pytest
 from dagster import AssetKey, DagsterEventType
@@ -11,9 +10,6 @@ from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.test_utils import instance_for_test
 from dagstermill.compat import ExecutionError
 from dagstermill.examples.repository import custom_io_mgr_key_asset
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 
 
 def get_path(materialization_event):
@@ -115,8 +111,8 @@ def test_hello_world_resource_asset():
 
 @pytest.mark.notebook_test
 def test_asset_tags() -> None:
-    key = cast("AssetsDefinition", custom_io_mgr_key_asset).key
-    assert cast("AssetsDefinition", custom_io_mgr_key_asset).tags_by_key[key] == {"foo": "bar"}
+    key = custom_io_mgr_key_asset.key
+    assert custom_io_mgr_key_asset.tags_by_key[key] == {"foo": "bar"}
 
 
 @pytest.mark.notebook_test

@@ -77,25 +77,19 @@ For more information about the Kubernetes agent setup and Helm chart values, see
 - [Dagster+ Helm chart values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 
 </TabItem>
-<TabItem value="build_yaml" label="build.yaml (Optional queue routing configuration for code locations)">
+<TabItem value="build_yaml" label="pyproject.toml (Optional queue routing configuration for code locations)">
 
-:::note
+Whether in the context of a [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) or a [branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments), you can configure the code location to be served on a specific agent queue in [`pyproject.toml`](/deployment/dagster-plus/management/build-yaml#pyprojecttoml):
 
-If you have an older Dagster+ deployment, you may have a `dagster_cloud.yaml` file instead of a `build.yaml` file.
+```toml
+# pyproject.toml
 
-:::
-
-Whether in the context of a [full deployment](/deployment/dagster-plus/deploying-code/full-deployments) or a [branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments), you can configure the code location to be served on a specific agent queue:
-
-```yaml
-# build.yaml
-locations:
-  - location_name: <location name>
-    # The named queue that this code location will be served on. If not set, the default queue is used.
-    agent_queue: <queue name>
+[tool.dg.project]
+root_module = "my_project"
+agent_queue = "<queue name>"
 ```
 
-For more information about agent queue routing or code location configuration, refer to:
+For more information about agent queue routing or code location configuration, see:
 
 - [Agent queue routing](/deployment/dagster-plus/hybrid/multiple#routing-requests-to-specific-agents)
 - [build.yaml code location configuration reference](/deployment/dagster-plus/management/build-yaml)
@@ -135,29 +129,9 @@ On Hybrid, you can also use [Setting environment variables using agent config](/
 
 See: [Dagster+ branch deployments](/guides/operate/configuration/using-environment-variables-and-secrets#dagster-branch-deployments)
 
-### Setting the concurrency limit for runs across all branch deployments
+### Setting concurrency limits for branch deployment runs
 
-There is an organization-scoped setting `max_concurrent_branch_deployment_runs` that controls concurrency across all branch deployments. By default its value is 50.
-
-Modifying organization-scoped settings can only be done using the [dagster-cloud CLI](/api/clis/dagster-cloud-cli). The CLI must be [authenticated](/api/clis/dagster-cloud-cli/installing-and-configuring#setting-up-the-configuration-file) with a user token for a user that has the [Organization Admin role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#dagster-user-roles).
-
-To view the organization settings in the terminal:
-
-```bash
-dagster-cloud organization settings get # max_concurrent_branch_deployment_runs: 50
-```
-
-To modify organization settings, first save the settings to a `YAML` file on your local system:
-
-```bash
-dagster-cloud organization settings get > org-settings.yaml
-```
-
-Edit the contents of this `YAML` file and save it. Then run the below command to sync the changes:
-
-```bash
-dagster-cloud organization settings set-from-file org-settings.yaml
-```
+Branch deployment concurrency is controlled by a set of organization-scoped settings that apply across all branch deployments, including a global run limit, a per-branch-deployment run limit, and tag-based concurrency limits. For details, see [Configuring concurrency for branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/branch-deployment-concurrency).
 
 ### Serving specific code location branch deployments on specific agents when you have multiple agents in distinct environments
 
@@ -183,7 +157,7 @@ See `dagster_cloud_api.agent_queues` in `dagster.yaml` (for Docker, local, and E
 ### No agent is serving my branch deployment
 
 - Ensure that at least one agent is configured to serve branch deployments. See `dagster_cloud_api.branch_deployments` in `dagster.yaml` (for Docker, local, and ECS agents) or `dagsterCloud.branchDeployments` in the Helm chart (for Kubernetes agents).
-- This agent's token must also be either organization-scoped or have the "All branch deployments" permission. See [Managing agent tokens](/deployment/dagster-plus/management/tokens/agent-tokens#managing-agent-tokens)
+- This agent's token must also be either organization-scoped or have the "All branch deployments" permission. See [Managing agent tokens](/deployment/dagster-plus/management/tokens/agent-tokens)
 
 ### I have configured my agent to serve branch deployments, but now I have no agent serving my full deployment
 

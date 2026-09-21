@@ -1,10 +1,10 @@
 import {Box} from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {gql} from '../apollo-client';
 import {OpCardSolidDefinitionFragment} from './types/OpCard.types';
 import {OP_NODE_DEFINITION_FRAGMENT, OpNode} from '../graph/OpNode';
 import {layoutOp} from '../graph/asyncGraphLayout';
+import styles from './css/OpCard.module.css';
 
 interface OpCardProps {
   definition: OpCardSolidDefinitionFragment;
@@ -33,7 +33,7 @@ export const OpCard = (props: OpCardProps) => {
 
   return (
     <Box padding={24}>
-      <OpCardContainer style={{height: layout.bounds.height}}>
+      <div className={styles.opCardContainer} style={{height: layout.bounds.height}}>
         <OpNode
           invocation={undefined}
           definition={props.definition}
@@ -48,7 +48,7 @@ export const OpCard = (props: OpCardProps) => {
           highlightedEdges={[]}
           dim={false}
         />
-      </OpCardContainer>
+      </div>
     </Box>
   );
 };
@@ -71,10 +71,4 @@ export const OP_CARD_SOLID_DEFINITION_FRAGMENT = gql`
   }
 
   ${OP_NODE_DEFINITION_FRAGMENT}
-`;
-
-const OpCardContainer = styled.div`
-  flex: 1;
-  max-width: 450px;
-  position: relative;
 `;

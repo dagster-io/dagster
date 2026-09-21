@@ -124,11 +124,10 @@ class DynamicPartitionsDefinition(
     ) -> "DynamicPartitionsStore":
         if dynamic_partitions_store is None:
             check.failed(
-                "The instance is not available to load partitions. You may be seeing this error"
-                " when using dynamic partitions with a version of dagster-webserver or"
-                " dagster-cloud that is older than 1.1.18. The other possibility is that an"
-                " internal framework error where a dynamic partitions store was not properly"
-                " threaded down a call stack."
+                "The instance is not available to load partitions. Try wrapping the call in"
+                " `with partition_loading_context` with an instance set. This error may also"
+                " indicate a Dagster framework error where an instance was not properly threaded"
+                " down a call stack."
             )
         return dynamic_partitions_store
 
@@ -197,11 +196,10 @@ class DynamicPartitionsDefinition(
             else:
                 if ctx.dynamic_partitions_store is None:
                     check.failed(
-                        "The instance is not available to load partitions. You may be seeing this error"
-                        " when using dynamic partitions with a version of dagster-webserver or"
-                        " dagster-cloud that is older than 1.1.18. The other possibility is that an"
-                        " internal framework error where a dynamic partitions store was not properly"
-                        " threaded down a call stack."
+                        "The instance is not available to load partitions. Try wrapping the call"
+                        " in `with partition_loading_context` with an instance set. This error"
+                        " may also indicate a Dagster framework error where an instance was not"
+                        " properly threaded down a call stack."
                     )
 
                 return ctx.dynamic_partitions_store.has_dynamic_partition(

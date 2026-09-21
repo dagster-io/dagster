@@ -3,6 +3,7 @@ import signal
 
 import pytest
 import requests
+import requests.adapters
 from urllib3.util.retry import Retry
 
 BUILDKITE = os.environ.get("BUILDKITE") is not None
@@ -26,7 +27,7 @@ def retrying_requests():
     session = requests.Session()
     session.mount(
         "http://",
-        requests.adapters.HTTPAdapter(max_retries=Retry(total=5, backoff_factor=1)),  # pyright: ignore[reportAttributeAccessIssue]
+        requests.adapters.HTTPAdapter(max_retries=Retry(total=5, backoff_factor=1)),
     )
     yield session
 

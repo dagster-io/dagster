@@ -1,8 +1,8 @@
 import os
 import subprocess
-import time
 
 from dagster import asset
+from dagster._core.test_utils import poll_for_subprocess_output
 
 
 def test_invoke_cli():
@@ -23,13 +23,24 @@ def foo(bar):
 def test_cli_logs_to_dagit():
     defs_path = os.path.realpath(__file__)
     process = subprocess.Popen(
-        ["dagit", "-f", defs_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        ["dagit", "-f", defs_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
-    time.sleep(2)  # give time for dagit to start
-    process.terminate()
+    marker = b"The `dagit` CLI command is deprecated"
     try:
-        stdout, _ = process.communicate(timeout=10)
-        assert "The `dagit` CLI command is deprecated" in stdout
-        assert "- dagit -" in stdout
-    except subprocess.TimeoutExpired:
-        process.kill()
+        stdout, stderr = poll_for_subprocess_output(process, marker, timeout=60)
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+
+    captured = stdout.decode("utf-8", errors="replace")
+    assert marker.decode() in captured, (
+        f"Expected deprecation banner in dagit stdout within 60s. "
+        f"stdout={captured!r} "
+        f"stderr={stderr.decode('utf-8', errors='replace')!r}"
+    )
+    assert "- dagit -" in captured

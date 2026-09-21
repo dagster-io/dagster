@@ -56,6 +56,7 @@ from dagster._core.storage.sql import (
 from dagster._core.storage.sqlalchemy_compat import db_result, db_select
 from dagster._core.storage.sqlite import (
     LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION,
+    SQLITE_BUSY_TIMEOUT_SECONDS,
     create_db_conn_string,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
@@ -112,7 +113,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if not os.path.exists(self.path_for_shard(INDEX_SHARD_NAME)):
             conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
-            engine = create_engine(conn_string, poolclass=NullPool)
+            engine = create_engine(
+                conn_string,
+                poolclass=NullPool,
+                connect_args={"timeout": SQLITE_BUSY_TIMEOUT_SECONDS},
+            )
             self._initdb(engine, for_index_shard=True)
             self.reindex_events()
             self.reindex_assets()
@@ -143,7 +148,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return {"base_dir": StringSource}
 
     @classmethod
-    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_config_value(  # ty: ignore[invalid-method-override]
         cls, inst_data: ConfigurableClassData | None, config_value: "SqliteStorageConfig"
     ) -> "SqliteEventLogStorage":
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)
@@ -158,7 +163,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def has_table(self, table_name: str) -> bool:
         conn_string = self.conn_string_for_shard(INDEX_SHARD_NAME)
-        engine = create_engine(conn_string, poolclass=NullPool)
+        engine = create_engine(
+            conn_string,
+            poolclass=NullPool,
+            connect_args={"timeout": SQLITE_BUSY_TIMEOUT_SECONDS},
+        )
         with engine.connect() as conn:
             return bool(engine.dialect.has_table(conn, table_name))
 
@@ -227,7 +236,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             check.str_param(shard, "shard")
 
             conn_string = self.conn_string_for_shard(shard)
-            engine = create_engine(conn_string, poolclass=NullPool)
+            engine = create_engine(
+                conn_string,
+                poolclass=NullPool,
+                connect_args={"timeout": SQLITE_BUSY_TIMEOUT_SECONDS},
+            )
 
             if shard not in self._initialized_dbs:
                 self._initdb(engine)
@@ -262,20 +275,17 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event_id = None
 
             # mirror the event in the cross-run index database
-            with (
-                self.index_connection() as conn,
-                db_result(conn, insert_event_statement) as result,
-            ):
-                event_id = result.inserted_primary_key[0]
+            with self.index_transaction() as conn:
+                with db_result(conn, insert_event_statement) as result:
+                    event_id = result.inserted_primary_key[0]
 
-            self.store_asset_event(event, event_id)
+                if event_id is None:
+                    raise DagsterInvariantViolationError(
+                        "Cannot store asset event tags for null event id."
+                    )
 
-            if event_id is None:
-                raise DagsterInvariantViolationError(
-                    "Cannot store asset event tags for null event id."
-                )
-
-            self.store_asset_event_tags([event], [event_id])
+                self._store_asset_event_tags(conn, [event], [event_id])
+                self._store_asset_event(conn, event, event_id)
 
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             # mirror the event in the cross-run index database

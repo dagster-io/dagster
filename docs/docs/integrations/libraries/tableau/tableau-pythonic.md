@@ -33,8 +33,7 @@ If you are just getting started with the Tableau integration, we recommend using
 
 - How to materialize Tableau sheets and dashboards.
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 - The `dagster-tableau` library installed in your environment
 - Familiarity with asset definitions and the Dagster asset graph
@@ -42,8 +41,6 @@ If you are just getting started with the Tableau integration, we recommend using
 - Familiarity with Tableau concepts, like data sources, sheets, and dashboards
 - A Tableau site, either on Tableau Cloud or Tableau Server
 - A connected app configured to access Tableau. For more information, see [Use Tableau Connected Apps for Application Integration](https://help.tableau.com/current/online/en-us/connected_apps.htm) in the Tableau documentation.
-
-</details>
 
 ## Set up your environment
 

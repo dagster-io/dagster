@@ -1,4 +1,4 @@
-import {Box, Colors, Icon, Subheading, Table, Tag} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Table, Tag} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {DynamicPartitionRequestFragment} from './types/SensorDryRunDialog.types';
@@ -37,7 +37,9 @@ export function DynamicPartitionRequests({
       {includeTitle ? (
         <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
           <Icon name="partition" />
-          <Subheading>Dynamic Partition Requests</Subheading>
+          <Heading size={14} weight={600}>
+            Dynamic Partition Requests
+          </Heading>
         </Box>
       ) : null}
       <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`}}>

@@ -4,7 +4,7 @@ description: How to monitor critical assets with scheduled health checks.
 last_update:
   author: Dennis Hume
 sidebar_custom_props:
-  logo: images/dagster-primary-mark.svg
+  logo: images/examples/best-practices/Visibility.png
 ---
 
 In this example, we'll explore different approaches to monitoring critical (Tier-0) assets in Dagster. When you have assets that power downstream business processes, you need to ensure they are successfully materialized, passing data quality checks, and fresh according to defined policies.
@@ -22,14 +22,16 @@ To monitor critical data assets, you can use freshness policies, asset checks, o
 | [Health monitoring asset](#strategy-3-aggregated-health-monitoring-asset)    | <ul><li>You need aggregated health status across multiple assets</li><li>Scheduled health reports are required at specific times (for example, at the start or end of the day)</li><li>You want historical tracking of health over time</li></ul> |
 
 :::info Alerting
+
 To get notified when assets become stale or fail checks, use [alert policies](/guides/observe/alerts) (Dagster+) or [sensors](/guides/automate/sensors) to react to run or asset status.
+
 :::
 
 ## Strategy 1: Freshness policies for staleness detection
 
 [Freshness policies](/guides/observe/asset-freshness-policies) define acceptable staleness thresholds for your assets. Dagster automatically tracks whether assets are fresh and displays status in the UI.
 
-**Benefits**:
+**Benefits:**
 
 - Dagster automatically monitors time since asset materialization.
 - Assets have built-in freshness status badges in the UI.
@@ -50,10 +52,10 @@ To get notified when assets become stale or fail checks, use [alert policies](/g
 
 Asset checks provide the following:
 
-- **Validation scope**: Per-asset data quality rules
-- **Severity levels**: ERROR (blocking) or WARN (non-blocking)
-- **Execution**: Runs after materialization or on-demand
-- **Aggregated view**: Check results visible per-asset, not aggregated
+- **Validation scope**: Per-asset data quality rules.
+- **Severity levels**: ERROR (blocking) or WARN (non-blocking).
+- **Execution**: Runs after materialization or on-demand.
+- **Aggregated view**: Check results visible per-asset, not aggregated.
 
 [Asset checks](/guides/test/asset-checks) validate data quality after materialization, providing pass/fail results with configurable severity levels. You can define multiple assets with different freshness requirements and paired checks.
 
@@ -112,5 +114,7 @@ Finally, schedule asset health monitoring for predictable check times:
 />
 
 :::tip Optional: Add alerting
+
 You can trigger alerts when the health monitoring asset's `overall_status` indicates an issue by using [alert policies](/guides/observe/alerts) (Dagster+) or [sensors](/guides/automate/sensors) that react to the asset's materialization result.
+
 :::

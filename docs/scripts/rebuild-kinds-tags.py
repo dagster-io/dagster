@@ -135,15 +135,15 @@ def main() -> None:
     docs_file_new_contents.append("|-----|-------|")
 
     # Table content
-    for kind in output:
-        docs_file_new_contents.append(
-            KIND_LINE.format(
-                kind=kind,
-                kind_spacing=" " * (20 - len(kind)),
-                image=kind_docs_images.get(kind, ""),
-                image_spacing=" " * (100 - len(kind_docs_images.get(kind, ""))),
-            )
+    docs_file_new_contents.extend(
+        KIND_LINE.format(
+            kind=kind,
+            kind_spacing=" " * (20 - len(kind)),
+            image=kind_docs_images.get(kind, ""),
+            image_spacing=" " * (100 - len(kind_docs_images.get(kind, ""))),
         )
+        for kind in output
+    )
 
     KIND_TAGS_DOCS_PARTIAL.write_text("\n".join(docs_file_new_contents))
 

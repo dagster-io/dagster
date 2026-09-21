@@ -4,14 +4,16 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Resolvers} from '../../apollo-client';
+import * as CustomAlertProvider from '../../app/CustomAlertProvider';
 import {useTrackEvent} from '../../app/analytics';
+import {TestPermissionsProvider} from '../../testing/TestPermissions';
 import {SensorDryRunDialog} from '../SensorDryRunDialog';
 import * as Mocks from '../__fixtures__/SensorDryRunDialog.fixtures';
 
-// This component is unit tested separately so mocking it out
-jest.mock('../DryRunRequestTable', () => {
+// Mock run config dialog since it's not relevant to these tests
+jest.mock('../../runs/RunConfigDialog', () => {
   return {
-    RunRequestTable: () => <div />,
+    RunConfigDialog: () => <div />,
   };
 });
 
@@ -26,23 +28,51 @@ jest.mock('../../app/analytics', () => ({
   useTrackEvent: jest.fn(() => jest.fn()),
 }));
 
+jest.mock('../../app/CustomAlertProvider', () => ({
+  CustomAlertProvider: jest.fn(({children}) => children),
+  showCustomAlert: jest.fn(),
+}));
+
 const onCloseMock = jest.fn();
 
-function Test({mocks, resolvers}: {mocks?: MockedResponse[]; resolvers?: Resolvers}) {
+function Test({
+  mocks,
+  resolvers,
+  canEditDynamicPartitions = true,
+}: {
+  mocks?: MockedResponse[];
+  resolvers?: Resolvers;
+  canEditDynamicPartitions?: boolean;
+}) {
   return (
-    <MockedProvider mocks={mocks} resolvers={resolvers}>
-      <SensorDryRunDialog
-        name="test"
-        onClose={onCloseMock}
-        isOpen={true}
-        repoAddress={{
-          name: 'testName',
-          location: 'testLocation',
-        }}
-        jobName="testJobName"
-        currentCursor="testCursor"
-      />
-    </MockedProvider>
+    <MemoryRouter>
+      <MockedProvider mocks={mocks} resolvers={resolvers}>
+        <TestPermissionsProvider
+          locationOverrides={{
+            testLocation: {
+              canEditDynamicPartitions: {
+                enabled: canEditDynamicPartitions,
+                disabledReason: canEditDynamicPartitions
+                  ? ''
+                  : 'You do not have permission to create dynamic partitions.',
+              },
+            },
+          }}
+        >
+          <SensorDryRunDialog
+            name="test"
+            onClose={onCloseMock}
+            isOpen={true}
+            repoAddress={{
+              name: 'testName',
+              location: 'testLocation',
+            }}
+            jobName="testJobName"
+            currentCursor="testCursor"
+          />
+        </TestPermissionsProvider>
+      </MockedProvider>
+    </MemoryRouter>
   );
 }
 
@@ -146,6 +176,96 @@ describe('SensorDryRunTest', () => {
     });
   });
 
+  it('shows apply button for dynamic partition requests with no run requests', async () => {
+    const user = userEvent.setup();
+    render(<Test mocks={[Mocks.SensorDryRunMutationDynamicPartitionsOnly]} />);
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+    // Should show "Apply requests & commit tick result", not just "Commit tick result"
+    expect(await screen.findByTestId('launch-all')).toBeVisible();
+    expect(screen.queryByTestId('commit-tick-result')).toBe(null);
+  });
+
+  it('preflights EDIT_DYNAMIC_PARTITIONS and fires no mutations when the user lacks it', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    (useHistory as jest.Mock).mockReturnValue({push: jest.fn(), createHref: jest.fn()});
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        canEditDynamicPartitions={false}
+        mocks={[
+          Mocks.SensorDryRunMutationWithDynamicPartitionRequest,
+          // no partition/launch mocks: an unmatched request fails the test
+        ]}
+      />,
+    );
+
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Insufficient permissions',
+        body: 'You do not have permission to create dynamic partitions.',
+      });
+    });
+
+    expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
+  it('does not launch runs when a mid-flight partition mutation returns UnauthorizedError', async () => {
+    const showCustomAlertSpy = jest.spyOn(CustomAlertProvider, 'showCustomAlert');
+    showCustomAlertSpy.mockClear();
+    onCloseMock.mockClear();
+
+    (useHistory as jest.Mock).mockReturnValue({push: jest.fn(), createHref: jest.fn()});
+    (useTrackEvent as jest.Mock).mockReturnValue(jest.fn());
+
+    const user = userEvent.setup();
+    render(
+      <Test
+        canEditDynamicPartitions={true}
+        mocks={[
+          Mocks.SensorDryRunMutationWithDynamicPartitionRequest,
+          Mocks.AddDynamicPartitionUnauthorizedMock,
+          // No SensorLaunchAllMutation mock — an unmatched request fails the test.
+        ]}
+      />,
+    );
+
+    const cursorInput = await screen.findByTestId('cursor-input');
+    await user.type(cursorInput, 'testing123');
+    await user.click(screen.getByTestId('continue'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('launch-all')).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByTestId('launch-all'));
+
+    await waitFor(() => {
+      expect(showCustomAlertSpy).toHaveBeenCalledWith({
+        title: 'Insufficient permissions',
+        body: 'You do not have permission to create dynamic partitions.',
+      });
+    });
+
+    expect(onCloseMock).not.toHaveBeenCalled();
+  });
+
   it('launches all runs for 1 runrequest with undefined job name in the runrequest', async () => {
     const user = userEvent.setup();
     const pushSpy = jest.fn();
@@ -173,7 +293,7 @@ describe('SensorDryRunTest', () => {
     await user.type(cursorInput, 'testing123');
     await user.click(screen.getByTestId('continue'));
     await waitFor(() => {
-      expect(screen.getByText(/1\srun requests/g)).toBeVisible();
+      expect(screen.getByText(/1\srun request\b/g)).toBeVisible();
       expect(screen.queryByText('Skipped')).toBe(null);
       expect(screen.queryByText('Failed')).toBe(null);
     });

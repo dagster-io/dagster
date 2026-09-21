@@ -1,3 +1,4 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {Box, Checkbox} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
@@ -345,13 +346,15 @@ const MetadataEntryMocks = [
 export const EmptyState = () => {
   const [expandSmallValues, setExpandSmallValues] = useState(false);
   return (
-    <Box style={{width: '950px', display: 'flex', flexDirection: 'column', gap: 12}}>
-      <Checkbox
-        label="Expand small values"
-        checked={expandSmallValues}
-        onChange={() => setExpandSmallValues(!expandSmallValues)}
-      />
-      <MetadataEntries entries={MetadataEntryMocks} expandSmallValues={expandSmallValues} />
-    </Box>
+    <MockedProvider>
+      <Box style={{width: '950px', display: 'flex', flexDirection: 'column', gap: 12}}>
+        <Checkbox
+          label="Expand small values"
+          checked={expandSmallValues}
+          onChange={() => setExpandSmallValues(!expandSmallValues)}
+        />
+        <MetadataEntries entries={MetadataEntryMocks} expandSmallValues={expandSmallValues} />
+      </Box>
+    </MockedProvider>
   );
 };

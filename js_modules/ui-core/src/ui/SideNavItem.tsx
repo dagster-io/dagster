@@ -1,6 +1,8 @@
-import {Box, Colors, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Tooltip, UnstyledButton} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {Link} from 'react-router-dom';
-import styled, {css} from 'styled-components';
+
+import styles from './css/SideNavItem.module.css';
 
 interface SideNavItemInterface {
   key: string;
@@ -48,59 +50,25 @@ export const SideNavItem = (props: Props) => {
   if (type === 'link' && !disabled) {
     return (
       <Tooltip canShow={!!tooltip} content={tooltip} placement="right" display="block">
-        <StyledSideNavLink to={item.path} $active={active}>
+        <Link
+          to={item.path}
+          className={clsx(styles.sideNavItem, active ? styles.active : styles.inactive)}
+        >
           {content}
-        </StyledSideNavLink>
+        </Link>
       </Tooltip>
     );
   }
 
   return (
     <Tooltip canShow={!!tooltip} content={tooltip} placement="right" display="block">
-      <StyledSideNavButton $active={active} disabled={disabled} onClick={item.onClick}>
+      <UnstyledButton
+        className={clsx(styles.sideNavItem, active ? styles.active : styles.inactive)}
+        disabled={disabled}
+        onClick={item.onClick}
+      >
         {content}
-      </StyledSideNavButton>
+      </UnstyledButton>
     </Tooltip>
   );
 };
-
-const sharedSideNavItemStyle = css<{$active: boolean}>`
-  background-color: ${({$active}) => ($active ? Colors.backgroundBlue() : 'transparent')};
-  border-radius: 8px;
-  color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
-  display: block;
-  font-size: 14px;
-  line-height: 20px;
-  text-decoration: none;
-  transition: 100ms background-color linear;
-  user-select: none;
-  width: 100%;
-
-  :focus {
-    outline: none;
-    background-color: ${({$active}) =>
-      $active ? Colors.backgroundBlue() : Colors.backgroundLight()};
-  }
-
-  :hover,
-  :active {
-    background-color: ${({$active}) =>
-      $active ? Colors.backgroundBlue() : Colors.backgroundLightHover()};
-    color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
-    text-decoration: none;
-  }
-
-  .iconAndLabel {
-    .iconGlobal {
-      background-color: ${({$active}) => ($active ? Colors.textBlue() : Colors.textDefault())};
-    }
-  }
-`;
-
-const StyledSideNavLink = styled(Link)<{$active: boolean}>`
-  ${sharedSideNavItemStyle}
-`;
-
-const StyledSideNavButton = styled(UnstyledButton)<{$active: boolean}>`
-  ${sharedSideNavItemStyle}
-`;

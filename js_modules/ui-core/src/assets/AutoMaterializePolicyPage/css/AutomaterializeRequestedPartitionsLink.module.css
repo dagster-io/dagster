@@ -1,0 +1,5 @@
+.tagLink {
+  &:focus {
+    outline: none;
+  }
+}

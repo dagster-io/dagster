@@ -139,7 +139,7 @@ class ConfigurableAssetBasedInMemoryIOManager(dg.ConfigurableIOManager):
     def load_input(self, context: InputContext) -> Any:
         keys = self._keys_from_context(context)
         if keys is None:
-            return self.values[None]
+            return self._values[None]
         else:
             return (
                 {key[-1]: self._values[key] for key in keys}

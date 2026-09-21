@@ -8,7 +8,7 @@ def test_resource(hostname, conn_string):
     @asset
     def mysql_create_table(mysql: MySQLResource):
         with mysql.get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor() as cur:  # ty: ignore[invalid-context-manager]
                 cur.execute(
                     "CREATE TABLE IF NOT EXISTS films ("
                     " title VARCHAR(40) NOT NULL,"
@@ -31,7 +31,7 @@ def test_resource(hostname, conn_string):
     @asset
     def mysql_query_table(mysql: MySQLResource):
         with mysql.get_connection() as conn:
-            with conn.cursor() as cur:
+            with conn.cursor() as cur:  # ty: ignore[invalid-context-manager]
                 cur.execute("SELECT * FROM films;")
                 assert len(cur.fetchall()) == 2
 

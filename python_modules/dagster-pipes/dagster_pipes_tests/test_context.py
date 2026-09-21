@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,8 +16,7 @@ from dagster_pipes import (
     PipesParams,
     PipesPartitionKeyRange,
     PipesTimeWindow,
-    de_escape_asset_key,
-    to_assey_key_path,
+    to_asset_key_path,
 )
 
 TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(
@@ -43,10 +43,10 @@ class _DirectContextLoader(PipesContextLoader):
 
 
 def _make_external_execution_context(**kwargs):
-    kwargs = {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs}
+    context_data = cast("PipesContextData", {**TEST_PIPES_CONTEXT_DEFAULTS, **kwargs})
     return PipesContext(
         params_loader=MagicMock(),
-        context_loader=_DirectContextLoader(PipesContextData(**kwargs)),
+        context_loader=_DirectContextLoader(context_data),
         message_writer=MagicMock(),
     )
 
@@ -68,24 +68,18 @@ def _assert_undefined_asset_key(context, method, *args, **kwargs) -> None:
         getattr(context, method)(*args, **kwargs)
 
 
-def test_de_escape_asset_key():
-    assert de_escape_asset_key("foo") == "foo"
-    assert de_escape_asset_key("foo/bar") == "foo/bar"
-    assert de_escape_asset_key(r"foo\/bar") == "foo/bar"
-    assert de_escape_asset_key(r"foo\bar") == r"foo\bar"
-    assert de_escape_asset_key(r"foo\bar\/baz") == r"foo\bar/baz"
-
-
-def test_to_assey_key_path():
-    assert to_assey_key_path("foo") == ["foo"]
-    assert to_assey_key_path("foo/bar") == ["foo", "bar"]
-    assert to_assey_key_path(r"foo\/bar") == ["foo/bar"]
-    assert to_assey_key_path("foo/bar/baz") == ["foo", "bar", "baz"]
-    assert to_assey_key_path(r"foo\/bar\/baz") == ["foo/bar/baz"]
-    assert to_assey_key_path(r"foo\/bar/baz") == ["foo/bar", "baz"]
-    assert to_assey_key_path(r"foo/bar\/baz") == ["foo", "bar/baz"]
-    assert to_assey_key_path(r"foo\bar") == [r"foo\bar"]
-    assert to_assey_key_path(r"foo\bar\/baz") == [r"foo\bar/baz"]
+def test_to_asset_key_path():
+    assert to_asset_key_path("foo") == ["foo"]
+    assert to_asset_key_path("foo/bar") == ["foo", "bar"]
+    assert to_asset_key_path(r"foo\/bar") == ["foo/bar"]
+    assert to_asset_key_path("foo/bar/baz") == ["foo", "bar", "baz"]
+    assert to_asset_key_path(r"foo\/bar\/baz") == ["foo/bar/baz"]
+    assert to_asset_key_path(r"foo\/bar/baz") == ["foo/bar", "baz"]
+    assert to_asset_key_path(r"foo/bar\/baz") == ["foo", "bar/baz"]
+    # Escaped backslash decodes to a single backslash
+    assert to_asset_key_path(r"foo\\bar") == [r"foo\bar"]
+    # \\ is an escaped backslash; the following / is a separator
+    assert to_asset_key_path(r"foo\\/bar") == ["foo\\", "bar"]
 
 
 def test_no_asset_context():

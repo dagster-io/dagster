@@ -1,10 +1,12 @@
 import os
+import socket
 import subprocess
 import tempfile
 import time
 from collections.abc import Iterator
 
 import docker
+import docker.errors
 import pytest
 from dagster import file_relative_path
 from dagster._core.instance import DagsterInstance
@@ -16,12 +18,34 @@ from dagster_celery_tests.utils import start_celery_worker
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
+def _wait_for_tcp_port(host: str, port: int, timeout: float = 60.0) -> None:
+    deadline = time.monotonic() + timeout
+    last_err: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=2.0):
+                return
+        except OSError as e:
+            last_err = e
+            time.sleep(1.0)
+    raise RuntimeError(
+        f"Timed out waiting for {host}:{port} to accept connections after {timeout}s: {last_err}"
+    )
+
+
 @pytest.fixture(scope="session")
 def rabbitmq():
     if IS_BUILDKITE:
+        # The celery_extra_cmds shell starts the rabbitmq sibling container with
+        # `docker compose up -d`, which returns once the container is created --
+        # not once rabbitmq's TCP listener is bound. Wait for the AMQP port to
+        # actually accept connections before yielding, otherwise test_start_worker
+        # races the broker and fails with `[Errno 111] Connection refused`.
+        broker_host = os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")
+        _wait_for_tcp_port(broker_host, 5672, timeout=60.0)
         # Set the enviornment variable that celery uses in the start_worker() test function
         # to find the broker host
-        with environ({"TEST_BROKER": os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")}):
+        with environ({"TEST_BROKER": broker_host}):
             yield
         return
 
@@ -31,15 +55,17 @@ def rabbitmq():
 
     try:
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "stop", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "stop", service_name],
         )
         subprocess.check_output(
-            ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name],
+            ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name],
         )
     except Exception:
         pass
 
-    subprocess.check_output(["docker-compose", "-f", docker_compose_file, "up", "-d", service_name])
+    subprocess.check_output(
+        ["docker", "compose", "-f", docker_compose_file, "up", "-d", service_name]
+    )
 
     print("Waiting for rabbitmq to be ready...")  # noqa: T201
     while True:
@@ -53,10 +79,10 @@ def rabbitmq():
     finally:
         try:
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "stop", service_name]
             )
             subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+                ["docker", "compose", "-f", docker_compose_file, "rm", "-f", service_name]
             )
         except Exception:
             pass
@@ -92,7 +118,7 @@ def dagster_docker_image():
                 f"Found existing image tagged {docker_image}, skipping image build. To rebuild, first run: "
                 f"docker rmi {docker_image}"
             )
-        except docker.errors.ImageNotFound:  # pyright: ignore[reportAttributeAccessIssue]
+        except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)
 
     return docker_image

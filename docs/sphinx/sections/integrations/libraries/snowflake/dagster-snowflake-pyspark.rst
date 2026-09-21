@@ -1,5 +1,6 @@
+#################################
 dagster-snowflake-pyspark library
----------------------------------
+#################################
 
 This library provides an integration with the `Snowflake <https://www.snowflake.com>`_ data
 warehouse and PySpark data processing library.
@@ -21,8 +22,9 @@ Related Guides:
 
 .. autoclass:: SnowflakePySparkTypeHandler
 
+******
 Legacy
-======
+******
 
 .. autoconfigurable:: snowflake_pyspark_io_manager
   :annotation: IOManagerDefinition

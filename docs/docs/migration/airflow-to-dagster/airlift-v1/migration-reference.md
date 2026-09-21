@@ -12,7 +12,7 @@ import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';
 
 - [Supporting custom authorization](#supporting-custom-authorization)
 - [Dagster Plus Authorization](#dagster-authorization)
-- [Dealing with changing Airflow](#dealing-with-changing-airflow)
+- [Handling changing Airflow](#handling-changing-airflow)
 - [Automating changes to code locations](#automating-changes-to-code-locations)
 - [Peering to multiple Airflow instances](#peering-to-multiple-airflow-instances)
 - [Customizing DAG proxying operator](#customizing-dag-proxying-operator)
@@ -25,11 +25,11 @@ If your Dagster deployment lives behind a custom auth backend, you can customize
 
 ## Dagster+ authorization
 
-You can use a custom proxy operator to establish a connection to a Dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as Airflow Variables. To set a Dagster+ user token, see "[Managing user tokens in Dagster+](/deployment/dagster-plus/management/tokens/user-tokens)".
+You can use a custom proxy operator to establish a connection to a Dagster plus deployment. The below example proxies to Dagster Plus using organization name, deployment name, and user token set as Airflow Variables. To set a Dagster+ user token, see [Managing user tokens in Dagster+](/deployment/dagster-plus/management/tokens/user-tokens).
 
 <CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/custom_operator_examples/plus_proxy_operator.py" />
 
-## Dealing with changing Airflow
+## Handling changing Airflow
 
 In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the code location don't require additional calls to Airflow's rest API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
 

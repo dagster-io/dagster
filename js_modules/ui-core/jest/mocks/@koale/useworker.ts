@@ -10,6 +10,6 @@ export const WORKER_STATUS = {
   TIMEOUT_EXPIRED: 'TIMEOUT_EXPIRED',
 } as const;
 
-export function useWorker(fn: (...args: any[]) => any) {
+export function useWorker(fn: (...args: unknown[]) => unknown) {
   return [fn, {status: WORKER_STATUS.SUCCESS, kill: () => {}}] as const;
 }

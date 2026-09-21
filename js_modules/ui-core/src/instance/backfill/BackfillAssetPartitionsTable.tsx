@@ -1,9 +1,22 @@
-import {Box, Caption, Colors, MiddleTruncate, NonIdealState, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  Colors,
+  Container,
+  HeaderCell,
+  HeaderRow,
+  Inner,
+  MiddleTruncate,
+  NonIdealState,
+  Row,
+  RowCell,
+  Tag,
+  Text,
+} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useRef} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
+import styles from './css/BackfillAssetPartitionsTable.module.css';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {gql} from '../../apollo-client';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
@@ -16,7 +29,6 @@ import {
 } from '../../runs/RunStatuses';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
-import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {numberFormatter} from '../../ui/formatters';
 
 const TEMPLATE_COLUMNS = '60% repeat(4, 1fr)';
@@ -58,7 +70,7 @@ export const BackfillAssetPartitionsTable = ({
   return (
     <Container ref={parentRef}>
       <VirtualizedBackfillPartitionsHeader backfill={backfill} />
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => (
           <VirtualizedBackfillPartitionsRow
             key={key}
@@ -168,11 +180,11 @@ export const VirtualizedBackfillPartitionsRow = ({
 
   return (
     <Row
-      $height={height}
-      $start={start}
+      height={height}
+      start={start}
       data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
     >
-      <RowGrid border="bottom">
+      <Box className={styles.rowGrid} border="bottom">
         <RowCell>
           <Box
             flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'baseline'}}
@@ -230,16 +242,10 @@ export const VirtualizedBackfillPartitionsRow = ({
             </RowCell>
           </>
         )}
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
-
-const RowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const BACKFILL_PARTITIONS_FOR_ASSET_KEY_QUERY = gql`
   query BackfillPartitionsForAssetKey($backfillId: String!, $assetKey: AssetKeyInput!) {
@@ -273,7 +279,7 @@ export function StatusBar({
   const pctFailed = (100 * failed) / targeted;
   const pctInProgress = (100 * inProgress) / targeted;
 
-  const pctFinal = Math.ceil(pctSucceeded + pctFailed);
+  const pctFinal = Math.floor(pctSucceeded + pctFailed);
 
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
@@ -293,7 +299,7 @@ export function StatusBar({
         <div style={{background: Colors.accentRed()}} />
         <div style={{background: Colors.accentBlue()}} />
       </div>
-      <Caption color={Colors.textLight()}>{`${pctFinal}% completed`}</Caption>
+      <Text size={12} color="textLight">{`${pctFinal}% completed`}</Text>
     </Box>
   );
 }

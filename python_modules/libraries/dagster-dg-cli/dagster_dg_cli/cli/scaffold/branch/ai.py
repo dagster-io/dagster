@@ -19,6 +19,7 @@ from dagster_dg_cli.cli.scaffold.branch.constants import (
     ALLOWED_COMMANDS_SCAFFOLDING,
     ModelType,
 )
+from dagster_dg_cli.cli.scaffold.branch.errors import ScaffoldBranchError
 from dagster_dg_cli.cli.scaffold.branch.version_utils import ensure_claude_sdk_python_version
 from dagster_dg_cli.utils.ui import daggy_spinner_context
 
@@ -154,7 +155,7 @@ def get_branch_name(plan: str, diagnostics: ClaudeDiagnostics) -> str:
         message="Could not extract branch name from plan",
         data={"plan_snippet": plan[:200]},
     )
-    raise click.ClickException("Could not extract branch name from plan")
+    raise ScaffoldBranchError("Could not extract branch name from plan")
 
 
 def get_pr_title(plan: str, diagnostics: ClaudeDiagnostics) -> str:
@@ -177,7 +178,7 @@ def get_pr_title(plan: str, diagnostics: ClaudeDiagnostics) -> str:
         message="Could not extract PR title from plan",
         data={"plan_snippet": plan[:200]},
     )
-    raise click.ClickException("Could not extract PR title from plan")
+    raise ScaffoldBranchError("Could not extract PR title from plan")
 
 
 def get_branch_name_and_pr_title_from_plan(

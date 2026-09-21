@@ -217,7 +217,7 @@ def test_load_from_instance(
                 ]
             )
         )
-        for key, metadata in assets_def.metadata_by_key.items()
+        for metadata in assets_def.metadata_by_key.values()
     )
     # Check schema metadata works for normalization tables too
     if use_normalization_tables:
@@ -231,7 +231,7 @@ def test_load_from_instance(
                     ]
                 )
             )
-            for key, metadata in assets_def.metadata_by_key.items()
+            for metadata in assets_def.metadata_by_key.values()
         )
 
     table_names = {
@@ -334,7 +334,7 @@ def test_load_from_instance(
     res = materialize(all_assets)
 
     materializations = [
-        event.event_specific_data.materialization  # type: ignore[attr-defined]
+        event.event_specific_data.materialization  # ty: ignore[unresolved-attribute]
         for event in res.events_for_node("airbyte_sync_87b7fe85_a22c_420e_8d74_b30e7ede77df")
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
@@ -368,6 +368,6 @@ def test_load_from_instance_with_downstream_asset_errors():
         match='Param "asset" is not one of ',
     ):
 
-        @asset(deps=[ab_cacheable_assets])  # pyright: ignore[reportArgumentType]
+        @asset(deps=[ab_cacheable_assets])  # ty: ignore[invalid-argument-type]
         def downstream_of_ab():
             return None

@@ -37,8 +37,8 @@ This example utilizes Discord "Embeds" for rich formatting.
 }
 ```
 
-## Official References
+## Official Discord references
 
-- [Discord Webhooks Guide](https://discord.com/developers/docs/resources/webhook): Basic setup instructions.
-- [Embed Object Structure](https://discord.com/developers/docs/resources/channel#embed-object): Customize colors, fields, and images.
-- [Execute Webhook API](https://discord.com/developers/docs/resources/webhook#execute-webhook): Full API parameters documentation.
+- [Discord webhooks guide](https://discord.com/developers/docs/resources/webhook): Basic setup instructions.
+- [Embed object structure](https://discord.com/developers/docs/resources/channel#embed-object): Customize colors, fields, and images.
+- [Execute webhook API](https://discord.com/developers/docs/resources/webhook#execute-webhook): Full API parameters documentation.

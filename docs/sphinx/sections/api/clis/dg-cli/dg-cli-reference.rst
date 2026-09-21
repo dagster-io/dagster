@@ -1,6 +1,6 @@
-====================================
+####################################
 dg CLI local build command reference
-====================================
+####################################
 
 ``dg`` commands for scaffolding, checking, and listing Dagster entities, and running pipelines in a local Dagster instance.
 
@@ -24,8 +24,9 @@ dg CLI local build command reference
     :prog: dg launch
     :nested: full
 
+************************
 dg scaffold defs example
-========================
+************************
 
 **Note:** Before scaffolding definitions with ``dg``, you must `create a project <https://docs.dagster.io/guides/build/projects/creating-projects>`_ with the `create-dagster CLI <https://docs.dagster.io/api/clis/create-dagster>`_ and activate its virtual environment.
 

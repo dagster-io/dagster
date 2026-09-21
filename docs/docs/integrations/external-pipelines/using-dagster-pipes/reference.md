@@ -3,7 +3,7 @@ title: 'Dagster Pipes subprocess reference'
 description: 'Executing external code with Dagster Pipes with different entities in the Dagster system.'
 ---
 
-This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step walkthrough, refer to the [Dagster Pipes tutorial](/integrations/external-pipelines/using-dagster-pipes).
+This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step tutorial, see [Using Dagster Pipes](/integrations/external-pipelines/using-dagster-pipes).
 
 ## Specifying environment variables and extras
 
@@ -15,7 +15,7 @@ When launching the subprocess, you may want to make environment variables or add
 In the external code, you can access extras via the <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" /> object:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/with_extras_env/external_code.py"
   lineStart="2"
   title="src/external_pipeline/defs/external_code.py"
 />
@@ -28,14 +28,14 @@ The `run` method to the `PipesSubprocessClient` resource also accepts `env` and 
 Note: We're using `os.environ` in this example, but we recommend using <PyObject section="resources" module="dagster" object="EnvVar" /> in production.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/with_extras_env/dagster_code.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
 </TabItem>
 </Tabs>
 
-## Working with @asset_check
+## Working with `@asset_check`
 
 Sometimes, you may not want to materialize an asset, but instead want to report a data quality check result. When your asset has data quality checks defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
 
@@ -46,7 +46,7 @@ Sometimes, you may not want to materialize an asset, but instead want to report 
 From the external code, you can report to Dagster that an asset check has been performed via <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext" method="report_asset_check" />. Note that `asset_key` in this case is required, and must match the asset key defined in <PyObject section="asset-checks" module="dagster" object="asset_check" decorator />:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/with_asset_check/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -56,7 +56,7 @@ From the external code, you can report to Dagster that an asset check has been p
 On Dagster's side, the `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_asset_check_result` method, which you can use to access the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> event reported by the subprocess.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_asset_check/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/with_asset_check/dagster_code.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
@@ -71,7 +71,7 @@ Sometimes, you may invoke a single call to an API that results in multiple table
 
 <TabItem value="External code in external_code.py">
 
-**Note**: When working with multi-assets, <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext.report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+When working with multi-assets, <PyObject section="libraries" integration="pipes" module="dagster_pipes" object="PipesContext.report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
 
 ```bash
 Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
@@ -80,7 +80,7 @@ Calling {method} with asset key {asset_key} is undefined. Asset has already been
 Instead, you’ll need to set the `asset_key` parameter for each instance of <PyObject module="dagster_pipes" section="libraries" integration="pipes" object="PipesContext.report_asset_materialization" />:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/with_multi_asset/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -91,7 +91,7 @@ Instead, you’ll need to set the `asset_key` parameter for each instance of <Py
 In the Dagster code, you can use <PyObject section="assets" module="dagster" object="multi_asset" decorator /> to define a single asset that represents multiple assets. The `PipesClientCompletedInvocation` object returned from `PipesSubprocessClient` includes a `get_results` method, which you can use to access all the events, such as multiple <PyObject section="ops" module="dagster" object="AssetMaterialization" pluralize /> and <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" pluralize />, reported by the subprocess:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_multi_asset/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/with_multi_asset/dagster_code.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
@@ -108,7 +108,7 @@ Sometimes, you may want to pass data back from the external process for use in t
 In the external code, we send messages using `report_custom_message`. The message can be any data that is JSON serializable.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/custom_messages/external_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/custom_messages/external_code.py"
   title="src/external_pipeline/defs/external_code.py"
 />
 
@@ -118,7 +118,7 @@ In the external code, we send messages using `report_custom_message`. The messag
 In the Dagster code we receive custom messages using `get_custom_messages`.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/custom_messages/dagster_code.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/custom_messages/dagster_code.py"
   title="src/external_pipeline/defs/dagster_code.py"
 />
 
@@ -136,74 +136,74 @@ Below are examples of specifying data for all supported metadata types. Float, i
 
 ### Examples for complex metadata types
 
-#### URL Metadata
+#### URL metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/url_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/url_metadata.py"
   startAfter="start_url"
   endBefore="end_url"
 />
 
-#### Path Metadata
+#### Path metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/path_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/path_metadata.py"
   startAfter="start_path"
   endBefore="end_path"
 />
 
-#### Notebook Metadata
+#### Notebook metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/notebook_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/notebook_metadata.py"
   startAfter="start_notebook"
   endBefore="end_notebook"
 />
 
-#### JSON Metadata
+#### JSON metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/json_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/json_metadata.py"
   startAfter="start_json"
   endBefore="end_json"
 />
 
-#### Markdown Metadata
+#### Markdown metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/markdown_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/markdown_metadata.py"
   startAfter="start_markdown"
   endBefore="end_markdown"
 />
 
-#### Table Metadata
+#### Table metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/table_metadata.py"
   startAfter="start_table"
   endBefore="end_table"
 />
 
-#### Table Schema Metadata
+#### Table schema metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_schema_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/table_schema_metadata.py"
   startAfter="start_table_schema"
   endBefore="end_table_schema"
 />
 
-#### Table Column Lineage Metadata
+#### Table column lineage metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/table_column_lineage.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/table_column_lineage.py"
   startAfter="start_table_column_lineage"
   endBefore="end_table_column_lineage"
 />
 
-#### Timestamp Metadata
+#### Timestamp metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/rich_metadata/timestamp_metadata.py"
+  path="docs_snippets/docs_snippets/integrations/external_pipelines/dagster_pipes/subprocess/rich_metadata/timestamp_metadata.py"
   startAfter="start_timestamp"
   endBefore="end_timestamp"
 />

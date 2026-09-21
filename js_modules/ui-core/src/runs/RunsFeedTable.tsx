@@ -1,10 +1,13 @@
 import {
   Alert,
-  Body2,
   Box,
+  Container,
   CursorHistoryControls,
   CursorPaginationProps,
+  Inner,
+  Row,
   SpinnerWithText,
+  Text,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -28,7 +31,6 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
-import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {numberFormatter} from '../ui/formatters';
 
 interface RunsFeedTableProps {
@@ -140,11 +142,11 @@ export const RunsFeedTable = ({
                   intent="warning"
                   title={
                     <Box flex={{direction: 'column'}}>
-                      <Body2>Bulk actions are currently only supported for runs.</Body2>
-                      <Body2>
+                      <Text size={14}>Bulk actions are currently only supported for runs.</Text>
+                      <Text size={14}>
                         {numberFormatter.format(backfillsExcluded)}&nbsp;
                         {ifPlural(backfillsExcluded, 'backfill is', 'backfills are')} being excluded
-                      </Body2>
+                      </Text>
                     </Box>
                   }
                 />
@@ -213,14 +215,14 @@ export const RunsFeedTable = ({
               <SpinnerWithText label="Loading runs…" />
             </Box>
           )}
-          <Inner $totalHeight={totalHeight}>
+          <Inner totalHeight={totalHeight}>
             {items.map(({index, size, start, key}) => {
               const entry = entries[index];
               if (!entry) {
                 return <span key={key} />;
               }
               return (
-                <Row $height={size} $start={start} data-key={key} key={key}>
+                <Row height={size} start={start} data-key={key} key={key}>
                   <div ref={rowVirtualizer.measureElement} data-index={index}>
                     <RunsFeedRow
                       key={key}

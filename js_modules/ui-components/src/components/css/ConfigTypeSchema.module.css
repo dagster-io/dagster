@@ -1,0 +1,49 @@
+.configHeader {
+  background-color: var(--color-tooltip-background);
+  color: var(--color-tooltip-text);
+  font-size: 13px;
+  padding: 8px;
+}
+
+.configJSON {
+  background-color: var(--color-tooltip-background);
+  color: var(--color-tooltip-text);
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px;
+  margin: 0;
+}
+
+.typeSchemaContainer {
+  color: var(--color-text-lighter);
+  display: block;
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.dictEntry {
+  border: 1px solid transparent;
+}
+
+.dictEntry.hovered {
+  border: 1px solid var(--color-border-default);
+  background-color: var(--color-background-light);
+}
+
+.dictKeyLight {
+  color: var(--color-accent-primary);
+}
+
+.dictKeyDark {
+  color: var(--color-accent-reversed);
+}
+
+.dictComment {
+  /* This allows long comments to wrap as nice indented blocks, while
+     copy/pasting as a single line with space-based indentation. */
+  text-indent: -1.85em;
+  padding-left: 1.85em;
+  white-space: initial;
+}

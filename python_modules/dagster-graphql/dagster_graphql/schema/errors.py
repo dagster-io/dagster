@@ -122,14 +122,16 @@ class GraphenePythonError(graphene.ObjectType):
                 current_error = current_error.cause
                 chain.append(
                     GrapheneErrorChainLink(
-                        error=GraphenePythonError(current_error), isExplicitLink=True
+                        error=GraphenePythonError(current_error),
+                        isExplicitLink=True,
                     )
                 )
             elif current_error.context:
                 current_error = current_error.context
                 chain.append(
                     GrapheneErrorChainLink(
-                        error=GraphenePythonError(current_error), isExplicitLink=False
+                        error=GraphenePythonError(current_error),
+                        isExplicitLink=False,
                     )
                 )
             else:
@@ -156,7 +158,7 @@ class GraphenePipelineSnapshotNotFoundError(graphene.ObjectType):
 
     def __init__(self, snapshot_id):
         super().__init__()
-        self.snapshot_id = check.str_param(snapshot_id, "snapshot_id")
+        self.snapshot_id = check.str_param(snapshot_id, "snapshot_id")  # ty: ignore[invalid-assignment]
         self.message = f"Pipeline snapshot {snapshot_id} is not present in the current instance."
 
 
@@ -244,7 +246,7 @@ class GrapheneRunNotFoundError(graphene.ObjectType):
 
     def __init__(self, run_id):
         super().__init__()
-        self.run_id = check.str_param(run_id, "run_id")
+        self.run_id = check.str_param(run_id, "run_id")  # ty: ignore[invalid-assignment]
         self.message = f"Pipeline run {run_id} could not be found."
 
 
@@ -267,7 +269,7 @@ class GrapheneRunGroupNotFoundError(graphene.ObjectType):
 
     def __init__(self, run_id):
         super().__init__()
-        self.run_id = check.str_param(run_id, "run_id")
+        self.run_id = check.str_param(run_id, "run_id")  # ty: ignore[invalid-assignment]
         self.message = f"Run group of run {run_id} could not be found."
 
 
@@ -280,7 +282,7 @@ class GraphenePresetNotFoundError(graphene.ObjectType):
 
     def __init__(self, preset, selector):
         super().__init__()
-        self.preset = check.str_param(preset, "preset")
+        self.preset = check.str_param(preset, "preset")  # ty: ignore[invalid-assignment]
         self.message = f"Preset {preset} not found in pipeline {selector.job_name}."
 
 
@@ -305,7 +307,7 @@ class GrapheneModeNotFoundError(graphene.ObjectType):
 
     def __init__(self, mode, selector):
         super().__init__()
-        self.mode = check.str_param(mode, "mode")
+        self.mode = check.str_param(mode, "mode")  # ty: ignore[invalid-assignment]
         self.message = f"Mode {mode} not found in pipeline {selector.job_name}."
 
 
@@ -406,7 +408,7 @@ class GrapheneScheduleNotFoundError(graphene.ObjectType):
 
     def __init__(self, schedule_name):
         super().__init__()
-        self.schedule_name = check.str_param(schedule_name, "schedule_name")
+        self.schedule_name = check.str_param(schedule_name, "schedule_name")  # ty: ignore[invalid-assignment]
         self.message = f"Schedule {self.schedule_name} could not be found."
 
 
@@ -419,7 +421,7 @@ class GrapheneResourceNotFoundError(graphene.ObjectType):
 
     def __init__(self, resource_name):
         super().__init__()
-        self.resource_name = check.str_param(resource_name, "resource_name")
+        self.resource_name = check.str_param(resource_name, "resource_name")  # ty: ignore[invalid-assignment]
         self.message = f"Top-level resource {self.resource_name} could not be found."
 
 
@@ -432,7 +434,7 @@ class GrapheneSensorNotFoundError(graphene.ObjectType):
 
     def __init__(self, sensor_name):
         super().__init__()
-        self.sensor_name = check.str_param(sensor_name, "sensor_name")
+        self.sensor_name = check.str_param(sensor_name, "sensor_name")  # ty: ignore[invalid-assignment]
         self.message = f"Could not find `{sensor_name}` in the currently loaded repository."
 
 
@@ -445,7 +447,7 @@ class GraphenePartitionSetNotFoundError(graphene.ObjectType):
 
     def __init__(self, partition_set_name):
         super().__init__()
-        self.partition_set_name = check.str_param(partition_set_name, "partition_set_name")
+        self.partition_set_name = check.str_param(partition_set_name, "partition_set_name")  # ty: ignore[invalid-assignment]
         self.message = f"Partition set {self.partition_set_name} could not be found."
 
 
@@ -474,8 +476,8 @@ class GrapheneRepositoryNotFoundError(graphene.ObjectType):
 
     def __init__(self, repository_location_name, repository_name):
         super().__init__()
-        self.repository_name = check.str_param(repository_name, "repository_name")
-        self.repository_location_name = check.str_param(
+        self.repository_name = check.str_param(repository_name, "repository_name")  # ty: ignore[invalid-assignment]
+        self.repository_location_name = check.str_param(  # ty: ignore[invalid-assignment]
             repository_location_name, "repository_location_name"
         )
         self.message = f"Could not find Repository {repository_location_name}.{repository_name}"
@@ -512,8 +514,8 @@ class GrapheneDuplicateDynamicPartitionError(graphene.ObjectType):
 
     def __init__(self, partitions_def_name, partition_name):
         super().__init__()
-        self.partitions_def_name = check.str_param(partitions_def_name, "partitions_def_name")
-        self.partition_name = check.str_param(partition_name, "partition_name")
+        self.partitions_def_name = check.str_param(partitions_def_name, "partitions_def_name")  # ty: ignore[invalid-assignment]
+        self.partition_name = check.str_param(partition_name, "partition_name")  # ty: ignore[invalid-assignment]
         self.message = (
             f"Partition {self.partition_name} already exists in dynamic partitions definition"
             f" {self.partitions_def_name}."

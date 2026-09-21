@@ -30,12 +30,12 @@ def build_looker_asset_specs(
 
             from pathlib import Path
 
-            from dagster import external_assets_from_specs
+            from dagster import Definitions
             from dagster_looker import build_looker_asset_specs
 
 
             looker_specs = build_looker_asset_specs(project_dir=Path("my_looker_project"))
-            looker_assets = external_assets_from_specs(looker_specs)
+            defs = Definitions(assets=looker_specs)
     """
     dagster_looker_translator = dagster_looker_translator or DagsterLookerLkmlTranslator()
 

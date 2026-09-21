@@ -65,7 +65,7 @@ export const useObserveAction = (preferredJobName?: string) => {
     }
 
     if (next.type === 'single-run') {
-      await launchWithTelemetry({executionParams: next.executionParams}, 'toast');
+      await launchWithTelemetry({executionParams: next.executionParams}, {behavior: 'toast'});
       setState({type: 'none'});
     } else {
       setState(next);

@@ -8,6 +8,7 @@ import dagster._check as check
 def is_loopback(host: str) -> bool:
     addr_info = socket.getaddrinfo(host, None, socket.AF_INET, socket.SOCK_STREAM)[0]
     sockaddr = addr_info[4][0]
+    assert isinstance(sockaddr, str)
     return struct.unpack("!I", socket.inet_aton(sockaddr))[0] >> (32 - 8) == 127
 
 

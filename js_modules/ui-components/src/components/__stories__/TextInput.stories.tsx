@@ -4,8 +4,8 @@ import {Box} from '../Box';
 import {Button} from '../Button';
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
-import {Caption} from '../Text';
 import {TextInput} from '../TextInput';
+import {Text} from '../Typography';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -93,7 +93,7 @@ export const PasswordManagers = () => {
     <Box flex={{direction: 'column', gap: 8}} style={{width: '300px'}}>
       <label htmlFor="username">
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Username</Caption>
+          <Text size={12}>Username</Text>
           <TextInput
             name="username-1"
             placeholder="Password managers allowed…"
@@ -105,7 +105,7 @@ export const PasswordManagers = () => {
       </label>
       <label htmlFor="password">
         <Box flex={{direction: 'column', gap: 4}}>
-          <Caption>Username (no password managers)</Caption>
+          <Text size={12}>Username (no password managers)</Text>
           <TextInput
             name="username-2"
             placeholder="Password managers not allowed…"

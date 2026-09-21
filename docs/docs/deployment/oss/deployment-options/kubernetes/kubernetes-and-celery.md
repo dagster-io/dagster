@@ -4,13 +4,9 @@ sidebar_position: 3300
 title: Using Celery with Kubernetes
 ---
 
-In addition to using the `k8s_job_executor` to run each op in its own Kubernetes job, Dagster also allows you to use Celery to limit the number of ops that can concurrently connect to a resource across all running Dagster jobs.
+In addition to using the `k8s_job_executor` to run each op in its own Kubernetes job, Dagster also allows you to use [Celery](https://docs.celeryq.dev) to limit the number of ops that can concurrently connect to a resource across all running Dagster jobs.
 
 In this section, we demonstrate how to extend the [previous Helm deployment guide](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject section="libraries" integration="celery" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
-
-## Prerequisites
-
-In addition to the [previous prerequisites](/deployment/oss/deployment-options/kubernetes/deploying-to-kubernetes), this article assumes familiarity with [Celery, a distributed task queue system](https://docs.celeryq.dev).
 
 ## Deployment architecture
 
@@ -126,12 +122,12 @@ By default, all ops will be sent to the default Celery queue named `dagster`.
 
 ```python
 @dg.op(
-  tags = {
-    'dagster-celery/queue': 'snowflake_queue',
-  }
+    tags={
+        "dagster-celery/queue": "snowflake_queue",
+    }
 )
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
 ```
 
 ### Celery priority
@@ -140,20 +136,21 @@ Users can set `dagster-celery/run_priority` on job tags to configure the baselin
 
 ```python
 @dg.op(
-  tags = {
-    'dagster-celery/priority': 2,
-  }
+    tags={
+        "dagster-celery/priority": 2,
+    }
 )
 def my_op(context):
-  context.log.info('running')
+    context.log.info("running")
+
 
 @dg.job(
-  tags = {
-    'dagster-celery/run_priority': 3,
-  }
+    tags={
+        "dagster-celery/run_priority": 3,
+    }
 )
 def my_job():
-  my_op()
+    my_op()
 ```
 
 ### Configuring an External Message Broker

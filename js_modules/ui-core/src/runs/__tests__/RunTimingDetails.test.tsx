@@ -14,17 +14,16 @@ describe('RunTimingDetails', () => {
   const END_TIME = 1613571916.945;
   const FAKE_NOW = 1613571931.945; // Fifteen seconds later
 
-  let dateNow: any = null;
+  const originalDateNow = global.Date.now;
   beforeEach(() => {
     jest.useFakeTimers();
-    dateNow = global.Date.now;
     const dateNowStub = jest.fn(() => FAKE_NOW * 1000);
     global.Date.now = dateNowStub;
   });
 
   afterEach(() => {
     jest.useRealTimers();
-    global.Date.now = dateNow;
+    global.Date.now = originalDateNow;
   });
 
   it('renders QUEUED details', async () => {

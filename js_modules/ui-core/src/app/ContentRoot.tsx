@@ -6,7 +6,7 @@ import {Redirect, Switch, useLocation} from 'react-router-dom';
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
-import RunsFeedRoot from '../runs/RunsFeedRoot';
+import {RunsRoot} from '../runs/RunsRoot';
 import {lazy} from '../util/lazy';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
@@ -52,8 +52,8 @@ export const ContentRoot = memo(() => {
             <RunsFeedBackfillPage />
           </Route>
           ,
-          <Route path={['/runs', '/runs/scheduled', '/backfills']} exact key="2">
-            <RunsFeedRoot />
+          <Route path={['/runs', '/backfills']} exact key="2">
+            <RunsRoot />
           </Route>
           <Route path="/runs/:runId" exact>
             <RunRoot />

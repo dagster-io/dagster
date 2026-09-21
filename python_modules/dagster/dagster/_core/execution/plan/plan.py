@@ -74,6 +74,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import toposort
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.events import AssetKey
     from dagster._core.execution.plan.active import ActiveExecution
     from dagster._core.snap.execution_plan_snapshot import (
         ExecutionPlanSnapshot,
@@ -396,6 +397,43 @@ class _PlanBuilder:
         )
 
 
+def _get_ordering_step_keys_for_view(
+    input_asset_key: "AssetKey | None",
+    asset_layer: AssetLayer,
+    current_step_key: str,
+) -> set[str]:
+    """When an input comes from an excluded view asset, resolve the view's non-view ancestors
+    and return their step keys as ordering dependencies so downstream steps wait for them.
+    """
+    from dagster._core.definitions.assets.job.asset_job import JobScopedAssetGraph
+
+    if input_asset_key is None:
+        return set()
+
+    # Use the source asset graph when available, as the job-scoped graph only
+    # includes direct dependencies of selected assets. Transitive virtual ancestors
+    # beyond those direct deps are absent from the graph, preventing the
+    # get_non_virtual_ancestor_keys BFS from traversing the full virtual chain.
+    asset_graph = asset_layer.asset_graph
+    if isinstance(asset_graph, JobScopedAssetGraph):
+        asset_graph = asset_graph.source_asset_graph
+    if not asset_graph.has(input_asset_key) or not asset_graph.get(input_asset_key).is_virtual:
+        return set()
+    ancestor_keys = asset_graph.get_non_virtual_ancestor_keys(input_asset_key)
+    selected_keys = asset_layer.selected_asset_keys
+    step_keys: set[str] = set()
+    for ancestor_key in ancestor_keys:
+        if ancestor_key in selected_keys:
+            node_output_handle = asset_layer.get_op_output_handle(ancestor_key)
+            step_key = str(node_output_handle.node_handle)
+            # Filter out self-references to prevent deadlock. This happens when
+            # a subsettable multi-asset has virtual intermediaries between its
+            # own non-virtual outputs — the ancestor resolves to the same step.
+            if step_key != current_step_key:
+                step_keys.add(step_key)
+    return step_keys
+
+
 def get_step_input_source(
     job_def: JobDefinition,
     node: Node,
@@ -420,7 +458,13 @@ def get_step_input_source(
     ):
         # can only load from source asset if assets defs are available
         if asset_layer.get_asset_key_for_node_input(handle, input_handle.input_name):
-            return FromLoadableAsset()
+            input_asset_key = asset_layer.get_asset_key_for_node_input(
+                handle, input_handle.input_name
+            )
+            ordering_keys = _get_ordering_step_keys_for_view(
+                input_asset_key, asset_layer, current_step_key=str(handle)
+            )
+            return FromLoadableAsset(ordering_step_keys=frozenset(ordering_keys))
         elif input_def.input_manager_key:
             return FromInputManager(node_handle=handle, input_name=input_name)
 
@@ -914,7 +958,7 @@ class ExecutionPlan(
             if not isinstance(only_step, ExecutionStep):
                 return None
 
-            return cast("ExecutionStep", only_step).handle
+            return only_step.handle
 
         return None
 

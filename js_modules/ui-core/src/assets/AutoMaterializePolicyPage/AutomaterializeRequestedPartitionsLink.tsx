@@ -2,18 +2,20 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
+  Container,
   Dialog,
   DialogFooter,
+  Inner,
   NonIdealState,
+  Row,
   Spinner,
   Tag,
+  Text,
   TextInput,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {
   RunStatusAndPartitionKeyQuery,
@@ -21,12 +23,12 @@ import {
   RunStatusAndTagsFragment,
 } from './types/AutomaterializeRequestedPartitionsLink.types';
 import {gql, useQuery} from '../../apollo-client';
+import styles from './css/AutomaterializeRequestedPartitionsLink.module.css';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {RunStatusTagWithID} from '../../runs/RunStatusTag';
 import {DagsterTag} from '../../runs/RunTag';
-import {Container, Inner, Row} from '../../ui/VirtualizedTable';
 
 interface Props {
   runIds?: string[];
@@ -74,7 +76,7 @@ export const AutomaterializeRequestedPartitionsLink = ({runIds, partitionKeys, i
       <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
         <Tag intent={intent}>{label}</Tag>
         <ButtonLink onClick={() => setIsOpen(true)}>
-          <Caption>View details</Caption>
+          <Text size={12}>View details</Text>
         </ButtonLink>
       </Box>
       <Dialog
@@ -240,14 +242,14 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
 
   return (
     <Container ref={container} style={{padding: '8px 24px'}}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const partitionKey = partitionKeys[index]!;
           const runForPartition = runsByPartitionKey ? runsByPartitionKey[partitionKey] : null;
 
           return (
-            <Row $height={size} $start={start} key={key}>
+            <Row height={size} start={start} key={key}>
               <Box
                 style={{height: '100%'}}
                 flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
@@ -257,12 +259,12 @@ const VirtualizedPartitionList = ({partitionKeys, runsByPartitionKey}: Virtualiz
                 {showRunTag ? (
                   <div>
                     {runForPartition ? (
-                      <TagLink to={`/runs/${runForPartition.id}`}>
+                      <Link className={styles.tagLink} to={`/runs/${runForPartition.id}`}>
                         <RunStatusTagWithID
                           runId={runForPartition.id}
                           status={runForPartition.status}
                         />
-                      </TagLink>
+                      </Link>
                     ) : (
                       <Tag>Run not found</Tag>
                     )}
@@ -303,10 +305,4 @@ export const RUN_STATUS_AND_PARTITION_KEY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const TagLink = styled(Link)`
-  :focus {
-    outline: none;
-  }
 `;

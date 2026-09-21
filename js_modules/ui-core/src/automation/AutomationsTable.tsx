@@ -1,4 +1,4 @@
-import {Row} from '@dagster-io/ui-components';
+import {Container, Inner, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
@@ -7,7 +7,6 @@ import {ObserveAutomationSensorRow} from './ObserveAutomationSensorRow';
 import {COMMON_COLLATOR} from '../app/Util';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {makeAutomationKey} from '../sensors/makeSensorKey';
-import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {DynamicRepoRow} from '../workspace/VirtualizedWorkspaceTable';
@@ -89,7 +88,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
 
   return (
     <Container ref={parentRef}>
-      <Inner $totalHeight={totalHeight}>
+      <Inner totalHeight={totalHeight}>
         {items.map(({index, key, size, start}) => {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const row: RowType = flattened[index]!;
@@ -97,7 +96,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
           const type = row!.type;
           if (type === 'header') {
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <DynamicRepoRow
                   repoAddress={row.repoAddress}
                   ref={rowVirtualizer.measureElement}
@@ -115,7 +114,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
           if (type === 'sensor') {
             const sensorKey = makeAutomationKey(row.repoAddress, row.sensor);
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <ObserveAutomationSensorRow
                   key={key}
                   index={index}
@@ -133,7 +132,7 @@ export const AutomationsTable = ({repos, checkedKeys, onToggleCheckFactory}: Pro
             const scheduleKey = makeAutomationKey(row.repoAddress, row.schedule);
 
             return (
-              <Row $height={size} $start={start} key={key}>
+              <Row height={size} start={start} key={key}>
                 <ObserveAutomationScheduleRow
                   key={key}
                   index={index}

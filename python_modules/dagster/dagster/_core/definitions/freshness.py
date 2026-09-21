@@ -75,7 +75,7 @@ class FreshnessPolicy(ABC):
         # https://github.com/dagster-io/dagster/pull/30615
         if serialized_policy is None or serialized_policy.value == "null":
             return None
-        return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
+        return deserialize_value(serialized_policy.value, cls)  # ty: ignore
 
     @staticmethod
     def time_window(

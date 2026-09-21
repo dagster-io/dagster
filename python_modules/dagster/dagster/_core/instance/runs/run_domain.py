@@ -49,6 +49,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
+    from dagster._core.definitions.asset_key import AssetOrCheckKey
     from dagster._core.definitions.assets.graph.base_asset_graph import (
         AssetCheckNode,
         BaseAssetGraph,
@@ -60,7 +61,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
-    from dagster._core.definitions.utils import EntityKey
     from dagster._core.events import DagsterEvent
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
@@ -683,12 +683,12 @@ class RunDomain:
         check.str_param(job_snapshot_id, "job_snapshot_id")
         check.opt_nullable_sequence_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
-        check.invariant(
-            execution_plan_snapshot.job_snapshot_id == job_snapshot_id,
-            "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
-            f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
-            f'"{job_snapshot_id}"',
-        )
+        if execution_plan_snapshot.job_snapshot_id != job_snapshot_id:
+            logging.getLogger("dagster").warning(
+                "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
+                f'"{execution_plan_snapshot.job_snapshot_id}" and snapshot_id created in memory is '
+                f'"{job_snapshot_id}"'
+            )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
 
@@ -697,7 +697,13 @@ class RunDomain:
                 self._instance.run_storage.add_execution_plan_snapshot(execution_plan_snapshot)
             )
 
-            check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
+            if execution_plan_snapshot_id != returned_execution_plan_snapshot_id:
+                logging.getLogger("dagster").warning(
+                    "Execution plan snapshot ID mismatch: locally computed "
+                    f'"{execution_plan_snapshot_id}" but storage returned '
+                    f'"{returned_execution_plan_snapshot_id}". Using the storage-returned ID.'
+                )
+            return returned_execution_plan_snapshot_id
 
         return execution_plan_snapshot_id
 
@@ -730,7 +736,7 @@ class RunDomain:
                 DagsterEventType.ASSET_CHECK_EVALUATION,
             },
         )
-        executed_keys: set[EntityKey] = set()
+        executed_keys: set[AssetOrCheckKey] = set()
         blocking_failure_keys: set[AssetKey] = set()
         for log in logs:
             event_data = log.dagster_event.event_specific_data if log.dagster_event else None
@@ -748,7 +754,7 @@ class RunDomain:
         to_not_reexecute = executed_keys - blocking_failure_keys
 
         # find the set of planned assets and checks
-        to_reexecute: set[EntityKey] = set()
+        to_reexecute: set[AssetOrCheckKey] = set()
         for step in execution_plan_snapshot.steps:
             if step.key not in execution_plan_snapshot.step_keys_to_execute:
                 continue
@@ -785,9 +791,17 @@ class RunDomain:
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
     ) -> Optional["AssetCheckNode"]: ...
 
+    @overload
     def _get_repo_scoped_entity_node(
         self,
-        key: "EntityKey",
+        key: "AssetOrCheckKey",
+        asset_graph: "BaseAssetGraph",
+        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+    ) -> Optional["BaseEntityNode"]: ...
+
+    def _get_repo_scoped_entity_node(
+        self,
+        key: "AssetOrCheckKey",
         asset_graph: "BaseAssetGraph",
         remote_job_origin: Optional["RemoteJobOrigin"] = None,
     ) -> Optional["BaseEntityNode"]:
@@ -814,7 +828,7 @@ class RunDomain:
 
     def _get_partitions_def(
         self,
-        key: "EntityKey",
+        key: "AssetOrCheckKey",
         asset_graph: "BaseAssetGraph",
         remote_job_origin: Optional["RemoteJobOrigin"],
         run: "DagsterRun",

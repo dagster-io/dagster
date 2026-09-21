@@ -18,7 +18,7 @@ def test_get_sync():
             "https://app.getcensus.com/api/v1/syncs/52",
             json=get_sync_data(),
         )
-        assert census.get_sync(sync_id="52")  # pyright: ignore[reportArgumentType]
+        assert census.get_sync(sync_id="52")  # ty: ignore[invalid-argument-type]
 
 
 def test_get_source():
@@ -29,7 +29,7 @@ def test_get_source():
             "https://app.getcensus.com/api/v1/sources/15",
             json=get_source_data(),
         )
-        assert census.get_source(source_id="15")  # pyright: ignore[reportArgumentType]
+        assert census.get_source(source_id="15")  # ty: ignore[invalid-argument-type]
 
 
 def test_get_destination():
@@ -40,7 +40,7 @@ def test_get_destination():
             "https://app.getcensus.com/api/v1/destinations/15",
             json=get_destination_data(),
         )
-        assert census.get_destination(destination_id="15")  # pyright: ignore[reportArgumentType]
+        assert census.get_destination(destination_id="15")  # ty: ignore[invalid-argument-type]
 
 
 def test_get_sync_run():
@@ -51,7 +51,7 @@ def test_get_sync_run():
             "https://app.getcensus.com/api/v1/sync_runs/94",
             json=get_sync_run_data(),
         )
-        assert census.get_sync_run(sync_run_id="94")  # pyright: ignore[reportArgumentType]
+        assert census.get_sync_run(sync_run_id="94")  # ty: ignore[invalid-argument-type]
 
 
 def test_trigger_sync():
@@ -62,7 +62,7 @@ def test_trigger_sync():
             "https://app.getcensus.com/api/v1/syncs/52/trigger",
             json=get_sync_trigger_data(),
         )
-        assert census.trigger_sync(sync_id="52")  # pyright: ignore[reportArgumentType]
+        assert census.trigger_sync(sync_id="52")  # ty: ignore[invalid-argument-type]
 
 
 def test_trigger_sync_and_poll():
@@ -93,7 +93,7 @@ def test_trigger_sync_and_poll():
             "https://app.getcensus.com/api/v1/sync_runs/94",
             json=get_sync_run_data(),
         )
-        result = census.trigger_sync_and_poll(sync_id="52", poll_interval=0)  # pyright: ignore[reportArgumentType]
+        result = census.trigger_sync_and_poll(sync_id="52", poll_interval=0)  # ty: ignore[invalid-argument-type]
         assert result == CensusOutput(
             sync_run=get_sync_run_data()["data"],
             source=get_source_data()["data"],

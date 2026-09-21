@@ -1,7 +1,7 @@
 ---
 description: Dagster+ is a managed orchestration platform for data engineering, offering Serverless and Hybrid deployment types with data cataloging, cost insights, authentication and RBAC, alerting, and branch deployment features.
-sidebar_class_name: hidden
 sidebar_position: 10
+sidebar_label: Dagster+ deployment
 title: About Dagster+
 canonicalUrl: '/deployment/dagster-plus'
 slug: '/deployment/dagster-plus'
@@ -30,7 +30,7 @@ In addition to managed infrastructure, Dagster+ also adds core capabilities on t
 
 Ready to [get started](/deployment/dagster-plus/getting-started)?
 
-## Other resources
+## Additional resources
 
 - Learn more about Dagster+ [pricing and plan types](https://dagster.io/pricing) or [contact the Dagster team](https://dagster.io/contact)
 - Learn more about [Dagster+ support](https://dagster.io/support)

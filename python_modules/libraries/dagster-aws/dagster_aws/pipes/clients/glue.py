@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional
 
 import boto3
 import dagster._check as check
@@ -58,7 +58,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -81,7 +81,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         params = start_job_run_params
 
         params["Arguments"] = params.get("Arguments") or {}
-        job_name = cast("str", params["JobName"])
+        job_name = params["JobName"]
 
         with open_pipes_session(
             context=context,
@@ -91,7 +91,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         ) as session:
             pipes_args = session.get_bootstrap_cli_arguments()
 
-            params["Arguments"].update(pipes_args)  # pyright: ignore (reportAttributeAccessIssue)
+            params["Arguments"].update(pipes_args)  # ty: ignore[unresolved-attribute]
 
             # Note: AWS Glue doesn't have a concept of Tags so we can't inject Dagster tags from session.default_remote_invocation_info
 
@@ -102,8 +102,8 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 context.log.error(
                     "Couldn't create job %s. Here's why: %s: %s",
                     job_name,
-                    err.response["Error"]["Code"],  # pyright: ignore (reportTypedDictNotRequiredAccess)
-                    err.response["Error"]["Message"],  # pyright: ignore (reportTypedDictNotRequiredAccess)
+                    err.response["Error"]["Code"],
+                    err.response["Error"]["Message"],
                 )
                 raise
 
@@ -117,7 +117,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                     self._terminate_job_run(context=context, job_name=job_name, run_id=run_id)
                 raise
 
-            status = response["JobRun"]["JobRunState"]  # pyright: ignore (reportOptionalSubscript)
+            status = response["JobRun"]["JobRunState"]
             if status != "SUCCEEDED":
                 raise RuntimeError(
                     f"Glue job {job_name} run {run_id} completed with status {status} :\n{response['JobRun'].get('ErrorMessage')}"
@@ -158,7 +158,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         while True:
             response = self._client.get_job_run(JobName=job_name, RunId=run_id)
             # https://docs.aws.amazon.com/glue/latest/dg/job-run-statuses.html
-            if response["JobRun"]["JobRunState"] in [  # pyright: ignore (reportTypedDictNotRequiredAccess)
+            if response["JobRun"]["JobRunState"] in [
                 "FAILED",
                 "SUCCEEDED",
                 "STOPPED",
@@ -199,5 +199,5 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             context.log.warning(f"Successfully stopped Glue job run {run_id}.")
         else:
             context.log.warning(
-                f"Something went wrong during Glue job run termination: {response['errors']}"  # pyright: ignore (reportGeneralTypeIssues)
+                f"Something went wrong during Glue job run termination: {response['errors']}"  # ty: ignore[invalid-key]
             )

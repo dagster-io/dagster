@@ -4,7 +4,7 @@ from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
 from .resources import ENV, HEX_PROJECT_ID, GithubResource, PyPiResource, resource_def
 
-dbt_parse_invocation = resource_def[ENV.upper()]["dbt"].cli(["parse"]).wait()
+dbt_parse_invocation = resource_def[ENV.upper()]["dbt"].cli(["parse"]).wait()  # ty: ignore[unresolved-attribute]
 dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
 
 

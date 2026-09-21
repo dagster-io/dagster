@@ -192,10 +192,10 @@ def apply_utilities_to_df(df, config):
             util_opts = config[util_name]
 
             if isinstance(util_opts, dict):
-                df = util_func(df, **util_opts)
+                df = util_func(df, **util_opts)  # ty: ignore[call-non-callable]
             elif isinstance(util_opts, list):
-                df = util_func(df, *util_opts)
+                df = util_func(df, *util_opts)  # ty: ignore[call-non-callable]
             else:
-                df = util_func(df, util_opts)
+                df = util_func(df, util_opts)  # ty: ignore[call-non-callable]
 
     return df

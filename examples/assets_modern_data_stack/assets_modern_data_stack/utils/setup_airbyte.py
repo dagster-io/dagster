@@ -138,11 +138,11 @@ def _random_dates():
 
 def add_data():
     con_string = get_conn_string(
-        username=PG_SOURCE_CONFIG["username"],
-        password=PG_SOURCE_CONFIG["password"],
-        hostname=PG_SOURCE_CONFIG["host"],
+        username=str(PG_SOURCE_CONFIG["username"]),
+        password=str(PG_SOURCE_CONFIG["password"]),
+        hostname=str(PG_SOURCE_CONFIG["host"]),
         port=str(PG_SOURCE_CONFIG["port"]),
-        db_name=PG_SOURCE_CONFIG["database"],
+        db_name=str(PG_SOURCE_CONFIG["database"]),
     )
 
     users = pd.DataFrame(

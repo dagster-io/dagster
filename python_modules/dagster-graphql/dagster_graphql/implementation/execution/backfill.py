@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING, Union
 
 import dagster._check as check
 from dagster._core.definitions.selector import (
@@ -62,7 +62,7 @@ def get_asset_backfill_preview(
     check.invariant(backfill_preview_params.get("partitionNames") is not None)
 
     asset_selection = [
-        cast("AssetKey", AssetKey.from_graphql_input(asset_key))
+        AssetKey.from_graphql_input(asset_key)
         for asset_key in backfill_preview_params["assetSelection"]
     ]
     partition_names: list[str] = backfill_preview_params["partitionNames"]
@@ -108,10 +108,7 @@ def create_and_launch_partition_backfill(
     )
 
     asset_selection = (
-        [
-            cast("AssetKey", AssetKey.from_graphql_input(asset_key))
-            for asset_key in backfill_params["assetSelection"]
-        ]
+        [AssetKey.from_graphql_input(asset_key) for asset_key in backfill_params["assetSelection"]]
         if backfill_params.get("assetSelection")
         else None
     )

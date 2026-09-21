@@ -1,4 +1,4 @@
-from ..tutorial.resource.create_table import iris_dataset  # noqa: I001
+from ..tutorial.resource.create_table import iris_dataset  # noqa: I001  # ty: ignore[unresolved-import]
 
 
 # start

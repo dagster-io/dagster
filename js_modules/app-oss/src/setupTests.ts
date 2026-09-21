@@ -6,11 +6,11 @@ import '@testing-library/jest-dom';
 
 const ignoredErrors = ['ReactDOM.render is no longer supported in React 18'];
 
-function bind(method: 'warn' | 'error', original: any) {
+function bind(method: 'warn' | 'error', original: typeof console.warn) {
   console[method] = (msg) =>
     ignoredErrors.every((error) => !msg.toString().includes(error)) && original(msg);
 }
-function unbind(method: 'warn' | 'error', original: any) {
+function unbind(method: 'warn' | 'error', original: typeof console.warn) {
   console[method] = original;
 }
 const originalWarn = console.warn.bind(console.warn);

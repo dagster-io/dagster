@@ -9,7 +9,6 @@ import datetime
 from typing import Annotated, Any, Literal
 
 import dagster as dg
-import yaml
 from dagster.components.resolved.core_models import (
     DailyPartitionsDefinitionModel,
     HourlyPartitionsDefinitionModel,
@@ -19,6 +18,7 @@ from dagster_dg_cli.utils.yaml_template_generator import (
     generate_defs_yaml_example_values,
     generate_defs_yaml_schema,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def custom_resolver(context: dg.ResolutionContext, value: str) -> str:
@@ -49,7 +49,7 @@ class TestResolvableYamlTemplates:
 
         # Schema output is a template with comments, not valid YAML
         # Only example output should be valid YAML
-        parsed_example = yaml.safe_load(example_result)
+        parsed_example = safe_load_yaml(example_result)
         assert parsed_example is not None
 
         # Check component type is set correctly

@@ -12,11 +12,9 @@ success_canceled_run:
 
 error_run_not_found:
   command: "dg api run get nonexistent-run-id"
-  has_recording: false
 
 error_invalid_run_id:
   command: "dg api run get '' --json"
-  has_recording: false
 
 # get-events scenarios (formerly under log and run-events)
 
@@ -133,4 +131,34 @@ error_list_runs_cursor_no_recording:
 
 error_list_runs_multiple_statuses_no_recording:
   command: "dg api run list --status SUCCESS --status FAILURE --json"
+  has_recording: false
+
+# launch scenarios
+
+success_launch_job_json:
+  command: "dg api run launch --location my_loc --job ingest_customers --json"
+
+success_launch_job_text:
+  command: "dg api run launch --location my_loc --job ingest_customers"
+
+success_launch_asset_json:
+  command: "dg api run launch --location my_loc --asset-key raw_customers --asset-key marts/dim_customers --json"
+
+success_launch_with_partition_and_tags_json:
+  command: "dg api run launch --location my_loc --job ingest_customers --partition 2026-05-15 --tag team=data --json"
+
+error_launch_no_target_no_recording:
+  command: "dg api run launch --location my_loc --json"
+  has_recording: false
+
+error_launch_partition_range_no_recording:
+  command: "dg api run launch --location my_loc --job j --partition 2026-01-01...2026-05-15 --json"
+  has_recording: false
+
+error_launch_invalid_tag_no_recording:
+  command: "dg api run launch --location my_loc --job j --tag invalid_no_equals --json"
+  has_recording: false
+
+error_launch_invalid_config_json_no_recording:
+  command: "dg api run launch --location my_loc --job j --config-json {bad --json"
   has_recording: false

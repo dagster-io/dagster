@@ -1,8 +1,8 @@
 import {Button} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/Description.module.css';
 import {Markdown} from '../ui/Markdown';
 
 interface IDescriptionProps {
@@ -67,8 +67,11 @@ export const Description = ({maxHeight, description, fontSize}: IDescriptionProp
     return null;
   }
 
+  const resolvedFontSize = typeof fontSize === 'number' ? `${fontSize}px` : fontSize || '0.8rem';
+
   return (
-    <Container
+    <div
+      className={styles.container}
       onDoubleClick={() => {
         const sel = document.getSelection();
         if (!sel || !container.current) {
@@ -79,44 +82,22 @@ export const Description = ({maxHeight, description, fontSize}: IDescriptionProp
         sel.removeAllRanges();
         sel.addRange(range);
       }}
-      $fontSize={fontSize || '0.8rem'}
       style={{
         maxHeight: expanded ? undefined : maxHeight || DEFAULT_MAX_HEIGHT,
+        fontSize: resolvedFontSize,
       }}
     >
       {hasMore && (
-        <ShowMoreHandle>
+        <div className={styles.showMoreHandle}>
           <Button intent="primary" onClick={() => setExpanded(!expanded)}>
             {expanded ? 'Show less' : 'Show more'}
           </Button>
-        </ShowMoreHandle>
+        </div>
       )}
 
       <div ref={container} style={{overflowX: 'auto'}}>
         <Markdown>{removeLeadingSpaces(description)}</Markdown>
       </div>
-    </Container>
+    </div>
   );
 };
-
-const Container = styled.div<{$fontSize: string | number}>`
-  overflow: hidden;
-  position: relative;
-  font-size: ${({$fontSize}) => (typeof $fontSize === 'number' ? `${$fontSize}px` : $fontSize)};
-  p:last-child {
-    margin-bottom: 0;
-  }
-
-  & code,
-  & pre {
-    font-size: ${({$fontSize}) => (typeof $fontSize === 'number' ? `${$fontSize}px` : $fontSize)};
-  }
-`;
-
-const ShowMoreHandle = styled.div`
-  position: absolute;
-  padding: 0 14px;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%);
-`;

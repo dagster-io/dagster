@@ -1,5 +1,5 @@
 import dagster as dg
-from src.jobs import hello_world_job  # type: ignore
+from src.jobs import hello_world_job
 
 
 @dg.repository

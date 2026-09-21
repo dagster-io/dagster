@@ -48,3 +48,28 @@ User groups in your IdP can be mapped to Dagster+ teams, allowing you to central
 - **Teams can still be managed in Dagster+.** You can choose to map and sync these teams to the IdP or administer them solely in Dagster+. Synced groups should be managed only in the IdP, or changes made in Dagster+ may be overwritten when a sync is triggered from the IdP.
 - **If a group exists only in the IdP** and is synced to Dagster+, you'll be prompted to either create a new Dagster+ team with the same name or create a link between the IdP group and an existing team in Dagster+.
 - **If a group exists only in Dagster+**, the group will display in the IdP as an 'external' group with no members. In this case, you can either create a new group in the IdP and link it to an existing Dagster+ team, or choose to manage the team only in Dagster+.
+
+## Permissions and SCIM
+
+SCIM controls which **users and teams** exist in Dagster+, but does not directly control user permissions or roles. Permissions must be managed separately within Dagster+.
+
+### Using SCIM groups to manage permissions
+
+If you want to use your IdP to indirectly control permissions, you can:
+
+1. Use SCIM to sync IdP groups to Dagster+ [teams](https://docs.dagster.io/deployment/dagster-plus/authentication-and-access-control/rbac/teams).
+2. In the Dagster+ UI, assign roles to those teams via **Organization Settings > Teams**.
+
+Any user added to an IdP group will inherit the permissions of the corresponding Dagster+ team when synced. For details, see [Managing team roles](https://docs.dagster.io/deployment/dagster-plus/authentication-and-access-control/rbac/teams#managing-team-roles).
+
+### Setting a default role for new SSO users
+
+When a new user logs into Dagster+ via SSO for the first time, they are automatically granted a default role. This is configured separately from SCIM using the `sso_default_role` deployment setting.
+
+By default, new SSO users receive **`Viewer`** permissions. To change this, set `sso_default_role` in your [full deployment settings](https://docs.dagster.io/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference):
+
+```yaml
+sso_default_role: EDITOR
+```
+
+You can also set this to **`NO_ACCESS`** to prevent new user accounts from being created automatically on first login.

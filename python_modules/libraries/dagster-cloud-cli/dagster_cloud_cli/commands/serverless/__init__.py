@@ -3,12 +3,17 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from dagster_shared import seven
 from typer import Argument, Option, Typer
 
 from dagster_cloud_cli import docker_utils, gql, pex_utils, ui
 from dagster_cloud_cli.commands import metrics
+from dagster_cloud_cli.commands.ci import (
+    DISABLE_PEX_DOCKER_REDIRECT_ENV_VAR,
+    build_pex_docker_bundle,
+)
 from dagster_cloud_cli.commands.workspace import wait_for_load
 from dagster_cloud_cli.config_utils import (
     DEPLOYMENT_CLI_OPTIONS,
@@ -104,7 +109,13 @@ def build_command(
             base_image = None
 
         retval = docker_utils.build_image(
-            source_directory, image, ecr_info, env_vars, base_image, use_editable_dagster=False
+            source_directory,
+            image,
+            ecr_info,
+            env_vars,
+            base_image,
+            use_editable_dagster=False,
+            build_args=[],
         )
         if retval == 0:
             ui.print(f"Built image {registry}:{image}")
@@ -212,7 +223,6 @@ def deploy_command(
     if not source_directory:
         raise ui.error("No source directory provided.")
 
-    _check_source_directory(source_directory)
     docker_utils.verify_docker()
 
     env_vars = kwargs.get("env", [])
@@ -221,21 +231,30 @@ def deploy_command(
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
         ecr_info = gql.get_ecr_info(client)
         registry = ecr_info["registry_url"]
+        repo_location = location_name if ecr_info.get("is_harbor") else None
 
         image_tag = kwargs.get("image") or docker_utils.default_image_tag(
             deployment, location_name, kwargs.get("commit_hash")
         )
         retval = docker_utils.build_image(
-            source_directory, image_tag, ecr_info, env_vars, base_image, use_editable_dagster=False
+            source_directory,
+            image_tag,
+            ecr_info,
+            env_vars,
+            base_image,
+            use_editable_dagster=False,
+            location_name=repo_location,
+            build_args=[],
         )
         if retval != 0:
             return
 
-        retval = docker_utils.upload_image(image_tag, ecr_info)
+        retval = docker_utils.upload_image(image_tag, ecr_info, location_name=repo_location)
         if retval != 0:
             return
 
-        location_args = {**kwargs, "image": f"{registry}:{image_tag}"}
+        full_image = docker_utils.full_image_ref(registry, repo_location, image_tag)
+        location_args = {**kwargs, "image": full_image}
         location_document = get_location_document(location_name, location_args)
         gql.add_or_update_code_location(client, location_document)
 
@@ -394,10 +413,83 @@ def build_python_dependencies(
     except pex_builder.deps.DepsBuildFailure as err:
         errors = [
             "Could not build dependencies for this project.",
-            f"Dependencies:\n {' '.join(open(requirements_path).readlines())}",
+            f"Dependencies:\n {' '.join(open(requirements_path, encoding='utf-8').readlines())}",
             err.format_error(),
         ]
         raise ui.error("\n".join(errors))
+
+
+def _should_redirect_pex_to_docker(url: str, api_token: str, deployment: str | None) -> bool:
+    """Whether this deploy targets Harbor, which routes to an agent with no PEX runtime.
+
+    Keyed on the registry rather than on which agents are running: during a rollback the
+    Kubernetes tenant and its agent are deliberately left up while the registry moves back to
+    ECR, and such a deploy should stay a python executable.
+    """
+    if os.getenv(DISABLE_PEX_DOCKER_REDIRECT_ENV_VAR):
+        ui.warn(
+            f"{DISABLE_PEX_DOCKER_REDIRECT_ENV_VAR} is set - skipping the registry check and"
+            " deploying a python executable as requested."
+        )
+        return False
+
+    try:
+        with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
+            if not gql.get_ecr_info(client).get("is_harbor"):
+                return False
+    except Exception as e:
+        ui.warn(
+            f"Could not determine the target registry ({e}); deploying a python executable. If"
+            " this deployment runs Serverless on Kubernetes the result will not be runnable -"
+            " retry, or deploy with dagster-cloud serverless deploy-docker."
+        )
+        return False
+
+    ui.print(
+        "Fast deploys (PEX) are not supported on Serverless (Kubernetes) - baking your build into"
+        " a Docker image instead (no action needed). This fallback is temporary and will be"
+        " removed; migrate with ENABLE_FAST_DEPLOYS=false."
+    )
+    return True
+
+
+def _build_pex_docker_bundle_kwargs(
+    *,
+    url: str,
+    api_token: str,
+    location: pex_builder.parse_workspace.Location,
+    build_method: pex_builder.deps.BuildMethod,
+    deployment: str | None,
+    kwargs: dict[str, Any],
+) -> dict[str, Any]:
+    """Build a location's PEX artifacts into a Docker image, returning deploy kwargs for it."""
+    kwargs = kwargs.copy()
+    # Resolved here rather than in the builder: this command holds a deployment-scoped url, so
+    # letting the builder append the deployment again would double that path segment. The name is
+    # read back from the server because --deployment is optional and callers (the GitHub action
+    # included) encode it in the url instead.
+    with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:
+        registry_info = gql.get_ecr_info(client)
+        deployment_name = gql.fetch_deployment_name(client)
+
+    build_output = build_pex_docker_bundle(
+        url=url,
+        api_token=api_token,
+        name=location.name,
+        location_build_dir=location.directory,
+        python_version=kwargs.get("python_version") or DEFAULT_PYTHON_VERSION,
+        pex_build_method=build_method,
+        location_file=location.location_file,
+        deployment_name=deployment_name,
+        commit_hash=kwargs.get("commit_hash"),
+        registry_info=registry_info,
+    )
+    kwargs["image"] = build_output.image
+    kwargs["pex_bundle"] = True
+    # The image pins its own interpreter, so the server must not also resolve a base image.
+    kwargs.pop("python_version", None)
+    kwargs.pop("base_image_tag", None)
+    return kwargs
 
 
 @app.command(
@@ -506,15 +598,27 @@ def deploy_python_executable_command(
     for location in locations:
         _check_source_directory(location.directory)
 
+    redirect_to_docker = _should_redirect_pex_to_docker(url, api_token, deployment)
+
     location_documents = []
     for location in locations:
-        location_kwargs = pex_utils.build_upload_pex(
-            url=url,
-            api_token=api_token,
-            location=location,
-            build_method=build_method,
-            kwargs=kwargs,
-        )
+        if redirect_to_docker:
+            location_kwargs = _build_pex_docker_bundle_kwargs(
+                url=url,
+                api_token=api_token,
+                location=location,
+                build_method=build_method,
+                deployment=deployment,
+                kwargs=kwargs,
+            )
+        else:
+            location_kwargs = pex_utils.build_upload_pex(
+                url=url,
+                api_token=api_token,
+                location=location,
+                build_method=build_method,
+                kwargs=kwargs,
+            )
         location_documents.append(get_location_document(location.name, location_kwargs))
 
     with gql.graphql_client_from_url(url, api_token, deployment_name=deployment) as client:

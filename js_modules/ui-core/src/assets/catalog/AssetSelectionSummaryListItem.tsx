@@ -17,7 +17,7 @@ import {numberFormatter} from '../../ui/formatters';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 export const AssetSelectionSummaryListItemFromSelection = React.memo(
-  ({index, item}: {index: number; item: Extract<ViewType, {__typename: 'CatalogView'}>}) => {
+  ({index, item}: {index: number; item: Exclude<ViewType, {__typename: 'FavoritesView'}>}) => {
     const {liveDataByNode, assetCount, loading} = useSelectionHealthData({
       selection: item.selection.querySelection ?? '',
     });

@@ -20,6 +20,7 @@ def test_items():
 def test_comments():
     mock_data = pd.DataFrame({"id": [1, 2, 3], "type": ["comment", "story", "comment"]})
     out_data = comments(mock_data)
+    assert isinstance(out_data, pd.DataFrame)
 
     out_ids = out_data["id"].tolist()
 
@@ -31,6 +32,7 @@ def test_comments():
 def test_stories():
     mock_data = pd.DataFrame({"id": [1, 2, 3], "type": ["story", "story", "comment"]})
     out_data = stories(mock_data)
+    assert isinstance(out_data, pd.DataFrame)
 
     out_ids = out_data["id"].tolist()
 

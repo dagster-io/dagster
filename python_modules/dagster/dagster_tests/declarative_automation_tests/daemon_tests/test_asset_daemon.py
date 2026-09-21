@@ -12,8 +12,9 @@ from dagster import AutoMaterializeRule, AutomationCondition, DagsterInstance
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.scheduler.instigation import (
+    InstigatorState,
     InstigatorStatus,
     InstigatorTick,
     InstigatorType,
@@ -265,6 +266,12 @@ auto_materialize_sensor_scenarios = [
 ]
 
 
+# Per-scenario daemon work (submitting many partitioned run requests through the synchronous
+# run coordinator) is CPU-bound and routinely takes >120s under EKS pod CPU contention. The
+# slowest scenario, `hourly_to_daily_partitions_never_materialized`, submits 73 partitioned
+# runs in a single tick and hits the 240s pyproject-wide pytest-timeout fallback. Widen the
+# budget for this whole test function so the safety net does not fire on legitimate work.
+@pytest.mark.timeout(600)
 @pytest.mark.parametrize(
     "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
 )
@@ -509,7 +516,7 @@ def test_auto_materialize_sensor_enforced_minimum_interval():
         with environ({"DAGSTER_ASSET_DAEMON_MINIMUM_ALLOWED_MIN_INTERVAL": "60"}):
             result = daemon_sensor_scenario.evaluate_daemon(instance)
 
-            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+            sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
                 instigator_type=InstigatorType.SENSOR
             )
             assert len(sensor_states) == 1
@@ -524,7 +531,7 @@ def test_auto_materialize_sensor_enforced_minimum_interval():
             result = result.with_current_time_advanced(seconds=59)
             result = result.evaluate_tick()
             daemon_sensor_scenario.evaluate_daemon(instance)
-            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+            sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
                 instigator_type=InstigatorType.SENSOR
             )
 
@@ -556,7 +563,7 @@ def test_auto_materialize_sensor_no_transition():
 
         assert get_has_migrated_to_sensors(instance)
 
-        sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+        sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
             instigator_type=InstigatorType.SENSOR
         )
 
@@ -579,7 +586,7 @@ def test_auto_materialize_sensor_no_transition():
         result = result.with_current_time_advanced(seconds=30)
         result = result.evaluate_tick()
         daemon_sensor_scenario.evaluate_daemon(instance)
-        sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+        sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
             instigator_type=InstigatorType.SENSOR
         )
         assert len(sensor_states) == 1
@@ -633,7 +640,7 @@ def test_auto_materialize_sensor_transition():
 
         assert get_has_migrated_to_sensors(instance)
 
-        sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+        sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
             instigator_type=InstigatorType.SENSOR
         )
 
@@ -772,6 +779,97 @@ def test_auto_materialize_sensor_name_transition() -> None:
             )
 
 
+def test_copy_default_auto_materialize_sensor_states_skips_non_matching_sensors() -> None:
+    """Regression test: _copy_default_auto_materialize_sensor_states should only copy state from
+    sensors named 'default_auto_materialize_sensor' with sensor_type AUTO_MATERIALIZE. It must
+    not copy state from unrelated sensors (wrong name or wrong type).
+    """
+    from dagster._core.remote_origin import (
+        GrpcServerCodeLocationOrigin,
+        RemoteInstigatorOrigin,
+        RemoteRepositoryOrigin,
+    )
+    from dagster._daemon.asset_daemon import AssetDaemon
+
+    repo_origin = RemoteRepositoryOrigin(
+        code_location_origin=GrpcServerCodeLocationOrigin(
+            host="localhost", port=1234, location_name="test_location"
+        ),
+        repository_name="__repository__",
+    )
+
+    def _make_state(
+        name: str,
+        sensor_type: SensorType | None = None,
+    ) -> InstigatorState:
+        origin = RemoteInstigatorOrigin(
+            repository_origin=repo_origin,
+            instigator_name=name,
+        )
+        return InstigatorState(
+            origin,
+            InstigatorType.SENSOR,
+            InstigatorStatus.RUNNING,
+            SensorInstigatorData(sensor_type=sensor_type),
+        )
+
+    # The sensor that SHOULD be migrated
+    matching_state = _make_state("default_auto_materialize_sensor", SensorType.AUTO_MATERIALIZE)
+    # An unrelated sensor with a different name and AUTO_MATERIALIZE type
+    other_am_state = _make_state("some_other_sensor", SensorType.AUTO_MATERIALIZE)
+    # An unrelated sensor with a different name and STANDARD type
+    standard_state = _make_state("my_standard_sensor", SensorType.STANDARD)
+    # A sensor with the right name but wrong type (should not be migrated)
+    wrong_type_state = _make_state("default_auto_materialize_sensor", SensorType.STANDARD)
+
+    all_states: dict[str, InstigatorState] = {}
+    for state in [matching_state, other_am_state, standard_state]:
+        selector_id = state.origin.get_selector().get_id()
+        all_states[selector_id] = state
+
+    daemon = AssetDaemon(settings={}, pre_sensor_interval_seconds=30)
+
+    with get_daemon_instance(paused=False) as instance:
+        # Pre-populate the states
+        for state in all_states.values():
+            instance.add_instigator_state(state)
+
+        result = daemon._copy_default_auto_materialize_sensor_states(instance, all_states)  # noqa: SLF001
+
+        migrated_names = {s.instigator_name for s in result.values()}
+
+        # The matching sensor should have been copied to the new name
+        assert "default_automation_condition_sensor" in migrated_names
+        # The original states should still be present
+        assert "default_auto_materialize_sensor" in migrated_names
+        assert "some_other_sensor" in migrated_names
+        assert "my_standard_sensor" in migrated_names
+
+        # Crucially: the number of entries should be exactly 4 (3 original + 1 migrated copy).
+        # Before the fix, unrelated sensors would also produce spurious copies.
+        assert len(result) == 4
+
+        # Verify the migrated state has the correct cursor data from the matching sensor
+        migrated_states = [
+            s for s in result.values() if s.instigator_name == "default_automation_condition_sensor"
+        ]
+        assert len(migrated_states) == 1
+        assert migrated_states[0].instigator_data == matching_state.instigator_data
+
+    # Also verify that a sensor with the right name but wrong type is NOT migrated
+    wrong_type_states: dict[str, InstigatorState] = {}
+    selector_id = wrong_type_state.origin.get_selector().get_id()
+    wrong_type_states[selector_id] = wrong_type_state
+
+    with get_daemon_instance(paused=False) as instance:
+        instance.add_instigator_state(wrong_type_state)
+        result = daemon._copy_default_auto_materialize_sensor_states(instance, wrong_type_states)  # noqa: SLF001
+
+        # Should not have created a new entry - wrong sensor type
+        assert len(result) == 1
+        assert all(s.instigator_name == "default_auto_materialize_sensor" for s in result.values())
+
+
 @pytest.mark.parametrize("num_threads", [0, 4])
 def test_auto_materialize_sensor_ticks(num_threads):
     with get_daemon_instance(
@@ -814,7 +912,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 instance, threadpool_executor=threadpool_executor
             )
 
-            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+            sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
                 instigator_type=InstigatorType.SENSOR
             )
 
@@ -856,7 +954,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             result = result.start_sensor("auto_materialize_sensor_b")
             result = result.with_current_time_advanced(seconds=15)
             result = result.evaluate_tick()
-            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+            sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
                 instigator_type=InstigatorType.SENSOR
             )
             assert len(sensor_states) == 4
@@ -886,7 +984,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             result = result.with_current_time_advanced(seconds=15)
             result = result.evaluate_tick()
 
-            sensor_states = instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+            sensor_states = instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
                 instigator_type=InstigatorType.SENSOR
             )
 
@@ -1000,7 +1098,7 @@ def test_auto_materialize_sensor_ticks(num_threads):
             # than the pre-sensor evaluation ID and they are increasing for each sensor
             sensor_states = [
                 sensor_state
-                for sensor_state in instance.schedule_storage.all_instigator_state(  # pyright: ignore[reportOptionalMemberAccess]
+                for sensor_state in instance.schedule_storage.all_instigator_state(  # ty: ignore[unresolved-attribute]
                     instigator_type=InstigatorType.SENSOR
                 )
             ]

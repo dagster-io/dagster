@@ -112,7 +112,7 @@ def test_code_location_reconstruction_metadata_value():
     assert CodeLocationReconstructionMetadataValue("foo").value == "foo"
 
     with pytest.raises(CheckError, match="not a str"):
-        CodeLocationReconstructionMetadataValue({"foo": "bar"})  # pyright: ignore[reportArgumentType]
+        CodeLocationReconstructionMetadataValue({"foo": "bar"})  # ty: ignore[invalid-argument-type]
 
 
 def test_serdes_json_metadata():

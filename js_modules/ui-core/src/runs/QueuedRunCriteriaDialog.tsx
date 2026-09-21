@@ -17,6 +17,7 @@ import * as yaml from 'yaml';
 
 import {QUEUED_RUN_CRITERIA_QUERY} from './QueuedRunCriteriaQuery';
 import {useQuery} from '../apollo-client';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {
   QueuedRunCriteriaQuery,
   QueuedRunCriteriaQueryVariables,
@@ -65,6 +66,7 @@ interface ContentProps {
 }
 
 const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
   const runQueueConfig = useRunQueueConfig();
 
   const {data, loading} = useQuery<QueuedRunCriteriaQuery, QueuedRunCriteriaQueryVariables>(
@@ -79,6 +81,8 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
   const granularity = data?.instance.poolConfig?.poolGranularity;
   const runTagMap = Object.fromEntries(run.tags.map(({key, value}) => [key, value]));
   const maxConcurrentRuns = runQueueConfig?.maxConcurrentRuns;
+  const maxConcurrentRunsAllBranchDeployments =
+    runQueueConfig?.maxConcurrentRunsAllBranchDeployments;
   const runTagLimits = React.useMemo(() => {
     try {
       if (!runQueueConfig?.tagConcurrencyLimitsYaml) {
@@ -121,6 +125,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
   const {rootConcurrencyKeys, hasUnconstrainedRootNodes, allPools} = data.runOrError;
 
   const priority = runTagMap['dagster/priority'];
+
   const poolOpGranularityRunLimited =
     runQueueConfig?.isOpConcurrencyAware &&
     (!granularity || granularity === 'op') &&
@@ -140,7 +145,21 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
             <td>{priority}</td>
           </tr>
         ) : null}
-        {maxConcurrentRuns !== undefined ? (
+        {isBranchDeployment ? (
+          <>
+            <tr>
+              <td>Max concurrent runs (all branch deployments)</td>
+              <td>{numberFormatter.format(maxConcurrentRunsAllBranchDeployments ?? 0)}</td>
+            </tr>
+            {maxConcurrentRuns != null && maxConcurrentRuns >= 0 ? (
+              <tr>
+                <td>Max concurrent runs (this branch deployment)</td>
+                <td>{numberFormatter.format(maxConcurrentRuns)}</td>
+              </tr>
+            ) : null}
+          </>
+        ) : null}
+        {!isBranchDeployment && maxConcurrentRuns != null ? (
           <tr>
             <td>Max concurrent runs</td>
             <td>{numberFormatter.format(maxConcurrentRuns)}</td>
@@ -148,7 +167,7 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
         ) : null}
         {runTagLimits?.length ? (
           <tr>
-            <td>Tag concurrency limits:</td>
+            <td>Tag concurrency limits{isBranchDeployment ? ' (all branch deployments)' : ''}:</td>
             <td>
               {runTagLimits.map((limit, i) => (
                 <div style={{overflow: 'auto', paddingBottom: 10}} key={`tagLimit:${i}`}>

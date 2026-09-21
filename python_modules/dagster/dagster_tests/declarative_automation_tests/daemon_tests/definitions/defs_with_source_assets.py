@@ -1,9 +1,10 @@
 import dagster as dg
 
-
-@dg.observable_source_asset(auto_observe_interval_minutes=10)
-def foo_source_asset():
-    return dg.DataVersion("foo")
+foo_source_asset = dg.SourceAsset(
+    key="foo_source_asset",
+    observe_fn=lambda context: dg.DataVersion("foo"),
+    auto_observe_interval_minutes=10,
+)
 
 
 always_asset_spec = dg.AssetSpec(key=dg.AssetKey("always"))

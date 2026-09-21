@@ -1,72 +1,49 @@
 import {Box, Colors, FontFamily, MetadataTable, Tooltip} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import memoize from 'lodash/memoize';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {LogLevel} from './LogLevel';
 import {ColumnWidthsContext} from './LogsScrollingTableHeader';
+import styles from './css/LogsRowComponents.module.css';
 import {formatElapsedTimeWithMsec} from '../app/Util';
 import {HourCycle} from '../app/time/HourCycle';
 import {TimeContext} from '../app/time/TimeContext';
 import {browserHourCycle} from '../app/time/browserTimezone';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
-const bgcolorForLevel = (level: LogLevel) =>
-  ({
-    [LogLevel.DEBUG]: Colors.backgroundDefault(),
-    [LogLevel.INFO]: Colors.backgroundDefault(),
-    [LogLevel.EVENT]: Colors.backgroundDefault(),
-    [LogLevel.WARNING]: Colors.backgroundYellow(),
-    [LogLevel.ERROR]: Colors.backgroundRed(),
-    [LogLevel.CRITICAL]: Colors.backgroundRed(),
-  })[level];
-
 export const MAX_ROW_HEIGHT_PX = 200;
 
-export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
-  font-size: 12px;
-  width: 100%;
-  height: 100%;
-  max-height: ${MAX_ROW_HEIGHT_PX}px;
-  word-break: break-word;
-  white-space: pre-wrap;
-  color: ${Colors.textDefault()};
-  font-family: ${FontFamily.monospace};
-  font-variant-ligatures: none;
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  overflow: hidden;
-  border-top: 1px solid ${Colors.keylineDefault()};
-  background-color: ${({highlighted, level}) =>
-    highlighted ? Colors.backgroundLightHover() : bgcolorForLevel(level)};
+const rowLevelClass: Record<LogLevel, string | undefined> = {
+  [LogLevel.DEBUG]: styles.rowDebug,
+  [LogLevel.INFO]: styles.rowInfo,
+  [LogLevel.EVENT]: styles.rowEvent,
+  [LogLevel.WARNING]: styles.rowWarning,
+  [LogLevel.ERROR]: styles.rowError,
+  [LogLevel.CRITICAL]: styles.rowCritical,
+};
 
-  color: ${(props) =>
-    ({
-      [LogLevel.DEBUG]: Colors.textLight(),
-      [LogLevel.INFO]: Colors.textDefault(),
-      [LogLevel.EVENT]: Colors.textDefault(),
-      [LogLevel.WARNING]: Colors.textYellow(),
-      [LogLevel.ERROR]: Colors.textRed(),
-      [LogLevel.CRITICAL]: Colors.textRed(),
-    })[props.level]};
-`;
+export const Row = React.forwardRef<
+  HTMLDivElement,
+  {level: LogLevel; highlighted: boolean} & React.HTMLAttributes<HTMLDivElement>
+>(({level, highlighted, className, ...rest}, ref) => (
+  <div
+    ref={ref}
+    className={clsx(
+      styles.row,
+      rowLevelClass[level],
+      highlighted && styles.rowHighlighted,
+      className,
+    )}
+    {...rest}
+  />
+));
 
-export const StructuredContent = styled.div`
-  box-sizing: border-box;
-  border-left: 1px solid ${Colors.keylineDefault()};
-  word-break: break-word;
-  white-space: pre-wrap;
-  font-family: ${FontFamily.monospace};
-  font-variant-ligatures: none;
-  flex: 1;
-  align-self: stretch;
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-`;
+export const StructuredContent = ({className, ...rest}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={clsx(styles.structuredContent, className)} {...rest} />
+);
 
 // Step Key Column
 //
@@ -101,11 +78,11 @@ export const OpColumn = (props: {stepKey: string | false | null}) => {
   );
 };
 
-export const OpColumnContainer = styled.div`
-  width: 250px;
-  flex-shrink: 0;
-  padding: 4px 12px;
-`;
+export const OP_COLUMN_CONTAINER_CLASS = 'op-column-container';
+
+export const OpColumnContainer = ({className, ...rest}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={clsx(OP_COLUMN_CONTAINER_CLASS, styles.opColumnContainer, className)} {...rest} />
+);
 
 const OpColumnTooltipStyle = JSON.stringify({
   fontSize: '12px',
@@ -163,7 +140,7 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
   const stepElapsedTime = formatElapsedTimeWithMsec(Number(time) - (stepStartTime || 0));
 
   return (
-    <TimestampColumnContainer style={{width: widths.timestamp}}>
+    <div className={styles.timestampColumnContainer} style={{width: widths.timestamp}}>
       <Tooltip
         canShow={canShowTooltip}
         content={
@@ -215,38 +192,15 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
       >
         <Link to={href}>{timeString()}</Link>
       </Tooltip>
-    </TimestampColumnContainer>
+    </div>
   );
 });
-
-const TimestampColumnContainer = styled.div`
-  flex-shrink: 0;
-  padding: 4px 4px 4px 12px;
-
-  a:link,
-  a:visited,
-  a:hover,
-  a:active {
-    color: ${Colors.textLight()};
-  }
-
-  a:hover,
-  a:active {
-    text-decoration: underline;
-  }
-`;
 
 export const EventTypeColumn = (props: {children: React.ReactNode}) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
-    <EventTypeColumnContainer style={{width: widths.eventType}}>
+    <div className={styles.eventTypeColumnContainer} style={{width: widths.eventType}}>
       {props.children}
-    </EventTypeColumnContainer>
+    </div>
   );
 };
-
-const EventTypeColumnContainer = styled.div`
-  flex-shrink: 0;
-  color: ${Colors.textLight()};
-  padding: 4px;
-`;

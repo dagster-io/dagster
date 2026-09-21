@@ -194,7 +194,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
             }
         )
         for job in jobs
-        if job in unsatisfied_jobs
+        if isinstance(job, JobDefinition) and job in unsatisfied_jobs
     }
 
     # Update all jobs to use the resource bound version
@@ -840,16 +840,6 @@ class Definitions(IHaveNew):
             metadata=metadata,
             component_tree=component_tree,
         )
-
-    @public
-    @deprecated(
-        breaking_version="1.11",
-        additional_warn_text="Use resolve_all_asset_specs instead",
-        subject="get_all_asset_specs",
-    )
-    def get_all_asset_specs(self) -> Sequence[AssetSpec]:
-        """Returns an AssetSpec object for AssetsDefinitions and AssetSpec passed directly to the Definitions object."""
-        return self.resolve_all_asset_specs()
 
     @public
     def resolve_all_asset_specs(self) -> Sequence[AssetSpec]:

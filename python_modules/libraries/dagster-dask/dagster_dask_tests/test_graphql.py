@@ -29,7 +29,14 @@ def test_execute_hammer_through_webserver():
             variables = {
                 "executionParams": {
                     "runConfigData": {
-                        "execution": {"config": {"cluster": {"local": {}}}},
+                        # Cap workers — with default n_workers=nproc, the
+                        # parallel hammer ops race for the SQLite event-log
+                        # file lock.
+                        "execution": {
+                            "config": {
+                                "cluster": {"local": {"n_workers": 2, "threads_per_worker": 1}}
+                            }
+                        },
                     },
                     "selector": selector,
                     "mode": "default",

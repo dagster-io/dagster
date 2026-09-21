@@ -14,7 +14,9 @@ def get_pyright_reveal_type_output(filename) -> list[str]:
 
 
 def get_mypy_type_output(filename) -> list[str]:
-    stdout = subprocess.check_output(["mypy", filename]).decode("utf-8")
+    # --no-namespace-packages keeps mypy from naming the temp file's module
+    # by walking up parent dirs (e.g. tmp.tmpXXX.test instead of just test).
+    stdout = subprocess.check_output(["mypy", "--no-namespace-packages", filename]).decode("utf-8")
     match = re.findall(r'note: Revealed type is "([^"]+)"', stdout)
     assert match
     return match
@@ -27,7 +29,7 @@ def test_type_signatures_constructor_nested_resource():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource
@@ -67,7 +69,7 @@ def test_type_signatures_config_at_launch():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource
@@ -92,7 +94,7 @@ def test_type_signatures_constructor_resource_dependency():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource, ResourceDependency
@@ -128,7 +130,7 @@ def test_type_signatures_alias():
     with tempfile.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, "test.py")
 
-        with open(filename, "w") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(
                 """
 from dagster import ConfigurableResource

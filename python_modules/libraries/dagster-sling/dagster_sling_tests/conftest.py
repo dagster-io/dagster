@@ -3,8 +3,8 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-import yaml
 from dagster import file_relative_path
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_sling import SlingConnectionResource, SlingResource
 
 base_replication_config_path = (
@@ -26,8 +26,8 @@ def path_to_temp_sqlite_db(tmp_path):
 @pytest.fixture
 def sling_sqlite_resource(path_to_temp_sqlite_db):
     return SlingResource(
-        source_connection=SlingConnectionResource(name="file_source", type="file"),  # pyright: ignore[reportCallIssue]
-        target_connection=SlingConnectionResource(  # pyright: ignore[reportCallIssue]
+        source_connection=SlingConnectionResource(name="file_source", type="file"),
+        target_connection=SlingConnectionResource(
             name="sqlite_target",
             type="sqlite",
             connection_string=f"sqlite://{path_to_temp_sqlite_db}",
@@ -61,7 +61,7 @@ def path_to_dataworks_folder():
 
 def base_replication_config():
     with base_replication_config_path.open("r") as f:
-        return yaml.safe_load(f)
+        return safe_load_yaml(f)
 
 
 @pytest.fixture
@@ -82,9 +82,10 @@ def replication_config():
 @pytest.fixture
 def csv_to_sqlite_replication_config(path_to_test_csv):
     with open(
-        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml"),
+        encoding="utf-8",
     ) as f:
-        conf = yaml.safe_load(f)
+        conf = safe_load_yaml(f)
 
     conf["streams"][f"file://{path_to_test_csv}"] = {"object": "main.tbl"}
     return conf
@@ -93,9 +94,10 @@ def csv_to_sqlite_replication_config(path_to_test_csv):
 @pytest.fixture
 def csv_to_sqlite_dataworks_replication(path_to_dataworks_folder):
     with open(
-        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml"),
+        encoding="utf-8",
     ) as f:
-        conf = yaml.safe_load(f)
+        conf = safe_load_yaml(f)
     conf_streams = {}
     for file_name in os.listdir(path_to_dataworks_folder):
         file_path = os.path.join(path_to_dataworks_folder, file_name)

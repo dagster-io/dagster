@@ -6,12 +6,6 @@ sidebar_position: 400
 
 In this article, we'll cover a few ways to test your partitioned config and jobs.
 
-:::note
-
-This article assumes familiarity with [partitioned assets](/guides/build/partitions-and-backfills/partitioning-assets).
-
-:::
-
 ## Testing partitioned config
 
 Invoking a <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object directly invokes the decorated function.
@@ -19,14 +13,14 @@ Invoking a <PyObject section="partitions" module="dagster" object="PartitionedCo
 If you want to check whether the generated run config is valid for the config of a job, you can use the <PyObject section="execution" module="dagster" object="validate_run_config" /> function.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_config_test.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioned_config_test.py"
   startAfter="start_partition_config"
   endBefore="end_partition_config"
   title="src/<project_name>/defs/ops.py"
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_config_test.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioned_config_test.py"
   startAfter="start_partition_test"
   endBefore="end_partition_test"
   title="tests/test_ops.py"
@@ -35,14 +29,14 @@ If you want to check whether the generated run config is valid for the config of
 If you want to test that a <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> creates the partitions you expect, use the `get_partition_keys` or `get_run_config_for_partition_key` functions:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_config_test.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioned_config_test.py"
   startAfter="start_partition_keys"
   endBefore="end_partition_keys"
   title="src/<project_name>/defs/ops.py"
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_config_test.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioned_config_test.py"
   startAfter="start_partition_keys_test"
   endBefore="end_partition_keys_test"
   title="tests/test_ops.py"
@@ -55,7 +49,7 @@ If you want to test that a <PyObject section="partitions" module="dagster" objec
 To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of [`dagster.JobDefinition.execute_in_process`](/api/dagster/execution):
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job_test.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partitioned_job_test.py"
   startAfter="start"
   endBefore="end"
   title="tests/test_ops.py"

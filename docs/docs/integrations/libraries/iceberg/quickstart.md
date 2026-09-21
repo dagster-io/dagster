@@ -6,8 +6,7 @@ sidebar_position: 2
 
 <p>{frontMatter.description}</p>
 
-<details>
-  <summary>Prerequisites</summary>
+## Prerequisites
 
 To follow the steps in this guide, you'll need to:
 
@@ -18,8 +17,6 @@ To follow the steps in this guide, you'll need to:
   ```python
   catalog.create_namespace("default")
   ```
-
-</details>
 
 ## Defining the I/O manager
 

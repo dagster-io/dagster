@@ -1,11 +1,10 @@
 import datetime
 import logging
 import re
-import shlex
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import dagster_shared.check as check
 from dagster_shared.record import record
@@ -13,6 +12,8 @@ from dagster_shared.serdes.serdes import whitelist_for_serdes
 from dagster_shared.seven import resolve_module_pattern
 from dagster_shared.utils import find_uv_workspace_root
 from dagster_shared.utils.config import get_canonical_defs_module_name
+from dagster_shared.yaml_utils import safe_load_yaml
+from dotenv import dotenv_values
 from packaging.version import Version
 from typing_extensions import Self
 
@@ -49,6 +50,7 @@ from dagster_dg_core.utils.warnings import emit_warning
 _DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 _DEFAULT_PROJECT_PLUGIN_MODULE: Final = "components"
 _DEFAULT_PROJECT_PLUGIN_MODULE_REGISTRY_FILE: Final = "plugin_modules.json"
+_ALTERNATIVE_DEFS_SUBMODULE: Final = "definitions"
 _EXCLUDED_COMPONENT_DIRECTORIES: Final = {"__pycache__"}
 DG_PLUGIN_ENTRY_POINT_GROUP: Final = "dagster_dg_cli.registry_modules"
 # Remove in future, in place for backcompat
@@ -232,7 +234,7 @@ class DgContext:
         if not ((root_path / "pyproject.toml").exists() or (root_path / "dg.toml").exists()):
             raise DgError(f"Cannot find `pyproject.toml` at {root_path}")
         return self.__class__.from_file_discovery_and_command_line_config(
-            root_path, self.cli_opts or {}
+            root_path, self.cli_opts or cast("DgRawCliConfig", {})
         )
 
     def component_registry_paths(self) -> list[Path]:
@@ -347,20 +349,16 @@ class DgContext:
                 "`project_python_executable` is only available in a Dagster project context"
             )
 
-        # This is a temporary "backdoor" to satisfy users who want to auto-discover non-standard virtual
-        # environments for their dg projects. Here is how it works:
-        # - If a `.env` file is present in the project root, it looks for the following variables:
-        #   - `DG_PROJECT_PYTHON_EXECUTABLE`: if this variable is set, its value is used as the python
-        #     executable path
-        # - If no `.env` file is present or if the variable is not set, fall back to default
-        #   behavior (assume .venv in project root).
-        env_path = Path(self.root_path / ".env")
+        # Temporary "backdoor" for users with non-standard virtual environment layouts (uv
+        # workspaces, etc.). If a `.env` file in the project root sets
+        # `DG_PROJECT_PYTHON_EXECUTABLE`, that value is used as the python executable path
+        # (relative paths are resolved against the project root). Otherwise we fall back to
+        # the default `.venv` adjacent to the project root.
+        env_path = self.root_path / ".env"
         if env_path.exists():
-            content = env_path.read_text()
-            for line in content.splitlines():
-                stripped_line = line.strip()
-                if stripped_line.startswith(f"{DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR}="):
-                    return self.root_path / shlex.split(stripped_line)[0].split("=", 1)[1]
+            value = dotenv_values(env_path).get(DG_PROJECT_PYTHON_EXECUTABLE_ENV_VAR)
+            if value:
+                return self.root_path / value
 
         return self.root_path / get_venv_executable(Path(".venv"))
 
@@ -370,15 +368,14 @@ class DgContext:
 
     @cached_property
     def build_config(self) -> DgRawBuildConfig | None:
-        import yaml
 
         build_yaml_path = self.build_config_path
 
         if not build_yaml_path.resolve().exists():
             return None
 
-        with open(build_yaml_path) as f:
-            build_config_dict = yaml.safe_load(f)
+        with open(build_yaml_path, encoding="utf-8") as f:
+            build_config_dict = safe_load_yaml(f)
             build_directory = build_config_dict.get("directory")
             if build_directory:
                 build_directory_path = Path(build_directory)
@@ -394,23 +391,33 @@ class DgContext:
 
     @cached_property
     def container_context_config(self) -> Mapping[str, Any] | None:
-        import yaml
 
         container_context_yaml_path = self.container_context_config_path
 
         if not container_context_yaml_path.resolve().exists():
             return None
 
-        with open(container_context_yaml_path) as f:
-            return yaml.safe_load(f)
+        with open(container_context_yaml_path, encoding="utf-8") as f:
+            return safe_load_yaml(f)
 
     @cached_property
     def defs_module_name(self) -> str:
         if not self.config.project:
             raise DgError("`defs_module_name` is only available in a Dagster project context")
-        return get_canonical_defs_module_name(
+        canonical = get_canonical_defs_module_name(
             self.config.project.defs_module, self.root_module_name
         )
+        # If the user explicitly configured a defs_module, use it as-is
+        if self.config.project.defs_module:
+            return canonical
+        # Auto-detect: if the default "defs" path doesn't exist, try "definitions"
+        default_path = self.get_path_for_local_module(canonical, require_exists=False)
+        if not default_path.exists() and not default_path.with_suffix(".py").exists():
+            alt_module = f"{self.root_module_name}.{_ALTERNATIVE_DEFS_SUBMODULE}"
+            alt_path = self.get_path_for_local_module(alt_module, require_exists=False)
+            if alt_path.exists() or alt_path.with_suffix(".py").exists():
+                return alt_module
+        return canonical
 
     @cached_property
     def _defs_path(self) -> Path:

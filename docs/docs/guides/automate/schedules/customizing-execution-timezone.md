@@ -14,16 +14,6 @@ Schedules that don't have a set timezone will, by default, execute in [UTC](http
 - Set custom timezones on partitioned jobs
 - Account for the impact of Daylight Savings Time on schedule execution times
 
-:::note
-
-This guide assumes familiarity with:
-
-- Schedules
-- Jobs, either [asset](/guides/build/jobs/asset-jobs) or op-based
-- [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
-
-:::
-
 ## Setting timezones on schedule definitions
 
 Using the `execution_timezone` parameter allows you to specify a timezone for the schedule on the following objects:
@@ -35,7 +25,7 @@ Using the `execution_timezone` parameter allows you to specify a timezone for th
 This parameter accepts any [`tz` timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). For example, the following schedule will execute **every day at 9:00 AM in US Pacific time (America/Los_Angeles)**:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedules.py"
   startAfter="start_timezone"
   endBefore="end_timezone"
   title="src/<project_name>/defs/schedules.py"
@@ -48,7 +38,7 @@ Schedules constructed from partitioned jobs execute in the timezone defined on t
 For example, the following partition uses the **US Pacific (America/Los_Angeles)** timezone:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py"
+  path="docs_snippets/docs_snippets/guides/build/partitions_backfills/partition_with_timezone.py"
   title="src/<project_name>/defs/schedules.py"
 />
 
@@ -109,12 +99,3 @@ Let's say you have a **schedule that executes hourly at 30 minutes past the hour
 - 2:00 AM
 - 2:30 AM ## schedule executes
 ```
-
-## APIs in this guide
-
-| Name                                                                                                               | Description                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                              | Decorator that defines a schedule that executes according to a given cron schedule.                 |
-| <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" />                              | Class for schedules.                                                                                |
-| <PyObject section="schedules-sensors" module="dagster"  object="build_schedule_from_partitioned_job" />            | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
-| <PyObject section="libraries" integration="dbt" object="build_schedule_from_dbt_selection" module="dagster_dbt" /> | A function that constructs a schedule that materializes a set of specified dbt resources.           |

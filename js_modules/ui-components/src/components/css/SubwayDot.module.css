@@ -1,0 +1,28 @@
+.blob {
+  --blob-color: transparent;
+  --blob-size: 24px;
+  --blob-font-size: 13px;
+
+  align-items: center;
+  background-color: var(--blob-color);
+  border-radius: 50%;
+  color: var(--color-accent-reversed);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: var(--blob-font-size);
+  height: var(--blob-size);
+  justify-content: center;
+  outline: none;
+  text-transform: uppercase;
+  transition:
+    background 50ms linear,
+    color 50ms linear;
+  user-select: none;
+  width: var(--blob-size);
+}
+
+.blob:focus,
+.blob:active {
+  outline: none;
+}

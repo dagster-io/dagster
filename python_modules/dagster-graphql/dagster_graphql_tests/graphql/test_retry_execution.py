@@ -677,7 +677,7 @@ class TestHardFailures(ExecutingGraphQLContextTestMatrix):
 
 def test_graphene_reexecution_strategy():
     """Check that graphene enum has corresponding values in the ReexecutionStrategy enum."""
-    for strategy in GrapheneReexecutionStrategy.__enum__:
+    for strategy in GrapheneReexecutionStrategy.__enum__:  # ty: ignore[unresolved-attribute]
         assert ReexecutionStrategy[strategy.value]
 
 

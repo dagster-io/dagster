@@ -24,6 +24,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes import serialize_value
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
+from dagster_dg_cli.cli.plus.build import get_agent_type_and_platform
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import deploy_configure_group
 from dagster_dg_cli.cli.plus.deploy.deploy_session import (
@@ -32,10 +33,11 @@ from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     init_deploy_session,
 )
 from dagster_dg_cli.cli.plus.deploy.validation import _extract_dagster_env_from_url
-from dagster_dg_cli.utils.plus.build import get_agent_type
+from dagster_dg_cli.utils.plus.gql import SECRETS_QUERY
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
+    from dagster_cloud_cli.commands.ci.state import LocationState
     from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-state")
@@ -43,6 +45,14 @@ DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-stat
 
 def _get_statedir():
     return os.getenv("DAGSTER_BUILD_STATEDIR", DEFAULT_STATEDIR_PATH)
+
+
+def _resolve_agent_type(
+    agent_type_str: str | None, plus_config: DagsterPlusCliConfig
+) -> DgPlusAgentType:
+    if not agent_type_str:
+        return get_agent_type_and_platform(plus_config)[0]
+    return DgPlusAgentType(agent_type_str.upper())
 
 
 def _get_snapshot_base_deployment_conditions():
@@ -254,10 +264,7 @@ def deploy_group(
 
     statedir = _get_statedir()
 
-    if agent_type_str:
-        agent_type = DgPlusAgentType(agent_type_str.upper())
-    else:
-        agent_type = get_agent_type(plus_config)
+    agent_type = _resolve_agent_type(agent_type_str, plus_config)
 
     build_strategy_enum = BuildStrategy(build_strategy)
     pex_build_method_enum = BuildMethod(pex_build_method)
@@ -280,13 +287,13 @@ def deploy_group(
 
     build_artifact(
         dg_context,
-        agent_type,
-        build_strategy_enum,
-        pex_build_method_enum,
-        statedir,
-        bool(use_editable_dagster),
-        python_version,
-        location_names,
+        agent_type=agent_type,
+        build_strategy=build_strategy_enum,
+        pex_build_method=pex_build_method_enum,
+        statedir=statedir,
+        use_editable_dagster=bool(use_editable_dagster),
+        python_version=python_version,
+        location_names=location_names,
     )
 
     finish_deploy_session(dg_context, statedir, location_names)
@@ -463,11 +470,10 @@ def build_and_push_command(
 
     _validate_location_names(dg_context, location_names, cli_config)
 
-    if agent_type_str:
-        agent_type = DgPlusAgentType(agent_type_str.upper())
-    else:
-        plus_config = DagsterPlusCliConfig.get()
-        agent_type = get_agent_type(plus_config)
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
+    agent_type = _resolve_agent_type(agent_type_str, plus_config)
 
     build_strategy_enum = BuildStrategy(build_strategy)
     pex_build_method_enum = BuildMethod(pex_build_method)
@@ -476,13 +482,13 @@ def build_and_push_command(
 
     build_artifact(
         dg_context,
-        agent_type,
-        build_strategy_enum,
-        pex_build_method_enum,
-        statedir,
-        bool(use_editable_dagster),
-        python_version,
-        location_names,
+        agent_type=agent_type,
+        build_strategy=build_strategy_enum,
+        pex_build_method=pex_build_method_enum,
+        statedir=statedir,
+        use_editable_dagster=bool(use_editable_dagster),
+        python_version=python_version,
+        location_names=location_names,
     )
 
 
@@ -519,6 +525,44 @@ def _instance_with_defs_state_storage(
             yield instance
 
 
+def _fetch_secrets_for_location(
+    location_state: "LocationState",
+    api_token: str,
+    organization: str,
+    location_name: str,
+) -> dict[str, str]:
+    """Fetch Dagster Plus env vars for injection into refresh-defs-state subprocess.
+
+    Selects the appropriate secret scope based on whether this is a branch or full deployment.
+    """
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
+    client = DagsterPlusGraphQLClient(
+        url=location_state.url,
+        api_token=api_token,
+        organization=organization,
+        deployment=location_state.deployment_name,
+    )
+
+    # Select scope based on deployment type
+    if location_state.is_branch_deployment:
+        scopes = {"allBranchDeploymentsScope": True}
+    else:
+        scopes = {"fullDeploymentScope": True}
+
+    result = client.execute_arbitrary(
+        SECRETS_QUERY,
+        variables={"onlyViewable": True, "scopes": scopes},
+    )
+
+    secrets: dict[str, str] = {}
+    for secret in result["secretsOrError"]["secrets"]:
+        # Include if global (no location filter) or matches this location
+        if len(secret["locationNames"]) == 0 or location_name in secret["locationNames"]:
+            secrets[secret["secretName"]] = secret["secretValue"]
+    return secrets
+
+
 def refresh_defs_state_impl(
     ctx: click.Context,
     statedir: str,
@@ -527,6 +571,7 @@ def refresh_defs_state_impl(
     management_types: set["DefsStateManagementType"],
 ):
     from dagster_cloud_cli.commands.ci import state
+    from dagster_cloud_cli.config_utils import get_organization, get_user_token
 
     state_store = state.FileStore(statedir=statedir)
     locations = state_store.list_selected_locations()
@@ -534,6 +579,9 @@ def refresh_defs_state_impl(
     if not locations:
         click.echo("No locations to refresh.")
         return
+
+    api_token = check.not_none(get_user_token(ctx))
+    organization_name = check.not_none(get_organization(ctx))
 
     # Determine which projects/locations to process
     if dg_context.is_project:
@@ -577,6 +625,30 @@ def refresh_defs_state_impl(
             for mt in management_types:
                 cmd.extend(["--management-type", mt.value])
 
+            # Fetch and inject env vars from Dagster Plus into subprocess
+            subprocess_env = None
+            try:
+                secrets = _fetch_secrets_for_location(
+                    location_state,
+                    api_token,
+                    organization_name,
+                    location_state.location_name,
+                )
+                if secrets:
+                    subprocess_env = {**os.environ, **secrets}
+                    click.echo(
+                        f"Injecting {len(secrets)} environment variable(s) from Dagster Plus "
+                        f"for location: {location_state.location_name}"
+                    )
+            except Exception as e:
+                click.echo(
+                    click.style(
+                        f"Warning: Failed to fetch environment variables from Dagster Plus "
+                        f"for {location_state.location_name}: {e}",
+                        fg="yellow",
+                    )
+                )
+
             click.echo(
                 f"Refreshing defs state for location: {location_state.location_name} with command: {cmd}"
             )
@@ -584,7 +656,7 @@ def refresh_defs_state_impl(
             try:
                 # activate the venv for the subprocess to ensure CLIs are available
                 with activate_venv(project_context.root_path / ".venv"):
-                    subprocess.run(cmd, check=True, capture_output=False)
+                    subprocess.run(cmd, check=True, capture_output=False, env=subprocess_env)
             except subprocess.CalledProcessError as e:
                 click.echo(
                     click.style(
@@ -628,6 +700,10 @@ def refresh_defs_state_command(
 ):
     """[Experimental] If using StateBackedComponents, this command will execute the `refresh_state` on each of them,
     and set the defs_state_info for each location.
+
+    Environment variables from Dagster Plus are automatically fetched and injected into the
+    subprocess environment during state refresh. Uses fullDeploymentScope for production deploys
+    and allBranchDeploymentsScope for branch deploys.
     """
     from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
@@ -760,11 +836,13 @@ def notify_command(project_dir: str, **global_options: object) -> None:
     source = metrics.get_source()
     if source == CliEventTags.source.github:
         event = github_context.get_github_event(project_dir)
-        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud."
+        deployment_name = location_states[0].deployment_name if location_states else None
+        deployment_label = f" (`{deployment_name}`)" if deployment_name else ""
+        msg = f"Your pull request at commit `{event.github_sha}` is automatically being deployed to Dagster Cloud{deployment_label}."
         event.update_pr_comment(
             msg + "\n\n" + report.markdown_report(location_states),
             orig_author="github-actions[bot]",
-            orig_text="Dagster Cloud",
+            orig_text=f"Dagster Cloud{deployment_label}",
         )
     else:
         raise click.UsageError("'dg plus deploy notify' is only available within Github actions.")

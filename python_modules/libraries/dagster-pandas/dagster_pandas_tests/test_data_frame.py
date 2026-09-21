@@ -62,7 +62,7 @@ def test_basic_job_with_pandas_dataframe_dagster_type():
     assert result.success
     for event in result.all_node_events:
         if event.event_type_value == "STEP_OUTPUT":
-            mock_df_output_metadata = event.event_specific_data.type_check_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            mock_df_output_metadata = event.event_specific_data.type_check_data.metadata  # ty: ignore[unresolved-attribute]
             assert len(mock_df_output_metadata) == 1
             assert "max_pid" in mock_df_output_metadata
 
@@ -140,7 +140,7 @@ def test_execute_summary_stats_null_function():
         lambda value: {"qux": MetadataValue.text("baz")},
     )
     assert len(metadata) == 1
-    assert metadata["qux"] == MetadataValue.text("baz")  # pyright: ignore[reportCallIssue,reportArgumentType]
+    assert metadata["qux"] == MetadataValue.text("baz")
 
 
 def test_execute_summary_stats_error():
@@ -275,7 +275,7 @@ def test_basic_job_with_pandas_dataframe_dagster_type_metadata():
     assert result.success
     for event in result.all_node_events:
         if event.event_type_value == "STEP_OUTPUT":
-            mock_df_output_metadata = event.event_specific_data.type_check_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            mock_df_output_metadata = event.event_specific_data.type_check_data.metadata  # ty: ignore[unresolved-attribute]
             assert len(mock_df_output_metadata) == 1
             assert "max_pid" in mock_df_output_metadata
 

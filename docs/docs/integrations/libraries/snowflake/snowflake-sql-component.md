@@ -12,7 +12,7 @@ partnerlink: https://www.snowflake.com/en/
 
 Dagster provides a ready-to-use `TemplatedSQLComponent` which can be used alongside the `SnowflakeConnectionComponent` provided by the [dagster-snowflake](/integrations/libraries/snowflake/dagster-snowflake) library to execute SQL queries in Dagster in order to rebuild data assets in your Snowflake instance. This guide will walk you through how to use these components to execute your SQL.
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -26,7 +26,7 @@ Finally, add the `dagster-snowflake` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/2-add-snowflake.txt" />
 
-## 2. Scaffold a SQL component definition
+## Step 2: Scaffold a SQL component definition
 
 Now that you have a Dagster project, you can scaffold a templated SQL component definition. You'll need to provide a name for your component instance. In this example, we'll create a component definition that will execute a SQL query to calculate the daily revenue from a table of sales transactions.
 
@@ -36,7 +36,7 @@ The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/snowflake-sql-component/4-tree.txt" />
 
-## 3. Configure Snowflake connection
+## Step 3: Configure Snowflake connection
 
 You'll need to configure a Snowflake connection component to enable the SQL component to connect to your Snowflake instance. For more information on Snowflake configuration, see the [Using Snowflake with Dagster](/integrations/libraries/snowflake/using-snowflake-with-dagster#step-1-configure-the-snowflake-resource) guide.
 
@@ -56,7 +56,7 @@ The scaffold call will generate a connection component configuration:
 
 You will only need a single connection component in your project for each Snowflake instance you'd like to connect to - this connection component can be used by multiple SQL components.
 
-## 4. Write custom SQL
+## Step 4: Write custom SQL
 
 You can customize the SQL template and define the assets that will be created. Update your `defs.yaml` file with a SQL template and template variables. You can also specify properties for the asset in Dagster, such as a group name and kind tag:
 
@@ -94,7 +94,7 @@ Then update your component configuration to reference the external file:
   language="yaml"
 />
 
-## 5. Launch your assets
+## Step 5: Launch your assets
 
 Once your component is configured, you can launch your assets to execute the SQL queries:
 

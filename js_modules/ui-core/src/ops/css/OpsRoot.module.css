@@ -1,0 +1,31 @@
+.opListItem {
+  cursor: pointer;
+  font-size: 14px;
+  gap: 8px;
+  padding: 12px 24px;
+  user-select: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.opListItemSelected {
+  background: var(--color-background-light);
+  box-shadow:
+    var(--color-accent-blue) 4px 0 0 inset,
+    var(--color-keyline-default) 0 -1px 0 inset;
+  color: var(--color-text-default);
+}
+
+.opListItemUnselected {
+  background: var(--color-background-default);
+  box-shadow:
+    transparent 4px 0 0 inset,
+    var(--color-keyline-default) 0 -1px 0 inset;
+  color: var(--color-text-light);
+}
+
+.opListColumnContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

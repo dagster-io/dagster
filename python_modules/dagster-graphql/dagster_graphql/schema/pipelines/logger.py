@@ -24,8 +24,8 @@ class GrapheneLogger(graphene.ObjectType):
         super().__init__()
         self._get_config_type = get_config_type
         self._logger_def_snap = check.inst_param(logger_def_snap, "logger_def_snap", LoggerDefSnap)
-        self.name = logger_def_snap.name
-        self.description = logger_def_snap.description
+        self.name = logger_def_snap.name  # ty: ignore[invalid-assignment]
+        self.description = logger_def_snap.description  # ty: ignore[invalid-assignment]
 
     def resolve_configField(self, _: ResolveInfo):
         if self._logger_def_snap.config_field_snap:

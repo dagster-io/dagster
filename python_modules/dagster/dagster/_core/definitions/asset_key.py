@@ -4,7 +4,8 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeAlias, TypeVar, Union
 
 import dagster_shared.seven as seven
-from dagster_pipes import to_assey_key_path
+from dagster_pipes import to_asset_key_path
+from dagster_shared.record import record
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -67,6 +68,7 @@ class AssetKey(IHaveNew):
     @public
     @cached_property
     def path(self) -> Sequence[str]:
+        """Sequence[str]: The components of the asset key as a list of strings."""
         return list(self.parts)
 
     def __str__(self):
@@ -89,9 +91,14 @@ class AssetKey(IHaveNew):
     def to_escaped_user_string(self) -> str:
         r"""Similar to to_user_string, but escapes slashes in the path components with backslashes.
 
+        Produces a string that uniquely identifies the AssetKey: backslashes in components are
+        escaped as ``\\`` and slashes as ``\/`` before joining with ``/``.
+
         E.g. ["first_component", "second/component"] -> "first_component/second\/component"
         """
-        return ASSET_KEY_DELIMITER.join([part.replace("/", "\\/") for part in self.path])
+        return ASSET_KEY_DELIMITER.join(
+            part.replace("\\", "\\\\").replace("/", "\\/") for part in self.path
+        )
 
     def to_python_identifier(self, suffix: str | None = None) -> str:
         """Build a valid Python identifier based on the asset key that can be used for
@@ -111,7 +118,7 @@ class AssetKey(IHaveNew):
     @staticmethod
     def from_escaped_user_string(asset_key_string: str) -> "AssetKey":
         """Inverse of to_escaped_user_string."""
-        return AssetKey(to_assey_key_path(asset_key_string))
+        return AssetKey(to_asset_key_path(asset_key_string))
 
     @staticmethod
     def from_db_string(asset_key_string: str | None) -> Optional["AssetKey"]:
@@ -250,11 +257,47 @@ class AssetCheckKey(NamedTuple):
         return AssetCheckKey(asset_key, self.name)
 
 
-EntityKey: TypeAlias = AssetKey | AssetCheckKey
-T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
+@whitelist_for_serdes
+@record(kw_only=False)
+class AssetJobKey:
+    job_name: PublicAttr[str]
+
+    def to_user_string(self) -> str:
+        return self.job_name
+
+    @staticmethod
+    def from_user_string(user_string: str) -> "AssetJobKey":
+        return AssetJobKey(job_name=user_string)
+
+    def to_db_string(self) -> str:
+        return seven.json.dumps({"job_name": self.job_name})
+
+    @staticmethod
+    def from_db_string(db_string: str) -> Optional["AssetJobKey"]:
+        try:
+            values = seven.json.loads(db_string)
+            if isinstance(values, dict) and values.keys() == {"job_name"}:
+                return AssetJobKey(job_name=check.inst(values["job_name"], str))
+            return None
+        except seven.JSONDecodeError:
+            return None
+
+    @staticmethod
+    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetJobKey":
+        return AssetJobKey(job_name=graphql_input["jobName"])
+
+
+AssetOrCheckKey: TypeAlias = AssetKey | AssetCheckKey
+EntityKey: TypeAlias = AssetKey | AssetCheckKey | AssetJobKey
+T_EntityKey = TypeVar(
+    "T_EntityKey", AssetKey, AssetCheckKey, AssetJobKey, AssetOrCheckKey, EntityKey
+)
 
 
 def entity_key_from_db_string(db_string: str) -> EntityKey:
+    job_key = AssetJobKey.from_db_string(db_string)
+    if job_key:
+        return job_key
     check_key = AssetCheckKey.from_db_string(db_string)
     return check_key if check_key else check.not_none(AssetKey.from_db_string(db_string))
 

@@ -21,17 +21,21 @@ An Airflow DAG with three tasks and a daily schedule:
 from airflow.decorators import dag, task
 from datetime import datetime, timedelta
 
+
 @task
 def fetch_data(source: str = "api") -> dict:
     return {"source": source, "data": [1, 2, 3, 4, 5]}
+
 
 @task
 def process_data(data: dict) -> dict:
     return {"source": data["source"], "processed": [x * 2 for x in data["data"]]}
 
+
 @task
 def save_results(processed: dict) -> str:
     return f"Saved {len(processed['processed'])} items from {processed['source']}"
+
 
 @dag(
     dag_id="simple_sequential_pipeline",
@@ -45,6 +49,7 @@ def simple_sequential_pipeline():
     data = fetch_data()
     processed = process_data(data)
     save_results(processed)
+
 
 dag_instance = simple_sequential_pipeline()
 ```
@@ -75,7 +80,7 @@ Three Dagster assets with a schedule:
 
 **Schedule.** The `@dag(schedule="0 9 * * *")` becomes a <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator /> wrapping a <PyObject section="assets" module="dagster" object="define_asset_job" /> that selects the three assets.
 
-**Airflow Connections become Dagster resources.** Airflow Connections (database URLs, API credentials stored in the Airflow metadata DB) become Dagster [resources](/guides/build/external-resources/). You can define a resource class and inject it into your assets in the function signature—the equivalent of `Variable.get()` or `BaseHook.get_connection()` is a resource attribute read at runtime.
+**Airflow Connections become Dagster resources.** Airflow Connections (database URLs, API credentials stored in the Airflow metadata DB) become Dagster [resources](/guides/build/external-resources). You can define a resource class and inject it into your assets in the function signature—the equivalent of `Variable.get()` or `BaseHook.get_connection()` is a resource attribute read at runtime.
 
 **Airflow sensors become Dagster `@sensor` definitions.** Airflow `ExternalTaskSensor` and `FileSensor` become Dagster [`@sensor`](/guides/automate/sensors) definitions. A sensor polls for a condition and yields a `RunRequest` when it's met—the same pattern, but version-controlled alongside your asset code.
 

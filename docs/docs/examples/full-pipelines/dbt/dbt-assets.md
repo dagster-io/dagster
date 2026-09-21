@@ -10,7 +10,7 @@ When dbt executes commands, it does so at the project level. For example, runnin
 
 In Dagster, we take a different approach: each dbt model becomes its own asset. This lets us build a fine-grained dependency graph where each model is linked to its upstream and downstream assets across both dbt and non-dbt layers within the Dagster project.
 
-## 1. Scaffold the dbt component definition
+## Step 1: Scaffold the dbt component definition
 
 The best way to integrate a dbt project with Dagster is through the [dbt component](/integrations/libraries/dbt). This component turns a dbt project directory into a set of Dagster assets, one per model. You can scaffold it with `dg`:
 
@@ -25,7 +25,7 @@ attributes:
   project: '{{ context.project_root }}/src/project_dbt/analytics'
 ```
 
-## 2. Customize the dbt model assets
+## Step 2: Customize the dbt model assets
 
 By default, all dbt models are represented as assets, but the asset keys may not align with the rest of your Dagster project.
 

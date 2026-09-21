@@ -87,6 +87,31 @@ def test_compute_log_to_disk():
 @pytest.mark.skipif(
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
+def test_logs_captured_message_text():
+    """Regression test: LOGS_CAPTURED message should use neutral wording that does not
+    imply real-time streaming, since cloud compute log managers only upload on completion
+    by default (dagster-io/dagster#4341).
+    """
+    with dg.instance_for_test() as instance:
+        spew_job = define_job()
+        result = spew_job.execute_in_process(instance=instance)
+        assert result.success
+
+        capture_events = [
+            event
+            for event in result.all_events
+            if event.event_type == DagsterEventType.LOGS_CAPTURED
+        ]
+        assert len(capture_events) == 1
+        event = capture_events[0]
+        assert event.message is not None
+        assert "Capturing logs for process (pid:" in event.message
+        assert "Started capturing" not in event.message
+
+
+@pytest.mark.skipif(
+    should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
+)
 def test_compute_log_to_disk_multiprocess():
     spew_job = dg.reconstructable(define_job)
     with dg.instance_for_test() as instance:
@@ -136,9 +161,9 @@ def test_compute_log_manager():
         log_key = manager.build_log_key_for_run(result.run_id, event.logs_captured_data.file_key)
         assert manager.is_capture_complete(log_key)
         log_data = manager.get_log_data(log_key)
-        stdout = normalize_file_content(log_data.stdout.decode("utf-8"))  # pyright: ignore[reportOptionalMemberAccess]
+        stdout = normalize_file_content(log_data.stdout.decode("utf-8"))  # ty: ignore[unresolved-attribute]
         assert stdout == f"{HELLO_FROM_OP}\n{HELLO_FROM_OP}"
-        stderr = normalize_file_content(log_data.stderr.decode("utf-8"))  # pyright: ignore[reportOptionalMemberAccess]
+        stderr = normalize_file_content(log_data.stderr.decode("utf-8"))  # ty: ignore[unresolved-attribute]
         cleaned_logs = stderr.replace("\x1b[34m", "").replace("\x1b[0m", "")
         assert "dagster - DEBUG - spew_job - " in cleaned_logs
 
@@ -236,7 +261,7 @@ def test_long_op_names():
         assert manager.is_capture_complete(log_key)
 
         log_data = manager.get_log_data(log_key)
-        assert normalize_file_content(log_data.stdout.decode("utf-8")) == HELLO_FROM_OP  # pyright: ignore[reportOptionalMemberAccess]
+        assert normalize_file_content(log_data.stdout.decode("utf-8")) == HELLO_FROM_OP  # ty: ignore[unresolved-attribute]
 
 
 def execute_inner(step_key: str, dagster_run: DagsterRun, instance_ref: InstanceRef) -> None:
@@ -284,7 +309,7 @@ def test_single():
         for step_key in step_keys:
             log_key = [dagster_run.run_id, "compute_logs", step_key]
             log_data = instance.compute_log_manager.get_log_data(log_key)
-            assert normalize_file_content(log_data.stdout.decode("utf-8")) == expected_inner_output(  # pyright: ignore[reportOptionalMemberAccess]
+            assert normalize_file_content(log_data.stdout.decode("utf-8")) == expected_inner_output(  # ty: ignore[unresolved-attribute]
                 step_key
             )
 
@@ -292,7 +317,7 @@ def test_single():
             [dagster_run.run_id, "compute_logs", job_name]
         )
 
-        assert normalize_file_content(full_data.stdout.decode("utf-8")).startswith(  # pyright: ignore[reportOptionalMemberAccess]
+        assert normalize_file_content(full_data.stdout.decode("utf-8")).startswith(  # ty: ignore[unresolved-attribute]
             expected_outer_prefix()
         )
 
@@ -330,14 +355,14 @@ def test_compute_log_base_with_spaces():
                 log_key = [dagster_run.run_id, "compute_logs", step_key]
                 log_data = instance.compute_log_manager.get_log_data(log_key)
                 assert normalize_file_content(
-                    log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
+                    log_data.stdout.decode("utf-8")  # ty: ignore[unresolved-attribute]
                 ) == expected_inner_output(step_key)
 
             full_data = instance.compute_log_manager.get_log_data(
                 [dagster_run.run_id, "compute_logs", job_name]
             )
 
-            assert normalize_file_content(full_data.stdout.decode("utf-8")).startswith(  # pyright: ignore[reportOptionalMemberAccess]
+            assert normalize_file_content(full_data.stdout.decode("utf-8")).startswith(  # ty: ignore[unresolved-attribute]
                 expected_outer_prefix()
             )
 
@@ -371,7 +396,7 @@ def test_multi():
         for step_key in step_keys:
             log_key = [dagster_run.run_id, "compute_logs", step_key]
             log_data = instance.compute_log_manager.get_log_data(log_key)
-            assert normalize_file_content(log_data.stdout.decode("utf-8")) == expected_inner_output(  # pyright: ignore[reportOptionalMemberAccess]
+            assert normalize_file_content(log_data.stdout.decode("utf-8")) == expected_inner_output(  # ty: ignore[unresolved-attribute]
                 step_key
             )
 
@@ -382,6 +407,6 @@ def test_multi():
         # The way that the multiprocess compute-logging interacts with pytest (which stubs out the
         # sys.stdout fileno) makes this difficult to test.  The pytest-captured stdout only captures
         # the stdout from the outer process, not also the inner process
-        assert normalize_file_content(full_data.stdout.decode("utf-8")).startswith(  # pyright: ignore[reportOptionalMemberAccess]
+        assert normalize_file_content(full_data.stdout.decode("utf-8")).startswith(  # ty: ignore[unresolved-attribute]
             expected_outer_prefix()
         )

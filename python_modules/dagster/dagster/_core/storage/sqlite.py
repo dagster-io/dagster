@@ -5,6 +5,15 @@ import dagster._check as check
 
 LAST_KNOWN_STAMPED_SQLITE_ALEMBIC_REVISION = "5771160a95ad"
 
+# busy_timeout applied to SQLite connections opened by Dagster's SQLite-backed
+# storages. Passed as `connect_args={"timeout": ...}` to `create_engine`, which
+# forwards it to `sqlite3.connect(timeout=...)`. The pysqlite default is 5s,
+# which is too tight under heavy contended writes on slower filesystems
+# (overlayfs / EBS gp3) — concurrent writers can spend longer than that queued
+# behind the WAL writer lock and surface `sqlite3.OperationalError: database is
+# locked`.
+SQLITE_BUSY_TIMEOUT_SECONDS = 30
+
 
 def create_db_conn_string(base_dir: str, db_name: str) -> str:
     check.str_param(base_dir, "base_dir")

@@ -1,10 +1,10 @@
 import {Colors} from '@dagster-io/ui-components';
 import {LinkVertical as Link} from '@visx/shape';
-import styled from 'styled-components';
 
 import {Edge} from './OpEdges';
 import {SVGMonospaceText} from './SVGComponents';
 import {IPoint, isHighlighted} from './common';
+import styles from './css/ExternalConnectionNode.module.css';
 
 interface ExternalConnectionNodeProps {
   layout: IPoint;
@@ -48,7 +48,8 @@ export const ExternalConnectionNode = ({
 
   return (
     <g onMouseEnter={() => onHighlightEdges(edges)} onMouseLeave={() => onHighlightEdges([])}>
-      <BackingRect
+      <rect
+        className={styles.backingRect}
         {...textSize}
         {...textOrigin}
         onClick={(e) => e.stopPropagation()}
@@ -63,13 +64,3 @@ export const ExternalConnectionNode = ({
     </g>
   );
 };
-
-const BackingRect = styled('rect')`
-  stroke-width: 10px;
-  fill: ${Colors.backgroundDefault()};
-  stroke: ${Colors.backgroundDefault()};
-  &:hover {
-    fill: ${Colors.backgroundLightHover()};
-    stroke: ${Colors.backgroundLightHover()};
-  }
-`;

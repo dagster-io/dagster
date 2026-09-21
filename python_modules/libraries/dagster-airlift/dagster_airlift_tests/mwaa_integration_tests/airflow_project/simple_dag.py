@@ -18,12 +18,10 @@ default_args = {
 globals_dict = globals()
 
 for i in range(1000):
-    dag = DAG(
-        f"dag_{i}", default_args=default_args, schedule_interval=None, is_paused_upon_creation=False
-    )
+    dag = DAG(f"dag_{i}", default_args=default_args, schedule=None, is_paused_upon_creation=False)
     print_op = PythonOperator(task_id="print_task", python_callable=print_hello, dag=dag)
     downstream_print_op = PythonOperator(
         task_id="downstream_print_task", python_callable=print_hello, dag=dag
     )
-    print_op >> downstream_print_op  # pyright: ignore[reportUnusedExpression]
+    print_op >> downstream_print_op
     globals_dict[f"dag_{i}"] = dag

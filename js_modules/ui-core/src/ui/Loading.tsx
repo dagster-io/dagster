@@ -19,7 +19,7 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
   const {error, data, loading} = props.queryResult;
 
   const [blankLoading, setBlankLoading] = React.useState(true);
-  const isLoading = !data || (loading && !allowStaleData) || Object.keys(data as any).length === 0;
+  const isLoading = !data || (loading && !allowStaleData) || Object.keys(data).length === 0;
 
   React.useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;

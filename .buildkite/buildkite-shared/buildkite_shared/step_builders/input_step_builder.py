@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, Self
 
+from buildkite_shared.step_builders.slug import make_label
 from typing_extensions import Required, TypedDict
 
 
@@ -17,10 +18,17 @@ class InputStepConfiguration(TypedDict, closed=True, total=False):
 class InputStepBuilder:
     _step: InputStepConfiguration
 
-    def __init__(self, prompt: str, fields: list[dict[str, Any]], key: str | None = None) -> None:
-        self._step: InputStepConfiguration = {"input": prompt, "fields": fields}
-        if key is not None:
-            self._step["key"] = key
+    def __init__(
+        self,
+        key: str,
+        fields: list[dict[str, Any]],
+        label_emojis: list[str] | None = None,
+    ) -> None:
+        self._step: InputStepConfiguration = {
+            "key": key,
+            "input": make_label(key, label_emojis),
+            "fields": fields,
+        }
 
     def with_condition(self, condition: str) -> Self:
         self._step["if"] = condition  # pyright: ignore[reportGeneralTypeIssues]

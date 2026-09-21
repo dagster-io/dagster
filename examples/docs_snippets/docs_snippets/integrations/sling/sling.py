@@ -5,21 +5,21 @@ import dagster as dg
 source = SlingConnectionResource(
     name="MY_PG",
     type="postgres",
-    host="localhost",  # type: ignore
-    port=5432,  # type: ignore
-    database="my_database",  # type: ignore
-    user="my_user",  # type: ignore
-    password=dg.EnvVar("PG_PASS"),  # type: ignore
+    host="localhost",
+    port=5432,
+    database="my_database",
+    user="my_user",
+    password=dg.EnvVar("PG_PASS"),
 )
 
 target = SlingConnectionResource(
     name="MY_SF",
     type="snowflake",
-    host="hostname.snowflake",  # type: ignore
-    user="username",  # type: ignore
-    database="database",  # type: ignore
-    password=dg.EnvVar("SF_PASSWORD"),  # type: ignore
-    role="role",  # type: ignore
+    host="hostname.snowflake",
+    user="username",
+    database="database",
+    password=dg.EnvVar("SF_PASSWORD"),
+    role="role",
 )
 
 

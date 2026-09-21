@@ -1,5 +1,6 @@
+###########
 dagster-k8s
-===========
+###########
 
 See also the `Kubernetes deployment guide <https://docs.dagster.io/deployment/oss/deployment-options/kubernetes>`_.
 
@@ -7,8 +8,10 @@ This library contains utilities for running Dagster with Kubernetes. This includ
 allowing the webserver to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
 for a Dagster deployment on a Kubernetes cluster.
 
+****
 APIs
-----
+****
+
 .. currentmodule:: dagster_k8s
 
 .. autoconfigurable:: K8sRunLauncher
@@ -17,15 +20,17 @@ APIs
 .. autoconfigurable:: k8s_job_executor
   :annotation: ExecutorDefinition
 
+***
 Ops
----
+***
 
 .. autoconfigurable:: k8s_job_op
 
 .. autofunction:: execute_k8s_job
 
+**********
 Python API
-----------
+**********
 
 The ``K8sRunLauncher`` allows webserver instances to be configured to launch new runs by starting
 per-run Kubernetes Jobs. To configure the ``K8sRunLauncher``\ , your ``dagster.yaml`` should
@@ -65,8 +70,9 @@ include a section like:
        scheduler_name:
        kubeconfig_file: 
 
+**********
 Helm chart
-----------
+**********
 
 For local dev (e.g., on kind or minikube):
 
@@ -84,8 +90,9 @@ For local dev (e.g., on kind or minikube):
 Upon installation, the Helm chart will provide instructions for port forwarding
 the Dagster webserver and Flower (if configured).
 
+*************
 Running tests
--------------
+*************
 
 To run the unit tests:
 
@@ -121,7 +128,7 @@ Docker images and the ``dagster-k8s`` Helm chart. For faster development, you ca
 Instructions are below.
 
 Faster local development (with kind)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+====================================
 
 You may find that the kind cluster creation, image loading, and kind cluster creation loop
 is too slow for effective local dev.
@@ -154,7 +161,7 @@ kubeconfig file location with:
    export KUBECONFIG=/tmp/kubeconfig
 
 Manual kind cluster setup
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 The test fixtures provided by ``dagster-k8s`` automate the process described below, but sometimes
 it's useful to manually configure a kind cluster and load images onto it.
@@ -196,7 +203,7 @@ Then you can run pytest as follows:
    pytest --kind-cluster=kind-test
 
 Faster local development (with an existing K8s cluster)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=======================================================
 
 If you already have a development K8s cluster available, you can run tests on that cluster vs.
 running locally in ``kind``.
@@ -227,7 +234,7 @@ Then, you can run tests on EKS with:
    pytest --cluster-provider="kubeconfig" --existing-helm-namespace="dagster-test-<some id>" -s -vvv
 
 Validating Helm charts
-^^^^^^^^^^^^^^^^^^^^^^
+======================
 
 To test / validate Helm charts, you can run:
 
@@ -237,7 +244,7 @@ To test / validate Helm charts, you can run:
    helm lint
 
 Enabling GCR access from Minikube
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+=================================
 
 To enable GCR access from Minikube:
 
@@ -250,7 +257,7 @@ To enable GCR access from Minikube:
        --docker-email=my@email.com
 
 A note about PVCs
-^^^^^^^^^^^^^^^^^
+=================
 
 Both the Postgres and the RabbitMQ Helm charts will store credentials using Persistent Volume
 Claims, which will outlive test invocations and calls to ``helm uninstall``. These must be deleted if
@@ -262,7 +269,7 @@ you want to change credentials. To view your pvcs, run:
 
 
 Testing Redis
-^^^^^^^^^^^^^
+=============
 
 The Redis Helm chart installs w/ a randomly-generated password by default; turn this off:
 
@@ -277,8 +284,9 @@ Then, to connect to your database from outside the cluster execute the following
    kubectl port-forward --namespace default svc/dagredis-master 6379:6379
    redis-cli -h 127.0.0.1 -p 6379
 
+*****
 Pipes
------
+*****
 
 .. autoclass:: PipesK8sClient
 

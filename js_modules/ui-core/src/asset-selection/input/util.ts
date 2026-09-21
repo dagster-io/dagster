@@ -8,7 +8,13 @@ import {AssetHealthStatus} from '../../graphql/types';
 import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
-export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
+// Shared by every asset search box, so they all draw on the same recent-search history.
+export const ASSET_SELECTION_RECENTS_KEY = 'asset-selection';
+
+export const getAttributesMap = (
+  assets: AssetGraphQueryItem[],
+  opts?: {sensorNames?: string[]; scheduleNames?: string[]},
+) => {
   const assetNamesSet: Set<string> = new Set();
   const seenTags: Set<string> = new Set();
   const tagSet: Set<{key: string; value: string}> = new Set();
@@ -16,6 +22,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const groupsSet: Set<string> = new Set();
   const kindsSet: Set<string> = new Set();
   const codeLocationSet: Set<string> = new Set();
+  const jobNamesSet: Set<string> = new Set();
 
   assets.forEach((asset) => {
     assetNamesSet.add(asset.name);
@@ -58,6 +65,11 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     } else {
       kindsSet.add('');
     }
+    if (asset.node.jobNames.length > 0) {
+      asset.node.jobNames.forEach((jobName) => {
+        jobNamesSet.add(jobName);
+      });
+    }
     const repository = asset.node.repository;
     if (repository && repository.location.name && repository.name) {
       const location = buildRepoPathForHuman(repository.name, repository.location.name);
@@ -73,6 +85,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const groups = Array.from(groupsSet).sort();
   const kinds = Array.from(kindsSet).sort();
   const codeLocations = Array.from(codeLocationSet).sort();
+  const jobNames = Array.from(jobNamesSet).sort();
   const data = {
     key: assetNames,
     tag: tagNames,
@@ -80,6 +93,24 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     group: groups,
     kind: kinds,
     code_location: codeLocations,
+    is: ['external', 'materializable'],
+    partitions: ['none', 'static', 'dynamic', 'time', 'multipartitions'],
+    automation_type: [
+      'any',
+      'none',
+      'disabled',
+      'schedule',
+      'sensor',
+      'sensor/standard',
+      'sensor/run_status',
+      'sensor/asset',
+      'sensor/multi_asset',
+      'sensor/automation_condition',
+      'sensor/unknown',
+    ],
+    sensor: (opts?.sensorNames ?? []).sort(),
+    schedule: (opts?.scheduleNames ?? []).sort(),
+    job: jobNames,
   };
   if (assetHealthEnabled()) {
     const statuses = [
@@ -113,6 +144,12 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   owner: 'owner',
   tag: 'tag',
   status: 'status',
+  partitions: 'partition',
+  automation_type: 'automation',
+  sensor: 'sensors',
+  schedule: 'schedule',
+  job: 'job',
+  is: 'flag',
 };
 
 export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(

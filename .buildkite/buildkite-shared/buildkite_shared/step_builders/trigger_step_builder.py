@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Self
 
+from buildkite_shared.step_builders.slug import make_label
 from typing_extensions import Required, TypedDict
 
 
@@ -22,11 +23,12 @@ class TriggerStepConfiguration(TypedDict, closed=True, total=False):
 class TriggerStepBuilder:
     _step: TriggerStepConfiguration
 
-    def __init__(self, label: str, pipeline: str, key: str | None = None) -> None:
-        self._step: TriggerStepConfiguration = {"trigger": pipeline, "label": label}
-
-        if key is not None:
-            self._step["key"] = key
+    def __init__(self, key: str, pipeline: str, label_emojis: list[str] | None = None) -> None:
+        self._step: TriggerStepConfiguration = {
+            "key": key,
+            "trigger": pipeline,
+            "label": make_label(key, label_emojis),
+        }
 
     def with_build_params(self, build_params: dict[str, object]) -> Self:
         self._step["build"] = build_params

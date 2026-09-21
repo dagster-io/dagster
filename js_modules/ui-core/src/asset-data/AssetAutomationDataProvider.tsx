@@ -69,15 +69,25 @@ const memoizedAssetKeys = weakMapMemoize((assetKeys: AssetKeyInput[]) => {
   return assetKeys.map((key) => tokenForAssetKey(key));
 });
 
-export function useAssetsAutomationData(
-  assetKeys: AssetKeyInput[],
-  thread: LiveDataThreadID = 'AssetAutomation', // Use AssetAutomation to get 250 batch size
-) {
+type AssetsAutomationDataConfig = {
+  assetKeys: AssetKeyInput[];
+  thread?: LiveDataThreadID;
+  blockTrace?: boolean;
+  skip?: boolean;
+};
+
+export function useAssetsAutomationData({
+  assetKeys,
+  thread = 'AssetAutomation', // Use AssetAutomation to get 250 batch size
+  blockTrace = true,
+  skip = false,
+}: AssetsAutomationDataConfig) {
   const keys = memoizedAssetKeys(assetKeys);
-  const result = AssetAutomationData.useLiveData(keys, thread);
+  const result = AssetAutomationData.useLiveData(keys, thread, skip);
   useBlockTraceUntilTrue(
     'useAssetsAutomationData',
     !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+    {skip: skip || !blockTrace},
   );
   return result;
 }

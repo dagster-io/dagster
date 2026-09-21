@@ -130,7 +130,9 @@ def test_build_defs_no_conflicts(omni_workspace: OmniWorkspace):
     doc2 = create_sample_document(identifier="doc-2", name="Doc Two")
     workspace_data = create_sample_workspace_data([doc1, doc2])
 
-    specs = component.build_defs_from_workspace_data(context, workspace_data).get_all_asset_specs()
+    specs = component.build_defs_from_workspace_data(
+        context, workspace_data
+    ).resolve_all_asset_specs()
 
     # Should have 2 documents + 1 shared query = 3 total specs (queries deduplicate by table)
     assert len(specs) == 3
@@ -181,7 +183,7 @@ def test_complex_folder_structures(component: OmniComponent):
     workspace_data = create_sample_workspace_data([doc])
 
     defs = component.build_defs_from_workspace_data(context, workspace_data)
-    assets = defs.get_all_asset_specs()
+    assets = defs.resolve_all_asset_specs()
 
     # Find the document asset
     doc_assets = [a for a in assets if "Deep Document" in str(a.key)]
@@ -208,7 +210,7 @@ def test_folder_name_sanitization(component: OmniComponent):
     workspace_data = create_sample_workspace_data([doc])
 
     defs = component.build_defs_from_workspace_data(context, workspace_data)
-    assets = defs.get_all_asset_specs()
+    assets = defs.resolve_all_asset_specs()
 
     # Find the document asset
     doc_assets = [a for a in assets if "Test Doc" in str(a.key)]
@@ -243,7 +245,7 @@ def test_end_to_end_integration(omni_workspace):
 
         # Step 2: Build definitions from workspace data
         defs = component.build_defs_from_workspace_data(context, workspace_data)
-        assets = defs.get_all_asset_specs()
+        assets = defs.resolve_all_asset_specs()
 
     # Verify end-to-end results
     assert len(assets) == 3  # 1 document + 2 queries

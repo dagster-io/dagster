@@ -1,7 +1,7 @@
 import {memo} from 'react';
-import styled from 'styled-components';
 
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
+import styles from './css/OpEdges.module.css';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
 import {OpGraphOpFragment} from './types/OpGraph.types';
 import {buildSVGPathVertical} from '../asset-graph/Utils';
@@ -79,7 +79,7 @@ export const OpEdges = memo(
             onMouseLeave={() => props.onHighlight([])}
             onMouseEnter={() => props.onHighlight([{a: from.opName, b: to.opName}])}
           >
-            <StyledPath d={path} style={{stroke: props.color}} />
+            <path className={styles.styledPath} d={path} style={{stroke: props.color}} />
             {outputIsDynamic(props.ops, from) && (
               <DynamicMarker
                 color={props.color}
@@ -127,8 +127,3 @@ const DynamicMarker = ({
     <polygon points="18.6367188 35.1669922 20.8203125 32.9707031 12.0605469 24.2109375 3.28808594 32.9707031 5.47167969 35.1669922 12.0605469 28.5908203"></polygon>
   </g>
 );
-
-const StyledPath = styled('path')`
-  stroke-width: 4;
-  fill: none;
-`;

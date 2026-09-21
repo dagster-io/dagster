@@ -114,7 +114,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -177,9 +177,9 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
 
         # inject Dagster labels
         if not request_is_used:
-            job = params["job"]  # type: ignore
+            job = params["job"]
         else:
-            job: Job = params["request"].job  # type: ignore
+            job: Job = params["request"].job
 
         job.labels = {
             **(job.labels or {}),
@@ -231,7 +231,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
         request_is_used = self._request_parameter_is_used(params)
 
         if request_is_used:
-            return params["request"].project_id, params["request"].region  # type: ignore
+            return params["request"].project_id, params["request"].region
         else:
             return params.get("project_id"), params.get("region")
 

@@ -1,9 +1,9 @@
 import {Box} from '@dagster-io/ui-components';
 import faker from 'faker';
 import {MemoryRouter} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {AssetKeyTagCollection} from '../AssetTagCollections';
+import styles from './css/AssetKeyTagCollection.module.css';
 
 const makeKeys = (count: number) => {
   return Array(count)
@@ -29,12 +29,12 @@ export const Scenarios = () => {
 
   return (
     <MemoryRouter>
-      <Row>
+      <Box className={styles.row}>
         <div>old style</div>
         <div>tag style</div>
         <div>tag + maxrows</div>
-      </Row>
-      <Row>
+      </Box>
+      <Box className={styles.row}>
         <div>
           <AssetKeyTagCollection assetKeys={single} />
         </div>
@@ -44,8 +44,8 @@ export const Scenarios = () => {
         <div style={{maxHeight: 60}}>
           <AssetKeyTagCollection assetKeys={single} useTags maxRows={2} />
         </div>
-      </Row>
-      <Row>
+      </Box>
+      <Box className={styles.row}>
         <div style={{overflow: 'hidden', maxWidth: 400}}>
           <AssetKeyTagCollection assetKeys={singleSuperLong} />
         </div>
@@ -55,8 +55,8 @@ export const Scenarios = () => {
         <div style={{minWidth: 0, maxHeight: 60}}>
           <AssetKeyTagCollection assetKeys={singleSuperLong} useTags maxRows={2} />
         </div>
-      </Row>
-      <Row>
+      </Box>
+      <Box className={styles.row}>
         <div>
           <AssetKeyTagCollection assetKeys={two} />
         </div>
@@ -66,8 +66,8 @@ export const Scenarios = () => {
         <div style={{maxHeight: 60}}>
           <AssetKeyTagCollection assetKeys={two} useTags maxRows={2} />
         </div>
-      </Row>
-      <Row>
+      </Box>
+      <Box className={styles.row}>
         <div>
           <AssetKeyTagCollection assetKeys={many} />
         </div>
@@ -77,8 +77,8 @@ export const Scenarios = () => {
         <div style={{maxHeight: 60}}>
           <AssetKeyTagCollection assetKeys={many} useTags maxRows={2} />
         </div>
-      </Row>
-      <Row>
+      </Box>
+      <Box className={styles.row}>
         <div>
           <AssetKeyTagCollection assetKeys={manySuperLong} />
         </div>
@@ -88,19 +88,7 @@ export const Scenarios = () => {
         <div style={{maxHeight: 60}}>
           <AssetKeyTagCollection assetKeys={manySuperLong} useTags maxRows={2} />
         </div>
-      </Row>
+      </Box>
     </MemoryRouter>
   );
 };
-
-const Row = styled(Box)`
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  min-height: 30px;
-  margin-bottom: 24px;
-  height: 100%;
-
-  & > div {
-    min-width: 0;
-  }
-`;

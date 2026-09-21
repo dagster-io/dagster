@@ -54,7 +54,7 @@ describe('ExecutionSessionStorage', () => {
   });
 
   describe('Preserve session object', () => {
-    let storedObject: any = null;
+    let storedObject: IStorageData | null = null;
     const TestComponent = (props: {initial?: Partial<IExecutionSession>}) => {
       const [data] = useExecutionSessionStorage(REPO_ADDRESS, JOB_NAME, props.initial);
       storedObject = data;

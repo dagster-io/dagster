@@ -1,8 +1,9 @@
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {Box} from './Box';
 import {Table, TableProps} from './Table';
+import styles from './css/MetadataTable.module.css';
 
 export type MetadataTableRow = {key: string; label?: React.ReactNode; value: React.ReactNode};
 
@@ -15,7 +16,7 @@ export const MetadataTable = (props: Props) => {
   const {rows, spacing = 4} = props;
 
   return (
-    <StyledTable>
+    <table className={styles.styledTable}>
       <tbody>
         {rows.map((pair: MetadataTableRow | null | undefined) => {
           if (!pair) {
@@ -26,7 +27,7 @@ export const MetadataTable = (props: Props) => {
             <tr key={key}>
               <td>
                 <Box padding={{vertical: spacing, right: 32}}>
-                  <MetadataKey>{label ?? key}</MetadataKey>
+                  <div className={styles.metadataKey}>{label ?? key}</div>
                 </Box>
               </td>
               <td>
@@ -36,33 +37,17 @@ export const MetadataTable = (props: Props) => {
           );
         })}
       </tbody>
-    </StyledTable>
+    </table>
   );
 };
 
-export const StyledTable = styled.table`
-  border-spacing: 0;
-  td {
-    vertical-align: top;
-  }
+export const StyledTable = ({className, ...props}: React.HTMLAttributes<HTMLTableElement>) => (
+  <table className={clsx(styles.styledTable, className)} {...props} />
+);
 
-  td .bp5-control {
-    margin-bottom: 0;
-  }
-`;
-
-const MetadataKey = styled.div`
-  font-weight: 400;
-`;
-
-export const MetadataTableWIP = styled(Table)<TableProps>`
-  td:first-child {
-    white-space: nowrap;
-    width: 1px;
-    max-width: 400px;
-    word-break: break-word;
-    overflow: hidden;
-    padding-right: 24px;
-    text-overflow: ellipsis;
-  }
-`;
+export const MetadataTableWIP = ({
+  className,
+  ...props
+}: TableProps & React.HTMLAttributes<HTMLTableElement>) => (
+  <Table className={clsx(styles.metadataTableWIP, className)} {...props} />
+);

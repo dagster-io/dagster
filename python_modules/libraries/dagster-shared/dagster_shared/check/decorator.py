@@ -89,7 +89,7 @@ def {checked_fn_name}(__checked_wrapper{args_str}):
             fn_name=checked_fn_name,
         )
 
-        self.__class__.__call__ = call
+        self.__class__.__call__ = call  # ty: ignore[invalid-assignment]
         return call(self, *args, **kwargs)
 
 

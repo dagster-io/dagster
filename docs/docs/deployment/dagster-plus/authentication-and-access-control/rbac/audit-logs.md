@@ -49,7 +49,7 @@ To access a visual GraphiQL interface, visit the GraphQL endpoint in a browser:
 You can also query the API directly using the Python client:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/dagster-plus/access/rbac/audit-logs.graphql"
+  path="docs_snippets/docs_snippets/deployment/dagster_plus/access/rbac/audit-logs.graphql"
   language="graphql"
   title="Audit log GraphQL query"
 />

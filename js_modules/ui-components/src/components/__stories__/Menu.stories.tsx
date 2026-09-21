@@ -1,5 +1,4 @@
-import {useCallback, useState} from 'react';
-import styled from 'styled-components';
+import React, {useCallback, useState} from 'react';
 
 import {Box} from '../Box';
 import {Checkbox} from '../Checkbox';
@@ -247,6 +246,6 @@ export const InteractiveMenu = () => {
   );
 };
 
-const Container = styled.div`
-  box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
-`;
+const Container = ({style, children}: {style?: React.CSSProperties; children: React.ReactNode}) => (
+  <div style={{boxShadow: `${Colors.shadowDefault()} 0px 2px 12px`, ...style}}>{children}</div>
+);

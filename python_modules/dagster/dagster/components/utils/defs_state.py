@@ -4,6 +4,7 @@ from dagster_shared.record import record
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 from pydantic import Field
 
+from dagster.components.resolved.form_config import ComponentFormConfig
 from dagster.components.resolved.model import Model, Resolver
 
 
@@ -58,6 +59,7 @@ class DefsStateConfig:
 ResolvedDefsStateConfig = Annotated[
     DefsStateConfigArgs,
     Resolver.default(
-        description="Configuration for determining how state is stored and persisted for this component."
+        description="Configuration for determining how state is stored and persisted for this component.",
+        form_config=ComponentFormConfig(hidden=True),
     ),
 ]

@@ -1,0 +1,55 @@
+{
+  "repositoriesOrError": {
+    "__typename": "RepositoryConnection",
+    "nodes": [
+      {
+        "name": "__repository__",
+        "location": {
+          "name": "dagster_open_platform"
+        },
+        "jobs": [
+          {
+            "id": "job-001",
+            "name": "analytics_daily_job",
+            "description": "Runs daily analytics pipeline",
+            "isAssetJob": true,
+            "tags": [
+              {"key": "dagster/priority", "value": "high"}
+            ],
+            "schedules": [
+              {
+                "name": "analytics_daily_schedule",
+                "cronSchedule": "0 6 * * *",
+                "scheduleState": {"status": "RUNNING"}
+              }
+            ],
+            "sensors": []
+          },
+          {
+            "id": "job-002",
+            "name": "etl_ingestion_job",
+            "description": "Ingests data from external sources",
+            "isAssetJob": false,
+            "tags": [],
+            "schedules": [],
+            "sensors": [
+              {
+                "name": "new_files_sensor",
+                "sensorState": {"status": "RUNNING"}
+              }
+            ]
+          },
+          {
+            "id": "job-003",
+            "name": "__ASSET_JOB_0",
+            "description": null,
+            "isAssetJob": true,
+            "tags": [],
+            "schedules": [],
+            "sensors": []
+          }
+        ]
+      }
+    ]
+  }
+}

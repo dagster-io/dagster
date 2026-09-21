@@ -41,7 +41,6 @@ from dagster_airbyte.resources import (
 from dagster_airbyte.translator import (
     AirbyteConnectionTableProps as AirbyteConnectionTableProps,
     AirbyteJobStatusType as AirbyteJobStatusType,
-    AirbyteState as AirbyteState,
     DagsterAirbyteTranslator as DagsterAirbyteTranslator,
 )
 from dagster_airbyte.types import AirbyteOutput as AirbyteOutput

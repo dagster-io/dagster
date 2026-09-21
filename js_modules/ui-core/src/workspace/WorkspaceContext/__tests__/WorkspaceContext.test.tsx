@@ -5,6 +5,7 @@ import {act, renderHook, waitFor} from '@testing-library/react';
 import {useContext} from 'react';
 import {RecoilRoot} from 'recoil';
 
+import {FetchResult} from '../../../apollo-client';
 import {AppContext} from '../../../app/AppContext';
 import {
   buildPythonError,
@@ -24,12 +25,42 @@ import {
   CodeLocationStatusQueryVersion,
   LocationWorkspaceAssetsQueryVersion,
   LocationWorkspaceQueryVersion,
+  WorkspaceLocationFragment,
 } from '../types/WorkspaceQueries.types';
 import {repoLocationToRepos} from '../util';
 
 const mockCache = cache as any;
 
-const mockedCacheStore: Record<string, any> = {};
+interface MockCacheInstance {
+  has: jest.Mock;
+  get: jest.Mock;
+  set: jest.Mock;
+  delete: jest.Mock;
+}
+const mockedCacheStore: Record<string, MockCacheInstance> = {};
+
+function getMockOrThrow(mocks: MockedResponse[], index: number): MockedResponse {
+  const mock = mocks[index];
+  if (!mock) {
+    throw new Error(`Expected mocks[${index}] to be defined`);
+  }
+  return mock;
+}
+
+/** Extract `.result.data` from a MockedResponse whose result is a plain object (not a function). */
+function getMockData(mock: MockedResponse | undefined): FetchResult {
+  if (!mock) {
+    throw new Error('Expected mock to be defined');
+  }
+  const result = mock.result;
+  if (typeof result === 'function') {
+    throw new Error('Expected mock result to be an object, not a function');
+  }
+  if (!result) {
+    throw new Error('Expected mock to have a result');
+  }
+  return result;
+}
 
 jest.mock('../../../util/idb-lru-cache', () => {
   return {
@@ -189,8 +220,8 @@ describe('WorkspaceContext', () => {
     const mockCbs = mocks.map(getMockResultFn);
 
     // Include code location status mock a second time since we call runOnlyPendingTimersAsync twice
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const {result} = renderWithMocks([...mocks, mocks[0]!]);
+    const firstMock = getMockOrThrow(mocks, 0);
+    const {result} = renderWithMocks([...mocks, firstMock]);
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
@@ -265,38 +296,31 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
+      value: {data: getMockData(mocks[0]).data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[1]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[2]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[3]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location1Assets.has.mockResolvedValue(true);
     caches.location1Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[4]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[4]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     caches.location2Assets.has.mockResolvedValue(true);
     caches.location2Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[5]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[5]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     caches.location3Assets.has.mockResolvedValue(true);
     caches.location3Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[6]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[6]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
 
     const mockCbs = mocks.map(getMockResultFn);
@@ -360,43 +384,35 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
+      value: {data: getMockData(mocks[0]).data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[1]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[2]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[3]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location1Assets.has.mockResolvedValue(true);
     caches.location1Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[4]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[4]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     caches.location2Assets.has.mockResolvedValue(true);
     caches.location2Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[5]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[5]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     caches.location3Assets.has.mockResolvedValue(true);
     caches.location3Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[6]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[6]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     const mockCbs = updatedMocks.map(getMockResultFn);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const {result} = renderWithMocks([...updatedMocks, updatedMocks[0]!]);
+    const {result} = renderWithMocks([...updatedMocks, getMockOrThrow(updatedMocks, 0)]);
 
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
@@ -461,38 +477,31 @@ describe('WorkspaceContext', () => {
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(true);
     caches.codeLocationStatusQuery.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[0]! as any).result.data, version: CodeLocationStatusQueryVersion},
+      value: {data: getMockData(mocks[0]).data, version: CodeLocationStatusQueryVersion},
     });
     caches.location1.has.mockResolvedValue(true);
     caches.location1.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[1]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[1]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location2.has.mockResolvedValue(true);
     caches.location2.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[2]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[2]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location3.has.mockResolvedValue(true);
     caches.location3.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[3]! as any).result.data, version: LocationWorkspaceQueryVersion},
+      value: {data: getMockData(mocks[3]).data, version: LocationWorkspaceQueryVersion},
     });
     caches.location1Assets.has.mockResolvedValue(true);
     caches.location1Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[4]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[4]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     caches.location2Assets.has.mockResolvedValue(true);
     caches.location2Assets.get.mockResolvedValue({
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      value: {data: (mocks[5]! as any).result.data, version: LocationWorkspaceAssetsQueryVersion},
+      value: {data: getMockData(mocks[5]).data, version: LocationWorkspaceAssetsQueryVersion},
     });
     const mockCbs = updatedMocks.map(getMockResultFn);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const {result} = renderWithMocks([...updatedMocks, updatedMocks[0]!]);
+    const {result} = renderWithMocks([...updatedMocks, getMockOrThrow(updatedMocks, 0)]);
 
     await act(async () => {
       await jest.runAllTicks();
@@ -561,8 +570,7 @@ describe('WorkspaceContext', () => {
     location2.locationOrLoadError = error;
 
     const mocks = buildWorkspaceMocks([location1, location2, location3], {delay: 10});
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    mocks[0]!.maxUsageCount = 999;
+    getMockOrThrow(mocks, 0).maxUsageCount = 999;
     const mockCbs = mocks.map(getMockResultFn);
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
@@ -610,8 +618,8 @@ describe('WorkspaceContext', () => {
 
     // Verify that repositories from location2 are not included
     expect(result.current.allRepos).toEqual([
-      ...repoLocationToRepos(location1.locationOrLoadError as any),
-      ...repoLocationToRepos(location3.locationOrLoadError as any),
+      ...repoLocationToRepos(location1.locationOrLoadError as WorkspaceLocationFragment),
+      ...repoLocationToRepos(location3.locationOrLoadError as WorkspaceLocationFragment),
     ]);
   });
 
@@ -620,8 +628,7 @@ describe('WorkspaceContext', () => {
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
 
     const mocks = buildWorkspaceMocks([], {delay: 10});
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    mocks[0]!.maxUsageCount = 9999;
+    getMockOrThrow(mocks, 0).maxUsageCount = 9999;
 
     const {result} = renderWithMocks(mocks);
 
@@ -657,8 +664,7 @@ describe('WorkspaceContext', () => {
     });
     const mockCbs = mocks.map(getMockResultFn);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const {result} = renderWithMocks([...mocks, mocks[0]!]);
+    const {result} = renderWithMocks([...mocks, getMockOrThrow(mocks, 0)]);
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});

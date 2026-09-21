@@ -1,0 +1,19 @@
+# start
+# code_location_2.py
+import json
+
+from dagster import Definitions, asset
+
+
+@asset(deps=["code_location_1_asset"])
+def code_location_2_asset():
+    with open("/tmp/data/code_location_1_asset.json", encoding="utf-8") as f:
+        x = json.load(f)
+
+    with open("/tmp/data/code_location_2_asset.json", "w+", encoding="utf-8") as f:
+        json.dump(x + 6, f)
+
+
+defs = Definitions(assets=[code_location_2_asset])
+
+# end

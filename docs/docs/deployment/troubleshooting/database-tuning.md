@@ -1,6 +1,6 @@
 ---
-title: Cleaning older data from your Dagster database
-sidebar_position: 500
+title: 'Cleaning older data from your Dagster database'
+sidebar_position: 400
 description: How to bulk delete older data from your Dagster database to reduce its size.
 ---
 
@@ -59,7 +59,9 @@ class DagsterCleanupDebugLogsConfig(Config):
 
 @op
 def dagster_cleanup_debug_logs(
-    context: OpExecutionContext, postgresql_dagster_engine: ResourceParam[Engine], config: DagsterCleanupDebugLogsConfig
+    context: OpExecutionContext,
+    postgresql_dagster_engine: ResourceParam[Engine],
+    config: DagsterCleanupDebugLogsConfig,
 ):
     # Run in transaction
     with postgresql_dagster_engine.begin() as conn:
@@ -78,7 +80,9 @@ def dagster_cleanup_debug_logs(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} debug logs older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} debug logs older than {config.delete_after_days} days!"
+    )
 
 
 class DagsterCleanupInfoLogsConfig(Config):
@@ -87,7 +91,9 @@ class DagsterCleanupInfoLogsConfig(Config):
 
 @op
 def dagster_cleanup_info_logs(
-    context: OpExecutionContext, postgresql_dagster_engine: ResourceParam[Engine], config: DagsterCleanupInfoLogsConfig
+    context: OpExecutionContext,
+    postgresql_dagster_engine: ResourceParam[Engine],
+    config: DagsterCleanupInfoLogsConfig,
 ):
     # Run in transaction
     with postgresql_dagster_engine.begin() as conn:
@@ -106,7 +112,9 @@ def dagster_cleanup_info_logs(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} info logs older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} info logs older than {config.delete_after_days} days!"
+    )
 
 
 class DagsterCleanupWarningLogsConfig(Config):
@@ -136,11 +144,15 @@ def dagster_cleanup_warning_logs(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} warning logs older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} warning logs older than {config.delete_after_days} days!"
+    )
 
 
 class DagsterCleanupUnimportantEventsConfig(Config):
-    delete_after_days: int = Field(30, description="Number of days to keep transitory/unimportant event logs")
+    delete_after_days: int = Field(
+        30, description="Number of days to keep transitory/unimportant event logs"
+    )
 
 
 @op
@@ -184,7 +196,9 @@ def dagster_cleanup_unimportant_events(
             ),
             parameters={"delete_after_days": config.delete_after_days},
         )
-    context.log.info(f"Deleted {result.rowcount} unimportant events older than {config.delete_after_days} days!")
+    context.log.info(
+        f"Deleted {result.rowcount} unimportant events older than {config.delete_after_days} days!"
+    )
 
 
 @job(
@@ -248,13 +262,13 @@ JOIN
 
 ### About VACUUM (RECOVERING DISK SPACE)
 
-From the [Postgresql documentation](https://www.postgresql.org/docs/current/routine-vacuuming.html#VACUUM-FOR-SPACE-RECOVERY):
+From the [PostgreSQL documentation](https://www.postgresql.org/docs/current/routine-vacuuming.html#VACUUM-FOR-SPACE-RECOVERY):
 
 > The standard form of VACUUM removes dead row versions in tables and indexes and marks the space available for future reuse. **However, it will not return the space to the operating system**, except in the special case where one or more pages at the end of a table become entirely free and an exclusive table lock can be easily obtained. In contrast, VACUUM FULL actively **compacts tables by writing a complete new version of the table file with no dead space**. This minimizes the size of the table, but can take a long time. **It also requires extra disk space for the new copy of the table, until the operation completes.**
 
 > The usual goal of routine vacuuming is to do standard VACUUMs often enough to avoid needing VACUUM FULL. The autovacuum daemon attempts to work this way, and in fact will never issue VACUUM FULL. In this approach, **the idea is not to keep tables at their minimum size, but to maintain steady-state usage of disk space: each table occupies space equivalent to its minimum size plus however much space gets used up between vacuum runs. Although VACUUM FULL can be used to shrink a table back to its minimum size and return the disk space to the operating system, there is not much point in this if the table will just grow again in the future.** Thus, moderately-frequent standard VACUUM runs are a better approach than infrequent VACUUM FULL runs for maintaining heavily-updated tables.
 
-## Step 3: Shrink the datbase with `pg_repack`
+## Step 3: Shrink the database with `pg_repack`
 
 Running `pg_repack` on the database can cut the overall disk usage in a few hours with little to no downtime.
 
@@ -269,17 +283,17 @@ Additional Azure documentation:
 
 :::
 
-1. Install the `pg_repack` client (the one that matching your Postgres version).
+1. Install the `pg_repack` client (the one matching your Postgres version).
 
    ```shell
    brew install postgresql@14 pgxn
    pgxn install pg_repack==1.4.7
    ```
 
-2. Add permissions for dagster schema to admin user that will run `pg_repack`:
+2. Add permissions for the dagster schema to the admin user that will run `pg_repack`:
 
    ```sql
-   GRANT dagster to my_admin
+   GRANT dagster to my_admin;
    ```
 
 3. Test `pg_repack` command with dry run:
@@ -364,8 +378,8 @@ Additional Azure documentation:
 
 ## Resources
 
-- [PostgresQL Europe: Managing your Tuple Graveyard - Chelsea Dole](https://youtu.be/aW94NwTACBM). Very educative!
+- [PostgreSQL Europe: Managing your Tuple Graveyard - Chelsea Dole](https://youtu.be/aW94NwTACBM). Very informative!
 - After running **VACUUM** on `event_logs` table, it will stop growing in size as the space from deleted rows will get reused for new inserts.
 - To visibly reduce disk size, you need to run **VACUUM FULL** (🚨 needs EXCLUSIVE LOCK => Downtime). Also needs extra space to create copy of shrunk table, so you need to upscale the disk first.
-- [pg_repack](https://reorg.github.io/pg_repack/) or [pg_sqeeze](https://www.cybertec-postgresql.com/en/products/pg_squeeze/) act like VACUUM FULL, but with less EXCLUSIVE LOCKS (which are blocking).
+- [pg_repack](https://reorg.github.io/pg_repack/) or [pg_squeeze](https://www.cybertec-postgresql.com/en/products/pg_squeeze/) act like VACUUM FULL, but with less EXCLUSIVE LOCKS (which are blocking).
 - [Using pg_squeeze](https://www.enterprisedb.com/docs/pg_extensions/pg_squeeze/using/#disk-space-requirements)

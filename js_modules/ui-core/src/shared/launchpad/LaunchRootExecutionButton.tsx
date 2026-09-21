@@ -2,6 +2,7 @@ import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import * as React from 'react';
 
 import {IconName} from '../../../../ui-components/src';
+import {isNewTabClick} from '../../hooks/useOpenInNewTab';
 import {LaunchButton} from '../../launchpad/LaunchButton';
 import {LaunchBehavior} from '../../runs/RunUtils';
 import {LaunchPipelineExecutionMutationVariables} from '../../runs/types/RunUtils.types';
@@ -23,12 +24,13 @@ export const LaunchRootExecutionButton = (props: LaunchRootExecutionButtonProps)
   const {hasLaunchPermission} = props;
   const launchWithTelemetry = useLaunchWithTelemetry();
 
-  const onLaunch = async () => {
+  const onLaunch = async (e: React.MouseEvent | KeyboardEvent) => {
     const variables = props.getVariables();
     if (variables == null) {
       return;
     }
-    await launchWithTelemetry(variables, props.behavior);
+    const openInNewTab = isNewTabClick(e);
+    await launchWithTelemetry(variables, {behavior: props.behavior, openInNewTab});
   };
 
   return (

@@ -34,7 +34,7 @@ _ORIGINAL_CLASS_FIELD = "__original_class__"
 _KW_ONLY_FIELD = "__kw_only__"
 _REPLACE_NEW_FIELD = "__replace_new__"
 
-_sample_nt = namedtuple("_canary", "x")
+_sample_nt = namedtuple("_sample_nt", "x")
 # use a sample to avoid direct private imports (_collections._tuplegetter)
 _tuple_getter_type = type(getattr(_sample_nt, "x"))
 
@@ -116,7 +116,7 @@ def _namedtuple_record_transform(
     """
     field_set, defaults = _get_field_set_and_defaults(cls, kw_only)
 
-    base = NamedTuple(f"_{cls.__name__}", field_set.items())
+    base = NamedTuple(f"_{cls.__name__}", list(field_set.items()))  # ty: ignore[invalid-named-tuple]
     nt_new = base.__new__
 
     generated_new = None
@@ -152,12 +152,12 @@ def _namedtuple_record_transform(
 
     # the default namedtuple record cannot handle subclasses that have different fields from their
     # parents if both are records
-    base.__repr__ = _repr
+    base.__repr__ = _repr  # ty: ignore[invalid-assignment]
     nt_iter = base.__iter__
 
     # disable iteration unless the debugger is running which uses iteration to display values
     if not os.getenv("DEBUGPY_RUNNING"):
-        base.__iter__ = _banned_iter
+        base.__iter__ = _banned_iter  # ty: ignore[invalid-assignment]
         base.__getitem__ = _banned_idx
 
     # these will override an implementation on the class if it exists
@@ -199,7 +199,7 @@ def _namedtuple_record_transform(
 
         # For records with custom new, put the generated new on the NT base class
         if generated_new:
-            base.__new__ = generated_new
+            base.__new__ = generated_new  # ty: ignore[invalid-assignment]
 
     elif generated_new:
         if _defines_own_new(cls):

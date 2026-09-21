@@ -1,10 +1,10 @@
-import yaml
 from dagster._core.test_utils import environ
 from dagster._core.workspace.config_schema import process_workspace_config
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 def _validate_yaml_contents(yaml_contents):
-    return process_workspace_config(yaml.safe_load(yaml_contents))
+    return process_workspace_config(safe_load_yaml(yaml_contents))
 
 
 def test_python_file():

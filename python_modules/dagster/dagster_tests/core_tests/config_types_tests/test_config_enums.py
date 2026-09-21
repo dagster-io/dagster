@@ -182,7 +182,10 @@ def test_list_enum_with_bad_default_value():
 
     # This error message is bad
     # https://github.com/dagster-io/dagster/issues/2339
-    assert "Invalid default_value for Field." in str(exc_info.value)
+    assert (
+        "Invalid default_value for Field. Ensure all required config entries are provided and all values match the expected types."
+        in str(exc_info.value)
+    )
     assert "Error 1: Value at path root[0] for enum type NativeEnum must be a string" in str(
         exc_info.value
     )

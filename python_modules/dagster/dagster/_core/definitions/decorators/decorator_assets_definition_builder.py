@@ -56,10 +56,11 @@ def get_function_params_without_context_or_config_or_resources(
 
     resource_arg_names = {arg.name for arg in get_resource_args(fn)}
 
-    new_input_args = []
-    for input_arg in input_params:
-        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-            new_input_args.append(input_arg)
+    new_input_args = [
+        input_arg
+        for input_arg in input_params
+        if input_arg.name != "config" and input_arg.name not in resource_arg_names
+    ]
 
     return new_input_args
 
@@ -292,7 +293,7 @@ class DecoratorAssetsDefinitionBuilder:
     def for_multi_asset(
         *, fn: Callable[..., Any], args: DecoratorAssetsDefinitionBuilderArgs
     ) -> "DecoratorAssetsDefinitionBuilder":
-        op_name = args.name or fn.__name__
+        op_name = args.name or fn.__name__  # ty: ignore[unresolved-attribute]
 
         if args.asset_out_map and args.specs:
             raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")

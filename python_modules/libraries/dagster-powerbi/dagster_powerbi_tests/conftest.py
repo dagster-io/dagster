@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from typing import cast
 
 import pytest
 import responses
@@ -160,22 +161,22 @@ def workspace_data_fixture(workspace_id: str) -> PowerBIWorkspaceData:
     return PowerBIWorkspaceData(
         workspace_id=workspace_id,
         dashboards_by_id={
-            sample_dash["id"]: PowerBIContentData(
+            cast("str", sample_dash["id"]): PowerBIContentData(
                 content_type=PowerBIContentType.DASHBOARD, properties=sample_dash
             )
         },
         reports_by_id={
-            SAMPLE_REPORT["id"]: PowerBIContentData(
+            cast("str", SAMPLE_REPORT["id"]): PowerBIContentData(
                 content_type=PowerBIContentType.REPORT, properties=SAMPLE_REPORT
             )
         },
         semantic_models_by_id={
-            sample_semantic_model["id"]: PowerBIContentData(
+            cast("str", sample_semantic_model["id"]): PowerBIContentData(
                 content_type=PowerBIContentType.SEMANTIC_MODEL, properties=sample_semantic_model
             )
         },
         data_sources_by_id={
-            ds["datasourceId"]: PowerBIContentData(
+            cast("str", ds["datasourceId"]): PowerBIContentData(
                 content_type=PowerBIContentType.DATA_SOURCE, properties=ds
             )
             for ds in data_sources
@@ -314,7 +315,7 @@ def second_workspace_data_fixture(second_workspace_id: str) -> PowerBIWorkspaceD
         dashboards_by_id={},
         reports_by_id={},
         semantic_models_by_id={
-            OTHER_SAMPLE_SEMANTIC_MODEL["id"]: PowerBIContentData(
+            cast("str", OTHER_SAMPLE_SEMANTIC_MODEL["id"]): PowerBIContentData(
                 content_type=PowerBIContentType.SEMANTIC_MODEL,
                 properties=OTHER_SAMPLE_SEMANTIC_MODEL,
             )

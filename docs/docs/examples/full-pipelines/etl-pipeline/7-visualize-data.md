@@ -6,7 +6,7 @@ sidebar_position: 80
 
 In this final step, we will visualize some of the data we have been modeling in a dashboard using [Evidence](https://evidence.dev/) connected to our model assets.
 
-## 1. Add the Evidence project
+## Step 1: Add the Evidence project
 
 First, we will clone an Evidence project that is already configured to work with the data we have modeled with dbt:
 
@@ -28,7 +28,7 @@ Change into that directory and install the necessary packages with [`npm`](https
 
 <CliInvocationExample contents="cd dashboard && npm install" />
 
-## 2. Define the Evidence Component
+## Step 2: Scaffold the Evidence component definition
 
 Next, we will need to install Dagster's [Evidence integration](https://docs.dagster.io/integrations/libraries/evidence):
 
@@ -60,7 +60,7 @@ This will add the directory `dashboard` to the `etl_tutorial` module:
 
 <CliInvocationExample path="docs_projects/project_etl_tutorial/tree/evidence.txt" />
 
-## 3. Configure the Evidence `defs.yaml`
+## Step 3: Configure the Evidence `defs.yaml`
 
 Unlike the other components we used, which generated individual assets for each model in our project, the Evidence component will register a single asset for the entire Evidence deployment. This asset will build all the sources and dashboards within our Evidence project.
 
@@ -72,7 +72,7 @@ However, we can still configure our Evidence component to be dependent on multip
   title="src/etl_tutorial/defs/dashboard/defs.yaml"
 />
 
-## 4. Execute the Evidence asset
+## Step 4: Execute the Evidence asset
 
 With the Evidence component configured, our assets graph should look like this:
 

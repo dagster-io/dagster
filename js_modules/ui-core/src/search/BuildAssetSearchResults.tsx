@@ -1,5 +1,5 @@
 import {COMMON_COLLATOR} from '../app/Util';
-import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
+import {WorkspaceAssetNode} from '../assets/useAllAssets';
 import {isKindTag} from '../graph/KindTags';
 import {buildTagString} from '../ui/tagAsString';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
@@ -53,7 +53,7 @@ export type GroupMetadata = {
 
 type AssetDefinitionMetadata = {
   definition: Pick<
-    AssetTableDefinitionFragment,
+    WorkspaceAssetNode,
     'owners' | 'groupName' | 'repository' | 'tags' | 'kinds'
   > | null;
 };

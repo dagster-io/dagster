@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Literal
 
 import dagster as dg
+from anthropic.types import TextBlock
 from dagster_anthropic import AnthropicResource
 from pydantic import BaseModel
 
@@ -100,7 +101,9 @@ def user_input_prompt(
             messages=[{"role": "user", "content": prompt}],
         )
 
-    message = resp.content[0].text
+    block = resp.content[0]
+    assert isinstance(block, TextBlock)
+    message = block.text
     schema = UserInputSchema(**json.loads(message))
     context.log.info(schema)
     return schema
@@ -159,7 +162,9 @@ def available_fuel_stations(
                 messages=[{"role": "user", "content": prompt}],
             )
 
-            message = resp.content[0].text
+            block = resp.content[0]
+            assert isinstance(block, TextBlock)
+            message = block.text
             data = json.loads(message)
 
             if data["is_open"]:

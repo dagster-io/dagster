@@ -1,6 +1,39 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type AssetCheckCanExecuteIndividually =
+  | 'CAN_EXECUTE'
+  | 'NEEDS_USER_CODE_UPGRADE'
+  | 'REQUIRES_MATERIALIZATION';
+
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: string;
+};
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type BackfillPolicyType = 'MULTI_RUN' | 'SINGLE_RUN';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type PipelineSelector = {
+  assetCheckSelection?: Array<AssetCheckHandleInput> | null | undefined;
+  assetSelection?: Array<AssetKeyInput> | null | undefined;
+  pipelineName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+  solidSelection?: Array<string> | null | undefined;
+};
 
 export type PartitionDefinitionForLaunchAssetFragment = {
   __typename: 'PartitionDefinition';
@@ -624,7 +657,7 @@ export type LaunchAssetExecutionAssetNodeFragment = {
   } | null;
 };
 
-export type LaunchAssetLoaderQueryVariables = Types.Exact<{
+export type LaunchAssetLoaderQueryVariables = Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 
@@ -1249,7 +1282,7 @@ export type LaunchAssetLoaderQuery = {
   }>;
 };
 
-export type LaunchAssetLoaderJobQueryVariables = Types.Exact<{
+export type LaunchAssetLoaderJobQueryVariables = Exact<{
   job: Types.PipelineSelector;
 }>;
 
@@ -1863,10 +1896,10 @@ export type LaunchAssetLoaderJobQuery = {
   }>;
 };
 
-export type LaunchAssetLoaderResourceQueryVariables = Types.Exact<{
-  pipelineName: Types.Scalars['String']['input'];
-  repositoryLocationName: Types.Scalars['String']['input'];
-  repositoryName: Types.Scalars['String']['input'];
+export type LaunchAssetLoaderResourceQueryVariables = Exact<{
+  pipelineName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
 }>;
 
 export type LaunchAssetLoaderResourceQuery = {
@@ -1885,7 +1918,7 @@ export type LaunchAssetLoaderResourceQuery = {
       };
 };
 
-export type LaunchAssetCheckUpstreamQueryVariables = Types.Exact<{
+export type LaunchAssetCheckUpstreamQueryVariables = Exact<{
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 

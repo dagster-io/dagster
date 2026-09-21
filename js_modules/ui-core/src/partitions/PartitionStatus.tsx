@@ -45,6 +45,7 @@ interface PartitionStatusProps {
   hideStatusTooltip?: boolean;
   tooltipMessage?: string;
   selectionWindowSize?: number;
+  dateFilterMessage?: React.ReactNode;
 }
 
 export const PartitionStatus = React.memo(
@@ -58,6 +59,7 @@ export const PartitionStatus = React.memo(
     selectionWindowSize,
     hideStatusTooltip,
     tooltipMessage,
+    dateFilterMessage,
     splitPartitions = false,
   }: PartitionStatusProps) => {
     const ref = React.useRef<HTMLDivElement>(null);
@@ -95,6 +97,22 @@ export const PartitionStatus = React.memo(
     const height = small ? 14 : 24;
     const heightPx = `${height}px`;
 
+    if (partitionNames.length === 0) {
+      return (
+        <div {...containerProps}>
+          <div className={styles.selectionSpansContainer} />
+          <div
+            className={clsx(
+              styles.partitionSpansContainer,
+              small && styles.partitionSpansContainerSmall,
+            )}
+          />
+          <Box flex={{justifyContent: 'center'}} margin={{top: 4}} className={styles.footer}>
+            {dateFilterMessage}
+          </Box>
+        </div>
+      );
+    }
     return (
       <div
         {...containerProps}
@@ -266,12 +284,9 @@ export const PartitionStatus = React.memo(
           ) : null}
         </div>
         {!splitPartitions ? (
-          <Box
-            flex={{justifyContent: 'space-between'}}
-            margin={{top: 4}}
-            style={{fontSize: '0.8rem', color: Colors.textLight(), minHeight: 17}}
-          >
+          <Box flex={{justifyContent: 'space-between'}} margin={{top: 4}} className={styles.footer}>
             <span>{partitionNames[0]}</span>
+            {dateFilterMessage}
             <span>{partitionNames[partitionNames.length - 1]}</span>
           </Box>
         ) : null}

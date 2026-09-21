@@ -1,10 +1,13 @@
+###########################
 dagster-gcp-pyspark library
-===========================
+###########################
 
 .. currentmodule:: dagster_gcp_pyspark
 
+***************
 Google BigQuery
------------------
+***************
+
 This library provides an integration with the `BigQuery <https://cloud.google.com/bigquery>`_ database and PySpark data processing library.
 
 Related Guides:
@@ -18,8 +21,9 @@ Related Guides:
 
 .. autoclass:: BigQueryPySparkTypeHandler
 
+******
 Legacy
-------
+******
 
 .. autoconfigurable:: bigquery_pyspark_io_manager
   :annotation: IOManagerDefinition

@@ -1,0 +1,22 @@
+query GetOrganizationSettings {
+  organizationSettings {
+    settings
+  }
+}
+
+mutation UpdateOrganizationSettings(
+  $organizationSettings: OrganizationSettingsInput!
+) {
+  setOrganizationSettings(organizationSettings: $organizationSettings) {
+    __typename
+    ... on OrganizationSettings {
+      settings
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

@@ -57,8 +57,4 @@ def build_dbt_asset_specs(
         project=project,
     )
 
-    return [
-        # Allow specs to be represented as external assets by adhering to external asset invariants.
-        spec.replace_attributes(skippable=False, code_version=None)
-        for spec in specs
-    ]
+    return specs

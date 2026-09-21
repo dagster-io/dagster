@@ -1,81 +1,4 @@
 # ########################
-# ##### PYRIGHT
-# ########################
-
-# [Docs root]
-#   https://github.com/microsoft/pyright/tree/main/docs
-# [Config option reference]
-#   https://github.com/microsoft/pyright/blob/main/docs/configuration.md
-
-# Pyright does not have a docs site, but the documentation (a collection of
-# markdown files in the GH repo, linked above) is pretty thorough.
-
-[tool.pyright]
-
-typeCheckingMode = "standard"
-
-include = [
-  "docs/sphinx/_ext/dagster-sphinx",
-  "python_modules",
-  "examples",
-  "integration_tests",
-  "scripts",
-]
-
-# Unfortunately pyright does not offer a way to extend the default exclusions, so we have to
-# reiterate them here if we want to add anything else.
-exclude = [
-  "**/node_modules",
-  "**/__pycache__",
-  "**/__generated__",
-  "**/vendor",
-  "**/_vendored",
-  "**/.tox",
-  ".git",
-  "**/.venv*",
-  "**/build",
-]
-
-extraPaths = [
-  ".buildkite/buildkite-shared"
-]
-
-# These two settings point pyright to a python environment to resolve imports against. This virtual
-# environment is defined in the `pyright` tox environment in the tox section below-- that
-# environment must be built before pyright can run correctly.
-venv = ".venv"
-venvPath = "pyright/master"
-
-
-# Minimum version of Python on which code must run. This determines the standard library stubs used by
-# pyright.
-pythonVersion = "3.10"
-
-
-# Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
-# include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.
-# `Any`). This setting does not affect `py.typed` libraries.
-useLibraryCodeForTypes = false
-
-# We use ruff for this.
-reportInvalidStringEscapeSequence = false
-
-# As of 2023-02-02, there are still many `py.typed` libs that are not compliant with the standards
-# for defining a public API.
-reportPrivateImportUsage = false
-
-# Since we only use pyright, there is no need to suppress type errors that pyright does not
-# recognize.
-reportUnnecessaryTypeIgnoreComment = "warning"
-
-# Skip analyzing unannotated code in examples to facilitate terse code.
-executionEnvironments = [
-  { root = "examples", analyzeUnannotatedFunctions=false },
-  { root = "python_modules" },
-  { root = "integration_tests" }
-]
-
-# ########################
 # ##### PYTEST
 # ########################
 
@@ -105,6 +28,66 @@ filterwarnings = [
 markers = [
   "integration: Tests requiring real git operations or other I/O",
   "slow: Tests that take more than 1 second",
+
+  # dagster: misc suite selection
+  "typesignature: Type-signature tests for pythonic resources/config",
+  "nettest: Requires network access",
+
+  # dagster-graphql: graphql_context_test_suite builds a context out of one
+  # marker from each of these groups, and tox selects on the combination.
+  "graphql_context_test_suite: Part of the GraphQL context test suite",
+  "graphql_context_variants: Tests over the GraphQL context variants themselves",
+  "python_client_test_suite: Python GraphQL client test suite",
+  "sqlite_instance: Context backed by a SQLite instance",
+  "postgres_instance: Context backed by a Postgres instance",
+  "asset_aware_instance: Context backed by an asset-aware instance",
+  "managed_grpc_env: Code location served by a managed gRPC server",
+  "deployed_grpc_env: Code location served by a deployed gRPC server",
+  "code_server_cli_grpc_env: Code location served via the code-server CLI",
+  "multi_location: Context with multiple code locations",
+  "lazy_repository: Context with a lazily-loaded repository",
+  "default_run_launcher: Context using the default run launcher",
+  "sync_run_launcher: Context using the synchronous run launcher",
+  "queued_run_coordinator: Context using the queued run coordinator",
+  "non_launchable: Context whose runs cannot be launched",
+  "read_only: Context with read-only permissions",
+  "backfill_daemon: Requires the backfill daemon",
+
+  # dagster-dbt
+  "core: dbt-core tests (applied in conftest)",
+  "cloud: dbt Cloud tests (applied in conftest)",
+  "fusion: dbt Fusion support tests",
+  "snowflake: Requires Snowflake",
+  "bigquery: Requires BigQuery",
+  "derived_metadata: dbt derived column metadata tests",
+
+  # dagster-snowflake
+  "skip_if_no_snowflake_credentials: Skipped without Snowflake credentials",
+
+  # dagster-airflow
+  "requires_no_db: Runs without a database",
+  "requires_local_db: Requires a local database",
+  "requires_persistent_db: Requires a persistent database",
+  "structures: Airflow structure tests",
+
+  # dagster-k8s / helm integration test infra
+  "default: Default Helm subchart configuration",
+  "subchart: Helm subchart tests",
+  "mark_redis: Requires Redis",
+  "mark_rabbitmq: Requires RabbitMQ",
+
+  # dagstermill
+  "notebook_test: Executes a notebook",
+
+  # dagster-dg-cli
+  "serial: Must not run in parallel",
+
+  # dagster-dbt cloud_v2 reconstruction tests (pytest-order)
+  "order: Explicit test ordering",
+
+  # backcompat-test-suite: applied dynamically from MARK_TO_VERSIONS_MAP
+  "user-code-earliest-release: User code at the earliest tested release",
+  "user-code-latest-release: User code at the most recent release",
 ]
 
 ### pytest-asyncio configuration
@@ -155,7 +138,6 @@ exclude = ["*.ipynb"]
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
-"examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 # Modules where it is expected for there to be no __init.py__
 "**/*test*/**/" = ["INP001"]
@@ -163,19 +145,22 @@ exclude = ["*.ipynb"]
 "**/conftest.py" = ["INP001"]
 "examples/**" = ["INP001"]
 "docs/**" = ["INP001"]
-"**/scripts/**" = ["INP001"]
+"**/scripts/**" = ["INP001", "T201"]  # scripts are CLI tools — print is the output channel
 "python_modules/dagster/dagster/_core/storage/alembic/env.py" = ["INP001"]
+"python_modules/dagster/dagster/_core/storage/alembic/versions/__init__.py" = ["INP001"]
 "python_modules/libraries/dagster-airlift/kitchen-sink/**" = ["INP001"]
 # There is an __init__.py.tmpl
 "python_modules/dagster/dagster/_generate/templates/REPO_NAME_PLACEHOLDER/REPO_NAME_PLACEHOLDER/assets.py" = ["INP001"]
+# Project-scaffold templates; the PROJECT_NAME_PLACEHOLDER is substituted at generation time.
+"**/templates/PROJECT_NAME_PLACEHOLDER/**/__init__.py" = ["INP001"]
 
-[tool.ruff.format]
-exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
+# User-facing connectivity reproduction script shown verbatim in the docs; print is the
+# intended output channel and the dagster-cloud API config is read off the instance.
+"examples/docs_snippets/docs_snippets/deployment/dagster_plus/hybrid/test_connection.py" = ["T201", "SLF001"]
+
+# yaml_utils implements the wrapped loader; test_yaml asserts the bare yaml.safe_load behavior for comparison.
+"python_modules/libraries/dagster-shared/dagster_shared/yaml_utils/__init__.py" = ["TID251"]
+"python_modules/libraries/dagster-shared/dagster_shared_tests/test_yaml.py" = ["TID251"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"
-
-[dependency-groups]
-dev = [
-    "erk>=0.6.0",
-]

@@ -1,10 +1,12 @@
 .. currentmodule:: dagster
 
+##########
 Partitions
-==========
+##########
 
+**********************
 Partitions Definitions
-----------------------
+**********************
 
 .. autoclass:: PartitionsDefinition
 
@@ -30,14 +32,16 @@ Partitions Definitions
 
 .. autoclass:: PartitionKeyRange
 
-Partitioned Schedules
----------------------
+*********************
+Partitioned schedules
+*********************
 
 .. autofunction:: build_schedule_from_partitioned_job
     :noindex:
 
-Partition Mapping
------------------
+*****************
+Partition mapping
+*****************
 
 .. autoclass:: PartitionMapping
 
@@ -57,13 +61,15 @@ Partition Mapping
 
 .. autoclass:: MultiPartitionMapping
 
-Backfill Policy
----------------
+***************
+Backfill policy
+***************
 
 .. autoclass:: BackfillPolicy
 
-Partitioned Config
-------------------
+******************
+Partitioned config
+******************
 
 .. autoclass:: PartitionedConfig
 
@@ -79,7 +85,8 @@ Partitioned Config
 
 .. autofunction:: monthly_partitioned_config
 
-Partition Loading Context
--------------------------
+*************************
+Partition loading context
+*************************
 
 .. autofunction:: partition_loading_context

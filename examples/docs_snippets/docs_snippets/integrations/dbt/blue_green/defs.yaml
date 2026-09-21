@@ -1,0 +1,10 @@
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    project_dir: ../../dbt_project
+  # `dbt build` runs models AND tests in one invocation, so the on-run-end
+  # hook sees every test result and can gate the swap. Dagster orchestrates
+  # the build; the blue/green safety lives entirely in the dbt hooks.
+  cli_args:
+    - build

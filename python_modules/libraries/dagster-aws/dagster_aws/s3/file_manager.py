@@ -64,7 +64,7 @@ class S3FileManager(FileManager):
         return file_handle
 
     @contextmanager
-    def read(self, file_handle, mode="rb"):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def read(self, file_handle, mode="rb"):
         check.inst_param(file_handle, "file_handle", S3FileHandle)
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")

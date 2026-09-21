@@ -1,5 +1,4 @@
 import {
-  BodySmall,
   Box,
   Checkbox,
   Colors,
@@ -9,6 +8,7 @@ import {
   ListItem,
   Popover,
   Skeleton,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
@@ -181,13 +181,13 @@ export const ObserveAutomationSensorRow = forwardRef(
                   </Tooltip>
                 ) : null}
               </Box>
-              <BodySmall>
+              <Text size={12}>
                 {sensorData?.sensorType ? (
                   sensorTypeToLabel[sensorData.sensorType]
                 ) : (
                   <Skeleton $width={80} $height={16} />
                 )}
-              </BodySmall>
+              </Text>
             </Box>
           </Box>
         }

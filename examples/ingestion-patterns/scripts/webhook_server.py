@@ -71,14 +71,14 @@ def save_payload(source_id: str, payload: dict) -> str:
     # Load existing payloads
     existing = []
     if source_file.exists():
-        with open(source_file) as f:
+        with open(source_file, encoding="utf-8") as f:
             existing = json.load(f)
 
     # Append new payload
     existing.append(enriched_payload)
 
     # Save back
-    with open(source_file, "w") as f:
+    with open(source_file, "w", encoding="utf-8") as f:
         json.dump(existing, f, indent=2)
 
     return payload_id
@@ -107,9 +107,7 @@ def receive_webhook(source_id: str):
 
     payload_id = save_payload(source_id, payload)
 
-    print(  # noqa: T201
-        f"[{datetime.now().isoformat()}] Received webhook: source={source_id}, id={payload_id}"
-    )
+    print(f"[{datetime.now().isoformat()}] Received webhook: source={source_id}, id={payload_id}")
 
     return jsonify(
         {
@@ -128,7 +126,7 @@ def get_pending(source_id: str):
     if not source_file.exists():
         return jsonify({"source": source_id, "pending": [], "count": 0})
 
-    with open(source_file) as f:
+    with open(source_file, encoding="utf-8") as f:
         payloads = json.load(f)
 
     return jsonify({"source": source_id, "pending": payloads, "count": len(payloads)})
@@ -153,9 +151,9 @@ def main():
     args = parser.parse_args()
 
     ensure_storage_dir()
-    print(f"Webhook server starting on {args.host}:{args.port}")  # noqa: T201
-    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")  # noqa: T201
-    print(f"Send webhooks to: POST http://localhost:{args.port}/webhook/<source_id>")  # noqa: T201
+    print(f"Webhook server starting on {args.host}:{args.port}")
+    print(f"Storage directory: {WEBHOOK_STORAGE_DIR}")
+    print(f"Send webhooks to: POST http://localhost:{args.port}/webhook/<source_id>")
 
     app.run(host=args.host, port=args.port, debug=False)
 

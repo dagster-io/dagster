@@ -1,5 +1,7 @@
-import {Box, Colors, Icon} from '@dagster-io/ui-components';
-import styled from 'styled-components';
+import {Box, Icon} from '@dagster-io/ui-components';
+import clsx from 'clsx';
+
+import styles from './css/TableSectionHeader.module.css';
 
 export const SECTION_HEADER_HEIGHT = 32;
 
@@ -13,7 +15,10 @@ export interface TableSectionHeaderProps {
 export const TableSectionHeader = (props: TableSectionHeaderProps) => {
   const {expanded, onClick, children, rightElement} = props;
   return (
-    <SectionHeaderButton $open={expanded} onClick={onClick}>
+    <button
+      className={clsx(styles.sectionHeaderButton, !expanded && styles.collapsed)}
+      onClick={onClick}
+    >
       <Box
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
         padding={{horizontal: 24}}
@@ -26,36 +31,6 @@ export const TableSectionHeader = (props: TableSectionHeaderProps) => {
           </Box>
         </Box>
       </Box>
-    </SectionHeaderButton>
+    </button>
   );
 };
-
-const SectionHeaderButton = styled.button<{$open: boolean}>`
-  background-color: ${Colors.backgroundLight()};
-  border: 0;
-  box-shadow:
-    inset 0px -1px 0 ${Colors.keylineDefault()},
-    inset 0px 1px 0 ${Colors.keylineDefault()};
-  color: ${Colors.textLight()};
-  cursor: pointer;
-  display: block;
-  padding: 0;
-  width: 100%;
-  margin: 0;
-  height: ${SECTION_HEADER_HEIGHT}px;
-  text-align: left;
-
-  :focus,
-  :active {
-    outline: none;
-  }
-
-  :hover {
-    background-color: ${Colors.backgroundLightHover()};
-  }
-
-  .iconGlobal[aria-label='arrow_drop_down'] {
-    transition: transform 100ms linear;
-    ${({$open}) => ($open ? null : `transform: rotate(-90deg);`)}
-  }
-`;

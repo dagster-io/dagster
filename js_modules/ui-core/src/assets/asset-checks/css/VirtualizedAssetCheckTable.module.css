@@ -1,0 +1,12 @@
+.captionEllipsed {
+  text-overflow: ellipsis;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rowGrid {
+  display: grid;
+  grid-template-columns: 2fr 150px 1fr 1.5fr 120px;
+  height: 100%;
+}

@@ -26,7 +26,7 @@ Procedural content answers the question "How do I…?" Conceptual content docs a
 
 ### Examples
 
-- [Build pipelines with Databricks](https://docs.dagster.io/guides/build/external-pipelines/databricks-pipeline)
+- [AWS ECS pipeline](https://docs.dagster.io/integrations/external-pipelines/aws/aws-ecs-pipeline)
 - [Creating alert policies](https://docs.dagster.io/guides/observe/alerts/creating-alerts)
 - [Creating Dagster projects](https://docs.dagster.io/guides/build/projects/creating-projects)
 

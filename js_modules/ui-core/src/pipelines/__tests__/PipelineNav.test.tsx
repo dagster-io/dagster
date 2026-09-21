@@ -26,7 +26,7 @@ jest.mock('../PipelineOverviewRoot', () => ({
 // Mock useJobPermissions to control job-specific permissions in tests
 const mockUseJobPermissions = jest.fn();
 jest.mock('../../app/useJobPermissions', () => ({
-  useJobPermissions: (...args: any[]) => mockUseJobPermissions(...args),
+  useJobPermissions: (...args: unknown[]) => mockUseJobPermissions(...args),
 }));
 
 describe('PipelineNav', () => {

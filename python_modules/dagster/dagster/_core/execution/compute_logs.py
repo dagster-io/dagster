@@ -30,7 +30,7 @@ def create_compute_log_file_key():
 @contextmanager
 def redirect_to_file(stream, filepath):
     with open(filepath, "a+", buffering=1, encoding="utf8") as file_stream:
-        with redirect_stream(file_stream, stream):  # pyright: ignore[reportArgumentType]
+        with redirect_stream(file_stream, stream):
             yield
 
 
@@ -67,7 +67,7 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
     with os.fdopen(os.dup(from_fd), "wb") as copied:
         from_stream.flush()
         try:
-            os.dup2(_fileno(to_stream), from_fd)  # pyright: ignore[reportArgumentType]
+            os.dup2(_fileno(to_stream), from_fd)
         except ValueError:
             with open(to_stream, "wb") as to_file:
                 os.dup2(to_file.fileno(), from_fd)
@@ -75,7 +75,7 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
             yield from_stream
         finally:
             from_stream.flush()
-            to_stream.flush()  # pyright: ignore[reportAttributeAccessIssue]
+            to_stream.flush()  # ty: ignore[unresolved-attribute]
             os.dup2(copied.fileno(), from_fd)
 
 
@@ -106,7 +106,7 @@ def execute_windows_tail(path, stream):
             )
             yield (tail_process.pid, None)
         finally:
-            if tail_process:  # pyright: ignore[reportPossiblyUnboundVariable]
+            if tail_process:
                 start_time = time.time()
                 while not os.path.isfile(ipc_output_file):
                     if time.time() - start_time > 15:
@@ -149,10 +149,10 @@ def execute_posix_tail(path, stream):
         # More here: https://github.com/dagster-io/dagster/issues/23336
         time.sleep(float(os.getenv("DAGSTER_COMPUTE_LOG_TAIL_WAIT_AFTER_FINISH", "0")))
 
-        if tail_process:  # pyright: ignore[reportPossiblyUnboundVariable]
+        if tail_process:
             _clean_up_subprocess(tail_process)
 
-        if watcher_process:  # pyright: ignore[reportPossiblyUnboundVariable]
+        if watcher_process:
             _clean_up_subprocess(watcher_process)
 
 

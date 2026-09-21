@@ -1,22 +1,26 @@
 import {
   Box,
   Button,
-  Caption,
   Checkbox,
   Colors,
+  HeaderCell,
+  HeaderRow,
   Icon,
   Menu,
   MiddleTruncate,
   Popover,
+  Row,
+  RowCell,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {LoadingOrNone} from './VirtualizedWorkspaceTable';
 import {isThisThingAJob, useRepository} from './WorkspaceContext/util';
+import styles from './css/VirtualizedScheduleRow.module.css';
 import {RepoAddress} from './types';
 import {
   SingleScheduleQuery,
@@ -43,7 +47,6 @@ import {
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {MenuLink} from '../ui/MenuLink';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.2fr 1fr 1fr 76px 148px 210px 92px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
@@ -148,8 +151,16 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
       : null;
 
   return (
-    <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
+    <Row height={height} start={start}>
+      <Box
+        border="bottom"
+        className={styles.rowGrid}
+        style={{
+          gridTemplateColumns: showCheckboxColumn
+            ? TEMPLATE_COLUMNS_WITH_CHECKBOX
+            : TEMPLATE_COLUMNS,
+        }}
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -177,7 +188,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
               />
               {scheduleData.scheduleState.nextTick &&
               scheduleData.scheduleState.status === InstigationStatus.RUNNING ? (
-                <Caption>
+                <Text size={12}>
                   <div
                     style={{
                       overflow: 'hidden',
@@ -194,7 +205,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
                       timeFormat={{showSeconds: false, showTimezone: true}}
                     />
                   </div>
-                </Caption>
+                </Text>
               ) : null}
             </Box>
           ) : (
@@ -278,7 +289,7 @@ export const VirtualizedScheduleRow = (props: ScheduleRowProps) => {
             <span style={{color: Colors.textLight()}}>{'\u2013'}</span>
           )}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -305,13 +316,6 @@ export const VirtualizedScheduleHeader = (props: {checkbox: React.ReactNode}) =>
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showCheckboxColumn}) =>
-    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const SINGLE_SCHEDULE_QUERY = gql`
   query SingleScheduleQuery($selector: ScheduleSelector!) {

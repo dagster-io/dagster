@@ -5,7 +5,6 @@ import tempfile
 import pytest
 import pytz
 from _pytest.mark.structures import ParameterSet
-from airflow import __version__ as airflow_version
 from airflow.models import Pool, Variable
 from dagster import (
     DagsterInstance,
@@ -60,7 +59,6 @@ def reconstruct_retry_job(postgres_airflow_db: str, dags_path: str, *_args) -> J
     return job
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.requires_persistent_db
 def test_retry_from_failure(instance: DagsterInstance, postgres_airflow_db: str):
     with tempfile.TemporaryDirectory() as dags_path:
@@ -69,7 +67,7 @@ def test_retry_from_failure(instance: DagsterInstance, postgres_airflow_db: str)
         utc_date_string = "2023-02-01T00:00:00+00:00"
 
         reconstructable_job = build_reconstructable_job(
-            reconstructor_module_name="test_persistent_airflow_db",
+            reconstructor_module_name="test_persistent_airflow_2_db",
             reconstructor_function_name="reconstruct_retry_job",
             reconstructor_working_directory=os.path.dirname(os.path.realpath(__file__)),
             reconstructable_kwargs={
@@ -122,7 +120,6 @@ with models.DAG(
 """
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.requires_persistent_db
 def test_pools(postgres_airflow_db: str):
     with tempfile.TemporaryDirectory() as dags_path:
@@ -175,7 +172,6 @@ with models.DAG(
 """
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.requires_persistent_db
 def test_prev_execution_date(postgres_airflow_db: str):
     with tempfile.TemporaryDirectory() as dags_path:
@@ -211,15 +207,16 @@ def airflow_examples_repo(postgres_airflow_db) -> RepositoryDefinition:
 def get_examples_airflow_repo_params() -> list[ParameterSet]:
     definitions = make_dagster_definitions_from_airflow_example_dags()
     repo = definitions.get_repository_def()
-    params = []
     no_job_run_dags = [
         # requires k8s environment to work
         # FileNotFoundError: [Errno 2] No such file or directory: '/foo/volume_mount_test.txt'
         "example_kubernetes_executor",
         # requires params to be passed in to work
         "example_passing_params_via_test_command",
+        "example_params_ui_tutorial",
         # requires template files to exist
         "example_python_operator",
+        "tutorial_taskflow_templates",
         # requires email server to work
         "example_dag_decorator",
         # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
@@ -229,16 +226,22 @@ def get_examples_airflow_repo_params() -> list[ParameterSet]:
         "example_sensors",
         "example_dynamic_task_mapping",
         "example_dynamic_task_mapping_with_no_taskflow_operators",
+        # requires an object storage backend to work
+        # ValueError: No filesystem registered for scheme s3
+        "tutorial_objectstorage",
+        # inlet events are resolved by the scheduler, so they blow up when the dag
+        # is executed in-process
+        "read_dataset_event",
+        "read_dataset_event_from_classic",
     ]
-    for job_name in repo.job_names:
-        params.append(
-            pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name),
-        )
+    params = [
+        pytest.param(job_name, True if job_name in no_job_run_dags else False, id=job_name)
+        for job_name in repo.job_names
+    ]
 
     return params
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "job_name, exclude_from_execution_tests",
     get_examples_airflow_repo_params(),
@@ -287,7 +290,6 @@ with models.DAG(
 """
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.requires_persistent_db
 def test_dag_run_conf_persistent(postgres_airflow_db: str) -> None:
     with tempfile.TemporaryDirectory() as dags_path:

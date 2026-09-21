@@ -160,7 +160,7 @@ def test_handle_cleaup_by_gc_without_request_context():
             assert process_context.code_locations_count == 1
 
             request_context = process_context.create_request_context()
-            request_context.code_locations[0].cleanup = call_me
+            request_context.code_locations[0].cleanup = call_me  # ty: ignore[invalid-assignment]
 
             # Reload the location from the request context
             assert not called["yup"]

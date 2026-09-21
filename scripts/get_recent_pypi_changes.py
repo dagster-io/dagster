@@ -1,5 +1,3 @@
-# ruff: noqa: T201
-
 import datetime
 import subprocess
 import time

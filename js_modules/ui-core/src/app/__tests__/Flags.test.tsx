@@ -22,9 +22,9 @@ jest.mock('../../util/getJSONForKey', () => {
 });
 
 describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
-  const mockBroadcastChannel: any = new global.BroadcastChannel('feature-flags');
+  const mockBroadcastChannel = new global.BroadcastChannel('feature-flags');
 
-  let mockBroadcastChannelInstance: any;
+  let mockBroadcastChannelInstance: Record<string, unknown>;
 
   beforeEach(() => {
     localStorage.clear();
@@ -36,7 +36,7 @@ describe('Feature Flags with In-Memory Cache and BroadcastChannel', () => {
 
   it('should migrate old array format to new object format', () => {
     jest.isolateModules(() => {
-      const flag = 'test_flag' as any;
+      const flag = 'test_flag' as unknown as FeatureFlag;
       const oldFlags = [flag];
       mockGetJSONForKey.mockReturnValue(oldFlags);
 

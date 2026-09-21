@@ -63,6 +63,13 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
         raise NotImplementedError()
 
+    def list_state_keys_with_prefix(self, prefix: str) -> list[str]:
+        """List all state keys that start with the given prefix."""
+        info = self.get_latest_defs_state_info()
+        if info is None:
+            return []
+        return [k for k in info.info_mapping if k.startswith(prefix)]
+
     @abstractmethod
     def download_state_to_path(self, key: str, version: str, path: Path) -> None:
         """Loads the state file for the given defs key and version into the given file path.
@@ -89,25 +96,39 @@ class DefsStateStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def set_latest_version(self, key: str, version: str) -> None:
+    def set_latest_version(self, key: str, version: str | None) -> None:
         """Sets the latest version of the state for the given key.
+
+        Passing ``version=None`` drops the key from the latest-version
+        mapping. After such a call, ``get_latest_version(key)`` returns
+        None and the key no longer appears in
+        ``list_state_keys_with_prefix``. Idempotent — clearing a key that
+        isn't present is a no-op. Stored bytes for prior versions are
+        not cleaned up by this call; backends that care about orphan
+        cleanup should handle it out-of-band.
 
         Args:
             key (str): The key of the state to persist.
-            version (str): The version of the state to persist.
+            version (str | None): The version of the state to persist,
+                or None to clear the key from the mapping.
         """
         raise NotImplementedError()
 
     def _sanitize_key(self, key: str) -> str:
         return re.sub(r"[^A-Za-z0-9._-]", "__", key)
 
-    def _get_version_key(self, key: str) -> str:
-        """Returns a storage key under which the latest version of a given key's state is stored."""
-        return f"__version__/{key}"
+    def _get_artifact_key(self, key: str, version: str) -> str:
+        """Returns the storage key under which a given defs key's state is stored at a given version.
 
-    def _get_state_key(self, key: str, version: str) -> str:
-        """Returns a storage key under which a given key's state at a given version is stored."""
-        return f"__state__/{key}/{version}"
+        The ``key`` component is sanitized so the result is safe to use as an S3 key or path
+        segment. This is the single canonical key layout shared by every remote
+        ``DefsStateStorage``: producers (the agent and ``dg`` CLI) and the consumer (host cloud)
+        must derive identical keys, so the layout lives here on the base class rather than being
+        reimplemented per subclass. It is effectively frozen -- changing the prefix or the
+        sanitization orphans every previously-uploaded state blob. See
+        ``test_artifact_key_layout_is_frozen``.
+        """
+        return f"__state__/{self._sanitize_key(key)}/{version}"
 
     @classmethod
     def get(cls) -> Optional["DefsStateStorage"]:

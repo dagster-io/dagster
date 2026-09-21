@@ -1,6 +1,7 @@
 ---
 title: Dagster & Hightouch
 sidebar_label: Hightouch
+sidebar_position: 1
 description: Integrate with Hightouch to trigger and monitor syncs.
 tags: [dagster-supported, reverse-etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-hightouch
@@ -30,13 +31,10 @@ from dagster_hightouch import HightouchSyncComponent
 
 # Components are typically loaded from YAML, but can be used in Python definitions
 hightouch_sync = HightouchSyncComponent(
-    sync_id="my-hightouch-sync-id",
-    asset={"key": ["hightouch", "marketing_sync"]}
+    sync_id="my-hightouch-sync-id", asset={"key": ["hightouch", "marketing_sync"]}
 )
 
-defs = dg.Definitions(
-    assets=[hightouch_sync.build_defs(None)]
-)
+defs = dg.Definitions(assets=[hightouch_sync.build_defs(None)])
 ```
 
 For job-based workflows, the `ConfigurableHightouchResource` can be used with the `hightouch_sync_op` to trigger syncs within a job.

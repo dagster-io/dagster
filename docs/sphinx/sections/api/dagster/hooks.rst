@@ -1,7 +1,8 @@
 .. currentmodule:: dagster
 
+#####
 Hooks
-=======
+#####
 
 .. autodecorator:: success_hook
 

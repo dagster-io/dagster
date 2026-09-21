@@ -49,7 +49,7 @@ A time window freshness policy is useful when you expect an asset to have new da
 
 For example, the policy below states that there should be a successful materialization of the asset at least every 24 hours for it to be considered fresh, with a warning window of 12 hours:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/freshness/time_window_policy.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/observe/freshness/time_window_policy.py" language="python" />
 
 :::info
 
@@ -72,7 +72,7 @@ If the asset has not materialized in the window after the deadline passes, it wi
 
 Example:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/freshness/cron_policy.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/observe/freshness/cron_policy.py" language="python" />
 
 :::info
 
@@ -89,18 +89,18 @@ Example:
 
 You can configure a freshness policy directly on an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/freshness/individual_asset_policy.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/observe/freshness/individual_asset_policy.py" language="python" />
 
 ### Across multiple assets
 
 To apply freshness policies to multiple or all assets in your deployment, you can use `map_asset_specs`.
 Use `map_resolved_asset_specs` to apply a policy to an asset selection.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/freshness/multiple_assets_policy.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/observe/freshness/multiple_assets_policy.py" language="python" />
 
 You can also use `map_asset_specs` directly on the asset specs before creating a `Definitions` object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/freshness/map_asset_specs_direct.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/observe/freshness/map_asset_specs_direct.py" language="python" />
 
 :::caution
 
@@ -114,7 +114,7 @@ Often, it's useful to set a default freshness policy across all assets, and over
 
 To do so, you can use `map_asset_specs` with `overwrite_existing` set to `False` on the mapped function to avoid overwriting any pre-defined freshness policies:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/freshness/default_freshness.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/observe/freshness/default_freshness.py" language="python" />
 
 ### Limitations
 

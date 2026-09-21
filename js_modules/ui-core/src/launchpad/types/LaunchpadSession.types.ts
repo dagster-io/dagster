@@ -1,11 +1,43 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type PreviewConfigQueryVariables = Types.Exact<{
+export type AssetCheckHandleInput = {
+  assetKey: AssetKeyInput;
+  name: string;
+};
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type EvaluationErrorReason =
+  | 'FIELDS_NOT_DEFINED'
+  | 'FIELD_NOT_DEFINED'
+  | 'MISSING_REQUIRED_FIELD'
+  | 'MISSING_REQUIRED_FIELDS'
+  | 'RUNTIME_TYPE_MISMATCH'
+  | 'SELECTOR_FIELD_ERROR';
+
+export type PipelineSelector = {
+  assetCheckSelection?: Array<AssetCheckHandleInput> | null | undefined;
+  assetSelection?: Array<AssetKeyInput> | null | undefined;
+  pipelineName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+  solidSelection?: Array<string> | null | undefined;
+};
+
+export type PreviewConfigQueryVariables = Exact<{
   pipeline: Types.PipelineSelector;
-  runConfigData: Types.Scalars['RunConfigData']['input'];
-  mode: Types.Scalars['String']['input'];
+  runConfigData: any;
+  mode: string;
 }>;
 
 export type PreviewConfigQuery = {

@@ -1,0 +1,16 @@
+.contextResourceHeader {
+  font-size: 16px;
+  margin: 4px 0;
+}
+
+.contextResourceContainer {
+  display: flex;
+  align-items: flex-start;
+
+  & h4 {
+    margin-top: -2px;
+  }
+  & .iconGlobal {
+    margin-right: 8px;
+  }
+}

@@ -2,6 +2,7 @@ import datetime
 
 import dagster as dg
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._time import create_datetime
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import (
@@ -9,15 +10,17 @@ from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario imp
     run_request,
 )
 
+asset1 = SourceAsset(
+    key="asset1",
+    observe_fn=lambda context: dg.DataVersion("5"),
+    auto_observe_interval_minutes=30,
+)
 
-@dg.observable_source_asset(auto_observe_interval_minutes=30)
-def asset1():
-    return dg.DataVersion("5")
-
-
-@dg.observable_source_asset(auto_observe_interval_minutes=30)
-def asset2():
-    return dg.DataVersion("5")
+asset2 = SourceAsset(
+    key="asset2",
+    observe_fn=lambda context: dg.DataVersion("5"),
+    auto_observe_interval_minutes=30,
+)
 
 
 @dg.asset(
@@ -31,18 +34,19 @@ def partitioned_dummy_asset():
     return 1
 
 
-@dg.observable_source_asset(
-    auto_observe_interval_minutes=30, partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"])
+partitioned_observable_source_asset = SourceAsset(
+    key="partitioned_observable_source_asset",
+    observe_fn=lambda context: dg.DataVersionsByPartition({"b": "1", "c": "5"}),
+    auto_observe_interval_minutes=30,
+    partitions_def=dg.StaticPartitionsDefinition(["a", "b", "c"]),
 )
-def partitioned_observable_source_asset():
-    return dg.DataVersionsByPartition({"b": "1", "c": "5"})
 
-
-@dg.observable_source_asset(
-    auto_observe_interval_minutes=30, partitions_def=dg.StaticPartitionsDefinition(["a", "b"])
+partitioned_observable_source_asset2 = SourceAsset(
+    key="partitioned_observable_source_asset2",
+    observe_fn=lambda context: dg.DataVersionsByPartition({"a": "1"}),
+    auto_observe_interval_minutes=30,
+    partitions_def=dg.StaticPartitionsDefinition(["a", "b"]),
 )
-def partitioned_observable_source_asset2():
-    return dg.DataVersionsByPartition({"a": "1"})
 
 
 auto_observe_scenarios = {

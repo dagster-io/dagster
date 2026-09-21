@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import re
+import select
 import sys
 import time
 import unittest.mock
@@ -15,7 +16,18 @@ from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
-from typing import AbstractSet, Any, Callable, NamedTuple, NoReturn, TypeVar  # noqa: UP035
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    NamedTuple,
+    NoReturn,
+    TypeVar,
+)
+
+if TYPE_CHECKING:
+    import subprocess
 
 from typing_extensions import Self
 
@@ -301,6 +313,80 @@ def poll_for_event(
             raise Exception("Timed out")
 
 
+def poll_for_subprocess_output(
+    process: "subprocess.Popen[bytes]",
+    marker: bytes,
+    *,
+    timeout: float = 60,
+) -> tuple[bytes, bytes]:
+    """Poll a subprocess's stdout and stderr until ``marker`` appears in stdout
+    or ``timeout`` seconds elapse, then return the captured ``(stdout, stderr)``
+    bytes.
+
+    The marker is only checked against stdout; stderr is captured for
+    diagnostic purposes (e.g. assertion failure messages on miss).
+
+    The process is left running — the caller is responsible for terminating
+    and waiting on it (typically inside a ``try/finally``). Use this instead
+    of ``time.sleep(N) + process.terminate()`` patterns when waiting for a
+    child to emit a known startup line; the fixed-sleep approach races the
+    child under pod scheduling latency.
+
+    The process must have been started with ``stdout=subprocess.PIPE`` and
+    ``stderr=subprocess.PIPE`` and without ``text=True`` / ``encoding=...`` so
+    raw bytes can be polled via ``select`` + ``os.read``.
+
+    POSIX only (uses ``select.select`` on subprocess pipes).
+    """
+    stdout = check.not_none(process.stdout, "process.stdout must be a pipe")
+    stderr = check.not_none(process.stderr, "process.stderr must be a pipe")
+
+    stdout_buf = bytearray()
+    stderr_buf = bytearray()
+    open_streams = {stdout: stdout_buf, stderr: stderr_buf}
+    deadline = time.monotonic() + timeout
+
+    while open_streams and time.monotonic() < deadline and marker not in stdout_buf:
+        # Clamp at 0: time can advance past the deadline between the while
+        # condition above and this call, and select.select rejects negatives.
+        ready, _, _ = select.select(
+            list(open_streams), [], [], max(0.0, min(deadline - time.monotonic(), 0.5))
+        )
+        for stream in ready:
+            chunk = os.read(stream.fileno(), 4096)
+            if chunk:
+                open_streams[stream].extend(chunk)
+            else:
+                del open_streams[stream]
+
+    return bytes(stdout_buf), bytes(stderr_buf)
+
+
+def poll_for_pool_pending_step(
+    instance: DagsterInstance, pool_name: str, timeout: float = 60
+) -> bool:
+    """Wait until the named concurrency pool has at least one pending step.
+
+    A step becomes pending once the executor has attempted (and failed) to
+    claim a slot. Polling for this state is a more reliable synchronization
+    primitive than a fixed sleep in tests that interleave slot manipulation
+    with subprocess-based execution: subprocess startup latency on slower
+    runners (e.g. k8s pods) can cause a blind sleep to elapse before the
+    executor's first claim, hiding the blocked state the test is trying to
+    observe.
+
+    Returns True if a pending step was observed within ``timeout`` seconds,
+    False otherwise.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        info = instance.event_log_storage.get_concurrency_info(pool_name)
+        if info.pending_step_count > 0:
+            return True
+        time.sleep(0.1)
+    return False
+
+
 @contextmanager
 def new_cwd(path: str) -> Iterator[None]:
     old = os.getcwd()
@@ -377,7 +463,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
         super().__init__()
 
-    def launch_run(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def launch_run(self, context):
         run = context.dagster_run
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
@@ -458,7 +544,7 @@ class MockSecretsLoader(SecretsLoader, ConfigurableClass):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:  # ty: ignore[invalid-method-override]
         return self.env_vars.copy()
 
     @property

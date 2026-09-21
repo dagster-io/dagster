@@ -59,10 +59,11 @@ def _get_all_dagster_public_symbols():
         "sys",  # Conflicts with built-in sys module, not actually part of Dagster's public API
     }
 
-    public_symbols = []
-    for name in dir(dagster_module):
-        if not name.startswith("_") and name not in EXCLUDED_SYMBOLS:
-            public_symbols.append(name)
+    public_symbols = [
+        name
+        for name in dir(dagster_module)
+        if not name.startswith("_") and name not in EXCLUDED_SYMBOLS
+    ]
 
     return [f"dagster.{name}" for name in sorted(public_symbols)]
 

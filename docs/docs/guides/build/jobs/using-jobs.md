@@ -35,6 +35,6 @@ dg scaffold defs dagster.job path/to/jobs.py
 
 which will create
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/automate/scaffolded-job-defs.py"  title="src/<project_name>/defs/jobs.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/automate/scaffolded-job-defs.py"  title="src/<project_name>/defs/jobs.py" />
 
 and you can fill out the job dictionary as needed.

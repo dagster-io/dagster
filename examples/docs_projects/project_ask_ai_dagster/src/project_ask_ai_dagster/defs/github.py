@@ -58,8 +58,7 @@ class GithubResource(dg.ConfigurableResource):
             result = client.execute(query)
             search = result["search"]
             edges = search["edges"]
-            for node in edges:
-                results.append(node["node"])
+            results.extend(node["node"] for node in edges)
             log.info(f"Total results: {len(results)}")
             if not search["pageInfo"]["hasNextPage"]:
                 break
@@ -191,9 +190,11 @@ class GithubResource(dg.ConfigurableResource):
 
                 # Add comments if present
                 if "comments" in item and "nodes" in item["comments"]:
-                    for comment in item["comments"]["nodes"]:
-                        if comment and "body" in comment:
-                            content_parts.append(f"Comment: {comment['body']}")
+                    content_parts.extend(
+                        f"Comment: {comment['body']}"
+                        for comment in item["comments"]["nodes"]
+                        if comment and "body" in comment
+                    )
 
                 # Create document with properly formatted content
                 doc = Document(page_content="\n\n".join(content_parts), metadata=metadata)

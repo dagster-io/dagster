@@ -66,9 +66,3 @@ When viewing the asset list, you can create a new dashboard from your current as
 5. When finished, click **Save**.
 
 ![Edit selection modal](/images/guides/observe/asset-catalog/edit-selection.png)
-
-:::info Coming soon
-
-Job selection syntax and automation selection syntax are coming soon.
-
-:::

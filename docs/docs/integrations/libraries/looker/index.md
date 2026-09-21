@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-looker
 pypi: https://pypi.org/project/dagster-looker
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/looker.svg
 partnerlink: https://www.looker.com/
 canonicalUrl: '/integrations/libraries/looker'
@@ -25,7 +26,7 @@ The [dagster-looker](/integrations/libraries/looker) library provides a `LookerC
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -41,7 +42,7 @@ Finally, add the `dagster-looker` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/looker-component/2-add-looker.txt" />
 
-## 2. Scaffold a Looker component definition
+## Step 2: Scaffold a Looker component definition
 
 Now that you have a Dagster project, you can scaffold a Looker component definition:
 
@@ -51,7 +52,7 @@ The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/looker-component/4-tree.txt" />
 
-## 3. Configure your Looker instance
+## Step 3: Configure your Looker instance
 
 Update the `defs.yaml` file with your Looker instance connection details. You'll need to provide your base URL, client ID, and client secret. For more information on creating API credentials, see the [Looker API documentation](https://cloud.google.com/looker/docs/api-auth).
 
@@ -65,7 +66,7 @@ Update the `defs.yaml` file with your Looker instance connection details. You'll
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/looker-component/7-list-defs.txt" />
 </WideContent>
 
-## 4. Filter Looker content
+## Step 4: Filter Looker content
 
 You can filter which Looker dashboards and explores are loaded using the `looker_filter` key. For example, you can load only dashboards from specific folders and only explores used in those dashboards:
 
@@ -75,7 +76,7 @@ You can filter which Looker dashboards and explores are loaded using the `looker
   language="yaml"
 />
 
-## 5. Configure PDT Builds
+## Step 5: Configure PDT builds
 
 You can configure the `LookerComponent` to create executable assets for Looker Persistent Derived Tables (PDTs). This allows Dagster to orchestrate the materialization of these tables.
 

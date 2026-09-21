@@ -1,6 +1,7 @@
 [project]
 name = "shared"
 version = "0.1.0"
+requires-python = ">=3.10,<3.15"
 description = "A shared package"
 dependencies = [
     "dagster",

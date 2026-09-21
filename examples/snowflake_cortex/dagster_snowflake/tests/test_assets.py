@@ -2,6 +2,8 @@
 
 from unittest.mock import Mock
 
+from dagster import MaterializeResult
+
 from dagster_snowflake_ai.defs.assets.cortex_ai import (
     aggregations,
     entity_extraction,
@@ -27,10 +29,11 @@ class TestStoriesAsset:
         mock_cursor.fetchone.return_value = (expected_story_count,)
 
         result = stories.raw_stories(mock_context, mock_snowflake_resource, Mock())
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
-        assert result.metadata["stories_in_staging"].value == expected_story_count
-        assert result.metadata["table_schema"].value.endswith(".stories")
+        assert result.metadata["stories_in_staging"].value == expected_story_count  # ty: ignore[unresolved-attribute]
+        assert result.metadata["table_schema"].value.endswith(".stories")  # ty: ignore[unresolved-attribute]
         assert mock_cursor.execute.called
 
 
@@ -54,12 +57,13 @@ class TestSentimentAnalysisAsset:
         result = sentiment_analysis.story_sentiment_analysis(
             mock_context, mock_snowflake_resource
         )
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
-        assert result.metadata["stories_processed"].value == 10
-        assert result.metadata["unique_posters"].value == 3
-        assert result.metadata["avg_description_length"].value == 500.0
-        assert result.metadata["cortex_function"].value == "AI_CLASSIFY"
+        assert result.metadata["stories_processed"].value == 10  # ty: ignore[unresolved-attribute]
+        assert result.metadata["unique_posters"].value == 3  # ty: ignore[unresolved-attribute]
+        assert result.metadata["avg_description_length"].value == 500.0  # ty: ignore[unresolved-attribute]
+        assert result.metadata["cortex_function"].value == "AI_CLASSIFY"  # ty: ignore[unresolved-attribute]
 
 
 class TestEntityExtractionAsset:
@@ -81,14 +85,15 @@ class TestEntityExtractionAsset:
         result = entity_extraction.entity_extraction(
             mock_context, mock_snowflake_resource
         )
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
         assert (
-            result.metadata["stories_with_entities"].value
+            result.metadata["stories_with_entities"].value  # ty: ignore[unresolved-attribute]
             == expected_stories_with_entities
         )
-        assert result.metadata["model_used"].value == "llama3.1-8b"
-        assert result.metadata["cortex_function"].value == "SNOWFLAKE.CORTEX.COMPLETE"
+        assert result.metadata["model_used"].value == "llama3.1-8b"  # ty: ignore[unresolved-attribute]
+        assert result.metadata["cortex_function"].value == "SNOWFLAKE.CORTEX.COMPLETE"  # ty: ignore[unresolved-attribute]
 
 
 class TestAggregationsAsset:
@@ -108,7 +113,8 @@ class TestAggregationsAsset:
         mock_cursor.fetchone.return_value = (expected_summary_count,)
 
         result = aggregations.daily_story_summary(mock_context, mock_snowflake_resource)
+        assert isinstance(result, MaterializeResult)
+        assert result.metadata is not None
 
-        assert result is not None
-        assert result.metadata["summary_count"].value == expected_summary_count
+        assert result.metadata["summary_count"].value == expected_summary_count  # ty: ignore[unresolved-attribute]
         assert "dagster_value" in result.metadata

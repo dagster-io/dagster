@@ -91,4 +91,4 @@ Next, you can write a Dagster <PyObject section="assets" object="asset" module="
 
 ### Step 3: Using `dagster-airlift` to proxy execution
 
-Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see "[Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration)".
+Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. For more information, see [Migrate from Airflow to Dagster at the task level](/migration/airflow-to-dagster/airlift-v1/task-level-migration).

@@ -1,5 +1,7 @@
 import warnings
 
+from dagster_azure._constants import DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX
+
 try:
     # Centralise Azure imports here so we only need to warn in one place
     from azure.core.exceptions import ResourceNotFoundError
@@ -16,13 +18,21 @@ except ImportError:
     raise
 
 
-def _create_url(storage_account: str, subdomain: str) -> str:
-    return f"https://{storage_account}.{subdomain}.core.windows.net/"
+def _create_url(
+    storage_account: str,
+    subdomain: str,
+    endpoint_suffix: str = DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX,
+) -> str:
+    return f"https://{storage_account}.{subdomain}.{endpoint_suffix}/"
 
 
-def create_blob_client(storage_account: str, credential) -> BlobServiceClient:
+def create_blob_client(
+    storage_account: str,
+    credential,
+    endpoint_suffix: str = DEFAULT_AZURE_STORAGE_ENDPOINT_SUFFIX,
+) -> BlobServiceClient:
     """Create a Blob Storage client."""
-    account_url = _create_url(storage_account, "blob")
+    account_url = _create_url(storage_account, "blob", endpoint_suffix)
     if hasattr(credential, "account_key"):
         credential = credential.account_key
     return BlobServiceClient(account_url, credential)

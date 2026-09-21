@@ -107,3 +107,14 @@ def test_dbt_core_project_id_metadata(test_jaffle_shop_manifest: dict[str, Any])
 
         # Verify unique_id is also present (already exists)
         assert DAGSTER_DBT_UNIQUE_ID_METADATA_KEY in spec.metadata
+
+
+def test_storage_kind(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    """Asset specs carry storage_kind derived from the manifest's adapter_type."""
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(): ...
+
+    expected_adapter_type = test_jaffle_shop_manifest["metadata"]["adapter_type"]
+    for spec in my_dbt_assets.specs:
+        assert TableMetadataSet.extract(spec.metadata).storage_kind == expected_adapter_type

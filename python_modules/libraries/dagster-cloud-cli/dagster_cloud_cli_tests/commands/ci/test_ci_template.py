@@ -1,9 +1,9 @@
 import pathlib
 
-import yaml
 from dagster_cloud_cli.config.models import ProcessedDagsterCloudConfig
 from dagster_cloud_cli.entrypoint import app
 from dagster_cloud_cli_tests.conftest import create_template_file
+from dagster_shared.yaml_utils import safe_load_yaml
 from typer.testing import CliRunner
 
 DAGSTER_CLOUD_YAML_JINJA = """
@@ -71,7 +71,7 @@ def test_ci_template(temp_dir):
             ],
         )
         assert result.exit_code == 0
-        processed_config = ProcessedDagsterCloudConfig.model_validate(yaml.safe_load(result.stdout))
+        processed_config = ProcessedDagsterCloudConfig.model_validate(safe_load_yaml(result.stdout))
         assert len(processed_config.locations) == 1
         assert processed_config.locations[0].container_context is not None
         assert set(processed_config.locations[0].container_context["k8s"]["env_vars"]) == {

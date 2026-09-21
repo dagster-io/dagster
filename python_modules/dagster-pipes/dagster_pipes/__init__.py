@@ -195,20 +195,10 @@ class PipesException(TypedDict):
 ESCAPE_CHARACTER = "\\"
 
 
-def de_escape_asset_key(asset_key: str) -> str:
-    r"""Removes the backward slashes escape characters from the asset key.
+def to_asset_key_path(asset_key: str) -> list[str]:
+    r"""Converts an escaped user string into an asset key's parts.
 
-    Example: "foo\/bar" -> "foo/bar"
-    """
-    # make sure to keep any standalone backslashes since they may be
-    # coming from the original (non-escaped) key
-    return asset_key.replace(ESCAPE_CHARACTER + "/", "/")
-
-
-def to_assey_key_path(asset_key: str) -> list[str]:
-    """Converts an asset key to a collection of key parts.
-
-    Forward slash (except escaped) is used as separator. De-escapes the key.
+    Forward slashes (except escaped ones) separate parts; ``\X`` de-escapes to ``X``.
     """
     parts = []
     current_part = []
@@ -216,8 +206,7 @@ def to_assey_key_path(asset_key: str) -> list[str]:
 
     for char in asset_key:
         if escape_next:
-            # Include escaped character (including backslash itself) in the current part
-            current_part.append(ESCAPE_CHARACTER + char)
+            current_part.append(char)
             escape_next = False
         elif char == ESCAPE_CHARACTER:
             escape_next = True
@@ -227,12 +216,10 @@ def to_assey_key_path(asset_key: str) -> list[str]:
         else:
             current_part.append(char)
 
-    # Add the final part to parts
     if current_part:
         parts.append("".join(current_part))
 
-    # De-escape each part, ensuring standalone backslashes remain intact
-    return [de_escape_asset_key(part) for part in parts]
+    return parts
 
 
 _T = TypeVar("_T")
@@ -411,8 +398,9 @@ def _normalize_param_metadata(
                     " string keys and values that are either raw metadata values or dictionaries"
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
-            _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
-            new_metadata[key] = cast("PipesMetadataValue", value)
+            typed_value = cast("PipesMetadataValue", value)
+            _assert_param_value(typed_value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
+            new_metadata[key] = typed_value
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
@@ -734,7 +722,7 @@ class PipesBufferedFilesystemMessageWriterChannel(PipesBlobStoreMessageWriterCha
 
     def upload_messages_chunk(self, payload: IO, index: int) -> None:
         message_path = os.path.join(self._path, f"{index}.json")
-        with open(message_path, "w") as f:
+        with open(message_path, "w", encoding="utf-8") as f:
             f.write(payload.read())
 
 
@@ -759,7 +747,7 @@ class PipesDefaultContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         if self.FILE_PATH_KEY in params:
             path = _assert_env_param_type(params, self.FILE_PATH_KEY, str, self.__class__)
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
                 yield data
         elif self.DIRECT_KEY in params:
@@ -803,7 +791,7 @@ class PipesStdioLogWriter(PipesLogWriter[T_LogChannel]):
         pass
 
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[None]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open(self, params: PipesParams) -> Iterator[None]:
         with ExitStack() as stack:
             stdout_channel = self.make_channel(params, stream="stdout")
             stderr_channel = self.make_channel(params, stream="stderr")
@@ -896,7 +884,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         capturing_started: Event,
         capturing_should_stop: Event,
     ):
-        with open(path) as input_file:
+        with open(path, encoding="utf-8") as input_file:
             received_stop_event_at = None
 
             while not (
@@ -997,7 +985,7 @@ class PipesFileMessageWriterChannel(PipesMessageWriterChannel):
         self._path = path
 
     def write_message(self, message: PipesMessage) -> None:
-        with open(self._path, "a") as f:
+        with open(self._path, "a", encoding="utf-8") as f:
             f.write(json.dumps(message) + "\n")
 
 
@@ -1158,7 +1146,7 @@ class PipesStdioFileLogWriterChannel(PipesStdioLogWriterChannel):
 
     def write_chunk(self, chunk: str) -> None:
         # write the chunk to a file
-        with open(self.output_path, "a") as file:
+        with open(self.output_path, "a", encoding="utf-8") as file:
             file.write(chunk)
 
 
@@ -1426,7 +1414,7 @@ class PipesDbfsContextLoader(PipesContextLoader):
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         unmounted_path = _assert_env_param_type(params, "path", str, self.__class__)
         path = os.path.join("/dbfs", unmounted_path.lstrip("/"))
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             yield json.load(f)
 
 
@@ -1497,7 +1485,7 @@ class PipesUnityCatalogVolumesContextLoader(PipesContextLoader):
     @contextmanager
     def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
         path = _assert_env_param_type(params, "path", str, self.__class__)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             yield json.load(f)
 
 

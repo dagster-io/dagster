@@ -1,0 +1,26 @@
+.expandMore {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  visibility: hidden;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.itemContainer {
+  height: 32px;
+  position: relative;
+  cursor: pointer;
+}
+
+.itemContainer:hover :global(.GrayOnHoverBox),
+.itemContainer:focus-within :global(.GrayOnHoverBox) {
+  background: var(--color-background-light-hover);
+}
+
+.itemContainer:hover .expandMore,
+.itemContainer:focus-within .expandMore {
+  visibility: visible;
+}

@@ -458,7 +458,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         if "job_permissions" in self.permissions:
             job_permissions = self._format_permissions(self.permissions["job_permissions"])
             job_id = check.not_none(
-                run_info.job_id,  # pyright: ignore[reportPossiblyUnboundVariable]
+                run_info.job_id,
                 f"Databricks run {databricks_run_id} has null job_id",
             )
             log.debug(f"Updating job permissions with following json: {job_permissions}")
@@ -553,11 +553,12 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         )
 
     def get_dagster_env_variables(self) -> dict[str, str]:
-        out = {}
+        out: dict[str, str] = {}
         if self.add_dagster_env_variables:
             for var in DAGSTER_SYSTEM_ENV_VARS:
-                if os.getenv(var):
-                    out.update({var: os.getenv(var)})
+                value = os.getenv(var)
+                if value is not None:
+                    out[var] = value
         return out
 
     def create_remote_config(self) -> "DatabricksConfig":

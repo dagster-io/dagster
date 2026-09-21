@@ -18,7 +18,7 @@ jest.mock('react', () => ({
 const mockUseContext = useContext as jest.MockedFunction<typeof useContext>;
 
 describe('useAllAssetsNodes integration tests', () => {
-  let useAllAssetsNodes: any;
+  let useAllAssetsNodes: () => {assets: unknown[]; allAssetKeys: Set<string>; loading: boolean};
 
   beforeAll(() => {
     // Import after mocks are set up
@@ -28,7 +28,7 @@ describe('useAllAssetsNodes integration tests', () => {
   });
 
   beforeEach(() => {
-    mockUseContext.mockImplementation((context: any) => {
+    mockUseContext.mockImplementation((context: unknown) => {
       if (context === WorkspaceContext) {
         return mockWorkspaceContext;
       }
@@ -72,7 +72,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -94,7 +94,7 @@ describe('useAllAssetsNodes integration tests', () => {
     });
 
     it('should return empty Set when no asset nodes exist', () => {
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: {},
@@ -136,7 +136,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -156,7 +156,7 @@ describe('useAllAssetsNodes integration tests', () => {
 
     it('should maintain loading property', () => {
       // Test with loading = true
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: {},
@@ -171,7 +171,7 @@ describe('useAllAssetsNodes integration tests', () => {
       expect(result.current.loading).toBe(true);
 
       // Test with loading = false
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: {},
@@ -210,7 +210,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -250,7 +250,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -290,7 +290,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -347,7 +347,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -404,7 +404,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,
@@ -449,7 +449,7 @@ describe('useAllAssetsNodes integration tests', () => {
         },
       };
 
-      mockUseContext.mockImplementation((context: any) => {
+      mockUseContext.mockImplementation((context: unknown) => {
         if (context === WorkspaceContext) {
           return {
             assetEntries: mockAssetEntries,

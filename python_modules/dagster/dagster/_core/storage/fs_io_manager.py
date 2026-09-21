@@ -18,7 +18,11 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
-from dagster._core.storage.upath_io_manager import UPathIOManager
+from dagster._core.storage.upath_io_manager import (
+    UPathIOManager,
+    escape_dotdot_segments,
+    escape_leading_slash,
+)
 from dagster._utils import PICKLE_PROTOCOL, mkdir_p
 
 if TYPE_CHECKING:
@@ -247,7 +251,7 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
         **kwargs: additional keyword arguments for `universal_pathlib.UPath`.
     """
 
-    extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.  # pyright: ignore[reportIncompatibleVariableOverride]
+    extension: str = ""  # TODO: maybe change this to .pickle? Leaving blank for compatibility.
 
     def __init__(self, base_dir=None, **kwargs):
         from upath import UPath
@@ -255,6 +259,13 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")
 
         super().__init__(base_path=UPath(base_dir, **kwargs))
+
+    def make_safe_partition_path(self, base_path: "UPath", partition: str) -> "UPath":
+        # The local filesystem resolves '..' segments as upward traversal at
+        # write time, and pathlib's '/' operator drops the base when its right
+        # side is absolute. Escape both so the partition joins as a literal
+        # subpath under base_path.
+        return base_path / escape_dotdot_segments(escape_leading_slash(partition))
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: "UPath"):
         try:
@@ -303,7 +314,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
     def _get_path(self, path: str) -> str:
         return os.path.join(self.base_dir, path)  # type: ignore  # (possible none)
 
-    def handle_output(self, context: OutputContext, obj: object):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def handle_output(self, context: OutputContext, obj: object):
         """Pickle the data and store the object to a custom file path.
 
         This method emits an AssetMaterialization event so the assets will be tracked by the

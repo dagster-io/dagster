@@ -7,7 +7,7 @@ title: Configuring behavior based on scheduled run time
 This example demonstrates how to use run config to vary the behavior of a run based on its scheduled launch time.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
+  path="docs_snippets/docs_snippets/guides/automate/schedules/schedules.py"
   startAfter="start_run_config_schedule"
   endBefore="end_run_config_schedule"
   title="src/<project_name>/defs/assets.py"

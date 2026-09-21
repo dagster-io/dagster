@@ -46,7 +46,7 @@ def transform(hackernews_topstories: pd.DataFrame) -> str:
 
 
 def load(md_content: str):
-    with open("output.md", "w") as f:
+    with open("output.md", "w", encoding="utf-8") as f:
         f.write(md_content)
 
 

@@ -1,6 +1,6 @@
 <Tabs groupId="os">
   <TabItem value="mac" label="Mac">
-    <CliInvocationExample contents="brew install uv" />
+    <CliInvocationExample contents="curl -LsSf https://astral.sh/uv/install.sh | sh" />
   </TabItem>
   <TabItem value="windows" label="Windows">
     <CliInvocationExample contents="powershell -ExecutionPolicy ByPass -c 'irm https://astral.sh/uv/install.ps1 | iex'" />

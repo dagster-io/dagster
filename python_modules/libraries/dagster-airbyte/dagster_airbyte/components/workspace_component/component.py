@@ -279,7 +279,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Function used to translate Airbyte connection table properties into Dagster asset specs.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -387,7 +387,7 @@ class AirbyteWorkspaceComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
     async def write_state_to_path(self, state_path: Path) -> None:
         state = self.workspace.fetch_airbyte_workspace_data()
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Path | None
@@ -418,7 +418,7 @@ class AirbyteCloudWorkspaceComponent(AirbyteWorkspaceComponent): ...
 
 
 class AirbyteComponentTranslator(
-    create_component_translator_cls(AirbyteWorkspaceComponent, DagsterAirbyteTranslator),
+    create_component_translator_cls(AirbyteWorkspaceComponent, DagsterAirbyteTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[AirbyteWorkspaceComponent],
 ):
     def __init__(self, component: AirbyteWorkspaceComponent):

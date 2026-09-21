@@ -30,10 +30,7 @@ class S3FakeSession:
 
     def _list_objects(self, Bucket, Prefix):
         bucket = self.buckets.get(Bucket, {})
-        contents = []
-        for key in sorted(bucket.keys()):
-            if key.startswith(Prefix):
-                contents.append({"Key": key})
+        contents = [{"Key": key} for key in sorted(bucket.keys()) if key.startswith(Prefix)]
         return {"Contents": contents, "IsTruncated": False}
 
     def list_objects_v2(self, Bucket, Prefix, *args, **kwargs):
@@ -55,7 +52,7 @@ class S3FakeSession:
 
     def get_object(self, Bucket, Key, *args, **kwargs):
         if not self.has_object(Bucket, Key):
-            raise ClientError({}, None)  # pyright: ignore[reportArgumentType]
+            raise ClientError({}, None)  # ty: ignore[invalid-argument-type]
 
         self.mock_extras.get_object(*args, **kwargs)
         return {"Body": self._get_byte_stream(Bucket, Key)}

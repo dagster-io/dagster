@@ -45,27 +45,27 @@ import dagster as dg
 
 @dg.asset(kinds={"duckdb"}, key=["target", "main", "raw_customers"])
 def raw_customers() -> None:
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv",
-        duckdb_path="/tmp/jaffle_platform.duckdb",
+        duckdb_path="/tmp/jaffle_platform.duckdb",  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_customers",
     )
 
 
 @dg.asset(kinds={"duckdb"}, key=["target", "main", "raw_orders"])
 def raw_orders() -> None:
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv",
-        duckdb_path="/tmp/jaffle_platform.duckdb",
+        duckdb_path="/tmp/jaffle_platform.duckdb",  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_orders",
     )
 
 
 @dg.asset(kinds={"duckdb"}, key=["target", "main", "raw_payments"])
 def raw_payments() -> None:
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv",
-        duckdb_path="/tmp/jaffle_platform.duckdb",
+        duckdb_path="/tmp/jaffle_platform.duckdb",  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_payments",
     )
 
@@ -101,9 +101,9 @@ def import_url_to_duckdb(url: str, duckdb: DuckDBResource, table_name: str):
 # highlight-start
 def raw_customers(duckdb: DuckDBResource) -> None:
     # highlight-end
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv",
-        duckdb=duckdb,
+        duckdb=duckdb,  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_customers",
     )
 
@@ -115,9 +115,9 @@ def raw_customers(duckdb: DuckDBResource) -> None:
 # highlight-start
 def raw_orders(duckdb: DuckDBResource) -> None:
     # highlight-end
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv",
-        duckdb=duckdb,
+        duckdb=duckdb,  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_orders",
     )
 
@@ -129,9 +129,9 @@ def raw_orders(duckdb: DuckDBResource) -> None:
 # highlight-start
 def raw_payments(duckdb: DuckDBResource) -> None:
     # highlight-end
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv",
-        duckdb=duckdb,
+        duckdb=duckdb,  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_payments",
     )
 
@@ -148,9 +148,9 @@ def raw_payments(duckdb: DuckDBResource) -> None:
     # highlight-end
 )
 def raw_customers(duckdb: DuckDBResource) -> None:
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv",
-        duckdb=duckdb,
+        duckdb=duckdb,  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_customers",
     )
 
@@ -163,9 +163,9 @@ def raw_customers(duckdb: DuckDBResource) -> None:
     # highlight-end
 )
 def raw_orders(duckdb: DuckDBResource) -> None:
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv",
-        duckdb=duckdb,
+        duckdb=duckdb,  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_orders",
     )
 
@@ -178,9 +178,9 @@ def raw_orders(duckdb: DuckDBResource) -> None:
     # highlight-end
 )
 def raw_payments(duckdb: DuckDBResource) -> None:
-    import_url_to_duckdb(
+    import_url_to_duckdb(  # ty: ignore[missing-argument]
         url="https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv",
-        duckdb=duckdb,
+        duckdb=duckdb,  # ty: ignore[unknown-argument]
         table_name="jaffle_platform.main.raw_payments",
     )
 

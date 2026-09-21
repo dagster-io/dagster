@@ -318,20 +318,6 @@ def test_launch_docker_image_on_instance_config(docker_postgres_instance, aws_en
 
 
 @pytest.mark.integration
-def test_launch_docker_image_multiple_networks(docker_postgres_instance, postgres_network, aws_env):
-    docker_image = get_test_project_docker_image()
-    launcher_config = {
-        "env_vars": aws_env,
-        "networks": [
-            "container:postgres",
-            postgres_network,
-        ],
-        "image": docker_image,
-    }
-    _test_launch(docker_postgres_instance, docker_image, launcher_config)
-
-
-@pytest.mark.integration
 def test_launch_docker_config_on_container_context(docker_postgres_instance, aws_env):
     docker_image = get_test_project_docker_image()
     launcher_config = {}

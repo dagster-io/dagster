@@ -35,10 +35,11 @@ SNIPPETS_DIR = (
 
 def _swap_to_mock_airbyte_component(path: Path) -> None:
     path.write_text(
-        path.read_text().replace(
+        path.read_text(encoding="utf-8").replace(
             "dagster_airbyte.AirbyteWorkspaceComponent",
             "my_project.defs.airbyte_ingest.test_airbyte_utils.MockAirbyteComponent",
-        )
+        ),
+        encoding="utf-8",
     )
 
 

@@ -599,7 +599,7 @@ def test_incorrect_resource_init_error():
         ),
     ):
 
-        @dg.resource  # pyright: ignore[reportCallIssue,reportArgumentType]
+        @dg.resource  # ty: ignore[no-matching-overload]
         def _incorrect_resource_2(_a, _b, _c, _d=4):
             pass
 
@@ -833,7 +833,7 @@ def test_resource_teardown_failure():
     error_events = [
         event
         for event in result.all_events
-        if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error  # ty: ignore[unresolved-attribute]
     ]
     assert len(error_events) == 1
     assert called == ["A", "B"]
@@ -883,7 +883,7 @@ def test_multiprocessing_resource_teardown_failure():
         error_events = [
             event
             for event in result.all_events
-            if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+            if event.event_type == DagsterEventType.ENGINE_EVENT and event.event_specific_data.error  # ty: ignore[unresolved-attribute]
         ]
         assert len(error_events) == 1
 
@@ -973,6 +973,7 @@ def test_configured_decorator_with_fn_and_user_code_error():
     ) as user_code_exc:
         assert_job_runs_with_resource(configured_resource, 2, "unreachable")
 
+    assert user_code_exc.value.user_exception is not None
     assert user_code_exc.value.user_exception.args[0] == "beep boop broke"
 
 

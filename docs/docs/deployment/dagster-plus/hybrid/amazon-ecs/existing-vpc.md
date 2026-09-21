@@ -48,7 +48,11 @@ Click the **Launch Stack** button to install the CloudFormation stack in your AW
 
 [<img src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png"/>](https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/dagster.cloud/cloudformation/ecs-agent.yaml)
 
-**Note**: Creating the CloudFormation stack may take a few minutes. Refresh the [AWS console **Stacks** page](https://console.aws.amazon.com/cloudformation/home#/stacks) to check the status.
+:::note
+
+Creating the CloudFormation stack may take a few minutes. Refresh the [AWS console **Stacks** page](https://console.aws.amazon.com/cloudformation/home#/stacks) to check the status.
+
+:::
 
 ## Step 3: Configure the agent
 
@@ -75,10 +79,6 @@ After you've finished configuring the stack in AWS, you can view the agent in Da
 
 ## Next steps
 
-Now that you've got your agent running, what's next?
+Now that you've got your agent running, you can follow the steps in [Creating Dagster projects](/guides/build/projects/creating-projects) to create and deploy a project to Dagster+.
 
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/guides/build/projects) using the agent.
-
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/guides/build/projects) guide for more info.
-
-If you need to upgrade your ECS agent's CloudFormation template, refer to the [upgrade guide](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation) for more info.
+If you need to upgrade your ECS agent's CloudFormation template, see [Upgrading CloudFormation for an Amazon ECS agent](/deployment/dagster-plus/hybrid/amazon-ecs/upgrading-cloudformation).

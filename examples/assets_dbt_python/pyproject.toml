@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "assets_dbt_python"
 version = "1!0+dev"
+requires-python = ">=3.10,<3.12"
 dependencies = [
     "dagster",
     "dagster-cloud",
@@ -17,13 +18,25 @@ dependencies = [
     "dbt-duckdb",
     "dagster-duckdb",
     "dagster-duckdb-pandas",
-    # packaging v22 has build compatibility issues with dbt as of 2022-12-07
-    "packaging<22.0",
 ]
-
-[project.optional-dependencies]
-dev = ["dagster-webserver", "pytest"]
 
 [tool.dagster]
 module_name = "assets_dbt_python.definitions"
 code_location_name = "assets_dbt_python"
+
+[dependency-groups]
+dev = [
+    "dagster-cloud",
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-webserver",
+    "dagster-pandas",
+    "dagster-dbt",
+    "dagster-duckdb",
+    "dagster-duckdb-pandas",
+    "pytest",
+    "dagster-dg-cli",
+]
+[tool.uv]
+exclude-newer = "48h"

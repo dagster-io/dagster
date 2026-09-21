@@ -135,7 +135,9 @@ class DefsFolderSandbox:
     project_name: str
 
     @contextmanager
-    def build_component_tree(self) -> Iterator[ComponentTree]:
+    def build_component_tree(
+        self, code_location_name: str | None = None
+    ) -> Iterator[ComponentTree]:
         """Builds a ComponentTree from this sandbox's defs folder."""
         with alter_sys_path(to_add=[str(self.project_root / "src")], to_remove=[]):
             module_path = f"{self.project_name}.defs"
@@ -143,6 +145,7 @@ class DefsFolderSandbox:
                 tree = ComponentTree(
                     defs_module=importlib.import_module(module_path),
                     project_root=self.project_root,
+                    code_location_name=code_location_name,
                 )
                 yield tree
 
@@ -252,7 +255,7 @@ class DefsFolderSandbox:
         try:
             shutil.copy2(defs_path, temp_path)
 
-            defs_path.write_text(yaml.safe_dump(defs_yaml_contents))
+            defs_path.write_text(yaml.safe_dump(defs_yaml_contents), encoding="utf-8")
 
             yield
 
@@ -303,7 +306,7 @@ def create_defs_folder_sandbox(
     * ``defs_folder_path``: The absolute path to the ``defs`` folder. The user can inspect and load files from scaffolded components, e.g. ``(defs_folder_path / "my_component" / "defs.yaml").exists()``
     * ``project_name``: If not provided, a random name is generated.
 
-    Once the sandbox is created, you can load all definitions using the ``load`` method on :py:class:`DefsFolderSandbox`, or with the ``load_component_at_path`` method.
+    Once the sandbox is created, you can load all definitions using the ``load`` method on :py:class:`DefsFolderSandbox`, or with the ``load_component`` method.
 
     This sandbox does not provide complete environmental isolation, but does provide some isolation guarantees
     to do its best to isolate the test from and restore the environment after the test.
@@ -384,4 +387,4 @@ def copy_code_to_file(fn: Callable, file_path: Path) -> None:
     source_code_text = inspect.getsource(fn)
     source_code_text = "\n".join(source_code_text.split("\n")[1:])
     dedented_source_code_text = textwrap.dedent(source_code_text)
-    file_path.write_text(dedented_source_code_text)
+    file_path.write_text(dedented_source_code_text, encoding="utf-8")

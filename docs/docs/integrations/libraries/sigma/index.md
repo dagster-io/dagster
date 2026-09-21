@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma
 pypi: https://pypi.org/project/dagster-sigma
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/sigma.svg
 partnerlink: https://www.sigmacomputing.com/
 canonicalUrl: '/integrations/libraries/sigma'
@@ -25,7 +26,7 @@ The [dagster-sigma](/integrations/libraries/sigma) library provides a `SigmaComp
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating project) or create a new one:
 
@@ -41,7 +42,7 @@ Finally, add the `dagster-sigma` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sigma-component/2-add-sigma.txt" />
 
-## 2. Scaffold a Sigma component definition
+## Step 2: Scaffold a Sigma component definition
 
 Now that you have a Dagster project, you can scaffold a Sigma component definition:
 
@@ -51,7 +52,7 @@ The `dg scaffold defs` call will generate a `defs.yaml` file:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sigma-component/4-tree.txt" />
 
-## 3. Configure your Sigma organization
+## Step 3: Configure your Sigma organization
 
 Update the `defs.yaml` file with your Sigma organization connection details. You'll need to provide your base URL, client ID, and client secret. For more information on creating API credentials, see the [Sigma API documentation](https://help.sigmacomputing.com/reference/get-started-sigma-api).
 
@@ -65,7 +66,7 @@ Update the `defs.yaml` file with your Sigma organization connection details. You
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/sigma-component/7-list-defs.txt" />
 </WideContent>
 
-## 4. Filter Sigma content
+## Step 4: Filter Sigma content
 
 You can filter which Sigma workbooks and datasets are loaded using the `sigma_filter` key. For example, you can load only workbooks from specific folders and exclude unused datasets:
 
@@ -75,7 +76,7 @@ You can filter which Sigma workbooks and datasets are loaded using the `sigma_fi
   language="yaml"
 />
 
-## 5. Customize Sigma asset metadata
+## Step 5: Customize Sigma asset metadata
 
 You can customize the metadata and grouping of Sigma assets using the `translation` key:
 

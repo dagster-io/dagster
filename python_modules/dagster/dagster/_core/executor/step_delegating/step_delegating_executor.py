@@ -65,11 +65,8 @@ class StepDelegatingExecutor(Executor):
             "float",
             check.opt_float_param(sleep_seconds, "sleep_seconds", default=_default_sleep_seconds()),
         )
-        self._check_step_health_interval_seconds = cast(
-            "int",
-            check.opt_int_param(
-                check_step_health_interval_seconds, "check_step_health_interval_seconds", default=20
-            ),
+        self._check_step_health_interval_seconds = check.opt_int_param(
+            check_step_health_interval_seconds, "check_step_health_interval_seconds", default=20
         )
         self._should_verify_step = should_verify_step
 

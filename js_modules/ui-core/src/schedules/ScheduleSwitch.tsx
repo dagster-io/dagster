@@ -92,7 +92,7 @@ export const ScheduleSwitch = (props: Props) => {
   }
   if (
     !['InstigationState', 'InstigationStateNotFoundError'].includes(
-      data?.instigationStateOrError.__typename as any,
+      data?.instigationStateOrError.__typename ?? '',
     )
   ) {
     return (

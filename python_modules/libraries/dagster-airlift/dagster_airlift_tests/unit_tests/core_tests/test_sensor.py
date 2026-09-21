@@ -17,7 +17,10 @@ from dagster import (
 from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata.metadata_value import TimestampMetadataValue
+from dagster._core.definitions.metadata.metadata_value import (
+    TextMetadataValue,
+    TimestampMetadataValue,
+)
 from dagster._core.definitions.partitions.definition import DailyPartitionsDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import DagsterInvariantViolationError
@@ -231,15 +234,15 @@ def test_request_asset_checks(init_load_context: None, instance: DagsterInstance
 
     dag_asset_key = make_dag_key("dag")
 
-    @asset_check(asset="a")  # pyright: ignore[reportArgumentType]
+    @asset_check(asset="a")
     def check_task_asset():
         pass
 
-    @asset_check(asset=dag_asset_key)  # pyright: ignore[reportArgumentType]
+    @asset_check(asset=dag_asset_key)
     def check_dag_asset():
         pass
 
-    @asset_check(asset="c")  # pyright: ignore[reportArgumentType]
+    @asset_check(asset="c")
     def check_unrelated_asset():
         pass
 
@@ -419,7 +422,7 @@ def test_pluggable_transformation(init_load_context: None, instance: DagsterInst
                 new_events.append(
                     event._replace(
                         metadata={
-                            "test": "test",
+                            "test": TextMetadataValue("test"),
                             EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(1.0),
                         }
                     )
@@ -428,7 +431,7 @@ def test_pluggable_transformation(init_load_context: None, instance: DagsterInst
                 new_events.append(
                     event._replace(
                         metadata={
-                            "test": "test",
+                            "test": TextMetadataValue("test"),
                             EFFECTIVE_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(0.0),
                         }
                     )

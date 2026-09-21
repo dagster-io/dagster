@@ -219,7 +219,7 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
             ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": s3_key}
         )
 
-    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
             return None
         s3_key = self._s3_key(log_key, io_type)
@@ -262,7 +262,7 @@ class S3ComputeLogManager(TruncatingCloudStorageComputeLogManager, ConfigurableC
 
     def get_log_keys_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], io_type: ComputeIOType
-    ) -> Sequence[Sequence[str]]:
+    ) -> Sequence[list[str]]:
         directory = self._resolve_path_for_namespace(log_key_prefix)
         objects = self._s3_session.list_objects_v2(
             Bucket=self._s3_bucket, Prefix="/".join(directory)

@@ -33,9 +33,9 @@ def test_translator_sheet_spec(workspace_data: TableauWorkspaceData) -> None:
             "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
             "dagster-tableau/project_name": TEST_PROJECT_NAME,
             "dagster-tableau/project_id": TEST_PROJECT_ID,
+            "dagster/storage_kind": "tableau",
         }
         assert asset_spec.tags == {
-            "dagster/storage_kind": "tableau",
             "dagster-tableau/asset_type": "sheet",
             "dagster/kind/tableau": "",
             "dagster/kind/sheet": "",
@@ -60,9 +60,9 @@ def test_translator_dashboard_spec(workspace_data: TableauWorkspaceData, dashboa
         "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
         "dagster-tableau/project_name": TEST_PROJECT_NAME,
         "dagster-tableau/project_id": TEST_PROJECT_ID,
+        "dagster/storage_kind": "tableau",
     }
     assert asset_spec.tags == {
-        "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "dashboard",
         "dagster/kind/tableau": "",
         "dagster/kind/dashboard": "",
@@ -88,9 +88,9 @@ def test_translator_data_source_spec(
         "dagster-tableau/id": TEST_DATA_SOURCE_ID,
         "dagster-tableau/has_extracts": False,
         "dagster-tableau/is_published": True,
+        "dagster/storage_kind": "tableau",
     }
     assert asset_spec.tags == {
-        "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
         "dagster/kind/tableau": "",
         "dagster/kind/live": "",
@@ -114,9 +114,9 @@ def test_translator_data_source_spec(
         "dagster-tableau/has_extracts": True,
         "dagster-tableau/is_published": False,
         "dagster-tableau/workbook_id": TEST_WORKBOOK_ID,
+        "dagster/storage_kind": "tableau",
     }
     assert asset_spec.tags == {
-        "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "data_source",
         "dagster/kind/tableau": "",
         "dagster/kind/extract": "",
@@ -147,7 +147,6 @@ def test_translator_custom_metadata(workspace_data: TableauWorkspaceData) -> Non
     assert asset_spec.metadata["custom"] == "metadata"
     assert asset_spec.key.path == ["prefix", "test_workbook", "sheet", "sales"]
     assert asset_spec.tags == {
-        "dagster/storage_kind": "tableau",
         "dagster-tableau/asset_type": "sheet",
         "dagster/kind/sheet": "",
         "dagster/kind/tableau": "",

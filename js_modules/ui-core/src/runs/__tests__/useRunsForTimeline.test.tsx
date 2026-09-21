@@ -44,14 +44,17 @@ const mockedCache = {
 
 jest.mock('../../util/idb-lru-cache', () => {
   return {
-    cache: (...args: any[]) => {
+    cache: (...args: unknown[]) => {
       mockedCache.constructorArgs = args;
       return mockedCache;
     },
   };
 });
 
-const mockCompletedRuns = (variables: any, result: any) => ({
+const mockCompletedRuns = (
+  variables: Record<string, unknown>,
+  result: Record<string, unknown>,
+) => ({
   request: {
     query: COMPLETED_RUN_TIMELINE_QUERY,
     variables,
@@ -80,8 +83,8 @@ const mockOngoingRuns = ({
   results = [defaultOngoingRun],
 }: {
   limit?: number;
-  results?: any[];
-  cursor?: any;
+  results?: ReturnType<typeof buildRun>[];
+  cursor?: string;
   runsFilter?: RunsFilter;
 } = {}) =>
   buildQueryMock({
@@ -407,7 +410,13 @@ describe('useRunsForTimeline', () => {
     const updatedBefore = bucket[1];
     const updatedAfter = bucket[0];
 
-    const mockPaginatedRuns = ({cursor, result}: {cursor?: string | undefined; result: any}) => ({
+    const mockPaginatedRuns = ({
+      cursor,
+      result,
+    }: {
+      cursor?: string | undefined;
+      result: Record<string, unknown>;
+    }) => ({
       request: {
         query: COMPLETED_RUN_TIMELINE_QUERY,
         variables: {
@@ -734,7 +743,13 @@ describe('useRunsForTimeline', () => {
     const updatedBefore = bucket[1];
     const updatedAfter = bucket[0];
 
-    const mockPaginatedRuns = ({cursor, result}: {cursor?: string | undefined; result: any}) => ({
+    const mockPaginatedRuns = ({
+      cursor,
+      result,
+    }: {
+      cursor?: string | undefined;
+      result: Record<string, unknown>;
+    }) => ({
       request: {
         query: COMPLETED_RUN_TIMELINE_QUERY,
         variables: {

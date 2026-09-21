@@ -1,6 +1,7 @@
 import os
 import sys
 from io import StringIO
+from types import TracebackType
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -26,9 +27,9 @@ class IndentingBufferPrinter(IndentingPrinter):
 
     def __exit__(
         self,
-        _exception_type: type[BaseException],
-        _exception_value: BaseException,
-        _traceback: list[str],
+        _exception_type: type[BaseException] | None,
+        _exception_value: BaseException | None,
+        _traceback: TracebackType | None,
     ) -> None:
         self.buffer.close()
 

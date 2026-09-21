@@ -4,4 +4,4 @@ attributes:
   assets:
     - key: downstream_of_customers_two
       deps:
-        - "{{ load_component_at_path('jaffle_shop_dbt').asset_key_for_model('customers') }}"
+        - "{{ context.load_component('jaffle_shop_dbt').asset_key_for_model('customers') }}"

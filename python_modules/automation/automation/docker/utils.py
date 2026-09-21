@@ -35,6 +35,44 @@ def execute_docker_build(
     check.invariant(retval == 0, "Process must exit successfully")
 
 
+def execute_docker_buildx_build_and_push(
+    tags: list[str],
+    platforms: list[str],
+    docker_args: dict[str, str] | None = None,
+    cwd: str | None = None,
+) -> None:
+    """Build an image for several platforms and push it as a single manifest list.
+
+    ``docker build`` produces one architecture per invocation and the local image store
+    cannot hold a multi-platform image, so build/tag/push cannot emit a manifest list.
+    ``buildx`` therefore builds and pushes in one step, against a builder that can target
+    every requested platform.
+    """
+    check.list_param(tags, "tags", of_type=str)
+    check.list_param(platforms, "platforms", of_type=str)
+    docker_args = check.opt_dict_param(docker_args, "docker_args", key_type=str, value_type=str)
+    cwd = check.opt_str_param(cwd, "cwd")
+
+    print(f"Building and pushing {', '.join(tags)} for {', '.join(platforms)}")
+
+    args = ["docker", "buildx", "build", "."]
+
+    for arg, value in docker_args.items():
+        args += ["--build-arg", f"{arg}={value}"]
+
+    for tag in tags:
+        args += ["-t", tag]
+
+    args += ["--platform", ",".join(platforms)]
+    args += ["--progress", "plain"]
+    args += ["--push"]
+
+    print(" ".join(args))
+
+    retval = subprocess.call(args, stderr=sys.stderr, stdout=sys.stdout, cwd=cwd)
+    check.invariant(retval == 0, "Process must exit successfully")
+
+
 def execute_docker_push(image: str) -> None:
     check.str_param(image, "image")
 

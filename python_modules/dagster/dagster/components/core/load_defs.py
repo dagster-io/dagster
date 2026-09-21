@@ -1,6 +1,7 @@
 import importlib
 from pathlib import Path
 from types import ModuleType
+from typing import TYPE_CHECKING, Any, cast
 
 import dagster_shared.check as check
 from dagster_shared.serdes.objects.package_entry import json_for_all_components
@@ -13,7 +14,53 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.component.component import Component
 from dagster.components.core.component_tree import ComponentTree, LegacyAutoloadingComponentTree
 
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.code_location import CodeLocation
+
 PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
+
+
+def get_plugin_component_jsons_for_code_location(
+    code_location: "CodeLocation",
+) -> list[tuple[str, dict[str, Any]]]:
+    """Extract unique plugin component type JSONs from a code location's repository metadata.
+
+    Component types are embedded as the ``PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY`` metadata
+    entry on each repository (see :func:`get_library_json_enriched_defs`). This iterates all
+    repositories on the location, deduplicates by component name, and returns
+    ``(namespace_name, component_json)`` pairs in the order they were encountered.
+    """
+    seen_names: set[str] = set()
+    results: list[tuple[str, dict[str, Any]]] = []
+    for repository in code_location.get_repositories().values():
+        metadata = repository.repository_snap.metadata
+        if not metadata:
+            continue
+        entry = metadata.get(PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY)
+        if not entry or not entry.value:
+            continue
+        namespaces = entry.value
+        if not isinstance(namespaces, list):
+            continue
+        for namespace in namespaces:
+            if not isinstance(namespace, dict):
+                continue
+            namespace_dict = cast("dict[str, Any]", namespace)
+            raw_namespace_name = namespace_dict.get("name")
+            namespace_name = raw_namespace_name if isinstance(raw_namespace_name, str) else ""
+            component_jsons = namespace_dict.get("componentTypes")
+            if not isinstance(component_jsons, list):
+                continue
+            for component_json in component_jsons:
+                if not isinstance(component_json, dict):
+                    continue
+                component_json_dict = cast("dict[str, Any]", component_json)
+                name = component_json_dict.get("name")
+                if not isinstance(name, str) or name in seen_names:
+                    continue
+                seen_names.add(name)
+                results.append((namespace_name, component_json_dict))
+    return results
 
 
 @deprecated(breaking_version="0.2.0")
@@ -152,7 +199,7 @@ def load_defs(
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
-        defs_root (Path): The path to the defs root, typically `package.defs`.
+        defs_root (ModuleType): The root module containing Dagster defs, typically the `defs` submodule of your project package.
         project_root (Optional[Path]): path to the project root directory.
         terminate_autoloading_on_keyword_files (bool): Whether to terminate the defs
             autoloading process when encountering a definitions.py or component.py file.

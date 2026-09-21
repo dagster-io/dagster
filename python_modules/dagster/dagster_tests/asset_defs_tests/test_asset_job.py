@@ -2,6 +2,7 @@ import hashlib
 import os
 import re
 import traceback
+from collections.abc import Callable
 
 import dagster as dg
 import dagster._check as check
@@ -19,12 +20,13 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 from dagster._core.definitions.assets.graph.asset_graph import AssetGraph
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.execution.api import execute_run_iterator
+from dagster._core.execution.api import create_execution_plan, execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.test_utils import (
     create_test_asset_job,
     ignore_warning,
@@ -240,14 +242,14 @@ def test_source_asset():
             pass
 
         def load_input(self, context):
-            assert context.resource_config["a"] == 7  # pyright: ignore[reportOptionalSubscript]
+            assert context.resource_config["a"] == 7
             assert context.resources.subresource == 9
-            assert context.upstream_output.resources.subresource == 9  # pyright: ignore[reportOptionalMemberAccess]
-            assert context.upstream_output.asset_key == dg.AssetKey("source1")  # pyright: ignore[reportOptionalMemberAccess]
-            assert context.upstream_output.definition_metadata["a"] == "b"  # pyright: ignore[reportOptionalMemberAccess]
-            assert context.upstream_output.resource_config["a"] == 7  # pyright: ignore[reportOptionalSubscript,reportOptionalMemberAccess]
-            assert context.upstream_output.log is not None  # pyright: ignore[reportOptionalMemberAccess]
-            context.upstream_output.log.info("hullo")  # pyright: ignore[reportOptionalMemberAccess]
+            assert context.upstream_output.resources.subresource == 9
+            assert context.upstream_output.asset_key == dg.AssetKey("source1")
+            assert context.upstream_output.definition_metadata["a"] == "b"
+            assert context.upstream_output.resource_config["a"] == 7
+            assert context.upstream_output.log is not None
+            context.upstream_output.log.info("hullo")
             assert context.asset_key == dg.AssetKey("source1")
             return 5
 
@@ -1025,7 +1027,7 @@ def test_asset_in_nested_graph():
 
     @dg.graph(out={"o1": dg.GraphOut(), "o3": dg.GraphOut()})
     def thing():
-        o1, o2 = inside_thing()  # pyright: ignore[reportGeneralTypeIssues]
+        o1, o2 = inside_thing()  # ty: ignore[not-iterable]
         o3 = get_transformed_string(o2)
         return (o1, o3)
 
@@ -1072,13 +1074,13 @@ def test_twice_nested_graph():
 
     @dg.graph(out={"n1": dg.GraphOut(), "n2": dg.GraphOut(), "unused": dg.GraphOut()})
     def middle_thing():
-        n1, unused_output = innermost_thing()  # pyright: ignore[reportGeneralTypeIssues]
+        n1, unused_output = innermost_thing()  # ty: ignore[not-iterable]
         n2 = get_string()
         return {"n1": n1, "n2": n2, "unused": unused_output}
 
     @dg.graph(out={"n1": dg.GraphOut(), "n2": dg.GraphOut(), "unused": dg.GraphOut()})
     def outer_thing(foo_asset):
-        n1, output, unused_output = middle_thing()  # pyright: ignore[reportGeneralTypeIssues]
+        n1, output, unused_output = middle_thing()  # ty: ignore[not-iterable]
         n2 = transformer(output)
         unused_output = combiner(unused_output, transformer(foo_asset))
         return {"n1": n1, "n2": n2, "unused": unused_output}
@@ -1240,7 +1242,7 @@ def test_connected_subset():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
 
         assert len(materialization_events) == 3
@@ -1259,7 +1261,7 @@ def test_subset_of_asset_job():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == dg.AssetKey("bar")
@@ -1282,7 +1284,7 @@ def test_subset_of_assets_job():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
         assert len(materialization_events) == 3
         assert materialization_events[0].asset_key == dg.AssetKey("bar")
@@ -1367,7 +1369,7 @@ def test_asset_selection_reconstructable():
             reconstructable_foo_job = dg.build_reconstructable_job(
                 "dagster_tests.asset_defs_tests.test_asset_job",
                 "reconstruct_asset_job",
-                reconstructable_args=tuple(),
+                reconstructable_args=tuple(),  # ty: ignore[invalid-argument-type]
                 reconstructable_kwargs={},
             ).get_subset(asset_selection=frozenset([dg.AssetKey("f")]))
 
@@ -1508,7 +1510,7 @@ def test_multi_subset():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
 
         assert len(materialization_events) == 2
@@ -1526,7 +1528,7 @@ def test_multi_all():
         )
         materialization_events = sorted(
             [event for event in result.all_events if event.is_step_materialization],
-            key=lambda event: event.asset_key,  # type: ignore
+            key=lambda event: event.asset_key,
         )
 
         assert len(materialization_events) == 3
@@ -1640,7 +1642,7 @@ def test_graph_output_is_input_within_graph():
         },
     )
     def complicated_graph():
-        one, two = nested()  # pyright: ignore[reportGeneralTypeIssues]
+        one, two = nested()  # ty: ignore[not-iterable]
         return one, two, transform(two)
 
     defs = dg.Definitions(
@@ -1840,7 +1842,7 @@ def test_transitive_resource_deps_provided():
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 @ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 def test_transitive_io_manager_dep_not_provided():
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_manager():
         pass
 
@@ -2005,10 +2007,10 @@ def test_asset_subset_io_managers(job_selection, expected_nodes):
     @dg.io_manager(config_schema={"n": int})
     def return_n_io_manager(context):
         class ReturnNIOManager(dg.IOManager):
-            def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def handle_output(self, _context, obj):  # ty: ignore[invalid-method-override]
                 pass
 
-            def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
+            def load_input(self, _context):  # ty: ignore[invalid-method-override]
                 return context.resource_config["n"]
 
         return ReturnNIOManager()
@@ -2256,10 +2258,7 @@ def test_build_subset_job_errors(job_selection, use_multi, expected_error):
         # assert exception context has the expected message and class
         assert check.not_none(error_info.cause).cls_name == expected_class.__name__
         if expected_message:
-            assert (
-                re.compile(expected_message).search(check.not_none(error_info.cause).message)
-                is not None
-            )
+            assert re.search(expected_message, check.not_none(error_info.cause).message) is not None
 
     else:
         dg.Definitions(assets=assets, jobs=[asset_job])
@@ -2388,7 +2387,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     with dg.instance_for_test() as instance:
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            record.event_log_entry.dagster_event.event_specific_data.asset_key  # ty: ignore[unresolved-attribute]
             for record in instance.get_records_for_run(
                 run_id=result.run_id,
                 of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
@@ -2583,9 +2582,9 @@ def test_subset_cycle_resolution_complex():
             d = y + 1
             yield dg.Output(d, "d")
         if "e" in context.op_execution_context.selected_output_names:
-            yield dg.Output(c + 1, "e")  # pyright: ignore[reportPossiblyUnboundVariable]
+            yield dg.Output(c + 1, "e")
         if "f" in context.op_execution_context.selected_output_names:
-            yield dg.Output(d + 1, "f")  # pyright: ignore[reportPossiblyUnboundVariable]
+            yield dg.Output(d + 1, "f")
 
     @dg.asset
     def x(a):
@@ -2929,6 +2928,72 @@ def test_subset_cycle_dependencies():
     assert _all_asset_keys(result) == {dg.AssetKey("a"), dg.AssetKey("b")}
 
 
+def test_subset_cycle_resolution_preserves_orphan_check():
+    """When cycle resolution splits a multi-asset by color, asset checks whose
+    target asset is not in the user-selected asset_selection (but were explicitly
+    requested in the user's check selection) must not be silently dropped.
+    """
+
+    @dg.asset(deps=["A"])
+    def B():
+        return 1
+
+    @dg.multi_asset(
+        can_subset=True,
+        specs=[
+            dg.AssetSpec("A"),
+            dg.AssetSpec("C", deps=["B"]),
+            dg.AssetSpec("Z"),
+        ],
+        check_specs=[
+            dg.AssetCheckSpec("check_A", asset="A"),
+            dg.AssetCheckSpec("check_C", asset="C"),
+            dg.AssetCheckSpec("check_Z", asset="Z"),
+        ],
+    )
+    def M1():
+        yield dg.Output(1, "A")
+        yield dg.Output(3, "C")
+        yield dg.Output(26, "Z")
+        yield dg.AssetCheckResult(asset_key="A", check_name="check_A", passed=True)
+        yield dg.AssetCheckResult(asset_key="C", check_name="check_C", passed=True)
+        yield dg.AssetCheckResult(asset_key="Z", check_name="check_Z", passed=True)
+
+    job = dg.Definitions(assets=[M1, B]).resolve_implicit_global_asset_job_def()
+
+    # Selecting A, B, C creates a cycle (M1 -> M2 -> M1) that triggers
+    # _attempt_resolve_node_cycles, splitting M1 into two color pieces.
+    # check_Z's target Z is NOT in the asset_selection, so it would be orphaned.
+    subset_job = job.get_subset(
+        asset_selection={dg.AssetKey("A"), dg.AssetKey("B"), dg.AssetKey("C")},
+        asset_check_selection={
+            dg.AssetCheckKey(dg.AssetKey("A"), "check_A"),
+            dg.AssetCheckKey(dg.AssetKey("C"), "check_C"),
+            dg.AssetCheckKey(dg.AssetKey("Z"), "check_Z"),
+        },
+    )
+
+    plan = create_execution_plan(subset_job)
+    snap = snapshot_from_execution_plan(plan, subset_job.get_job_snapshot_id())
+
+    found_check_keys = set()
+    for step in snap.steps:
+        if step.key not in snap.step_keys_to_execute:
+            continue
+        for out in step.outputs:
+            if out.properties and out.properties.asset_check_key:
+                found_check_keys.add(out.properties.asset_check_key)
+
+    expected = {
+        dg.AssetCheckKey(dg.AssetKey("A"), "check_A"),
+        dg.AssetCheckKey(dg.AssetKey("C"), "check_C"),
+        dg.AssetCheckKey(dg.AssetKey("Z"), "check_Z"),
+    }
+    assert found_check_keys == expected, (
+        f"Expected {expected}, got {found_check_keys}. Missing: {expected - found_check_keys}"
+    )
+
+
 def test_subset_recongeal() -> None:
     # In this test, we create a job that requires multi-asset `acd` to be broken up into two pieces
     # in order to accomodate the inclusion of `b` in the job, as `b` depends on `a`, but is depended
@@ -3042,7 +3107,7 @@ def test_partial_dependency_on_upstream_multi_asset():
             self.values: dict[dg.AssetKey, int] = {}
 
         def handle_output(self, context: OutputContext, obj: object):
-            self.values[context.asset_key] = obj  # pyright: ignore[reportArgumentType]
+            self.values[context.asset_key] = obj  # ty: ignore[invalid-assignment]
 
         def load_input(self, context: InputContext) -> object:
             return self.values[context.asset_key]
@@ -3085,3 +3150,321 @@ def test_job_definition_with_resolution_error():
         dg.DagsterInvalidDefinitionError, match="Failed to resolve asset job invalid_job"
     ):
         defs.get_repository_def().get_all_jobs()
+
+
+def test_asset_subset_preserves_run_tags() -> None:
+    """Test that subsetting an asset job preserves run_tags from the original job."""
+
+    @dg.asset
+    def asset_a():
+        return 1
+
+    @dg.asset
+    def asset_b():
+        return 2
+
+    job = dg.define_asset_job(
+        name="my_job",
+        selection=[asset_a, asset_b],
+        run_tags={"dagster/max_retries": "1", "my_tag": "my_value"},
+    )
+
+    defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[job])
+    job_def = defs.resolve_job_def("my_job")
+
+    # Subset to just asset_a
+    subset_job = job_def.get_subset(asset_selection={dg.AssetKey("asset_a")})
+
+    assert subset_job.run_tags == {"dagster/max_retries": "1", "my_tag": "my_value"}
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_stored_and_preserved() -> None:
+    @dg.asset
+    def asset_a():
+        return 1
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(dg.AutomationCondition.eager())
+    job = dg.define_asset_job(
+        name="my_job",
+        selection=[asset_a],
+        automation_condition=condition,
+    )
+    assert job.automation_condition == condition
+
+    defs = dg.Definitions(assets=[asset_a], jobs=[job])
+    job_def = defs.resolve_job_def("my_job")
+    assert job_def.automation_condition == condition
+
+    # preserved through asset-selection subsetting
+    subset_job = job_def.get_subset(asset_selection={dg.AssetKey("asset_a")})
+    assert subset_job.automation_condition == condition
+
+    # preserved through _copy-based methods
+    assert job_def.with_top_level_resources({}).automation_condition == condition
+
+
+def test_automation_condition_rejected_on_non_asset_job() -> None:
+    @dg.op
+    def my_op():
+        pass
+
+    @dg.graph
+    def my_graph():
+        my_op()
+
+    with pytest.raises(
+        check.CheckError, match="AutomationCondition can only be provided for asset jobs"
+    ):
+        my_graph.to_job(automation_condition=dg.AutomationCondition.eager())
+
+
+def _defs_with_partitioned_config() -> dg.Definitions:
+    partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def part_asset() -> None: ...
+
+    job = dg.define_asset_job(
+        "my_job",
+        selection=[part_asset],
+        config=dg.PartitionedConfig(
+            partitions_def=partitions_def,
+            run_config_for_partition_key_fn=lambda _: {},
+        ),
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    return dg.Definitions(assets=[part_asset], jobs=[job])
+
+
+def _defs_with_config_on_partitioned_job() -> dg.Definitions:
+    # a plain-dict config on a partitioned job also resolves to per-partition config
+    partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def part_asset() -> None: ...
+
+    job = dg.define_asset_job(
+        "my_job",
+        selection=[part_asset],
+        config={},
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    return dg.Definitions(assets=[part_asset], jobs=[job])
+
+
+def _defs_with_config_on_explicitly_partitioned_job() -> dg.Definitions:
+    # same as above, but the job's partitions_def is declared explicitly rather than
+    # inferred from its member assets
+    partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def my_asset() -> None: ...
+
+    with pytest.warns(DeprecationWarning, match="partitions_def"):
+        job = dg.define_asset_job(
+            "my_job",
+            selection=[my_asset],
+            config={},
+            partitions_def=partitions_def,
+            automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+                dg.AutomationCondition.missing()
+            ),
+        )
+    return dg.Definitions(assets=[my_asset], jobs=[job])
+
+
+def _defs_with_partitions_def_and_partitioned_config() -> dg.Definitions:
+    # scenario: explicit partitions_def AND a matching PartitionedConfig (legal without a
+    # condition) is still rejected when combined with an automation_condition
+    partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def part_asset() -> None: ...
+
+    with pytest.warns(DeprecationWarning, match="partitions_def"):
+        job = dg.define_asset_job(
+            "my_job",
+            selection=[part_asset],
+            partitions_def=partitions_def,
+            config=dg.PartitionedConfig(
+                partitions_def=partitions_def,
+                run_config_for_partition_key_fn=lambda _: {},
+            ),
+            automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+                dg.AutomationCondition.missing()
+            ),
+        )
+    return dg.Definitions(assets=[part_asset], jobs=[job])
+
+
+@pytest.mark.parametrize(
+    "build_defs",
+    [
+        pytest.param(_defs_with_partitioned_config, id="partitioned_config"),
+        pytest.param(_defs_with_config_on_partitioned_job, id="config_on_partitioned_job"),
+        pytest.param(
+            _defs_with_config_on_explicitly_partitioned_job,
+            id="config_on_explicitly_partitioned_job",
+        ),
+        pytest.param(
+            _defs_with_partitions_def_and_partitioned_config,
+            id="partitions_def_and_partitioned_config",
+        ),
+    ],
+)
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_rejected_with_partitioned_run_config(
+    build_defs: Callable[[], dg.Definitions],
+) -> None:
+    defs = build_defs()
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError, match="Failed to resolve asset job"
+    ) as exc_info:
+        defs.resolve_job_def("my_job")
+    assert "has both an automation_condition and partitioned run config" in str(
+        exc_info.value.__cause__
+    )
+
+
+@pytest.mark.parametrize("explicit_partitions_def", [False, True], ids=["implicit", "explicit"])
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_allowed_on_partitioned_job(
+    explicit_partitions_def: bool,
+) -> None:
+    # without user-supplied config, a partitioned job with a condition is supported
+    partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
+
+    @dg.asset(partitions_def=partitions_def)
+    def part_asset() -> None: ...
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(dg.AutomationCondition.missing())
+
+    if explicit_partitions_def:
+        with pytest.warns(DeprecationWarning, match="partitions_def"):
+            job = dg.define_asset_job(
+                "my_job",
+                selection=[part_asset],
+                partitions_def=partitions_def,
+                automation_condition=condition,
+            )
+    else:
+        job = dg.define_asset_job("my_job", selection=[part_asset], automation_condition=condition)
+
+    job_def = dg.Definitions(assets=[part_asset], jobs=[job]).resolve_job_def("my_job")
+    assert job_def.automation_condition == condition
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_allowed_on_partitioned_job_with_unpartitioned_assets() -> None:
+    # without user-supplied config, a partitioned job with a condition is supported
+    partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
+
+    @dg.asset
+    def my_asset() -> None: ...
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(dg.AutomationCondition.missing())
+
+    with pytest.warns(DeprecationWarning, match="partitions_def"):
+        job = dg.define_asset_job(
+            "my_job",
+            selection=[my_asset],
+            partitions_def=partitions_def,
+            automation_condition=condition,
+        )
+
+    job_def = dg.Definitions(assets=[my_asset], jobs=[job]).resolve_job_def("my_job")
+    assert job_def.automation_condition == condition
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@pytest.mark.parametrize(
+    "condition",
+    [
+        pytest.param(dg.AutomationCondition.eager(), id="eager"),
+        pytest.param(dg.AutomationCondition.missing(), id="missing"),
+        pytest.param(dg.AutomationCondition.on_cron("@daily"), id="on_cron"),
+        # scope-agnostic, so it type-checks at job scope (see test_type_errors.py); this
+        # runtime rejection is the only guard against using it unanchored on a job
+        pytest.param(dg.AutomationCondition.cron_tick_passed("@daily"), id="cron_tick_passed"),
+    ],
+)
+def test_automation_condition_without_job_scope_rejected(
+    condition: dg.AutomationCondition,
+) -> None:
+    # an asset-level condition must be wrapped with any/all_job_root_assets_match to be
+    # used on a job; unwrapped conditions are rejected when the job resolves
+    @dg.asset
+    def my_asset() -> None: ...
+
+    job = dg.define_asset_job("my_job", selection=[my_asset], automation_condition=condition)
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
+        dg.Definitions(assets=[my_asset], jobs=[job]).resolve_job_def("my_job")
+    assert "does not evaluate against the job's root assets" in (
+        str(exc_info.value) + str(exc_info.value.__cause__)
+    )
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_composed_with_job_scope_allowed() -> None:
+    # compositions are fine as long as the tree contains a job-root-assets condition
+    @dg.asset
+    def my_asset() -> None: ...
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(
+        dg.AutomationCondition.eager()
+    ) & dg.AutomationCondition.cron_tick_passed("@daily")
+
+    job = dg.define_asset_job("my_job", selection=[my_asset], automation_condition=condition)
+    job_def = dg.Definitions(assets=[my_asset], jobs=[job]).resolve_job_def("my_job")
+    assert job_def.automation_condition == condition
+
+
+@pytest.mark.parametrize("explicit_partitions_def", [False, True], ids=["implicit", "explicit"])
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_job_with_mismatched_asset_partitions_rejected(
+    explicit_partitions_def: bool,
+) -> None:
+    # a conditioned job cannot span assets with different partitions definitions; the
+    # core resolution error fires before declarative automation is involved
+    pd_one = dg.StaticPartitionsDefinition(["p1", "p2"])
+    pd_two = dg.StaticPartitionsDefinition(["x", "y"])
+
+    @dg.asset(partitions_def=pd_one)
+    def asset_one() -> None: ...
+
+    @dg.asset(partitions_def=pd_two)
+    def asset_two() -> None: ...
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(dg.AutomationCondition.missing())
+    if explicit_partitions_def:
+        with pytest.warns(DeprecationWarning, match="partitions_def"):
+            job = dg.define_asset_job(
+                "my_job",
+                selection=[asset_one, asset_two],
+                partitions_def=pd_one,
+                automation_condition=condition,
+            )
+    else:
+        job = dg.define_asset_job(
+            "my_job",
+            selection=[asset_one, asset_two],
+            automation_condition=condition,
+        )
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError) as exc_info:
+        dg.Definitions(assets=[asset_one, asset_two], jobs=[job]).resolve_job_def("my_job")
+    assert "must have the same partitions definitions" in (
+        str(exc_info.value) + str(exc_info.value.__cause__)
+    )

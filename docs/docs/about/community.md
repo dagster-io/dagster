@@ -63,7 +63,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 #### Responsibilities
 
-The Dagster core team is responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful. For the full list of core team members, refer to [the Dagster Labs team page](https://dagster.io/about).
+The Dagster core team is responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful. For the full list of core team members, see the [Dagster Labs team page](https://dagster.io/about).
 
 The Dagster core team has the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that aren't aligned to this Code of Conduct, and will communicate reasons for moderation decisions when appropriate.
 

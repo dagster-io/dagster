@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Icon, Popover} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Popover, Text} from '@dagster-io/ui-components';
 import React, {ReactNode, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -83,14 +83,14 @@ export const EventPopover = React.memo(
           }
           if (latestRun.status === 'STARTED') {
             return {
-              content: <Body>In progress</Body>,
+              content: <Text size={14}>In progress</Text>,
               icon: <Icon name="run_started" color={Colors.accentBlue()} />,
               runId: latestRun.id,
               timestamp: Number(latestRun.startTime) * 1000,
             };
           }
           return {
-            content: <Body>Queued</Body>,
+            content: <Text size={14}>Queued</Text>,
             icon: <Icon name="run_queued" color={Colors.accentBlue()} />,
             runId: latestRun.id,
             timestamp: null,
@@ -98,21 +98,21 @@ export const EventPopover = React.memo(
         }
         case 'FailedToMaterializeEvent':
           return {
-            content: <Body>Failed</Body>,
+            content: <Text size={14}>Failed</Text>,
             icon: <Icon name="run_failed" color={Colors.accentRed()} />,
             runId: event.runId,
             timestamp: event.timestamp,
           };
         case 'ObservationEvent':
           return {
-            content: <Body>Observed</Body>,
+            content: <Text size={14}>Observed</Text>,
             icon: <Icon name="run_success" color={Colors.accentGreen()} />,
             runId: event.runId,
             timestamp: event.timestamp,
           };
         case 'MaterializationEvent':
           return {
-            content: <Body>Materialized</Body>,
+            content: <Text size={14}>Materialized</Text>,
             icon: <Icon name="run_success" color={Colors.accentGreen()} />,
             runId: event.runId,
             timestamp: event.timestamp,

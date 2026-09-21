@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import dagster as dg
-import dspy
-from dspy.teleprompt import MIPROv2
+import dspy  # ty: ignore[unresolved-import]
+from dspy.teleprompt import MIPROv2  # ty: ignore[unresolved-import]
 from pydantic import Field
 
 from dspy_modules.connections_metrics import success_metric
@@ -58,7 +58,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
         )
         def puzzle_data_asset(
             context: dg.AssetExecutionContext,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Load and split Connections puzzle data."""
 
             # Get absolute path to connections data
@@ -72,7 +72,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 raise FileNotFoundError(f"Connections data not found at: {data_path}")
 
             # Load puzzles
-            puzzles = load_puzzles_from_csv(str(data_path))
+            puzzles = load_puzzles_from_csv(data_path)
             context.log.info(f"Loaded {len(puzzles)} puzzles")
 
             # Split data
@@ -120,7 +120,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
         def baseline_model_asset(
             context: dg.AssetExecutionContext,
             dspy_resource: DSPyResource,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Create baseline DSPy Connections solver model."""
             # start_baseline_core
             # Configure DSPy
@@ -167,7 +167,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
         def baseline_performance_asset(
             context: dg.AssetExecutionContext,
             dspy_resource: DSPyResource,
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             """Evaluate baseline model performance on Connections puzzles."""
 
             # Configure DSPy
@@ -182,7 +182,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
             if not data_path.is_absolute():
                 data_path = Path.cwd() / data_path
 
-            puzzles = load_puzzles_from_csv(str(data_path))
+            puzzles = load_puzzles_from_csv(data_path)
             _, test_puzzles = shuffle_and_split_puzzles(puzzles, self.train_test_split)
             eval_puzzles = test_puzzles[: self.eval_subset_size]
 
@@ -253,7 +253,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
             def optimized_model_asset(
                 context: dg.AssetExecutionContext,
                 dspy_resource: DSPyResource,
-            ) -> Dict[str, Any]:
+            ) -> dict[str, Any]:
                 """Run DSPy optimization if performance is below threshold."""
 
                 # Configure DSPy
@@ -270,7 +270,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 if not data_path.is_absolute():
                     data_path = Path.cwd() / data_path
 
-                puzzles = load_puzzles_from_csv(str(data_path))
+                puzzles = load_puzzles_from_csv(data_path)
                 train_puzzles, _ = shuffle_and_split_puzzles(
                     puzzles, self.train_test_split
                 )
@@ -312,7 +312,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 optimizer = MIPROv2(
                     auto="light",  # Use light mode for faster optimization
                     metric=optimization_metric,
-                    teacher_settings=dict(lm=dspy.LM(f"gemini/{main_model}", **params)),
+                    teacher_settings={"lm": dspy.LM(f"gemini/{main_model}", **params)},
                     prompt_model=dspy.LM(f"gemini/{main_model}", **params),
                     num_threads=4,
                 )
@@ -359,7 +359,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
             def optimized_performance_asset(
                 context: dg.AssetExecutionContext,
                 dspy_resource: DSPyResource,
-            ) -> Dict[str, Any]:
+            ) -> dict[str, Any]:
                 """Evaluate optimized model performance."""
 
                 # Configure DSPy
@@ -376,7 +376,7 @@ class DSPyModelBuilder(dg.Component, dg.Model, dg.Resolvable):
                 if not data_path.is_absolute():
                     data_path = Path.cwd() / data_path
 
-                puzzles = load_puzzles_from_csv(str(data_path))
+                puzzles = load_puzzles_from_csv(data_path)
                 _, test_puzzles = shuffle_and_split_puzzles(
                     puzzles, self.train_test_split
                 )

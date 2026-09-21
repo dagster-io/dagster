@@ -13,6 +13,7 @@ import type {PropSidebarItemCategory, PropSidebarItemLink} from '@docusaurus/plu
 
 import styles from './styles.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import {CARD_TAGS, hasCardTag} from '../DocCardList/filters';
 
 // TODO - text for folders
 // TODO - indicator for "community supported" integration
@@ -63,7 +64,9 @@ function CardLayout({
 }): ReactNode {
   const label = item.label;
   const logo: string | null = (item?.customProps?.logo as string) || null;
-  const community: boolean = (item?.customProps?.community as boolean) || false;
+  const logoVariant: string | null = (item?.customProps?.logoVariant as string) || null;
+  const isPanelLogo = logoVariant === 'panel';
+  const cardTags = CARD_TAGS.filter((tag) => hasCardTag(item, tag.key));
   const categoryItemsPlural = useCategoryItemsPlural();
   const doc = useDocById(item.type === 'link' ? (item.docId ?? undefined) : undefined);
   const logoUrl = useBaseUrl(logo || '');
@@ -86,7 +89,7 @@ function CardLayout({
   const hrefString = typeof href === 'string' ? href : '';
   const isExamplesPage = pathname.startsWith('/examples');
   const isExamplesCard = isExamplesPage || hrefString.startsWith('/examples');
-  const isMiniExampleCard = hrefString.includes('/best-practices/');
+  const isBestPracticesCard = hrefString.includes('/best-practices/');
   const examplePill = hrefString.includes('/best-practices/')
     ? 'Best practice'
     : hrefString.includes('/full-pipelines/')
@@ -99,8 +102,11 @@ function CardLayout({
   if (isExamplesCard) {
     return (
       <LinkComponent href={href} className={clsx('card', styles.cardContainer, styles.examplesCard, className)}>
-        <div className={styles.examplesBody}>
-          {logo && !isMiniExampleCard && <img className={styles.cardLogo} src={logoUrl} />}
+        {logo && isPanelLogo && <img className={styles.cardLogoPanel} src={logoUrl} aria-hidden="true" />}
+        <div className={clsx(styles.examplesBody, isPanelLogo && styles.examplesBodyWithPanel)}>
+          {logo && !isPanelLogo && (
+            <img className={clsx(styles.cardLogo, isBestPracticesCard && styles.cardLogoFrameless)} src={logoUrl} />
+          )}
           <div>
             <div className={styles.examplesMetaRow}>
               <span className={styles.examplesPill}>{examplePill}</span>
@@ -110,7 +116,11 @@ function CardLayout({
                 {label}
               </Heading>
               {!hasInternalHref && <ExternalLinkIcon />}
-              {community && <span className={styles.cardTags}>Community</span>}
+              {cardTags.map((tag) => (
+                <span key={tag.key} className={styles.cardTags}>
+                  {tag.label}
+                </span>
+              ))}
             </div>
             {description && (
               <p className={styles.cardDescription} title={description}>
@@ -139,7 +149,11 @@ function CardLayout({
             {label}
           </Heading>
           {!hasInternalHref && <ExternalLinkIcon />}
-          {community && <span className={styles.cardTags}>Community</span>}
+          {cardTags.map((tag) => (
+            <span key={tag.key} className={styles.cardTags}>
+              {tag.label}
+            </span>
+          ))}
         </div>
         {description && (
           <p className={styles.cardDescription} title={description}>

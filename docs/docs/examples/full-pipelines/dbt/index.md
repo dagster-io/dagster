@@ -25,7 +25,7 @@ To follow the steps in this guide, you'll need:
 - Python 3.10+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Familiar with [dbt](https://www.getdbt.com) and data transformation.
 
-## 1. Set up your Dagster environment
+## Step 1: Set up your Dagster environment
 
 First, set up a new Dagster project.
 
@@ -60,7 +60,7 @@ First, set up a new Dagster project.
 
    And then populate the fields.
 
-## 2. Launch the Dagster webserver
+## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 

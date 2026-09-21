@@ -34,7 +34,7 @@ with DAG(
     schedule_interval=None,
     is_paused_upon_creation=False,
 ) as affected_dag:
-    build_print_task("print_task") >> build_print_task("downstream_print_task")  # type: ignore
+    build_print_task("print_task") >> build_print_task("downstream_print_task")
 
 with DAG(
     "unaffected_dag",
@@ -42,12 +42,12 @@ with DAG(
     schedule_interval=None,
     is_paused_upon_creation=False,
 ) as unaffected_dag:
-    build_print_task("print_task") >> build_print_task("downstream_print_task")  # type: ignore
+    build_print_task("print_task") >> build_print_task("downstream_print_task")
 
 
 class CustomProxyTaskToDagsterOperator(DefaultProxyTaskToDagsterOperator):
     @classmethod
-    def build_from_task(cls, original_task: BaseOperator) -> BaseProxyTaskToDagsterOperator:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def build_from_task(cls, original_task: BaseOperator) -> BaseProxyTaskToDagsterOperator:  # ty: ignore[invalid-method-override]
         """A custom callback to construct a new operator for the given task. In our case, we add retries to the affected_dag."""
         new_task = build_dagster_task(original_task, DefaultProxyTaskToDagsterOperator)
         if original_task.dag_id == "affected_dag":

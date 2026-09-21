@@ -1,0 +1,81 @@
+.container {
+  display: flex;
+  overflow: hidden;
+  flex: 1 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.container.horizontal {
+  flex-direction: row;
+}
+
+.container.vertical {
+  flex-direction: column;
+}
+
+.container .splitPanel {
+  position: relative;
+  flex-direction: column;
+  display: flex;
+  z-index: 0;
+}
+
+.container.horizontal .splitPanel {
+  transition: width 200ms ease-out;
+  min-width: 0;
+}
+
+.container.vertical .splitPanel {
+  transition: height 200ms ease-out;
+  min-height: 0;
+}
+
+.container.resizing .splitPanel {
+  transition: none;
+}
+
+.horizontalDivider {
+  width: 2px;
+  z-index: 1;
+  background: var(--color-keyline-default);
+  margin-left: -1px;
+  overflow: visible;
+  position: relative;
+}
+
+.horizontalDivider.resizing {
+  background: var(--color-accent-gray);
+}
+
+.verticalDivider {
+  height: 2px;
+  z-index: 1;
+  background: var(--color-keyline-default);
+  margin-top: -1px;
+  overflow: visible;
+  position: relative;
+}
+
+.verticalDivider.resizing {
+  background: var(--color-accent-gray);
+}
+
+.horizontalHitArea {
+  width: 17px;
+  height: 100%;
+  z-index: 1;
+  cursor: ew-resize;
+  position: relative;
+  left: -8px;
+}
+
+.verticalHitArea {
+  height: 17px;
+  width: 100%;
+  z-index: 1;
+  cursor: ns-resize;
+  position: relative;
+  top: -8px;
+}

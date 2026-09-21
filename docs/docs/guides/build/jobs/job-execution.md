@@ -64,7 +64,7 @@ Dagster includes Python APIs for execution that are useful when writing tests or
 <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMain={false} />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/job_execution.py" startAfter="start_execute" endBefore="end_execute" title="src/<project_name>/defs/assets.py" trimMain={false} />
 
 You can find the full API documentation in [Execution API](/api/dagster/execution) and learn more about the testing use cases in the [testing documentation](/guides/test).
 
@@ -103,7 +103,7 @@ Let's take a look at some examples:
 
 Use this selection syntax in the `op_selection` argument to the <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" />:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_op_selection_marker" endBefore="end_op_selection_marker" title="src/<project_name>/defs/jobs.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/job_execution.py" startAfter="start_op_selection_marker" endBefore="end_op_selection_marker" title="src/<project_name>/defs/jobs.py"/>
 
 Similarly, you can specify the same op selection in the Dagster UI Launchpad:
 
@@ -121,13 +121,13 @@ The default job executor definition defaults to multiprocess execution. It also 
 
 Below is an example of run config as YAML you could provide in the Dagster UI playground to launch an in-process execution.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_ip_yaml" endBefore="end_ip_yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/job_execution.py" startAfter="start_ip_yaml" endBefore="end_ip_yaml" />
 
 Additional config options are available for multiprocess execution that can help with performance. This includes limiting the max concurrent subprocesses and controlling how those subprocesses are spawned.
 
 The example below sets the run config directly on the job to explicitly set the max concurrent subprocesses to `4`, and change the subprocess start method to use a forkserver.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_mp_cfg" endBefore="end_mp_cfg" title="src/<project_name>/defs/jobs.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/job_execution.py" startAfter="start_mp_cfg" endBefore="end_mp_cfg" title="src/<project_name>/defs/jobs.py"/>
 
 Using a forkserver is a great way to reduce per-process overhead during multiprocess execution, but can cause issues with certain libraries. Refer to the [Python documentation](https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods) for more info.
 
@@ -139,7 +139,7 @@ Limits can be specified for all ops with a certain tag key or key-value pair. If
 
 For example, the following job will execute at most two ops at once with the `database` tag equal to `redshift`, while also ensuring that at most four ops execute at once:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_tag_concurrency" endBefore="end_tag_concurrency" title="src/<project_name>/defs/jobs.py"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/build/ops_jobs_graphs/job_execution.py" startAfter="start_tag_concurrency" endBefore="end_tag_concurrency" title="src/<project_name>/defs/jobs.py"/>
 
 :::note
 

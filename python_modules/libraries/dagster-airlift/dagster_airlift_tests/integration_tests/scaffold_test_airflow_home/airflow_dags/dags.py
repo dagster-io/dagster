@@ -20,12 +20,12 @@ def make_print_dag(dag_id: str) -> DAG:
     with DAG(
         dag_id,
         default_args=default_args,
-        schedule_interval=None,
+        schedule=None,
         is_paused_upon_creation=False,
     ) as dag:
         PythonOperator(task_id="print_task", python_callable=print_hello) >> PythonOperator(
             task_id="downstream_print_task", python_callable=print_hello
-        )  # type: ignore
+        )
         return dag
 
 

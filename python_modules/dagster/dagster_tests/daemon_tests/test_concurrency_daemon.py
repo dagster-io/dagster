@@ -24,7 +24,7 @@ def instance():
         with dg.instance_for_test(
             overrides={
                 "event_log_storage": {
-                    "module": "dagster.utils.test",
+                    "module": "dagster._utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },

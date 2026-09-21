@@ -6,7 +6,7 @@ modal run modal/hello_world.py
 
 import logging
 
-import modal
+import modal  # ty: ignore[unresolved-import]
 
 app = modal.App("example-hello-world")
 

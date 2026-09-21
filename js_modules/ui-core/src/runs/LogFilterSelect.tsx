@@ -9,10 +9,10 @@ import {
   Popover,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {LogLevel} from '../graphql/types';
 import {compactNumber} from '../ui/formatters';
+import styles from './css/LogFilterSelect.module.css';
 
 export type FilterOption = {
   label: string;
@@ -52,7 +52,8 @@ export const LogFilterSelect = ({options, onSetFilter}: Props) => {
             const {label, count, enabled} = optionForLevel;
             return (
               <MenuItemForInteractiveContent key={level}>
-                <MenuCheckbox
+                <Checkbox
+                  className={styles.menuCheckbox}
                   id={`menu-check-${level}`}
                   checked={enabled}
                   onChange={onChange(level)}
@@ -76,7 +77,8 @@ export const LogFilterSelect = ({options, onSetFilter}: Props) => {
         </Menu>
       }
     >
-      <FilterButton
+      <Button
+        className={styles.filterButton}
         onClick={() => setShowMenu((current) => !current)}
         icon={<Icon name="filter_alt" />}
         rightIcon={<Icon name="expand_more" />}
@@ -84,18 +86,7 @@ export const LogFilterSelect = ({options, onSetFilter}: Props) => {
         <span style={{fontVariantNumeric: 'tabular-nums'}}>
           Levels ({enabledCount}/{levels.length})
         </span>
-      </FilterButton>
+      </Button>
     </Popover>
   );
 };
-
-const FilterButton = styled(Button)`
-  justify-content: space-between;
-  width: 100%;
-`;
-
-const MenuCheckbox = styled(Checkbox)`
-  display: flex;
-  flex: 1;
-  align-items: center;
-`;

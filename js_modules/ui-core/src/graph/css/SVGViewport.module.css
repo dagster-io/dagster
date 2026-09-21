@@ -1,0 +1,32 @@
+.iconButton {
+  background: var(--color-background-default);
+  border: 1px solid var(--color-border-default);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  border-radius: 8px;
+  transition: background 200ms ease-in-out;
+
+  &:hover {
+    background-color: var(--color-background-light-hover);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:active {
+    background-color: var(--color-background-light);
+  }
+}
+
+.zoomSliderContainer {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 30px;
+}

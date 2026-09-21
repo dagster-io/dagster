@@ -177,7 +177,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
             # add the trailing '/' to make sure that ['a'] does not match ['apple']
             delete_prefix = "/".join([self._prefix, "storage", *prefix, ""])
             to_delete = self._bucket.list_blobs(prefix=delete_prefix)
-            self._bucket.delete_blobs(list(to_delete))
+            self._bucket.delete_blobs(list(to_delete), on_error=lambda _: None)
         else:
             check.failed("Must pass in either `log_key` or `prefix` argument to delete_logs")
 
@@ -232,7 +232,7 @@ class GCSComputeLogManager(TruncatingCloudStorageComputeLogManager, Configurable
 
     def get_log_keys_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], io_type: ComputeIOType
-    ) -> Sequence[Sequence[str]]:
+    ) -> Sequence[list[str]]:
         directory = self._resolve_path_for_namespace(log_key_prefix)
         blobs = self._client.list_blobs(self._bucket, prefix="/".join(directory))
         results = []

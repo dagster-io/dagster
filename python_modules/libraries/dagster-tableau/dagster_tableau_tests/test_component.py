@@ -16,7 +16,7 @@ from dagster.components.testing import create_defs_folder_sandbox
 from dagster.components.testing.test_cases import TestTranslation
 from dagster_tableau.components import TableauComponent
 
-BASIC_TABLEAU_COMPONENT_BODY = {
+BASIC_TABLEAU_COMPONENT_BODY: dict[str, Any] = {
     "type": "dagster_tableau.TableauComponent",
     "attributes": {
         "workspace": {
@@ -153,7 +153,8 @@ class TestTableauTranslation(TestTranslation):
                     key = key_modifier(key)
 
                 assets_def = defs.resolve_assets_def(key)
-                assert assertion(assets_def.get_asset_spec(key))
+                asset_spec = assets_def.get_asset_spec(key)
+                assert assertion(asset_spec)
 
 
 def test_component_workbook_selector_by_id(

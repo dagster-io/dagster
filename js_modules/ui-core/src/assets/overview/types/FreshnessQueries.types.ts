@@ -1,15 +1,27 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
 
-export type FreshnessEvaluationEnabledQueryVariables = Types.Exact<{[key: string]: never}>;
+export type AssetHealthStatus = 'DEGRADED' | 'HEALTHY' | 'NOT_APPLICABLE' | 'UNKNOWN' | 'WARNING';
+
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type FreshnessEvaluationEnabledQueryVariables = Exact<{[key: string]: never}>;
 
 export type FreshnessEvaluationEnabledQuery = {
   __typename: 'Query';
   instance: {__typename: 'Instance'; id: string; freshnessEvaluationEnabled: boolean};
 };
 
-export type FreshnessStatusQueryVariables = Types.Exact<{
+export type FreshnessStatusQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
 

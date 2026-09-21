@@ -95,7 +95,7 @@ describe('BackfillPage', () => {
   it('renders the loading state', async () => {
     render(
       <RecoilRoot>
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <AnalyticsContext.Provider value={{page: () => {}, track: () => {}}}>
           <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
             <Route path="/runs/b/:backfillId">
               <MockedProvider mocks={mocks}>
@@ -127,7 +127,7 @@ describe('BackfillPage', () => {
 
     const {findByText} = render(
       <RecoilRoot>
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <AnalyticsContext.Provider value={{page: () => {}, track: () => {}}}>
           <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
             <Route path="/runs/b/:backfillId">
               <MockedProvider mocks={errorMocks}>
@@ -145,7 +145,7 @@ describe('BackfillPage', () => {
   it('renders the loaded state', async () => {
     render(
       <RecoilRoot>
-        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+        <AnalyticsContext.Provider value={{page: () => {}, track: () => {}}}>
           <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
             <Route path="/runs/b/:backfillId">
               <MockedProvider mocks={mocks}>

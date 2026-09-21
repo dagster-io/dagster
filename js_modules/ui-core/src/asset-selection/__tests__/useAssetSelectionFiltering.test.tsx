@@ -1,7 +1,9 @@
 import {renderHook, waitFor} from '@testing-library/react';
 
 import {tokenForAssetKey} from '../../asset-graph/Utils';
+import {AssetGraphQueryItem} from '../../asset-graph/types';
 import {useAssetGraphData} from '../../asset-graph/useAssetGraphData';
+import {WorkspaceAssetNode} from '../../assets/useAllAssets';
 import {buildAssetKey} from '../../graphql/builders';
 import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 
@@ -9,9 +11,11 @@ const mockTokenForAssetKeyNotMock = tokenForAssetKey;
 jest.mock('../util', () => ({
   getAssetsByKey: jest.fn((assets) => {
     const map = new Map();
-    assets.forEach((asset: any) => {
+    assets.forEach((asset: {key?: {path: string[]}; assetKey?: {path: string[]}}) => {
       const key = asset.key || asset.assetKey;
-      map.set(mockTokenForAssetKeyNotMock(key), asset);
+      if (key) {
+        map.set(mockTokenForAssetKeyNotMock(key), asset);
+      }
     });
     return map;
   }),
@@ -57,7 +61,7 @@ const createMockExternalAsset = (path: string[]) => createMockAsset(path, false)
 const createMockAssetGraphResponse = (
   assetKeys: Array<{path: string[]}>,
   loading = false,
-  graphQueryItems: any[] = [],
+  graphQueryItems: AssetGraphQueryItem[] = [],
 ) => ({
   loading,
   assetGraphData: null,
@@ -356,13 +360,15 @@ describe('useAssetSelectionFiltering', () => {
     const mockNode = {
       assetKey: buildAssetKey({path: ['asset1']}),
     };
-    const shouldHide = config.hideNodesMatching?.(mockNode as any);
+    const shouldHide = config.hideNodesMatching?.(mockNode as unknown as WorkspaceAssetNode);
     expect(shouldHide).toBe(false); // Should not hide because asset exists in our list
 
     const nonExistentNode = {
       assetKey: buildAssetKey({path: ['nonexistent']}),
     };
-    const shouldHideNonExistent = config.hideNodesMatching?.(nonExistentNode as any);
+    const shouldHideNonExistent = config.hideNodesMatching?.(
+      nonExistentNode as unknown as WorkspaceAssetNode,
+    );
     expect(shouldHideNonExistent).toBe(true); // Should hide because asset doesn't exist in our list
   });
 

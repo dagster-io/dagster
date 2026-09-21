@@ -345,7 +345,7 @@ def configured(
             updated_fn, new_config_schema = _wrap_user_fn_if_pythonic_config(
                 config_or_config_fn, config_schema
             )
-            return configurable.configured(
+            return configurable.configured(  # ty: ignore[invalid-return-type]
                 config_or_config_fn=updated_fn,
                 name=name,
                 config_schema=new_config_schema,
@@ -359,7 +359,7 @@ def configured(
             updated_fn, new_config_schema = _wrap_user_fn_if_pythonic_config(
                 config_or_config_fn, config_schema
             )
-            return configurable.configured(
+            return configurable.configured(  # ty: ignore[invalid-return-type]
                 config_schema=new_config_schema, config_or_config_fn=updated_fn, **kwargs
             )
 

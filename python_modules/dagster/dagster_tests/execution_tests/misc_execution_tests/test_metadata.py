@@ -57,7 +57,7 @@ def test_metadata_asset_materialization():
         result, "the_op", DagsterEventType.ASSET_MATERIALIZATION
     )
     assert len(materialization_events) == 1
-    materialization = materialization_events[0].event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    materialization = materialization_events[0].event_specific_data.materialization
     assert len(materialization.metadata) == 8
     entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
     assert entry_map["text"] == dg.TextMetadataValue
@@ -95,7 +95,7 @@ def test_metadata_asset_observation():
 
     observation_events = step_events_of_type(result, "the_op", DagsterEventType.ASSET_OBSERVATION)
     assert len(observation_events) == 1
-    observation = observation_events[0].event_specific_data.asset_observation  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    observation = observation_events[0].event_specific_data.asset_observation
     assert len(observation.metadata) == 5
     entry_map = {k: v.__class__ for k, v in observation.metadata.items()}
     assert entry_map["text"] == dg.TextMetadataValue
@@ -155,9 +155,9 @@ def test_parse_invalid_metadata():
     metadata = {"foo": object()}
 
     with pytest.raises(DagsterInvalidMetadata) as _exc_info:
-        normalize_metadata(metadata)  # pyright: ignore[reportArgumentType]
+        normalize_metadata(metadata)  # ty: ignore[invalid-argument-type]
 
-    normalized = normalize_metadata(metadata, allow_invalid=True)  # pyright: ignore[reportArgumentType]
+    normalized = normalize_metadata(metadata, allow_invalid=True)  # ty: ignore[invalid-argument-type]
     assert normalized["foo"] == dg.TextMetadataValue("[object] (unserializable)")
 
 
@@ -223,7 +223,7 @@ bad_values = {
 
 def test_table_column_keys():
     with pytest.raises(TypeError):
-        dg.TableColumn(bad_key="foo", description="bar", type="string")  # pyright: ignore[reportCallIssue]
+        dg.TableColumn(bad_key="foo", description="bar", type="string")  # ty: ignore[unknown-argument, missing-argument]
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_column"].items()))
@@ -236,12 +236,12 @@ def test_table_column_values(key, value):
     }
     kwargs[key] = value
     with pytest.raises(CheckError):
-        dg.TableColumn(**kwargs)
+        dg.TableColumn(**kwargs)  # ty: ignore[invalid-argument-type]
 
 
 def test_table_constraints_keys():
     with pytest.raises(TypeError):
-        dg.TableColumn(bad_key="foo")  # pyright: ignore[reportCallIssue]
+        dg.TableColumn(bad_key="foo")  # ty: ignore[unknown-argument, missing-argument]
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_constraints"].items()))
@@ -254,7 +254,7 @@ def test_table_constraints(key, value):
 
 def test_table_column_constraints_keys():
     with pytest.raises(TypeError):
-        dg.TableColumnConstraints(bad_key="foo")  # pyright: ignore[reportCallIssue]
+        dg.TableColumnConstraints(bad_key="foo")  # ty: ignore[unknown-argument]
 
 
 # minimum and maximum aren't checked because they depend on the type of the column
@@ -272,7 +272,7 @@ def test_table_column_constraints_values(key, value):
 
 def test_table_schema_keys():
     with pytest.raises(TypeError):
-        dg.TableSchema(bad_key="foo")  # pyright: ignore[reportCallIssue]
+        dg.TableSchema(bad_key="foo")  # ty: ignore[unknown-argument, missing-argument]
 
 
 @pytest.mark.parametrize("key,value", list(bad_values["table_schema"].items()))
@@ -342,7 +342,7 @@ def test_bool_metadata_value():
         result, "the_op", DagsterEventType.ASSET_MATERIALIZATION
     )
     assert len(materialization_events) == 1
-    materialization = materialization_events[0].event_specific_data.materialization  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    materialization = materialization_events[0].event_specific_data.materialization
     entry_map = {k: v.__class__ for k, v in materialization.metadata.items()}
     assert entry_map["first_bool"] == dg.BoolMetadataValue
     assert entry_map["second_bool"] == dg.BoolMetadataValue

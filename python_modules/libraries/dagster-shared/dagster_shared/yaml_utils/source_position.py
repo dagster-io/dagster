@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, TypeAlias, cast
+from typing import Any, NamedTuple, TypeAlias
 
 import dagster_shared.check as check
 
@@ -92,7 +92,7 @@ class SourcePositionTree(NamedTuple):
         if source_position.filename == "<string>":
             code_snippet = ""
         else:
-            with open(source_position.filename) as f:
+            with open(source_position.filename, encoding="utf-8") as f:
                 lines = f.readlines()
             lines_with_line_numbers = list(zip(range(1, len(lines) + 1), lines))
 
@@ -256,7 +256,7 @@ def populate_source_position_and_key_paths(
 
     for child_key_segment, child_tree in source_position_tree.children.items():
         try:
-            child_obj = cast("Any", obj)[child_key_segment]
+            child_obj = obj[child_key_segment]
         except TypeError:
             if not isinstance(child_key_segment, str):
                 raise

@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal, TypeAlias
 
 import dagster as dg
 import pydantic
@@ -37,6 +37,8 @@ from dagster_fivetran.translator import (
     FivetranWorkspaceData,
 )
 from dagster_fivetran.utils import DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY
+
+FivetranMetadataAddons: TypeAlias = Literal["column_metadata"]
 
 
 class FivetranWorkspaceModel(pydantic.BaseModel):
@@ -106,7 +108,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         FivetranWorkspace,
         dg.Resolver(
             lambda context, model: FivetranWorkspace(
-                **resolve_fields(model, FivetranWorkspace, context)
+                **resolve_fields(model, FivetranWorkspace, context)  # ty: ignore[invalid-argument-type]
             )
         ),
     ]
@@ -135,7 +137,14 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
             "Use this when Fivetran connectors run on Fivetran's auto-schedule."
         ),
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.legacy_code_server_snapshots()
+    include_metadata: Annotated[
+        list[FivetranMetadataAddons],
+        dg.Resolver.default(
+            description="Optionally include additional metadata in materializations generated while executing Fivetran syncs",
+            examples=[["column_metadata"]],
+        ),
+    ] = pydantic.Field(default_factory=list)
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @cached_property
     def workspace_resource(self) -> FivetranWorkspace:
@@ -220,7 +229,10 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
                         yield from super().execute(context, fivetran)
                         context.log.info("Fivetran sync completed successfully")
         """
-        yield from fivetran.sync_and_poll(context=context)
+        iterator = fivetran.sync_and_poll(context=context)
+        if "column_metadata" in self.include_metadata:
+            iterator = iterator.fetch_column_metadata()
+        yield from iterator
 
     def _load_asset_specs(self, state: FivetranWorkspaceData) -> Sequence[dg.AssetSpec]:
         connector_selector_fn = self.connector_selector or (bool)
@@ -244,7 +256,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
     async def write_state_to_path(self, state_path: Path) -> None:
         state = self.workspace_resource.fetch_fivetran_workspace_data()
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def build_defs_from_state(
         self, context: dg.ComponentLoadContext, state_path: Path | None
@@ -281,7 +293,7 @@ class FivetranAccountComponent(StateBackedComponent, dg.Model, dg.Resolvable):
 
 
 class FivetranComponentTranslator(
-    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),
+    create_component_translator_cls(FivetranAccountComponent, DagsterFivetranTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[FivetranAccountComponent],
 ):
     def __init__(self, component: "FivetranAccountComponent"):

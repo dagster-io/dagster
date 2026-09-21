@@ -1,6 +1,39 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type DefinitionsSource = 'CODE_SERVER' | 'CONNECTION';
+
+export type InstigationStatus = 'RUNNING' | 'STOPPED';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type RepositoryLocationLoadStatus = 'LOADED' | 'LOADING';
+
+export type SensorType =
+  | 'ASSET'
+  | 'AUTOMATION'
+  | 'AUTO_MATERIALIZE'
+  | 'FRESHNESS_POLICY'
+  | 'MULTI_ASSET'
+  | 'RUN_STATUS'
+  | 'STANDARD'
+  | 'UNKNOWN';
 
 export type WorkspaceDisplayMetadataFragment = {
   __typename: 'RepositoryMetadata';
@@ -16,6 +49,7 @@ export type WorkspacePipelineFragment = {
   isAssetJob: boolean;
   externalJobSource: string | null;
   pipelineSnapshotId: string;
+  automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
 };
 
 export type WorkspaceScheduleFragment = {
@@ -77,6 +111,7 @@ export type PartialWorkspaceRepositoryFragment = {
     isAssetJob: boolean;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
+    automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -161,6 +196,7 @@ export type PartialWorkspaceLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -267,6 +303,7 @@ export type PartialWorkspaceLocationNodeFragment = {
             isAssetJob: boolean;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
+            automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -340,11 +377,10 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export type WorkspaceAssetFragment = {
+export type RepositoryAssetFragment = {
   __typename: 'AssetNode';
   id: string;
   graphName: string | null;
-  opVersion: string | null;
   changedReasons: Array<Types.ChangeReason>;
   groupName: string;
   opNames: Array<string>;
@@ -356,13 +392,12 @@ export type WorkspaceAssetFragment = {
   hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
-  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-  dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   internalFreshnessPolicy:
     | {
@@ -379,29 +414,25 @@ export type WorkspaceAssetFragment = {
     | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
-    description: string;
     dimensionTypes: Array<{
       __typename: 'DimensionDefinitionType';
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-  repository: {
-    __typename: 'Repository';
-    id: string;
-    name: string;
-    location: {__typename: 'RepositoryLocation'; id: string; name: string};
-  };
+  storageAddress: {
+    __typename: 'StorageAddress';
+    storageKind: string | null;
+    tableName: string;
+  } | null;
 };
+
+export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
 
 export type WorkspaceRepositoryAssetsFragment = {
   __typename: 'Repository';
@@ -411,7 +442,6 @@ export type WorkspaceRepositoryAssetsFragment = {
     __typename: 'AssetNode';
     id: string;
     graphName: string | null;
-    opVersion: string | null;
     changedReasons: Array<Types.ChangeReason>;
     groupName: string;
     opNames: Array<string>;
@@ -423,13 +453,12 @@ export type WorkspaceRepositoryAssetsFragment = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-    dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     internalFreshnessPolicy:
       | {
@@ -446,33 +475,25 @@ export type WorkspaceRepositoryAssetsFragment = {
       | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
-      description: string;
       dimensionTypes: Array<{
         __typename: 'DimensionDefinitionType';
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-    repository: {
-      __typename: 'Repository';
-      id: string;
-      name: string;
-      location: {__typename: 'RepositoryLocation'; id: string; name: string};
-    };
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
 };
-
-export type WorkspaceAssetGroupFragment = {__typename: 'AssetGroup'; id: string; groupName: string};
 
 export type WorkspaceLocationAssetsFragment = {
   __typename: 'RepositoryLocation';
@@ -486,7 +507,6 @@ export type WorkspaceLocationAssetsFragment = {
       __typename: 'AssetNode';
       id: string;
       graphName: string | null;
-      opVersion: string | null;
       changedReasons: Array<Types.ChangeReason>;
       groupName: string;
       opNames: Array<string>;
@@ -498,13 +518,12 @@ export type WorkspaceLocationAssetsFragment = {
       hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
+      hasWipePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
       description: string | null;
-      pools: Array<string>;
       jobNames: Array<string>;
       kinds: Array<string>;
       dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-      dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
       assetKey: {__typename: 'AssetKey'; path: Array<string>};
       internalFreshnessPolicy:
         | {
@@ -521,28 +540,22 @@ export type WorkspaceLocationAssetsFragment = {
         | null;
       partitionDefinition: {
         __typename: 'PartitionDefinition';
-        description: string;
         dimensionTypes: Array<{
           __typename: 'DimensionDefinitionType';
           type: Types.PartitionDefinitionType;
           dynamicPartitionsDefinitionName: string | null;
         }>;
       } | null;
-      automationCondition: {
-        __typename: 'AutomationCondition';
-        label: string | null;
-        expandedLabel: Array<string>;
-      } | null;
+      automationCondition: {__typename: 'AutomationCondition'} | null;
       owners: Array<
         {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
       >;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-      repository: {
-        __typename: 'Repository';
-        id: string;
-        name: string;
-        location: {__typename: 'RepositoryLocation'; id: string; name: string};
-      };
+      storageAddress: {
+        __typename: 'StorageAddress';
+        storageKind: string | null;
+        tableName: string;
+      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
   }>;
@@ -571,6 +584,7 @@ export type WorkspaceLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -632,7 +646,6 @@ export type WorkspaceLocationFragment = {
       __typename: 'AssetNode';
       id: string;
       graphName: string | null;
-      opVersion: string | null;
       changedReasons: Array<Types.ChangeReason>;
       groupName: string;
       opNames: Array<string>;
@@ -644,13 +657,12 @@ export type WorkspaceLocationFragment = {
       hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
+      hasWipePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
       description: string | null;
-      pools: Array<string>;
       jobNames: Array<string>;
       kinds: Array<string>;
       dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-      dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
       assetKey: {__typename: 'AssetKey'; path: Array<string>};
       internalFreshnessPolicy:
         | {
@@ -667,28 +679,22 @@ export type WorkspaceLocationFragment = {
         | null;
       partitionDefinition: {
         __typename: 'PartitionDefinition';
-        description: string;
         dimensionTypes: Array<{
           __typename: 'DimensionDefinitionType';
           type: Types.PartitionDefinitionType;
           dynamicPartitionsDefinitionName: string | null;
         }>;
       } | null;
-      automationCondition: {
-        __typename: 'AutomationCondition';
-        label: string | null;
-        expandedLabel: Array<string>;
-      } | null;
+      automationCondition: {__typename: 'AutomationCondition'} | null;
       owners: Array<
         {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
       >;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-      repository: {
-        __typename: 'Repository';
-        id: string;
-        name: string;
-        location: {__typename: 'RepositoryLocation'; id: string; name: string};
-      };
+      storageAddress: {
+        __typename: 'StorageAddress';
+        storageKind: string | null;
+        tableName: string;
+      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -726,7 +732,6 @@ export type WorkspaceLocationAssetsEntryFragment = {
             __typename: 'AssetNode';
             id: string;
             graphName: string | null;
-            opVersion: string | null;
             changedReasons: Array<Types.ChangeReason>;
             groupName: string;
             opNames: Array<string>;
@@ -738,13 +743,12 @@ export type WorkspaceLocationAssetsEntryFragment = {
             hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-            dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
             internalFreshnessPolicy:
               | {
@@ -761,29 +765,23 @@ export type WorkspaceLocationAssetsEntryFragment = {
               | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
-              description: string;
               dimensionTypes: Array<{
                 __typename: 'DimensionDefinitionType';
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            automationCondition: {
-              __typename: 'AutomationCondition';
-              label: string | null;
-              expandedLabel: Array<string>;
-            } | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-            repository: {
-              __typename: 'Repository';
-              id: string;
-              name: string;
-              location: {__typename: 'RepositoryLocation'; id: string; name: string};
-            };
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
         }>;
@@ -791,8 +789,8 @@ export type WorkspaceLocationAssetsEntryFragment = {
     | null;
 };
 
-export type LocationWorkspaceQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceQuery = {
@@ -852,6 +850,10 @@ export type LocationWorkspaceQuery = {
                   isAssetJob: boolean;
                   externalJobSource: string | null;
                   pipelineSnapshotId: string;
+                  automationCondition: {
+                    __typename: 'AutomationCondition';
+                    label: string | null;
+                  } | null;
                 }>;
                 schedules: Array<{
                   __typename: 'Schedule';
@@ -922,7 +924,7 @@ export type LocationWorkspaceQuery = {
     | null;
 };
 
-export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;
+export type CodeLocationStatusQueryVariables = Exact<{[key: string]: never}>;
 
 export type CodeLocationStatusQuery = {
   __typename: 'Query';
@@ -941,8 +943,8 @@ export type CodeLocationStatusQuery = {
       };
 };
 
-export type LocationWorkspaceAssetsQueryVariables = Types.Exact<{
-  name: Types.Scalars['String']['input'];
+export type LocationWorkspaceAssetsQueryVariables = Exact<{
+  name: string;
 }>;
 
 export type LocationWorkspaceAssetsQuery = {
@@ -988,7 +990,6 @@ export type LocationWorkspaceAssetsQuery = {
                   __typename: 'AssetNode';
                   id: string;
                   graphName: string | null;
-                  opVersion: string | null;
                   changedReasons: Array<Types.ChangeReason>;
                   groupName: string;
                   opNames: Array<string>;
@@ -1000,13 +1001,12 @@ export type LocationWorkspaceAssetsQuery = {
                   hasAssetChecks: boolean;
                   computeKind: string | null;
                   hasMaterializePermission: boolean;
+                  hasWipePermission: boolean;
                   hasReportRunlessAssetEventPermission: boolean;
                   description: string | null;
-                  pools: Array<string>;
                   jobNames: Array<string>;
                   kinds: Array<string>;
                   dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-                  dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                   internalFreshnessPolicy:
                     | {
@@ -1023,30 +1023,109 @@ export type LocationWorkspaceAssetsQuery = {
                     | null;
                   partitionDefinition: {
                     __typename: 'PartitionDefinition';
-                    description: string;
                     dimensionTypes: Array<{
                       __typename: 'DimensionDefinitionType';
                       type: Types.PartitionDefinitionType;
                       dynamicPartitionsDefinitionName: string | null;
                     }>;
                   } | null;
-                  automationCondition: {
-                    __typename: 'AutomationCondition';
-                    label: string | null;
-                    expandedLabel: Array<string>;
-                  } | null;
+                  automationCondition: {__typename: 'AutomationCondition'} | null;
                   owners: Array<
                     | {__typename: 'TeamAssetOwner'; team: string}
                     | {__typename: 'UserAssetOwner'; email: string}
                   >;
                   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-                  repository: {
-                    __typename: 'Repository';
-                    id: string;
-                    name: string;
-                    location: {__typename: 'RepositoryLocation'; id: string; name: string};
-                  };
+                  storageAddress: {
+                    __typename: 'StorageAddress';
+                    storageKind: string | null;
+                    tableName: string;
+                  } | null;
                 }>;
+                assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+              }>;
+            }
+          | null;
+      }
+    | null;
+};
+
+export type WorkspaceLocationAssetsManifestEntryFragment = {
+  __typename: 'WorkspaceLocationEntry';
+  id: string;
+  name: string;
+  loadStatus: Types.RepositoryLocationLoadStatus;
+  updatedTimestamp: number;
+  versionKey: string;
+  locationOrLoadError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'RepositoryLocation';
+        id: string;
+        name: string;
+        repositories: Array<{
+          __typename: 'Repository';
+          id: string;
+          name: string;
+          assetManifest: any;
+          assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
+        }>;
+      }
+    | null;
+};
+
+export type LocationWorkspaceAssetsManifestQueryVariables = Exact<{
+  name: string;
+}>;
+
+export type LocationWorkspaceAssetsManifestQuery = {
+  __typename: 'Query';
+  workspaceLocationEntryOrError:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'WorkspaceLocationEntry';
+        id: string;
+        name: string;
+        loadStatus: Types.RepositoryLocationLoadStatus;
+        updatedTimestamp: number;
+        versionKey: string;
+        locationOrLoadError:
+          | {
+              __typename: 'PythonError';
+              message: string;
+              stack: Array<string>;
+              errorChain: Array<{
+                __typename: 'ErrorChainLink';
+                isExplicitLink: boolean;
+                error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+              }>;
+            }
+          | {
+              __typename: 'RepositoryLocation';
+              id: string;
+              name: string;
+              repositories: Array<{
+                __typename: 'Repository';
+                id: string;
+                name: string;
+                assetManifest: any;
                 assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
               }>;
             }
@@ -1094,6 +1173,7 @@ export type WorkspaceLocationNodeFragment = {
             isAssetJob: boolean;
             externalJobSource: string | null;
             pipelineSnapshotId: string;
+            automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
           }>;
           schedules: Array<{
             __typename: 'Schedule';
@@ -1155,7 +1235,6 @@ export type WorkspaceLocationNodeFragment = {
             __typename: 'AssetNode';
             id: string;
             graphName: string | null;
-            opVersion: string | null;
             changedReasons: Array<Types.ChangeReason>;
             groupName: string;
             opNames: Array<string>;
@@ -1167,13 +1246,12 @@ export type WorkspaceLocationNodeFragment = {
             hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-            dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
             internalFreshnessPolicy:
               | {
@@ -1190,29 +1268,23 @@ export type WorkspaceLocationNodeFragment = {
               | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
-              description: string;
               dimensionTypes: Array<{
                 __typename: 'DimensionDefinitionType';
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            automationCondition: {
-              __typename: 'AutomationCondition';
-              label: string | null;
-              expandedLabel: Array<string>;
-            } | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-            repository: {
-              __typename: 'Repository';
-              id: string;
-              name: string;
-              location: {__typename: 'RepositoryLocation'; id: string; name: string};
-            };
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
           }>;
           assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1245,6 +1317,7 @@ export type WorkspaceRepositoryLocationFragment = {
       isAssetJob: boolean;
       externalJobSource: string | null;
       pipelineSnapshotId: string;
+      automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
     }>;
     schedules: Array<{
       __typename: 'Schedule';
@@ -1306,7 +1379,6 @@ export type WorkspaceRepositoryLocationFragment = {
       __typename: 'AssetNode';
       id: string;
       graphName: string | null;
-      opVersion: string | null;
       changedReasons: Array<Types.ChangeReason>;
       groupName: string;
       opNames: Array<string>;
@@ -1318,13 +1390,12 @@ export type WorkspaceRepositoryLocationFragment = {
       hasAssetChecks: boolean;
       computeKind: string | null;
       hasMaterializePermission: boolean;
+      hasWipePermission: boolean;
       hasReportRunlessAssetEventPermission: boolean;
       description: string | null;
-      pools: Array<string>;
       jobNames: Array<string>;
       kinds: Array<string>;
       dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-      dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
       assetKey: {__typename: 'AssetKey'; path: Array<string>};
       internalFreshnessPolicy:
         | {
@@ -1341,28 +1412,22 @@ export type WorkspaceRepositoryLocationFragment = {
         | null;
       partitionDefinition: {
         __typename: 'PartitionDefinition';
-        description: string;
         dimensionTypes: Array<{
           __typename: 'DimensionDefinitionType';
           type: Types.PartitionDefinitionType;
           dynamicPartitionsDefinitionName: string | null;
         }>;
       } | null;
-      automationCondition: {
-        __typename: 'AutomationCondition';
-        label: string | null;
-        expandedLabel: Array<string>;
-      } | null;
+      automationCondition: {__typename: 'AutomationCondition'} | null;
       owners: Array<
         {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
       >;
       tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-      repository: {
-        __typename: 'Repository';
-        id: string;
-        name: string;
-        location: {__typename: 'RepositoryLocation'; id: string; name: string};
-      };
+      storageAddress: {
+        __typename: 'StorageAddress';
+        storageKind: string | null;
+        tableName: string;
+      } | null;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
@@ -1387,6 +1452,7 @@ export type WorkspaceRepositoryFragment = {
     isAssetJob: boolean;
     externalJobSource: string | null;
     pipelineSnapshotId: string;
+    automationCondition: {__typename: 'AutomationCondition'; label: string | null} | null;
   }>;
   schedules: Array<{
     __typename: 'Schedule';
@@ -1448,7 +1514,6 @@ export type WorkspaceRepositoryFragment = {
     __typename: 'AssetNode';
     id: string;
     graphName: string | null;
-    opVersion: string | null;
     changedReasons: Array<Types.ChangeReason>;
     groupName: string;
     opNames: Array<string>;
@@ -1460,13 +1525,12 @@ export type WorkspaceRepositoryFragment = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     dependencyKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-    dependedByKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     internalFreshnessPolicy:
       | {
@@ -1483,36 +1547,32 @@ export type WorkspaceRepositoryFragment = {
       | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
-      description: string;
       dimensionTypes: Array<{
         __typename: 'DimensionDefinitionType';
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
-    repository: {
-      __typename: 'Repository';
-      id: string;
-      name: string;
-      location: {__typename: 'RepositoryLocation'; id: string; name: string};
-    };
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
 
-export const LocationWorkspaceQueryVersion = '13d0e674c559c7506419e36c9f30ecc793abeac06e93e1597c2bd5e5b78f7537';
+export const LocationWorkspaceQueryVersion = '8e4dff45086e9f3bdb86af2001e711d1c881d59d80266df3fc410ed599d16050';
 
 export const CodeLocationStatusQueryVersion = '5491629a2659feca3a6cf0cc976c6f59c8e78dff1193e07d7850ae4355698b04';
 
-export const LocationWorkspaceAssetsQueryVersion = '61195fc88cb53d325132085b835ac95f0315c431e9a80a86dddd51815ef4c77f';
+export const LocationWorkspaceAssetsQueryVersion = '33552d752f313cc8beb047ec9ffedacc56452109f95c9279e324a46d0bfbd688';
+
+export const LocationWorkspaceAssetsManifestQueryVersion = '26f05a136fa06937c3c7c0536f69f2c5dde1956750e8de4eec7fcaf9dd684d94';

@@ -40,8 +40,8 @@ class BackfillPolicy(
       be backfilled in 10 runs; each run will backfill 10 partitions.
 
     - If an asset has 100 partitions, and the `max_partitions_per_run` is set to 11, then it will
-      be backfilled in 10 runs; the first 9 runs will backfill 11 partitions, and the last one run
-      will backfill the remaining 9 partitions.
+      be backfilled in 10 runs; the first 9 runs will backfill 11 partitions, and the last run
+      will backfill the one remaining partition.
 
     **Warning:**
 

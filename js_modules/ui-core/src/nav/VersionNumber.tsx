@@ -1,15 +1,13 @@
-import {FontFamily} from '@dagster-io/ui-components';
-import styled from 'styled-components';
-
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/VersionNumber.module.css';
 import {VersionNumberQuery, VersionNumberQueryVariables} from './types/VersionNumber.types';
 
 export const VersionNumber = () => {
   const {version} = useVersionNumber();
   return (
-    <Version>
+    <div className={styles.version}>
       <span>{version || ' '}</span>
-    </Version>
+    </div>
   );
 };
 
@@ -19,11 +17,6 @@ export const useVersionNumber = () => {
   );
   return {version: data?.version, loading: !data && loading};
 };
-
-const Version = styled.div`
-  font-size: 11px;
-  font-family: ${FontFamily.monospace};
-`;
 
 export const VERSION_NUMBER_QUERY = gql`
   query VersionNumberQuery {

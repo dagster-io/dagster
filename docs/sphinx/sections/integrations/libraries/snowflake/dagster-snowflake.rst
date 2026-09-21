@@ -1,5 +1,6 @@
+#########################
 dagster-snowflake library
--------------------------
+#########################
 
 This library provides an integration with the `Snowflake <https://www.snowflake.com>`_ data
 warehouse.
@@ -18,13 +19,16 @@ Related Guides:
 
 .. currentmodule:: dagster_snowflake
 
-I/O Manager
-===========
+***********
+I/O manager
+***********
+
 .. autoconfigurable:: SnowflakeIOManager
   :annotation: IOManagerDefinition
 
+*********
 Resources
-=========
+*********
 
 .. autoconfigurable:: SnowflakeResource
   :annotation: ResourceDefinition
@@ -32,18 +36,21 @@ Resources
 .. autoclass:: SnowflakeConnection
   :members:
 
-Data Freshness 
-==============
+**************
+Data freshness 
+**************
 
 .. autofunction:: fetch_last_updated_timestamps
 
+***
 Ops
-===
+***
+
 .. autofunction:: snowflake_op_for_query
 
-
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: build_snowflake_io_manager
   :annotation: IOManagerDefinition

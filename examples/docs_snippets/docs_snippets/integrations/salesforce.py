@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from dagster_salesforce import SalesforceResource
-from dagster_salesforce.credentials import SalesforceUserPasswordCredentials
+from dagster_salesforce import SalesforceResource  # ty: ignore[unresolved-import]
+from dagster_salesforce.credentials import (
+    SalesforceUserPasswordCredentials,  # ty: ignore[unresolved-import]
+)
 
 import dagster as dg
 

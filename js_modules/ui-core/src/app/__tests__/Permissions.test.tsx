@@ -4,7 +4,7 @@ import {PermissionFragment} from '../types/Permissions.types';
 
 describe('Permissions', () => {
   it('Client permissions match graphql permissions', () => {
-    permissions.forEach(({permission}: {permission: any}) => {
+    permissions.forEach(({permission}: {permission: string}) => {
       expect(permission in EXPECTED_PERMISSIONS).toBe(true);
     });
   });

@@ -37,7 +37,7 @@ def raw_stories(
     Uses MERGE to handle deduplication based on story_id.
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         cursor.execute(f"""
             CREATE TABLE IF NOT EXISTS {schema}.stories (

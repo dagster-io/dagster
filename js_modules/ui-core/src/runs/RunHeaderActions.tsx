@@ -115,7 +115,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                     {canCreateIssue && (
                       <MenuItem
                         icon="issue"
-                        text="Create issue"
+                        text="Create or link issue"
                         onClick={() => setVisibleDialog('create-issue')}
                       />
                     )}

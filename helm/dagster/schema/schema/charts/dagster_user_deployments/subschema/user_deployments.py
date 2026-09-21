@@ -1,6 +1,6 @@
 from typing import Optional, Union
 
-from pydantic import BaseModel, create_model, field_validator
+from pydantic import BaseModel, Field, create_model, field_validator
 
 from schema.charts.utils import kubernetes
 
@@ -22,6 +22,7 @@ class UserDeployment(BaseModel):
     includeConfigInLaunchedRuns: UserDeploymentIncludeConfigInLaunchedRuns | None = None
     deploymentNamespace: str | None = None
     port: int
+    replicaCount: int = Field(default=1, gt=0)
     env: dict[str, str] | list[kubernetes.EnvVar] | None = None
     envConfigMaps: list[kubernetes.ConfigMapEnvSource] | None = None
     envSecrets: list[kubernetes.SecretEnvSource] | None = None

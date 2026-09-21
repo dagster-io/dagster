@@ -11,7 +11,7 @@ slug: "/guides/build/assets/metadata-and-tags"
 Using metadata in Dagster, you can:
 
 - Attach ownership information
-- Organize assets with tags
+- Organize assets with groups and tags
 - Attach rich, complex information such as a Markdown description, a table schema, or a time series
 - Link assets with their source code
 
@@ -19,7 +19,7 @@ Using metadata in Dagster, you can:
 
 In a large organization, it's important to know which individuals and teams are responsible for a given data asset.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/owners.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/owners.py" language="python" />
 
 :::note
 
@@ -29,11 +29,18 @@ In a large organization, it's important to know which individuals and teams are 
 
 :::tip
 With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/observe/alerts) for more information.
+
+You can also grant permissions to users and teams that apply to the definitions they own. For more information, see [User roles and permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#owned-definitions).
+
 :::
+
+## Organizing assets with groups \{#groups}
+
+Every asset belongs to a [**group**](/guides/build/assets/metadata-and-tags/groups), which is the most basic way to organize assets in Dagster. An asset can belong to only one group, and group names can be nested to build a hierarchy that the asset graph renders as nested boxes.
 
 ## Organizing assets with tags \{#tags}
 
-[**Tags**](/guides/build/assets/metadata-and-tags/tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
+[**Tags**](/guides/build/assets/metadata-and-tags/tags) can be used to add more flexible organization to assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
@@ -43,7 +50,7 @@ Here's an example of some tags you might apply to an asset:
 
 As with `owners`, you can pass a dictionary of tags to the `tags` argument when defining an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/tags.py" language="python" />
 
 Keep in mind that tags must contain only strings as keys and values. Additionally, the Dagster UI will render tags with the empty string as a "label" rather than a key-value pair.
 
@@ -53,25 +60,40 @@ Keep in mind that tags must contain only strings as keys and values. Additionall
 
 Metadata can be attached to an asset at definition time, when the code is first imported, or at runtime when an asset is materialized.
 
-### At definition time \{#definition-time-metadata}
+### Definition metadata \{#definition-time-metadata}
 
 Using definition metadata to describe assets can make it easy to provide context for you and your team. This metadata could be descriptions of the assets, the types of assets, or links to relevant documentation.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/definition-metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/definition-metadata.py" language="python" />
+
+Definition metadata is attached to the asset (or op) definition when your code is loaded, and it's identical for every materialization until you change the code. Because it lives on the definition, it's available anywhere Dagster has access to the definition, including inside an [I/O manager](/guides/build/io-managers):
+
+- In <PyObject section="io-managers" module="dagster" object="IOManager" method="handle_output" displayText="handle_output" />, the definition metadata of the output being stored is on `context.definition_metadata`.
+- In <PyObject section="io-managers" module="dagster" object="IOManager" method="load_input" displayText="load_input" />, the definition metadata of the upstream asset being loaded is on `context.upstream_output.definition_metadata`. (`context.definition_metadata` in `load_input` refers only to metadata declared on the downstream <PyObject section="assets" module="dagster" object="AssetIn" /> or <PyObject section="ops" module="dagster" object="In" />, not the upstream asset.)
+
+For a code example, see [Accessing asset metadata in an I/O manager](/guides/build/io-managers/defining-a-custom-io-manager#accessing-metadata).
 
 To learn more about the different types of metadata you can attach, see the <PyObject section="metadata" module="dagster" object="MetadataValue" /> API docs.
 
 Some metadata keys will be given special treatment in the Dagster UI. See the [Standard metadata types](#standard-metadata-types) section for more information.
 
-### At runtime \{#runtime-metadata}
+### Runtime metadata \{#runtime-metadata}
 
-With runtime metadata, you can surface information about an asset's materialization, such as how many records were processed or when the materialization occurred. This allows you to update an asset's information when it changes and track historical metadata as a time series.
+With runtime metadata (also known as materialization metadata), you can surface information about an asset's materialization, such as how many records were processed or when the materialization occurred.
+
+Every materialization can produce different values (for example, the row count for that run), so Dagster stores the full history and renders numeric values as a time series in the UI. For more information, see [structured event logs](/guides/log-debug/logging#structured-event-logs).
+
+:::warning
+
+Since runtime materialization metadata is written to the event log, not passed to the I/O manager, it is not available from <PyObject section="io-managers" module="dagster" object="InputContext" />. An I/O manager cannot persist the metadata from `MaterializeResult` (or `Output`) and read it back when loading a downstream asset.
+
+:::
 
 To attach materialization metadata to an asset, returning a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object containing a `metadata` parameter. This parameter accepts a dictionary of key/value pairs, where keys must be a string.
 
 When specifying values, use the <PyObject section="metadata" module="dagster" object="MetadataValue" /> utility class to wrap the data to ensure it displays correctly in the UI. Values can also be primitive Python types, which Dagster will convert to the appropriate `MetadataValue`.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/runtime-metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/runtime-metadata.py" language="python" />
 
 :::note
 
@@ -101,7 +123,7 @@ Two of the most powerful metadata types are <PyObject section="metadata" module=
 
 The following example attaches [table and column schema metadata](/guides/build/assets/metadata-and-tags/table-metadata) at both definition time and runtime:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-schema-metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/table-schema-metadata.py" language="python" />
 
 There are several data types and constraints available on <PyObject section="metadata" module="dagster" object="TableColumn" /> objects. For more information, see the API documentation.
 
@@ -113,7 +135,7 @@ Many integrations such as [dbt](/integrations/libraries/dbt) automatically attac
 
 [Column lineage metadata](/guides/build/assets/metadata-and-tags/column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
 
 :::tip
 Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/guides/observe/asset-catalog) for more information.
@@ -138,13 +160,13 @@ Many integrations, such as [dbt](/integrations/libraries/dbt/reference#attaching
 
 Dagster can automatically attach code references to assets during local development:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/python-local-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/python-local-references.py" language="python" />
 
 ### Customizing code references \{#custom-references}
 
 If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets/creating-asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/custom-local-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/custom-local-references.py" language="python" />
 
 ### Attaching code references in production \{#production-references}
 
@@ -153,14 +175,14 @@ If you want to customize how code references are attached - such as when you are
 
 Dagster+ can automatically annotate assets with code references to source control, such as GitHub or GitLab.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/plus-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/plus-references.py" language="python" />
 
 </TabItem>
 <TabItem value="dagster-open-source" label="OSS">
 
 If you aren't using Dagster+, you can annotate your assets with code references to source control, but it requires manual mapping:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/oss-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/assets/metadata/oss-references.py" language="python" />
 
 `link_code_references_to_git` currently supports GitHub and GitLab repositories. It also supports customization of how file paths are mapped; see the `AnchorBasedFilePathMapping` API docs for more information.
 

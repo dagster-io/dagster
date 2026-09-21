@@ -1,7 +1,7 @@
 .PHONY: rerecord test clean
 
 rerecord:
-	dagster-dev dg-api-record sensor
+	python ../_record.py sensor
 
 test:
 	pytest . -v

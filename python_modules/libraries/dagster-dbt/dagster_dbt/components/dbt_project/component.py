@@ -22,6 +22,7 @@ from dagster.components.utils.translation import (
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManagementType
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
     DBT_DEFAULT_EXCLUDE,
     DBT_DEFAULT_SELECT,
     DBT_DEFAULT_SELECTOR,
@@ -78,7 +79,7 @@ def resolve_dbt_project(context: ResolutionContext, model) -> DbtProjectManager:
     return DbtProjectArgsManager(args)
 
 
-DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+DbtMetadataAddons: TypeAlias = Literal["column_metadata", "row_count", "insights"]
 
 
 @public
@@ -309,7 +310,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
                             tags={**base_spec.tags, "custom_tag": "my_value"}
                         )
         """
-        return self._base_translator.get_asset_spec(manifest, unique_id, project)
+        return DagsterDbtTranslator.get_asset_spec(self.translator, manifest, unique_id, project)
 
     def get_asset_check_spec(
         self,
@@ -390,6 +391,8 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             iterator = iterator.fetch_column_metadata()
         if "row_count" in self.include_metadata:
             iterator = iterator.fetch_row_counts()
+        if "insights" in self.include_metadata:
+            iterator = iterator.with_insights()
         return iterator
 
     @public
@@ -452,7 +455,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
 
 class DbtProjectComponentTranslator(
-    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),
+    create_component_translator_cls(DbtProjectComponent, DagsterDbtTranslator),  # ty: ignore[unsupported-base]
     ComponentTranslator[DbtProjectComponent],
 ):
     def __init__(
@@ -468,10 +471,11 @@ class DbtProjectComponentTranslator(
     ) -> dg.AssetSpec:
         base_spec = super().get_asset_spec(manifest, unique_id, project)
         if self.component.translation is None:
-            return base_spec
+            spec = base_spec
         else:
             dbt_props = get_node(manifest, unique_id)
-            return self.component.translation(base_spec, dbt_props)
+            spec = self.component.translation(base_spec, dbt_props)
+        return spec.merge_attributes(metadata={DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self})
 
 
 def get_projects_from_dbt_component(components: Path) -> list[DbtProject]:

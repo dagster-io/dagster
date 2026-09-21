@@ -15,7 +15,7 @@ By default, <PyObject module="dagster" section="assets" object="AutomationCondit
 If it is expected to have missing upstream data, remove `~AutomationCondition.any_deps_missing()` from the eager policy to allow execution:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/allow_missing_upstreams.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/allow_missing_upstreams.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -26,7 +26,7 @@ By default, `AutomationCondition.eager()` will only update the latest time parti
 If updates to historical partitions should result in downstream updates, then this sub-condition can be removed:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/update_older_time_partitions.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/update_older_time_partitions.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -37,7 +37,7 @@ The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes tr
 This can be combined with `AutomationCondition.eager()` to ensure that your asset does not execute if upstream data is failing data quality checks:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/blocking_checks_condition.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/blocking_checks_condition.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -48,7 +48,7 @@ By default, `AutomationCondition.eager()` materializes a target whenever any ups
 It can be useful to ignore runs of certain types when determining if an upstream asset should be considered "updated". This can be done using `AutomationCondition.any_new_update_has_run_tags()` to filter updates for runs with tags matching particular keys:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/executed_with_tags_condition.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/executed_with_tags_condition.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -59,12 +59,27 @@ By default, `AutomationCondition.eager()` will trigger a target if any upstream 
 In some cases, it can be useful to ignore some upstream dependencies that should not trigger downstream compute. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/ignore_dependencies.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/ignore_dependencies.py"
   title="src/<project_name>/defs/assets.py"
 />
 Alternatively, you can pass in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be allowed:
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/allow_dependencies.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/allow_dependencies.py"
+  title="src/<project_name>/defs/assets.py"
+/>
+
+## Resolving dependencies through virtual assets (views)
+
+import Preview from '@site/docs/partials/\_Preview.md';
+
+<Preview />
+
+By default, `AutomationCondition.eager()` evaluates dependencies against an asset's direct parents. When some of those parents are virtual assets such as database views, you may want the condition to look through them to the nearest non-virtual ancestors instead. For more information, see [virtual assets](/guides/build/assets/virtual-assets).
+
+The `.resolve_through_virtual()` modifier causes all dependency-related sub-conditions (such as `any_deps_updated()`, `any_deps_missing()`, and `any_deps_in_progress()`) to resolve through virtual assets. This means the condition will react to updates from non-virtual ancestors, skipping over any virtual assets in the graph:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/resolve_through_virtual.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -75,7 +90,7 @@ By default, `AutomationCondition.eager()` will consider any upstream asset to be
 If you want to only consider upstream assets to be "updated" if the data version has changed, you can use `AutomationCondition.data_version_changed()`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/data_version_changed_condition.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/data_version_changed_condition.py"
   title="src/<project_name>/defs/assets.py"
 />
 
@@ -84,7 +99,7 @@ If you want to only consider upstream assets to be "updated" if the data version
 For more complex automation patterns, you can combine scheduled execution with dependency-driven updates. This pattern ensures regular execution on a schedule while also allowing for more frequent updates when dependencies change, with additional safety checks:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/declarative_automation/eager/combined.py"
+  path="docs_snippets/docs_snippets/guides/automate/declarative_automation/eager/combined.py"
   title="src/<project_name>/defs/assets.py"
 />
 

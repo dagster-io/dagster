@@ -736,10 +736,11 @@ export type YamlModeValidationResult =
 
 export type YamlModeValidateFunction = (configYaml: string) => Promise<YamlModeValidationResult>;
 
-type YamlModeValidationError = {
+export type YamlModeValidationError = {
   message: string;
   path: string[];
   reason: string;
+  severity?: 'error' | 'warning' | 'information' | 'hint';
 };
 
 CodeMirror.registerHelper('dagster-docs', 'yaml', (editor: any, pos: CodeMirror.Position) => {
@@ -845,8 +846,8 @@ function validationErrorToCodemirrorError(
   }
   return {
     message: error.message,
-    severity: 'error',
-    type: 'syntax',
+    severity: error.severity ?? 'error',
+    type: 'validation',
     from: codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position,
     to: codeMirrorDoc.posFromIndex(
       range ? range.end : Number.MAX_SAFE_INTEGER,
@@ -860,19 +861,19 @@ export function findRangeInDocumentFromPath(
   pathPart: 'key' | 'value',
 ): {start: number; end: number} | null {
   let node = nodeAtPath(doc, path);
-  if (!node || !('type' in node)) {
+  if (!node) {
     return null;
   }
 
-  if (node.type === 'PAIR') {
+  if (yaml.isPair(node)) {
     if (pathPart === 'value' && node.value) {
-      node = node.value;
+      node = node.value as yaml.Node;
     } else {
-      node = node.key;
+      node = node.key as yaml.Node;
     }
   }
 
-  if (node && node.range) {
+  if (yaml.isNode(node) && node.range) {
     return {
       start: node.range[0],
       end: node.range[1],
@@ -882,28 +883,30 @@ export function findRangeInDocumentFromPath(
   }
 }
 
-function nodeAtPath(doc: yaml.Document, path: Array<string>) {
-  let node: any = doc.contents;
+function nodeAtPath(doc: yaml.Document, path: Array<string>): yaml.Node | yaml.Pair | null {
+  let node: yaml.Node | yaml.Pair | null | undefined = doc.contents;
   for (let i = 0; i < path.length; i++) {
     const part = path[i];
     if (!part) {
       return null;
     }
 
-    if (node && node.type && node.type === 'PAIR') {
-      node = node.value;
+    if (yaml.isPair(node)) {
+      node = node.value as yaml.Node;
     }
 
-    if (node && node.type && (node.type === 'SEQ' || node.type === 'FLOW_SEQ')) {
+    if (yaml.isSeq(node)) {
       const index = Number.parseInt(part);
       if (!Number.isNaN(index)) {
-        node = node.items[index];
+        node = node.items[index] as yaml.Node;
       } else {
         return null;
       }
-    } else if (node && node.type && (node.type === 'FLOW_MAP' || node.type === 'MAP')) {
-      const item = node.items.find(({key}: {key: any}) => key.value === part);
-      if (item && item.type && item.type === 'PAIR') {
+    } else if (yaml.isMap(node)) {
+      const item: yaml.Pair | undefined = node.items.find(
+        (pair) => yaml.isScalar(pair.key) && pair.key.value === part,
+      );
+      if (item) {
         node = item;
       } else {
         return null;
@@ -913,7 +916,7 @@ function nodeAtPath(doc: yaml.Document, path: Array<string>) {
     }
   }
 
-  return node;
+  return node ?? null;
 }
 
 export const registerYaml = () => {

@@ -9,14 +9,15 @@ description = "Airflow plugin for Dagster"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
-classifiers = [
-    "Operating System :: OS Independent",
-]
 dependencies = [
     "dagster==1!0+dev",
     "lazy_object_proxy",
     "setuptools<71.0.0",
-    "pendulum",
+    # pendulum 2.x sdist imports the removed-in-py3.12 stdlib `distutils`
+    # and has no wheels for modern Python. Require 3.x on py3.12+ so
+    # installs succeed.
+    "pendulum>=3; python_version>='3.12'",
+    "pendulum; python_version<'3.12'",
 ]
 
 [project.urls]
@@ -37,32 +38,38 @@ kubernetes = [
     "kubernetes>=3.0.0",
     "cryptography>=2.0.0",
 ]
-test_airflow_2 = [
-    "apache-airflow>=2.0.0,<2.8",  # 2.8+ airflow breaks a bunch of tests
-    "pendulum<3.0.0",  # sub 2.8 blows up on pendulum 3
-    "boto3>=1.26.7",
-    # Flask-session 0.6 is incompatible with certain airflow-provided test utilities.
-    "flask-session<0.6.0",
-    "kubernetes>=10.0.1",
-    "apache-airflow-providers-docker>=3.2.0,<4",
-    "apache-airflow-providers-apache-spark",
-    # Logging messages are set to debug starting 4.1.1
-    "apache-airflow-providers-http<4.1.1",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-]
-test_airflow_1 = [
-    "apache-airflow>=1.0.0,<2.0.0",
-    "boto3>=1.26.7",
-    "kubernetes>=10.0.1",
-    # pinned based on certain incompatible versions of Jinja2, which is itself pinned
-    # by apache-airflow==1.10.10
-    "markupsafe<=2.0.1",
-    # New WTForms release breaks the version of airflow used by tests
-    "WTForms<3.0.0",
-    "sqlalchemy>=1.0,<1.4.0",  # https://github.com/dagster-io/dagster/issues/3858
-    "marshmallow-sqlalchemy<0.26.0",
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
-]
+
+[dependency-groups]
 test = [
-    "connexion<3.0.0",  # https://github.com/apache/airflow/issues/35234
+    "dagster[test]",
+    "dagster-pipes",
+    "dagster-shared",
+    "dagster-test",
+    "dagster-aws",
+    "dagster-pandas",
+    "dagster-gcp",
+    "dagster-postgres",
 ]
+# Airflow 2.x is EOL at 2.11 and does not support py3.13+, so the group is
+# marker-scoped to py<3.13 and a no-op above that.
+test-airflow2 = [
+    "apache-airflow>=2.11,<3; python_version<'3.13'",
+    "boto3>=1.26.7; python_version<'3.13'",
+    "kubernetes>=10.0.1; python_version<'3.13'",
+    "apache-airflow-providers-docker; python_version<'3.13'",
+    "apache-airflow-providers-apache-spark; python_version<'3.13'",
+    "apache-airflow-providers-http; python_version<'3.13'",
+]
+
+[tool.uv]
+exclude-newer = "48h"
+
+[tool.uv.sources]
+dagster = { path = "../../dagster", editable = true }
+dagster-pipes = { path = "../../dagster-pipes", editable = true }
+dagster-shared = { path = "../dagster-shared", editable = true }
+dagster-test = { path = "../../dagster-test", editable = true }
+dagster-aws = { path = "../dagster-aws", editable = true }
+dagster-pandas = { path = "../dagster-pandas", editable = true }
+dagster-gcp = { path = "../dagster-gcp", editable = true }
+dagster-postgres = { path = "../dagster-postgres", editable = true }

@@ -41,5 +41,5 @@ def scaffold_proxied_state(logger: Any) -> None:
                 {"id": task.task_id, "proxied": False} for task in tasks_in_alphabetical_order
             ]
         }
-        with open(proxied_state_file, "w") as f:
+        with open(proxied_state_file, "w", encoding="utf-8") as f:
             yaml.dump(proxied_state, f)

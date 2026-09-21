@@ -1,0 +1,155 @@
+import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
+import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
+import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
+import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
+import {AppManagedComponentRepoBindingSection} from '@shared/code-location/AppManagedComponentRepoBindingSection';
+import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
+import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
+import {useAppManagedComponentRepoBinding} from '@shared/code-location/useAppManagedComponentRepoBinding';
+import {useContext, useState} from 'react';
+import {Redirect, useHistory, useLocation, useParams} from 'react-router-dom';
+
+import {CodeLocationComponentInstancesSubtab} from './CodeLocationComponentInstancesSubtab';
+import {CodeLocationComponentsCatalogSubtab} from './CodeLocationComponentsCatalogSubtab';
+import {addComponentDisabledReason} from './appManagedComponentAddGate';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+interface Props {
+  repoAddress: RepoAddress;
+}
+
+export type ComponentsSubTab = 'instances' | 'library';
+
+export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
+  const {locationEntries, loadingNonAssets: loading} = useContext(WorkspaceContext);
+  const locationEntry = locationEntries.find((entry) => entry.name === repoAddress.location);
+
+  const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
+  // Git-backed authoring needs a connected repo to open the PR against; without
+  // one the author action is disabled with a nudge to connect an integration.
+  const gitProviderConnected = useGitProviderConnected();
+  // Git-backed authoring commits to the location's bound repo, so a location
+  // with no binding has nowhere to write. Block it here rather than letting the
+  // form be filled in and rejected at submit.
+  const gitBackedEnabled = useGitBackedComponentAuthoringEnabled();
+  const isBranchDeployment = useIsBranchDeployment();
+  const {binding, loading: bindingLoading} = useAppManagedComponentRepoBinding(
+    repoAddress.location,
+  );
+
+  const addDisabledReason = addComponentDisabledReason({
+    isBranchDeployment,
+    gitProviderConnected,
+    gitBackedEnabled,
+    bindingLoading,
+    hasBinding: binding !== null,
+  });
+
+  const params = useParams<{
+    packageName?: string;
+    componentName?: string;
+  }>();
+
+  // Routes:
+  //   ``/components``                        -> instances (default)
+  //   ``/components/library[/packages/...]`` -> library (component-type registry)
+  const location = useLocation();
+  const subTab: ComponentsSubTab = location.pathname.includes('/components/library')
+    ? 'library'
+    : 'instances';
+
+  const history = useHistory();
+
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  if (!locationEntry) {
+    if (!loading) {
+      return <Redirect to="/deployment/locations" />;
+    }
+    return <div />;
+  }
+
+  // When the Instances surface is gated off, send the user to Library so the
+  // page still has something to render.
+  if (subTab === 'instances' && !componentInstanceUIEnabled) {
+    return <Redirect to={workspacePathFromAddress(repoAddress, '/components/library')} />;
+  }
+
+  const renderSubTab = () => {
+    if (subTab === 'library') {
+      return (
+        <CodeLocationComponentsCatalogSubtab
+          repoAddress={repoAddress}
+          packageName={params.packageName}
+          componentName={params.componentName}
+        />
+      );
+    }
+    return (
+      <CodeLocationComponentInstancesSubtab
+        repoAddress={repoAddress}
+        isAddOpen={isAddOpen}
+        setIsAddOpen={setIsAddOpen}
+      />
+    );
+  };
+
+  const onSubTabClick = (id: ComponentsSubTab) => {
+    history.push(
+      workspacePathFromAddress(
+        repoAddress,
+        id === 'library' ? '/components/library' : '/components',
+      ),
+    );
+  };
+
+  return (
+    <Box style={{height: '100%', overflow: 'hidden'}} flex={{direction: 'column'}}>
+      <CodeLocationPageHeader repoAddress={repoAddress} />
+      <Box padding={{horizontal: 24}} border="bottom">
+        <CodeLocationTabs
+          selectedTab="components"
+          repoAddress={repoAddress}
+          locationEntry={locationEntry}
+        />
+      </Box>
+      {componentInstanceUIEnabled ? (
+        <Box
+          padding={{horizontal: 24, vertical: 12}}
+          border="bottom"
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+        >
+          <ButtonGroup<ComponentsSubTab>
+            activeItems={new Set([subTab])}
+            buttons={[
+              {id: 'library', label: 'Library'},
+              {id: 'instances', label: 'Instances'},
+            ]}
+            onClick={onSubTabClick}
+          />
+          {subTab === 'instances' ? (
+            <Tooltip content={addDisabledReason ?? ''} canShow={!!addDisabledReason}>
+              <Button
+                intent="primary"
+                icon={<Icon name="add_circle" />}
+                disabled={!!addDisabledReason}
+                onClick={() => setIsAddOpen(true)}
+              >
+                Add
+              </Button>
+            </Tooltip>
+          ) : null}
+        </Box>
+      ) : null}
+      {componentInstanceUIEnabled && subTab === 'instances' ? (
+        <AppManagedComponentRepoBindingSection locationName={repoAddress.location} />
+      ) : null}
+      <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'auto'}}>
+        {renderSubTab()}
+      </Box>
+    </Box>
+  );
+};

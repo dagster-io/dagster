@@ -132,10 +132,9 @@ def test_cursors(instance: DagsterInstance, empty_workspace_context):
         instance.report_engine_event("foo", run2)
 
     list(daemon.run_iteration(empty_workspace_context))
-    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == {
-        FAILURE_KEY: str(int(cursors[FAILURE_KEY]) + 10),
-        SUCCESS_KEY: str(int(cursors[SUCCESS_KEY]) + 10),
-    }
+    # Cursors are per-type, so engine events (which are neither RUN_FAILURE nor RUN_SUCCESS)
+    # do not advance the cursor. The cursor stays at the last seen event of the relevant type.
+    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == cursors
 
     run3 = create_run_for_test(instance, "foo")
     run4 = create_run_for_test(instance, "foo")
@@ -168,23 +167,9 @@ def test_cursor_init(instance: DagsterInstance, empty_workspace_context):
 
 
 def test_get_new_cursor():
-    # hit fetch limit, uses max new_event_ids
-    assert get_new_cursor(0, 20, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
+    # new events: advances to max
+    assert get_new_cursor(0, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
 
-    # hit fetch limit, uses max new_event_ids with overall_max_event_id low
-    assert get_new_cursor(0, 7, 8, [3, 4, 5, 6, 7, 8, 9, 10]) == 10
-
-    # didn't hit fetch limit, uses max new_event_ids with overall_max_event_id low
-    assert get_new_cursor(0, 7, 8, [3, 4, 5, 6, 7, 8, 9]) == 9
-
-    # didn't hit fetch limit, jumps to overall_max_event_id
-    assert get_new_cursor(0, 20, 4, [1, 2, 3]) == 20
-
-    # empty event log
-    assert get_new_cursor(0, None, 4, []) == 0
-
-    # empty overall_max_event_id
-    assert get_new_cursor(0, None, 5, [2, 3, 4]) == 4
-
-    # no new_event_ids
-    assert get_new_cursor(0, 10, 4, []) == 10
+    # no new events: stays at persisted cursor
+    assert get_new_cursor(0, []) == 0
+    assert get_new_cursor(10, []) == 10

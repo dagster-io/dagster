@@ -38,7 +38,7 @@ def write_openai_file(file_name: str, data: list):
         data (list): data to write to file
 
     """
-    with open(file_name, "w") as output_file:
+    with open(file_name, "w", encoding="utf-8") as output_file:
         for i, row in enumerate(data):
             output_file.write(json.dumps(row))
             if i < len(data) - 1:
@@ -55,7 +55,7 @@ def read_openai_file(file_name: str) -> Generator:
         Generator: records of the jsonl file as dicts
 
     """
-    with open(file_name) as training_file:
+    with open(file_name, encoding="utf-8") as training_file:
         for line in training_file:
             if line.strip():
                 yield json.loads(line)
@@ -228,9 +228,10 @@ def training_file(
     enriched_graphic_novels,
 ) -> str:
     graphic_novels = enriched_graphic_novels.sample(n=TRAINING_FILE_NUM)
-    prompt_data = []
-    for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record, CATEGORIES))
+    prompt_data = [
+        create_prompt_record(record, CATEGORIES)
+        for record in [row for _, row in graphic_novels.iterrows()]
+    ]
 
     file_name = "goodreads-training.jsonl"
     write_openai_file(file_name, prompt_data)
@@ -249,9 +250,10 @@ def validation_file(
     enriched_graphic_novels,
 ) -> str:
     graphic_novels = enriched_graphic_novels.sample(n=VALIDATION_FILE_NUM)
-    prompt_data = []
-    for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record, CATEGORIES))
+    prompt_data = [
+        create_prompt_record(record, CATEGORIES)
+        for record in [row for _, row in graphic_novels.iterrows()]
+    ]
 
     file_name = "goodreads-validation.jsonl"
     write_openai_file(file_name, prompt_data)

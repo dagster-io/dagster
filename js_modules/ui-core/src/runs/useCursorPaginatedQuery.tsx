@@ -28,7 +28,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   variables: Omit<TVars, 'cursor' | 'limit'>;
   pageSize: number;
   queryKey?: string;
-  getResultArray: (result: T | undefined) => any[];
+  getResultArray: (result: T | undefined) => unknown[];
   nextCursorForResult: (result: T) => string | undefined;
   hasMoreForResult?: (result: T) => boolean;
 }) {
@@ -45,7 +45,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   // or an item will be skipped when you advance.
   //
   const limit = options.hasMoreForResult ? options.pageSize : options.pageSize + 1;
-  const queryVars: any = {...options.variables, cursor, limit};
+  const queryVars = {...options.variables, cursor, limit} as TVars;
 
   const queryResult = useQuery<T, TVars>(options.query, {
     skip: options.skip,

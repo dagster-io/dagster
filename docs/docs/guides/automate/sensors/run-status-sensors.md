@@ -11,7 +11,7 @@ If you want to act on the status of a run, Dagster provides a way to create a se
 Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/run_status_run_requests.py"
   startAfter="start"
   endBefore="end"
   title="src/<project_name>/defs/sensors.py"
@@ -26,7 +26,7 @@ Note that in `report_status_sensor` we conditionally return a `RunRequest`. This
 Here is an example of a sensor that reports job success in a Slack message:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/sensor_alert.py"
   startAfter="start_success_sensor_marker"
   endBefore="end_success_sensor_marker"
   title="src/<project_name>/defs/sensors.py"
@@ -41,7 +41,7 @@ Run status sensors can be used to coordinate the execution of multiple independe
 To coordinate multiple jobs, use a run status sensor that monitors completion status and tracks processed runs using a cursor. This ensures the downstream job triggers exactly once per batch of upstream completions.
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_sensor.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/run_status_sensor.py"
   language="python"
   startAfter="start_assets"
   endBefore="end_assets"
@@ -49,7 +49,7 @@ To coordinate multiple jobs, use a run status sensor that monitors completion st
 />
 
 <CodeExample
-  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_sensor.py"
+  path="docs_snippets/docs_snippets/guides/automate/sensors/run_status_sensor.py"
   language="python"
   startAfter="start_sensors"
   endBefore="end_sensors"

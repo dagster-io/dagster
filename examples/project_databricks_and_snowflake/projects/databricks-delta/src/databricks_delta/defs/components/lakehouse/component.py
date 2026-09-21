@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import dagster._check as check
 import pandas as pd
@@ -41,21 +41,18 @@ class LakehouseComponent(Component, LakehouseComponentParams, Resolvable):
             context: AssetExecutionContext,
             delta_storage: DeltaStorageResource,
         ) -> str:
-            base_time = datetime.now()
-            data = []
-            for i in range(1000):
-                data.append(
-                    {
-                        "sensor_id": f"sensor-{i % 50:03d}",
-                        "timestamp": (
-                            base_time - timedelta(minutes=1000 - i)
-                        ).isoformat(),
-                        "temperature": 20.0 + (i % 30) * 0.5,
-                        "humidity": 50.0 + (i % 40) * 0.3,
-                        "region": ["North", "South", "East", "West"][i % 4],
-                        "raw_metadata": json.dumps({"firmware_version": "1.2.3"}),
-                    }
-                )
+            base_time = datetime.now(timezone.utc)
+            data = [
+                {
+                    "sensor_id": f"sensor-{i % 50:03d}",
+                    "timestamp": (base_time - timedelta(minutes=1000 - i)).isoformat(),
+                    "temperature": 20.0 + (i % 30) * 0.5,
+                    "humidity": 50.0 + (i % 40) * 0.3,
+                    "region": ["North", "South", "East", "West"][i % 4],
+                    "raw_metadata": json.dumps({"firmware_version": "1.2.3"}),
+                }
+                for i in range(1000)
+            ]
 
             df = pd.DataFrame(data)
 
@@ -89,20 +86,19 @@ class LakehouseComponent(Component, LakehouseComponentParams, Resolvable):
 
             if df.empty:
                 if self.demo_mode:
-                    base_time = datetime.now()
-                    data = []
-                    for i in range(1000):
-                        data.append(
-                            {
-                                "sensor_id": f"sensor-{i % 50:03d}",
-                                "timestamp": (
-                                    base_time - timedelta(minutes=1000 - i)
-                                ).isoformat(),
-                                "temperature": 20.0 + (i % 30) * 0.5,
-                                "humidity": 50.0 + (i % 40) * 0.3,
-                                "region": ["North", "South", "East", "West"][i % 4],
-                            }
-                        )
+                    base_time = datetime.now(timezone.utc)
+                    data = [
+                        {
+                            "sensor_id": f"sensor-{i % 50:03d}",
+                            "timestamp": (
+                                base_time - timedelta(minutes=1000 - i)
+                            ).isoformat(),
+                            "temperature": 20.0 + (i % 30) * 0.5,
+                            "humidity": 50.0 + (i % 40) * 0.3,
+                            "region": ["North", "South", "East", "West"][i % 4],
+                        }
+                        for i in range(1000)
+                    ]
                     df = pd.DataFrame(data)
                 else:
                     raise ValueError("No data in bronze layer to process")
@@ -152,20 +148,19 @@ class LakehouseComponent(Component, LakehouseComponentParams, Resolvable):
 
             if df.empty:
                 if self.demo_mode:
-                    base_time = datetime.now()
-                    data = []
-                    for i in range(100):
-                        data.append(
-                            {
-                                "sensor_id": f"sensor-{i % 50:03d}",
-                                "timestamp": (
-                                    base_time - timedelta(minutes=100 - i)
-                                ).isoformat(),
-                                "temperature": 20.0 + (i % 30) * 0.5,
-                                "humidity": 50.0 + (i % 40) * 0.3,
-                                "region": ["North", "South", "East", "West"][i % 4],
-                            }
-                        )
+                    base_time = datetime.now(timezone.utc)
+                    data = [
+                        {
+                            "sensor_id": f"sensor-{i % 50:03d}",
+                            "timestamp": (
+                                base_time - timedelta(minutes=100 - i)
+                            ).isoformat(),
+                            "temperature": 20.0 + (i % 30) * 0.5,
+                            "humidity": 50.0 + (i % 40) * 0.3,
+                            "region": ["North", "South", "East", "West"][i % 4],
+                        }
+                        for i in range(100)
+                    ]
                     df = pd.DataFrame(data)
                     df["timestamp"] = pd.to_datetime(df["timestamp"])
                 else:

@@ -29,7 +29,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecretList")
+@dg_response_schema(module="dagster_rest_resources.schemas.secret", cls="DgApiSecretList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -46,15 +46,24 @@ def list_secrets_command(
 
     By default, secret values are not shown for security reasons.
     Use 'dg api secret get NAME --show-value' to view specific values.
+
+    Example::
+
+        $ dg api secret list
+        NAME                LOCATIONS  SCOPES                                                     UPDATED
+        SNOWFLAKE_USER      All        Full Deployment, All Branch Deployments, Local Deployment  2023-05-04 19:14:15 UTC
+        SNOWFLAKE_PASSWORD  All        Full Deployment, All Branch Deployments, Local Deployment  2023-11-29 22:38:48 UTC
+        DATABRICKS_TOKEN    All        Full Deployment, Local Deployment                          2025-07-25 23:52:00 UTC
+        GITHUB_TOKEN        analytics  Full Deployment                                            2025-08-11 18:19:12 UTC
     """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.secret import DgApiSecretApi
+    from dagster_rest_resources.api.secret import DgApiSecretApi
 
-    api = DgApiSecretApi(client)
+    api = DgApiSecretApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         secrets = api.list_secrets(
@@ -82,7 +91,7 @@ def list_secrets_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.secret", cls="DgApiSecret")
+@dg_response_schema(module="dagster_rest_resources.schemas.secret", cls="DgApiSecret")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -103,15 +112,30 @@ def get_secret_command(
 
     WARNING: When using --show-value, the secret will be visible in your terminal
     and may be stored in shell history. Use with caution.
+
+    Example::
+
+        $ dg api secret get SNOWFLAKE_USER
+        Name: SNOWFLAKE_USER
+        Locations: All code locations
+        Scopes: Full Deployment, All Branch Deployments, Local Deployment
+        Permissions:
+          Can Edit: Yes
+          Can View Value: Yes
+
+        Value: <hidden - use --show-value to display>
+
+        Updated By: colton@dagsterlabs.com
+        Updated: 2023-05-04 19:14:15 UTC
     """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.secret import DgApiSecretApi
+    from dagster_rest_resources.api.secret import DgApiSecretApi
 
-    api = DgApiSecretApi(client)
+    api = DgApiSecretApi(_client=client)
 
     with handle_api_errors(ctx, output_json):
         secret = api.get_secret(

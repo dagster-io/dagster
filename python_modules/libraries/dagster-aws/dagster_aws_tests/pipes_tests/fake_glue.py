@@ -1,3 +1,4 @@
+import os
 import sys
 import tempfile
 import time
@@ -22,10 +23,10 @@ class LocalGlueMockClient:
     def __init__(
         self,
         aws_endpoint_url: str,  # usually received from moto
-        s3_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
-        glue_client: boto3.client,  # pyright: ignore (reportGeneralTypeIssues)
+        s3_client: boto3.client,  # ty: ignore (reportGeneralTypeIssues)
+        glue_client: boto3.client,  # ty: ignore (reportGeneralTypeIssues)
         pipes_messages_backend: Literal["s3", "cloudwatch"],
-        cloudwatch_client: "boto3.client | None" = None,  # pyright: ignore (reportGeneralTypeIssues)
+        cloudwatch_client: "boto3.client | None" = None,  # ty: ignore (reportGeneralTypeIssues)
     ):
         """This class wraps moto3 clients for S3 and Glue, and provides a way to "run" Glue jobs locally.
         This is necessary because moto3 does not actually run anything when you start a Glue job, so we won't be able
@@ -114,6 +115,11 @@ class LocalGlueMockClient:
         popen = Popen(
             [sys.executable, f.name, *args],
             env={
+                # Pass through AWS_* creds from the parent (set by the autouse
+                # `fake_aws_credentials` fixture to stub values). Without this,
+                # botocore inside the subprocess has no creds at all and only
+                # works incidentally when the host has an EC2 IMDS instance role.
+                **{k: v for k, v in os.environ.items() if k.startswith("AWS_")},
                 "AWS_ENDPOINT_URL": self.aws_endpoint_url,
                 "TESTING_PIPES_MESSAGES_BACKEND": self.pipes_messages_backend,
             },

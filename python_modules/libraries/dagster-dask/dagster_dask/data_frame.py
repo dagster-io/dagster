@@ -449,7 +449,7 @@ def _dataframe_loader_config():
                     is_required=option_args[1],
                     description=option_args[2],
                 )
-                for option_name, option_args in read_opts["options"].items()
+                for option_name, option_args in read_opts["options"].items()  # ty: ignore[unresolved-attribute]
             }
         )
         for read_from, read_opts in DataFrameReadTypes.items()
@@ -494,7 +494,7 @@ def dataframe_loader(_context, config):
         read_kwargs["filters"] = _innermost_list2tuple(read_kwargs["filters"])
 
     # Read the dataframe and apply any utility functions
-    df = read_function(*read_args, **read_kwargs)
+    df = read_function(*read_args, **read_kwargs)  # ty: ignore[call-non-callable]
     df = apply_utilities_to_df(df, config)
     df = df.persist()
 

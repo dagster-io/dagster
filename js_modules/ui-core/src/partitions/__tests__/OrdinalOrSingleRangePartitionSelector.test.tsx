@@ -6,6 +6,7 @@ import {TWO_DIMENSIONAL_ASSET_BOTH_STATIC} from '../../assets/__fixtures__/Parti
 import {PartitionHealthQuery} from '../../assets/types/usePartitionHealthData.types';
 import {
   PartitionDimensionSelection,
+  PartitionHealthDimension,
   buildPartitionHealthData,
 } from '../../assets/usePartitionHealthData';
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
@@ -58,7 +59,11 @@ describe('OrdinalOrSingleRangePartitionSelector', () => {
     const {baseElement, getByTitle} = render(
       <Wrapper
         queryResult={TWO_DIMENSIONAL_ASSET_BOTH_STATIC}
-        initialSelection={{dimension: {} as any, selectedKeys: ['CA', 'MN'], selectedRanges: []}}
+        initialSelection={{
+          dimension: {} as unknown as PartitionHealthDimension,
+          selectedKeys: ['CA', 'MN'],
+          selectedRanges: [],
+        }}
       />,
     );
     expect(baseElement.querySelector('[aria-selected=true]')?.textContent).toEqual('Single');

@@ -1,5 +1,4 @@
 import os
-from typing import cast
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -77,7 +76,7 @@ def load_prices_csv(path: str) -> pd.DataFrame:
     `DATA_ROOT`.
     """
     path = normalize_path(path)
-    df = cast("pd.DataFrame", pd.read_csv(path, parse_dates=["date"]))
+    df = pd.read_csv(path, parse_dates=["date"])
     df = df.rename(columns={"Name": "name"})
     df = df.dropna()
     return df

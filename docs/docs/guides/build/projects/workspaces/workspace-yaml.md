@@ -287,7 +287,7 @@ If you're using the built-in [Helm chart](/deployment/oss/deployment-options/kub
 
 By default, code is loaded with `dagster-webserver`'s working directory as the base path to resolve any local imports in your code. Using the `working_directory` key, you can specify a custom working directory for relative imports. For example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/repositories_workspaces/workspace_working_directory.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/repositories_workspaces/workspace_working_directory.yaml" />
 
 </TabItem>
 <TabItem value="Loading multiple Python environments">
@@ -298,7 +298,7 @@ By default, the webserver and other Dagster tools assume that code locations sho
 
 To enable this use case, Dagster supports customizing the Python environment for each code location by adding the `executable_path` key to the YAML for a location. These environments can involve distinct sets of installed dependencies, or even completely different Python versions. For example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/repositories_workspaces/python_environment_example.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/repositories_workspaces/python_environment_example.yaml" />
 
 The example above also illustrates the `location_name` key. Each code location in a workspace file has a unique name that is displayed in the UI, and is also used to disambiguate definitions with the same name across multiple code locations. Dagster will supply a default name for each location based on its workspace entry if a custom one is not supplied.
 

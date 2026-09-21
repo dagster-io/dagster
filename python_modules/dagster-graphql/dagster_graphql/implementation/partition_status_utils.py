@@ -176,7 +176,12 @@ def build_multi_partition_ranges_generic(
         for status, subset in subsets.items():
             if subset:
                 dim2_keys_by_dim1 = defaultdict(set)
-                for partition_key in subset.get_partition_keys():
+                partition_keys = [
+                    key
+                    for key in subset.get_partition_keys()
+                    if partitions_def.is_valid_key_format(key)
+                ]
+                for partition_key in partition_keys:
                     multipartition_key = partitions_def.get_partition_key_from_str(partition_key)
                     primary_key_val = multipartition_key.keys_by_dimension[primary_dim.name]
                     secondary_key_val = multipartition_key.keys_by_dimension[secondary_dim.name]

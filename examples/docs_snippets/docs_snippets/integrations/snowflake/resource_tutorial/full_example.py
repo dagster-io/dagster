@@ -74,7 +74,7 @@ def iris_setosa(snowflake: SnowflakeResource) -> None:
     """
 
     with snowflake.get_connection() as conn:
-        conn.cursor.execute(query)  # pyright: ignore[reportFunctionMemberAccess]
+        conn.cursor.execute(query)  # ty: ignore[unresolved-attribute]
 
 
 # end_downstream

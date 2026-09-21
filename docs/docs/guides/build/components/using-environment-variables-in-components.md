@@ -12,9 +12,9 @@ For more information on using environment variables with non-component Dagster c
 
 :::
 
-## 1. Create a new Dagster components project
+## Step 1: Create a new Dagster project
 
-First, we'll set up a basic ELT pipeline using Sling in an empty Dagster components project:
+First, we'll set up a basic ELT pipeline using Sling in an empty Dagster project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/1-dg-init.txt" />
 
@@ -30,7 +30,7 @@ We'll install `dagster-sling` and scaffold an empty Sling connection component:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/5-dg-scaffold-sling.txt" />
 
-## 2. Use environment variables in a component
+## Step 2: Use environment variables in a component
 
 Next, we will configure a Sling connection that will sync a local CSV file to a Snowflake database, with credentials provided with environment variables:
 
@@ -73,7 +73,7 @@ You can edit the `.env` file in your project root to specify environment variabl
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/using-env/14-dg-list-env.txt" />
 
-## 3. Configure environment variables for components in Dagster+ (Optional)
+## Step 3: Configure environment variables for components in Dagster+ (Optional)
 
 If you are using Dagster+, you can also use the `dg` CLI to push environment variables to your deployment so that your code is ready to run in a production setting.
 

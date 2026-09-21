@@ -1,6 +1,6 @@
 import pandas as pd
 
-from snowflake_medallion.defs.resources import (  # type: ignore[import-not-found]
+from snowflake_medallion.defs.resources import (
     SnowflakeResource,
 )
 

@@ -2,7 +2,6 @@ import os
 import tempfile
 
 import pytest
-from airflow import __version__ as airflow_version
 from airflow.models import DagBag
 from dagster import AssetKey, asset, materialize
 from dagster_airflow import load_assets_from_airflow_dag, make_ephemeral_airflow_db_resource
@@ -36,7 +35,6 @@ with models.DAG(
 """
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.requires_local_db
 def test_load_assets_from_airflow_dag():
     with tempfile.TemporaryDirectory(suffix="assets") as tmpdir_path:
@@ -47,7 +45,7 @@ def test_load_assets_from_airflow_dag():
         asset_dag = dag_bag.get_dag(dag_id="asset_dag")
 
         assets = load_assets_from_airflow_dag(
-            dag=asset_dag,  # pyright: ignore[reportArgumentType]
+            dag=asset_dag,
             task_ids_by_asset_key={
                 AssetKey("foo_asset"): {"foo"},
                 AssetKey("biz_asset"): {"biz"},
@@ -60,7 +58,7 @@ def test_load_assets_from_airflow_dag():
         )
         other_dag = dag_bag.get_dag(dag_id="other_dag")
         other_assets = load_assets_from_airflow_dag(
-            dag=other_dag,  # pyright: ignore[reportArgumentType]
+            dag=other_dag,
         )
 
         resources = None

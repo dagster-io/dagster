@@ -1,4 +1,4 @@
-import {Tag, Tooltip} from '@dagster-io/ui-components';
+import {Container, Inner, Tag, Tooltip} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
@@ -8,7 +8,6 @@ import {
   VirtualizedResourceRow,
 } from '../resources/VirtualizedResourceRow';
 import {ResourceEntryFragment} from '../resources/types/WorkspaceResourcesQuery.types';
-import {Container, Inner} from '../ui/VirtualizedTable';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {RepoRow} from '../workspace/VirtualizedWorkspaceTable';
@@ -76,7 +75,7 @@ export const OverviewResourcesTable = ({repos}: Props) => {
     <div style={{overflow: 'hidden'}}>
       <Container ref={parentRef}>
         <VirtualizedResourceHeader />
-        <Inner $totalHeight={totalHeight}>
+        <Inner totalHeight={totalHeight}>
           {items.map(({index, key, size, start}) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const row: RowType = flattened[index]!;

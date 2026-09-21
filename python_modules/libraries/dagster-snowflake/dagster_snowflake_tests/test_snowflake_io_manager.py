@@ -16,7 +16,7 @@ class PassTypeHandler(DbTypeHandler[int]):
     def handle_output(self, *args, **kwargs):
         return None
 
-    def load_input(self, *args, **kwargs):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def load_input(self, *args, **kwargs):
         return None
 
     @property
@@ -29,7 +29,7 @@ class TestSnowflakeIOManager(SnowflakeIOManager):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def type_handlers(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def type_handlers(self):
         return [PassTypeHandler()]
 
 
@@ -200,6 +200,44 @@ def test_get_cleanup_statement_multi_partitioned():
         == "DELETE FROM database_abc.schema1.table1 WHERE\nmy_fruit_col in ('apple')"
         " AND\nmy_timestamp_col >= '2020-01-02 00:00:00' AND my_timestamp_col < '2020-02-03"
         " 00:00:00'"
+    )
+
+
+def test_get_select_statement_escapes():
+    assert (
+        SnowflakeDbClient.get_select_statement(
+            TableSlice(
+                database="database_abc",
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "SELECT * FROM database_abc.schema1.table1 WHERE\nmy_col in ('it''s a test')"
+    )
+
+
+def test_get_cleanup_statement_escapes():
+    assert (
+        _get_cleanup_statement(
+            TableSlice(
+                database="database_abc",
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "DELETE FROM database_abc.schema1.table1 WHERE\nmy_col in ('it''s a test')"
     )
 
 

@@ -365,6 +365,7 @@ class FivetranConnectionMetadata(
                                 database=self.database,
                                 schema=schema_name,
                                 table=table_name,
+                                service=self.service,
                             )
         else:
             schema_table_meta[self.name] = {}

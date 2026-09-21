@@ -65,11 +65,13 @@ spec:
           command: ["dagster-celery"]
           args: ["worker", "start", "-A", "dagster_celery_k8s.app", "-y", "{{ $.Values.global.dagsterHome }}/celery-config.yaml", "-q", "{{- $queue.name -}}", {{- if $queue.additionalCeleryArgs -}}"--", "{{- join "\",\"" $queue.additionalCeleryArgs -}}" {{- end -}}]
           env:
+            {{- if not $.Values.global.postgresqlAuthWifEnabled }}
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" $ | quote }}
                   key: postgresql-password
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-celery-worker-env

@@ -14,22 +14,14 @@ You can use Dagster's rich metadata to use a schedule or a sensor to only start 
   title="src/<project_name>/defs/assets.py"
 />
 
-## Limit concurrent runs across all branch deployments (Dagster+ only) \{#branch-deployment-concurrency}
+## Limit concurrent runs in branch deployments (Dagster+ only) \{#branch-deployment-concurrency}
 
-In Dagster+, you can limit the total number of concurrent runs across all [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) using the organization-scoped `max_concurrent_branch_deployment_runs` setting. By default, this value is 50.
+In Dagster+, [branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments) share a set of organization-scoped concurrency settings that apply to every branch deployment in the organization:
 
-This setting is useful for preventing branch deployments from consuming too many resources, especially when multiple developers are working simultaneously.
+- `max_concurrent_branch_deployment_runs`: caps the total number of concurrent runs across **all** branch deployments (default `50`).
+- `max_concurrent_runs_per_branch_deployment`: caps the number of concurrent runs within an **individual** branch deployment (default no limit).
+- `branch_deployment_tag_concurrency_limits`: caps the number of concurrent runs with matching run tags across **all** branch deployments.
 
-To view or modify this setting, use the `dagster-cloud` CLI (requires a user token with the Organization Admin role):
+These settings are useful for preventing branch deployments from consuming too many resources, especially when multiple developers are working simultaneously.
 
-```bash
-# View current settings
-dagster-cloud organization settings get
-
-# Save settings to a file, edit, then sync
-dagster-cloud organization settings get > org-settings.yaml
-# Edit org-settings.yaml to change max_concurrent_branch_deployment_runs
-dagster-cloud organization settings set-from-file org-settings.yaml
-```
-
-For more details, see [Managing branch deployments across multiple deployments](/deployment/dagster-plus/deploying-code/branch-deployments/multiple-deployments#setting-the-concurrency-limit-for-runs-across-all-branch-deployments).
+For details on each setting and how to edit them in the Dagster+ UI or with the `dg` CLI, see [Configuring concurrency for branch deployments](/deployment/dagster-plus/deploying-code/branch-deployments/branch-deployment-concurrency).

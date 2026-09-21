@@ -1,5 +1,6 @@
+import logging
 import uuid
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from dagster import asset, instance_for_test, materialize
@@ -38,7 +39,7 @@ def test_basic_resource_request(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     @asset
     def test_assets():
@@ -92,7 +93,7 @@ def test_add_data_quality_warning(
         host_key: host_value,
     }
 
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     with resource.get_client() as client:
         client.add_data_quality_warning_to_data_source(data_source_id="fake_datasource_id")
@@ -134,7 +135,7 @@ def test_fetch_tableau_workspace_data(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     response = resource.get_or_fetch_workspace_data()
 
@@ -153,6 +154,191 @@ def test_fetch_tableau_workspace_data(
         )
         == "Embedded Superstore Datasource"
     )
+
+
+def _build_workbook_item(*, wb_id: str, name: str, project_name: str, project_id: str) -> MagicMock:
+    """Build a mock workbook list item, mirroring the shape returned by `get_workbooks`."""
+    workbook_item = MagicMock()
+    type(workbook_item).id = PropertyMock(return_value=wb_id)
+    type(workbook_item).name = PropertyMock(return_value=name)
+    type(workbook_item).project_name = PropertyMock(return_value=project_name)
+    type(workbook_item).project_id = PropertyMock(return_value=project_id)
+    return workbook_item
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+@pytest.mark.parametrize(
+    "bad_workbook_data",
+    [
+        # Malformed workbook missing `sheets`/`dashboards` entirely (previously raised KeyError).
+        {
+            "luid": "bad-workbook-id",
+            "name": "Bad Workbook",
+            "projectName": "bad_project",
+            "projectLuid": "bad_project_id",
+        },
+        # Workbook whose `sheets`/`dashboards` are null rather than lists.
+        {
+            "luid": "bad-workbook-id",
+            "name": "Bad Workbook",
+            "projectName": "bad_project",
+            "projectLuid": "bad_project_id",
+            "sheets": None,
+            "dashboards": None,
+        },
+        # Genuinely empty workbook with no sheets and no dashboards.
+        {
+            "luid": "bad-workbook-id",
+            "name": "Bad Workbook",
+            "projectName": "bad_project",
+            "projectLuid": "bad_project_id",
+            "sheets": [],
+            "dashboards": [],
+        },
+    ],
+    ids=["missing_keys", "null_keys", "empty_lists"],
+)
+def test_fetch_tableau_workspace_data_skips_empty_or_malformed_workbook(
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
+    host_key: str,
+    host_value: str,
+    bad_workbook_data: dict,
+    site_name: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """A single empty or malformed workbook must be skipped with a warning rather than
+    failing the entire workspace load and bringing down the whole code location.
+    """
+    from dagster_tableau_tests.conftest import (
+        SAMPLE_SECOND_WORKBOOK,
+        TEST_SECOND_PROJECT_ID,
+        TEST_SECOND_PROJECT_NAME,
+        TEST_SECOND_WORKBOOK_ID,
+    )
+
+    bad_workbook_id = "bad-workbook-id"
+
+    def get_workbook_by_id(workbook_id):
+        if workbook_id == bad_workbook_id:
+            return {"data": {"workbooks": [bad_workbook_data]}}
+        elif workbook_id == TEST_SECOND_WORKBOOK_ID:
+            return {"data": {"workbooks": [SAMPLE_SECOND_WORKBOOK]}}
+        return {"data": {"workbooks": []}}
+
+    resource = clazz(
+        connected_app_client_id=uuid.uuid4().hex,
+        connected_app_secret_id=uuid.uuid4().hex,
+        connected_app_secret_value=uuid.uuid4().hex,
+        username="fake_username",
+        site_name=site_name,
+        **{host_key: host_value},
+    )
+
+    with (
+        patch("dagster_tableau.resources.BaseTableauClient.get_workbooks") as mock_get_workbooks,
+        patch("dagster_tableau.resources.BaseTableauClient.get_workbook") as mock_get_workbook,
+    ):
+        mock_get_workbooks.return_value = [
+            _build_workbook_item(
+                wb_id=bad_workbook_id,
+                name="Bad Workbook",
+                project_name="bad_project",
+                project_id="bad_project_id",
+            ),
+            _build_workbook_item(
+                wb_id=TEST_SECOND_WORKBOOK_ID,
+                name="Second Workbook",
+                project_name=TEST_SECOND_PROJECT_NAME,
+                project_id=TEST_SECOND_PROJECT_ID,
+            ),
+        ]
+        mock_get_workbook.side_effect = get_workbook_by_id
+
+        with caplog.at_level(logging.WARNING):
+            response = resource.fetch_tableau_workspace_data()
+
+    # The bad workbook is skipped, but the valid workbook still loads successfully.
+    assert bad_workbook_id not in response.workbooks_by_id
+    assert TEST_SECOND_WORKBOOK_ID in response.workbooks_by_id
+    assert "Bad Workbook" in caplog.text
+    assert "Skipping" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+def test_fetch_tableau_workspace_data_skips_workbook_that_raises(
+    clazz: type[TableauCloudWorkspace] | type[TableauServerWorkspace],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """If fetching/parsing a single workbook raises, it is skipped with a warning rather than
+    aborting the entire workspace load.
+    """
+    from dagster_tableau_tests.conftest import (
+        SAMPLE_SECOND_WORKBOOK,
+        TEST_SECOND_PROJECT_ID,
+        TEST_SECOND_PROJECT_NAME,
+        TEST_SECOND_WORKBOOK_ID,
+    )
+
+    raising_workbook_id = "raising-workbook-id"
+
+    def get_workbook_by_id(workbook_id):
+        if workbook_id == raising_workbook_id:
+            raise Exception("Tableau API exploded for this workbook")
+        elif workbook_id == TEST_SECOND_WORKBOOK_ID:
+            return {"data": {"workbooks": [SAMPLE_SECOND_WORKBOOK]}}
+        return {"data": {"workbooks": []}}
+
+    resource = clazz(
+        connected_app_client_id=uuid.uuid4().hex,
+        connected_app_secret_id=uuid.uuid4().hex,
+        connected_app_secret_value=uuid.uuid4().hex,
+        username="fake_username",
+        site_name=site_name,
+        **{host_key: host_value},
+    )
+
+    with (
+        patch("dagster_tableau.resources.BaseTableauClient.get_workbooks") as mock_get_workbooks,
+        patch("dagster_tableau.resources.BaseTableauClient.get_workbook") as mock_get_workbook,
+    ):
+        mock_get_workbooks.return_value = [
+            _build_workbook_item(
+                wb_id=raising_workbook_id,
+                name="Raising Workbook",
+                project_name="bad_project",
+                project_id="bad_project_id",
+            ),
+            _build_workbook_item(
+                wb_id=TEST_SECOND_WORKBOOK_ID,
+                name="Second Workbook",
+                project_name=TEST_SECOND_PROJECT_NAME,
+                project_id=TEST_SECOND_PROJECT_ID,
+            ),
+        ]
+        mock_get_workbook.side_effect = get_workbook_by_id
+
+        with caplog.at_level(logging.WARNING):
+            response = resource.fetch_tableau_workspace_data()
+
+    assert raising_workbook_id not in response.workbooks_by_id
+    assert TEST_SECOND_WORKBOOK_ID in response.workbooks_by_id
+    assert "Raising Workbook" in caplog.text
+    assert "Skipping" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -185,7 +371,7 @@ def test_fetch_tableau_workspace_data_with_workbook_selector_by_id(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     # Import after resource is created to avoid import errors
     from dagster_tableau.translator import TableauWorkbookMetadata
@@ -233,7 +419,7 @@ def test_fetch_tableau_workspace_data_with_workbook_selector_excludes_non_matchi
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -280,7 +466,7 @@ def test_fetch_tableau_workspace_data_with_project_selector_by_id(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -325,7 +511,7 @@ def test_fetch_tableau_workspace_data_with_project_selector_by_name(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -371,7 +557,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_or_logic(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -423,7 +609,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_workbook_matches_workb
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -474,7 +660,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_neither_matches(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -527,7 +713,7 @@ def test_fetch_tableau_workspace_data_with_both_selectors_both_match(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)  # type: ignore
+    resource = clazz(**resource_args)
 
     from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -599,7 +785,7 @@ def test_fetch_tableau_workspace_data_project_selector_filters_data_sources(
     with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
         mock_get_ds.return_value = [mock_ds_matching, mock_ds_non_matching]
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
 
         from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -661,7 +847,7 @@ def test_fetch_tableau_workspace_data_project_selector_excludes_non_matching_dat
     with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
         mock_get_ds.return_value = [mock_ds]
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
 
         from dagster_tableau.translator import TableauWorkbookMetadata
 
@@ -724,7 +910,7 @@ def test_fetch_tableau_workspace_data_project_selector_by_name_filters_data_sour
     with patch("dagster_tableau.resources.BaseTableauClient.get_data_sources") as mock_get_ds:
         mock_get_ds.return_value = [mock_ds]
 
-        resource = clazz(**resource_args)  # type: ignore
+        resource = clazz(**resource_args)
 
         from dagster_tableau.translator import TableauWorkbookMetadata
 

@@ -19,16 +19,12 @@ def filter_sphinx_warnings(
 ) -> ValidationResult:
     """Filter Sphinx role warnings from the result."""
     # Filter warnings
-    filtered_warnings = []
-    for warning in result.warnings:
-        if not _is_sphinx_role_issue(warning):
-            filtered_warnings.append(warning)
+    filtered_warnings = [
+        warning for warning in result.warnings if not _is_sphinx_role_issue(warning)
+    ]
 
     # Filter errors
-    filtered_errors = []
-    for error in result.errors:
-        if not _is_sphinx_role_issue(error):
-            filtered_errors.append(error)
+    filtered_errors = [error for error in result.errors if not _is_sphinx_role_issue(error)]
 
     return ValidationResult(
         symbol_path=result.symbol_path,

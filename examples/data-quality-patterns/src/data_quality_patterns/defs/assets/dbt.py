@@ -58,7 +58,7 @@ class DataQualityDbtTranslator(DagsterDbtTranslator):
 
             source_key = (source_name, table_name)
             if source_key in SOURCE_TO_ASSET_KEY:
-                return SOURCE_TO_ASSET_KEY[source_key]
+                return SOURCE_TO_ASSET_KEY[source_key]  # ty: ignore[invalid-argument-type]
 
             # Fallback: use source_table naming
             return dg.AssetKey(f"{source_name}_{table_name}")

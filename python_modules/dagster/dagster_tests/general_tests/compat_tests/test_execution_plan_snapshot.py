@@ -112,9 +112,7 @@ def get_dynamic_job() -> dg.JobDefinition:
         n = multiply_by_two.alias("double_total")(sum_numbers(dynamic.collect()))
         echo(n)
         echo_default()
-        fan_outs = []
-        for i in range(0, 10):
-            fan_outs.append(return_one.alias(f"return_one_{i}")())
+        fan_outs = [return_one.alias(f"return_one_{i}")() for i in range(0, 10)]
         sum_fan_in(fan_outs)
 
     return dynamic_job
@@ -189,13 +187,13 @@ def test_execution_plan_snapshot_backcompat():
                 _validate_execution_plan(new_plan)
 
                 # Create a snapshot and rebuild it, validate the rebuilt plan
-                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.job_snapshot_id)  # pyright: ignore[reportArgumentType]
+                new_plan_snapshot = snapshot_from_execution_plan(new_plan, run.job_snapshot_id)  # ty: ignore[invalid-argument-type]
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("dynamic_job", new_plan_snapshot)
                 _validate_execution_plan(rebuilt_plan)
 
                 # Then validate the plan built from the historical snapshot on the run
                 stored_snapshot = instance.get_execution_plan_snapshot(
-                    run.execution_plan_snapshot_id  # pyright: ignore[reportArgumentType]
+                    run.execution_plan_snapshot_id  # ty: ignore[invalid-argument-type]
                 )
 
                 rebuilt_plan = ExecutionPlan.rebuild_from_snapshot("dynamic_job", stored_snapshot)

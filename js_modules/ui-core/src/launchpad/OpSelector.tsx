@@ -1,6 +1,5 @@
-import {Box, Colors, Popover} from '@dagster-io/ui-components';
+import {Box, Popover} from '@dagster-io/ui-components';
 import {useRef, useState} from 'react';
-import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
 import {OpSelectorQuery, OpSelectorQueryVariables} from './types/OpSelector.types';
@@ -13,6 +12,7 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/OpSelector.module.css';
 
 interface IOpSelectorProps {
   pipelineName: string;
@@ -123,7 +123,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
       <Popover
         isOpen={focused && !!errorMessage}
         position="bottom-left"
-        content={<PopoverErrorWrap>{errorMessage}</PopoverErrorWrap>}
+        content={<div className={styles.popoverErrorWrap}>{errorMessage}</div>}
       >
         <ShortcutHandler
           shortcutLabel="⌥S"
@@ -157,11 +157,3 @@ export const OpSelector = (props: IOpSelectorProps) => {
     </Box>
   );
 };
-
-const PopoverErrorWrap = styled.div`
-  padding: 4px 8px;
-  border-radius: 2px;
-  border: 1px solid ${Colors.accentRed()};
-  background: ${Colors.backgroundRed()};
-  color: ${Colors.textRed()};
-`;

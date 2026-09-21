@@ -18,7 +18,9 @@ class TestTimezoneHelpers:
         naive_dt = datetime(2024, 1, 1, 12, 0, 0)
         result = convert_to_utc(naive_dt)
         assert result.tzinfo is not None
-        assert result.tzinfo.utcoffset(None).total_seconds() == 0
+        offset = result.tzinfo.utcoffset(None)
+        assert offset is not None
+        assert offset.total_seconds() == 0
 
     def test_snowflake_timestamp(self):
         """Test converting to Snowflake TIMESTAMP_NTZ format."""

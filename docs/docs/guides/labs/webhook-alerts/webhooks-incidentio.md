@@ -31,7 +31,7 @@ In your Dagster+ deployment settings, create an environment variable for the inc
 {
   "name": "{{alert_summary}}",
   "summary": "{{alert_content}}",
-  "idempotency_key": "{{alert_policy_id}}:{{run_id}}",
+  "idempotency_key": "{{alert_id}}",
   "severity_id": "YOUR_SEVERITY_ID",
   "visibility": "public"
 }

@@ -22,7 +22,7 @@ During these events, logs like the following are generated:
 12:40:07 - DEBUG - STEP_WORKER_STARTED - Executing step "taxi_zones_file" in subprocess.
 12:40:07 - DEBUG - taxi_zones_file - RESOURCE_INIT_STARTED - Starting initialization of resources [io_manager].
 12:40:07 - DEBUG - taxi_zones_file - RESOURCE_INIT_SUCCESS - Finished initialization of resources [io_manager].
-12:40:07 - DEBUG - LOGS_CAPTURED - Started capturing logs in process (pid: 86390).
+12:40:07 - DEBUG - LOGS_CAPTURED - Capturing logs for process (pid: 86390).
 12:40:07 - DEBUG - taxi_zones_file - STEP_START - Started execution of step "taxi_zones_file".
 12:40:09 - DEBUG - taxi_zones_file - STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).
 12:40:09 - DEBUG - __ASSET_JOB_0 - taxi_zones_file - Writing file at: /Users/erincochran/Desktop/dagster-examples/project-dagster-university/tmpfxsoltsc/storage/taxi_zones_file using PickledObjectFilesystemIOManager...
@@ -69,7 +69,7 @@ Windows / Azure users may need to enable the environment variable `PYTHONLEGACYW
 
 Loggers can be configured when you run a job. For example, to filter all messages below `ERROR` out of the colored console logger for a job, add the following lines to the run config in the launchpad or `RunRequest`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/logging/config.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/log_debug/logging/config.yaml" />
 
 When a job with the above configuration is executed, you'll only see the `ERROR` level logs.
 
@@ -81,7 +81,7 @@ Dagster's [built-in loggers](/api/dagster/loggers#built-in-loggers):
 - Can be configured to capture only specified levels, such as `ERROR`
 - Can include manually-defined messages produced inside certain Dagster definitions like assets, ops, and sensors
 
-For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](/guides/log-debug/logging/custom-logging)".
+For more information on customizing loggers, see [Customizing Dagster's built-in loggers](/guides/log-debug/logging/custom-logging).
 
 ## Integrating external loggers
 

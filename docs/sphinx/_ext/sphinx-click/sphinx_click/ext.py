@@ -147,6 +147,18 @@ def _format_help(help_string: str) -> ty.Generator[str, None, None]:
     yield ""
 
 
+def _split_description_and_examples(help_string: str) -> tuple[str, str]:
+    """Split a cleaned help string into (description, examples_block) at 'Example(s)::'.
+
+    Returns the portion before the Example block and the Example block itself (or empty string).
+    """
+    cleaned = inspect.cleandoc(ANSI_ESC_SEQ_RE.sub("", help_string))
+    match = re.search(r"\n+(Examples?::.*)", cleaned, re.DOTALL | re.IGNORECASE)
+    if match:
+        return cleaned[: match.start()].rstrip(), match.group(1)
+    return cleaned, ""
+
+
 @_process_lines("sphinx-click-process-description")
 def _format_description(ctx: click.Context) -> ty.Generator[str, None, None]:
     """Format the description for a given `click.Command`.
@@ -156,7 +168,31 @@ def _format_description(ctx: click.Context) -> ty.Generator[str, None, None]:
     """
     help_string = ctx.command.help or ctx.command.short_help
     if help_string:
-        yield from _format_help(help_string)
+        description, _ = _split_description_and_examples(help_string)
+        if description:
+            yield from _format_help(description)
+
+
+@_process_lines("sphinx-click-process-examples")
+def _format_examples(ctx: click.Context) -> ty.Generator[str, None, None]:
+    """Format the examples block for a given `click.Command`, if present."""
+    help_string = ctx.command.help or ctx.command.short_help
+    if help_string:
+        _, examples = _split_description_and_examples(help_string)
+        if examples:
+            # Do NOT pass through _format_help: it calls inspect.cleandoc again, which
+            # strips the 4-space indent that the RST literal block under "Example::" requires.
+            # _split_description_and_examples already ran cleandoc once.
+            bar_enabled = False
+            for line in statemachine.string2lines(examples, tab_width=4, convert_whitespace=True):
+                if line == "\b":
+                    bar_enabled = True
+                    continue
+                if line == "":
+                    bar_enabled = False
+                line = "| " + line if bar_enabled else line  # noqa
+                yield line
+            yield ""
 
 
 @_process_lines("sphinx-click-process-usage")
@@ -354,6 +390,11 @@ def _format_command(
     # usage
 
     for line in _format_usage(ctx):
+        yield line
+
+    # examples
+
+    for line in _format_examples(ctx):
         yield line
 
     # options
@@ -581,6 +622,7 @@ def setup(app: application.Sphinx) -> ty.Dict[str, ty.Any]:  # noqa
     app.add_event("sphinx-click-process-options")
     app.add_event("sphinx-click-process-arguments")
     app.add_event("sphinx-click-process-envvars")
+    app.add_event("sphinx-click-process-examples")
     app.add_event("sphinx-click-process-epilog")
     app.add_config_value(
         "sphinx_click_mock_imports", lambda config: config.autodoc_mock_imports, "env"

@@ -8,4 +8,4 @@ def test_backcompat():
         ' "AssetCheckSeverity.ERROR"}, "success": true, "target_materialization_data": null}'
     )
     v = dg.deserialize_value(old_value)
-    assert v.passed  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert v.passed  # ty: ignore[unresolved-attribute]

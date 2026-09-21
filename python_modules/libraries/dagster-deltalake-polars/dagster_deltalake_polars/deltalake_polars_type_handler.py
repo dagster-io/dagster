@@ -17,7 +17,7 @@ PolarsTypes: TypeAlias = pl.DataFrame | pl.LazyFrame
 
 
 class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
-    def from_arrow(
+    def from_arrow(  # ty: ignore[invalid-method-override]
         self,
         obj: ds.Dataset | pa.RecordBatchReader,
         target_type: type[PolarsTypes],
@@ -27,7 +27,7 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
         elif isinstance(obj, ds.Dataset):
             df = pl.scan_pyarrow_dataset(obj)
             if target_type == pl.DataFrame:
-                return df.collect()
+                return df.collect()  # ty: ignore[invalid-return-type]
             else:
                 return df
         else:
@@ -35,8 +35,8 @@ class DeltaLakePolarsTypeHandler(DeltalakeBaseArrowTypeHandler[PolarsTypes]):
 
     def to_arrow(self, obj: PolarsTypes) -> tuple[pa.RecordBatchReader, dict[str, Any]]:
         if isinstance(obj, pl.LazyFrame):
-            obj = obj.collect()
-        return obj.to_arrow().to_reader(), {}
+            obj = obj.collect()  # ty: ignore[invalid-assignment]
+        return obj.to_arrow().to_reader(), {}  # ty: ignore[unresolved-attribute]
 
     def load_input(
         self,

@@ -255,7 +255,7 @@ class DgConfig:
             DgCliConfig.from_raw(*all_cli_config) if all_cli_config else DgCliConfig.default()
         )
 
-        return cls(cli_config, project_config, workspace_config)  # pyright: ignore[reportPossiblyUnboundVariable]
+        return cls(cli_config, project_config, workspace_config)
 
 
 # ########################
@@ -286,16 +286,16 @@ class DgCliConfig:
 
     @classmethod
     def from_raw(cls, *partials: "DgRawCliConfig") -> Self:
-        merged = cast("DgRawCliConfig", functools.reduce(lambda acc, x: {**acc, **x}, partials))  # type: ignore
+        merged = cast("DgRawCliConfig", functools.reduce(lambda acc, x: {**acc, **x}, partials))
         return cls(
             verbose=merged.get("verbose", DgCliConfig.verbose),
             use_component_modules=merged.get(
                 "use_component_modules",
-                cls.__dataclass_fields__["use_component_modules"].default_factory(),
+                cls.__dataclass_fields__["use_component_modules"].default_factory(),  # ty: ignore[call-non-callable]
             ),
             suppress_warnings=merged.get(
                 "suppress_warnings",
-                cls.__dataclass_fields__["suppress_warnings"].default_factory(),
+                cls.__dataclass_fields__["suppress_warnings"].default_factory(),  # ty: ignore[call-non-callable]
             ),
             telemetry_enabled=merged.get("telemetry", {}).get(
                 "enabled", DgCliConfig.telemetry_enabled
@@ -358,6 +358,8 @@ class DgProjectConfig:
     code_location_target_module: str | None = None
     code_location_name: str | None = None
     registry_modules: list[str] = field(default_factory=list)
+    agent_queue: str | None = None
+    image: str | None = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -370,8 +372,11 @@ class DgProjectConfig:
                 DgProjectConfig.code_location_target_module,
             ),
             registry_modules=raw.get(
-                "registry_modules", cls.__dataclass_fields__["registry_modules"].default_factory()
+                "registry_modules",
+                cls.__dataclass_fields__["registry_modules"].default_factory(),  # ty: ignore[call-non-callable]
             ),
+            agent_queue=raw.get("agent_queue", DgProjectConfig.agent_queue),
+            image=raw.get("image", DgProjectConfig.image),
         )
 
 
@@ -381,6 +386,8 @@ class DgRawProjectConfig(TypedDict):
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
     registry_modules: NotRequired[list[str]]
+    agent_queue: NotRequired[str]
+    image: NotRequired[str]
 
 
 # ########################
@@ -535,7 +542,6 @@ def modify_dg_toml_config(
     path: Path,
 ) -> Iterator[Union["tomlkit.TOMLDocument", "tomlkit.items.Table"]]:
     """Modify a TOML file as a tomlkit.TOMLDocument, preserving comments and formatting."""
-    import tomlkit
     import tomlkit.items
 
     with modify_toml(path) as toml:
@@ -604,7 +610,7 @@ def validate_dg_file_config(
     import tomlkit
     import tomlkit.items
 
-    toml = tomlkit.parse(path.read_text())
+    toml = tomlkit.parse(path.read_text(encoding="utf-8"))
     config_format = config_format or detect_dg_config_file_format(path)
     if config_format == "root":
         raw_dict = toml.unwrap()
@@ -763,6 +769,7 @@ class _DgConfigValidator:
         if not isinstance(section, dict):
             self._log_invalid_value_error("tool.dg.cli", get_type_str(dict), section)
             return
+        section = cast("dict[str, Any]", section)
         for key, type_ in DgRawCliConfig.__annotations__.items():
             self._validate_file_config_setting(section, key, type_, "cli")
         self._validate_file_config_no_extraneous_keys(
@@ -773,6 +780,7 @@ class _DgConfigValidator:
         if not isinstance(section, dict):
             self._log_invalid_value_error("project", get_type_str(dict), section)
             return
+        section = cast("dict[str, Any]", section)
         for key, type_ in DgRawProjectConfig.__annotations__.items():
             self._validate_file_config_setting(section, key, type_, "project")
         self._validate_file_config_no_extraneous_keys(
@@ -794,6 +802,7 @@ class _DgConfigValidator:
         if not isinstance(section, dict):
             self._log_invalid_value_error("workspace", get_type_str(dict), section)
             return
+        section = cast("dict[str, Any]", section)
         for key, type_ in DgRawWorkspaceConfig.__annotations__.items():
             if key == "projects":
                 if self._validate_file_config_setting(section, key, list, "workspace"):
@@ -815,6 +824,7 @@ class _DgConfigValidator:
                 f"workspace.projects[{index}]", get_type_str(dict), section
             )
             return
+        section = cast("dict[str, Any]", section)
         for key, type_ in DgRawWorkspaceProjectSpec.__annotations__.items():
             self._validate_file_config_setting(section, key, type_, f"workspace.projects[{index}]")
         self._validate_file_config_no_extraneous_keys(
@@ -829,6 +839,7 @@ class _DgConfigValidator:
                 "workspace.scaffold_project_options", get_type_str(dict), section
             )
             return
+        section = cast("dict[str, Any]", section)
         for key, type_ in DgRawWorkspaceNewProjectOptions.__annotations__.items():
             self._validate_file_config_setting(
                 section, key, type_, "workspace.scaffold_project_options"

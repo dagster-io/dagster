@@ -15,14 +15,13 @@ from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DAGSTER_CLOUD_BASE_URL, DagsterPlusCliConfig
 
+from dagster_dg_cli.cli.plus.build import get_agent_type_and_platform_from_graphql
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import resolve_python_version
 from dagster_dg_cli.cli.plus.deploy.configure.configure_build_artifacts import (
     configure_build_artifacts_impl,
 )
 from dagster_dg_cli.cli.plus.deploy.configure.utils import DgPlusDeployConfigureOptions
-from dagster_dg_cli.utils.plus.build import get_agent_type_and_platform_from_graphql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 
 def _resolve_config_for_build_artifacts(
@@ -37,6 +36,8 @@ def _resolve_config_for_build_artifacts(
     This command only scaffolds build artifacts (no CI/CD), and tries to detect
     agent type/platform from Plus config but doesn't prompt if unavailable.
     """
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     plus_config = DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else None
 
     # Try to detect agent type and platform from Plus config
@@ -44,7 +45,12 @@ def _resolve_config_for_build_artifacts(
     agent_platform = None
     if plus_config:
         try:
-            gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
+            gql_client = DagsterPlusGraphQLClient(
+                url=plus_config.organization_url,
+                api_token=plus_config.user_token,
+                organization=plus_config.organization,
+                deployment=plus_config.default_deployment,
+            )
             agent_type, agent_platform = get_agent_type_and_platform_from_graphql(gql_client)
         except Exception:
             # If GraphQL fails, just proceed without it

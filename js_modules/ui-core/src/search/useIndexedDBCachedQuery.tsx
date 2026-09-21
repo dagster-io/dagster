@@ -117,7 +117,9 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     return await this.cacheManager.get(this.version);
   }
 
-  async fetchData(bypassCache = false): Promise<{data: TQuery | undefined; error: any}> {
+  async fetchData(
+    bypassCache = false,
+  ): Promise<{data: TQuery | undefined; error: ApolloError | undefined}> {
     if (!bypassCache) {
       const cachedData = await this.getCachedData();
       if (cachedData !== undefined) {
@@ -129,11 +131,16 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     const currentState = globalFetchStates[globalKey];
     if (currentState) {
       return new Promise((resolve) => {
-        currentState.onFetched.push(resolve as any);
+        currentState.onFetched.push(resolve);
       });
     }
 
-    const state = {onFetched: [] as ((value: {data: TQuery | undefined; error: any}) => void)[]};
+    const state = {
+      onFetched: [] as ((value: {
+        data: TQuery | undefined;
+        error: ApolloError | undefined;
+      }) => void)[],
+    };
     globalFetchStates[globalKey] = state;
 
     const result = await this.queryFn(this.variables);

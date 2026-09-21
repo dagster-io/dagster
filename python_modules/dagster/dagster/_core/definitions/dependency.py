@@ -248,7 +248,7 @@ class Node(ABC):
 
 
 class GraphNode(Node):
-    definition: "GraphDefinition"  # pyright: ignore[reportIncompatibleVariableOverride]
+    definition: "GraphDefinition"
 
     def __init__(
         self,
@@ -284,7 +284,7 @@ class GraphNode(Node):
 
 
 class OpNode(Node):
-    definition: "OpDefinition"  # pyright: ignore[reportIncompatibleVariableOverride]
+    definition: "OpDefinition"
 
     def __init__(
         self,

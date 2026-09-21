@@ -5,7 +5,7 @@ from typing import Any, Literal, TypeAlias
 from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
-from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
+from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet, TableMetadataSet
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -257,14 +257,15 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=asset_key,
             deps=data_source_keys if data_source_keys else None,
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="sheet")},
+            tags={**TableauTagSet(asset_type="sheet")},
             metadata={
                 **TableauViewMetadataSet(
                     id=data.properties["luid"],
                     workbook_id=data.properties["workbook"]["luid"],
                     project_name=workbook_data.properties["projectName"],
                     project_id=workbook_data.properties["projectLuid"],
-                )
+                ),
+                **TableMetadataSet(storage_kind="tableau"),
             },
             kinds={"tableau", "sheet"},
         )
@@ -312,14 +313,15 @@ class DagsterTableauTranslator:
         return AssetSpec(
             key=asset_key,
             deps=upstream_keys if upstream_keys else None,
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="dashboard")},
+            tags={**TableauTagSet(asset_type="dashboard")},
             metadata={
                 **TableauViewMetadataSet(
                     id=data.properties["luid"],
                     workbook_id=data.properties["workbook"]["luid"],
                     project_name=workbook_data.properties["projectName"],
                     project_id=workbook_data.properties["projectLuid"],
-                )
+                ),
+                **TableMetadataSet(storage_kind="tableau"),
             },
             kinds={"tableau", "dashboard"},
         )
@@ -346,7 +348,7 @@ class DagsterTableauTranslator:
 
         return AssetSpec(
             key=asset_key,
-            tags={"dagster/storage_kind": "tableau", **TableauTagSet(asset_type="data_source")},
+            tags={**TableauTagSet(asset_type="data_source")},
             metadata={
                 **TableauDataSourceMetadataSet(
                     id=data.properties["luid"],
@@ -356,6 +358,7 @@ class DagsterTableauTranslator:
                     if not data.properties["isPublished"]
                     else None,
                 ),
+                **TableMetadataSet(storage_kind="tableau"),
             },
             kinds=kinds,
         )

@@ -1,3 +1,4 @@
+import re
 import textwrap
 from contextlib import ExitStack
 from pathlib import Path
@@ -43,6 +44,11 @@ class CustomSlingReplicationComponent(SlingReplicationCollectionComponent):
 def test_components_docs_adding_attributes_to_assets(
     update_snippets: bool, update_screenshots: bool, get_selenium_driver, component_type
 ) -> None:
+    # Per-parametrization duckdb file so a leaked sling/duckdb child from one variant
+    # can't hold an OS lock on the file the next variant will open. Canonicalized back
+    # to the docs path via global_snippet_replace_regexes.
+    duckdb_instance_path = f"/tmp/jaffle_platform_{component_type}.duckdb"
+    canonical_duckdb_path = "/tmp/jaffle_platform.duckdb"
     with ExitStack() as stack:
         context = stack.enter_context(
             isolated_snippet_generation_environment(
@@ -50,6 +56,7 @@ def test_components_docs_adding_attributes_to_assets(
                 snapshot_base_dir=SNIPPETS_DIR,
                 global_snippet_replace_regexes=[
                     MASK_MY_PROJECT,
+                    (re.escape(duckdb_instance_path), canonical_duckdb_path),
                 ],
                 # For multi-parameter tests which share snippets, we don't want to clear the
                 # snapshot dir before updating the snippets
@@ -214,7 +221,7 @@ def test_components_docs_adding_attributes_to_assets(
                   connections:
                     DUCKDB:
                       type: duckdb
-                      instance: /tmp/jaffle_platform.duckdb
+                      instance: {duckdb_instance_path}
                   replications:
                     - path: replication.yaml
                 """),
@@ -297,7 +304,7 @@ def test_components_docs_adding_attributes_to_assets(
                   connections:
                     DUCKDB:
                       type: duckdb
-                      instance: /tmp/jaffle_platform.duckdb
+                      instance: {duckdb_instance_path}
                   replications:
                     - path: replication.yaml
                 post_processing:

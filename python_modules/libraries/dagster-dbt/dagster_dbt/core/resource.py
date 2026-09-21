@@ -9,7 +9,6 @@ from pathlib import Path
 from subprocess import check_output
 from typing import Any, cast
 
-import yaml
 from dagster import (
     AssetExecutionContext,
     ConfigurableResource,
@@ -19,11 +18,13 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
+from dagster_shared.yaml_utils import safe_load_yaml
 from packaging import version
 from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
     DBT_INDIRECT_SELECTION_ENV,
+    extract_runtime_selection_from_args,
     get_updated_cli_invocation_params_for_context,
 )
 from dagster_dbt.compat import DBT_PYTHON_VERSION, BaseAdapter
@@ -54,9 +55,16 @@ DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
-        "list[dict[str, Any]]", yaml.safe_load(packages_file.read_text()).get("packages", [])
+        "list[dict[str, Any]]",
+        safe_load_yaml(packages_file.read_text(encoding="utf-8")).get("packages", []),
     )
-    return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
+    for package in packages:
+        if package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE:
+            return True
+        local_path = package.get("local")
+        if local_path and Path(local_path).name == "dagster":
+            return True
+    return False
 
 
 class DbtCliResource(ConfigurableResource):
@@ -225,15 +233,14 @@ class DbtCliResource(ConfigurableResource):
         project_dir = os.fspath(project_dir)
         state_path = state_path and os.fspath(state_path)
 
-        # static typing doesn't understand whats going on here, thinks these fields dont exist
         super().__init__(
-            project_dir=project_dir,  # type: ignore
-            global_config_flags=global_config_flags or [],  # type: ignore
-            profiles_dir=profiles_dir,  # type: ignore
-            profile=profile,  # type: ignore
-            target=target,  # type: ignore
-            dbt_executable=dbt_executable,  # type: ignore
-            state_path=state_path,  # type: ignore
+            project_dir=project_dir,
+            global_config_flags=global_config_flags or [],
+            profiles_dir=profiles_dir,
+            profile=profile,
+            target=target,
+            dbt_executable=dbt_executable,
+            state_path=state_path,
             **kwargs,
         )
 
@@ -359,6 +366,8 @@ class DbtCliResource(ConfigurableResource):
         from dbt.config.runtime import load_profile, load_project
         from dbt.config.utils import parse_cli_vars
         from dbt.flags import get_flags, set_from_args
+
+        assert DBT_PYTHON_VERSION is not None  # dbt-core imports above would have failed otherwise
 
         parser = ArgumentParser(description="Parse cli vars from dbt command")
         parser.add_argument("--vars")
@@ -620,8 +629,18 @@ class DbtCliResource(ConfigurableResource):
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         manifest = validate_manifest(manifest) if manifest else {}
 
+        # Pull --select/--exclude out of the user-supplied args at the CLI boundary so
+        # get_updated_cli_invocation_params_for_context receives already-parsed runtime
+        # selection and can route it (into a generated selector yaml or into
+        # selection_args) without mutating args itself.
+        cleaned_args, runtime_selects, runtime_excludes = extract_runtime_selection_from_args(args)
+
         updated_params = get_updated_cli_invocation_params_for_context(
-            context=context, manifest=manifest, dagster_dbt_translator=dagster_dbt_translator
+            context=context,
+            manifest=manifest,
+            dagster_dbt_translator=dagster_dbt_translator,
+            runtime_selects=runtime_selects,
+            runtime_excludes=runtime_excludes,
         )
         manifest = updated_params.manifest
         dagster_dbt_translator = updated_params.dagster_dbt_translator
@@ -683,7 +702,7 @@ class DbtCliResource(ConfigurableResource):
         full_dbt_args = [
             self.dbt_executable,
             *self.global_config_flags,
-            *args,
+            *cleaned_args,
             *profile_args,
             *selection_args,
         ]

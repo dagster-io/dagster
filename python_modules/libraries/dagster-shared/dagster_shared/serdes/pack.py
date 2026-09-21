@@ -54,10 +54,18 @@ _TABLE_ROWS_KEY = "r"  # table field: list of rows (each row is positional value
 def serialize_deduped(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    columnar_classes: frozenset[str] | None = None,
 ) -> str:
-    """Serialize a value into columnar-packed JSON with deduplication."""
+    """Serialize a value into columnar-packed JSON with deduplication.
+
+    Args:
+        columnar_classes: If provided, only these storage names will be packed into
+            columnar tables.  All other serdes objects are serialized inline (like
+            normal ``serialize_value``).  When ``None`` (the default), *every*
+            serdes object is columnar-packed.
+    """
     collector = _ColumnarCollector()
-    handler = _make_collecting_handler(collector)
+    handler = _make_collecting_handler(collector, columnar_classes)
 
     tree = _transform_for_serialization(
         val,
@@ -117,7 +125,7 @@ def deserialize_deduped(
     )
     result = context.finalize_unpack(unpacked)
 
-    if as_type is not None and not match_type(result, as_type):  # type: ignore[arg-type]
+    if as_type is not None and not match_type(result, as_type):  # ty: ignore[invalid-argument-type]
         from dagster_shared.serdes.errors import DeserializationError
 
         raise DeserializationError(
@@ -200,13 +208,21 @@ class _ColumnarCollector:
         return {_OBJ_ID_KEY: f"{table_id}:{idx}"}
 
 
-def _make_collecting_handler(collector: _ColumnarCollector):
+def _make_collecting_handler(
+    collector: _ColumnarCollector,
+    columnar_classes: frozenset[str] | None = None,
+):
     """Create an ``object_handler`` that collects objects into columnar tables.
 
     Plugs into ``_transform_for_serialization``'s ``object_handler`` parameter.
     Children are serialized first via ``pack_items`` (which calls back into this
     handler), so by the time we register a row, all nested objects are already
     ``__oid__`` refs.
+
+    When *columnar_classes* is set, only objects whose storage name is in the set
+    are columnar-packed.  All others are serialized inline as regular dicts (like
+    ``_pack_object``), but still recurse through this handler so their children
+    can be columnar-packed.
     """
 
     def handler(
@@ -218,6 +234,11 @@ def _make_collecting_handler(collector: _ColumnarCollector):
         serializer = wm.object_serializers[klass_name]
         fields_dict = dict(serializer.pack_items(obj, wm, handler, descent_path))
         storage_name = cast("str", fields_dict["__class__"])
+
+        if columnar_classes is not None and storage_name not in columnar_classes:
+            # Inline — return the full dict just like _pack_object would.
+            return fields_dict
+
         return collector.register(storage_name, fields_dict)
 
     return handler
@@ -245,7 +266,7 @@ def _unpack_columnar(
 
     if isinstance(val, dict):
         if _OBJ_ID_KEY in val:
-            oid = cast("str", val[_OBJ_ID_KEY])
+            oid = cast("str", val[_OBJ_ID_KEY])  # ty: ignore[invalid-argument-type]
             if oid not in row_cache:
                 table_id_str, idx_str = oid.rsplit(":", 1)
                 table = tables[int(table_id_str)]
@@ -263,7 +284,7 @@ def _unpack_columnar(
         # _unpack_object which handles __class__ detection and passthrough.
         return _unpack_object(
             {
-                k: _unpack_columnar(v, tables, whitelist_map, context, row_cache)
+                k: _unpack_columnar(v, tables, whitelist_map, context, row_cache)  # ty: ignore[invalid-argument-type]
                 for k, v in val.items()
             },
             whitelist_map,

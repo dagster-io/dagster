@@ -1,5 +1,5 @@
 ---
-title: RSS Assets
+title: RSS assets
 description: Processing RSS feeds
 last_update:
   author: Dennis Hume

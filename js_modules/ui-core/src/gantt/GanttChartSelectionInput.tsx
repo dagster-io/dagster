@@ -1,5 +1,4 @@
-import styled from 'styled-components';
-
+import styles from './css/GanttChartSelectionInput.module.css';
 import {RunGraphQueryItem} from './toGraphQueryItems';
 import {
   ganttChartSelectionSyntaxSupportedAttributes,
@@ -7,7 +6,7 @@ import {
 } from './useGanttChartSelectionAutoCompleteProvider';
 import {RunSelectionLexer} from '../run-selection/generated/RunSelectionLexer';
 import {RunSelectionParser} from '../run-selection/generated/RunSelectionParser';
-import {InputDiv, SelectionAutoCompleteInput} from '../selection/SelectionInput';
+import {SelectionAutoCompleteInput} from '../selection/SelectionInput';
 import {createSelectionLinter} from '../selection/createSelectionLinter';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
@@ -21,7 +20,7 @@ export const GanttChartSelectionInput = ({
   onChange: (value: string) => void;
 }) => {
   return (
-    <Wrapper>
+    <div className={styles.wrapper}>
       <SelectionAutoCompleteInput
         wildcardAttributeName="name"
         id="run-gantt-chart"
@@ -31,7 +30,7 @@ export const GanttChartSelectionInput = ({
         value={value}
         onChange={onChange}
       />
-    </Wrapper>
+    </div>
   );
 };
 const getLinter = weakMapMemoize(() =>
@@ -41,9 +40,3 @@ const getLinter = weakMapMemoize(() =>
     supportedAttributes: ganttChartSelectionSyntaxSupportedAttributes,
   }),
 );
-
-const Wrapper = styled.div`
-  ${InputDiv} {
-    width: 24vw;
-  }
-`;

@@ -1,7 +1,7 @@
 import {Box} from '../Box';
 import {Colors} from '../Color';
 import {Icon} from '../Icon';
-import {Caption} from '../Text';
+import {Text} from '../Typography';
 import {UnstyledButton} from '../UnstyledButton';
 
 // eslint-disable-next-line import/no-default-export
@@ -15,7 +15,7 @@ export const Default = () => {
     <Box flex={{direction: 'column', gap: 12, alignItems: 'flex-start'}}>
       <UnstyledButton>No style here at all</UnstyledButton>
       <UnstyledButton>
-        <Caption>Hey I am a Caption</Caption>
+        <Text size={12}>Hey I am a Caption</Text>
       </UnstyledButton>
       <UnstyledButton>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>

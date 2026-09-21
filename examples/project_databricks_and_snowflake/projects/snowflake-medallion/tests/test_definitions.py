@@ -1,6 +1,6 @@
 import dagster as dg
 
-from snowflake_medallion.definitions import defs  # type: ignore[import-not-found]
+from snowflake_medallion.definitions import defs
 
 
 def test_definitions_load():

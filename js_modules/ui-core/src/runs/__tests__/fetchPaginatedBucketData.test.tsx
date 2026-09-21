@@ -21,7 +21,7 @@ describe('fetchPaginatedBucketData', () => {
       data: DataType[];
       hasMore: boolean;
       cursor: CursorType | undefined;
-      error: any;
+      error: unknown;
     }>
   >;
 

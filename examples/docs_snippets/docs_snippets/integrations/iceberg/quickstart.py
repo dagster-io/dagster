@@ -34,8 +34,10 @@ def my_table_with_year(my_table: pa.Table) -> pa.Table:
 
 # start_defining_the_io_manager
 
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.io_manager.arrow import PyArrowIcebergIOManager
+from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
+from dagster_iceberg.io_manager.arrow import (
+    PyArrowIcebergIOManager,  # ty: ignore[unresolved-import]
+)
 
 from dagster import Definitions
 

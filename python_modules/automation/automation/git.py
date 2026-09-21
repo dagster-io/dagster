@@ -138,10 +138,10 @@ def set_git_tag(tag: str, signed: bool = False, dry_run: bool = True) -> str:
 
 def git_commit_updates(repo_dir: str, message: str) -> None:
     cmds = [
-        "git add -A",
-        f'git commit -m "{message}"',
+        ["git", "add", "-A"],
+        ["git", "commit", "-m", message],
     ]
 
     print(f"Committing to {repo_dir} with message {message}")  # noqa: T201
     for cmd in cmds:
-        subprocess.call(cmd, cwd=repo_dir, shell=True)
+        subprocess.call(cmd, cwd=repo_dir)

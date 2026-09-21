@@ -35,7 +35,7 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
             output_config_schema
         )
         super().__init__(
-            resource_fn=resource_fn,  # pyright: ignore[reportArgumentType]
+            resource_fn=resource_fn,  # ty: ignore[invalid-argument-type]
             config_schema=config_schema,
             description=description,
             required_resource_keys=required_resource_keys,
@@ -43,7 +43,7 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
         )
 
     @property
-    def output_config_schema(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def output_config_schema(self):
         return self._output_config_schema
 
     def copy_for_configured(self, description, config_schema):

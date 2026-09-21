@@ -87,7 +87,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -177,7 +177,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
         cluster = self._client.describe_cluster(ClusterId=cluster_id)
 
-        state: ClusterStateType = cluster["Cluster"]["Status"]["State"]  # type: ignore
+        state: ClusterStateType = cluster["Cluster"]["Status"]["State"]
 
         context.log.info(f"[pipes] EMR cluster {cluster_id} completed with state: {state}")
 
@@ -194,7 +194,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
     ):
         cluster = self.client.describe_cluster(ClusterId=response["JobFlowId"])
 
-        cluster_id = cluster["Cluster"]["Id"]  # type: ignore
+        cluster_id = cluster["Cluster"]["Id"]
         logs_uri = cluster.get("Cluster", {}).get("LogUri", {})
 
         if isinstance(self.message_reader, PipesS3MessageReader) and logs_uri is None:
@@ -210,7 +210,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             # forward stdout and stderr from each step
 
             for step in steps["Steps"]:
-                step_id = step["Id"]  # type: ignore
+                step_id = step["Id"]
 
                 for stdio in ["stdout", "stderr"]:
                     # at this stage we can't know if this key will be created
@@ -246,7 +246,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             # no need to read any files from S3
             return
 
-        cluster_id = response["Cluster"]["Id"]  # type: ignore
+        cluster_id = response["Cluster"]["Id"]
         logs_uri = response.get("Cluster", {}).get("LogUri", {})
 
         if isinstance(self.message_reader, PipesS3MessageReader) and isinstance(logs_uri, str):

@@ -1,0 +1,10 @@
+.backingRect {
+  stroke-width: 10px;
+  fill: var(--color-background-default);
+  stroke: var(--color-background-default);
+}
+
+.backingRect:hover {
+  fill: var(--color-background-light-hover);
+  stroke: var(--color-background-light-hover);
+}

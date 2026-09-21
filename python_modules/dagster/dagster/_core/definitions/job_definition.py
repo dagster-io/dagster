@@ -16,6 +16,9 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.declarative_automation.operators.job_operators import (
+    contains_job_root_assets_condition,
+)
 from dagster._core.definitions.dependency import (
     DependencyMapping,
     DependencyStructure,
@@ -80,7 +83,11 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.definitions.asset_key import AssetJobKey
     from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
     from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.run_config_schema import RunConfigSchema
     from dagster._core.definitions.run_request import RunRequest
@@ -114,6 +121,7 @@ class JobDefinition(IHasInternalInit):
     _subset_selection_data: OpSelectionData | AssetSelectionData | None
     input_values: Mapping[str, object]
     _owners: Sequence[str] | None
+    _automation_condition: "AutomationCondition | None"
 
     def __init__(
         self,
@@ -137,7 +145,11 @@ class JobDefinition(IHasInternalInit):
         input_values: Mapping[str, object] | None = None,
         _was_explicitly_provided_resources: bool | None = None,
         owners: Sequence[str] | None = None,
+        _automation_condition: "AutomationCondition[AssetJobKey] | None" = None,
     ):
+        from dagster._core.definitions.declarative_automation.automation_condition import (
+            AutomationCondition,
+        )
         from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
         self._graph_def = graph_def
@@ -225,6 +237,33 @@ class JobDefinition(IHasInternalInit):
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
 
+        self._automation_condition = check.opt_inst_param(
+            _automation_condition, "_automation_condition", AutomationCondition
+        )
+        if self._automation_condition is not None:
+            check.param_invariant(
+                self.is_asset_job,
+                "_automation_condition",
+                "AutomationCondition can only be provided for asset jobs.",
+            )
+            # every partitioned job synthesizes a PartitionedConfig internally, so only
+            # reject when the user actually supplied config for it to resolve
+            if self._original_config_argument is not None and self.partitioned_config is not None:
+                raise DagsterInvalidDefinitionError(
+                    f"Job '{self.name}' has both an automation_condition and partitioned run"
+                    " config. Declarative automation submits partitioned-job runs without"
+                    " resolving per-partition config, so this combination is not currently"
+                    " supported."
+                )
+            if not contains_job_root_assets_condition(self._automation_condition):
+                raise DagsterInvalidDefinitionError(
+                    f"Job '{self.name}' has an automation_condition that does not evaluate"
+                    " against the job's root assets. Asset-level conditions such as"
+                    " `AutomationCondition.eager()` cannot be applied to a job directly;"
+                    " wrap them with `AutomationCondition.any_job_root_assets_match(...)` or"
+                    " `AutomationCondition.all_job_root_assets_match(...)`."
+                )
+
     def dagster_internal_init(
         *,
         graph_def: GraphDefinition,
@@ -245,6 +284,7 @@ class JobDefinition(IHasInternalInit):
         input_values: Mapping[str, object] | None,
         _was_explicitly_provided_resources: bool | None,
         owners: Sequence[str] | None,
+        _automation_condition: "AutomationCondition[AssetJobKey] | None",
     ) -> "JobDefinition":
         return JobDefinition(
             graph_def=graph_def,
@@ -265,6 +305,7 @@ class JobDefinition(IHasInternalInit):
             input_values=input_values,
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
             owners=owners,
+            _automation_condition=_automation_condition,
         )
 
     @staticmethod
@@ -341,6 +382,10 @@ class JobDefinition(IHasInternalInit):
     @property
     def owners(self) -> Sequence[str] | None:
         return self._owners
+
+    @property
+    def automation_condition(self) -> "AutomationCondition | None":
+        return self._automation_condition
 
     @property
     def graph(self) -> GraphDefinition:
@@ -820,6 +865,7 @@ class JobDefinition(IHasInternalInit):
             _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
             owners=self._owners,
+            _automation_condition=self._automation_condition,
         ).get_subset(
             op_selection=op_selection,
             asset_selection=frozenset(asset_selection) if asset_selection else None,
@@ -962,9 +1008,11 @@ class JobDefinition(IHasInternalInit):
             resource_defs=self.resource_defs,
             description=self.description,
             tags=self.tags,
+            run_tags=self._run_tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
             allow_different_partitions_defs=True,
+            automation_condition=self.automation_condition,
         )
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":
@@ -1141,9 +1189,10 @@ class JobDefinition(IHasInternalInit):
                 "resource_defs" in kwargs or self._was_provided_resources
             ),
             owners=self._owners,
+            _automation_condition=self._automation_condition,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
-        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)
+        job_def = JobDefinition.dagster_internal_init(**resolved_kwargs)  # ty: ignore[invalid-argument-type]
         update_wrapper(job_def, self, updated=())
         return job_def
 
@@ -1284,6 +1333,37 @@ def default_job_io_manager_with_fs_io_manager_schema(init_context: "InitResource
     return PickledObjectFilesystemIOManager(base_dir=base_dir)
 
 
+def _shape_with_child_defaults(
+    config_type: ConfigType,
+    default_value: Any,
+) -> ConfigType:
+    """Apply default values from a dict to the immediate child fields of a Shape config type.
+
+    When a job has a config preset (e.g. resources with specific values), and a user provides
+    partial config at execution time (e.g. only some resources), the missing child fields should
+    get their defaults from the job-level preset, not from the definitions-level schema defaults.
+    """
+    if not isinstance(default_value, Mapping) or not isinstance(config_type, Shape):
+        return config_type
+
+    updated_fields = {}
+    for child_name, child_field in config_type.fields.items():
+        if child_name in default_value:
+            updated_fields[child_name] = Field(
+                config=child_field.config_type,
+                default_value=default_value[child_name],
+                description=child_field.description,
+            )
+        else:
+            updated_fields[child_name] = child_field
+
+    return Shape(
+        fields=updated_fields,
+        description=config_type.description,
+        field_aliases=config_type.field_aliases,
+    )
+
+
 def _config_mapping_with_default_value(
     inner_schema: ConfigType,
     default_config: Mapping[str, Any],
@@ -1300,13 +1380,15 @@ def _config_mapping_with_default_value(
     for name, field in inner_schema.fields.items():
         if name in default_config:
             updated_fields[name] = Field(
-                config=field.config_type,
+                config=_shape_with_child_defaults(field.config_type, default_config[name]),
                 default_value=default_config[name],
                 description=field.description,
             )
         elif name in field_aliases and field_aliases[name] in default_config:
             updated_fields[name] = Field(
-                config=field.config_type,
+                config=_shape_with_child_defaults(
+                    field.config_type, default_config[field_aliases[name]]
+                ),
                 default_value=default_config[field_aliases[name]],
                 description=field.description,
             )
@@ -1325,7 +1407,7 @@ def _config_mapping_with_default_value(
     config_evr = validate_config(config_schema, default_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
-            f"Error in config when building job '{job_name}' ",
+            f"Error in config when building job '{job_name}': the provided config is missing required fields or contains invalid entries",
             config_evr.errors,
             default_config,
         )
@@ -1390,9 +1472,11 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
                     keys_by_input_handle[inner_input_handle] = key
 
         # add all subgraphs to the stack
-        for node_def in graph_def.node_defs:
-            if isinstance(node_def, GraphDefinition):
-                stack.append((node_def, NodeHandle(node_def.name, parent_node_handle)))
+        stack.extend(
+            (node_def, NodeHandle(node_def.name, parent_node_handle))
+            for node_def in graph_def.node_defs
+            if isinstance(node_def, GraphDefinition)
+        )
 
     return AssetLayer(
         asset_graph=AssetGraph.from_assets(list(assets_defs_by_key.values())),

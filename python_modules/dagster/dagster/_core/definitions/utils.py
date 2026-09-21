@@ -1,17 +1,23 @@
 import keyword
 import os
 import re
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import (
+    Iterable,
+    Mapping,
+    Sequence,
+    Set as AbstractSet,
+)
 from glob import glob
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Optional, TypeVar, Union, cast
 
 import yaml
 from dagster_shared.yaml_utils import merge_yaml_strings, merge_yamls
 
 import dagster._check as check
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetJobKey, EntityKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.utils import is_valid_email
+from dagster._record import ImportFrom, record
 from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
 
 DEFAULT_OUTPUT = "result"
@@ -42,6 +48,12 @@ DISALLOWED_NAMES = set(
 INVALID_NAME_CHARS = r"[^A-Za-z0-9_]"
 VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
+
+# Group names allow `/` separators between segments, where each segment must
+# match VALID_NAME_REGEX. Derived from VALID_NAME_REGEX_STR so the two stay in
+# sync.
+_VALID_NAME_SEGMENT = VALID_NAME_REGEX_STR.strip("^$")
+VALID_GROUP_NAME_REGEX = re.compile(rf"^{_VALID_NAME_SEGMENT}(/{_VALID_NAME_SEGMENT})*$")
 
 INVALID_TITLE_CHARACTERS_REGEX_STR = r"[\%\*\"]"
 INVALID_TITLE_CHARACTERS_REGEX = re.compile(INVALID_TITLE_CHARACTERS_REGEX_STR)
@@ -149,8 +161,12 @@ def struct_to_string(name: str, **kwargs: object) -> str:
     return f"{name}({props_str})"
 
 
+def is_valid_owner(owner: str) -> bool:
+    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
+
+
 def validate_asset_owner(owner: str, key: "AssetKey") -> None:
-    if not is_valid_asset_owner(owner):
+    if not is_valid_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
@@ -158,56 +174,31 @@ def validate_asset_owner(owner: str, key: "AssetKey") -> None:
 
 
 def validate_component_owner(owner: str) -> None:
-    if not is_valid_asset_owner(owner):
+    if not is_valid_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
 
 
-def is_valid_asset_owner(owner: str) -> bool:
-    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
-
-
-def is_valid_definition_owner(owner: str) -> bool:
-    """Enhanced owner validation that checks team name characters.
-
-    An owner must be either:
-    - A valid email address
-    - A team name prefixed with 'team:' where the team name contains only valid characters (A-Za-z0-9_)
-    """
-    if is_valid_email(owner):
-        return True
-
-    if owner.startswith("team:") and len(owner) > 5:
-        team_name = owner[5:]  # Remove 'team:' prefix
-        return has_valid_name_chars(team_name)
-
-    return False
-
-
 def validate_definition_owner(owner: str, definition_type: str, definition_name: str) -> None:
-    """Validate that an owner string is properly formatted.
+    """Owner validation for jobs, sensors, and schedules.
 
     Args:
-        owner: The owner string to validate
+        owner: The owner string to validate. Must be either a valid email address or a team name
+            prefixed with 'team:'
         definition_type: Type of definition (e.g., "job", "sensor", "schedule") for error messages
         definition_name: Name of the definition for error messages
+
+    Raises:
+        DagsterInvalidDefinitionError: When owner is not a valid email or team name
     """
-    if not is_valid_definition_owner(owner):
-        if owner.startswith("team:"):
-            team_name = owner[5:] if len(owner) > 5 else ""
-            if not team_name:
-                raise DagsterInvalidDefinitionError(
-                    f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
-                    "Team name cannot be empty after 'team:' prefix."
-                )
-            else:
-                raise DagsterInvalidDefinitionError(
-                    f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
-                    f"Team name '{team_name}' contains invalid characters. "
-                    f"Team names must match regex {VALID_NAME_REGEX_STR}."
-                )
+    if not is_valid_owner(owner):
+        if owner.startswith("team:") and len(owner) <= 5:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
+                "Team name cannot be empty after 'team:' prefix."
+            )
         else:
             raise DagsterInvalidDefinitionError(
                 f"Invalid owner '{owner}' for {definition_type} '{definition_name}'. "
@@ -216,9 +207,21 @@ def validate_definition_owner(owner: str, definition_type: str, definition_name:
 
 
 def validate_group_name(group_name: str | None) -> None:
-    """Ensures a string name is valid and returns a default if no name provided."""
+    """Ensures a string group name is valid.
+
+    Group names may use ``/`` as a separator to express hierarchy
+    (e.g. ``"marketing/foo/bar"``). Each path segment must match
+    ``[A-Za-z0-9_]+``; leading, trailing, and consecutive separators
+    are not permitted.
+    """
     if group_name:
-        check_valid_chars(group_name)
+        if not VALID_GROUP_NAME_REGEX.match(group_name):
+            raise DagsterInvalidDefinitionError(
+                f'"{group_name}" is not a valid asset group name. Group names must be '
+                "one or more segments matching "
+                f"{VALID_NAME_REGEX_STR} separated by '/' "
+                "(e.g. 'marketing' or 'marketing/foo/bar')."
+            )
     elif group_name == "":
         raise DagsterInvalidDefinitionError(
             "Empty asset group name was provided, which is not permitted. "
@@ -365,9 +368,28 @@ def dedupe_object_refs(objects: Iterable[T] | None) -> Sequence[T]:
     return list({id(obj): obj for obj in objects}.values()) if objects is not None else []
 
 
+@record
+class DefaultAutomationSensorTarget:
+    """What the default automation condition sensor should cover: a lazy asset
+    selection (possibly empty, for a sensor that only hosts jobs), plus the
+    conditioned asset-job keys not claimed by any user sensor.
+
+    The two halves are intentionally asymmetric: asset coverage is an expression that
+    re-resolves as the asset graph changes, while job coverage has no selection
+    language yet and is expressed as explicit keys (see the TODO below on replacing
+    this with a first-class job-selection API).
+    """
+
+    asset_selection: Annotated[
+        "AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")
+    ]
+    asset_job_keys: AbstractSet[AssetJobKey]
+
+
 def get_default_automation_condition_sensor(
     sensors: Sequence["SensorDefinition"],
     asset_graph: "BaseAssetGraph",
+    additional_automatable_asset_job_keys: AbstractSet["AssetJobKey"] | None = None,
 ) -> Optional["SensorDefinition"]:
     """Given a list of existing sensors, adds an AutomationConditionSensorDefinition with name
     `default_automation_condition_sensor` that targets all assets/asset_checks that have an
@@ -380,19 +402,30 @@ def get_default_automation_condition_sensor(
     )
 
     with disable_dagster_warnings():
-        sensor_selection = get_default_automation_condition_sensor_selection(sensors, asset_graph)
-        if sensor_selection:
+        target = get_default_automation_condition_sensor_target(
+            sensors,
+            asset_graph,
+            additional_automatable_asset_job_keys=additional_automatable_asset_job_keys,
+        )
+        if target:
             return AutomationConditionSensorDefinition(
-                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME, target=sensor_selection
+                DEFAULT_AUTOMATION_CONDITION_SENSOR_NAME,
+                target=target.asset_selection,
+                asset_job_keys=target.asset_job_keys,
             )
 
     return None
 
 
-def get_default_automation_condition_sensor_selection(
-    sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]], asset_graph: "BaseAssetGraph"
-) -> Optional["AssetSelection"]:
+def get_default_automation_condition_sensor_target(
+    sensors: Sequence[Union["SensorDefinition", "RemoteSensor"]],
+    asset_graph: "BaseAssetGraph",
+    additional_automatable_asset_job_keys: AbstractSet["AssetJobKey"] | None = None,
+) -> DefaultAutomationSensorTarget | None:
     from dagster._core.definitions.asset_selection import AssetSelection
+    from dagster._core.definitions.automation_condition_sensor_definition import (
+        asset_job_keys_from_sensor_metadata,
+    )
     from dagster._core.definitions.sensor_definition import SensorType
 
     automation_condition_sensors = sorted(
@@ -419,6 +452,9 @@ def get_default_automation_condition_sensor_selection(
             has_auto_observe_keys = True
             automation_condition_keys.add(k)
 
+    # get the set of keys that are handled by an existing sensor. sensor asset
+    # selections cannot express job keys, so a conditioned job is never covered by an
+    # explicit sensor and always lands on the default sensor
     # get the set of keys that are handled by an existing sensor
     covered_keys: set[EntityKey] = set()
     for sensor in automation_condition_sensors:
@@ -426,6 +462,22 @@ def get_default_automation_condition_sensor_selection(
         covered_keys = covered_keys.union(
             selection.resolve(asset_graph) | selection.resolve_checks(asset_graph)
         )
+
+    # Asset selections cannot express job keys, so job keys are handled separately: a
+    # sensor claims job keys via its (hidden) asset_job_keys parameter, carried in
+    # sensor metadata, and the default sensor claims every conditioned job key not
+    # claimed by an existing sensor. Only job keys explicitly passed in by the caller
+    # (repository_data_builder) are considered; do NOT pull from
+    # asset_graph.automatable_asset_job_keys here — the host-side
+    # RemoteRepository._sensors also calls this function, and including job keys there
+    # would cause the default sensor to be re-created with an empty selection.
+    # TODO: create a new first-class field on the sensor for asset jobs. Deferring this
+    # for now in the interest of stabilizing the implementation before worrying about
+    # the longer term API.
+    covered_job_keys: set[AssetJobKey] = set()
+    for sensor in automation_condition_sensors:
+        covered_job_keys |= asset_job_keys_from_sensor_metadata(sensor.metadata)
+    uncovered_job_keys = (additional_automatable_asset_job_keys or set()) - covered_job_keys
 
     default_sensor_keys = automation_condition_keys - covered_keys
     if len(default_sensor_keys) > 0:
@@ -443,7 +495,15 @@ def get_default_automation_condition_sensor_selection(
             default_sensor_asset_selection = default_sensor_asset_selection - check.not_none(
                 sensor.asset_selection
             )
-        return default_sensor_asset_selection
+        return DefaultAutomationSensorTarget(
+            asset_selection=default_sensor_asset_selection, asset_job_keys=uncovered_job_keys
+        )
+    elif uncovered_job_keys:
+        # No uncovered assets/checks, but a default sensor is still needed to host the
+        # uncovered job keys, with an empty asset selection
+        return DefaultAutomationSensorTarget(
+            asset_selection=AssetSelection.keys(), asset_job_keys=uncovered_job_keys
+        )
     # no additional sensor required
     else:
         return None

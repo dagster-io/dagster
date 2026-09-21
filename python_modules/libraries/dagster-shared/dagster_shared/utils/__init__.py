@@ -8,7 +8,7 @@ from types import GenericAlias
 from typing import TypeGuard, TypeVar
 
 try:
-    import tomllib  # pyright: ignore[reportMissingImports]
+    import tomllib  # ty: ignore[unresolved-import]
 except ImportError:
     # Python < 3.11 fallback
     import tomli as tomllib

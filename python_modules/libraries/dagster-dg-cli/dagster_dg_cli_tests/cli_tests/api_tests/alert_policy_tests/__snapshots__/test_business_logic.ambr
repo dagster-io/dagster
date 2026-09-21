@@ -1,7 +1,7 @@
 # serializer version: 1
-# name: TestFormatAlertPolicies.test_format_policies_json_output[0]
+# name: TestFormatDgAlertPolicies.test_format_policies_json_output[0]
   dict({
-    'alert_policies': list([
+    'items': list([
       dict({
         'description': 'Send email on job failure',
         'event_types': list([
@@ -38,9 +38,10 @@
         ]),
       }),
     ]),
+    'total': 2,
   })
 # ---
-# name: TestFormatAlertPolicies.test_format_policies_text_output[0]
+# name: TestFormatDgAlertPolicies.test_format_policies_text_output[0]
   '''
   alert_policies:
   - name: email-on-failure
@@ -65,20 +66,15 @@
       value: data-eng
   '''
 # ---
-# name: TestFormatAlertPolicySyncResult.test_format_sync_result_json[0]
+# name: TestFormatDgApiAlertPolicySyncResult.test_format_sync_result_json[0]
   dict({
-    'synced_policies': list([
+    'items': list([
       'email-on-failure',
       'slack-on-sla-miss',
     ]),
+    'total': 2,
   })
 # ---
-# name: TestFormatAlertPolicySyncResult.test_format_sync_result_text[0]
+# name: TestFormatDgApiAlertPolicySyncResult.test_format_sync_result_text[0]
   'Synced alert policies: email-on-failure, slack-on-sla-miss'
-# ---
-# name: TestProcessAlertPoliciesResponse.test_successful_response_processing[0]
-  AlertPolicyDocument(alert_policies=[{'name': 'email-on-failure', 'description': 'Send email on job failure', 'event_types': ['JOB_FAILURE'], 'notification_service': {'email': {'email_addresses': ['team@example.com']}}, 'tags': []}, {'name': 'slack-on-sla-miss', 'description': 'Notify Slack on SLA miss', 'event_types': ['ASSET_OVERDUE'], 'notification_service': {'slack': {'slack_workspace_name': 'dagster', 'slack_channel_name': '#alerts'}}, 'tags': [{'key': 'team', 'value': 'data-eng'}]}])
-# ---
-# name: TestProcessReconcileResponse.test_successful_reconcile[0]
-  AlertPolicySyncResult(synced_policies=['email-on-failure', 'slack-on-sla-miss'])
 # ---

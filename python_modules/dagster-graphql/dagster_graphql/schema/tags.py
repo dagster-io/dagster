@@ -44,6 +44,10 @@ class GrapheneDefinitionTag(graphene.ObjectType):
     def __init__(self, key, value):
         super().__init__(key=key, value=value)
 
+    @staticmethod
+    def to_manifest_dict(key: str, value: str) -> dict:
+        return {"__typename": "DefinitionTag", "key": key, "value": value}
+
 
 class GraphenePipelineTagAndValues(graphene.ObjectType):
     class Meta:

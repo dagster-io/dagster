@@ -6,7 +6,7 @@ from dagster_dbt import build_schedule_from_dbt_selection
 
 @dg.definitions
 def defs(context: dg.ComponentLoadContext) -> dg.Definitions:
-    defs = context.build_defs_at_path(Path("jaffle_shop_dbt"))
+    defs = context.build_defs(Path("jaffle_shop_dbt"))
     schedule = build_schedule_from_dbt_selection(
         defs.assets,  # type: ignore
         job_name="run_customers",

@@ -1,6 +1,20 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../../graphql/types';
+
+export type BulkActionStatus =
+  | 'CANCELED'
+  | 'CANCELING'
+  | 'COMPLETED'
+  | 'COMPLETED_FAILED'
+  | 'COMPLETED_SUCCESS'
+  | 'FAILED'
+  | 'FAILING'
+  | 'REQUESTED';
 
 export type BackfillTableFragment = {
   __typename: 'PartitionBackfill';

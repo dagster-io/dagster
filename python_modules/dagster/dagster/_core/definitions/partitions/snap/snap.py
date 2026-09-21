@@ -83,7 +83,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     day_offset: int | None = None
 
     @classmethod
-    def from_def(cls, partitions_def: "TimeWindowPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "TimeWindowPartitionsDefinition") -> Self:  # ty: ignore[invalid-method-override]
         from dagster._core.definitions.partitions.definition import TimeWindowPartitionsDefinition
 
         check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
@@ -103,22 +103,22 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
+                start=datetime_from_timestamp(self.start, tz=self.timezone),  # ty: ignore[invalid-argument-type]
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # ty: ignore[invalid-argument-type]
                 exclusions=self.exclusions if self.exclusions else None,
             )
         else:
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
-                start=datetime_from_timestamp(self.start, tz=self.timezone),  # pyright: ignore[reportArgumentType]
+                start=datetime_from_timestamp(self.start, tz=self.timezone),  # ty: ignore[invalid-argument-type]
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # pyright: ignore[reportArgumentType]
+                end=(datetime_from_timestamp(self.end, tz=self.timezone) if self.end else None),  # ty: ignore[invalid-argument-type]
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -158,7 +158,7 @@ class StaticPartitionsSnap(PartitionsSnap, IHaveNew):
         )
 
     @classmethod
-    def from_def(cls, partitions_def: "StaticPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "StaticPartitionsDefinition") -> Self:  # ty: ignore[invalid-method-override]
         from dagster._core.definitions.partitions.definition import StaticPartitionsDefinition
 
         check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
@@ -193,7 +193,7 @@ class MultiPartitionsSnap(PartitionsSnap):
     partition_dimensions: Sequence[PartitionDimensionSnap]
 
     @classmethod
-    def from_def(cls, partitions_def: "MultiPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "MultiPartitionsDefinition") -> Self:  # ty: ignore[invalid-method-override]
         from dagster._core.definitions.partitions.definition import MultiPartitionsDefinition
 
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
@@ -227,7 +227,7 @@ class DynamicPartitionsSnap(PartitionsSnap):
     name: str
 
     @classmethod
-    def from_def(cls, partitions_def: "DynamicPartitionsDefinition") -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def from_def(cls, partitions_def: "DynamicPartitionsDefinition") -> Self:  # ty: ignore[invalid-method-override]
         from dagster._core.definitions.partitions.definition import DynamicPartitionsDefinition
 
         check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)

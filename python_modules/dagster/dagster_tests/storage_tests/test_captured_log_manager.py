@@ -83,10 +83,10 @@ def test_external_compute_log_manager():
         assert len(captured_log_entries) == 1
         entry = captured_log_entries[0]
         assert (
-            entry.dagster_event.logs_captured_data.external_stdout_url == "https://fake.com/stdout"  # pyright: ignore[reportOptionalMemberAccess]
+            entry.dagster_event.logs_captured_data.external_stdout_url == "https://fake.com/stdout"  # ty: ignore[unresolved-attribute]
         )
         assert (
-            entry.dagster_event.logs_captured_data.external_stderr_url == "https://fake.com/stderr"  # pyright: ignore[reportOptionalMemberAccess]
+            entry.dagster_event.logs_captured_data.external_stderr_url == "https://fake.com/stderr"  # ty: ignore[unresolved-attribute]
         )
 
 
@@ -99,13 +99,13 @@ def test_get_log_keys_for_log_key_prefix():
         def write_log_file(file_id: int):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
-                f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
+                f.write("foo")  # ty: ignore[unresolved-attribute]
 
         for i in range(4):
             write_log_file(i)
 
         log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-        assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
+        assert sorted(log_keys) == [
             [*log_key_prefix, "0"],
             [*log_key_prefix, "1"],
             [*log_key_prefix, "2"],
@@ -129,9 +129,9 @@ def test_read_log_lines_for_log_key_prefix():
                 for j in range(num_lines):
                     msg = f"file: {file_id}, line: {j}"
                     all_logs.append(msg)
-                    f.write(msg)  # pyright: ignore[reportOptionalMemberAccess]
+                    f.write(msg)  # ty: ignore[unresolved-attribute]
                     if j < num_lines - 1:
-                        f.write("\n")  # pyright: ignore[reportOptionalMemberAccess]
+                        f.write("\n")  # ty: ignore[unresolved-attribute]
 
         for i in range(4):
             write_log_file(i)
@@ -144,9 +144,9 @@ def test_read_log_lines_for_log_key_prefix():
             log_key_prefix, cursor=None, io_type=ComputeIOType.STDERR
         )
         assert len(log_lines) == 10
-        assert cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.log_key == [*log_key_prefix, "1"]  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.line == 0  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.has_more_now  # ty: ignore[unresolved-attribute]
+        assert cursor.log_key == [*log_key_prefix, "1"]  # ty: ignore[unresolved-attribute]
+        assert cursor.line == 0  # ty: ignore[unresolved-attribute]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -154,13 +154,13 @@ def test_read_log_lines_for_log_key_prefix():
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "5"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix,
-            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            cursor=cursor.to_string(),  # ty: ignore[unresolved-attribute]
             io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 5
-        assert cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.log_key == [*log_key_prefix, "1"]  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.line == 5  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.has_more_now  # ty: ignore[unresolved-attribute]
+        assert cursor.log_key == [*log_key_prefix, "1"]  # ty: ignore[unresolved-attribute]
+        assert cursor.line == 5  # ty: ignore[unresolved-attribute]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -168,13 +168,13 @@ def test_read_log_lines_for_log_key_prefix():
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix,
-            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            cursor=cursor.to_string(),  # ty: ignore[unresolved-attribute]
             io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 10
-        assert cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.log_key == [*log_key_prefix, "2"]  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.line == 5  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.has_more_now  # ty: ignore[unresolved-attribute]
+        assert cursor.log_key == [*log_key_prefix, "2"]  # ty: ignore[unresolved-attribute]
+        assert cursor.line == 5  # ty: ignore[unresolved-attribute]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -182,14 +182,14 @@ def test_read_log_lines_for_log_key_prefix():
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix,
-            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            cursor=cursor.to_string(),  # ty: ignore[unresolved-attribute]
             io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 15
-        assert not cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.log_key == [*log_key_prefix, "3"]  # pyright: ignore[reportOptionalMemberAccess]
+        assert not cursor.has_more_now  # ty: ignore[unresolved-attribute]
+        assert cursor.log_key == [*log_key_prefix, "3"]  # ty: ignore[unresolved-attribute]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
-        assert cursor.line == -1  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.line == -1  # ty: ignore[unresolved-attribute]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -200,13 +200,13 @@ def test_read_log_lines_for_log_key_prefix():
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "15"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix,
-            cursor=cursor.to_string(),  # pyright: ignore[reportOptionalMemberAccess]
+            cursor=cursor.to_string(),  # ty: ignore[unresolved-attribute]
             io_type=ComputeIOType.STDERR,
         )
         assert len(log_lines) == 10
-        assert not cursor.has_more_now  # pyright: ignore[reportOptionalMemberAccess]
-        assert cursor.log_key == [*log_key_prefix, "4"]  # pyright: ignore[reportOptionalMemberAccess]
+        assert not cursor.has_more_now  # ty: ignore[unresolved-attribute]
+        assert cursor.log_key == [*log_key_prefix, "4"]  # ty: ignore[unresolved-attribute]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
-        assert cursor.line == -1  # pyright: ignore[reportOptionalMemberAccess]
+        assert cursor.line == -1  # ty: ignore[unresolved-attribute]
         for ll in log_lines:
             assert ll == next(all_logs_iter)

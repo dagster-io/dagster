@@ -10,7 +10,7 @@ from typing import Any
 import pytest
 import responses
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response, responses
+from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_dg_core.utils import activate_venv
 from pytest_httpserver import HTTPServer
 from werkzeug import Request, Response
@@ -412,7 +412,8 @@ def test_component_docs_using_env(
                 url = "{mock_graphql_server}"
                 user_token = "test"
                 default_deployment = "prod"
-                """
+                """,
+                encoding="utf-8",
             )
 
             mock_gql_for_list_env(

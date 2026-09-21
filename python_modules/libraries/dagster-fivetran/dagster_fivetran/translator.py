@@ -83,7 +83,7 @@ class FivetranConnector:
 
     @property
     def url(self) -> str:
-        return f"https://fivetran.com/dashboard/connectors/{self.id}"
+        return f"https://fivetran.com/dashboard/connections/{self.id}"
 
     @property
     def destination_id(self) -> str:
@@ -108,7 +108,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return max(succeeded_at, failed_at)  # pyright: ignore[reportReturnType]
+        return max(succeeded_at, failed_at)
 
     @property
     def is_last_sync_successful(self) -> bool:
@@ -121,7 +121,7 @@ class FivetranConnector:
         succeeded_at = parser.parse(self.succeeded_at or MIN_TIME_STR)
         failed_at = parser.parse(self.failed_at or MIN_TIME_STR)
 
-        return succeeded_at > failed_at  # pyright: ignore[reportOperatorIssue]
+        return succeeded_at > failed_at
 
     @property
     def is_rescheduled(self) -> bool:
@@ -131,7 +131,7 @@ class FivetranConnector:
         if not self.rescheduled_for:
             return False
         rescheduled_at = parser.parse(self.rescheduled_for)
-        return rescheduled_at > self.last_sync_completed_at  # pyright: ignore[reportOperatorIssue]
+        return rescheduled_at > self.last_sync_completed_at
 
     def validate_syncable(self) -> bool:
         """Confirms that the connector can be sync. Will raise a Failure in the event that
@@ -274,27 +274,27 @@ class FivetranWorkspaceData:
 
             for schema in schema_config.schemas.values():
                 if schema.enabled:
-                    for table in schema.tables.values():
-                        if table.enabled:
-                            data.append(
-                                FivetranConnectorTableProps(
-                                    table=get_fivetran_connector_table_name(
-                                        schema_name=schema.name_in_destination,
-                                        table_name=table.name_in_destination,
-                                    ),
-                                    connector_id=connector.id,
-                                    connector_name=connector.name,
-                                    connector_url=connector.url,
-                                    destination_id=connector.destination_id,
-                                    schema_config=schema_config,
-                                    database=destination.database,
-                                    service=destination.service,
-                                    sync_frequency=connector.sync_frequency,
-                                    schedule_type=connector.schedule_type,
-                                    daily_sync_time=connector.daily_sync_time,
-                                    connector_config=connector.config,
-                                )
-                            )
+                    data.extend(
+                        FivetranConnectorTableProps(
+                            table=get_fivetran_connector_table_name(
+                                schema_name=schema.name_in_destination,
+                                table_name=table.name_in_destination,
+                            ),
+                            connector_id=connector.id,
+                            connector_name=connector.name,
+                            connector_url=connector.url,
+                            destination_id=connector.destination_id,
+                            schema_config=schema_config,
+                            database=destination.database,
+                            service=destination.service,
+                            sync_frequency=connector.sync_frequency,
+                            schedule_type=connector.schedule_type,
+                            daily_sync_time=connector.daily_sync_time,
+                            connector_config=connector.config,
+                        )
+                        for table in schema.tables.values()
+                        if table.enabled
+                    )
         return data
 
     # Cache workspace data selection for a specific connector_selector_fn
@@ -377,6 +377,7 @@ class DagsterFivetranTranslator:
             database=props.database,
             schema=schema_name,
             table=table_name,
+            service=props.service,
         )
 
         # Detect if this table is from a custom report

@@ -33,7 +33,7 @@ class ValidAssetSubset(SerializableEntitySubset[AssetKey]):
             )
             return replace(self, value=value)
 
-    def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
+    def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":  # ty: ignore[invalid-method-override]
         value = oper(self.value, other.value)
         return replace(self, value=value)
 

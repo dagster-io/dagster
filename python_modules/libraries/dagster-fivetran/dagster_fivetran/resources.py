@@ -74,6 +74,7 @@ FIVETRAN_CONNECTOR_PATH = f"{FIVETRAN_CONNECTOR_ENDPOINT}/"
 # default polling interval (in seconds)
 DEFAULT_POLL_INTERVAL = 10
 
+
 # Maximum number of retries when Fivetran reschedules a sync due to quota limits.
 FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES = int(
     os.getenv("DAGSTER_FIVETRAN_QUOTA_RESCHEDULE_MAX_RETRIES", "3")
@@ -219,8 +220,8 @@ class FivetranResource(ConfigurableResource):
         failed_at = parser.parse(connector_details["failed_at"] or min_time_str)
 
         return (
-            max(succeeded_at, failed_at),  # pyright: ignore[reportReturnType]
-            succeeded_at > failed_at,  # pyright: ignore[reportOperatorIssue]
+            max(succeeded_at, failed_at),
+            succeeded_at > failed_at,
             connector_details["status"]["sync_state"],
         )
 
@@ -608,7 +609,7 @@ class FivetranClient:
             except RequestException as e:
                 self._log.error("Request to Fivetran API failed: %s", e)
                 if num_retries == self.request_max_retries:
-                    return response  # type: ignore
+                    return response
                 num_retries += 1
                 delay = self.request_retry_delay * (self.request_backoff_factor**num_retries)
                 self._log.info(
@@ -844,7 +845,7 @@ class FivetranClient:
                 rescheduled_at = parser.parse(connector.rescheduled_for)
                 seconds_to_wait = max(
                     0,
-                    (rescheduled_at - datetime.now(timezone.utc)).total_seconds(),  # pyright: ignore[reportOperatorIssue]
+                    (rescheduled_at - datetime.now(timezone.utc)).total_seconds(),
                 )
                 if self.retry_on_reschedule:
                     self._log.warning(
@@ -1046,7 +1047,9 @@ class FivetranWorkspace(ConfigurableResource):
     def snapshot(self) -> RepositoryLoadData | None:
         snapshot = None
         if self.snapshot_path and not os.getenv(FIVETRAN_SNAPSHOT_ENV_VAR_NAME):
-            snapshot = deserialize_value(Path(self.snapshot_path).read_text(), RepositoryLoadData)
+            snapshot = deserialize_value(
+                Path(self.snapshot_path).read_text(encoding="utf-8"), RepositoryLoadData
+            )
         return snapshot
 
     @cached_method
@@ -1258,6 +1261,7 @@ class FivetranWorkspace(ConfigurableResource):
                             database=None,
                             schema=schema.name_in_destination,
                             table=table.name_in_destination,
+                            service=fivetran_output.connector_details.get("service"),
                         ),
                         **FivetranMetadataSet(
                             connector_id=connector.id,

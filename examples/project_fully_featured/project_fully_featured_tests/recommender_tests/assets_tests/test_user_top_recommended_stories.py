@@ -20,6 +20,7 @@ def test_user_top_recommended_stories():
         recommender_model=model,
         user_story_matrix=IndexedCooMatrix(user_story_matrix, row_users, col_stories),
     )
+    assert isinstance(result, DataFrame)
 
     expected = DataFrame(
         [

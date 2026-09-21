@@ -24,6 +24,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.events import AssetKey
 
 
 def create_op_compute_wrapper(
@@ -176,20 +177,20 @@ def _filter_expected_output_defs(
     if not asset_results:
         return output_defs
 
-    check_names_by_asset_key = {}
+    check_names_by_asset_key: dict[AssetKey, set[str]] = {}
     for check_key in context.op_execution_context.selected_asset_check_keys:
         if check_key.asset_key not in check_names_by_asset_key:
-            check_names_by_asset_key[check_key.asset_key] = []
-        check_names_by_asset_key[check_key.asset_key].append(check_key.name)
+            check_names_by_asset_key[check_key.asset_key] = set()
+        check_names_by_asset_key[check_key.asset_key].add(check_key.name)
 
     remove_outputs = []
     for asset_result in asset_results:
-        for check_result in asset_result.check_results:
-            remove_outputs.append(
-                context.op_execution_context.assets_def.get_output_name_for_asset_check_key(
-                    check_result.resolve_target_check_key(check_names_by_asset_key)
-                )
+        remove_outputs.extend(
+            context.op_execution_context.assets_def.get_output_name_for_asset_check_key(
+                check_result.resolve_target_check_key(check_names_by_asset_key)
             )
+            for check_result in asset_result.check_results
+        )
 
     return [out for out in output_defs if out.name not in remove_outputs]
 
@@ -263,7 +264,7 @@ def validate_and_coerce_op_result_to_iterator(
 ) -> Iterator[Any]:
     if inspect.isgenerator(result):
         # this happens when a user explicitly returns a generator in the op
-        yield from result
+        yield from result  # ty: ignore[invalid-yield]
     elif isinstance(result, (AssetMaterialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
             f"Error in {context.describe_op()}: If you are "

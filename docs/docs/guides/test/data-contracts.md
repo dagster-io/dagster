@@ -21,7 +21,7 @@ To implement data contracts using asset checks, follow these general steps:
 ## Defining assets with schema metadata
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/data-contracts/assets.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/data-contracts/assets.py"
   language="python"
   title="src/<project_name>/defs/assets.py"
   startAfter="start_asset"
@@ -35,7 +35,7 @@ The `shipments` asset uses `create_table_schema_metadata_from_dataframe` from `d
 The data contract is defined in a separate YAML file, making it easy to version control and collaborate across teams:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/data-contracts/shipments_contract.yaml"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/data-contracts/shipments_contract.yaml"
   language="yaml"
   title="src/<project_name>/defs/shipments_contract.yaml"
 />
@@ -47,7 +47,7 @@ The contract defines expected column names and types, field descriptions, requir
 An asset check validates the actual asset schema against the data contract:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/data-contracts/assets.py"
+  path="docs_snippets/docs_snippets/guides/build/assets/data-assets/quality-testing/data-contracts/assets.py"
   language="python"
   title="src/<project_name>/defs/asset_checks.py"
   startAfter="start_asset_check"

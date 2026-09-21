@@ -1,12 +1,27 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type ConfigPartitionForAssetJobQueryVariables = Types.Exact<{
-  repositoryName: Types.Scalars['String']['input'];
-  repositoryLocationName: Types.Scalars['String']['input'];
-  jobName: Types.Scalars['String']['input'];
-  partitionName: Types.Scalars['String']['input'];
+export type AssetKeyInput = {
+  path: Array<string>;
+};
+
+export type RepositorySelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+};
+
+export type ConfigPartitionForAssetJobQueryVariables = Exact<{
+  repositoryName: string;
+  repositoryLocationName: string;
+  jobName: string;
+  partitionName: string;
   assetKeys: Array<Types.AssetKeyInput> | Types.AssetKeyInput;
 }>;
 
@@ -53,10 +68,10 @@ export type ConfigPartitionForAssetJobQuery = {
     | {__typename: 'PythonError'};
 };
 
-export type ConfigPartitionSelectionQueryVariables = Types.Exact<{
+export type ConfigPartitionSelectionQueryVariables = Exact<{
   repositorySelector: Types.RepositorySelector;
-  partitionSetName: Types.Scalars['String']['input'];
-  partitionName: Types.Scalars['String']['input'];
+  partitionSetName: string;
+  partitionName: string;
 }>;
 
 export type ConfigPartitionSelectionQuery = {

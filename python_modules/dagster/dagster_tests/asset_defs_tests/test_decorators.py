@@ -269,7 +269,7 @@ def test_multi_asset_internal_asset_deps_invalid():
 
 
 def test_asset_with_dagster_type():
-    @dg.asset(dagster_type=String)  # pyright: ignore[reportArgumentType]
+    @dg.asset(dagster_type=String)  # ty: ignore[invalid-argument-type]
     def my_asset(arg1):
         return arg1
 
@@ -456,8 +456,8 @@ def test_infer_output_dagster_type():
     def my_asset() -> str:
         return "foo"
 
-    assert my_asset.op.outs["result"].dagster_type.display_name == "String"  # pyright: ignore[reportAttributeAccessIssue]
-    assert my_asset.op.outs["result"].dagster_type.typing_type == str  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "String"  # ty: ignore[unresolved-attribute]
+    assert my_asset.op.outs["result"].dagster_type.typing_type == str  # ty: ignore[unresolved-attribute]
 
 
 def test_infer_output_dagster_type_none():
@@ -465,8 +465,8 @@ def test_infer_output_dagster_type_none():
     def my_asset() -> None:
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)  # pyright: ignore[reportAttributeAccessIssue]
-    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.typing_type == type(None)  # ty: ignore[unresolved-attribute]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Nothing"  # ty: ignore[unresolved-attribute]
 
 
 def test_infer_output_dagster_type_empty():
@@ -474,8 +474,8 @@ def test_infer_output_dagster_type_empty():
     def my_asset():
         pass
 
-    assert my_asset.op.outs["result"].dagster_type.typing_type is Any  # pyright: ignore[reportAttributeAccessIssue]
-    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"  # pyright: ignore[reportAttributeAccessIssue]
+    assert my_asset.op.outs["result"].dagster_type.typing_type is Any  # ty: ignore[unresolved-attribute]
+    assert my_asset.op.outs["result"].dagster_type.display_name == "Any"  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_with_docstring_description():
@@ -657,11 +657,11 @@ def test_multi_asset_resource_defs():
     def baz_resource():
         pass
 
-    @dg.io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"baz"})
     def foo_manager():
         pass
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def bar_manager():
         pass
 
@@ -688,11 +688,11 @@ def test_multi_asset_resource_defs_specs() -> None:
     def baz_resource():
         pass
 
-    @dg.io_manager(required_resource_keys={"baz"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"baz"})
     def foo_manager():
         pass
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def bar_manager():
         pass
 
@@ -732,7 +732,7 @@ def test_multi_asset_code_versions():
 @ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 @ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_asset_io_manager_def():
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_manager():
         pass
 
@@ -742,7 +742,7 @@ def test_asset_io_manager_def():
 
     # If IO manager def is passed directly, then it doesn't appear as a
     # required resource key on the underlying op.
-    assert set(the_asset.node_def.required_resource_keys) == set()  # pyright: ignore[reportAttributeAccessIssue]
+    assert set(the_asset.node_def.required_resource_keys) == set()  # ty: ignore[unresolved-attribute]
 
     @dg.asset(io_manager_key="blah", resource_defs={"blah": the_manager})
     def other_asset():
@@ -750,7 +750,7 @@ def test_asset_io_manager_def():
 
     # If IO manager def is provided as a resource def, it appears in required
     # resource keys on the underlying op.
-    assert set(other_asset.node_def.required_resource_keys) == {"blah"}  # pyright: ignore[reportAttributeAccessIssue]
+    assert set(other_asset.node_def.required_resource_keys) == {"blah"}  # ty: ignore[unresolved-attribute]
 
 
 def test_asset_retry_policy():
@@ -915,7 +915,6 @@ def test_graph_asset_decorator_no_args():
 @ignore_warning("Parameter `owners` .* is currently in beta")
 @ignore_warning("Parameter `auto_materialize_policy` .* is deprecated")
 @ignore_warning("Parameter `freshness_policy` .* is deprecated")
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 @ignore_warning("Parameter `legacy_freshness_policy`")
 @ignore_warning("Class `LegacyFreshnessPolicy`")
 @pytest.mark.parametrize(
@@ -953,9 +952,6 @@ def test_graph_asset_with_args(automation_condition_arg):
 
     assert my_asset.group_names_by_key[dg.AssetKey("my_asset")] == "group1"
     assert my_asset.metadata_by_key[dg.AssetKey("my_asset")] == {"my_metadata": "some_metadata"}
-    assert my_asset.legacy_freshness_policies_by_key[
-        dg.AssetKey("my_asset")
-    ] == dg.LegacyFreshnessPolicy(maximum_lag_minutes=5)
     assert my_asset.tags_by_key[dg.AssetKey("my_asset")] == {"foo": "bar"}
     assert my_asset.specs_by_key[dg.AssetKey("my_asset")].owners == [
         "team:team1",
@@ -1063,7 +1059,6 @@ def test_graph_asset_w_key_prefix():
     assert str_prefix.keys_by_output_name["result"].path == ["prefix", "str_prefix"]
 
 
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_config_dict():
     class FooConfig(dg.Config):
         val: int
@@ -1093,7 +1088,6 @@ def test_graph_asset_w_config_dict():
     assert result.output_for_node("bar", "first_asset") == 1
 
 
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_config_mapping():
     class FooConfig(dg.Config):
         val: int
@@ -1137,7 +1131,6 @@ def test_graph_asset_w_config_mapping():
 @ignore_warning("Parameter `auto_materialize_policy`")
 @ignore_warning("Parameter `freshness_policy`")
 @ignore_warning("Class `LegacyFreshnessPolicy`")
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 @ignore_warning("Parameter `legacy_freshness_policy`")
 @pytest.mark.parametrize(
     "automation_condition_arg",
@@ -1182,11 +1175,6 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
     assert two_assets.code_versions_by_key[dg.AssetKey("first_asset")] == "abc"
     assert two_assets.group_names_by_key[dg.AssetKey("second_asset")] == "grp"
 
-    assert two_assets.legacy_freshness_policies_by_key.get(dg.AssetKey("first_asset")) is None
-    assert two_assets.legacy_freshness_policies_by_key[
-        dg.AssetKey("second_asset")
-    ] == dg.LegacyFreshnessPolicy(maximum_lag_minutes=5)
-
     assert (
         two_assets.automation_conditions_by_key[dg.AssetKey("first_asset")]
         == AutomationCondition.eager()
@@ -1206,7 +1194,6 @@ def test_graph_multi_asset_decorator(automation_condition_arg):
     assert dg.materialize_to_memory([x, y, two_assets]).success
 
 
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_multi_asset_w_key_prefix():
     @dg.op(out={"one": dg.Out(), "two": dg.Out()})
     def two_in_two_out(context, in1, in2):
@@ -1250,7 +1237,6 @@ def test_graph_multi_asset_w_key_prefix():
     }
 
 
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_ins_and_param_args():
     @dg.asset
     def upstream():
@@ -1279,7 +1265,6 @@ def test_graph_asset_w_ins_and_param_args():
 
 
 @ignore_warning("Parameter `tags` of initializer `AssetOut.__init__` is currently in beta")
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_multi_asset_graph_asset_w_tags():
     @dg.op
     def return_1():
@@ -1310,7 +1295,6 @@ def test_multi_asset_graph_asset_w_tags():
 
 
 @ignore_warning("Parameter `owners` of initializer `AssetOut.__init__` is currently in beta")
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_multi_asset_graph_asset_w_owners():
     @dg.op
     def return_1():
@@ -1340,7 +1324,6 @@ def test_multi_asset_graph_asset_w_owners():
     assert the_asset.owners_by_key[dg.AssetKey("no_owner")] == []
 
 
-@ignore_warning("Parameter `legacy_freshness_policies_by_output_name`")
 def test_graph_asset_w_ins_and_kwargs():
     @dg.asset
     def upstream():

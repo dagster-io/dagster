@@ -7,7 +7,7 @@ import pytest
 try:
     from dagster_snowflake import SnowflakeResource
 except ImportError:
-    SnowflakeResource = None
+    SnowflakeResource = None  # ty: ignore[invalid-assignment]
 
 requires_snowflake = pytest.mark.skipif(
     SnowflakeResource is None,

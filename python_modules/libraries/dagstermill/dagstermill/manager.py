@@ -12,7 +12,6 @@ from dagster import (
     Failure,
     LoggerDefinition,
     ResourceDefinition,
-    StepExecutionContext,
     TypeCheck,
     _check as check,
 )
@@ -195,12 +194,9 @@ class Manager:
                 ),
                 op_name=op.name,
                 node_handle=node_handle,
-                step_context=cast(
-                    "StepExecutionContext",
-                    job_context.for_step(
-                        cast("ExecutionStep", execution_plan.get_step_by_key(step_key)),
-                        known_state=known_state,
-                    ),
+                step_context=job_context.for_step(
+                    cast("ExecutionStep", execution_plan.get_step_by_key(step_key)),
+                    known_state=known_state,
                 ),
             )
 
@@ -312,18 +308,18 @@ class Manager:
         # deferred import for perf
         import scrapbook
 
-        if not self.op_def.has_output(output_name):  # pyright: ignore[reportOptionalMemberAccess]
+        if not self.op_def.has_output(output_name):  # ty: ignore[unresolved-attribute]
             raise DagstermillError(
-                f"Op {self.op_def.name} does not have output named {output_name}.Expected one of"  # pyright: ignore[reportOptionalMemberAccess]
-                f" {[str(output_def.name) for output_def in self.op_def.output_defs]}"  # pyright: ignore[reportOptionalMemberAccess]
+                f"Op {self.op_def.name} does not have output named {output_name}.Expected one of"  # ty: ignore[unresolved-attribute]
+                f" {[str(output_def.name) for output_def in self.op_def.output_defs]}"  # ty: ignore[unresolved-attribute]
             )
 
         # pass output value cross process boundary using io manager
-        step_context = self.context._step_context  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        step_context = self.context._step_context  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         # Note: yield_result currently does not support DynamicOutput
 
         # dagstermill assets do not support yielding additional results within the notebook:
-        if len(step_context.job_def.asset_layer.executable_asset_keys) > 0:  # pyright: ignore[reportArgumentType]
+        if len(step_context.job_def.asset_layer.executable_asset_keys) > 0:
             raise DagstermillError(
                 "dagstermill assets do not currently support dagstermill.yield_result"
             )
@@ -370,7 +366,8 @@ class Manager:
         import scrapbook
 
         event_id = f"event-{uuid.uuid4()}"
-        out_file_path = os.path.join(self.marshal_dir, event_id)  # pyright: ignore[reportCallIssue,reportArgumentType]
+        assert self.marshal_dir is not None
+        out_file_path = os.path.join(self.marshal_dir, event_id)
         with open(out_file_path, "wb") as fd:
             fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))
 

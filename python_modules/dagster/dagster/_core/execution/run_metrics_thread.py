@@ -216,7 +216,7 @@ def _capture_metrics(
                 _report_run_metrics(
                     instance,
                     dagster_run=dagster_run,
-                    metrics=metrics,
+                    metrics={k: v for k, v in metrics.items() if v is not None},
                     run_tags=run_tags,
                 )
 

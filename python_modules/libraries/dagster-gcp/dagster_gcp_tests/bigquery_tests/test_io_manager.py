@@ -187,6 +187,44 @@ def test_get_cleanup_statement_multi_partitioned():
     )
 
 
+def test_get_select_statement_escapes():
+    assert (
+        BigQueryClient.get_select_statement(
+            TableSlice(
+                database="db",
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "SELECT * FROM `db.schema1.table1` WHERE\nmy_col in ('it''s a test')"
+    )
+
+
+def test_get_cleanup_statement_escapes():
+    assert (
+        _get_cleanup_statement(
+            TableSlice(
+                database="db",
+                schema="schema1",
+                table="table1",
+                partition_dimensions=[
+                    TablePartitionDimension(
+                        partition_expr="my_col",
+                        partitions=["it's a test"],
+                    )
+                ],
+            )
+        )
+        == "DELETE FROM `db.schema1.table1` WHERE\nmy_col in ('it''s a test')"
+    )
+
+
 class FakeHandler(DbTypeHandler[int]):
     def handle_output(self, context: OutputContext, table_slice: TableSlice, obj: int, connection):
         connection.query(
@@ -223,7 +261,7 @@ def test_authenticate_via_config():
         passed = False
 
         try:
-            with open(old_gcp_creds_file) as f:
+            with open(old_gcp_creds_file, encoding="utf-8") as f:
                 gcp_creds = f.read()
 
             bq_io_manager = build_bigquery_io_manager([FakeHandler()]).configured(

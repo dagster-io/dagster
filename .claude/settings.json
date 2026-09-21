@@ -62,8 +62,7 @@
       "Bash(git cat-file:*)",
       "Bash(git ls-remote:*)",
       "Bash(pytest:*)",
-      "Bash(dagster-dev:*)",
-      "Bash(erk:*)"
+      "Bash(dagster-dev:*)"
     ],
     "deny": [
       "Read(./.git/**)",
@@ -129,11 +128,6 @@
       "Read(./python_modules/dagit/node_modules/**)",
       "Read(./python_modules/dagit/yarn.lock)",
       "Read(./js_modules/dagit/**)",
-      "Read(./docs/gatsby/**/node_modules/**)",
-      "Read(./docs/gatsby/**/_build/**)",
-      "Read(./docs/gatsby/**/public/**)",
-      "Read(./docs/next/.mdx-data/**)",
-      "Read(./docs/next/public/sitemap.xml)",
       "Read(./data/**)",
       "Read(./dask-worker-space/**)",
       "Read(./.idea/**)",
@@ -150,31 +144,15 @@
       "Read(./scripts/.build/**)",
       "Read(./.user.yml)",
       "Read(./exponent.txt)",
-      "Read(./.cloudstorage/**)"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
-          }
-        ]
-      }
+      "Read(./.cloudstorage/**)",
+      "Read(docs/.tox/**)",
+      "Read(docs/**/__pycache__/**)",
+      "Read(docs/.docusaurus/**)",
+      "Read(docs/build/**)",
+      "Read(docs/static/objects.inv)",
+      "Read(docs/vale/**)",
+      "Read(docs/src/code-examples-content.js)",
+      "Read(docs/sphinx/_build/**)"
     ]
   }
 }

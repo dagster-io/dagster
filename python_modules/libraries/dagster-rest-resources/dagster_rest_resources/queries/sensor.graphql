@@ -1,0 +1,75 @@
+query ListSensors($repositorySelector: RepositorySelector!) {
+  sensorsOrError(repositorySelector: $repositorySelector) {
+    __typename
+    ... on Sensors {
+      results {
+        id
+        name
+        sensorState {
+          status
+        }
+        sensorType
+        description
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query ListRepositoriesWithSensors {
+  repositoriesOrError {
+    __typename
+    ... on RepositoryConnection {
+      nodes {
+        name
+        location {
+          name
+        }
+        sensors {
+          id
+          name
+          sensorState {
+            status
+          }
+          sensorType
+          description
+        }
+      }
+    }
+    ... on RepositoryNotFoundError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+
+query GetSensor($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on Sensor {
+      id
+      name
+      sensorState {
+        status
+      }
+      sensorType
+      description
+    }
+    ... on SensorNotFoundError {
+      message
+    }
+    ... on UnauthorizedError {
+      message
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}

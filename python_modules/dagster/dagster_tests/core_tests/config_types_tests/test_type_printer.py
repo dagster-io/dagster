@@ -1,5 +1,7 @@
 import dagster as dg
+import dagster._check as check
 from dagster._config import (
+    ConfigType,
     get_recursive_type_keys,
     print_config_type_to_string,
     resolve_to_config_type,
@@ -9,16 +11,16 @@ from dagster._config import (
 
 def assert_inner_types(parent_type, *dagster_types):
     config_type = resolve_to_config_type(parent_type)
-    config_schema_snapshot = config_type.schema_snapshot  # pyright: ignore[reportAttributeAccessIssue]
+    config_schema_snapshot = config_type.schema_snapshot
 
     all_type_keys = get_recursive_type_keys(
-        snap_from_config_type(config_type),  # pyright: ignore[reportArgumentType]
+        snap_from_config_type(config_type),
         config_schema_snapshot,
     )
 
-    assert set(all_type_keys) == set(
-        map(lambda x: x.key, map(resolve_to_config_type, dagster_types))
-    )
+    assert set(all_type_keys) == {
+        check.inst(resolve_to_config_type(t), ConfigType).key for t in dagster_types
+    }
 
 
 def test_basic_type_print():

@@ -1,10 +1,10 @@
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {Colors} from './Color';
 import {Popover} from './Popover';
 import {ConfigSchema_allConfigTypes as TypeData} from './configeditor/types/ConfigSchema';
-import {FontFamily} from './styles';
+import styles from './css/ConfigTypeSchema.module.css';
 
 type ConfigTypeSchemaTheme = 'dark' | 'light';
 
@@ -57,8 +57,8 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
         )}
         {type.fields.map((fieldData) => {
           const keyDisplay = (
-            <DictKey
-              theme={props.theme}
+            <span
+              className={props.theme === 'dark' ? styles.dictKeyDark : styles.dictKeyLight}
               style={
                 fieldData.defaultValueAsJson
                   ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`, cursor: 'pointer'}
@@ -66,7 +66,7 @@ const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, p
               }
             >
               {fieldData.name}
-            </DictKey>
+            </span>
           );
           return (
             <DictEntry key={fieldData.name}>
@@ -183,29 +183,12 @@ export const tryPrettyPrintJSON = (jsonString: string) => {
 
 const ConfigContent = React.memo(({value}: {value: string}) => (
   <>
-    <ConfigHeader>
+    <div className={styles.configHeader}>
       <strong>Default value</strong>
-    </ConfigHeader>
-    <ConfigJSON>{tryPrettyPrintJSON(value)}</ConfigJSON>
+    </div>
+    <pre className={styles.configJSON}>{tryPrettyPrintJSON(value)}</pre>
   </>
 ));
-
-const ConfigHeader = styled.div`
-  background-color: ${Colors.tooltipBackground()};
-  color: ${Colors.tooltipText()};
-  font-size: 13px;
-  padding: 8px;
-`;
-
-const ConfigJSON = styled.pre`
-  background-color: ${Colors.tooltipBackground()};
-  color: ${Colors.tooltipText()};
-  whitespace: pre-wrap;
-  font-family: ${FontFamily.monospace};
-  font-size: 12px;
-  padding: 8px;
-  margin: 0;
-`;
 
 export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
   const {type, typesInScope} = props;
@@ -217,10 +200,10 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
 
   return (
     <HoveredDictEntryContextProvider>
-      <TypeSchemaContainer>
+      <code className={styles.typeSchemaContainer}>
         <DictBlockComment content={type.description} indent="" />
         {renderTypeRecursive(type, typeLookup, 0, props)}
-      </TypeSchemaContainer>
+      </code>
     </HoveredDictEntryContextProvider>
   );
 });
@@ -301,68 +284,23 @@ const HoveredDictEntryContextProvider = React.memo(({children}: {children: React
   );
 });
 
-const DictEntry = React.forwardRef(
-  (
-    props: React.ComponentProps<typeof DictEntryDiv>,
-    ref: React.ForwardedRef<HTMLButtonElement>,
-  ) => {
-    const {hovered, onMouseEnter, onMouseLeave} =
-      React.useContext(HoveredDictEntryContext).useDictEntryHover();
+const DictEntry = (props: React.HTMLAttributes<HTMLDivElement>) => {
+  const {hovered, onMouseEnter, onMouseLeave} =
+    React.useContext(HoveredDictEntryContext).useDictEntryHover();
 
-    return (
-      <DictEntryDiv2>
-        <DictEntryDiv
-          {...props}
-          $hovered={hovered}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-          ref={ref}
-        />
-      </DictEntryDiv2>
-    );
-  },
-);
-
-const DictEntryDiv2 = styled.div``;
-const DictEntryDiv = styled.div<{$hovered: boolean}>`
-  border: 1px solid transparent;
-
-  ${({$hovered}) =>
-    $hovered
-      ? `
-      border: 1px solid ${Colors.borderDefault()};
-      background-color: ${Colors.backgroundLight()};
-      >${DictEntryDiv2} {
-        background-color: ${Colors.backgroundLighter()};
-      }
-    `
-      : ``}
-  }
-`;
-
-const TypeSchemaContainer = styled.code`
-  color: ${Colors.textLighter()};
-  display: block;
-  white-space: pre-wrap;
-  font-size: 12px;
-  line-height: 18px;
-`;
-
-const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
-  color: ${({theme}) => (theme === 'dark' ? Colors.accentReversed() : Colors.accentPrimary())};
-`;
-
-const DictComment = styled.div`
-  /* This allows long comments to wrap as nice indented blocks, while
-     copy/pasting as a single line with space-based indentation. */
-  text-indent: -1.85em;
-  padding-left: 1.85em;
-  white-space: initial;
-`;
+  return (
+    <div
+      {...props}
+      className={clsx(styles.dictEntry, hovered && styles.hovered)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    />
+  );
+};
 
 const DictBlockComment = ({indent = '', content}: {indent: string; content: string | null}) =>
   content !== null && content !== '' ? (
-    <DictComment>{`${indent.replace(/ /g, '\u00A0')}/* ${content} */`}</DictComment>
+    <div className={styles.dictComment}>{`${indent.replace(/ /g, '\u00A0')}/* ${content} */`}</div>
   ) : null;
 
 const Optional = <span style={{fontWeight: 500, color: Colors.accentYellow()}}>?</span>;

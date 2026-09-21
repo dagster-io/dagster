@@ -7,14 +7,14 @@
 1. **Run ruff formatting/linting from git repository root directory**:
 
    ```bash
-   make ruff
+   just ruff
    ```
 
    MUST do after _every_ edit of a Python file.
 
 2. **Fix any remaining issues**: If ruff reports errors that were not automatically fixed, Claude must manually correct them to the best of its ability
 
-3. **Verify success**: Ensure `make ruff` passes cleanly before considering the task complete.
+3. **Verify success**: Ensure `just ruff` passes cleanly before considering the task complete.
 
 ### Style guidelines
 
@@ -36,12 +36,12 @@ When ruff cannot auto-fix issues, Claude should address:
 
 ```bash
 # After editing any Python files from repository root:
-make ruff
+just ruff
 
 # If errors remain:
 # 1. Read the error messages
 # 2. Make necessary manual corrections
-# 3. Run make ruff again
+# 3. Run just ruff again
 # 4. Repeat until clean
 ```
 

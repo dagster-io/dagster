@@ -120,7 +120,7 @@ class RegisteredCodeLocationOrigin(LegacyNamedTupleMixin, CodeLocationOrigin):
     its own mapping from location name to repository location metadata.
     """
 
-    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    location_name: str
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
@@ -149,8 +149,8 @@ class RegisteredCodeLocationOrigin(LegacyNamedTupleMixin, CodeLocationOrigin):
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
 @record_custom
 class InProcessCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocationOrigin):
-    loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
-    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    loadable_target_origin: LoadableTargetOrigin
+    location_name: str
     container_image: str | None
     entry_point: Sequence[str]
     container_context: Mapping[str, Any] | None
@@ -201,8 +201,8 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, Co
     for these repository locations on startup.
     """
 
-    loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
-    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    loadable_target_origin: LoadableTargetOrigin
+    location_name: str
 
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: str | None = None
@@ -288,7 +288,7 @@ class GrpcServerCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocation
     host: str
     port: int | None
     socket: str | None
-    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    location_name: str
     use_ssl: bool | None
     additional_metadata: Mapping[str, Any] | None
 
@@ -334,7 +334,8 @@ class GrpcServerCodeLocationOrigin(IHaveNew, LegacyNamedTupleMixin, CodeLocation
             # Handle case when this is called against `dagster api grpc` servers that don't have this API method implemented
             if (
                 isinstance(e.__cause__, grpc.RpcError)
-                and cast("grpc.RpcError", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+                and cast("grpc.RpcError", e.__cause__).code()  # ty: ignore[redundant-cast,unresolved-attribute]
+                == grpc.StatusCode.UNIMPLEMENTED
             ):
                 pass
             else:

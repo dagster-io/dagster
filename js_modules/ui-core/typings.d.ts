@@ -2,7 +2,7 @@
 /// <reference types="next" />
 
 declare module '*.json' {
-  const value: any;
+  const value: unknown;
   export default value;
 }
 
@@ -88,6 +88,11 @@ declare module '*.bmp' {
 declare module '*.avif' {
   const content: StaticImageData;
   export default content;
+}
+
+declare module '*.module.css' {
+  const classes: {[key: string]: string};
+  export default classes;
 }
 
 declare module '*.css' {

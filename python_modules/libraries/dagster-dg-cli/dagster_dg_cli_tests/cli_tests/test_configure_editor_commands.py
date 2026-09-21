@@ -25,7 +25,7 @@ def test_utils_configure_editor(editor: str) -> None:
             "dagster_dg_core.utils.editor.get_default_extension_dir",
             return_value=Path(extension_dir),
         ),
-        isolated_example_project_foo_bar(runner, False),
+        isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         out = runner.invoke("utils", "configure-editor", editor)
 
@@ -46,7 +46,7 @@ def test_utils_configure_editor(editor: str) -> None:
 def test_generate_component_schema(output_path: str | None) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, False),
+        isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         out = runner.invoke(
             "utils",

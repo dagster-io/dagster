@@ -1,4 +1,12 @@
-import {Box, ButtonLink, Colors, ConfigTypeSchema, Icon, Tag} from '@dagster-io/ui-components';
+import {
+  Box,
+  ButtonLink,
+  Colors,
+  ConfigTypeSchema,
+  Icon,
+  MiddleTruncate,
+  Tag,
+} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
 import {metadataForAssetNode} from '../AssetMetadata';
@@ -7,6 +15,7 @@ import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
 import {PoolTag} from '../../instance/PoolTag';
+import {buildTagString} from '../../ui/tagAsString';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {UnderlyingOpsOrGraph} from '../UnderlyingOpsOrGraph';
@@ -26,6 +35,7 @@ export const ComputeDetailsSection = ({
   const configType = assetNode?.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
   const pools = assetNode.pools || [];
+  const opTags = assetNode.opTags || [];
 
   return (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -50,7 +60,13 @@ export const ComputeDetailsSection = ({
         ) : null}
       </AttributeAndValue>
 
-      <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>
+      <AttributeAndValue label="Code version">
+        <MiddleTruncate text={assetNode.opVersion} />
+      </AttributeAndValue>
+
+      <AttributeAndValue label="Op tags">
+        {opTags.length > 0 && opTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
+      </AttributeAndValue>
 
       <AttributeAndValue label="Resources">
         {[...assetNode.requiredResources]

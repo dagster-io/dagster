@@ -16,7 +16,7 @@ interface Props {
   right?: ReactNode;
 }
 
-export const NavItemWithLink = ({icon, href, label, isActive}: Props) => {
+export const NavItemWithLink = ({icon, href, label, isActive, right}: Props) => {
   const {isCollapsed} = useContext(NavCollapseContext);
 
   return (
@@ -26,7 +26,7 @@ export const NavItemWithLink = ({icon, href, label, isActive}: Props) => {
         isActive={isActive}
         className={(isActive) => clsx(styles.link, isActive ? styles.active : null)}
       >
-        <NavItemContent icon={icon} label={label} collapsed={isCollapsed} />
+        <NavItemContent icon={icon} label={label} collapsed={isCollapsed} right={right} />
       </NavLink>
     </Tooltip>
   );

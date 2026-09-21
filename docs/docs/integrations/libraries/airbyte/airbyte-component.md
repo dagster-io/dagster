@@ -19,7 +19,7 @@ The [dagster-airbyte](/integrations/libraries/airbyte/dagster-airbyte) library p
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -35,7 +35,7 @@ Finally, add the `dagster-airbyte` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-component/2-add-airbyte.txt" />
 
-## 2. Scaffold an Airbyte component
+## Step 2: Scaffold an Airbyte component
 
 Now that you have a Dagster project, you can scaffold an Airbyte component. You'll need to provide your Airbyte workspace ID and API credentials:
 
@@ -59,7 +59,7 @@ You can check the configuration of your component:
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-component/6-list-defs.txt" />
 </WideContent>
 
-## 3. Configuration for Airbyte OSS or Self-Managed Enterprise
+## Step 3: Configure component for Airbyte OSS or Self-Managed Enterprise
 
 In order to configure your Airbyte component for Airbyte OSS or Self-Managed Enterprise, you will need to provide the [REST API URL](https://docs.airbyte.com/platform/api-documentation#using-the-airbyte-api) and [Configuration API URL](https://docs.airbyte.com/platform/api-documentation#configuration-api-deprecated).
 
@@ -97,7 +97,7 @@ Airbyte OSS and Self-Managed Enterprise support several authentication methods. 
 </TabItem>
 </Tabs>
 
-## 4. Select specific connections
+## Step 4: Select specific connections
 
 You can select specific Airbyte connections to include in your component using the `connection_selector` key. This allows you to filter which connections are represented as assets:
 
@@ -111,7 +111,7 @@ You can select specific Airbyte connections to include in your component using t
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/airbyte-component/11-list-defs.txt" />
 </WideContent>
 
-## 5. Customize Airbyte assets
+## Step 5: Customize Airbyte assets
 
 Properties of the assets emitted by each connection can be customized in the `defs.yaml` file using the `translation` key:
 

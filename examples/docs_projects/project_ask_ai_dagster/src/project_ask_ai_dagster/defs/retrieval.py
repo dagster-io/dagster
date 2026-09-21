@@ -64,7 +64,7 @@ def query(
     results = results[:3]
     # end_query
 
-    if not search_results.matches:  # pyright: ignore[reportPossiblyUnboundVariable]
+    if not search_results.matches:
         return dg.MaterializeResult(
             metadata={
                 "question": config.question,
@@ -76,7 +76,7 @@ def query(
     # Format context from search results
     contexts = []
     sources = []
-    for match in search_results.matches:  # pyright: ignore[reportPossiblyUnboundVariable]
+    for match in search_results.matches:
         contexts.append(match.metadata.get("text", ""))
         sources.append(
             {

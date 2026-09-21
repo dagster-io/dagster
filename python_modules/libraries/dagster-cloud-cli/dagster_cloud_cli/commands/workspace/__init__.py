@@ -3,9 +3,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-import yaml
 from dagster_shared import check
 from dagster_shared.serdes.serdes import deserialize_value
+from dagster_shared.yaml_utils import safe_load_yaml
 from typer import Argument, Option, Typer
 
 from dagster_cloud_cli import gql, ui
@@ -341,7 +341,7 @@ def execute_sync_command(
     client, workspace, location_load_timeout, agent_heartbeat_timeout, url: str | None = None
 ):
     with open(str(workspace), encoding="utf8") as f:
-        config = yaml.load(f.read(), Loader=yaml.SafeLoader)
+        config = safe_load_yaml(f.read())
         processed_config = format_workspace_config(config)
 
     try:

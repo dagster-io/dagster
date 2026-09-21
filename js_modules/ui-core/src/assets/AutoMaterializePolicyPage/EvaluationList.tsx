@@ -5,13 +5,20 @@ import {EvaluationListRow} from './EvaluationListRow';
 import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuery.types';
 
 interface Props {
-  assetKey: AssetKey;
+  assetKey: AssetKey | null;
   isPartitioned: boolean;
   assetCheckName?: string;
+  jobName?: string;
   evaluations: AssetConditionEvaluationRecordFragment[];
 }
 
-export const EvaluationList = ({assetKey, isPartitioned, assetCheckName, evaluations}: Props) => {
+export const EvaluationList = ({
+  assetKey,
+  isPartitioned,
+  assetCheckName,
+  jobName,
+  evaluations,
+}: Props) => {
   return (
     <Table>
       <thead
@@ -37,6 +44,7 @@ export const EvaluationList = ({assetKey, isPartitioned, assetCheckName, evaluat
               evaluation={evaluation}
               assetKey={assetKey}
               assetCheckName={assetCheckName}
+              jobName={jobName}
               isPartitioned={isPartitioned}
             />
           );

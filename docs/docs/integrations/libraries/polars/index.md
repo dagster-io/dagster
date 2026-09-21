@@ -31,9 +31,11 @@ import polars as pl
 from dagster import asset, Definitions
 from dagster_polars import PolarsParquetIOManager
 
+
 @asset(io_manager_key="polars_parquet_io_manager")
 def upstream():
     return DataFrame({"foo": [1, 2, 3]})
+
 
 @asset(io_manager_key="polars_parquet_io_manager")
 def downstream(upstream) -> pl.LazyFrame:
@@ -41,7 +43,10 @@ def downstream(upstream) -> pl.LazyFrame:
     return upstream.lazy()  # LazyFrame will be sinked
 
 
-definitions = Definitions(assets=[upstream, downstream], resources={"polars_parquet_io_manager": PolarsParquetIOManager(...)})
+definitions = Definitions(
+    assets=[upstream, downstream],
+    resources={"polars_parquet_io_manager": PolarsParquetIOManager(...)},
+)
 ```
 
 Lazy pl.LazyFrame can be scanned by annotating the input with pl.LazyFrame, and returning a pl.LazyFrame will sink it:

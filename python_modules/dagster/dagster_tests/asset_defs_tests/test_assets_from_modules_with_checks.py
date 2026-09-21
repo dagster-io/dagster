@@ -12,13 +12,13 @@ def test_load():
     assets = dg.load_assets_from_current_module()
 
     assert len(assets) == 1
-    assert assets[0].key == dg.AssetKey(["my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
-    assert len(assets[0].check_specs) == 1  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
-    assert next(iter(assets[0].check_specs)).asset_key == dg.AssetKey(["my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
+    assert assets[0].key == dg.AssetKey(["my_asset"])  # ty: ignore[unresolved-attribute]
+    assert len(assets[0].check_specs) == 1  # ty: ignore[invalid-argument-type,unresolved-attribute]
+    assert next(iter(assets[0].check_specs)).asset_key == dg.AssetKey(["my_asset"])  # ty: ignore[unresolved-attribute]
 
 
 def test_materialize():
-    result = dg.materialize(dg.load_assets_from_current_module())  # pyright: ignore[reportArgumentType]
+    result = dg.materialize(dg.load_assets_from_current_module())  # ty: ignore[invalid-argument-type]
 
     assert len(result.get_asset_materialization_events()) == 1
     assert result.get_asset_materialization_events()[0].asset_key == dg.AssetKey(["my_asset"])
@@ -30,13 +30,13 @@ def test_prefix_load():
     assets = dg.load_assets_from_current_module(key_prefix="foo")
 
     assert len(assets) == 1
-    assert assets[0].key == dg.AssetKey(["foo", "my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
-    assert len(assets[0].check_specs) == 1  # pyright: ignore[reportArgumentType,reportAttributeAccessIssue]
-    assert next(iter(assets[0].check_specs)).asset_key == dg.AssetKey(["foo", "my_asset"])  # pyright: ignore[reportAttributeAccessIssue]
+    assert assets[0].key == dg.AssetKey(["foo", "my_asset"])  # ty: ignore[unresolved-attribute]
+    assert len(assets[0].check_specs) == 1  # ty: ignore[invalid-argument-type,unresolved-attribute]
+    assert next(iter(assets[0].check_specs)).asset_key == dg.AssetKey(["foo", "my_asset"])  # ty: ignore[unresolved-attribute]
 
 
 def test_prefix_materialize():
-    result = dg.materialize(dg.load_assets_from_current_module(key_prefix="foo"))  # pyright: ignore[reportArgumentType]
+    result = dg.materialize(dg.load_assets_from_current_module(key_prefix="foo"))  # ty: ignore[invalid-argument-type]
 
     assert len(result.get_asset_materialization_events()) == 1
     assert result.get_asset_materialization_events()[0].asset_key == dg.AssetKey(

@@ -64,7 +64,7 @@ def core_defs():
             customer_360_view,
             marketing_attribution,
         ],
-        ops=[process_kafka_events],
+        ops=[process_kafka_events],  # ty: ignore[unknown-argument]
         sensors=[
             kafka_sensor_erp,
             kafka_sensor_crm,

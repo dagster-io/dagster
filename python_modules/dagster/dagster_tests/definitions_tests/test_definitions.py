@@ -23,7 +23,7 @@ def test_op_def():
 
     @dg.op(
         ins={"input_one": dg.In(dg.String)},
-        out=dg.Out(dg.Any),  # pyright: ignore[reportArgumentType]
+        out=dg.Out(dg.Any),
         config_schema={"another_field": dg.Int},
     )
     def op_one(_context, input_one):
@@ -111,7 +111,7 @@ def test_job_types():
 
     @dg.op(
         ins={"input_one": dg.In(dg.String)},
-        out=dg.Out(dg.Any),  # pyright: ignore[reportArgumentType]
+        out=dg.Out(dg.Any),
         config_schema={"another_field": dg.Int},
     )
     def op_one(_context, input_one):

@@ -1,14 +1,35 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {useAssetGraphSupplementaryData} from '@shared/asset-graph/useAssetGraphSupplementaryData';
+import {AssetInstigatorsQuery} from '@shared/asset-graph/types/useAssetGraphSupplementaryData.types';
+import {
+  buildAutomationTypeSupplementaryData,
+  useAssetGraphSupplementaryData,
+} from '@shared/asset-graph/useAssetGraphSupplementaryData';
 import {renderHook, waitFor} from '@testing-library/react';
 import React from 'react';
 
 import {useAssetsHealthData} from '../../asset-data/AssetHealthDataProvider';
-import {parseExpression} from '../../asset-selection/AssetSelectionSupplementaryDataVisitor';
-import {useAllAssets} from '../../assets/useAllAssets';
-import {buildAsset, buildAssetHealth, buildAssetKey} from '../../graphql/builders';
-import {AssetHealthStatus} from '../../graphql/types';
-import {WorkspaceAssetFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
+import {
+  Filter,
+  parseExpression,
+} from '../../asset-selection/AssetSelectionSupplementaryDataVisitor';
+import {getSupplementaryDataKey} from '../../asset-selection/util';
+import {WorkspaceAssetNode, useAllAssets} from '../../assets/useAllAssets';
+import {
+  buildAsset,
+  buildAssetHealth,
+  buildAssetKey,
+  buildAssetNode,
+  buildAssetSelection,
+  buildInstigationState,
+  buildQuery,
+  buildRepository,
+  buildRepositoryConnection,
+  buildRepositoryLocation,
+  buildSchedule,
+  buildSensor,
+  buildTarget,
+} from '../../graphql/builders';
+import {AssetHealthStatus, InstigationStatus, SensorType} from '../../graphql/types';
 
 // Mock the dependencies
 jest.mock('../Utils', () => ({
@@ -46,21 +67,21 @@ describe('useAssetGraphSupplementaryData', () => {
   const mockAssetKey1 = buildAssetKey({path: ['asset1']});
   const mockAssetKey2 = buildAssetKey({path: ['asset2']});
 
-  const mockNodes: WorkspaceAssetFragment[] = [
+  const mockNodes: WorkspaceAssetNode[] = [
     {
       assetKey: mockAssetKey1,
-      // Add other required properties for WorkspaceAssetFragment
-    } as WorkspaceAssetFragment,
+      // Add other required properties for WorkspaceAssetNode
+    } as WorkspaceAssetNode,
     {
       assetKey: mockAssetKey2,
-    } as WorkspaceAssetFragment,
+    } as WorkspaceAssetNode,
   ];
 
   beforeEach(() => {
     jest.clearAllMocks();
 
     // Default mock implementations
-    mockParseExpression.mockReturnValue([{field: 'status', value: 'HEALTHY'} as any]);
+    mockParseExpression.mockReturnValue([{field: 'status', value: 'HEALTHY'}]);
     mockUseAllAssets.mockReturnValue({
       assetsByAssetKey: new Map([
         [
@@ -85,15 +106,15 @@ describe('useAssetGraphSupplementaryData', () => {
       // Add other required properties
       assets: [],
       assetGraphData: null,
-    } as any);
+    } as unknown as ReturnType<typeof useAllAssets>);
   });
 
   describe('status filtering detection', () => {
     it('should detect when status filtering is needed', () => {
-      mockParseExpression.mockReturnValue([{field: 'status', value: 'HEALTHY'} as any]);
+      mockParseExpression.mockReturnValue([{field: 'status', value: 'HEALTHY'}]);
       mockUseAssetsHealthData.mockReturnValue({
         liveDataByNode: {},
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       renderHook(() => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes), {
         wrapper: TestWrapper,
@@ -108,10 +129,10 @@ describe('useAssetGraphSupplementaryData', () => {
     });
 
     it('should skip health data when status filtering is not needed', () => {
-      mockParseExpression.mockReturnValue([{field: 'key', value: 'asset1'} as any]);
+      mockParseExpression.mockReturnValue([{field: 'key', value: 'asset1'} as unknown as Filter]);
       mockUseAssetsHealthData.mockReturnValue({
         liveDataByNode: {},
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       renderHook(() => useAssetGraphSupplementaryData('key:asset1', mockNodes), {
         wrapper: TestWrapper,
@@ -131,7 +152,7 @@ describe('useAssetGraphSupplementaryData', () => {
       });
       mockUseAssetsHealthData.mockReturnValue({
         liveDataByNode: {},
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       renderHook(() => useAssetGraphSupplementaryData('invalid:expression', mockNodes), {
         wrapper: TestWrapper,
@@ -166,7 +187,7 @@ describe('useAssetGraphSupplementaryData', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes.slice(0, 1)),
@@ -210,7 +231,7 @@ describe('useAssetGraphSupplementaryData', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:UNKNOWN', mockNodes.slice(0, 1)),
@@ -253,7 +274,7 @@ describe('useAssetGraphSupplementaryData', () => {
             assetHealth: {assetHealth: AssetHealthStatus.HEALTHY},
           },
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes),
@@ -276,7 +297,7 @@ describe('useAssetGraphSupplementaryData', () => {
             assetHealth: {assetHealth: AssetHealthStatus.DEGRADED},
           },
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const {result} = renderHook(
         () => useAssetGraphSupplementaryData('status:HEALTHY', mockNodes),
@@ -330,7 +351,7 @@ describe('getMaterializationStatus', () => {
         ]),
         assets: [],
         assetGraphData: null,
-      } as any);
+      } as unknown as ReturnType<typeof useAllAssets>);
 
       const mockHealthData = buildAsset({
         key: mockAssetKey1,
@@ -350,12 +371,12 @@ describe('getMaterializationStatus', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const mockNodes = [
         {
           assetKey: mockAssetKey1,
-        } as WorkspaceAssetFragment,
+        } as WorkspaceAssetNode,
       ];
 
       const {result} = renderHook(
@@ -422,7 +443,7 @@ describe('getFreshnessStatus', () => {
         ]),
         assets: [],
         assetGraphData: null,
-      } as any);
+      } as unknown as ReturnType<typeof useAllAssets>);
 
       const mockHealthData = buildAsset({
         key: mockAssetKey1,
@@ -442,12 +463,12 @@ describe('getFreshnessStatus', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const mockNodes = [
         {
           assetKey: mockAssetKey1,
-        } as WorkspaceAssetFragment,
+        } as WorkspaceAssetNode,
       ];
 
       const {result} = renderHook(
@@ -464,6 +485,324 @@ describe('getFreshnessStatus', () => {
       expect(result.current.data?.[expectedKey]).toBeDefined();
       expect(result.current.data?.[expectedKey]).toContain(mockAssetKey1);
     }
+  });
+});
+
+describe('buildAutomationTypeSupplementaryData', () => {
+  type NodeOverrides = {
+    path: string[];
+    repoId: string;
+    jobNames?: string[];
+  };
+
+  function makeNode({path, repoId, jobNames = []}: NodeOverrides): WorkspaceAssetNode {
+    return buildAssetNode({
+      assetKey: buildAssetKey({path}),
+      jobNames,
+      repository: buildRepository({
+        id: repoId,
+        name: repoId,
+        location: buildRepositoryLocation({id: `${repoId}-location`, name: repoId}),
+      }),
+    }) as unknown as WorkspaceAssetNode;
+  }
+
+  type SensorOverrides = {
+    name: string;
+    sensorType?: SensorType;
+    assetKeys?: Array<{path: string[]}>;
+    targets?: string[];
+  };
+
+  function makeSensor({
+    name,
+    sensorType = SensorType.STANDARD,
+    assetKeys,
+    targets,
+  }: SensorOverrides) {
+    return buildSensor({
+      id: name,
+      name,
+      sensorType,
+      assetSelection: assetKeys
+        ? buildAssetSelection({
+            assetKeys: assetKeys.map((k) => buildAssetKey({path: k.path})),
+          })
+        : null,
+      targets: targets ? targets.map((pipelineName) => buildTarget({pipelineName})) : null,
+    });
+  }
+
+  type ScheduleOverrides = {
+    name: string;
+    pipelineName: string;
+    assetKeys?: Array<{path: string[]}>;
+    status?: InstigationStatus;
+  };
+
+  function makeSchedule({
+    name,
+    pipelineName,
+    assetKeys,
+    status = InstigationStatus.RUNNING,
+  }: ScheduleOverrides) {
+    return buildSchedule({
+      id: name,
+      name,
+      pipelineName,
+      assetSelection: assetKeys
+        ? buildAssetSelection({
+            assetKeys: assetKeys.map((k) => buildAssetKey({path: k.path})),
+          })
+        : null,
+      scheduleState: buildInstigationState({id: `${name}-state`, status}),
+    });
+  }
+
+  function makeQuery(
+    repos: Array<{
+      id: string;
+      sensors?: ReturnType<typeof makeSensor>[];
+      schedules?: ReturnType<typeof makeSchedule>[];
+    }>,
+  ): AssetInstigatorsQuery {
+    return buildQuery({
+      repositoriesOrError: buildRepositoryConnection({
+        nodes: repos.map((r) =>
+          buildRepository({
+            id: r.id,
+            sensors: r.sensors ?? [],
+            schedules: r.schedules ?? [],
+          }),
+        ),
+      }),
+    }) as unknown as AssetInstigatorsQuery;
+  }
+
+  const key = (field: string, value: string) => getSupplementaryDataKey({field, value});
+
+  it('returns automation_type:none for assets with no matching instigators', () => {
+    const node = makeNode({path: ['lonely'], repoId: 'repo-a'});
+    const result = buildAutomationTypeSupplementaryData(makeQuery([{id: 'repo-a'}]), [node]);
+
+    expect(result[key('automation_type', 'none')]).toEqual([node.assetKey]);
+    expect(result[key('automation_type', 'any')]).toBeUndefined();
+  });
+
+  it('matches assets via assetSelection for sensors and schedules', () => {
+    const nodeA = makeNode({path: ['a'], repoId: 'repo-a'});
+    const nodeB = makeNode({path: ['b'], repoId: 'repo-a'});
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        sensors: [makeSensor({name: 'sensor1', assetKeys: [{path: ['a']}]})],
+        schedules: [
+          makeSchedule({name: 'schedule1', pipelineName: 'unused', assetKeys: [{path: ['b']}]}),
+        ],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [nodeA, nodeB]);
+
+    expect(result[key('sensor', 'sensor1')]).toEqual([nodeA.assetKey]);
+    expect(result[key('schedule', 'schedule1')]).toEqual([nodeB.assetKey]);
+    expect(result[key('automation_type', 'sensor')]).toEqual([nodeA.assetKey]);
+    expect(result[key('automation_type', 'schedule')]).toEqual([nodeB.assetKey]);
+    expect(result[key('automation_type', 'any')]).toEqual([nodeA.assetKey, nodeB.assetKey]);
+  });
+
+  it('resolves targeted jobs back to assets within the same repository', () => {
+    const nodeA = makeNode({path: ['a'], repoId: 'repo-a', jobNames: ['my_job']});
+    const nodeB = makeNode({path: ['b'], repoId: 'repo-a', jobNames: ['my_job']});
+    const nodeC = makeNode({path: ['c'], repoId: 'repo-a', jobNames: ['other_job']});
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        sensors: [makeSensor({name: 'sensor1', targets: ['my_job']})],
+        schedules: [makeSchedule({name: 'schedule1', pipelineName: 'other_job'})],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [nodeA, nodeB, nodeC]);
+
+    expect(result[key('sensor', 'sensor1')]).toEqual([nodeA.assetKey, nodeB.assetKey]);
+    expect(result[key('schedule', 'schedule1')]).toEqual([nodeC.assetKey]);
+  });
+
+  it('disambiguates same-named jobs across repositories', () => {
+    // Both repos have a job called "shared_job" but the schedule in repo-a
+    // must only pick up repo-a's asset.
+    const assetInRepoA = makeNode({
+      path: ['in_a'],
+      repoId: 'repo-a',
+      jobNames: ['shared_job'],
+    });
+    const assetInRepoB = makeNode({
+      path: ['in_b'],
+      repoId: 'repo-b',
+      jobNames: ['shared_job'],
+    });
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        schedules: [makeSchedule({name: 'schedule_a', pipelineName: 'shared_job'})],
+      },
+      {
+        id: 'repo-b',
+        sensors: [makeSensor({name: 'sensor_b', targets: ['shared_job']})],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [assetInRepoA, assetInRepoB]);
+
+    expect(result[key('schedule', 'schedule_a')]).toEqual([assetInRepoA.assetKey]);
+    expect(result[key('sensor', 'sensor_b')]).toEqual([assetInRepoB.assetKey]);
+  });
+
+  it('prefers assetSelection over targets/pipelineName when both are present', () => {
+    // sensor1 sets assetSelection=[a] AND targets=[my_job]. my_job also
+    // contains asset b. Under the precedence rule, targets is ignored when
+    // assetSelection is set — Dagster commonly populates targets with a
+    // synthetic root asset job whose scope shouldn't drive automation_type.
+    // schedule1 behaves the same way for pipelineName vs. assetSelection.
+    const nodeA = makeNode({path: ['a'], repoId: 'repo-a', jobNames: ['my_job']});
+    const nodeB = makeNode({path: ['b'], repoId: 'repo-a', jobNames: ['my_job']});
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        sensors: [makeSensor({name: 'sensor1', assetKeys: [{path: ['a']}], targets: ['my_job']})],
+        schedules: [
+          makeSchedule({
+            name: 'schedule1',
+            pipelineName: 'my_job',
+            assetKeys: [{path: ['a']}],
+          }),
+        ],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [nodeA, nodeB]);
+
+    expect(result[key('sensor', 'sensor1')]).toEqual([nodeA.assetKey]);
+    expect(result[key('schedule', 'schedule1')]).toEqual([nodeA.assetKey]);
+    // b is inside my_job but not in either assetSelection, so it should
+    // stay in the automation_type:none bucket.
+    expect(result[key('automation_type', 'none')]).toEqual([nodeB.assetKey]);
+  });
+
+  it('flags assets as disabled when reached by a stopped schedule', () => {
+    const nodeA = makeNode({path: ['a'], repoId: 'repo-a', jobNames: ['my_job']});
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        schedules: [
+          makeSchedule({
+            name: 'stopped_schedule',
+            pipelineName: 'my_job',
+            status: InstigationStatus.STOPPED,
+          }),
+        ],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [nodeA]);
+
+    expect(result[key('automation_type', 'disabled')]).toEqual([nodeA.assetKey]);
+    expect(result[key('automation_type', 'any')]).toEqual([nodeA.assetKey]);
+  });
+
+  it('maps sensor types to finer-grained automation_type buckets', () => {
+    const nodeA = makeNode({path: ['a'], repoId: 'repo-a'});
+    const nodeB = makeNode({path: ['b'], repoId: 'repo-a'});
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        sensors: [
+          makeSensor({
+            name: 'standard_sensor',
+            sensorType: SensorType.STANDARD,
+            assetKeys: [{path: ['a']}],
+          }),
+          makeSensor({
+            name: 'automation_sensor',
+            sensorType: SensorType.AUTOMATION,
+            assetKeys: [{path: ['b']}],
+          }),
+        ],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [nodeA, nodeB]);
+
+    expect(result[key('automation_type', 'sensor/standard')]).toEqual([nodeA.assetKey]);
+    expect(result[key('automation_type', 'sensor/automation_condition')]).toEqual([nodeB.assetKey]);
+  });
+
+  it('covers the full picture across sensors, schedules, jobs, and repos', () => {
+    const a1 = makeNode({path: ['a1'], repoId: 'repo-a', jobNames: ['job1']});
+    const a2 = makeNode({path: ['a2'], repoId: 'repo-a', jobNames: ['job1']});
+    const a3 = makeNode({path: ['a3'], repoId: 'repo-a', jobNames: ['job2']});
+    const a4 = makeNode({path: ['a4'], repoId: 'repo-a'});
+    const b1 = makeNode({path: ['b1'], repoId: 'repo-b', jobNames: ['job1']});
+
+    const query = makeQuery([
+      {
+        id: 'repo-a',
+        sensors: [
+          // Selection-based sensor.
+          makeSensor({
+            name: 'selection_sensor',
+            sensorType: SensorType.ASSET,
+            assetKeys: [{path: ['a1']}],
+          }),
+          // Target-based sensor with no assetSelection.
+          makeSensor({
+            name: 'target_sensor',
+            sensorType: SensorType.STANDARD,
+            targets: ['job2'],
+          }),
+        ],
+        schedules: [
+          // Target-based, stopped.
+          makeSchedule({
+            name: 'stopped_schedule',
+            pipelineName: 'job1',
+            status: InstigationStatus.STOPPED,
+          }),
+        ],
+      },
+      {
+        id: 'repo-b',
+        schedules: [makeSchedule({name: 'schedule_b', pipelineName: 'job1'})],
+      },
+    ]);
+
+    const result = buildAutomationTypeSupplementaryData(query, [a1, a2, a3, a4, b1]);
+
+    expect(result[key('automation_type', 'none')]).toEqual([a4.assetKey]);
+    expect(result[key('automation_type', 'any')]).toEqual([
+      a1.assetKey,
+      a2.assetKey,
+      a3.assetKey,
+      b1.assetKey,
+    ]);
+    // stopped_schedule covers a1 and a2 via pipelineName='job1'.
+    expect(result[key('automation_type', 'disabled')]).toEqual([a1.assetKey, a2.assetKey]);
+    // selection_sensor → a1, target_sensor → a3.
+    expect(result[key('automation_type', 'sensor')]).toEqual([a1.assetKey, a3.assetKey]);
+    expect(result[key('automation_type', 'sensor/asset')]).toEqual([a1.assetKey]);
+    expect(result[key('automation_type', 'sensor/standard')]).toEqual([a3.assetKey]);
+    // stopped_schedule (a1, a2) + schedule_b (b1).
+    expect(result[key('automation_type', 'schedule')]).toEqual([
+      a1.assetKey,
+      a2.assetKey,
+      b1.assetKey,
+    ]);
+    expect(result[key('sensor', 'selection_sensor')]).toEqual([a1.assetKey]);
+    expect(result[key('sensor', 'target_sensor')]).toEqual([a3.assetKey]);
+    expect(result[key('schedule', 'stopped_schedule')]).toEqual([a1.assetKey, a2.assetKey]);
+    // Repo disambiguation: schedule_b only picks up b1, not a1/a2.
+    expect(result[key('schedule', 'schedule_b')]).toEqual([b1.assetKey]);
   });
 });
 
@@ -514,7 +853,7 @@ describe('getCheckStatus', () => {
         ]),
         assets: [],
         assetGraphData: null,
-      } as any);
+      } as unknown as ReturnType<typeof useAllAssets>);
 
       const mockHealthData = buildAsset({
         key: mockAssetKey1,
@@ -534,12 +873,12 @@ describe('getCheckStatus', () => {
         liveDataByNode: {
           [JSON.stringify(mockAssetKey1.path)]: mockHealthData,
         },
-      } as any);
+      } as unknown as ReturnType<typeof useAssetsHealthData>);
 
       const mockNodes = [
         {
           assetKey: mockAssetKey1,
-        } as WorkspaceAssetFragment,
+        } as WorkspaceAssetNode,
       ];
 
       const {result} = renderHook(

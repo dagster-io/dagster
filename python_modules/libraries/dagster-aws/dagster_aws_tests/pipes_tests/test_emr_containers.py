@@ -4,7 +4,6 @@ from uuid import uuid4
 
 import boto3
 import pytest
-import pytest_cases
 from dagster import asset, materialize, open_pipes_session
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
@@ -21,15 +20,14 @@ def emr_containers_client(moto_server) -> "EMRContainersClient":
     return boto3.client("emr-containers", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
 
 
-@pytest_cases.fixture
-@pytest_cases.parametrize(pipes_params_bootstrap_method=["args", "env"])
+@pytest.fixture(params=["args", "env"])
 def pipes_emr_containers_client(
-    emr_containers_client, s3_client, pipes_params_bootstrap_method
+    request, emr_containers_client, s3_client
 ) -> PipesEMRContainersClient:
     return PipesEMRContainersClient(
         client=emr_containers_client,
         message_reader=PipesS3MessageReader(bucket=_S3_TEST_BUCKET, client=s3_client),
-        pipes_params_bootstrap_method=pipes_params_bootstrap_method,
+        pipes_params_bootstrap_method=request.param,
     )
 
 
@@ -62,29 +60,29 @@ def manual_asset(
 
         pipes_emr_containers_client._start(context, params)  # noqa: SLF001
 
-        pipes_emr_containers_client._client.start_job_run.assert_called_once()  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
+        pipes_emr_containers_client._client.start_job_run.assert_called_once()  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         assert (
-            pipes_emr_containers_client._client.start_job_run.call_args.kwargs["virtualClusterId"]  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
+            pipes_emr_containers_client._client.start_job_run.call_args.kwargs["virtualClusterId"]  # noqa: SLF001  # ty: ignore[unresolved-attribute]
             == "test"
         )
 
         if pipes_emr_containers_client.pipes_params_bootstrap_method == "args":
             assert (
                 "--dagster-pipes-context"
-                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
+                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                     "sparkSubmitJobDriver"
                 ]["sparkSubmitParameters"]
             )
 
             assert (
                 "--dagster-pipes-messages"
-                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
+                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                     "sparkSubmitJobDriver"
                 ]["sparkSubmitParameters"]
             )
 
         elif pipes_emr_containers_client.pipes_params_bootstrap_method == "env":
-            configurations = pipes_emr_containers_client._client.start_job_run.call_args.kwargs[  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
+            configurations = pipes_emr_containers_client._client.start_job_run.call_args.kwargs[  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                 "configurationOverrides"
             ]["applicationConfiguration"]
 

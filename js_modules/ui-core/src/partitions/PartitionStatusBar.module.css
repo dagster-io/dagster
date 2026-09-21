@@ -81,3 +81,9 @@
   border-radius: 4px;
   top: 0;
 }
+
+.footer {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  min-height: 17px;
+}

@@ -1,0 +1,12 @@
+.imageNameBox {
+  width: 100%;
+  color: var(--color-text-light);
+  font-size: 12px;
+
+  .bp5-popover-target {
+    display: inline;
+    overflow: hidden;
+    position: relative;
+    top: 1px;
+  }
+}

@@ -1,10 +1,11 @@
 import os
 import subprocess
+import sys
 import time
 from collections.abc import Generator, Mapping, Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import pytest
 from dagster import AssetKey, DagsterInstance
@@ -13,14 +14,20 @@ from dagster._core.test_utils import environ
 from dagster._time import get_current_datetime
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance
-from dagster_airlift.test.shared_fixtures import stand_up_airflow
+from dagster_airlift.test.shared_fixtures import stand_up_airflow, stand_up_dagster
 
 
 def makefile_dir() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-@pytest.fixture(name="local_env")
+# All fixtures are module-scoped so that Airflow and Dagster processes are started once per test
+# file rather than once per test. This saves ~50-90s of startup time per test. It is safe because
+# tests within a module trigger different DAGs and check different asset keys, so there is no
+# cross-test state interference.
+
+
+@pytest.fixture(name="local_env", scope="module")
 def local_env_fixture() -> Generator[None, None, None]:
     subprocess.run(["make", "setup_local_env"], cwd=makefile_dir(), check=True)
     with environ(
@@ -38,27 +45,27 @@ def local_env_fixture() -> Generator[None, None, None]:
     )
 
 
-@pytest.fixture(name="dags_dir")
+@pytest.fixture(name="dags_dir", scope="module")
 def dags_dir_fixture() -> Path:
     return makefile_dir() / "kitchen_sink" / "airflow_dags"
 
 
-@pytest.fixture(name="airflow_home")
+@pytest.fixture(name="airflow_home", scope="module")
 def airflow_home_fixture(local_env: None) -> Path:
     return Path(os.environ["AIRFLOW_HOME"])
 
 
-@pytest.fixture(name="dagster_home")
+@pytest.fixture(name="dagster_home", scope="module")
 def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
-@pytest.fixture(name="expected_num_dags")
+@pytest.fixture(name="expected_num_dags", scope="module")
 def expected_num_dags_fixture() -> int:
     return 1
 
 
-@pytest.fixture(name="airflow_instance")
+@pytest.fixture(name="airflow_instance", scope="module")
 def airflow_instance_fixture(
     local_env: None, expected_num_dags: int
 ) -> Generator[subprocess.Popen, None, None]:
@@ -71,15 +78,26 @@ def airflow_instance_fixture(
         yield process
 
 
+@pytest.fixture(name="dagster_dev", scope="module")
+def dagster_dev_fixture(
+    airflow_instance: None, dagster_home: str, dagster_dev_cmd: list[str]
+) -> Generator[Any, None, None]:
+    if sys.version_info >= (3, 12):
+        time.sleep(20)
+    with stand_up_dagster(dagster_dev_cmd) as process:
+        yield process
+    time.sleep(5)
+
+
 def poll_for_airflow_run_existence_and_completion(
     af_instance: AirflowInstance, dag_id: str, af_run_id: str, duration: int
 ) -> None:
     start_time = time.time()
     while time.time() - start_time < duration:
+        elapsed = time.time() - start_time
+        remaining = max(1, int(duration - elapsed))
         try:
-            af_instance.wait_for_run_completion(
-                dag_id=dag_id, run_id=af_run_id, timeout=int(time.time() - start_time)
-            )
+            af_instance.wait_for_run_completion(dag_id=dag_id, run_id=af_run_id, timeout=remaining)
             return
         # Run may not exist yet
         except Exception:
@@ -148,7 +166,7 @@ def poll_for_materialization(
     asset_key: AssetKey,
 ) -> EventLogEntry:
     start_time = get_current_datetime()
-    while get_current_datetime() - start_time < timedelta(seconds=30):
+    while get_current_datetime() - start_time < timedelta(seconds=60):
         asset_materialization = dagster_instance.get_latest_materialization_event(
             asset_key=asset_key
         )

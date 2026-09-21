@@ -35,7 +35,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        client: "boto3.client | None" = None,  # pyright: ignore (reportGeneralTypeIssues)
+        client: "boto3.client | None" = None,  # ty: ignore[invalid-type-form]
         context_injector: PipesContextInjector | None = None,
         message_reader: PipesMessageReader | None = None,
     ):
@@ -48,7 +48,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         function_name: str,

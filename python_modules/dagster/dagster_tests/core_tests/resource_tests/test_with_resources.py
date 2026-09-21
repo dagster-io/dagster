@@ -114,7 +114,7 @@ def test_source_assets_no_key_provided():
 
     # When an io manager definition is provided using the generic key, that
     # generic key is used as the io manager key for the source asset.
-    assert transformed_source.get_io_manager_key() == "io_manager"  # pyright: ignore[reportAttributeAccessIssue]
+    assert transformed_source.get_io_manager_key() == "io_manager"  # ty: ignore[unresolved-attribute]
 
     result = dg.materialize(
         [transformed_derived, transformed_source], selection=[transformed_derived]
@@ -149,7 +149,7 @@ def test_source_assets_key_provided():
 
     # When an io manager definition is provided using the generic key, that
     # generic key is used as the io manager key for the source asset.
-    assert transformed_source.get_io_manager_key() == "the_manager"  # pyright: ignore[reportAttributeAccessIssue]
+    assert transformed_source.get_io_manager_key() == "the_manager"  # ty: ignore[unresolved-attribute]
 
     result = dg.materialize(
         [transformed_derived, transformed_source], selection=[transformed_derived]
@@ -182,7 +182,7 @@ def test_source_assets_manager_def_provided():
 
     # When an io manager definition has already been provided, it will use an
     # override key.
-    assert transformed_source.io_manager_def == the_manager  # pyright: ignore[reportAttributeAccessIssue]
+    assert transformed_source.io_manager_def == the_manager  # ty: ignore[unresolved-attribute]
 
     result = dg.materialize(
         [transformed_derived, transformed_source], selection=[transformed_derived]
@@ -442,7 +442,7 @@ def test_bad_config_provided():
 
 
 def test_overlapping_io_manager_asset():
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_io_manager():
         pass
 
@@ -502,7 +502,7 @@ def test_overlapping_resources_asset():
 
 
 def test_overlapping_io_manager_source_asset():
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_io_manager():
         pass
 
@@ -527,7 +527,7 @@ def test_overlapping_io_manager_source_asset():
 def test_overlapping_resources_source_asset():
     foo_resource = ResourceDefinition.hardcoded_resource("blah")
 
-    @dg.io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
+    @dg.io_manager(required_resource_keys={"foo"})
     def the_io_manager():
         pass
 
@@ -572,7 +572,7 @@ def test_with_resources_no_exp_warnings():
     def blah():
         pass
 
-    @dg.io_manager  # pyright: ignore[reportCallIssue,reportArgumentType]
+    @dg.io_manager
     def the_manager():
         pass
 

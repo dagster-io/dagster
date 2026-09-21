@@ -1,0 +1,9 @@
+.partitionBox {
+  display: flex;
+  flex-direction: row;
+  gap: 8;
+  align-items: center;
+  > *:first-child {
+    flex-grow: 1;
+  }
+}

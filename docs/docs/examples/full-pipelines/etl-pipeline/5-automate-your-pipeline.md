@@ -6,7 +6,7 @@ sidebar_position: 60
 
 There are several ways to [automate assets ](/guides/automate) in Dagster. Dagster supports both scheduled and event-driven pipelines. Here, we will add a schedule directly to one of our assets and make another of our assets reactive to any upstream changes.
 
-## 1. Scheduled assets
+## Step 1: Scheduled assets
 
 Cron-based schedules are common in data orchestration. They use time-based expressions to automatically trigger tasks at specified intervals, making them ideal for ETL pipelines that need to run consistently, such as hourly, daily, or monthly, to process and update data on a regular cadence. For our pipeline, assume that updated CSVs are uploaded at a specific time every day.
 
@@ -20,7 +20,7 @@ While it is possible to define a standalone [schedule](/guides/automate/schedule
   title="src/etl_tutorial/defs/assets.py"
 />
 
-## 2. Other asset automation
+## Step 2: Other asset automation
 
 Now let's look at `monthly_sales_performance`. This asset should be executed once a month, but setting up an independent monthly schedule for this asset isn't exactly what we want -- if we do it naively, then this asset will execute exactly on the month boundary before the last week's data has had a chance to complete. We could delay the monthly schedule by a couple of hours to give the upstream assets a chance to finish, but what if the upstream computation fails or takes too long to complete?
 
@@ -36,7 +36,7 @@ We already set this in the `monthly_sales_performance` by setting the `automatio
 
 This will trigger the asset automatically when its upstream dependencies have completed.
 
-## 3. Enabling automation
+## Step 3: Enable automation
 
 Run `dg dev` (if it is not already running) and go to the Dagster UI [http://127.0.0.1:3000](http://127.0.0.1:3000). We can now enable the automation condition:
 

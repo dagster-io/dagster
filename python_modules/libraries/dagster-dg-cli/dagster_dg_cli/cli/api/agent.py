@@ -20,20 +20,29 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.agent", cls="DgApiAgentList")
+@dg_response_schema(module="dagster_rest_resources.schemas.agent", cls="DgApiAgentList")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
 def list_agents_command(
     ctx: click.Context, output_json: bool, organization: str, api_token: str, view_graphql: bool
 ) -> None:
-    """List all agents in the organization."""
+    """List all agents in the organization.
+
+    Example::
+
+        $ dg api agent list
+        LABEL              ID                                    STATUS   LAST HEARTBEAT
+        analytics-prod-1   c0b1ab17-1d2e-4f5b-9c8a-3e8d2c5f7a91  RUNNING  2026-05-06 18:42:11 UTC
+        ingest-prod        7e2c44b9-8f1a-4d6e-b0c3-2a5f9d4e6b18  RUNNING  2026-05-06 18:42:08 UTC
+        Agent ad9c7f2e     ad9c7f2e-3b15-4a87-9d61-5c8b3e2f1a04  STOPPED  2026-05-05 22:17:35 UTC
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.agent import DgApiAgentApi
+    from dagster_rest_resources.api.agent import DgApiAgentApi
 
     api = DgApiAgentApi(client)
 
@@ -51,7 +60,7 @@ def list_agents_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.agent", cls="DgApiAgent")
+@dg_response_schema(module="dagster_rest_resources.schemas.agent", cls="DgApiAgent")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -63,13 +72,26 @@ def get_agent_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get detailed information about a specific agent."""
+    """Get detailed information about a specific agent.
+
+    Example::
+
+        $ dg api agent get c0b1ab17-1d2e-4f5b-9c8a-3e8d2c5f7a91
+        Label:          analytics-prod-1
+        ID:             c0b1ab17-1d2e-4f5b-9c8a-3e8d2c5f7a91
+        Status:         RUNNING
+        Last Heartbeat: 2026-05-06 18:42:11 UTC
+
+        Metadata:
+          version: 1.12.0
+          dagster_cloud_version: 1.12.0
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.agent import DgApiAgentApi
+    from dagster_rest_resources.api.agent import DgApiAgentApi
 
     api = DgApiAgentApi(client)
 

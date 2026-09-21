@@ -1,4 +1,4 @@
-import {Box, PageHeader, Subtitle1, Tag} from '@dagster-io/ui-components';
+import {Box, Heading, PageHeader, Tag} from '@dagster-io/ui-components';
 import {buildJobTabs} from '@shared/pipelines/buildJobTabs';
 import {useMemo} from 'react';
 import {Link, useRouteMatch} from 'react-router-dom';
@@ -56,17 +56,23 @@ export const PipelineNav = (props: Props) => {
 
   const {hasLaunchExecutionPermission} = useJobPermissions(pipelineSelector, repoAddress.location);
 
-  const tabs = buildJobTabs({hasLaunchpad, hasPartitionSet, hasLaunchExecutionPermission});
+  const hasAutomationCondition = !!repoJobEntry?.automationCondition;
+  const tabs = buildJobTabs({
+    hasLaunchpad,
+    hasPartitionSet,
+    hasLaunchExecutionPermission,
+    hasAutomationCondition,
+  });
 
   return (
     <>
       <PageHeader
         title={
-          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/jobs">Jobs</Link>
             <span>/</span>
             {pipelineName}
-          </Subtitle1>
+          </Heading>
         }
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>

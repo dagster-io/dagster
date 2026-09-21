@@ -1,7 +1,9 @@
-import daft as da
+import daft as da  # ty: ignore[unresolved-import]
 import pandas as pd
-from dagster_iceberg.config import IcebergCatalogConfig
-from dagster_iceberg.io_manager.daft import DaftIcebergIOManager
+from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
+from dagster_iceberg.io_manager.daft import (
+    DaftIcebergIOManager,  # ty: ignore[unresolved-import]
+)
 
 from dagster import Definitions, asset
 

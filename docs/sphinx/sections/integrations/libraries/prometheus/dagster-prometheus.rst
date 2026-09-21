@@ -1,5 +1,6 @@
+##########################
 dagster-prometheus library
---------------------------
+##########################
 
 .. currentmodule:: dagster_prometheus
 
@@ -8,9 +9,9 @@ dagster-prometheus library
 
 .. autoclass:: dagster_prometheus.resources.PrometheusClient
 
-
+******
 Legacy
-=======
+******
 
 .. autoconfigurable:: prometheus_resource
   :annotation: ResourceDefinition

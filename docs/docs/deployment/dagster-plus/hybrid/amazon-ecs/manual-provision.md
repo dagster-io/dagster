@@ -97,24 +97,6 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 
   You can also include any additional permissions required to run your ops, such as permissions to interact with an S3 bucket.
 
-**Note**: Both roles must include a trust relationship that allows ECS to use them:
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ecs-tasks.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-```
-
 ## Step 3: Create an ECS service
 
 1. Create an ECS service to run the agent. You can do this [in the Amazon ECS console](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/create-service-console-v2.html) or [via the CreateService API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html).
@@ -130,8 +112,4 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
 
 ## Next steps
 
-Now that you've got your agent running, what's next?
-
-- **If you're getting Dagster+ set up**, the next step is to [add a code location](/guides/build/projects) using the agent.
-
-- **If you're ready to load your Dagster code**, refer to the [Adding Code to Dagster+](/guides/build/projects) guide for more info.
+Now that you've got your agent running, you can follow the steps in [Creating Dagster projects](/guides/build/projects/creating-projects) to create and deploy a project to Dagster+.

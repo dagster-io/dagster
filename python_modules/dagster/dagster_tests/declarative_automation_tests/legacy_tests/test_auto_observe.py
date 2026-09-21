@@ -74,8 +74,11 @@ def test_single_observable_source_asset_no_auto_observe():
 
 @fixture(params=[True, False], ids=["use_external_asset", "use_source_asset"])
 def single_auto_observe_asset_graph(request):
-    @dg.observable_source_asset(auto_observe_interval_minutes=30)
-    def asset1(): ...
+    asset1 = dg.SourceAsset(
+        key="asset1",
+        observe_fn=lambda context: dg.DataVersion("1"),
+        auto_observe_interval_minutes=30,
+    )
 
     observable = create_external_asset_from_source_asset(asset1) if request.param else asset1
     asset_graph = AssetGraph.from_assets([observable])
@@ -130,8 +133,11 @@ def test_single_observable_source_asset_prior_recent_observe_requests(
 
 
 def test_reconcile() -> None:
-    @dg.observable_source_asset(auto_observe_interval_minutes=30)
-    def asset1(): ...
+    asset1 = dg.SourceAsset(
+        key="asset1",
+        observe_fn=lambda context: dg.DataVersion("1"),
+        auto_observe_interval_minutes=30,
+    )
 
     asset_graph = AssetGraph.from_assets([asset1])
     instance = DagsterInstance.ephemeral()

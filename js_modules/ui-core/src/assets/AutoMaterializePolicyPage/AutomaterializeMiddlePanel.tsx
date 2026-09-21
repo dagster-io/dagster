@@ -1,4 +1,4 @@
-import {Body2, Box, NonIdealState, Subheading} from '@dagster-io/ui-components';
+import {Box, Heading, NonIdealState, Text} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {AutomaterializeMiddlePanelWithData} from './AutomaterializeMiddlePanelWithData';
@@ -102,7 +102,9 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
           padding={{horizontal: 16}}
           flex={{alignItems: 'center', justifyContent: 'space-between'}}
         >
-          <Subheading>Result</Subheading>
+          <Heading size={14} weight={600}>
+            Result
+          </Heading>
         </Box>
       </Box>
     );
@@ -152,12 +154,12 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
             icon="sensors"
             title="No evaluations"
             description={
-              <Body2>
+              <Text size={14}>
                 <Box flex={{direction: 'column', gap: 8}}>
-                  <Body2>
+                  <Text size={14}>
                     This asset&apos;s automation policy has not been evaluated yet. Make sure your
                     automation sensor is running.
-                  </Body2>
+                  </Text>
                   <div>
                     <AnchorButton
                       to={
@@ -173,7 +175,7 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
                     Learn more about declarative automation
                   </a>
                 </Box>
-              </Body2>
+              </Text>
             }
           />
         </Box>

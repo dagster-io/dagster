@@ -91,7 +91,7 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def run(  # ty: ignore[invalid-method-override]
         self,
         *,
         context: OpExecutionContext | AssetExecutionContext,
@@ -127,12 +127,12 @@ class PipesAzureMLClient(PipesClient, TreatAsResourceParam):
             job = self.client.create_or_update(command)
 
             try:
-                self._poll_til_success(context, job.name)  # pyright: ignore[reportArgumentType]
+                self._poll_til_success(context, job.name)  # ty: ignore[invalid-argument-type]
             except DagsterExecutionInterruptedError:
                 if self.forward_termination:
                     context.log.info("[pipes] execution interrupted, canceling Azure ML job.")
-                    self.client.jobs.begin_cancel(job.name)  # pyright: ignore[reportArgumentType]
-                    self._poll_til_terminating(job.name)  # pyright: ignore[reportArgumentType]
+                    self.client.jobs.begin_cancel(job.name)
+                    self._poll_til_terminating(job.name)  # ty: ignore[invalid-argument-type]
 
         return PipesClientCompletedInvocation(
             pipes_session, metadata={"AzureML Job Name": job.name}

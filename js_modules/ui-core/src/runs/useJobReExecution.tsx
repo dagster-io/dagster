@@ -6,6 +6,7 @@ import {gql, useApolloClient, useMutation} from '../apollo-client';
 import {ReexecutionDialog, ReexecutionDialogProps} from './ReexecutionDialog';
 import {DagsterTag} from './RunTag';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
+import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
@@ -30,6 +31,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
   const history = useHistory();
   const confirm = useConfirmation();
   const client = useApolloClient();
+  const openInNewTab = useOpenInNewTab();
   const {onCompleted} = opts || {};
 
   const [launchPipelineReexecution] = useMutation<
@@ -43,6 +45,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
       run: {id: string; pipelineName: string; tags: {key: string; value: string}[]},
       param: ReexecutionStrategy | ExecutionParams,
       forceLaunchpad: boolean,
+      options?: {openInNewTab?: boolean},
     ) => {
       const backfillTag = run.tags.find((t) => t.key === DagsterTag.Backfill);
 
@@ -104,13 +107,14 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
           preserveQuerystring: true,
           behavior: 'open',
+          openInNewTab: options?.openInNewTab ? openInNewTab : undefined,
         });
         onCompleted?.();
       } catch (error) {
         showLaunchError(error as Error);
       }
     },
-    [client, confirm, launchPipelineReexecution, history, onCompleted],
+    [client, confirm, launchPipelineReexecution, history, onCompleted, openInNewTab],
   );
 
   return {

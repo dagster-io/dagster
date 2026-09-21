@@ -40,6 +40,8 @@ attributes:
     key_prefix:
       - "example_string"
   polling_sensor: true
+  include_metadata:
+    - "example_string"
   defs_state:
     key: "example_string"
     management_type: "example_string"

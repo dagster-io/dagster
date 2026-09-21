@@ -121,10 +121,10 @@ def test_non_record_param():
     assert MyModel2(some_class=SomeClass())
 
     with pytest.raises(check.CheckError):
-        MyModel2(some_class=OtherClass())  # wrong class  # pyright: ignore[reportArgumentType]
+        MyModel2(some_class=OtherClass())  # wrong class  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(check.CheckError):
-        MyModel2(some_class=SomeClass)  # forgot ()  # pyright: ignore[reportArgumentType]
+        MyModel2(some_class=SomeClass)  # forgot ()  # ty: ignore[invalid-argument-type]
 
 
 def test_cached_method() -> None:
@@ -184,8 +184,8 @@ def test_forward_ref_with_new() -> None:
         def __new__(cls, partner=None, child=None):
             return super().__new__(
                 cls,
-                partner=partner,  # pyright: ignore[reportCallIssue]
-                child=child,  # pyright: ignore[reportCallIssue]
+                partner=partner,  # ty: ignore[unknown-argument]
+                child=child,  # ty: ignore[unknown-argument]
             )
 
     class Child: ...
@@ -420,12 +420,12 @@ def test_base_class_conflicts() -> None:
         TypeError,
         match="Can't instantiate abstract class DidntImpl",
     ):
-        DidntImpl()  # type: ignore # good job type checker
+        DidntImpl()  # good job type checker
 
     @record
     class A(AbsPropBase):
         abstract_prop: Any
-        abstract_prop_with_default: int = 0  # pyright: ignore[reportIncompatibleMethodOverride]
+        abstract_prop_with_default: int = 0
 
     assert A(abstract_prop=4).abstract_prop == 4
     assert A(abstract_prop=4).abstract_prop_with_default == 0
@@ -466,7 +466,7 @@ def test_lazy_import():
     with pytest.raises(
         check.CheckError, match=r"Expected <class 'dagster_shared.utils.test.TestType'>"
     ):
-        AnnotatedModel(foos=[1, 2, 3])  # pyright: ignore[reportArgumentType]
+        AnnotatedModel(foos=[1, 2, 3])  # ty: ignore[invalid-argument-type]
 
     def _out_of_scope():
         from dagster_shared.utils.test import TestType
@@ -530,7 +530,7 @@ def test_make_hashable():
         stuff: Sequence[Any]
 
         def __hash__(self):
-            return hash_collection(self)  # pyright: ignore[reportArgumentType]
+            return hash_collection(self)  # ty: ignore[invalid-argument-type]
 
     y = Yep(stuff=[1, 2, 3])
     assert hash(y)
@@ -837,7 +837,7 @@ def test_replace() -> None:
     class Unchecked:
         name: str
 
-    u = Unchecked(name=2)  # pyright: ignore[reportArgumentType]
+    u = Unchecked(name=2)  # ty: ignore[invalid-argument-type]
     replace(u, name="unchecked")
 
     @record(checked=False)

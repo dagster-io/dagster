@@ -1,5 +1,4 @@
 import {useState} from 'react';
-import styled from 'styled-components';
 
 import {Box} from '../Box';
 import {Colors} from '../Color';
@@ -56,7 +55,7 @@ export const TokenProvider = () => {
 export const TokenAndSuggestionProviders = () => {
   const [value, setValue] = useState<TokenizingFieldValue[]>([]);
 
-  const users = {
+  const users: Record<string, string> = {
     'ben@dagsterlabs.com': 'Ben Pankow',
     'dish@dagsterlabs.com': 'Isaac Hellendag',
     'marco@dagsterlabs.com': 'Marco Salazar',
@@ -70,7 +69,7 @@ export const TokenAndSuggestionProviders = () => {
       values: () => Object.keys(users),
       suggestionFilter: (typed: string, s: Suggestion) =>
         s.text.toLowerCase().includes(typed.toLowerCase()) ||
-        (users as any)[s.text].toLowerCase().includes(typed.toLowerCase()),
+        !!users[s.text]?.toLowerCase().includes(typed.toLowerCase()),
     },
   ];
 
@@ -101,7 +100,7 @@ export const CustomSuggestionRenderer = () => {
       suggestionProviders={suggestionProviders}
       suggestionRenderer={(suggestion) => (
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-          <ColorSwatch $color={suggestion.text} />
+          <ColorSwatch color={suggestion.text} />
           {suggestion.text}
         </Box>
       )}
@@ -109,10 +108,14 @@ export const CustomSuggestionRenderer = () => {
   );
 };
 
-const ColorSwatch = styled.div<{$color: string}>`
-  border-radius: 50%;
-  background-color: ${(p) => p.$color};
-  width: 16px;
-  height: 16px;
-  border: 1px solid;
-`;
+const ColorSwatch = ({color}: {color: string}) => (
+  <div
+    style={{
+      borderRadius: '50%',
+      backgroundColor: color,
+      width: 16,
+      height: 16,
+      border: '1px solid',
+    }}
+  />
+);

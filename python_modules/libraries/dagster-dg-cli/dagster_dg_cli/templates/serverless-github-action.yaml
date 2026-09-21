@@ -38,7 +38,7 @@ jobs:
         uses: dagster-io/dagster-cloud-action/actions/utils/prerun@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
 
@@ -56,7 +56,7 @@ jobs:
       - name: Set up Python ${{ env.PYTHON_VERSION }} for target
         id: setup-python-version
         if: steps.prerun.outputs.result != 'skip'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -99,7 +99,7 @@ jobs:
         if: steps.prerun.outputs.result == 'pex-deploy' || steps.prerun.outputs.result == 'docker-deploy'
         uses: dagster-io/dagster-cloud-action/actions/utils/dg-cli@TEMPLATE_DAGSTER_CLOUD_ACTION_VERSION
         with:
-          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }}"
+          command: "plus deploy build-and-push --agent-type=serverless --python-version ${{ env.PYTHON_VERSION }} --build-strategy=${{ env.ENABLE_FAST_DEPLOYS == 'true' && 'python-executable' || 'docker' }}"
 
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud

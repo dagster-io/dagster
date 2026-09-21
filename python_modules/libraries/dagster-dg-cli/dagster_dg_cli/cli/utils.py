@@ -34,9 +34,7 @@ from dagster_shared import check
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.objects import EnvRegistryKey
 from packaging.version import Version
-from rich.console import Console
 from rich.live import Live
-from rich.table import Table
 from rich.text import Text
 
 from dagster_dg_cli.cli.defs_state import (
@@ -349,6 +347,8 @@ def _dagster_cloud_entry_for_project(
         dg_context.container_context_config,
     )
 
+    project_config = dg_context.config.project
+
     return {
         "location_name": dg_context.code_location_name,
         "code_source": {
@@ -360,6 +360,12 @@ def _dagster_cloud_entry_for_project(
             if merged_container_context_config
             else {}
         ),
+        **(
+            {"agent_queue": project_config.agent_queue}
+            if project_config and project_config.agent_queue
+            else {}
+        ),
+        **({"image": project_config.image} if project_config and project_config.image else {}),
     }
 
 
@@ -373,7 +379,7 @@ def create_temp_dagster_cloud_yaml_file(dg_context: DgContext, statedir: str) ->
     )
 
     dagster_cloud_yaml_path = Path(statedir) / "dagster_cloud.yaml"
-    with open(dagster_cloud_yaml_path, "w+") as temp_dagster_cloud_yaml_file:
+    with open(dagster_cloud_yaml_path, "w+", encoding="utf-8") as temp_dagster_cloud_yaml_file:
         entries = []
         if dg_context.is_project:
             entries.append(_dagster_cloud_entry_for_project(dg_context, None))
@@ -553,45 +559,3 @@ def refresh_defs_state(
                 dg_context.root_path, instance, management_types, defs_state_keys
             )
         )
-
-
-@utils_group.command(
-    name="integrations",
-    cls=DgClickCommand,
-)
-@click.option(
-    "--json",
-    "output_json",
-    is_flag=True,
-    default=False,
-    help="Output as JSON.",
-)
-@cli_telemetry_wrapper
-def integrations_docs_command(output_json: bool) -> None:
-    """View an index of available Dagster integrations."""
-    import requests  # defer for import perf
-
-    response = requests.get("https://dagster-marketplace.vercel.app/api/integrations/index.json")
-    response.raise_for_status()
-
-    payload = response.json()
-    if output_json:
-        click.echo(json.dumps(payload, indent=2))
-        return
-
-    console = Console()
-    table = Table(border_style="dim", show_lines=True)
-    table.add_column("Name")
-    table.add_column("Description")
-    table.add_column("PyPI")
-
-    for integration in payload:
-        # filter out incomplete entries
-        if integration.get("name") and integration.get("description") and integration.get("pypi"):
-            table.add_row(
-                integration["name"],
-                integration["description"],
-                integration["pypi"],
-            )
-
-    console.print(table)

@@ -1,29 +1,8 @@
 import {Button, Dialog, DialogFooter, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {MAX_ROW_HEIGHT_PX} from './LogsRowComponents';
-
-const OverflowFade = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  user-select: none;
-  pointer-events: none;
-`;
-
-const OverflowButtonContainer = styled.div`
-  position: absolute;
-  bottom: 6px;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 8px;
-`;
+import styles from './css/CellTruncationProvider.module.css';
 
 interface Props {
   children: React.ReactNode;
@@ -73,12 +52,12 @@ export const CellTruncationProvider = (props: Props) => {
       <div ref={contentContainerRef}>{props.children}</div>
       {(state.isOverflowing || props.forceExpandability) && (
         <>
-          <OverflowFade />
-          <OverflowButtonContainer>
+          <div className={styles.overflowFade} />
+          <div className={styles.overflowButtonContainer}>
             <Button intent="primary" icon={<Icon name="unfold_more" />} onClick={onView}>
               View full message
             </Button>
-          </OverflowButtonContainer>
+          </div>
           {props.onExpand ? null : (
             <Dialog
               canEscapeKeyClose

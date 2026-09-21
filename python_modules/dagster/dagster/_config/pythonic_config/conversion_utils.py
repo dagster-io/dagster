@@ -116,12 +116,14 @@ def _convert_pydantic_field(
         if pydantic_field.default and isinstance(pydantic_field.default, Config):
             default = pydantic_field.default._get_non_default_public_field_values()  # noqa: SLF001
         inferred_field = infer_schema_from_config_class(
-            field_type, description=pydantic_field.description, default=default
+            field_type,  # ty: ignore[invalid-argument-type]
+            description=pydantic_field.description,
+            default=default,
         )
         return inferred_field
     else:
         if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
-            field_type = Optional[field_type]  # noqa: UP045
+            field_type = Optional[field_type]  # noqa: UP045  # ty: ignore[invalid-type-form]
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
@@ -210,7 +212,7 @@ def _config_type_for_type_on_pydantic_field(
 
     if safe_is_subclass(potential_dagster_type, Config):
         inferred_field = infer_schema_from_config_class(
-            potential_dagster_type,
+            potential_dagster_type,  # ty: ignore[invalid-argument-type]
         )
         return inferred_field.config_type
 
@@ -253,7 +255,11 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
       })
     })
     """
-    from dagster._config.pythonic_config.config import Config, infer_schema_from_config_class
+    from dagster._config.pythonic_config.config import (
+        Config,
+        _config_value_to_dict_representation,
+        infer_schema_from_config_class,
+    )
 
     field_type = pydantic_field.annotation
     discriminator = pydantic_field.discriminator if pydantic_field.discriminator else None
@@ -285,9 +291,28 @@ def _convert_pydantic_discriminated_union_field(pydantic_field: ModelFieldCompat
         for discriminator_value, field in sub_fields_mapping.items()
     }
 
+    # If the Pydantic field has a default instance, propagate it as a config default
+    # in the Selector's dict representation, e.g. Dog(barks=1.0) -> {"dog": {"barks": 1.0}}.
+    default = pydantic_field.default
+    if default is PydanticUndefined:
+        default_factory = getattr(pydantic_field.field, "default_factory", None)
+        if default_factory is not None:
+            default = default_factory()
+
+    default_to_pass = (
+        _config_value_to_dict_representation(pydantic_field, default)
+        if default is not PydanticUndefined and default is not None
+        else FIELD_NO_DEFAULT_PROVIDED
+    )
+
     # We then nest the union fields under a Selector. The keys for the selector
     # are the various discriminator values
-    return Field(config=Selector(fields=dagster_config_field_mapping))
+    return Field(
+        config=Selector(fields=dagster_config_field_mapping),
+        description=pydantic_field.description,
+        is_required=pydantic_field.is_required(),
+        default_value=default_to_pass,
+    )
 
 
 def _convert_typing_literal_field(pydantic_field: ModelFieldCompat) -> Field:

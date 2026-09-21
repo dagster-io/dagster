@@ -159,7 +159,7 @@ class LookerComponent(StateBackedComponent, Resolvable):
     ] = None
 
     defs_state: ResolvedDefsStateConfig = field(
-        default_factory=DefsStateConfigArgs.legacy_code_server_snapshots
+        default_factory=DefsStateConfigArgs.local_filesystem
     )
 
     @property
@@ -259,7 +259,7 @@ class LookerComponent(StateBackedComponent, Resolvable):
 
         # Convert to state format and serialize
         state = instance_data.to_state(sdk)
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def _build_pdt_assets_definition(self, request: RequestStartPdtBuild) -> dg.AssetsDefinition:
         spec = self.translator.get_asset_spec(

@@ -1,4 +1,4 @@
-import {Body, Box, Colors, Icon, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Spinner, Text} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -486,7 +486,7 @@ export function assetNodeLatestEventContent({
 }
 
 const SpacerDot = () => (
-  <Body color={Colors.keylineDefault()} style={{marginLeft: -3, marginRight: -3}}>
+  <Text size={14} color="keylineDefault" style={{marginLeft: -3, marginRight: -3}}>
     •
-  </Body>
+  </Text>
 );

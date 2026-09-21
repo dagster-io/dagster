@@ -1,8 +1,10 @@
+#############################
 dagster-celery-docker library
-=============================
+#############################
 
+****
 APIs
-----
+****
 
 .. currentmodule:: dagster_celery_docker
 

@@ -1,7 +1,6 @@
 import sys
 from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
-from typing import cast
 
 from dagster_shared.error import DagsterError
 
@@ -66,10 +65,7 @@ def inner_plan_execution_iterator(
                     active_execution.sleep_til_ready()
                     continue
 
-                step_context = cast(
-                    "StepExecutionContext",
-                    job_context.for_step(step, active_execution.get_known_state()),
-                )
+                step_context = job_context.for_step(step, active_execution.get_known_state())
                 step_event_list = []
 
                 missing_resources = [
@@ -308,6 +304,7 @@ def dagster_event_sequence_for_step(
 
     # case (3) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:
+        assert dagster_user_error.user_exception is not None
         step_context.capture_step_exception(dagster_user_error.user_exception)
         yield step_failure_event_from_exc_info(
             step_context,

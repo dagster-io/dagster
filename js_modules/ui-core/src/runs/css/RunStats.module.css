@@ -1,0 +1,8 @@
+.runStatsDetailsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 200px;
+  padding: 12px;
+  font-size: 12px;
+}

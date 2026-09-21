@@ -1,7 +1,22 @@
+@keyframes spinner-animation {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .spinner {
   --spinner-fill-color: var(--color-accent-gray);
   --spinner-padding: 0px;
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  overflow: visible;
   padding: var(--spinner-padding);
+  vertical-align: middle;
 }
 
 .spinner.captionText {
@@ -12,27 +27,36 @@
   --spinner-padding: 2px;
 }
 
-.spinner .slowSpinner :global(.bp5-spinner-animation) {
-  animation-duration: 0.8s;
+.spinner svg {
+  animation: spinner-animation 0.8s linear infinite;
+  display: block;
 }
 
-.spinner.stopped .slowSpinner :global(.bp5-spinner-animation) {
+.spinner.stopped svg {
   animation: none;
 }
 
-.spinner .slowSpinner path:global(.bp5-spinner-track) {
+.track,
+.head {
+  fill-opacity: 0;
+}
+
+.track {
   stroke: var(--spinner-fill-color);
   stroke-opacity: 0.25;
 }
 
-.spinner:not(.stopped) .slowSpinner path:global(.bp5-spinner-head) {
+.head {
   stroke: var(--spinner-fill-color);
+  stroke-linecap: round;
   stroke-opacity: 1;
+  transform-origin: center;
+  transition: stroke-dashoffset 0.4s ease;
 }
 
-.spinner.stopped .slowSpinner path:global(.bp5-spinner-head) {
-  stroke-opacity: 0;
+.stopped .head {
   fill: var(--spinner-fill-color);
   fill-opacity: 1;
+  stroke-opacity: 0;
   transform: scale(44%);
 }

@@ -6,7 +6,7 @@ sidebar_position: 10
 
 In the first step in our pipeline, we will use [software-defined assets](/guides/build/assets) to load files into [DuckDB](https://duckdb.org), an analytical database. This data will serve as the foundation for the rest of the ETL tutorial.
 
-## 1. Scaffold an asset
+## Step 1: Scaffold an asset
 
 We will start by writing our ingestion assets. Assets serve as the building blocks for our platform in Dagster and represent the underlying entities in our pipelines (such as tables, datasets, or machine learning models). Assets take dependencies on other assets to build out the full graph of our data platform and define its lineage.
 
@@ -18,7 +18,7 @@ This adds a file called `assets.py` that will contain our asset code to the `etl
 
 <CliInvocationExample path="docs_projects/project_etl_tutorial/tree/assets.txt" />
 
-## 2. Write DuckDB helper functions
+## Step 2: Write DuckDB helper functions
 
 Since we will be working with DuckDB, we will need to add the DuckDB Python library to our Dagster project:
 
@@ -70,7 +70,7 @@ All of these files are located in cloud storage, and we would like to ingest eac
 
 This function will take in the URL for one of our files and a table name, and load the data into DuckDB using [DuckDB CSV import](https://duckdb.org/docs/stable/data/csv/overview.html) functionality. Then using the `serialize_duckdb_query` function we just defined, it will execute the query while ensuring a proper lock on the DuckDB database.
 
-## 3. Define assets
+## Step 3: Define assets
 
 Now that we have written our DuckDB helper functions, we are ready to create our assets. We will define an asset for each file we want to ingest:
 
@@ -87,7 +87,7 @@ In Dagster, an asset is defined by the <PyObject section="assets" module="dagste
 - The `kinds` argument adds metadata about the tools and technologies used by the asset.
 - The `key` argument defines the key path of the asset. Without setting the key argument, the asset key will be the function name. Here we will explicitly set a key for our assets to work with our dbt project in the next step.
 
-## 4. Dagster definitions
+## Step 4: Dagster definitions
 
 In Dagster, all the objects we define (such as assets) need to be associated with a top-level <PyObject section="definitions" module="dagster" object="Definitions" /> object in order to be deployed. When we first created our project with `uvx create-dagster project`, a `definitions.py` file was created as well:
 
@@ -105,7 +105,7 @@ We can use `dg` to ensure that everything we define in our module is loading cor
 
 This tells us there are no issues with any of the assets we have defined. As you develop your Dagster project, it is a good habit to run `dg check` to ensure everything is working as expected.
 
-## 5. Materialize the assets
+## Step 5: Materialize the assets
 
 Now that our assets are configured and we have verified that the top-level `Definitions` object is valid, we can view the asset catalog within the Dagster UI. Navigate back to [http://127.0.0.1:3000](http://127.0.0.1:3000) (or restart `dg dev` if you have closed it) and reload the definitions:
 

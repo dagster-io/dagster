@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from itertools import chain
 
 from dagster import (
@@ -409,7 +409,7 @@ def _report_materialization(
 
 def _get_output_to_asset_key_map(
     context: OpExecutionContext, run: DagsterRun
-) -> dict[AssetKey, str]:
+) -> dict[str, AssetKey]:
     execution_plan_snap = context.instance.get_execution_plan_snapshot(
         check.not_none(run.execution_plan_snapshot_id)
     )
@@ -424,13 +424,13 @@ def _get_output_to_asset_key_map(
 
 def _per_asset_metadata_from_run(
     context: OpExecutionContext, run: DagsterRun
-) -> dict[AssetKey, dict[str, MetadataValue]]:
+) -> Mapping[AssetKey, Mapping[str, MetadataValue]]:
     output_to_key_map = _get_output_to_asset_key_map(context, run)
     conn = context.instance.event_log_storage.get_records_for_run(
         run_id=run.run_id,
         of_type=DagsterEventType.STEP_OUTPUT,
     )
-    per_key_metadata = {}
+    per_key_metadata: dict[AssetKey, Mapping[str, MetadataValue]] = {}
     for event_record in conn.records:
         event = check.not_none(event_record.event_log_entry.dagster_event)
         if event.step_output_data.output_name in output_to_key_map:

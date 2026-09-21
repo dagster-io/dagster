@@ -230,6 +230,7 @@ def _get_executor(instance, job_def, executor_config=None):
     )
     assert process_result.success, str(process_result.errors)
 
+    assert k8s_job_executor.executor_creation_fn is not None
     return k8s_job_executor.executor_creation_fn(
         InitExecutorContext(
             job=job_def,
@@ -276,7 +277,7 @@ def _step_handler_context(
     return StepHandlerContext(
         instance=instance,
         plan_context=plan_context,
-        steps=execution_plan.steps,  # pyright: ignore[reportArgumentType]
+        steps=execution_plan.steps,  # ty: ignore[invalid-argument-type]
         execute_step_args=execute_step_args,
     )
 
@@ -361,7 +362,7 @@ def test_executor_init(
 
     # env vars from both launcher and the executor
 
-    assert executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert executor._step_handler._get_container_context(  # noqa: SLF001
         step_handler_context
     ).run_k8s_config.container_config["env"] == [
         {"name": "BAR_TEST", "value": "bar"},
@@ -369,14 +370,14 @@ def test_executor_init(
     ]
 
     assert (
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        executor._step_handler._get_container_context(  # noqa: SLF001
             step_handler_context
         ).run_k8s_config.container_config["resources"]
         == resources
     )
 
     assert (
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        executor._step_handler._get_container_context(  # noqa: SLF001
             step_handler_context
         ).run_k8s_config.pod_spec_config["scheduler_name"]
         == "my-scheduler"
@@ -407,16 +408,16 @@ def test_executor_init_container_context(
 
     # env vars from both launcher and the executor
 
-    assert executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert executor._step_handler._get_container_context(  # noqa: SLF001
         step_handler_context
     ).run_k8s_config.container_config["env"] == [
         {"name": "BAR_TEST", "value": "bar"},
         {"name": "BAZ_TEST", "value": "baz_val"},
         {"name": "FOO_TEST", "value": "foo"},
     ]
-    assert executor._max_concurrent == 4  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert executor._max_concurrent == 4  # noqa: SLF001
     assert (
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        executor._step_handler._get_container_context(  # noqa: SLF001
             step_handler_context
         ).run_k8s_config.container_config["resources"]
         == python_origin_with_container_context.repository_origin.container_context["k8s"][
@@ -425,7 +426,7 @@ def test_executor_init_container_context(
     )
 
     assert (
-        executor._step_handler._get_container_context(  # noqa: SLF001  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        executor._step_handler._get_container_context(  # noqa: SLF001
             step_handler_context
         ).run_k8s_config.pod_spec_config["scheduler_name"]
         == "my-other-scheduler"
@@ -725,7 +726,7 @@ def test_step_raw_k8s_config_inheritance(
         executor=executor,
     )
 
-    container_context = executor._step_handler._get_container_context(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    container_context = executor._step_handler._get_container_context(  # noqa: SLF001
         step_handler_context
     )
 
@@ -786,7 +787,7 @@ def test_per_step_k8s_config(k8s_run_launcher_instance, python_origin_with_conta
         executor=executor,
     )
 
-    container_context = executor._step_handler._get_container_context(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    container_context = executor._step_handler._get_container_context(  # noqa: SLF001
         step_handler_context
     )
 
@@ -834,7 +835,7 @@ def test_per_step_k8s_config_dynamic_job(k8s_run_launcher_instance: DagsterInsta
         step=f"dyn_sink[{dynamic_step}]",
         known_state=dyn_known_state,
     )
-    container_context = executor._step_handler._get_container_context(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    container_context = executor._step_handler._get_container_context(  # noqa: SLF001
         step_handler_context
     )
     raw_k8s_config = container_context.run_k8s_config

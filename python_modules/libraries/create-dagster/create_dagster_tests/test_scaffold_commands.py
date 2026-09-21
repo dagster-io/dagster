@@ -9,7 +9,6 @@ import create_dagster.version_check
 import dagster_shared.check as check
 import pytest
 import tomlkit
-import yaml
 from create_dagster.scaffold import _get_editable_dagster_from_env
 from dagster_dg_core.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg_core.utils import (
@@ -21,6 +20,7 @@ from dagster_dg_core.utils import (
 )
 from dagster_shared.libraries import get_published_pypi_versions
 from dagster_shared.utils import environ
+from dagster_shared.yaml_utils import safe_load_yaml
 from dagster_test.dg_utils.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -173,12 +173,14 @@ def test_scaffold_project_success(
         assert Path("foo-bar/.gitignore").exists()
         # Verify .dg/telemetry.yaml exists and contains a valid UUID
         assert Path("foo-bar/.dg/telemetry.yaml").exists()
-        telemetry_content = yaml.safe_load(Path("foo-bar/.dg/telemetry.yaml").read_text())
+        telemetry_content = safe_load_yaml(
+            Path("foo-bar/.dg/telemetry.yaml").read_text(encoding="utf-8")
+        )
         assert "project_id" in telemetry_content
         uuid.UUID(telemetry_content["project_id"])  # Raises if invalid UUID
 
         # Verify README.md contains the project name
-        readme_content = Path("foo-bar/README.md").read_text()
+        readme_content = Path("foo-bar/README.md").read_text(encoding="utf-8")
         assert "foo_bar" in readme_content
 
         # this indicates user opts to create venv and uv.lock
@@ -218,16 +220,18 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert not Path("projects/foo-bar/.gitignore").exists()
         # Verify .dg/telemetry.yaml exists and contains a valid UUID
         assert Path("projects/foo-bar/.dg/telemetry.yaml").exists()
-        telemetry_content = yaml.safe_load(Path("projects/foo-bar/.dg/telemetry.yaml").read_text())
+        telemetry_content = safe_load_yaml(
+            Path("projects/foo-bar/.dg/telemetry.yaml").read_text(encoding="utf-8")
+        )
         assert "project_id" in telemetry_content
         uuid.UUID(telemetry_content["project_id"])  # Raises if invalid UUID
 
         # Check project TOML content
-        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
+        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text(encoding="utf-8"))
         assert get_toml_node(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
 
         # Check workspace TOML content
-        raw_toml = Path("dg.toml").read_text()
+        raw_toml = Path("dg.toml").read_text(encoding="utf-8")
         toml = tomlkit.parse(raw_toml)
         assert get_toml_node(toml, ("workspace", "projects", 0, "path"), str) == "projects/foo-bar"
 
@@ -260,7 +264,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert not Path("other_projects/baz/.gitignore").exists()
 
         # Check workspace TOML content
-        raw_toml = Path("dg.toml").read_text()
+        raw_toml = Path("dg.toml").read_text(encoding="utf-8")
         toml = tomlkit.parse(raw_toml)
         assert (
             get_toml_node(toml, ("workspace", "projects", 1, "path"), str) == "other_projects/baz"
@@ -291,7 +295,7 @@ def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monk
         assert not Path("projects/foo-bar/README.md").exists()
         assert not Path("projects/foo-bar/.gitignore").exists()
         # Check that use_editable_dagster was applied
-        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
+        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text(encoding="utf-8"))
         assert has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
 
 
@@ -318,7 +322,7 @@ def test_scaffold_project_editable_dagster_success(option: EditableOption, monke
         # Workspace projects should NOT have README.md and .gitignore
         assert not Path("projects/foo-bar/README.md").exists()
         assert not Path("projects/foo-bar/.gitignore").exists()
-        with open("projects/foo-bar/pyproject.toml") as f:
+        with open("projects/foo-bar/pyproject.toml", encoding="utf-8") as f:
             toml = tomlkit.parse(f.read())
             validate_pyproject_toml_with_editable(toml, option, dagster_git_repo_dir)
 
@@ -360,7 +364,7 @@ def validate_pyproject_toml_with_editable(
 
 
 def test_scaffold_project_pinned_dependencies(monkeypatch) -> None:
-    monkeypatch.setattr(create_dagster.version, "__version__", "1.10.18")  # type: ignore
+    monkeypatch.setattr(create_dagster.version, "__version__", "1.10.18")
 
     with (
         ProxyRunner.test() as runner,
@@ -374,7 +378,7 @@ def test_scaffold_project_pinned_dependencies(monkeypatch) -> None:
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
-        with open("projects/foo-bar/pyproject.toml") as f:
+        with open("projects/foo-bar/pyproject.toml", encoding="utf-8") as f:
             file_contents = f.read()
             toml = tomlkit.parse(file_contents)
             validate_published_pyproject_toml(toml, "1.10.18")
@@ -395,8 +399,8 @@ def validate_published_pyproject_toml(
         dict,
     ) == {
         "dev": [
-            "dagster-webserver",
             "dagster-dg-cli",
+            "dagster-webserver",
         ]
     }
 
@@ -418,7 +422,7 @@ def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> 
         # We need to use subprocess rather than runner here because the environment variable affects
         # CLI defaults set at process startup.
         subprocess.check_output(["create-dagster", "project", "--uv-sync", "foo-bar"], text=True)
-        with open("foo-bar/pyproject.toml") as f:
+        with open("foo-bar/pyproject.toml", encoding="utf-8") as f:
             toml = tomlkit.parse(f.read())
             validate_pyproject_toml_with_editable(
                 toml, "--use-editable-dagster", dagster_git_repo_dir

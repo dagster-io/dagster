@@ -6,8 +6,8 @@ import {
   DialogBody,
   DialogFooter,
   Icon,
-  Mono,
   ProgressBar,
+  Text,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
 
@@ -250,7 +250,9 @@ export const DeletionDialog = (props: Props) => {
               {Object.keys(errors).map((runId) => (
                 <li key={runId}>
                   <Box flex={{direction: 'row', gap: 8}}>
-                    <Mono>{runId.slice(0, 8)}</Mono>
+                    <Text size={14} family="mono">
+                      {runId.slice(0, 8)}
+                    </Text>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Box>
                 </li>

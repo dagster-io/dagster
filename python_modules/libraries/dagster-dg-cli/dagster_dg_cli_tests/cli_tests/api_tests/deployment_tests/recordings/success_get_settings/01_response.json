@@ -1,14 +1,16 @@
 {
-  "settings": {
-    "run_queue": {
-      "max_concurrent_runs": 25,
-      "tag_concurrency_limits": []
-    },
-    "run_monitoring": {
-      "start_timeout_seconds": 300
-    },
-    "run_retries": {
-      "max_retries": 0
+  "deploymentSettings": {
+    "settings": {
+      "run_queue": {
+        "max_concurrent_runs": 25,
+        "tag_concurrency_limits": []
+      },
+      "run_monitoring": {
+        "start_timeout_seconds": 300
+      },
+      "run_retries": {
+        "max_retries": 0
+      }
     }
   }
 }

@@ -44,17 +44,23 @@ export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') =>
   return workspacePath(name, location, path);
 };
 
+export const assetGroupPath = (repoAddress: RepoAddress, groupName: string, suffix = '') => {
+  const trimmed = suffix.startsWith('/') ? suffix.slice(1) : suffix;
+  const tail = trimmed ? `/${trimmed}` : '';
+  return workspacePathFromAddress(
+    repoAddress,
+    `/asset-groups/${encodeURIComponent(groupName)}${tail}`,
+  );
+};
+
 type RunDetails = {
   run: {
     id: string;
     pipelineName: string;
     executionPlan?: null | {assetKeys: AssetKey[]};
-    assetCheckSelection:
-      | null
-      | {
-          name: string;
-          assetKey: AssetKey;
-        }[];
+    // The count rather than the full selection, so callers don't have to fetch potentially enormous
+    // selections just to tell whether this is an asset job.
+    assetCheckSelectionCount: number;
     tags: {
       key: string;
       value: string;
@@ -89,7 +95,7 @@ export const workspacePipelineLinkForRun = ({
     };
   }
 
-  const isAssetJob = run.assetCheckSelection?.length || run.executionPlan?.assetKeys?.length;
+  const isAssetJob = run.assetCheckSelectionCount > 0 || run.executionPlan?.assetKeys?.length;
   const isExternalJob = isExternalRun(run);
   const path = isAssetJob || isExternalJob ? '/' : `/playground/setup-from-run/${run.id}`;
   const to =

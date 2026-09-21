@@ -1,13 +1,14 @@
 import base64
+from collections.abc import Sequence
 from typing import (
     Any,
     Generic,
-    Sequence,
 )
-from dagster._record import record
-from dagster._serdes import whitelist_for_serdes, deserialize_value, serialize_value
 
 from typing_extensions import TypeVar
+
+from dagster._record import record
+from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 T = TypeVar("T")
 

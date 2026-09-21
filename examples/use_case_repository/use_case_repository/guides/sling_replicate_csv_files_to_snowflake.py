@@ -7,21 +7,21 @@ S3_SOURCE_BUCKET = "elementl-data"
 s3_connection = SlingConnectionResource(
     name="SLING_S3_SOURCE",
     type="s3",
-    bucket=S3_SOURCE_BUCKET,  # type: ignore
-    access_key_id=EnvVar("AWS_ACCESS_KEY_ID"),  # type: ignore
-    secret_access_key=EnvVar("AWS_SECRET_ACCESS_KEY"),  # type: ignore
+    bucket=S3_SOURCE_BUCKET,
+    access_key_id=EnvVar("AWS_ACCESS_KEY_ID"),
+    secret_access_key=EnvVar("AWS_SECRET_ACCESS_KEY"),
 )
 
 snowflake_connection = SlingConnectionResource(
     name="SLING_SNOWFLAKE_DESTINATION",
     type="snowflake",
-    host=EnvVar("SNOWFLAKE_ACCOUNT"),  # type: ignore
-    user=EnvVar("SNOWFLAKE_USER"),  # type: ignore
-    password=EnvVar("SNOWFLAKE_PASSWORD"),  # type: ignore
-    warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),  # type: ignore
-    database=EnvVar("SNOWFLAKE_DATABASE"),  # type: ignore
-    schema=EnvVar("SNOWFLAKE_SCHEMA"),  # type: ignore
-    role=EnvVar("SNOWFLAKE_ROLE"),  # type: ignore
+    host=EnvVar("SNOWFLAKE_ACCOUNT"),
+    user=EnvVar("SNOWFLAKE_USER"),
+    password=EnvVar("SNOWFLAKE_PASSWORD"),
+    warehouse=EnvVar("SNOWFLAKE_WAREHOUSE"),
+    database=EnvVar("SNOWFLAKE_DATABASE"),
+    schema=EnvVar("SNOWFLAKE_SCHEMA"),
+    role=EnvVar("SNOWFLAKE_ROLE"),
 )
 
 

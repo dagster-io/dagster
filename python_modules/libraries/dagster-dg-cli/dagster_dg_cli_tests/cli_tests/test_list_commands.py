@@ -27,6 +27,8 @@ from dagster_test.dg_utils.utils import (
     standardize_box_characters,
 )
 
+pytestmark = pytest.mark.slow
+
 
 @pytest.fixture
 def capture_stderr_from_components_cli_invocations():
@@ -342,7 +344,8 @@ def test_list_component_tree_succeeds(snapshot):
                     def second(_) -> PyComponent:
                         return PyComponent(asset=dg.AssetSpec("second_py"))
                     """
-                )
+                ),
+                encoding="utf-8",
             )
 
             result = subprocess.run(
@@ -374,7 +377,7 @@ def test_list_defs_succeeds(use_json: bool, snapshot):
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
                 f.write(defs_source)
 
@@ -444,13 +447,13 @@ def test_list_defs_with_path(
         Path("src/foo_bar/defs/subfolder").mkdir(parents=True, exist_ok=True)
 
         defs_source = textwrap.dedent(inspect.getsource(_asset_1).split("\n", 1)[1])
-        Path("src/foo_bar/defs/asset1.py").write_text(defs_source)
+        Path("src/foo_bar/defs/asset1.py").write_text(defs_source, encoding="utf-8")
 
         defs_source = textwrap.dedent(inspect.getsource(_asset_2).split("\n", 1)[1])
-        Path("src/foo_bar/defs/subfolder/asset2.py").write_text(defs_source)
+        Path("src/foo_bar/defs/subfolder/asset2.py").write_text(defs_source, encoding="utf-8")
 
         defs_source = textwrap.dedent(inspect.getsource(_asset_3).split("\n", 1)[1])
-        Path("src/foo_bar/defs/subfolder/asset3.py").write_text(defs_source)
+        Path("src/foo_bar/defs/subfolder/asset3.py").write_text(defs_source, encoding="utf-8")
 
         result = subprocess.run(
             ["dg", "list", "defs", "--path", path], check=False, capture_output=True
@@ -516,7 +519,7 @@ def test_list_defs_complex_assets_succeeds(snapshot):
                 "utf-8"
             )  # no table header means no table
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(
                     inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
                 )
@@ -537,7 +540,7 @@ def test_list_defs_column_selection():
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(
                     inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
                 )
@@ -591,7 +594,7 @@ def test_list_defs_asset_subselection():
                 "utf-8"
             )  # no table header means no table
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(
                     inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
                 )
@@ -622,6 +625,42 @@ def test_list_defs_asset_subselection():
             assert "alpha:alpha_check" not in output, output
             assert "alpha:alpha_beta_check" not in output
             assert "should_not_be_included" not in output
+
+
+def test_list_defs_with_automation_condition():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, uv_sync=True) as project_dir,
+    ):
+        with activate_venv(project_dir / ".venv"):
+            subprocess.run(
+                ["dg", "scaffold", "defs", "dagster.DefsFolderComponent", "mydefs"],
+                check=True,
+            )
+
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
+                defs_source = textwrap.dedent(
+                    inspect.getsource(_sample_defs_with_automation_condition).split("\n", 1)[1]
+                )
+                f.write(defs_source)
+
+            result = subprocess.run(
+                ["dg", "list", "defs", "--json"], capture_output=True, check=True
+            )
+            output = json.loads(result.stdout.decode("utf-8"))
+
+            assets_by_key = {a["asset_key"]: a for a in output["assets"]}
+
+            # Asset with automation condition should have label and expanded_label
+            eager = assets_by_key["eager_asset"]
+            assert eager["automation_condition"] is not None
+            assert eager["automation_condition"]["label"] == "eager"
+            assert isinstance(eager["automation_condition"]["expanded_label"], list)
+            assert len(eager["automation_condition"]["expanded_label"]) > 0
+
+            # Asset without automation condition should have null
+            plain = assets_by_key["plain_asset"]
+            assert plain.get("automation_condition") is None
 
 
 def _sample_complex_asset_defs():
@@ -682,6 +721,18 @@ def _sample_complex_asset_defs():
         pass
 
 
+def _sample_defs_with_automation_condition():
+    import dagster as dg
+
+    @dg.asset(automation_condition=dg.AutomationCondition.eager())
+    def eager_asset(): ...
+
+    @dg.asset
+    def plain_asset(): ...
+
+    defs = dg.Definitions(assets=[eager_asset, plain_asset])  # noqa: F841
+
+
 def test_list_defs_with_env_file_succeeds(snapshot):
     with (
         ProxyRunner.test() as runner,
@@ -693,7 +744,7 @@ def test_list_defs_with_env_file_succeeds(snapshot):
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(
                     inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
                 )
@@ -702,7 +753,7 @@ def test_list_defs_with_env_file_succeeds(snapshot):
                     GROUP_NAME=bar
                 """)
 
-            with Path(".env").open("w") as f:
+            with Path(".env").open("w", encoding="utf-8") as f:
                 f.write(env_file_contents)
 
             result = subprocess.run(["dg", "list", "defs"], check=True, capture_output=True)
@@ -741,7 +792,7 @@ def test_list_defs_fails_compact(capture_stderr_from_components_cli_invocations)
                 check=True,
             )
 
-            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            with Path("src/foo_bar/defs/mydefs/definitions.py").open("w", encoding="utf-8") as f:
                 defs_source = textwrap.dedent(
                     inspect.getsource(_sample_failed_defs).split("\n", 1)[1]
                 )
@@ -785,7 +836,7 @@ def test_list_env_succeeds(monkeypatch):
         """).strip()
         )
 
-        Path(".env").write_text("FOO=bar")
+        Path(".env").write_text("FOO=bar", encoding="utf-8")
         result = runner.invoke("list", "env")
         assert_runner_result(result)
         assert (
@@ -813,7 +864,8 @@ def test_list_env_succeeds(monkeypatch):
                 requirements:
                     env:
                         - FOO
-            """)
+            """),
+            encoding="utf-8",
         )
 
         result = runner.invoke("list", "env")
@@ -847,7 +899,7 @@ def test_list_env_succeeds_with_no_defs(monkeypatch):
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
 
-        Path(".env").write_text("FOO=bar")
+        Path(".env").write_text("FOO=bar", encoding="utf-8")
         result = runner.invoke("list", "env")
         assert_runner_result(result)
         assert (

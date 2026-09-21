@@ -32,3 +32,21 @@ concurrency:
           applyLimitPerUniqueValue: true
         limit: 10
 ```
+
+### Limit the number of runs that can be in progress by code location
+
+Every run is automatically [tagged](/guides/build/assets/metadata-and-tags/tags#run-tags) with its code location using the `dagster/code_location` tag. You can use this tag to control run concurrency at the code location level. This is useful in multi-team environments where each team has their own code location and you want to ensure fair resource allocation.
+
+To apply a limit per code location, combine the `dagster/code_location` tag with `applyLimitPerUniqueValue`:
+
+```yaml
+concurrency:
+  runs:
+    tag_concurrency_limits:
+      - key: 'dagster/code_location'
+        value:
+          applyLimitPerUniqueValue: true
+        limit: 10
+```
+
+This configuration limits each code location to 10 concurrent runs. For example, if you have three code locations (`team_a`, `team_b`, and `team_c`), each can have up to 10 runs in progress simultaneously.

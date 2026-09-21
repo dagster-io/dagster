@@ -25,7 +25,7 @@ const MAR_3_2025_END_OF_DAY_DARWIN = 1741012199999;
 
 jest.mock('@dagster-io/ui-components', () => ({
   ...jest.requireActual('@dagster-io/ui-components'),
-  DayPickerWrapper: ({onSelect}: any) => {
+  DayPickerWrapper: ({onSelect}: {onSelect: (range: {from: Date; to: Date}) => void}) => {
     return (
       <div>
         <button

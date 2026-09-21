@@ -1,11 +1,11 @@
 import {Box, Colors, ConfigTypeSchema, Icon} from '@dagster-io/ui-components';
-import styled from 'styled-components';
 
 import {Description} from './Description';
 import {SectionHeader, SectionItemContainer} from './SidebarComponents';
 import {gql} from '../apollo-client';
 import {SidebarResourcesSectionFragment} from './types/SidebarResourcesSection.types';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import styles from './css/SidebarResourcesSection.module.css';
 
 const NO_DESCRIPTION = '';
 
@@ -26,10 +26,12 @@ export const SidebarResourcesSection = ({
       )}
       <Box flex={{direction: 'column', gap: 16}}>
         {[...mode.resources, ...mode.loggers].map((resource) => (
-          <ContextResourceContainer key={resource.name}>
+          <div className={styles.contextResourceContainer} key={resource.name}>
             <Icon name="resource" color={Colors.accentGray()} />
             <div>
-              <ContextResourceHeader>{resource.name}</ContextResourceHeader>
+              <SectionHeader className={styles.contextResourceHeader}>
+                {resource.name}
+              </SectionHeader>
               <Description description={resource.description || NO_DESCRIPTION} />
               {resource.configField && (
                 <ConfigTypeSchema
@@ -38,7 +40,7 @@ export const SidebarResourcesSection = ({
                 />
               )}
             </div>
-          </ContextResourceContainer>
+          </div>
         ))}
       </Box>
     </SectionItemContainer>
@@ -77,21 +79,4 @@ export const SIDEBAR_RESOURCES_SECTION_FRAGMENT = gql`
   }
 
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
-`;
-
-const ContextResourceHeader = styled(SectionHeader)`
-  font-size: 16px;
-  margin: 4px 0;
-`;
-
-const ContextResourceContainer = styled.div`
-  display: flex;
-  align-items: flex-start;
-
-  & h4 {
-    margin-top: -2px;
-  }
-  & .iconGlobal {
-    margin-right: 8px;
-  }
 `;

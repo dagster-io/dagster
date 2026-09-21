@@ -6,6 +6,9 @@ that are used to test the YAML generation functionality.
 """
 
 from pathlib import Path
+from typing import TypedDict
+
+from dagster import Component
 
 # Import the YAML generation functions from CLI
 from dagster_dg_cli.utils.yaml_template_generator import (
@@ -16,11 +19,18 @@ from dagster_dg_cli.utils.yaml_template_generator import (
 # Import the component classes directly
 from dagster_test.components import SimplePipesScriptComponent
 
+
+class _TestComponent(TypedDict):
+    name: str
+    component_class: type[Component]
+    test_data_dir: str
+
+
 # Test data directory
 TEST_DATA_DIR = Path(__file__).parent / "test_data"
 
 # Component test cases - same as in the test file
-TEST_COMPONENTS = [
+TEST_COMPONENTS: list[_TestComponent] = [
     {
         "name": "simple_example",
         "component_class": SimplePipesScriptComponent,
@@ -30,7 +40,7 @@ TEST_COMPONENTS = [
 ]
 
 
-def get_component_schema(component_class: type) -> dict:
+def get_component_schema(component_class: type[Component]) -> dict:
     """Get the JSON schema for a component class."""
     model_cls = component_class.get_model_cls()
     if model_cls is None:
@@ -38,7 +48,7 @@ def get_component_schema(component_class: type) -> dict:
     return model_cls.model_json_schema()
 
 
-def get_component_type_str(component_class: type) -> str:
+def get_component_type_str(component_class: type[Component]) -> str:
     """Get the component type string for a component class."""
     return f"{component_class.__module__}.{component_class.__name__}"
 

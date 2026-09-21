@@ -1,7 +1,6 @@
 import {
   BaseTag,
   Box,
-  Caption,
   Colors,
   Icon,
   IconName,
@@ -10,6 +9,7 @@ import {
   Popover,
   Spinner,
   Tag,
+  Text,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
@@ -147,7 +147,7 @@ const StatusTag = ({
         )}
       </Tag>
       {partitionSummary && config.partitionText && (
-        <Caption>{config.partitionText(partitionStats, totalPartitions)}</Caption>
+        <Text size={12}>{config.partitionText(partitionStats, totalPartitions)}</Text>
       )}
     </Box>
   );

@@ -92,9 +92,9 @@ class AutomationConditionScenarioState(ScenarioState):
                 emit_backfills=False,
                 evaluation_id=cursor.evaluation_id,
             )
-            evaluator.request_subsets_by_key = self._get_request_subsets_by_key(
+            evaluator.request_subsets_by_key = self._get_request_subsets_by_key(  # ty: ignore[invalid-assignment]
                 evaluator.asset_graph_view
-            )  # type: ignore
+            )
             context = AutomationContext.create(key=asset_key, evaluator=evaluator)
 
             full_result = await asset_condition.evaluate(context)  # type: ignore

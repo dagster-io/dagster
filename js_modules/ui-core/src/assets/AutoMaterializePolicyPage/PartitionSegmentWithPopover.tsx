@@ -7,7 +7,8 @@ import {numberFormatter} from '../../ui/formatters';
 interface Props {
   description: string;
   numTrue: number;
-  assetKeyPath: string[];
+  assetKeyPath: string[] | null;
+  jobName?: string;
   evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
@@ -17,6 +18,7 @@ export const PartitionSegmentWithPopover = ({
   description,
   selectPartition,
   assetKeyPath,
+  jobName,
   evaluationId,
   nodeUniqueId,
   numTrue,
@@ -42,6 +44,7 @@ export const PartitionSegmentWithPopover = ({
           description={description}
           status={AssetConditionEvaluationStatus.TRUE}
           assetKeyPath={assetKeyPath}
+          jobName={jobName}
           evaluationId={evaluationId}
           nodeUniqueId={nodeUniqueId}
           selectPartition={selectPartition}

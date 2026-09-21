@@ -24,4 +24,4 @@ with DAG(
 ) as the_dag:
     PythonOperator(task_id="print_task", python_callable=print_hello) >> PythonOperator(
         task_id="downstream_print_task", python_callable=print_hello
-    )  # type: ignore
+    )

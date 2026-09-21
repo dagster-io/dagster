@@ -1,5 +1,5 @@
 import torch
-from project_ml.defs.assets.data_assets import raw_mnist_data
+from project_ml.defs.assets.data_assets import raw_mnist_data  # ty: ignore[unresolved-import]
 
 
 def test_raw_mnist_data_basic(mock_context):

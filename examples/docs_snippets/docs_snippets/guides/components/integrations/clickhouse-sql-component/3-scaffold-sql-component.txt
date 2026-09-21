@@ -1,0 +1,3 @@
+dg scaffold defs dagster.TemplatedSqlComponent species_counts
+
+Creating defs at /.../my-project/src/my_project/defs/species_counts.

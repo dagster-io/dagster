@@ -33,10 +33,11 @@ SNIPPETS_DIR = (
 
 def _swap_to_mock_tableau_component(path: Path) -> None:
     path.write_text(
-        path.read_text().replace(
+        path.read_text(encoding="utf-8").replace(
             "dagster_tableau.TableauComponent",
             "my_project.defs.tableau_ingest.test_tableau_utils.MockTableauComponent",
-        )
+        ),
+        encoding="utf-8",
     )
 
 

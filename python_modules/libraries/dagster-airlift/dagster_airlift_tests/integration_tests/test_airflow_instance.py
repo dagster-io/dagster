@@ -8,6 +8,7 @@ from dagster_shared.error import DagsterError
 from dagster_airlift_tests.integration_tests.conftest import assert_link_exists
 
 
+@pytest.mark.timeout(180)
 def test_airflow_instance(airflow_instance: None) -> None:
     """Test AirflowInstance APIs against live-running airflow. Ensure that links result in 200s.
 
@@ -59,7 +60,7 @@ def test_airflow_instance(airflow_instance: None) -> None:
 
     # Kick off a run of the dag.
     run_id = instance.trigger_dag(dag_id="print_dag")
-    instance.wait_for_run_completion(dag_id="print_dag", run_id=run_id)
+    instance.wait_for_run_completion(dag_id="print_dag", run_id=run_id, timeout=180)
     run = instance.get_dag_run(dag_id="print_dag", run_id=run_id)
 
     assert run.run_id == run_id

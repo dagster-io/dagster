@@ -49,12 +49,12 @@ def create_my_final_list(downloaded_artifact: list[int]) -> list[int]:
     """Example downloading an Artifact and creating a new one.
 
     Args:
-        my_first_list (List[int]): Unpickled content of Artifact created in the previous asset
+        downloaded_artifact (List[int]): Unpickled content of Artifact created in the previous asset
 
     Returns:
         List[int]: The content of the new Artifact.
 
-    my_first_list is unpickled from the Artifact. We then concatene that list with another one into
+    downloaded_artifact is unpickled from the Artifact. We then concatene that list with another one into
     a new Artifact.
     """
     return downloaded_artifact + [4, 5, 7]

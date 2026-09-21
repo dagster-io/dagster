@@ -12,7 +12,7 @@ const mockGetData = jest.fn();
 const mockSetCodeLocationStatusAtom = jest.fn();
 
 jest.mock('../../../search/useIndexedDBCachedQuery', () => ({
-  getCachedData: (...args: any[]) => mockGetCachedData(...args),
+  getCachedData: (...args: unknown[]) => mockGetCachedData(...args),
   useGetData: () => mockGetData,
 }));
 

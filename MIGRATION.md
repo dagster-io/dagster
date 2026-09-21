@@ -2,6 +2,112 @@
 
 When new releases include breaking changes or deprecations, this document explains how to upgrade your projects.
 
+## Upgrading to 1.13.0
+
+### Breaking changes
+
+- The deprecated `external_asset_from_spec` and `external_assets_from_specs` helpers have been removed. Construct external assets by passing `AssetSpec` objects directly to `Definitions(...)`, or by building an `AssetsDefinition` from specs.
+
+```python
+# before
+from dagster import AssetSpec, Definitions, external_assets_from_specs
+
+defs = Definitions(assets=[*external_assets_from_specs([AssetSpec("my_asset")])])
+
+# after
+from dagster import AssetSpec, Definitions
+
+defs = Definitions(assets=[AssetSpec("my_asset")])
+```
+
+- Deprecated single-`AssetKey` `deps` argument support has been removed. If you were passing a single dependency, wrap it in a sequence. If you need dependency-level configuration such as a partition mapping, prefer `AssetDep`.
+
+```python
+# before
+from dagster import AssetKey, asset
+
+
+@asset(deps=AssetKey("upstream"))
+def downstream(): ...
+
+
+# after
+from dagster import AssetDep, asset
+
+
+@asset(deps=[AssetDep("upstream")])
+def downstream(): ...
+```
+
+- `Definitions.get_all_asset_specs()` has been removed. Use `Definitions.resolve_all_asset_specs()` instead.
+
+- `@observable_source_asset` no longer accepts the deprecated `legacy_freshness_policy` or `auto_observe_interval_minutes` parameters. Migrate to `automation_condition=` and schedule or sensor based automation instead.
+
+- `AssetsDefinition` no longer accepts the deprecated `legacy_freshness_policies_by_output_name` parameter.
+
+- `AssetOut` no longer accepts the deprecated `legacy_freshness_policy` parameter. If you were still passing `legacy_freshness_policy=` to `AssetOut(...)`, remove it and migrate to freshness checks or automation-based behavior instead.
+
+- The asset module loader helpers `load_assets_from_modules`, `load_assets_from_current_module`, `load_assets_from_package_module`, and `load_assets_from_package_name` no longer accept the deprecated `legacy_freshness_policy` parameter. If you were using these helpers to stamp a legacy freshness policy onto loaded assets, remove that argument and migrate to `automation_condition=` or freshness checks.
+
+- In component loading code, `ComponentLoadContext.load_component_at_path` and `ComponentLoadContext.build_defs_at_path` have been removed. Use `context.load_component(...)` and `context.build_defs(...)` instead.
+
+```python
+# before
+other_component = context.load_component_at_path("other_component")
+other_defs = context.build_defs_at_path("other_component")
+
+# after
+other_component = context.load_component("other_component")
+other_defs = context.build_defs("other_component")
+```
+
+- [dagster-airbyte] The deprecated `AirbyteState` enum has been removed. Use `AirbyteJobStatusType` instead. The deprecated `legacy_freshness_policy` and `auto_materialize_policy` parameters have also been removed from `build_airbyte_assets()`.
+
+- [dagster-looker] `DagsterLookerResource.build_defs` has been removed. Load specs with `load_looker_asset_specs(...)` and pass them to `Definitions(...)` instead. Deprecated translator key helper methods such as `get_asset_key`, `get_dashboard_asset_key`, `get_explore_asset_key`, and `get_view_asset_key` have also been removed. Custom translators should override `get_asset_spec(...)` and derive the key from the returned spec. `load_looker_asset_specs(...)` now expects a translator instance, not a translator class.
+
+```python
+# before
+looker_defs = looker_resource.build_defs(dagster_looker_translator=MyTranslator)
+
+# after
+looker_defs = Definitions(
+    assets=load_looker_asset_specs(
+        looker_resource,
+        dagster_looker_translator=MyTranslator(),
+    )
+)
+```
+
+- [dagster-powerbi] `PowerBIWorkspace.build_defs()` has been removed. Replace it with `load_powerbi_asset_specs(...)` plus `Definitions(...)`. Deprecated translator key helpers have also been removed; custom translators should implement `get_asset_spec(...)`. `load_powerbi_asset_specs(...)` now requires a translator instance rather than a translator class.
+
+```python
+# before
+defs = powerbi_workspace.build_defs(dagster_powerbi_translator=MyTranslator)
+
+# after
+defs = Definitions(
+    assets=load_powerbi_asset_specs(
+        powerbi_workspace,
+        dagster_powerbi_translator=MyTranslator(),
+    )
+)
+```
+
+- [dagster-sigma] `SigmaOrganization.build_defs()` has been removed. Replace it with `load_sigma_asset_specs(...)` plus `Definitions(...)`. Deprecated translator key helpers have also been removed; derive keys from `get_asset_spec(...)`. `load_sigma_asset_specs(...)` now requires a translator instance rather than a translator class.
+
+```python
+# before
+defs = sigma_organization.build_defs(dagster_sigma_translator=MyTranslator)
+
+# after
+defs = Definitions(
+    assets=load_sigma_asset_specs(
+        sigma_organization,
+        dagster_sigma_translator=MyTranslator(),
+    )
+)
+```
+
 ## Upgrading to 1.12.0
 
 ### Breaking changes
@@ -37,7 +143,6 @@ freshness:
 - If you have written a custom `Executor` subclass, you will need to update it to handle resource initialization failures. Resource initialization failures previously always caused runs to fail. With 1.12.0, executors that execute steps in dedicated processes can recover from resource initialization failures using step retries. Executors are responsible for coordinating resource initialization failures - they must now explicitly mark such failures to fail the step and encompassing run. All built-in executors provided by the dagster package and libraries now manage this failure-handling. Custom executor implementations that do not specially handle resource initialization failures may result in runs that stay in 'started' status without being explicitly marked as failed.
 
 ```python
-
 class MyCustomExecutor(Executor):
     @public
     def execute(
@@ -157,10 +262,11 @@ Other relevant parameter renames:
   ```python
   from dagster import asset, AssetExecutionContext
 
+
   @asset
   def my_asset(context: AssetExecutionContext):
-    window_start, window_end = context.partition_time_window
-    in_an_hour = window_start.add(hours=1) # will break since add() is only defined in pendulum
+      window_start, window_end = context.partition_time_window
+      in_an_hour = window_start.add(hours=1)  # will break since add() is only defined in pendulum
   ```
 
   - could be changed to this in order to continue using pendulum datetimes:
@@ -202,10 +308,12 @@ Other relevant parameter renames:
   ```python
   # before
   from dagster import SourceAsset
+
   my_asset = SourceAsset("my_asset", io_manager_key="abc")
 
   # after
   from dagster import AssetSpec
+
   my_asset = AssetSpec("my_asset", metadata={"dagster/io_manager_key": "abc"})
   ```
 
@@ -296,6 +404,7 @@ my_dbt_assets = load_assets_from_dbt_manifest(
 from dagster import AssetExecutionContext
 from dagster_dbt import dbt_assets, DbtCliResource
 
+
 @dbt_assets(manifest=manifest)
 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
@@ -312,8 +421,8 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 - `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
 
 ```python
-def my_helper_function(context: AssetExecutionContext):
-    ...
+def my_helper_function(context: AssetExecutionContext): ...
+
 
 @op
 def my_op(context: OpExecutionContext):
@@ -327,13 +436,12 @@ will cause type checking errors. To migrate, update type hints to respect the ne
 ```python
 # old
 @op
-def my_op(context: AssetExecutionContext):
-    ...
+def my_op(context: AssetExecutionContext): ...
+
 
 # correct
 @op
-def my_op(context: OpExecutionContext):
-    ...
+def my_op(context: OpExecutionContext): ...
 ```
 
 - `AssetCheckResult(success=True)` is renamed to `AssetCheckResult(passed=True)`
@@ -383,38 +491,33 @@ ingress:
 
 ```python
 @asset
-def my_asset():
-   ...
+def my_asset(): ...
 
-@asset(
-   non_argument_deps={"my_asset"}
-)
-def a_downstream_asset():
-   ...
+
+@asset(non_argument_deps={"my_asset"})
+def a_downstream_asset(): ...
+
 
 # becomes
 
-@asset
-def my_asset():
-   ...
 
-@asset(
-   deps=["my_asset"]
-)
-def a_downstream_asset():
-   ...
+@asset
+def my_asset(): ...
+
+
+@asset(deps=["my_asset"])
+def a_downstream_asset(): ...
+
 
 # or
 
-@asset
-def my_asset():
-   ...
 
-@asset(
-   deps=[my_asset]
-)
-def a_downstream_asset():
-   ...
+@asset
+def my_asset(): ...
+
+
+@asset(deps=[my_asset])
+def a_downstream_asset(): ...
 ```
 
 - [Dagster Cloud ECS Agent] We've introduced performance improvements that rely on the [AWS Resource Groups Tagging API](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/overview.html). To enable, grant your agent's IAM policy permission to `tag:GetResources`. Without this policy, the ECS Agent will log a deprecation warning and fall back to its old behavior (listing all ECS services in the cluster and then listing each service's tags).
@@ -433,39 +536,36 @@ def my_dbt_op(dbt_resource: DbtCliClientResource):
     dbt.cli("test")
     manifest_json = dbt.get_manifest_json()
 
+
 # new
 with Path("my/dbt/manifest").open() as handle:
     manifest = json.loads(dbt_manifest.read())
 
+
 @op
 def my_dbt_op(dbt: DbtCliResource):
-   dbt.cli(["run"], manifest=manifest).stream()
+    dbt.cli(["run"], manifest=manifest).stream()
 
-   dbt.cli(["run", "--full-refresh"], manifest=manifest).stream()
+    dbt.cli(["run", "--full-refresh"], manifest=manifest).stream()
 
-   dbt_test_invocation = dbt.cli(["test"], manifest_manifest).stream()
-   manifest_json = dbt_test_invocation.get_artifact("manifest.json")
+    dbt_test_invocation = dbt.cli(["test"], manifest_manifest).stream()
+    manifest_json = dbt_test_invocation.get_artifact("manifest.json")
+
 
 # old
 dbt_assets = load_assets_from_dbt_project(project_dir="my/dbt/project")
 
 defs = Definitions(
     assets=dbt_assets,
-    resources={
-        "dbt": DbtCliClientResource(project_dir="my/dbt/project")
-    },
+    resources={"dbt": DbtCliClientResource(project_dir="my/dbt/project")},
 )
 
 # new
 dbt_assets = load_assets_from_dbt_project(project_dir="my/dbt/project")
 
 defs = Definitions(
-    assets=dbt_assets,
-    resources={
-        "dbt": DbtCliResource(project_dir="my/dbt/project")
-    }
+    assets=dbt_assets, resources={"dbt": DbtCliResource(project_dir="my/dbt/project")}
 )
-
 ```
 
 - The following arguments on `load_assets_from_dbt_project` and `load_assets_from_dbt_manifest` are now deprecated in favor of other options. Arguments will continue to work when passed into these functions, but a deprecation warning will be emitted.
@@ -523,13 +623,14 @@ load_assets_from_dbt_project(
 ```python
 from dagster_dbt import default_metadata_from_dbt_resource_props
 
+
 def my_metadata_from_dbt_resource_props(dbt_resource_props):
     my_metadata = {...}
     return {**default_metadata_from_dbt_resource_props(dbt_resource_props), **my_metadata}
 
+
 load_assets_from_dbt_manifest(
-    ...,
-    node_info_to_definition_metadata_fn=my_metadata_from_dbt_resource_props
+    ..., node_info_to_definition_metadata_fn=my_metadata_from_dbt_resource_props
 )
 ```
 
@@ -813,6 +914,7 @@ This optional migration makes performance improvements to the runs page in Dagit
   ```python
   from flask import has_request_context, request
 
+
   def submit_run(self, context: SubmitRunContext) -> PipelineRun:
       jwt_claims_header = (
           request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
@@ -984,25 +1086,17 @@ more information.
 
   ```python
   @pipeline
-  def my_pipeline():
-      ...
+  def my_pipeline(): ...
+
 
   execute_pipeline(
       my_pipeline,
-      run_config={
-          "intermediate_storage": {
-              "filesystem": {"base_dir": ...}
-          }
-      },
+      run_config={"intermediate_storage": {"filesystem": {"base_dir": ...}}},
   )
 
   execute_pipeline(
       my_pipeline,
-      run_config={
-          "storage": {
-              "filesystem": {"base_dir": ...}
-          }
-      },
+      run_config={"storage": {"filesystem": {"base_dir": ...}}},
   )
   ```
 
@@ -1011,22 +1105,14 @@ more information.
 
   ```python
   @pipeline(
-      mode_defs=[
-          ModeDefinition(
-              resource_defs={"io_manager": fs_io_manager}
-          )
-      ],
+      mode_defs=[ModeDefinition(resource_defs={"io_manager": fs_io_manager})],
   )
-  def my_pipeline():
-      ...
+  def my_pipeline(): ...
+
 
   execute_pipeline(
       my_pipeline,
-      run_config={
-          "resources": {
-              "io_manager": {"config": {"base_dir": ...}}
-          }
-      },
+      run_config={"resources": {"io_manager": {"config": {"base_dir": ...}}}},
   )
   ```
 
@@ -1041,21 +1127,15 @@ more information.
   storages to IO managers.
 
   ```python
-  my_io_manager_def = io_manager_from_intermediate_storage(
-      my_intermediate_storage_def
-  )
+  my_io_manager_def = io_manager_from_intermediate_storage(my_intermediate_storage_def)
+
 
   @pipeline(
       mode_defs=[
-          ModeDefinition(
-              resource_defs={
-                  "io_manager": my_io_manager_def
-              }
-          ),
+          ModeDefinition(resource_defs={"io_manager": my_io_manager_def}),
       ],
   )
-  def my_pipeline():
-      ...
+  def my_pipeline(): ...
   ```
 
 - We have deprecated the `intermediate_storage_defs` argument to `ModeDefinition`, in favor of the
@@ -1147,7 +1227,7 @@ For example, the following partition range for a monthly partition set:
 date_partition_range(
     start=datetime.datetime(2018, 1, 1),
     end=datetime.datetime(2019, 1, 1),
-    delta=datetime.timedelta(months=1)
+    delta=datetime.timedelta(months=1),
 )
 ```
 
@@ -1155,9 +1235,7 @@ should now be expressed as:
 
 ```python
 date_partition_range(
-    start=datetime.datetime(2018, 1, 1),
-    end=datetime.datetime(2019, 1, 1),
-    delta_range="months"
+    start=datetime.datetime(2018, 1, 1), end=datetime.datetime(2019, 1, 1), delta_range="months"
 )
 ```
 
@@ -1378,12 +1456,12 @@ from dagster import DagsterType, input_hydration_config, output_materialization_
 
 @input_hydration_config(config_schema=my_config_schema)
 def my_loader(_context, config):
-    '''some implementation'''
+    """some implementation"""
 
 
 @output_materialization_config(config_schema=my_config_schema)
 def my_materializer(_context, config):
-    '''some implementation'''
+    """some implementation"""
 
 
 MyType = DagsterType(
@@ -1401,12 +1479,12 @@ from dagster import DagsterType, dagster_type_loader, dagster_type_materializer
 
 @dagster_type_loader(config_schema=my_config_schema)
 def my_loader(_context, config):
-    '''some implementation'''
+    """some implementation"""
 
 
 @dagster_type_materializer(config_schema=my_config_schema)
 def my_materializer(_context, config):
-    '''some implementation'''
+    """some implementation"""
 
 
 MyType = DagsterType(
@@ -1497,15 +1575,16 @@ python file such as the following:
 
 ```python
 @pipeline
-def test():
-    ...
+def test(): ...
+
 
 @daily_schedule(
-    pipeline_name='test',
+    pipeline_name="test",
     start_date=datetime.datetime(2020, 1, 1),
 )
 def daily_test_schedule(_):
     return {}
+
 
 test_partition_set = PartitionSetDefinition(
     name="test",
@@ -1514,16 +1593,19 @@ test_partition_set = PartitionSetDefinition(
     environment_dict_fn_for_partition=lambda _: {},
 )
 
+
 @schedules
 def define_schedules():
     return [daily_test_schedule]
+
 
 @repository_partitions
 def define_partitions():
     return [test_partition_set]
 
+
 def define_repository():
-    return RepositoryDefinition('test', pipeline_defs=[test])
+    return RepositoryDefinition("test", pipeline_defs=[test])
 ```
 
 With a `repository.yaml` such as:
@@ -1546,15 +1628,16 @@ In 0.8.0, you'll write Python like:
 
 ```python
 @pipeline
-def test_pipeline():
-    ...
+def test_pipeline(): ...
+
 
 @daily_schedule(
-    pipeline_name='test',
+    pipeline_name="test",
     start_date=datetime.datetime(2020, 1, 1),
 )
 def daily_test_schedule(_):
     return {}
+
 
 test_partition_set = PartitionSetDefinition(
     name="test",
@@ -1562,6 +1645,7 @@ test_partition_set = PartitionSetDefinition(
     partition_fn=lambda: ["test"],
     run_config_fn_for_partition=lambda _: {},
 )
+
 
 @repository
 def test_repository():
@@ -1605,11 +1689,11 @@ resulted in opaque and hard-to-predict errors and unpleasant workarounds, for in
 - Tests of pipelines with dagstermill solids had to resort to workarounds such as
 
 ```python
-    handle = handle_for_pipeline_cli_args(
-        {'module_name': 'some_module.repository', 'fn_name': 'some_pipeline'}
-    )
-    pipeline = handle.build_pipeline_definition()
-    result = execute_pipeline(pipeline, ...)
+handle = handle_for_pipeline_cli_args(
+    {"module_name": "some_module.repository", "fn_name": "some_pipeline"}
+)
+pipeline = handle.build_pipeline_definition()
+result = execute_pipeline(pipeline, ...)
 ```
 
 In 0.8.0, we've added the `reconstructable` helper to explicitly convert in-memory pipelines into

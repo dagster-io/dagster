@@ -10,8 +10,8 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/LaunchButton.module.css';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 
@@ -49,7 +49,7 @@ function useLaunchButtonCommonState({runCount, disabled}: {runCount: number; dis
   if (starting) {
     status = LaunchButtonStatus.Starting;
     forced = {
-      title: runCount === 1 ? 'Submitting run…' : `Submitting ${runCount} runs…`,
+      title: runCount === 1 ? 'Submitting run\u2026' : `Submitting ${runCount} runs\u2026`,
       disabled: true,
       icon: 'dagster-spinner',
     };
@@ -80,7 +80,7 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
   return (
     <ShortcutHandler
       onShortcut={onClick}
-      shortcutLabel="⌥L"
+      shortcutLabel="\u2325L"
       shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
       <ButtonWithConfiguration
@@ -124,7 +124,7 @@ export const LaunchButtonDropdown = ({
   return (
     <ShortcutHandler
       onShortcut={(e) => onConfigSelected(e, primary)}
-      shortcutLabel="⌥L"
+      shortcutLabel="\u2325L"
       shortcutFilter={(e) => e.code === 'KeyL' && e.altKey}
     >
       <ButtonWithConfiguration
@@ -146,7 +146,8 @@ export const LaunchButtonDropdown = ({
           <Menu>
             {options.map((option, idx) => (
               <Tooltip key={idx} position="left" content={option.tooltip || ''}>
-                <LaunchMenuItem
+                <MenuItem
+                  className={styles.launchMenuItem}
                   text={option.title}
                   disabled={option.disabled}
                   onClick={(e) => onConfigSelected(e, option)}
@@ -157,13 +158,12 @@ export const LaunchButtonDropdown = ({
           </Menu>
         }
       >
-        <ButtonContainer
+        <Button
           role="button"
-          status={status}
-          style={{minWidth: 'initial'}}
+          className={styles.dropdownArrow}
+          style={{cursor: status !== 'ready' ? 'normal' : 'pointer'}}
           icon={<Icon name="arrow_drop_down" />}
           intent="primary"
-          joined="left"
           disabled={popoverDisabled}
         />
       </Popover>
@@ -214,13 +214,21 @@ const ButtonWithConfiguration = ({
 
   return (
     <Tooltip position="left" canShow={!!tooltip} content={tooltip || ''}>
-      <ButtonContainer
+      <Button
         role="button"
         intent="primary"
-        style={{...style}}
-        status={status}
+        style={{
+          ...style,
+          borderTopRightRadius: joined === 'right' ? 0 : undefined,
+          borderBottomRightRadius: joined === 'right' ? 0 : undefined,
+          borderTopLeftRadius: joined === 'left' ? 0 : undefined,
+          borderBottomLeftRadius: joined === 'left' ? 0 : undefined,
+          borderLeft: joined === 'left' ? `1px solid ${Colors.keylineDefault()}` : 'transparent',
+          cursor: status !== 'ready' ? 'normal' : 'pointer',
+          marginLeft: joined ? '0' : '6px',
+          ...(joined === 'right' ? {paddingRight: '8px'} : {}),
+        }}
         onClick={onClickWithWarning}
-        joined={joined}
         disabled={disabled}
         icon={
           icon === 'dagster-spinner' ? (
@@ -232,32 +240,8 @@ const ButtonWithConfiguration = ({
           )
         }
       >
-        <MaxwidthText>{title}</MaxwidthText>
-      </ButtonContainer>
+        <div className={styles.maxwidthText}>{title}</div>
+      </Button>
     </Tooltip>
   );
 };
-
-const ButtonContainer = styled(Button)<{
-  status: LaunchButtonStatus;
-  joined?: 'right' | 'left';
-}>`
-  border-top-${({joined}) => joined}-radius: 0;
-  border-bottom-${({joined}) => joined}-radius: 0;
-  border-left: ${({joined}) =>
-    joined === 'left' ? `1px solid ${Colors.keylineDefault()}` : 'transparent'};
-  cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
-  margin-left: ${({joined}) => (joined ? '0' : '6px')};
-  ${({joined}) => (joined === 'right' ? 'padding-right: 8px;' : null)}
-`;
-
-const MaxwidthText = styled.div`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 350px;
-`;
-
-const LaunchMenuItem = styled(MenuItem)`
-  max-width: 200px;
-`;

@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import pyarrow as pa
-import pyspark
 import pyspark.sql
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
@@ -53,16 +52,21 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         connection,
     ):
         """Stores the given object at the provided filepath."""
-        pa_df = pyspark_df_to_arrow_table(obj)  # noqa: F841
-        connection.execute(
-            f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
-            " pa_df;"
-        )
-        if not connection.fetchall():
-            # table was not created, therefore already exists. Insert the data
-            connection.execute(
-                f"insert into {table_slice.schema}.{table_slice.table} select * from pa_df;"
+        if obj.isEmpty():
+            context.log.warning(
+                "Skipping DuckDB write for empty DataFrame. An empty table will not be created."
             )
+        else:
+            pa_df = pyspark_df_to_arrow_table(obj)  # noqa: F841
+            connection.execute(
+                f"create table if not exists {table_slice.schema}.{table_slice.table} as select * from"
+                " pa_df;"
+            )
+            if not connection.fetchall():
+                # table was not created, therefore already exists. Insert the data
+                connection.execute(
+                    f"insert into {table_slice.schema}.{table_slice.table} select * from pa_df;"
+                )
 
         context.add_output_metadata(
             {
@@ -81,7 +85,7 @@ class DuckDBPySparkTypeHandler(DbTypeHandler[pyspark.sql.DataFrame]):
         self, context: InputContext, table_slice: TableSlice, connection
     ) -> pyspark.sql.DataFrame:
         """Loads the return of the query as the correct type."""
-        spark = SparkSession.builder.getOrCreate()  # type: ignore
+        spark = SparkSession.builder.getOrCreate()
         if table_slice.partition_dimensions and len(context.asset_partition_keys) == 0:
             return spark.createDataFrame([], StructType([]))
 

@@ -21,8 +21,8 @@ def cleanup_result_notebook(result):
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
-        if os.path.exists(result_path):  # pyright: ignore[reportArgumentType]
-            os.unlink(result_path)  # pyright: ignore[reportArgumentType]
+        if os.path.exists(result_path):
+            os.unlink(result_path)
 
 
 @contextmanager

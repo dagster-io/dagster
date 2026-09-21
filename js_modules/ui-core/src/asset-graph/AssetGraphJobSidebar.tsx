@@ -71,7 +71,7 @@ export const AssetGraphJobSidebarContent = ({
     {__typename: 'PipelineSnapshot'}
   >;
 }) => {
-  const [activeTab, setActiveTab] = useQueryPersistedState({
+  const [activeTab, setActiveTab] = useQueryPersistedState<string>({
     queryKey: 'tab',
     defaults: {tab: 'info'},
   });

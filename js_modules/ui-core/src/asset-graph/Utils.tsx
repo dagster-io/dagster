@@ -15,9 +15,9 @@ import {
   AssetNodeLiveObservationFragment,
 } from '../asset-data/types/AssetBaseDataProvider.types';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import type {WorkspaceAssetNode} from '../assets/WorkspaceAssetNode';
 import {ILayoutOp} from '../graph/layout';
 import {RunStatus} from '../graphql/types';
-import {WorkspaceAssetFragment} from '../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
@@ -34,7 +34,7 @@ export enum AssetGraphViewType {
  * IMPORTANT: This file is used by the WebWorker so make sure we don't indirectly import React or anything that relies on window/document
  */
 
-type AssetNode = WorkspaceAssetFragment;
+type AssetNode = WorkspaceAssetNode;
 type AssetKey = AssetNodeKeyFragment;
 type AssetLiveNode = AssetNodeLiveFragment & {
   freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
@@ -265,12 +265,36 @@ export function shouldDisplayRunFailure(
   return true;
 }
 
+// Mirrors Python's AssetKey.to_escaped_user_string / from_escaped_user_string
+// (dagster/_core/definitions/asset_key.py) so that AssetKey(["foo/bar"]) and
+// AssetKey(["foo", "bar"]) produce distinct tokens. Within a component, "/" is
+// escaped as "\/"; standalone backslashes are preserved.
 export function tokenForAssetKey(key: {path: string[]}) {
-  return key.path.join('/');
+  return key.path.map((part) => part.replace(/\//g, '\\/')).join('/');
 }
 
 export function tokenToAssetKey(token: string) {
-  return {path: token.split('/')};
+  const parts: string[] = [];
+  let current = '';
+  let escapeNext = false;
+  for (const char of token) {
+    if (escapeNext) {
+      current += '\\' + char;
+      escapeNext = false;
+    } else if (char === '\\') {
+      escapeNext = true;
+    } else if (char === '/') {
+      parts.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (escapeNext) {
+    current += '\\';
+  }
+  parts.push(current);
+  return {path: parts.map((part) => part.replace(/\\\//g, '/'))};
 }
 
 export function displayNameForAssetKey(key: {path: string[]}) {
@@ -305,6 +329,64 @@ export const groupIdForNode = (node: GraphNode) =>
         node.definition.groupName,
       ].join('')
     : `global@global:${node.definition.groupName}`;
+
+// Group names support hierarchy via `/` separators. parseGroupId splits a
+// fully-qualified group id (`repo@location:a/b/c`) into its location prefix
+// (`repo@location:`) and the segmented group path (`['a','b','c']`). Memoized
+// because the same group ids are parsed many times per layout/render pass.
+export const parseGroupId = memoize(
+  (groupId: string): {locationPrefix: string; segments: string[]} | null => {
+    const colonIdx = groupId.indexOf(':');
+    if (colonIdx < 0) {
+      return null;
+    }
+    const locationPrefix = groupId.slice(0, colonIdx + 1);
+    const groupName = groupId.slice(colonIdx + 1);
+    const segments = groupName.split('/').filter(Boolean);
+    if (!segments.length) {
+      return null;
+    }
+    return {locationPrefix, segments};
+  },
+);
+
+// Returns the ancestor group ids for `groupId`, in order from outermost
+// (shortest) to immediate parent. Excludes `groupId` itself.
+export const ancestorGroupIds = memoize((groupId: string): string[] => {
+  const parsed = parseGroupId(groupId);
+  if (!parsed || parsed.segments.length <= 1) {
+    return [];
+  }
+  const result: string[] = [];
+  let acc = parsed.locationPrefix;
+  for (let i = 0; i < parsed.segments.length - 1; i++) {
+    acc += i === 0 ? parsed.segments[i] : `/${parsed.segments[i]}`;
+    result.push(acc);
+  }
+  return result;
+});
+
+// Just the trailing segment of the group id's path, used for display.
+export const groupIdLeafName = (groupId: string): string => {
+  const parsed = parseGroupId(groupId);
+  if (!parsed) {
+    return groupId;
+  }
+  return parsed.segments[parsed.segments.length - 1] ?? groupId;
+};
+
+// Rolls each asset up into its leaf group AND every synthetic ancestor, so a
+// collapsed "marketing" tile shows counts/statuses for all of marketing/*.
+export const groupedAssetsWithAncestors = (nodes: GraphNode[]): Record<string, GraphNode[]> => {
+  const grouped: Record<string, GraphNode[]> = {};
+  for (const node of nodes) {
+    const leafId = groupIdForNode(node);
+    for (const id of [leafId, ...ancestorGroupIds(leafId)]) {
+      (grouped[id] ??= []).push(node);
+    }
+  }
+  return grouped;
+};
 
 // Inclusive
 export const getUpstreamNodes = memoize(

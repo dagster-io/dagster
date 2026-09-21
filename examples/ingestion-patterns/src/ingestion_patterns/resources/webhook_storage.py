@@ -57,7 +57,7 @@ class WebhookStorageResource(dg.ConfigurableResource):
         if not source_file.exists():
             return []
 
-        with open(source_file) as f:
+        with open(source_file, encoding="utf-8") as f:
             return json.load(f)
 
     def clear_payloads(self, source_id: str) -> None:
@@ -81,7 +81,7 @@ class WebhookStorageResource(dg.ConfigurableResource):
 
         for source_file in Path(self.storage_dir).glob("*.json"):
             source_id = source_file.stem
-            with open(source_file) as f:
+            with open(source_file, encoding="utf-8") as f:
                 storage[source_id] = json.load(f)
 
         return storage

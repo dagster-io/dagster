@@ -572,10 +572,9 @@ def _audit_exclude_missing_public(validator: PublicApiValidator) -> int:
     public_lookup = {f"{sym.module_path}.{sym.symbol_name}" for sym in public_symbols}
 
     # Check which symbols in EXCLUDE_MISSING_PUBLIC actually have @public decorators now
-    symbols_with_public = []
-    for symbol_path in EXCLUDE_MISSING_PUBLIC:
-        if symbol_path in public_lookup:
-            symbols_with_public.append(symbol_path)
+    symbols_with_public = [
+        symbol_path for symbol_path in EXCLUDE_MISSING_PUBLIC if symbol_path in public_lookup
+    ]
 
     if not symbols_with_public:
         click.echo(
@@ -610,10 +609,9 @@ def _audit_exclude_missing_rst(validator: PublicApiValidator) -> int:
     rst_lookup = {f"{sym.module_path}.{sym.symbol_name}" for sym in rst_symbols}
 
     # Check which symbols in EXCLUDE_MISSING_RST actually have RST documentation now
-    symbols_with_rst = []
-    for symbol_path in EXCLUDE_MISSING_RST:
-        if symbol_path in rst_lookup:
-            symbols_with_rst.append(symbol_path)
+    symbols_with_rst = [
+        symbol_path for symbol_path in EXCLUDE_MISSING_RST if symbol_path in rst_lookup
+    ]
 
     if not symbols_with_rst:
         click.echo(
@@ -650,10 +648,9 @@ def _audit_exclude_missing_export(validator: PublicApiValidator) -> int:
     }
 
     # Check which symbols in EXCLUDE_MISSING_EXPORT are actually exported now
-    symbols_with_export = []
-    for symbol_path in EXCLUDE_MISSING_EXPORT:
-        if symbol_path in exported_lookup:
-            symbols_with_export.append(symbol_path)
+    symbols_with_export = [
+        symbol_path for symbol_path in EXCLUDE_MISSING_EXPORT if symbol_path in exported_lookup
+    ]
 
     if not symbols_with_export:
         click.echo(

@@ -1,7 +1,8 @@
 .. currentmodule:: dagster
 
+############
 Repositories
-============
+############
 
 .. autodata:: repository
   :annotation: RepositoryDefinition

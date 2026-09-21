@@ -2,7 +2,14 @@ import json
 import os
 
 import requests
-from dagster import AssetSelection, RunRequest, SensorResult, SkipReason, sensor
+from dagster import (
+    AssetSelection,
+    RunRequest,
+    SensorEvaluationContext,
+    SensorResult,
+    SkipReason,
+    sensor,
+)
 
 from . import assets
 
@@ -12,7 +19,7 @@ def semver_tuple(release: str) -> tuple[int, ...]:
 
 
 @sensor(asset_selection=AssetSelection.all())
-def release_sensor(context):
+def release_sensor(context: SensorEvaluationContext) -> SensorResult | SkipReason:
     """Polls the Github API for new releases.
 
     When we find one, add it to the set of partitions and run the pipeline on it.

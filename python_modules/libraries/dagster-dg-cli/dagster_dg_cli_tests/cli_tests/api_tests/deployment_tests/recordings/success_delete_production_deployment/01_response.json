@@ -1,8 +1,12 @@
 {
   "deleteDeployment": {
     "__typename": "DagsterCloudDeployment",
+    "agentType": "HYBRID",
     "deploymentId": 1,
     "deploymentName": "prod",
-    "deploymentType": "PRODUCTION"
+    "deploymentStatus": "ACTIVE",
+    "deploymentType": "PRODUCTION",
+    "isBranchDeployment": false,
+    "organizationName": "hooli"
   }
 }

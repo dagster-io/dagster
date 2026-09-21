@@ -3,13 +3,13 @@ from contextlib import ExitStack
 
 import dagster as dg
 import pytest
-import yaml
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,
     location_origins_from_config,
 )
+from dagster_shared.yaml_utils import safe_load_yaml
 
 
 @pytest.fixture
@@ -102,7 +102,7 @@ load_from:
 
     - python_module:
         executable_path: {executable}
-        module_name: dagster.utils.test.hello_world_repository
+        module_name: dagster._utils.test.hello_world_repository
         location_name: loaded_from_module
 
     - python_file:
@@ -112,12 +112,12 @@ load_from:
 
     - python_module:
         executable_path: {executable}
-        module_name: dagster.utils.test.named_hello_world_repository
+        module_name: dagster._utils.test.named_hello_world_repository
         location_name: named_loaded_from_module
 
     - python_module:
         executable_path: {executable}
-        module_name: dagster.utils.test.named_hello_world_repository
+        module_name: dagster._utils.test.named_hello_world_repository
         attribute: named_hello_world_repository
         location_name: named_loaded_from_module_attribute
 
@@ -138,7 +138,7 @@ def test_multi_location_origins(config_source):
     fake_executable = "/var/fake/executable"
 
     origins = location_origins_from_config(
-        yaml.safe_load(config_source(fake_executable)),
+        safe_load_yaml(config_source(fake_executable)),
         dg.file_relative_path(__file__, "not_a_real.yaml"),
     )
 
@@ -167,7 +167,7 @@ def test_multi_location_origins(config_source):
     )
     assert (
         origins["loaded_from_module"].loadable_target_origin.module_name
-        == "dagster.utils.test.hello_world_repository"
+        == "dagster._utils.test.hello_world_repository"
     )
 
     assert (
@@ -183,14 +183,14 @@ def test_multi_location_origins(config_source):
 @pytest.mark.parametrize("config_source", [_get_multi_location_workspace_yaml])
 def test_grpc_multi_location_workspace(config_source):
     origins = location_origins_from_config(
-        yaml.safe_load(config_source(sys.executable)),
+        safe_load_yaml(config_source(sys.executable)),
         # fake out as if it were loaded by a yaml file in this directory
         dg.file_relative_path(__file__, "not_a_real.yaml"),
     )
     with ExitStack() as stack:
         instance = stack.enter_context(dg.instance_for_test())
         code_locations = {
-            name: stack.enter_context(origin.create_single_location(instance))  # pyright: ignore[reportAttributeAccessIssue]
+            name: stack.enter_context(origin.create_single_location(instance))  # ty: ignore[unresolved-attribute]
             for name, origin in origins.items()
         }
 
@@ -208,17 +208,17 @@ def test_grpc_multi_location_workspace(config_source):
         assert loaded_from_module_location.repository_names == {"hello_world_repository"}
 
         named_loaded_from_file_location = code_locations.get("named_loaded_from_file")
-        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}  # pyright: ignore[reportOptionalMemberAccess]
+        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}  # ty: ignore[unresolved-attribute]
         assert isinstance(named_loaded_from_file_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_location = code_locations.get("named_loaded_from_module")
-        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}  # pyright: ignore[reportOptionalMemberAccess]
+        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}  # ty: ignore[unresolved-attribute]
         assert isinstance(named_loaded_from_module_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_attribute_location = code_locations.get(
             "named_loaded_from_module_attribute"
         )
-        assert named_loaded_from_module_attribute_location.repository_names == {  # pyright: ignore[reportOptionalMemberAccess]
+        assert named_loaded_from_module_attribute_location.repository_names == {  # ty: ignore[unresolved-attribute]
             "hello_world_repository_name"
         }
         assert isinstance(named_loaded_from_module_attribute_location, GrpcServerCodeLocation)
@@ -226,7 +226,7 @@ def test_grpc_multi_location_workspace(config_source):
         named_loaded_from_file_attribute_location = code_locations.get(
             "named_loaded_from_file_attribute"
         )
-        assert named_loaded_from_file_attribute_location.repository_names == {  # pyright: ignore[reportOptionalMemberAccess]
+        assert named_loaded_from_file_attribute_location.repository_names == {  # ty: ignore[unresolved-attribute]
             "hello_world_repository_name"
         }
         assert isinstance(named_loaded_from_file_attribute_location, GrpcServerCodeLocation)

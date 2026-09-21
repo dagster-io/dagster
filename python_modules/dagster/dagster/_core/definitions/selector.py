@@ -12,7 +12,7 @@ from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets.graph.base_asset_graph import EntityKey
+    from dagster._core.definitions.asset_key import AssetOrCheckKey
 
 
 @record_custom
@@ -85,7 +85,7 @@ class JobSubsetSelector(IHaveNew):
         return self._hash
 
     @property
-    def entity_selection(self) -> AbstractSet["EntityKey"] | None:
+    def entity_selection(self) -> AbstractSet["AssetOrCheckKey"] | None:
         if self.asset_selection is None and self.asset_check_selection is None:
             return None
 

@@ -65,6 +65,7 @@ def _build_column_lineage_metadata(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
     target_path: Path | None,
+    project: DbtProject | None,
 ) -> dict[str, Any]:
     """Process the lineage metadata for a dbt CLI event.
 
@@ -120,11 +121,19 @@ def _build_column_lineage_metadata(
         )
 
     package_name = dbt_resource_props["package_name"]
-    node_sql_path = target_path.joinpath(
-        "compiled",
-        package_name,
-        dbt_resource_props["original_file_path"].replace("\\", "/"),
-    )
+    is_snapshot = node_resource_type == NodeType.Snapshot
+    node_relative_path = Path(dbt_resource_props["original_file_path"].replace("\\", "/"))
+    if is_snapshot:
+        # A single file can declare multiple snapshot blocks, so dbt writes each block's
+        # compiled SQL into a directory named after the file.
+        node_relative_path = node_relative_path / f"{dbt_resource_props['name']}.sql"
+
+    node_sql_path = target_path.joinpath("compiled", package_name, node_relative_path)
+    if is_snapshot and not node_sql_path.exists():
+        # dbt only began writing compiled SQL for snapshots in 1.12; earlier versions skip
+        # them entirely, leaving nothing on disk to derive lineage from.
+        return {}
+
     optimized_node_ast = cast(
         "exp.Query",
         optimize(
@@ -161,10 +170,13 @@ def _build_column_lineage_metadata(
 
     deps_by_column: dict[str, Sequence[TableColumnDep]] = {}
     if implicit_alias_column_names:
-        logger.warning(
-            "The following columns are implicitly aliased and will be marked with an "
-            f" empty list column dependencies: `{implicit_alias_column_names}`."
-        )
+        # Snapshots always land here: the materialization appends bookkeeping columns
+        # (dbt_scd_id, dbt_valid_from, ...) that the compiled SQL never selects.
+        if not is_snapshot:
+            logger.warning(
+                "The following columns are implicitly aliased and will be marked with an "
+                f" empty list column dependencies: `{implicit_alias_column_names}`."
+            )
 
         deps_by_column = {column: [] for column in implicit_alias_column_names}
 
@@ -200,7 +212,9 @@ def _build_column_lineage_metadata(
             # Add the column dependency.
             column_deps.add(
                 TableColumnDep(
-                    asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
+                    asset_key=dagster_dbt_translator.get_asset_spec(
+                        manifest, parent_resource_props["unique_id"], project
+                    ).key,
                     column_name=parent_column_name,
                 )
             )
@@ -342,6 +356,7 @@ class DbtCliEventMessage(ABC):
         translator: DagsterDbtTranslator,
         manifest: Mapping[str, Any],
         target_path: Path | None,
+        project: DbtProject | None,
     ) -> Mapping[str, Any]:
         try:
             column_data = self._event_history_metadata.get("columns", {})
@@ -362,6 +377,7 @@ class DbtCliEventMessage(ABC):
                     manifest=manifest,
                     dagster_dbt_translator=translator,
                     target_path=target_path,
+                    project=project,
                 )
         except Exception as e:
             logger.warning(
@@ -378,10 +394,11 @@ class DbtCliEventMessage(ABC):
         translator: DagsterDbtTranslator,
         manifest: Mapping[str, Any],
         target_path: Path | None,
+        project: DbtProject | None,
     ) -> dict[str, Any]:
         return {
             **self._get_default_metadata(manifest),
-            **self._get_lineage_metadata(translator, manifest, target_path),
+            **self._get_lineage_metadata(translator, manifest, target_path, project),
         }
 
     def _to_model_events(
@@ -393,7 +410,9 @@ class DbtCliEventMessage(ABC):
         project: DbtProject | None,
     ) -> Iterator[Output | AssetMaterialization]:
         asset_key = dagster_dbt_translator.get_asset_spec(manifest, self._unique_id, project).key
-        metadata = self._get_materialization_metadata(dagster_dbt_translator, manifest, target_path)
+        metadata = self._get_materialization_metadata(
+            dagster_dbt_translator, manifest, target_path, project
+        )
         if context and context.has_assets_def:
             yield Output(
                 value=None, output_name=asset_key.to_python_identifier(), metadata=metadata

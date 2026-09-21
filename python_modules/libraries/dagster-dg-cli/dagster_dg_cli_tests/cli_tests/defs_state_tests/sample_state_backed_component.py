@@ -27,7 +27,7 @@ class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         if state_path is None:
             return dg.Definitions()
 
-        with open(state_path) as f:
+        with open(state_path, encoding="utf-8") as f:
             state = f.read()
 
         @dg.asset(name=state)
@@ -39,4 +39,4 @@ class SampleStateBackedComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         if self.fail_write:
             raise Exception("Failed to write state")
         else:
-            state_path.write_text("hi")
+            state_path.write_text("hi", encoding="utf-8")

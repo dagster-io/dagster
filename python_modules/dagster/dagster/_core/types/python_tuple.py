@@ -28,7 +28,7 @@ class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
     def construct_from_config_value(self, context, config_value):
         return tuple(
             (
-                self._dagster_types[idx].loader.construct_from_config_value(  # pyright: ignore[reportOptionalMemberAccess]
+                self._dagster_types[idx].loader.construct_from_config_value(  # ty: ignore[unresolved-attribute]
                     context, item
                 )
                 for idx, item in enumerate(config_value)
@@ -39,12 +39,12 @@ class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
 class _TypedPythonTuple(DagsterType):
     def __init__(self, dagster_types):
         all_have_input_configs = all(
-            (dagster_type.loader for dagster_type in dagster_types)
+            dagster_type.loader for dagster_type in dagster_types
         )
         self.dagster_types = dagster_types
         typing_types = tuple(t.typing_type for t in dagster_types)
-        super(_TypedPythonTuple, self).__init__(
-            key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),  # pyright: ignore[reportAttributeAccessIssue]
+        super().__init__(
+            key="TypedPythonTuple" + ".".join(t.key for t in dagster_types),
             name=None,
             loader=(
                 TypedTupleDagsterTypeLoader(dagster_types)
@@ -52,7 +52,7 @@ class _TypedPythonTuple(DagsterType):
                 else None
             ),
             type_check_fn=self.type_check_method,
-            typing_type=typing.Tuple[typing_types],
+            typing_type=typing.Tuple[typing_types],  # ty: ignore[invalid-type-form]
         )
 
     def type_check_method(self, context, value):
@@ -102,10 +102,8 @@ def create_typed_tuple(*dagster_type_args):
 
     check.invariant(
         not any(
-            (
-                dagster_type.kind == DagsterTypeKind.NOTHING
-                for dagster_type in dagster_types
-            )
+            dagster_type.kind == DagsterTypeKind.NOTHING
+            for dagster_type in dagster_types
         ),
         "Cannot create a runtime tuple containing inner type Nothing. Use List for fan-in",
     )

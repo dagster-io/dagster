@@ -29,7 +29,6 @@ from rich.text import Text
 
 from dagster_dg_cli.cli.response_schema import dg_response_schema
 from dagster_dg_cli.utils.plus import gql
-from dagster_dg_cli.utils.plus.gql_client import DagsterPlusGraphQLClient
 
 if TYPE_CHECKING:
     from rich.table import Table
@@ -489,6 +488,8 @@ def _get_dagster_plus_keys(
     location_name: str, env_var_keys: set[str]
 ) -> Mapping[str, DagsterPlusScopesForVariable] | None:
     """Retrieves the set Dagster Plus keys for the given location name, if Plus is configured, otherwise returns None."""
+    from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
+
     if not DagsterPlusCliConfig.exists():
         return None
     config = DagsterPlusCliConfig.get()
@@ -496,11 +497,16 @@ def _get_dagster_plus_keys(
         return None
 
     scopes_for_key = defaultdict(lambda: DagsterPlusScopesForVariable(False, False, False))
-    gql_client = DagsterPlusGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient(
+        url=config.organization_url,
+        api_token=config.user_token,
+        organization=config.organization,
+        deployment=config.default_deployment,
+    )
 
-    secrets_by_location = gql_client.execute(
+    secrets_by_location = gql_client.execute_arbitrary(
         gql.GET_SECRETS_FOR_SCOPES_QUERY_NO_VALUE,
-        {
+        variables={
             "locationName": location_name,
             "scopes": {
                 "fullDeploymentScope": True,
@@ -596,6 +602,6 @@ def list_component_tree_command(
 
     if output_file:
         click.echo("[dagster-components] Writing to file " + output_file)
-        Path(output_file).write_text(output)
+        Path(output_file).write_text(output, encoding="utf-8")
     else:
         click.echo(output)

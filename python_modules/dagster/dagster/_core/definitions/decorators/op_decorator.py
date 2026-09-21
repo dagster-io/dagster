@@ -78,7 +78,7 @@ class _Op:
         validate_resource_annotated_function(fn)
 
         if not self.name:
-            self.name = fn.__name__
+            self.name = fn.__name__  # ty: ignore[unresolved-attribute]
 
         compute_fn = (
             DecoratedOpFunction(decorated_fn=fn)
@@ -280,7 +280,7 @@ class DecoratedOpFunction(NamedTuple):
 
     @property
     def name(self):
-        return self.decorated_fn.__name__
+        return self.decorated_fn.__name__  # ty: ignore[unresolved-attribute]
 
     @lru_cache(maxsize=1)
     def has_context_arg(self) -> bool:
@@ -404,10 +404,11 @@ def resolve_checked_op_fn_inputs(
     explicit_names = explicit_names - resource_arg_names
 
     if compute_fn.has_config_arg() or resource_arg_names:
-        new_input_args = []
-        for input_arg in input_args:
-            if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-                new_input_args.append(input_arg)
+        new_input_args = [
+            input_arg
+            for input_arg in input_args
+            if input_arg.name != "config" and input_arg.name not in resource_arg_names
+        ]
         input_args = new_input_args
 
     # Validate input arguments

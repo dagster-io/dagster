@@ -1,0 +1,25 @@
+.styledTable {
+  border-spacing: 0;
+}
+
+.styledTable td {
+  vertical-align: top;
+}
+
+.styledTable td :global(.bp5-control) {
+  margin-bottom: 0;
+}
+
+.metadataKey {
+  font-weight: 400;
+}
+
+.metadataTableWIP td:first-child {
+  white-space: nowrap;
+  width: 1px;
+  max-width: 400px;
+  word-break: break-word;
+  overflow: hidden;
+  padding-right: 24px;
+  text-overflow: ellipsis;
+}

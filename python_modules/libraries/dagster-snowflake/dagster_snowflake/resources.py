@@ -20,7 +20,7 @@ from dagster._core.definitions.resource_definition import dagster_maintained_res
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
 from dagster._utils.cached_method import cached_method
 from dagster.components.lib.sql_component.sql_client import SQLClient
-from pydantic import Field, model_validator, validator
+from pydantic import Field, field_validator, model_validator
 from snowflake import snowpark
 from snowflake.core import Root
 from snowflake.core.database import Database
@@ -81,7 +81,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
                     'snowflake_resource': SnowflakeResource(
                         account=EnvVar("SNOWFLAKE_ACCOUNT"),
                         user=EnvVar("SNOWFLAKE_USER"),
-                        password=EnvVar("SNOWFLAKE_PASSWORD")
+                        private_key=EnvVar("SNOWFLAKE_PRIVATE_KEY"),
                         database="MY_DATABASE",
                         schema="MY_SCHEMA",
                         warehouse="MY_WAREHOUSE"
@@ -244,7 +244,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             "Indicate alternative database connection engine. Permissible option is "
             "'sqlalchemy' otherwise defaults to use the Snowflake Connector for Python."
         ),
-        is_required=False,  # type: ignore
+        is_required=False,
     )
 
     cache_column_metadata: str | None = Field(
@@ -278,7 +278,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
         ),
     )
 
-    @validator("paramstyle")
+    @field_validator("paramstyle")
+    @classmethod
     def validate_paramstyle(cls, v: str | None) -> str | None:
         valid_config = ["pyformat", "qmark", "numeric"]
         if v is not None and v not in valid_config:
@@ -288,7 +289,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             )
         return v
 
-    @validator("connector")
+    @field_validator("connector")
+    @classmethod
     def validate_connector(cls, v: str | None) -> str | None:
         if v is not None and v not in ["sqlalchemy", "adbc"]:
             raise ValueError(
@@ -566,7 +568,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             import adbc_driver_snowflake.dbapi
 
             conn = adbc_driver_snowflake.dbapi.connect(
-                db_kwargs=self._adbc_connection_args,  # pyright: ignore[reportArgumentType]
+                db_kwargs=self._adbc_connection_args,  # ty: ignore[invalid-argument-type]
             )
 
             yield conn
@@ -1090,7 +1092,7 @@ def snowflake_resource(context) -> SnowflakeConnection:
                             'config': {
                                 'account': {'env': 'SNOWFLAKE_ACCOUNT'},
                                 'user': {'env': 'SNOWFLAKE_USER'},
-                                'password': {'env': 'SNOWFLAKE_PASSWORD'},
+                                'private_key': {'env': 'SNOWFLAKE_PRIVATE_KEY'},
                                 'database': {'env': 'SNOWFLAKE_DATABASE'},
                                 'schema': {'env': 'SNOWFLAKE_SCHEMA'},
                                 'warehouse': {'env': 'SNOWFLAKE_WAREHOUSE'},

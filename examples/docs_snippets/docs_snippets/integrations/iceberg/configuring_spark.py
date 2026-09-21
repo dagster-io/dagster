@@ -1,4 +1,6 @@
-from dagster_iceberg.io_manager.spark import SparkIcebergIOManager
+from dagster_iceberg.io_manager.spark import (
+    SparkIcebergIOManager,  # ty: ignore[unresolved-import]
+)
 
 SPARK_CONFIG = {
     "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",

@@ -1,7 +1,6 @@
 import {renderHook} from '@testing-library/react-hooks';
 import {ReactNode, useContext} from 'react';
 
-import {QueryResult} from '../../apollo-client';
 import {
   CompletionType,
   Dependency,
@@ -35,8 +34,7 @@ describe('useBlockTraceOnQueryResult', () => {
     );
 
     const {rerender} = renderHook(
-      ({queryResult}: {queryResult: QueryResult<any>}) =>
-        useBlockTraceOnQueryResult(queryResult, 'testDep'),
+      ({queryResult}: any) => useBlockTraceOnQueryResult(queryResult, 'testDep'),
       {initialProps: {queryResult: {data: null, error: null}}, wrapper} as any,
     );
 
@@ -47,7 +45,7 @@ describe('useBlockTraceOnQueryResult', () => {
       CompletionType.SUCCESS,
     );
 
-    rerender({queryResult: {data: null, error: {}} as any});
+    rerender({queryResult: {data: null, error: {}}});
     expect(mockCompleteDependency).toHaveBeenCalledTimes(2);
     expect(mockCompleteDependency).toHaveBeenCalledWith(
       expect.any(Dependency),
@@ -114,16 +112,15 @@ describe('useBlockTraceUntilTrue', () => {
       addDependency: jest.fn(),
       completeDependency: mockCompleteDependency,
     };
-    const wrapper = ({children}: any) => (
+    const wrapper = ({children}: {children: ReactNode}) => (
       <TraceContext.Provider value={context}>{children}</TraceContext.Provider>
     );
 
     const {rerender, unmount} = renderHook(
-      ({name, isSuccessful}: any) => useBlockTraceUntilTrue(name, isSuccessful, {uid: 'uid123'}),
-      {
-        initialProps: {name: 'testDep', isSuccessful: false},
-        wrapper,
-      },
+      ({name, isSuccessful}: {name: string; isSuccessful: boolean}) =>
+        useBlockTraceUntilTrue(name, isSuccessful, {uid: 'uid123'}),
+
+      {initialProps: {name: 'testDep', isSuccessful: false}, wrapper} as any,
     );
 
     // Initially, isSuccessful is false, so completeDependency should not be called.

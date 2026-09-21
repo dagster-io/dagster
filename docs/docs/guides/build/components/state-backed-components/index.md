@@ -15,7 +15,7 @@ Before working with state-backed components, you should be familiar with the bas
 <PyObject section="components" module="dagster" object="StateBackedComponent" pluralize={true} /> are a specialized type of Dagster component designed to handle cases where your Dagster definitions depend on information from external systems or tools, rather than purely the code and configuration files in your repository.
 
 
-## What is the "state" in state-backed components?
+## About "state" in state-backed components
 
 Some integrations require doing non-trivial work to turn their configuration into actual definition objects. For example:
 
@@ -37,6 +37,8 @@ Dagster system code controls the lifecycle of the state, ensuring that the `writ
 
 The specifics of this process vary depending on the [state management strategy](/guides/build/components/state-backed-components#choosing-a-state-management-strategy) you configure, but regardless of the strategy chosen, `write_state_to_path()` will be called at most once per code location load.
 
+In CI/CD, `write_state_to_path()` is triggered by the `dg utils refresh-defs-state` command. This command operates on a single Dagster project (a directory containing a `pyproject.toml` or `dg.toml` configured for `dg`) and is independent of `workspace.yaml`. If your repo contains multiple code locations, run the command separately for each one. For the full workflow, see [Managing state in CI/CD](/guides/build/components/state-backed-components/managing-state-in-ci-cd).
+
 :::note Local development
 
 By default, when you run `dagster dev` or use `dg` CLI commands (like `dg list defs`), state-backed components automatically refresh their state. This provides convenience during development so you always see the latest metadata from external systems. You can disable this behavior by setting `refresh_if_dev` to `False` in your component configuration.
@@ -49,11 +51,11 @@ State-backed components support three different strategies for managing state, e
 
 | Strategy | Storage Location | Best For |
 |----------|-----------------|----------|
-| Local Filesystem | `.local_defs_state/` directory | Docker/PEX deployments where state is updated during image builds |
-| Versioned State Storage | Cloud storage (S3, GCS, etc.) | Deployments where you want to update state without rebuilding images |
-| Code Server Snapshots | In-memory | Legacy compatibility only (not recommended) |
+| [Local filesystem](#local-filesystem) | `.local_defs_state/` directory | Docker/PEX deployments where state is updated during image builds |
+| [Versioned state storage](#versioned-state-storage) | Cloud storage (S3, GCS, etc.) | Deployments where you want to update state without rebuilding images |
+| [Code server snapshots](#code-server-snapshots-legacy) | In-memory | Legacy compatibility only (not recommended) |
 
-### Local Filesystem
+### Local filesystem
 
 **Best for:**
 - Docker-based deployments
@@ -85,7 +87,7 @@ State files can be large and change frequently based on external system metadata
 
 :::
 
-### Versioned State Storage
+### Versioned state storage
 
 **Best for:**
 - Deployments where you want to update state without rebuilding Docker or PEX images
@@ -93,22 +95,35 @@ State files can be large and change frequently based on external system metadata
 
 **How it works:**
 - State is stored in cloud storage (S3, GCS, etc.) with UUID version identifiers
-- Multiple versions can exist simultaneously
-- All runs and definitions point to a consistent version until the code location reloads
-- Requires configuring a state storage backend in your Dagster instance (see [Configuring versioned state storage](/guides/build/components/state-backed-components/configuring-versioned-state-storage) for more information)
+- Multiple versions can exist simultaneously, allowing rollback to previous versions
+- Requires configuring a state storage backend in your Dagster instance. On Dagster+, this is handled automatically. For details on configuring an OSS backend, see [Configuring versioned state storage](/guides/build/components/state-backed-components/configuring-versioned-state-storage).
 
+**How updates become visible:**
+
+The mechanism differs between deployment models:
+
+<Tabs groupId="deployment-model">
+<TabItem value="oss" label="OSS">
+
+There is no version pinning. Each code location reload reads the latest state from the configured storage backend, so state updates are visible immediately after the next reload.
+
+</TabItem>
+<TabItem value="dagster-plus" label="Dagster+">
+
+Each code location load is pinned to specific defs state versions. A normal code location reload does **not** pick up new state versions automatically. To pull in the latest versions, use the "Refresh definitions state" option in the code location dropdown in the Dagster UI, or call the `refreshDefsState` GraphQL mutation.
+
+</TabItem>
+</Tabs>
 
 **Benefits:**
 
-This strategy allows you to update state in production without rebuilding Docker images. For example, you could write a Dagster job that:
-1. Executes and updates component state
-2. Reloads the code location to pick up the latest state version
+This strategy allows you to update state in production without rebuilding Docker images. For example, you could write a Dagster job that updates component state, then have the code location pick up the new version (via reload on OSS, or via `refreshDefsState` on Dagster+).
 
-### Code Server Snapshots (Legacy)
+### Code server snapshots (Legacy)
 
 :::warning Not recommended
 
-This is the default for many existing components only for backwards compatibility. This default will be changed in the 1.13.0 release. 
+As of the 1.13.0 release, bundled state-backed components default to `LOCAL_FILESYSTEM`. `LEGACY_CODE_SERVER_SNAPSHOTS` remains available for backwards compatibility but should not be used in new components — choose `LOCAL_FILESYSTEM` or `VERSIONED_STATE_STORAGE` instead.
 
 :::
 
@@ -149,9 +164,11 @@ The following Dagster integrations are implemented as state-backed components:
 - <PyObject section="libraries" integration="looker" module="dagster_looker" object="LookerComponent" /> - Syncs Looker explores and dashboards
 - <PyObject section="libraries" integration="sigma" module="dagster_sigma" object="SigmaComponent" /> - Syncs Sigma workbooks and datasets
 - <PyObject section="libraries" integration="powerbi" module="dagster_powerbi" object="PowerBIWorkspaceComponent" /> - Syncs Power BI dashboards and reports
+- <PyObject section="libraries" integration="omni" module="dagster_omni" object="OmniComponent" /> - Syncs Omni workbooks and queries
 - <PyObject section="libraries" integration="fivetran" module="dagster_fivetran" object="FivetranAccountComponent" /> - Syncs Fivetran connectors and connection tables
 - <PyObject section="libraries" integration="airbyte" module="dagster_airbyte" object="AirbyteWorkspaceComponent" /> - Syncs Airbyte connections and tables
 - <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DbtProjectComponent" /> - Uses dbt manifest files for project metadata
+- <PyObject section="libraries" integration="databricks" module="dagster_databricks" object="DatabricksWorkspaceComponent" /> - Syncs Databricks workspace metadata
 
 Each of these components handles the complexity of interacting with external APIs and managing state.
 

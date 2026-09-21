@@ -4,6 +4,7 @@ import os
 import pathlib
 import subprocess
 from contextlib import contextmanager
+from urllib.parse import urlparse
 
 from dagster_cloud_cli import ui
 from dagster_cloud_cli.core.pex_builder import util
@@ -66,16 +67,27 @@ class GithubEvent:
         token = os.getenv("GITHUB_TOKEN")
         if not token:
             return None
-        gh = github3.login(token=token)
+        api_url = os.environ["GITHUB_API_URL"]
+        host = urlparse(api_url).hostname
+        if host == "api.github.com":
+            gh = github3.login(token=token)
+        else:
+            gh = github3.enterprise_login(url=self.github_server_url, token=token)
         repo_owner, repo_name = self.github_repository.split("/", 1)
         return gh.repository(repo_owner, repo_name)
 
     def get_github_avatar_url(self) -> str | None:
-        repo = self.get_github_repo()
-        if not repo:
-            return
-        commit = repo.commit(self.github_sha)
-        return commit.author.get("avatar_url") if commit.author else None
+        import github3.exceptions
+
+        try:
+            repo = self.get_github_repo()
+            if not repo:
+                return None
+            commit = repo.commit(self.github_sha)
+            return commit.author.get("avatar_url") if commit.author else None
+        except github3.exceptions.GitHubException:
+            logging.exception("Ignoring error when loading avatar URL")
+            return None
 
     def update_pr_comment(
         self, body: str, orig_author: str | None = None, orig_text: str | None = None

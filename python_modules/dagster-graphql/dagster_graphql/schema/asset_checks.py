@@ -51,9 +51,9 @@ class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType)
         name = "AssetCheckEvaluationTargetMaterializationData"
 
     def __init__(self, target_materialization_data: AssetCheckEvaluationTargetMaterializationData):
-        self.storageId = target_materialization_data.storage_id
-        self.runId = target_materialization_data.run_id
-        self.timestamp = target_materialization_data.timestamp
+        self.storageId = target_materialization_data.storage_id  # ty: ignore[invalid-assignment]
+        self.runId = target_materialization_data.run_id  # ty: ignore[invalid-assignment]
+        self.timestamp = target_materialization_data.timestamp  # ty: ignore[invalid-assignment]
 
 
 GrapheneAssetCheckSeverity = graphene.Enum.from_enum(AssetCheckSeverity)
@@ -78,26 +78,26 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
         name = "AssetCheckEvaluation"
 
     def __init__(self, evaluation_event: EventLogEntry):
-        self.timestamp = evaluation_event.timestamp
+        self.timestamp = evaluation_event.timestamp  # ty: ignore[invalid-assignment]
 
         evaluation_data = cast(
             "AssetCheckEvaluation",
             check.not_none(evaluation_event.dagster_event).event_specific_data,
         )
         target_materialization_data = evaluation_data.target_materialization_data
-        self.targetMaterialization = (
+        self.targetMaterialization = (  # ty: ignore[invalid-assignment]
             GrapheneAssetCheckEvaluationTargetMaterializationData(target_materialization_data)
             if target_materialization_data
             else None
         )
 
         self.metadataEntries = list(iterate_metadata_entries(evaluation_data.metadata))
-        self.severity = evaluation_data.severity
-        self.success = evaluation_data.passed
-        self.checkName = evaluation_data.check_name
-        self.assetKey = evaluation_data.asset_key
-        self.description = evaluation_data.description
-        self.partition = evaluation_data.partition
+        self.severity = evaluation_data.severity  # ty: ignore[invalid-assignment]
+        self.success = evaluation_data.passed  # ty: ignore[invalid-assignment]
+        self.checkName = evaluation_data.check_name  # ty: ignore[invalid-assignment]
+        self.assetKey = evaluation_data.asset_key  # ty: ignore[invalid-assignment]
+        self.description = evaluation_data.description  # ty: ignore[invalid-assignment]
+        self.partition = evaluation_data.partition  # ty: ignore[invalid-assignment]
 
 
 class GrapheneAssetCheckExecution(graphene.ObjectType):
@@ -118,17 +118,17 @@ class GrapheneAssetCheckExecution(graphene.ObjectType):
     def __init__(self, execution: AssetCheckExecutionRecord):
         super().__init__()
         self._execution = execution
-        self.id = str(execution.id)
-        self.runId = execution.run_id
-        self.evaluation = (
+        self.id = str(execution.id)  # ty: ignore[invalid-assignment]
+        self.runId = execution.run_id  # ty: ignore[invalid-assignment]
+        self.evaluation = (  # ty: ignore[invalid-assignment]
             GrapheneAssetCheckEvaluation(execution.event)
             if execution.event
             and execution.event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION
             else None
         )
-        self.timestamp = execution.create_timestamp
-        self.stepKey = execution.event.step_key if execution.event else None
-        self.partition = execution.partition
+        self.timestamp = execution.create_timestamp  # ty: ignore[invalid-assignment]
+        self.stepKey = execution.event.step_key if execution.event else None  # ty: ignore[invalid-assignment]
+        self.partition = execution.partition  # ty: ignore[invalid-assignment]
 
     async def resolve_status(
         self, graphene_info: "ResolveInfo"
@@ -352,7 +352,7 @@ class GrapheneAssetCheck(graphene.ObjectType):
             or self._asset_check.automation_condition
         )
         if automation_condition:
-            return GrapheneAutomationCondition(
+            return GrapheneAutomationCondition(  # ty: ignore[invalid-return-type]
                 # we only store one of automation_condition or automation_condition_snapshot
                 automation_condition
                 if isinstance(automation_condition, AutomationConditionSnapshot)

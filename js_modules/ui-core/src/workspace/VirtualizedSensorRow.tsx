@@ -1,19 +1,23 @@
 import {
   Box,
-  Caption,
   Checkbox,
   Colors,
+  HeaderCell,
+  HeaderRow,
   IconName,
   MiddleTruncate,
+  Row,
+  RowCell,
   Tag,
+  Text,
   Tooltip,
   useDelayedState,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {LoadingOrNone} from './VirtualizedWorkspaceTable';
+import styles from './css/VirtualizedSensorRow.module.css';
 import {RepoAddress} from './types';
 import {SingleSensorQuery, SingleSensorQueryVariables} from './types/VirtualizedSensorRow.types';
 import {workspacePathFromAddress} from './workspacePath';
@@ -34,7 +38,6 @@ import {
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 180px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
@@ -137,8 +140,16 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
       : null;
 
   return (
-    <Row $height={height} $start={start}>
-      <RowGrid border="bottom" $showCheckboxColumn={showCheckboxColumn}>
+    <Row height={height} start={start}>
+      <Box
+        border="bottom"
+        className={styles.rowGrid}
+        style={{
+          gridTemplateColumns: showCheckboxColumn
+            ? TEMPLATE_COLUMNS_WITH_CHECKBOX
+            : TEMPLATE_COLUMNS,
+        }}
+      >
         {showCheckboxColumn ? (
           <RowCell>
             <Tooltip
@@ -162,16 +173,12 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
                 maxWidth: '100%',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Caption
-                style={{
-                  color: Colors.textLight(),
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <Text size={12} color="textLight">
                 {sensorData?.description}
-              </Caption>
+              </Text>
             </div>
           </Box>
         </RowCell>
@@ -239,7 +246,7 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
             <LoadingOrNone queryResult={sensorQueryResult} />
           )}
         </RowCell>
-      </RowGrid>
+      </Box>
     </Row>
   );
 };
@@ -265,13 +272,6 @@ export const VirtualizedSensorHeader = ({checkbox}: {checkbox: React.ReactNode})
     </HeaderRow>
   );
 };
-
-const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
-  display: grid;
-  grid-template-columns: ${({$showCheckboxColumn}) =>
-    $showCheckboxColumn ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 
 export const SENSOR_TYPE_META: Record<
   SensorType,

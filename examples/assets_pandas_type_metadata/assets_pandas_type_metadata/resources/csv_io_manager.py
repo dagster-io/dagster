@@ -41,7 +41,7 @@ class LocalCsvIOManager(ConfigurableIOManager):
                 "Rows": MetadataValue.int(obj.shape[0]),
                 "Path": MetadataValue.path(fpath),
                 "Sample": MetadataValue.md(obj.head(5).to_markdown()),
-                "Resolved version": MetadataValue.text(context.version),  # type: ignore
+                "Resolved version": MetadataValue.text(context.version or "None"),
                 "Schema": MetadataValue.table_schema(self.get_schema(context.dagster_type)),
             }
         )
@@ -57,9 +57,14 @@ class LocalCsvIOManager(ConfigurableIOManager):
     def load_input(self, context):
         """This reads a dataframe from a CSV."""
         fpath = self._get_fs_path(asset_key=context.asset_key)
+        upstream_output = context.upstream_output
+        if upstream_output is None:
+            raise ValueError(
+                "LocalCsvIOManager can only be used to load inputs that have an upstream output"
+            )
         date_col_names = [
             table_col.name
-            for table_col in self.get_schema(context.upstream_output.dagster_type).columns
+            for table_col in self.get_schema(upstream_output.dagster_type).columns
             if table_col.type == "datetime64[ns]"
         ]
         return pd.read_csv(fpath, parse_dates=date_col_names)

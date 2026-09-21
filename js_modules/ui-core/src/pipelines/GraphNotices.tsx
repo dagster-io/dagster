@@ -1,16 +1,10 @@
-import {
-  Body2,
-  Box,
-  Button,
-  Colors,
-  MonoSmall,
-  NonIdealState,
-  Spinner,
-} from '@dagster-io/ui-components';
+import {Box, Button, NonIdealState, Spinner, Text} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import capitalize from 'lodash/capitalize';
-import styled from 'styled-components';
+import * as React from 'react';
 
 import {SyntaxError} from '../selection/CustomErrorListener';
+import styles from './css/GraphNotices.module.css';
 
 export const EmptyDAGNotice = ({
   isGraph,
@@ -20,7 +14,7 @@ export const EmptyDAGNotice = ({
   nodeType: 'asset' | 'op';
 }) => {
   return (
-    <CenteredContainer>
+    <div className={styles.centeredContainer}>
       <NonIdealState
         icon="no-results"
         title={isGraph ? 'Empty graph' : 'Empty job'}
@@ -31,13 +25,13 @@ export const EmptyDAGNotice = ({
           </div>
         }
       />
-    </CenteredContainer>
+    </div>
   );
 };
 
 export const EntirelyFilteredDAGNotice = ({nodeType}: {nodeType: 'asset' | 'op'}) => {
   return (
-    <CenteredContainer>
+    <div className={styles.centeredContainer}>
       <NonIdealState
         icon="no-results"
         title="Nothing to display"
@@ -48,24 +42,26 @@ export const EntirelyFilteredDAGNotice = ({nodeType}: {nodeType: 'asset' | 'op'}
           </div>
         }
       />
-    </CenteredContainer>
+    </div>
   );
 };
 
 export const InvalidSelectionQueryNotice = ({errors}: {errors: SyntaxError[]}) => {
   return (
-    <CenteredContainer>
+    <div className={styles.centeredContainer}>
       <NonIdealState
         icon="no-results"
         title="Invalid selection query"
         description={
           <Box flex={{direction: 'column', gap: 8}}>
             The selection query you entered is invalid. Please try again.
-            <MonoSmall>{errors.map((error) => error.message).join('\n')}</MonoSmall>
+            <Text size={12} family="mono">
+              {errors.map((error) => error.message).join('\n')}
+            </Text>
           </Box>
         }
       />
-    </CenteredContainer>
+    </div>
   );
 };
 
@@ -81,28 +77,6 @@ export const LoadingNotice = (props: {async: boolean; nodeType: 'asset' | 'op'})
   );
 };
 
-export const LoadingContainer = styled.div`
-  background-color: ${Colors.backgroundDefault()};
-  position: absolute;
-  top: 57px;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-`;
-
-const CenteredContainer = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-`;
-
 export const LargeDAGNotice = ({
   nodeType,
   setForceLargeGraph,
@@ -111,27 +85,27 @@ export const LargeDAGNotice = ({
   setForceLargeGraph: (enabled: boolean) => void;
 }) => {
   return (
-    <CenteredContainer>
+    <div className={styles.centeredContainer}>
       <NonIdealState
         icon="graph_vertical"
         title="This graph may be too large to display"
         description={
           <Box flex={{direction: 'column', gap: 16, alignItems: 'flex-start'}}>
-            <Body2>
+            <Text size={14}>
               Build an {nodeType} filter above to render a portion of the graph, or click below to
               attempt to render it in full.
-            </Body2>
+            </Text>
             <Button onClick={() => setForceLargeGraph(true)}>Show Graph</Button>
           </Box>
         }
       />
-    </CenteredContainer>
+    </div>
   );
 };
 
 export const CycleDetectedNotice = () => {
   return (
-    <CenteredContainer>
+    <div className={styles.centeredContainer}>
       <NonIdealState
         icon="error"
         title="Cycle detected"
@@ -142,6 +116,13 @@ export const CycleDetectedNotice = () => {
           </div>
         }
       />
-    </CenteredContainer>
+    </div>
   );
 };
+
+export const LoadingContainer = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<'div'>
+>((props, ref) => {
+  return <div {...props} ref={ref} className={clsx(styles.loadingContainer, props.className)} />;
+});

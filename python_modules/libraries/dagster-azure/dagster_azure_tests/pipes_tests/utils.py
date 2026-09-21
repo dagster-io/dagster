@@ -12,7 +12,9 @@ _PYTHON_EXECUTABLE = shutil.which("python") or "python"
 
 @contextmanager
 def temp_script(script_fn: Callable[[], Any], mock_blob_storage_class: Any) -> Iterator[str]:
-    mock_blob_storage_source = Path(inspect.getfile(mock_blob_storage_class)).read_text()
+    mock_blob_storage_source = Path(inspect.getfile(mock_blob_storage_class)).read_text(
+        encoding="utf-8"
+    )
     # drop the signature line
     function_source = textwrap.dedent(inspect.getsource(script_fn).split("\n", 1)[1])
 

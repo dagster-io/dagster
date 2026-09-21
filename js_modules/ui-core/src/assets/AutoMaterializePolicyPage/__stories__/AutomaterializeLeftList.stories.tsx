@@ -23,7 +23,7 @@ export const WithPartitions = () => {
   return (
     <div style={{width: '320px'}}>
       <AutomaterializeLeftList
-        evaluations={evaluations as any}
+        evaluations={evaluations as unknown as AssetConditionEvaluationRecordFragment[]}
         onSelectEvaluation={(evaluation: AssetConditionEvaluationRecordFragment) =>
           setSelectedEvaluation(evaluation)
         }
@@ -43,7 +43,7 @@ export const NoPartitions = () => {
   return (
     <div style={{width: '320px'}}>
       <AutomaterializeLeftList
-        evaluations={evaluations as any}
+        evaluations={evaluations as unknown as AssetConditionEvaluationRecordFragment[]}
         onSelectEvaluation={(evaluation: AssetConditionEvaluationRecordFragment) =>
           setSelectedEvaluation(evaluation)
         }

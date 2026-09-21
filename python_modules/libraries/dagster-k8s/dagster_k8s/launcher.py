@@ -3,7 +3,6 @@ import sys
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-import kubernetes
 from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
@@ -18,7 +17,7 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
-from dagster_k8s.utils import get_deployment_id_label
+from dagster_k8s.utils import get_deployment_id_label, load_kubernetes_config
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -76,22 +75,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
 
         self.load_incluster_config = load_incluster_config
-        self.kubeconfig_file = kubeconfig_file
-        if load_incluster_config:
-            check.invariant(
-                kubeconfig_file is None,
-                "`kubeconfig_file` is set but `load_incluster_config` is True.",
-            )
-            kubernetes.config.load_incluster_config()
-        else:
-            check.opt_str_param(kubeconfig_file, "kubeconfig_file")
-            kubernetes.config.load_kube_config(kubeconfig_file)
-
-        # Override the SSL CA cert if a custom CA bundle is provided
-        if k8s_api_ssl_ca_cert_file:
-            config = kubernetes.client.Configuration.get_default_copy()
-            config.ssl_ca_cert = k8s_api_ssl_ca_cert_file
-            kubernetes.client.Configuration.set_default(config)
+        self.kubeconfig_file = check.opt_str_param(kubeconfig_file, "kubeconfig_file")
+        load_kubernetes_config(
+            load_incluster_config=load_incluster_config,
+            kubeconfig_file=kubeconfig_file,
+            k8s_api_ssl_ca_cert_file=k8s_api_ssl_ca_cert_file,
+        )
 
         self._api_client = DagsterKubernetesClient.production_client(
             core_api_override=k8s_client_core_api,
@@ -220,6 +209,51 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def get_container_context_for_run(self, dagster_run: DagsterRun) -> K8sContainerContext:
         return K8sContainerContext.create_for_run(dagster_run, self, include_run_tags=True)
 
+    def _report_run_worker_creating(self, run: DagsterRun, job_name: str, namespace: str) -> None:
+        self._instance.report_engine_event(
+            "Creating Kubernetes run worker job",
+            run,
+            EngineEventData(
+                {
+                    "Kubernetes Job name": job_name,
+                    "Kubernetes Namespace": namespace,
+                    "Run ID": run.run_id,
+                }
+            ),
+            cls=self.__class__,
+        )
+
+    def _report_run_worker_created(self, run: DagsterRun) -> None:
+        self._instance.report_engine_event(
+            "Kubernetes run worker job created",
+            run,
+            cls=self.__class__,
+        )
+
+    def _report_run_terminated(self, run: DagsterRun) -> None:
+        self._instance.report_engine_event(
+            message="Run was terminated successfully.",
+            dagster_run=run,
+            cls=self.__class__,
+        )
+
+    def _report_run_termination_failed(self, run: DagsterRun, result: object) -> None:
+        self._instance.report_engine_event(
+            message=f"Run was not terminated successfully; delete_job returned {result}",
+            dagster_run=run,
+            cls=self.__class__,
+        )
+
+    def _report_run_termination_error(self, run: DagsterRun) -> None:
+        self._instance.report_engine_event(
+            message="Run was not terminated successfully; encountered error in delete_job",
+            dagster_run=run,
+            engine_event_data=EngineEventData.engine_error(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            ),
+            cls=self.__class__,
+        )
+
     def _launch_k8s_job_with_args(
         self, job_name: str, args: Sequence[str] | None, run: DagsterRun
     ) -> None:
@@ -271,25 +305,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         namespace = check.not_none(container_context.namespace)
 
-        self._instance.report_engine_event(
-            "Creating Kubernetes run worker job",
-            run,
-            EngineEventData(
-                {
-                    "Kubernetes Job name": job_name,
-                    "Kubernetes Namespace": namespace,
-                    "Run ID": run.run_id,
-                }
-            ),
-            cls=self.__class__,
-        )
+        self._report_run_worker_creating(run, job_name, namespace)
 
         self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
-        self._instance.report_engine_event(
-            "Kubernetes run worker job created",
-            run,
-            cls=self.__class__,
-        )
+        self._report_run_worker_created(run)
 
     def launch_run(self, context: LaunchRunContext) -> None:
         run = context.dagster_run
@@ -330,7 +349,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return None
         return self._instance.count_resume_run_attempts(run.run_id)
 
-    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def terminate(self, run_id):
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
 
@@ -350,27 +369,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 job_name=job_name, namespace=container_context.namespace
             )
             if termination_result:
-                self._instance.report_engine_event(
-                    message="Run was terminated successfully.",
-                    dagster_run=run,
-                    cls=self.__class__,
-                )
+                self._report_run_terminated(run)
             else:
-                self._instance.report_engine_event(
-                    message=f"Run was not terminated successfully; delete_job returned {termination_result}",
-                    dagster_run=run,
-                    cls=self.__class__,
-                )
+                self._report_run_termination_failed(run, termination_result)
             return termination_result
         except Exception:
-            self._instance.report_engine_event(
-                message="Run was not terminated successfully; encountered error in delete_job",
-                dagster_run=run,
-                engine_event_data=EngineEventData.engine_error(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                ),
-                cls=self.__class__,
-            )
+            self._report_run_termination_error(run)
 
     @property
     def supports_check_run_worker_health(self):
@@ -412,7 +416,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
-            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)  # pyright: ignore[reportArgumentType]
+            job_debug_info = self._api_client.get_job_debug_info(job_name, namespace=namespace)
             full_msg = (
                 full_msg
                 + "\n\n"
@@ -431,7 +435,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         try:
             status = self._api_client.get_job_status(
-                namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
+                namespace=container_context.namespace,
                 job_name=job_name,
             )
         except Exception:

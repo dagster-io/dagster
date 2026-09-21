@@ -1,12 +1,14 @@
+###################
 dagster-aws library
-===================
+###################
 
 Utilities for interfacing with AWS with Dagster.
 
 .. currentmodule:: dagster_aws
 
+***
 S3
---
+***
 
 .. autoconfigurable:: dagster_aws.s3.S3Resource
   :annotation: ResourceDefinition
@@ -34,8 +36,8 @@ S3
 
 
 
-File Manager
-^^^^^^^^^^^^
+File manager
+============
 
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
@@ -43,37 +45,40 @@ File Manager
 .. autoconfigurable:: dagster_aws.s3.S3FileManagerResource
   :annotation: ResourceDefinition
 
-
+***
 ECS
----
+***
+
 .. autoconfigurable:: dagster_aws.ecs.EcsRunLauncher
   :annotation: RunLauncher
 
 .. autoconfigurable:: dagster_aws.ecs.ecs_executor
   :annotation: ExecutorDefinition
 
-
+***
 RDS
----
+***
+
 .. autoconfigurable:: dagster_aws.rds.RDSResource
   :annotation: ResourceDefinition
 
-
+********
 Redshift
---------
+********
+
 .. autoconfigurable:: dagster_aws.redshift.RedshiftClientResource
   :annotation: ResourceDefinition
 
 
 Testing
-^^^^^^^
+=======
 
 .. autoconfigurable:: dagster_aws.redshift.FakeRedshiftClientResource
   :annotation: ResourceDefinition
 
-
+***
 EMR
----
+***
 
 .. autoconfigurable:: dagster_aws.emr.emr_pyspark_step_launcher
   :annotation: ResourceDefinition
@@ -86,15 +91,16 @@ EMR
 
 .. autodata:: dagster_aws.emr.EmrStepState
 
-
+**********
 CloudWatch
-----------
+**********
 
 .. autoconfigurable:: dagster_aws.cloudwatch.cloudwatch_logger
   :annotation: LoggerDefinition
 
+**************
 SecretsManager
---------------
+**************
 
 Resources which surface SecretsManager secrets for use in Dagster resources and jobs.
 
@@ -104,8 +110,9 @@ Resources which surface SecretsManager secrets for use in Dagster resources and 
 .. autoconfigurable:: dagster_aws.secretsmanager.SecretsManagerSecretsResource
   :annotation: ResourceDefinition
 
+***
 SSM
----
+***
 
 .. autoconfigurable:: dagster_aws.ssm.SSMResource
   :annotation: ResourceDefinition
@@ -115,18 +122,19 @@ SSM
 
 .. autoclass:: dagster_aws.ssm.ParameterStoreTag
 
+*****
 Pipes
---------------
+*****
 
-Context Injectors
-^^^^^^^^^^^^^^^^^
+Context injectors
+=================
 
 .. autoclass:: dagster_aws.pipes.PipesS3ContextInjector
 
 .. autoclass:: dagster_aws.pipes.PipesLambdaEventContextInjector
 
-Message Readers
-^^^^^^^^^^^^^^^
+Message readers
+===============
 
 .. autoclass:: dagster_aws.pipes.PipesS3MessageReader
 
@@ -134,7 +142,7 @@ Message Readers
    :members: consume_cloudwatch_logs
 
 Clients
-^^^^^^^
+=======
 
 .. autoclass:: dagster_aws.pipes.PipesLambdaClient
 
@@ -148,13 +156,14 @@ Clients
 
 .. autoclass:: dagster_aws.pipes.PipesEMRServerlessClient
 
+**********
 Components
-----------
+**********
 
 Resource components for use with Dagster's component system.
 
 Credentials Components
-^^^^^^^^^^^^^^^^^^^^^^
+======================
 
 .. autoclass:: dagster_aws.Boto3CredentialsComponent
 
@@ -165,7 +174,7 @@ Credentials Components
 .. autoclass:: dagster_aws.redshift.RedshiftCredentialsComponent
 
 Resource Components
-^^^^^^^^^^^^^^^^^^^
+===================
 
 .. autoclass:: dagster_aws.S3ResourceComponent
 
@@ -187,8 +196,9 @@ Resource Components
 
 .. autoclass:: dagster_aws.ECRPublicResourceComponent
 
+******
 Legacy
---------
+******
 
 .. autoconfigurable:: dagster_aws.s3.ConfigurablePickledObjectS3IOManager
   :annotation: IOManagerDefinition

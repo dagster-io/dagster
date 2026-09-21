@@ -136,7 +136,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
-    def get_partition_keys_in_range(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_partition_keys_in_range(  # ty: ignore[invalid-method-override]
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
@@ -227,7 +227,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         # in some cases, an underlying partitions definition may have keys in a format
         # that produce invalid multi-partition keys (e.g. they have a | character).
         # in these cases, we filter out the invalid keys.
-        return [key for key in keys if self._is_valid_key_format(key)]
+        return [key for key in keys if self.is_valid_key_format(key)]
 
     @public
     def get_partition_keys(
@@ -295,7 +295,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 results=partition_keys, cursor=next_cursor, has_more=iterator.has_next()
             )
 
-    def _is_valid_key_format(self, partition_key: str) -> bool:
+    def is_valid_key_format(self, partition_key: str) -> bool:
         """Checks if the given partition key is in the correct format for a multi-partition key
         of this MultiPartitionsDefinition.
         """
@@ -307,7 +307,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         }
         validated_partitions = set()
         for partition_key in partition_keys:
-            if not self._is_valid_key_format(partition_key):
+            if not self.is_valid_key_format(partition_key):
                 continue
 
             partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
@@ -319,7 +319,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 key in partition_keys_by_dimension.get(dim, [])
                 for dim, key in multipartition_key.keys_by_dimension.items()
             ):
-                validated_partitions.add(partition_key)
+                validated_partitions.add(multipartition_key)
 
         return validated_partitions
 
@@ -397,7 +397,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         return self._get_primary_and_secondary_dimension()[1]
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
-        partition_key = cast("MultiPartitionKey", self.get_partition_key_from_str(partition_key))
+        partition_key = self.get_partition_key_from_str(partition_key)
         tags = {**super().get_tags_for_partition_key(partition_key)}
         tags.update(get_tags_from_multi_partition_key(partition_key))
         return tags
@@ -424,10 +424,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     @property
     def time_window_partitions_def(self) -> TimeWindowPartitionsDefinition:
         check.invariant(self.has_time_window_dimension, "Must have time window dimension")
-        return cast(
-            "TimeWindowPartitionsDefinition",
-            check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition),
-        )
+        return check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition)
 
     def time_window_for_partition_key(self, partition_key: str) -> TimeWindow:
         if not isinstance(partition_key, MultiPartitionKey):
@@ -436,15 +433,23 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         time_window_dimension = self.time_window_dimension
         return cast(
             "TimeWindowPartitionsDefinition", time_window_dimension.partitions_def
-        ).time_window_for_partition_key(
-            cast("MultiPartitionKey", partition_key).keys_by_dimension[time_window_dimension.name]
-        )
+        ).time_window_for_partition_key(partition_key.keys_by_dimension[time_window_dimension.name])
 
     def get_multipartition_keys_with_dimension_value(
         self, dimension_name: str, dimension_partition_key: str
     ) -> Sequence[MultiPartitionKey]:
         check.str_param(dimension_name, "dimension_name")
         check.str_param(dimension_partition_key, "dimension_partition_key")
+        return self.get_multipartition_keys_with_dimension_values(
+            dimension_name, [dimension_partition_key]
+        )
+
+    def get_multipartition_keys_with_dimension_values(
+        self, dimension_name: str, dimension_partition_keys: Sequence[str]
+    ) -> Sequence[MultiPartitionKey]:
+        """Expands keys of the named dimension into full multi-partition keys."""
+        check.str_param(dimension_name, "dimension_name")
+        check.sequence_param(dimension_partition_keys, "dimension_partition_keys", of_type=str)
 
         matching_dimensions = [
             dimension for dimension in self.partitions_defs if dimension.name == dimension_name
@@ -459,12 +464,12 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             f" {[dim.name for dim in self.partitions_defs]}",
         )
 
-        partition_sequences = [
+        partition_sequences = [dimension_partition_keys] + [
             partition_dim.partitions_def.get_partition_keys() for partition_dim in other_dimensions
-        ] + [[dimension_partition_key]]
+        ]
 
         # Names of partitions dimensions in the same order as partition_sequences
-        partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
+        partition_dim_names = [dimension_name] + [dim.name for dim in other_dimensions]
 
         return [
             MultiPartitionKey(

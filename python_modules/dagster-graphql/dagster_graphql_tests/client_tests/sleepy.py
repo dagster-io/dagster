@@ -19,7 +19,7 @@ def sleeper(context, units):
 
 
 class GiverConfig(Config):
-    units: list[int] = Field(default_value=[1, 1, 1, 1])  # type: ignore
+    units: list[int] = Field(default_value=[1, 1, 1, 1])
 
 
 @op(

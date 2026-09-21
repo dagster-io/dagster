@@ -1,6 +1,7 @@
 import {Box, ButtonLink, Icon, MiddleTruncate, Popover, Tag} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {EvaluationDetailDialog} from './AutoMaterializePolicyPage/EvaluationDetailDialog';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
@@ -21,7 +22,9 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
   const [openEvaluation, setOpenEvaluation] = useState<OpenEvaluation | null>(null);
 
   const sortedKeys = useMemo(() => {
-    return [...assetKeys].sort((a, b) => COLLATOR.compare(a.path.join('/'), b.path.join('/')));
+    return [...assetKeys].sort((a, b) =>
+      COLLATOR.compare(displayNameForAssetKey(a), displayNameForAssetKey(b)),
+    );
   }, [assetKeys]);
 
   return (
@@ -60,7 +63,7 @@ export const AutomaterializeTagWithEvaluation = ({assetKeys, evaluationId}: Prop
                       style={{overflow: 'hidden'}}
                     >
                       <Icon name="asset" />
-                      <MiddleTruncate text={assetKey.path.join('/')} />
+                      <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
                     </Box>
                     <ButtonLink
                       onClick={() => setOpenEvaluation({assetKeyPath: assetKey.path, evaluationId})}

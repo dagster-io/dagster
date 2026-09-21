@@ -1,7 +1,7 @@
-import {Colors} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
+import styles from './css/LogsScrollingTableHeader.module.css';
 import {getJSONForKey} from '../util/getJSONForKey';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';
@@ -105,18 +105,22 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 
   render() {
     const isDraggable = !!this.props.onResize;
+    const side = this.props.handleSide || 'right';
 
     return (
       <HeaderContainer style={{width: this.props.width}}>
-        <HeaderDragHandle
+        <div
+          className={clsx(
+            styles.headerDragHandle,
+            isDraggable && styles.headerDragHandleDraggable,
+            this.state.isDragging && styles.headerDragHandleDragging,
+            side === 'right' ? styles.headerDragHandleRight : styles.headerDragHandleLeft,
+          )}
           onMouseDown={isDraggable ? this.onMouseDown : undefined}
-          isDraggable={isDraggable}
-          isDragging={this.state.isDragging}
-          side={this.props.handleSide || 'right'}
         >
           <div />
-        </HeaderDragHandle>
-        <HeaderLabel>{this.props.children}</HeaderLabel>
+        </div>
+        <div className={styles.headerLabel}>{this.props.children}</div>
       </HeaderContainer>
     );
   }
@@ -146,45 +150,10 @@ export const Headers = () => {
   );
 };
 
-export const HeadersContainer = styled.div`
-  display: flex;
-  color: ${Colors.textLight()};
-  text-transform: uppercase;
-  font-size: 12px;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  z-index: 2;
-`;
+export const HeadersContainer = ({className, ...rest}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={clsx(styles.headersContainer, className)} {...rest} />
+);
 
-export const HeaderContainer = styled.div`
-  flex-shrink: 0;
-  position: relative;
-  user-select: none;
-  display: inline-block;
-  padding: 0 12px;
-  line-height: 32px;
-`;
-
-const HeaderDragHandle = styled.div<{
-  side: 'left' | 'right';
-  isDraggable: boolean;
-  isDragging: boolean;
-}>`
-  width: 1px;
-  height: 20000px;
-  position: absolute;
-  cursor: ${({isDraggable}) => (isDraggable ? 'ew-resize' : 'default')};
-  z-index: 2;
-  ${({side}) => (side === 'right' ? `right: -2px;` : `left: -2px;`)}
-  padding: 0 2px;
-  & > div {
-    width: 1px;
-    height: 100%;
-    background: ${({isDragging}) => (isDragging ? Colors.accentGray() : Colors.keylineDefault())};
-  }
-`;
-
-const HeaderLabel = styled.div`
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-`;
+export const HeaderContainer = ({className, ...rest}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={clsx(styles.headerContainer, className)} {...rest} />
+);

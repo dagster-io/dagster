@@ -1,10 +1,33 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
 
-export type AssetCatalogTableQueryVariables = Types.Exact<{
-  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
-  limit: Types.Scalars['Int']['input'];
+export type AssetGroupSelector = {
+  groupName: string;
+  repositoryLocationName: string;
+  repositoryName: string;
+};
+
+export type ChangeReason =
+  | 'CODE_VERSION'
+  | 'DEPENDENCIES'
+  | 'METADATA'
+  | 'NEW'
+  | 'PARTITIONS_DEFINITION'
+  | 'REMOVED'
+  | 'TAGS';
+
+export type PartitionDefinitionType = 'DYNAMIC' | 'MULTIPARTITIONED' | 'STATIC' | 'TIME_WINDOW';
+
+export type AssetCatalogTableQueryVariables = Exact<{
+  cursor?: string | null | undefined;
+  limit: number;
 }>;
 
 export type AssetCatalogTableQuery = {
@@ -31,9 +54,9 @@ export type AssetCatalogTableQuery = {
             hasAssetChecks: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
+            hasWipePermission: boolean;
             hasReportRunlessAssetEventPermission: boolean;
             description: string | null;
-            pools: Array<string>;
             jobNames: Array<string>;
             kinds: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -52,23 +75,23 @@ export type AssetCatalogTableQuery = {
               | null;
             partitionDefinition: {
               __typename: 'PartitionDefinition';
-              description: string;
               dimensionTypes: Array<{
                 __typename: 'DimensionDefinitionType';
                 type: Types.PartitionDefinitionType;
                 dynamicPartitionsDefinitionName: string | null;
               }>;
             } | null;
-            automationCondition: {
-              __typename: 'AutomationCondition';
-              label: string | null;
-              expandedLabel: Array<string>;
-            } | null;
+            automationCondition: {__typename: 'AutomationCondition'} | null;
             owners: Array<
               | {__typename: 'TeamAssetOwner'; team: string}
               | {__typename: 'UserAssetOwner'; email: string}
             >;
             tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            storageAddress: {
+              __typename: 'StorageAddress';
+              storageKind: string | null;
+              tableName: string;
+            } | null;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -90,8 +113,8 @@ export type AssetCatalogTableQuery = {
       };
 };
 
-export type AssetCatalogGroupTableQueryVariables = Types.Exact<{
-  group?: Types.InputMaybe<Types.AssetGroupSelector>;
+export type AssetCatalogGroupTableQueryVariables = Exact<{
+  group?: Types.AssetGroupSelector | null | undefined;
 }>;
 
 export type AssetCatalogGroupTableQuery = {
@@ -110,9 +133,9 @@ export type AssetCatalogGroupTableQuery = {
     hasAssetChecks: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
+    hasWipePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
-    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -131,22 +154,22 @@ export type AssetCatalogGroupTableQuery = {
       | null;
     partitionDefinition: {
       __typename: 'PartitionDefinition';
-      description: string;
       dimensionTypes: Array<{
         __typename: 'DimensionDefinitionType';
         type: Types.PartitionDefinitionType;
         dynamicPartitionsDefinitionName: string | null;
       }>;
     } | null;
-    automationCondition: {
-      __typename: 'AutomationCondition';
-      label: string | null;
-      expandedLabel: Array<string>;
-    } | null;
+    automationCondition: {__typename: 'AutomationCondition'} | null;
     owners: Array<
       {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
     >;
     tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+    storageAddress: {
+      __typename: 'StorageAddress';
+      storageKind: string | null;
+      tableName: string;
+    } | null;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -170,9 +193,9 @@ export type AssetCatalogGroupTableNodeFragment = {
   hasAssetChecks: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
+  hasWipePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
-  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -191,22 +214,22 @@ export type AssetCatalogGroupTableNodeFragment = {
     | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
-    description: string;
     dimensionTypes: Array<{
       __typename: 'DimensionDefinitionType';
       type: Types.PartitionDefinitionType;
       dynamicPartitionsDefinitionName: string | null;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
+  automationCondition: {__typename: 'AutomationCondition'} | null;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
   tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+  storageAddress: {
+    __typename: 'StorageAddress';
+    storageKind: string | null;
+    tableName: string;
+  } | null;
   repository: {
     __typename: 'Repository';
     id: string;
@@ -215,6 +238,6 @@ export type AssetCatalogGroupTableNodeFragment = {
   };
 };
 
-export const AssetCatalogTableQueryVersion = 'b9fb4b1e1639dcbd1f54b152d8c70e9522db4b57874dce2eb9d59608ac41dbb3';
+export const AssetCatalogTableQueryVersion = '67bd29bba7f7d1ddc9c2d3e7bd5a1b3fe26d36875ba9dea6052c799ab4c98955';
 
-export const AssetCatalogGroupTableQueryVersion = 'e40ea9d79f47b7677feefebd934e0a32808f21f2586e3149fd930d584b135203';
+export const AssetCatalogGroupTableQueryVersion = '2a2ce4dd539e52f1a5c95072d6c41e61fd0939380ed25f5e0700188b1e6edd20';

@@ -148,7 +148,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             resolved_input_defs: Sequence[InputDefinition] = resolve_checked_op_fn_inputs(
                 decorator_name="@op",
                 fn_name=name,
-                compute_fn=cast("DecoratedOpFunction", compute_fn),
+                compute_fn=compute_fn,
                 explicit_input_defs=input_defs,
                 exclude_nothing=True,
             )

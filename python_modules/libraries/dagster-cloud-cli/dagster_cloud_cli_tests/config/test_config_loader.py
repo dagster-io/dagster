@@ -104,18 +104,22 @@ def test_config_loader(tmpdir):
         result = loader.load_from_template(template_file, context)
         assert isinstance(result, ProcessedDagsterCloudConfig)
         assert len(result.locations) == 1
-        assert result.locations[0].location_name == "foo"
-        assert result.locations[0].code_source.package_name == "foo"
-        assert result.locations[0].build.model_dump() == {
+        location = result.locations[0]
+        assert location.location_name == "foo"
+        assert location.code_source is not None
+        assert location.code_source.package_name == "foo"
+        assert location.build is not None
+        assert location.build.model_dump() == {
             "directory": "foo",
             "registry": "my-registry.io/my-org",
         }
-        assert result.locations[0].image == "foo"
-        assert set(result.locations[0].container_context["k8s"]["env_vars"]) == {
+        assert location.image == "foo"
+        assert location.container_context is not None
+        assert set(location.container_context["k8s"]["env_vars"]) == {
             "foo=foo",
             "global=overridden",
         }
-        assert result.locations[0].container_context["k8s"]["resources"] == {
+        assert location.container_context["k8s"]["resources"] == {
             "requests": {"cpu": "1", "memory": "32Gi"},
             "limits": {"cpu": "2", "memory": "32Gi"},
         }

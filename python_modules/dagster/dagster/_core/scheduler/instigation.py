@@ -476,6 +476,40 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         )
 
     @property
+    def requested_job_run_count(self) -> int:
+        """The number of whole-job runs requested by this tick. Job-conditioned run
+        requests carry a job_name and no asset selection, so they are invisible to
+        requested_asset_materialization_count.
+        """
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return 0
+
+        return sum(
+            1
+            for run_request in self.tick_data.run_requests or []
+            if run_request.job_name is not None and not run_request.asset_selection
+        )
+
+    @property
+    def requested_jobs_and_partitions(self) -> Mapping[str, AbstractSet[str]]:
+        """Job name -> partition keys for the whole-job runs requested by this tick. An
+        unpartitioned job maps to an empty set.
+        """
+        if self.tick_data.status != TickStatus.SUCCESS:
+            return {}
+
+        partitions_by_job_name: dict[str, set[str]] = {}
+        for run_request in self.tick_data.run_requests or []:
+            if run_request.job_name is None or run_request.asset_selection:
+                continue
+            if run_request.job_name not in partitions_by_job_name:
+                partitions_by_job_name[run_request.job_name] = set()
+            if run_request.partition_key:
+                partitions_by_job_name[run_request.job_name].add(run_request.partition_key)
+
+        return partitions_by_job_name
+
+    @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
         if self.tick_data.status != TickStatus.SUCCESS:
             return {}

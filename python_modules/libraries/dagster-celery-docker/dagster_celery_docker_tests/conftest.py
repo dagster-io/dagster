@@ -32,8 +32,8 @@ def aws_env(hostnames, from_pytest: bool):
     endpoint_url_from_dagster_container = (
         endpoint_url_from_pytest if IS_BUILDKITE else "http://s3:4566"
     )
-    access_key_id = "fake"
-    secret_access_key = "fake"
+    access_key_id = "minioadmin"
+    secret_access_key = "minioadmin"
 
     return {
         "AWS_ENDPOINT_URL": endpoint_url_from_pytest

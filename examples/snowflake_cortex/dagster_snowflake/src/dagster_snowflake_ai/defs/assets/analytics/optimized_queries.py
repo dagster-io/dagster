@@ -26,7 +26,7 @@ def optimized_query_example(
     4. Query result caching strategies
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         # Example 1: Column selection optimization
         # Instead of SELECT *, select only needed columns
@@ -123,7 +123,7 @@ def query_cost_tracking(
     - Query patterns for optimization
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, _schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         # Query recent query history for cost tracking
         cursor.execute("""

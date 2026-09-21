@@ -1,9 +1,10 @@
+###################
 dagstermill library
-===================
+###################
 
 This library provides an integration with `papermill` to allow you to run Jupyter notebooks with Dagster.
 
-Related Guides:
+Related guides:
 
 * `Using Jupyter notebooks with Papermill and Dagster <https://docs.dagster.io/integrations/libraries/jupyter>`_
 

@@ -10,6 +10,7 @@ export type ButtonGroupItem<T> = {
   id: T;
   label?: React.ReactNode;
   icon?: IconName;
+  rightIcon?: React.ReactNode;
   tooltip?: string;
   disabled?: boolean;
 };
@@ -25,7 +26,7 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
   return (
     <JoinedButtons>
       {buttons.map((button) => {
-        const {id, icon, label, tooltip, disabled} = button;
+        const {id, icon, label, rightIcon, tooltip, disabled} = button;
         const isActive = activeItems?.has(id);
         return (
           <Tooltip content={tooltip ?? ''} canShow={!!tooltip} position="top" key={id}>
@@ -34,6 +35,7 @@ export const ButtonGroup = <T extends string | number>(props: Props<T>) => {
               aria-selected={isActive}
               className={clsx(styles.buttonGroupItem, isActive && styles.active)}
               icon={icon ? <Icon name={icon} /> : null}
+              rightIcon={rightIcon}
               onClick={(e) => onClick(id, e)}
               disabled={disabled}
             >

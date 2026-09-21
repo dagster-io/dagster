@@ -1,0 +1,9 @@
+.executeChecksLeftButton {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.executeChecksRightButton {
+  min-width: initial;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}

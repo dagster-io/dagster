@@ -24,12 +24,20 @@
   overflow: hidden;
 }
 
+.titleRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
 .heading h1 {
   font-size: 18px;
   margin-bottom: 4px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
   max-width: 100%;
 }
 

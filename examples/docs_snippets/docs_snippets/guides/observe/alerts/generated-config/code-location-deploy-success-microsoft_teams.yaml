@@ -1,0 +1,11 @@
+# alert_policies.yaml
+
+alert_policies:
+- description: Sends a Microsoft Teams webhook when a code location is successfully
+    deployed.
+  event_types:
+  - CODE_LOCATION_DEPLOY_SUCCESS
+  name: code-location-deploy-success-microsoft_teams
+  notification_service:
+    microsoft_teams:
+      webhook_url: https://yourdomain.webhook.office.com/...

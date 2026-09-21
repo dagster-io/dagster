@@ -36,8 +36,8 @@ def test_successful_expectation_in_compute_step():
 
     assert len(expt_results) == 1
     expt_result = expt_results[0]
-    assert expt_result.event_specific_data.expectation_result.success  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert expt_result.event_specific_data.expectation_result.description == "This is always true."  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert expt_result.event_specific_data.expectation_result.success  # ty: ignore[unresolved-attribute]
+    assert expt_result.event_specific_data.expectation_result.description == "This is always true."  # ty: ignore[unresolved-attribute]
 
 
 def test_failed_expectation_in_compute_step():
@@ -58,8 +58,8 @@ def test_failed_expectation_in_compute_step():
 
     assert len(expt_results) == 1
     expt_result = expt_results[0]
-    assert not expt_result.event_specific_data.expectation_result.success  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert expt_result.event_specific_data.expectation_result.description == "This is always false."  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert not expt_result.event_specific_data.expectation_result.success  # ty: ignore[unresolved-attribute]
+    assert expt_result.event_specific_data.expectation_result.description == "This is always false."  # ty: ignore[unresolved-attribute]
 
 
 def test_return_expectation_failure():

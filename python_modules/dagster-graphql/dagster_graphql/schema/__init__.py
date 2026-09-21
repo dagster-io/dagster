@@ -6,10 +6,12 @@ from dagster_graphql.schema.roots.subscription import GrapheneSubscription
 
 
 def types():
+    from dagster_graphql.schema.app_managed_components import types as app_managed_components_types
     from dagster_graphql.schema.backfill import (
         GrapheneLaunchBackfillResult,
         GrapheneLaunchBackfillSuccess,
     )
+    from dagster_graphql.schema.component_types import types as component_types_types
     from dagster_graphql.schema.config_type_or_error import GrapheneConfigTypeOrError
     from dagster_graphql.schema.config_types import types as config_types
     from dagster_graphql.schema.dagster_types import types as dagster_types_types
@@ -72,6 +74,8 @@ def types():
         + table_types
         + [GraphenePipelineTag, GraphenePipelineTagAndValues]
         + [GrapheneNodeInvocationSite, GrapheneUsedSolid]
+        + app_managed_components_types
+        + component_types_types
     )
 
 

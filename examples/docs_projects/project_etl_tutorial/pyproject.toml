@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "dagster-webserver",
     "dagster-dg-cli",
+    "pytest",
 ]
 
 [build-system]
@@ -30,3 +31,6 @@ root_module = "etl_tutorial"
 registry_modules = [
     "etl_tutorial.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

@@ -353,11 +353,14 @@ def _location_origin_from_location_config(
 
 
 def is_target_config(potential_target_config: object) -> bool:
-    return isinstance(potential_target_config, dict) and bool(
-        potential_target_config.get("python_file")
-        or potential_target_config.get("python_module")
-        or potential_target_config.get("python_package")
-        or potential_target_config.get("autoload_defs_module")
+    if not isinstance(potential_target_config, dict):
+        return False
+    config = cast("dict[str, object]", potential_target_config)
+    return bool(
+        config.get("python_file")
+        or config.get("python_module")
+        or config.get("python_package")
+        or config.get("autoload_defs_module")
     )
 
 

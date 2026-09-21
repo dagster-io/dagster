@@ -14,6 +14,8 @@ from dagster_k8s.pipes import PipesK8sClient, PipesK8sPodLogsMessageReader
 from dagster_pipes import PipesContextData, PipesDefaultContextLoader
 from dagster_test.test_project import get_test_project_docker_image
 
+from tests.utils import BUSYBOX_IMAGE
+
 POLL_INTERVAL = 0.5
 
 
@@ -317,7 +319,7 @@ def test_pipes_client_ignore_init_container(namespace, cluster_provider):
                 "init_containers": [
                     {
                         "name": "init-setup",
-                        "image": "busybox",
+                        "image": BUSYBOX_IMAGE,
                         "command": ["sh", "-c", "echo 'init done'"],
                     }
                 ],

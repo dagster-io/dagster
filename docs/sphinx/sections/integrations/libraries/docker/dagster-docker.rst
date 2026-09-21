@@ -1,8 +1,10 @@
+######################
 dagster-docker library
-======================
+######################
 
+****
 APIs
-----
+****
 
 .. currentmodule:: dagster_docker
 
@@ -13,7 +15,7 @@ APIs
   :annotation: ExecutorDefinition
 
 Ops
-^^^
+===
 
 .. autoconfigurable:: docker_container_op
 
@@ -21,7 +23,7 @@ Ops
 
 
 Pipes
-^^^^^
+=====
 
 .. autoclass:: PipesDockerClient
 

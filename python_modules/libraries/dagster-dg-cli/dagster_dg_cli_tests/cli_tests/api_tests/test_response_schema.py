@@ -13,17 +13,17 @@ RESPONSE_SCHEMA_COMMANDS = [
     ("api asset get-events --response-schema", "DgApiAssetEventList"),
     ("api asset get-evaluations --response-schema", "DgApiEvaluationRecordList"),
     # deployment commands (organization_scoped)
-    ("api deployment list --response-schema", "DeploymentList"),
-    ("api deployment get --response-schema", "Deployment"),
+    ("api deployment list --response-schema", "DgApiDeploymentList"),
+    ("api deployment get --response-schema", "DgApiDeployment"),
     # deployment settings commands (deployment_scoped)
-    ("api deployment settings get --response-schema", "DeploymentSettings"),
-    ("api deployment settings set --response-schema", "DeploymentSettings"),
+    ("api deployment settings get --response-schema", "DgApiDeploymentSettings"),
+    ("api deployment settings set --response-schema", "DgApiDeploymentSettings"),
     # agent commands (organization_scoped)
     ("api agent list --response-schema", "DgApiAgentList"),
     ("api agent get --response-schema", "DgApiAgent"),
     # run commands (deployment_scoped)
     ("api run get --response-schema", "DgApiRun"),
-    ("api run get-events --response-schema", "RunEventList"),
+    ("api run get-events --response-schema", "DgApiRunEventList"),
     # schedule commands (deployment_scoped)
     ("api schedule list --response-schema", "DgApiScheduleList"),
     ("api schedule get --response-schema", "DgApiSchedule"),

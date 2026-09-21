@@ -17,7 +17,6 @@ def test_build_output_context_asset_spec():
     asset_spec = dg.AssetSpec(
         key="key",
         group_name="group",
-        code_version="code_version",
         partitions_def=dg.StaticPartitionsDefinition(["part1"]),
     )
 

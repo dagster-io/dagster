@@ -318,7 +318,7 @@ class DagsterUserCodeExecutionError(DagsterError):
         self.original_exc_info = original_exc_info
 
     @property
-    def is_user_code_error(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def is_user_code_error(self) -> bool:
         return True
 
 
@@ -445,6 +445,16 @@ class DagsterSubprocessError(DagsterError):
 
 class DagsterUserCodeUnreachableError(DagsterError):
     """Dagster was unable to reach a user code server to fetch information about user code."""
+
+
+class DagsterUserCodeUnreachableTimeoutError(DagsterUserCodeUnreachableError):
+    """Raised when a call to user code was successfully dispatched but did not produce a response
+    within the caller's poll window. The work may still be running server-side; the caller has
+    simply given up waiting.
+
+    Distinct from the parent so callers can branch on "still running, just slow" vs. "agent /
+    transport actually unreachable".
+    """
 
 
 class DagsterUserCodeProcessError(DagsterError):

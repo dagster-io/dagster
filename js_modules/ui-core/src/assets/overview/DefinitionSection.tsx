@@ -1,16 +1,20 @@
 import {
   Box,
   ButtonLink,
-  Caption,
   Colors,
   Icon,
   MiddleTruncate,
   Tag,
+  Text,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
+import {useLinkedAsset} from './useLinkedAsset';
+import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {TimeFromNow} from '../../ui/TimeFromNow';
 import {AssetDefinedInMultipleReposNotice} from '../AssetDefinedInMultipleReposNotice';
+import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {AttributeAndValue} from './Common';
 import {CodeLink, getCodeReferenceKey} from '../../code-links/CodeLink';
 import {AssetKind, isCanonicalStorageKindTag, isSystemTag} from '../../graph/KindTags';
@@ -27,19 +31,21 @@ import {buildTagString} from '../../ui/tagAsString';
 import {WorkspaceLocationNodeFragment} from '../../workspace/WorkspaceContext/types/WorkspaceQueries.types';
 import {RepoAddress} from '../../workspace/types';
 import {globalAssetGraphPathForGroup} from '../globalAssetGraphPathToString';
-import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import {WorkspaceAssetNode} from '../useAllAssets';
 
 export const DefinitionSection = ({
   repoAddress,
   location,
   assetNode,
   cachedOrLiveAssetNode,
+  storageAddress,
 }: {
   repoAddress: RepoAddress | null;
   location: WorkspaceLocationNodeFragment | undefined;
   assetNode: AssetViewDefinitionNodeFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
+  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | WorkspaceAssetNode;
+  storageAddress?: {tableName: string; storageKind: string | null} | null;
 }) => {
   const storageKindTag = cachedOrLiveAssetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = cachedOrLiveAssetNode.tags?.filter(
@@ -78,9 +84,9 @@ export const DefinitionSection = ({
           {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
           <RepositoryLink repoAddress={repoAddress!} />
           {location && (
-            <Caption color={Colors.textLighter()}>
+            <Text size={12} color="textLighter">
               Loaded <TimeFromNow unixTimestamp={location.updatedTimestamp} />
-            </Caption>
+            </Text>
           )}
         </Box>
       </AttributeAndValue>
@@ -168,6 +174,10 @@ export const DefinitionSection = ({
           </Box>
         )}
       </AttributeAndValue>
+      <QueryfulLinkedAssetRow
+        assetKey={cachedOrLiveAssetNode.assetKey}
+        storageAddress={storageAddress}
+      />
       <AttributeAndValue label="Source code">
         {codeSource &&
           codeSource.codeReferences &&
@@ -179,19 +189,55 @@ export const DefinitionSection = ({
   );
 };
 
+const QueryfulLinkedAssetRow = ({
+  assetKey,
+  storageAddress,
+}: {
+  assetKey: {path: string[]};
+  storageAddress: {tableName: string; storageKind: string | null} | null | undefined;
+}) => {
+  const result = useLinkedAsset({currentAssetKey: assetKey, storageAddress});
+  if (result.type !== 'linked') {
+    return null;
+  }
+  return <LinkedAssetRow linkedAssetKey={result.linkedAssetKey} />;
+};
+
+export const LinkedAssetRow = ({linkedAssetKey}: {linkedAssetKey: {path: string[]}}) => {
+  return (
+    <AttributeAndValue
+      label={
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          Linked asset
+          <Tooltip
+            content="This asset targets the same table as an asset loaded by a connection."
+            placement="top"
+          >
+            <Icon name="info" color={Colors.textLight()} />
+          </Tooltip>
+        </Box>
+      }
+    >
+      <Link to={assetDetailsPathForKey(linkedAssetKey)}>
+        {displayNameForAssetKey(linkedAssetKey)}
+      </Link>
+    </AttributeAndValue>
+  );
+};
+
 const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) => {
   const [shown, setShown] = useStateWithStorage('show-asset-definition-system-tags', Boolean);
 
   if (!shown) {
     return (
-      <Caption>
+      <Text size={12}>
         <ButtonLink onClick={() => setShown(true)}>
           <Box flex={{alignItems: 'center'}}>
             <span>Show system tags ({tags.length || 0})</span>
             <Icon name="arrow_drop_down" style={{transform: 'rotate(0deg)'}} />
           </Box>
         </ButtonLink>
-      </Caption>
+      </Text>
     );
   } else {
     return (
@@ -201,14 +247,14 @@ const SystemTagsToggle = ({tags}: {tags: Array<{key: string; value: string}>}) =
             <Tag key={idx}>{buildTagString(tag)}</Tag>
           ))}
         </Box>
-        <Caption>
+        <Text size={12}>
           <ButtonLink onClick={() => setShown(false)}>
             <Box flex={{alignItems: 'center'}}>
               <span>Hide system tags</span>
               <Icon name="arrow_drop_down" style={{transform: 'rotate(180deg)'}} />
             </Box>
           </ButtonLink>
-        </Caption>
+        </Text>
       </Box>
     );
   }

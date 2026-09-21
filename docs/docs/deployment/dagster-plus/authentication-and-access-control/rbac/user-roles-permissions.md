@@ -33,7 +33,7 @@ For example, the **Admin** user role includes permissions specific to this role 
 
 :::tip Teams in Dagster+ Pro
 
-Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see "[Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams)".
+Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see [Managing teams in Dagster+](/deployment/dagster-plus/authentication-and-access-control/rbac/teams).
 
 :::
 
@@ -77,11 +77,12 @@ With the exception of the **Organization Admin** role, user and team roles are s
 
 Organization Admins have access to the entire organization, including all [deployments](/deployment/dagster-plus/deploying-code/full-deployments), [code locations](/guides/build/projects), and [Branch Deployments](/deployment/dagster-plus/deploying-code/branch-deployments).
 
-| Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.                                                                                                                                  |
-| Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/guides/build/projects). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. Note that overrides can only be used to grant additional permissions, not to take away permissions from the Deployment role. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
-| Branch deployments | All plans | Defines the level of access for all Branch Deployments in the organization, in all code locations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.                                                                                                                                           |
+| Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/guides/build/projects). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. Note that overrides can only be used to grant additional permissions, not to take away permissions from the Deployment role. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment.          |
+| Branch deployments | Pro       | Defines the level of access for branch deployments in the organization, in all code locations. <br/><br/> Dagster+ Pro users can assign a role to a specific branch deployment. <br/><br/>For non-Pro users, users will have the same level of access for all branch deployments.                                                                                                                                                                                                                                                                                                                                                                                         |
+| Owned definitions  | Pro       | Defines the level of access for the definitions a user owns in a given deployment. <br/><br/> Dagster+ Pro users can grant a role that applies only to assets, jobs, schedules, and sensors listing that user or one of their teams in the definition's [owners](/guides/build/assets/metadata-and-tags#owners). For example, if the <strong>Deployment</strong> role is <strong>Viewer</strong>, you could grant <strong>Editor</strong> on owned definitions, letting the user materialize the assets they own without gaining that access deployment-wide. <br/><br/> As with code location overrides, this can only grant additional permissions, not take them away. |
 
 ### Applying role overrides
 
@@ -101,6 +102,29 @@ To override a code location role for an individual user:
 4. Next to a code location, click **Edit user role**.
 5. Select the user role for the code location: {/* TODO: add picture previously at "/images/dagster-cloud/user-token-management/code-location-override.png" */}
 6. Click **Save**.
+
+#### Owned definitions
+
+Assets, jobs, schedules, and sensors can declare [owners](/guides/build/assets/metadata-and-tags#owners). Dagster+ Pro users can grant a role that applies only to the definitions a user owns.
+
+This is useful when you want users to operate their own data assets without granting them the same access across the entire deployment. A user with **Viewer** access to `prod` and an **Editor** role on owned definitions can materialize the assets that list them as an owner, but no others.
+
+To grant an owned definitions role for an individual user:
+
+1. Locate the user in the list of users.
+2. Click **Edit**.
+3. Click the toggle to the left of the deployment to open a list of code locations.
+4. Below the code locations, next to **User-owned definitions**, click **Edit user role**.
+5. Select the user role to apply to the definitions the user owns.
+6. Click **Save**.
+
+The same steps apply to teams. A team's owned definitions role applies to every definition listing that team in its owners, for every member of that team.
+
+Keep the following in mind when using owned definitions roles:
+
+- **Owners must match exactly.** An email owner must match the user's Dagster+ login email, and a `team:` owner must match the name of a Dagster+ team the user belongs to.
+- **Asset checks follow their asset.** A check is treated as owned by the owners of the asset it targets.
+- **The user needs access to the deployment first.** An owned definitions role raises a user's existing access; it can't be used to grant access to a deployment the user otherwise has no role in.
 
 #### Team members
 
@@ -133,6 +157,7 @@ If there are code location-level overrides, a small **N override(s)** link will 
 3. To remove an override:
    - **For a deployment**, click **Edit user role** next to the deployment.
    - **For a code location**, click the toggle next to the deployment to display a list of code locations. Click **Edit user role** next to the code location.
+   - **For owned definitions**, click the toggle next to the deployment and click **Edit user role** next to **User-owned definitions**.
 4. Click the **Remove override** button.
 5. Click **Save**.
 
@@ -210,7 +235,11 @@ User management is accessed in the UI by navigating to **user menu (your icon) >
 
 Team management is accessed in the UI by navigating to **user menu (your icon) > Organization Settings > Teams**.
 
-**Note**: Admin users can modify teams only in deployments where they're an Admin.
+:::note
+
+Admin users can modify teams only in deployments where they're an Admin.
+
+:::
 
 |                                                                                     | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ----------------------------------------------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |

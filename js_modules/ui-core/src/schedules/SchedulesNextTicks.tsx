@@ -7,20 +7,19 @@ import {
   DialogBody,
   DialogFooter,
   ExternalAnchorButton,
+  Heading,
   Icon,
   Menu,
   MenuItem,
   NonIdealState,
   Popover,
   Spinner,
-  Subheading,
   Table,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import qs from 'qs';
 import {memo, useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {TimestampDisplay} from './TimestampDisplay';
 import {gql, useLazyQuery} from '../apollo-client';
@@ -48,6 +47,7 @@ import {
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './css/SchedulesNextTicks.module.css';
 
 interface ScheduleTick {
   schedule: ScheduleNextFiveTicksFragment;
@@ -367,14 +367,18 @@ const NextTickDialog = ({
     body = (
       <Box flex={{direction: 'column', gap: 20}}>
         <Box flex={{direction: 'column', gap: 12}} padding={{top: 16, horizontal: 24}}>
-          <Subheading>Tags</Subheading>
+          <Heading size={14} weight={600}>
+            Tags
+          </Heading>
           {selectedRunRequest.tags.length ? (
             <RunTags tags={selectedRunRequest.tags} mode={isJob ? null : schedule.mode} />
           ) : null}
         </Box>
         <div>
           <Box border="bottom" padding={{left: 24, bottom: 16}}>
-            <Subheading>Config</Subheading>
+            <Heading size={14} weight={600}>
+              Config
+            </Heading>
           </Box>
           <StyledRawCodeMirror
             value={selectedRunRequest.runConfigYaml}
@@ -392,13 +396,13 @@ const NextTickDialog = ({
   } else if (evaluationResult.skipReason) {
     body = (
       <DialogBody>
-        <SkipWrapper>{evaluationResult.skipReason}</SkipWrapper>
+        <div className={styles.skipWrapper}>{evaluationResult.skipReason}</div>
       </DialogBody>
     );
   } else if (evaluationResult.runRequests) {
     body = (
       <DialogBody>
-        <RunRequestBody>
+        <div className={styles.runRequestBody}>
           <Table>
             <thead>
               <tr>
@@ -456,7 +460,7 @@ const NextTickDialog = ({
               })}
             </tbody>
           </Table>
-        </RunRequestBody>
+        </div>
       </DialogBody>
     );
   }
@@ -557,14 +561,4 @@ const SCHEDULE_TICK_CONFIG_QUERY = gql`
   }
 
   ${PYTHON_ERROR_FRAGMENT}
-`;
-
-const RunRequestBody = styled.div`
-  font-size: 13px;
-`;
-
-const SkipWrapper = styled.div`
-  background-color: ${Colors.backgroundYellow()};
-  border: 1px solid ${Colors.accentYellow()};
-  border-radius: 3px;
 `;

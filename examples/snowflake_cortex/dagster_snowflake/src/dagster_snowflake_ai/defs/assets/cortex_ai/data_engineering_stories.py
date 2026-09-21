@@ -26,7 +26,7 @@ def data_engineering_stories(
     - Experience and expertise levels mentioned
     """
     with get_snowflake_connection_with_schema(snowflake) as (connection, schema):
-        cursor = connection.cursor()  # type: ignore[attr-defined]
+        cursor = connection.cursor()  # ty: ignore[unresolved-attribute]
 
         cursor.execute(f"""
             CREATE OR REPLACE TABLE {schema}.data_engineering_stories AS

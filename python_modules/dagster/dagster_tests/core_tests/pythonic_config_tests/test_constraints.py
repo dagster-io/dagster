@@ -17,8 +17,8 @@ def test_str_min_length() -> None:
 def test_str_regex() -> None:
     try:
 
-        class AStringConfig(dg.Config):  # type: ignore
-            a_str: str = Field(regex=r"^(foo)+$")  # type: ignore
+        class AStringConfig(dg.Config):
+            a_str: str = Field(regex=r"^(foo)+$")
 
     except:
 
@@ -108,7 +108,7 @@ def test_float_multiple() -> None:
 
 def test_list_length() -> None:
     class AListConfig(dg.Config):
-        a_list: list[int] = Field(min_items=2, max_items=10)  # type: ignore
+        a_list: list[int] = Field(min_items=2, max_items=10)
 
     AListConfig(a_list=[1, 2])
     with pytest.raises(ValidationError, match=" at least 2 items"):
@@ -133,7 +133,7 @@ def test_with_constr() -> None:
 def test_with_conlist() -> None:
     try:
 
-        class AListConfig(dg.Config):  # type: ignore
+        class AListConfig(dg.Config):
             a_list: conlist(int, min_length=2, max_length=10)  # type: ignore
 
     except:

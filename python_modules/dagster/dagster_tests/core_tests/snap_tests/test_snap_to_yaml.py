@@ -1,9 +1,10 @@
 import os
 import sys
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import dagster as dg
+import pydantic
 import pytest
 from dagster import DagsterInstance
 from dagster._config.field import resolve_to_config_type
@@ -51,7 +52,7 @@ def test_with_spaces():
 def _remote_repository_for_function(
     instance: DagsterInstance, fn: Callable[..., Any]
 ) -> RemoteRepository:
-    return _remote_repository_for_module(instance, fn.__module__, fn.__name__)
+    return _remote_repository_for_module(instance, fn.__module__, fn.__name__)  # ty: ignore[unresolved-attribute]
 
 
 def _remote_repository_for_module(
@@ -218,3 +219,103 @@ def test_print_root_with_secret_fields(instance) -> None:
     # Verify that actual secret values are not in the output
     assert "secret123" not in yaml_output
     assert "key_456" not in yaml_output
+
+
+class AuthToken(dg.Config):
+    auth_type: Literal["token"] = "token"
+    token: str
+
+
+class AuthDefault(dg.Config):
+    auth_type: Literal["default"] = "default"
+    extra: dict[str, Any] = {}
+
+
+class MyConnectionResource(dg.ConfigurableResource):
+    host: str
+    auth: AuthToken | AuthDefault = pydantic.Field(discriminator="auth_type")
+
+
+def job_def_with_discriminated_union_resource():
+    @dg.asset
+    def my_asset(conn: MyConnectionResource):
+        pass
+
+    return dg.Definitions(
+        assets=[my_asset],
+        resources={
+            "conn": MyConnectionResource(
+                host="localhost",
+                auth=AuthDefault(extra={}),
+            )
+        },
+    )
+
+
+def test_discriminated_union_empty_dict_default_preserved(instance) -> None:
+    """Empty dict defaults inside discriminated unions must survive the
+    empty-dict filtering pass. Without type-aware filtering, _filter_empty_dicts
+    would recursively collapse: extra: {} -> removed -> default: {} -> removed
+    -> auth: {} -> removed, causing Launchpad to report missing required config.
+    """
+    repo = _remote_repository_for_function(instance, job_def_with_discriminated_union_resource)
+    remote_job = repo.get_full_job("__ASSET_JOB")
+    root_config_key = remote_job.root_config_key
+    assert root_config_key
+    root_type = remote_job.config_schema_snapshot.get_config_snap(root_config_key)
+    yaml_output = default_values_yaml_from_type_snap(remote_job.config_schema_snapshot, root_type)
+
+    # Discriminated unions use the discriminator value as a selector key,
+    # so it appears as "default:" not "auth_type: ..."
+    assert "auth:" in yaml_output
+    assert "default:" in yaml_output
+    assert "extra: {}" in yaml_output
+
+
+class InputFile(dg.Config):
+    kind: Literal["file"] = "file"
+    path: str = "data/input.csv"
+
+
+class InputUrl(dg.Config):
+    kind: Literal["url"] = "url"
+    url: str = "https://example.com/data.csv"
+
+
+def job_def_with_discriminated_union_default():
+    class MyOpConfig(dg.Config):
+        data_source: InputFile | InputUrl = pydantic.Field(default=InputUrl(), discriminator="kind")
+
+    @dg.op
+    def an_op(config: MyOpConfig):
+        pass
+
+    @dg.job
+    def a_job():
+        an_op()
+
+    return dg.Definitions(jobs=[a_job])
+
+
+def test_discriminated_union_with_default_emits_only_default_branch(instance) -> None:
+    """A discriminated-union field with a Pydantic default must emit ONLY the
+    default's branch in the defaults YAML. Emitting every selector branch produces
+    invalid config (a Selector permits exactly one field).
+    """
+    repo = _remote_repository_for_function(instance, job_def_with_discriminated_union_default)
+    remote_job = repo.get_full_job("a_job")
+    root_config_key = remote_job.root_config_key
+    assert root_config_key
+    root_type = remote_job.config_schema_snapshot.get_config_snap(root_config_key)
+    yaml_output = default_values_yaml_from_type_snap(remote_job.config_schema_snapshot, root_type)
+
+    assert (
+        yaml_output
+        == """ops:
+  an_op:
+    config:
+      data_source:
+        url:
+          url: https://example.com/data.csv
+"""
+    )

@@ -360,8 +360,8 @@ class AssetEventMixin:
         return await gen_run_by_id(graphene_info, self._event.run_id)
 
     def resolve_stepStats(self, graphene_info) -> "GrapheneRunStepStats":
-        run_id = self.runId  # type: ignore  # (value obj access)
-        step_key = self.stepKey  # type: ignore  # (value obj access)
+        run_id = self.runId
+        step_key = self.stepKey
         stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
         return stats[0]
 

@@ -1,0 +1,37 @@
+.partitionRunMatrixContainer {
+  display: block;
+}
+
+.pagerControl {
+  width: 30px;
+  position: absolute;
+  border: 1px solid var(--color-keyline-default);
+  border-radius: 3px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: calc(50% - 15px);
+  bottom: calc(50% - 15px);
+  background: var(--color-background-default);
+  z-index: 10;
+  cursor: pointer;
+}
+
+.pagerControl:hover {
+  background: var(--color-background-default-hover);
+}
+
+.pagerControl.left {
+  left: 315px;
+}
+
+.pagerControl.right {
+  right: 0;
+}
+
+.divider {
+  height: 1px;
+  width: 100%;
+  margin-top: 5px;
+  border-top: 1px solid var(--color-keyline-default);
+}

@@ -1,7 +1,10 @@
 import json
 import os
+import re
 import shutil
 import subprocess
+import sys
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,6 +15,7 @@ from typing import Any
 import dagster._check as check
 import yaml
 from dagster._utils import discover_oss_root
+from dagster_shared.yaml_utils import safe_load_yaml
 from kubernetes.client.api_client import ApiClient
 
 from schema.charts.dagster.values import DagsterHelmValues
@@ -20,6 +24,25 @@ from schema.charts.dagster_user_deployments.values import DagsterUserDeployments
 
 def git_repo_root():
     return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
+
+
+_HELM_SCHEMA_FETCH_FAILURE_RE = re.compile(r'failing loading "https?://')
+
+
+def _run_helm_template(command: list[str], max_attempts: int = 3, delay: float = 2.0) -> bytes:
+    # Retry only when helm's schema loader fails to fetch a $ref URL
+    # (any host, any HTTP error). Helm formats these as: failing loading "<url>": <err>
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return subprocess.run(command, capture_output=True, check=True).stdout
+        except subprocess.CalledProcessError as e:
+            stderr_text = e.stderr.decode("utf-8", errors="replace")
+            if _HELM_SCHEMA_FETCH_FAILURE_RE.search(stderr_text) and attempt < max_attempts:
+                time.sleep(delay)
+                continue
+            sys.stderr.write(stderr_text)
+            raise
+    raise AssertionError("unreachable")
 
 
 @dataclass
@@ -71,7 +94,7 @@ class HelmTemplate:
             ]
 
             with self._with_chart_yaml(helm_dir_path, chart_version):
-                templates = subprocess.check_output(command)
+                templates = _run_helm_template(command)
 
                 # HACK! Helm's --show-only option doesn't surface errors. For tests where we want to
                 # assert on things like {{ fail ... }}, we need to render the chart without --show-only.
@@ -79,7 +102,7 @@ class HelmTemplate:
                 # assert on specific objects in the chart.
                 if self.output:
                     command += ["--show-only", self.output]
-                    templates = subprocess.check_output(command)
+                    templates = _run_helm_template(command)
 
             print("\n--- Helm Templates ---")  # noqa: T201
             print(templates.decode())  # noqa: T201
@@ -115,7 +138,7 @@ class HelmTemplate:
                 chart_copy_paths.append(chart_copy_path)
 
                 with open(chart_path, encoding="utf8") as chart_file:
-                    old_chart_yaml = yaml.safe_load(chart_file)
+                    old_chart_yaml = safe_load_yaml(chart_file)
 
                 with open(chart_path, "w", encoding="utf8") as chart_file:
                     new_chart_yaml = old_chart_yaml.copy()

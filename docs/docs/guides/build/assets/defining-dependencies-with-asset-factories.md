@@ -4,17 +4,11 @@ sidebar_position: 600
 title: Defining dependencies with asset factories
 ---
 
-When building asset factories with [components](/guides/build/components), you often need to define dependencies between the generated assets. For example, you may have ETL tables where some tables depend on others.
+When [building asset factories with components](/guides/build/assets/creating-asset-factories), you often need to define dependencies between the generated assets. For example, you may have ETL tables where some tables depend on others.
 
 This guide shows how to:
 - Define dependencies between component-generated assets
 - Create regular assets that depend on component-generated assets
-
-:::note
-
-This guide assumes familiarity with [asset factories](/guides/build/assets/creating-asset-factories).
-
-:::
 
 ## Defining inter-dependencies between component assets
 

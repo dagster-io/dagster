@@ -16,7 +16,16 @@ ENV PYTHONUNBUFFERED=1
 
 RUN pip install -U uv
 
-RUN python -m uv pip install \
+# `--no-sources` is required because each module's pyproject.toml now has
+# `[tool.uv.sources]` pointing to relative sibling paths (e.g.
+# `dagster-pipes = { path = "../dagster-pipes", editable = true }`) for the
+# per-package lockfile workflow. With `uv pip install`, uv resolves those
+# paths relative to the current working directory rather than the
+# pyproject's location, producing bogus targets like `file:///dagster`.
+# Disabling sources tells uv to treat each `[project].dependencies` entry
+# as a normal registry spec; the explicit `-e /modules/...` entries below
+# already provide the local editable installs.
+RUN python -m uv pip install --no-sources \
     -e /modules/dagster \
     -e /modules/dagster-graphql \
     -e /modules/dagster-celery[flower,redis,kubernetes] \

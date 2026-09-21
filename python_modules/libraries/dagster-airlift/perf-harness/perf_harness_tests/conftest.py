@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from collections.abc import Generator
 from pathlib import Path
@@ -22,7 +23,12 @@ def local_env_fixture() -> Generator[None, None, None]:
         }
     ):
         yield
-    subprocess.run(["make", "wipe"], cwd=makefile_dir(), check=True)
+    # Best-effort cleanup. Airflow child processes (gunicorn workers, scheduler, etc.)
+    # may still be writing to .airflow_home after the process group is killed, causing
+    # `rm -rf` to fail with "Directory not empty". This is safe because setup_local_env
+    # starts with `make wipe` anyway.
+    shutil.rmtree(makefile_dir() / ".airflow_home", ignore_errors=True)
+    shutil.rmtree(makefile_dir() / ".dagster_home", ignore_errors=True)
 
 
 @pytest.fixture(name="dags_dir")

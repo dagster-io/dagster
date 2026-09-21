@@ -1,0 +1,40 @@
+.filterInput {
+  width: 300px;
+}
+
+.results {
+  list-style: none;
+  margin: 0;
+  max-height: 200px;
+  max-width: 800px;
+  min-width: 300px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.item {
+  align-items: center;
+  background-color: var(--color-background-default);
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  font-size: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 4px 8px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.item:hover {
+  background-color: var(--color-background-gray);
+}
+
+.itemHighlight {
+  background-color: var(--color-background-blue);
+  color: var(--color-accent-primary);
+}
+
+.itemHighlight:hover {
+  background-color: var(--color-background-blue);
+}

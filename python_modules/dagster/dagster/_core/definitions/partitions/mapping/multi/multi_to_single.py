@@ -71,7 +71,7 @@ def get_infer_single_to_multi_dimension_deps_result(
             f" Instead received {len(multipartitions_defs)} multi-partitioned assets.",
         )
 
-    multipartitions_def = cast("MultiPartitionsDefinition", next(iter(multipartitions_defs)))
+    multipartitions_def = next(iter(multipartitions_defs))
 
     single_dimension_partitions_def = next(
         iter(

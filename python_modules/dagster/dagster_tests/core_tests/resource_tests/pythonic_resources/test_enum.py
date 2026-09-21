@@ -47,7 +47,7 @@ def test_enum_name_resource_override_name():
     def my_asset(my_resource: MyResource):
         return my_resource.enum.value
 
-    dg.materialize([my_asset], resources={"my_resource": MyResource(enum=MyEnum.TYPE_A.name)})  # pyright: ignore[reportArgumentType]
+    dg.materialize([my_asset], resources={"my_resource": MyResource(enum=MyEnum.TYPE_A.name)})
 
 
 def test_enum_name_resource_override_enum():

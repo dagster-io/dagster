@@ -201,17 +201,17 @@ def test_asset_lazy_migration():
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             storage = instance.event_log_storage
-            assert not storage.has_asset_key_index_cols()  # pyright: ignore[reportAttributeAccessIssue]
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_asset_key_index_cols()  # ty: ignore[unresolved-attribute]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
 
             # run the schema migration without reindexing the asset keys
             storage.upgrade()
-            assert storage.has_asset_key_index_cols()  # pyright: ignore[reportAttributeAccessIssue]
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert storage.has_asset_key_index_cols()  # ty: ignore[unresolved-attribute]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
 
             # fetch all asset keys
             instance.all_asset_keys()
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
 
             # wipe a, b in order to populate wipe_timestamp
             storage.wipe_asset(dg.AssetKey("a"))
@@ -221,16 +221,16 @@ def test_asset_lazy_migration():
             my_job.execute_in_process(instance=instance)
 
             # still should not be migrated (on write)
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
 
             # fetching partial results should not trigger migration
             instance.get_asset_keys(prefix=["b"])
             instance.get_asset_keys(cursor=str(dg.AssetKey("b")))
             instance.get_latest_materialization_events(asset_keys=[dg.AssetKey("b")])
 
-            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert not storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]
 
             # on read, we should see that all the data has already been migrated and we can now mark
             # the asset key index as migrated
             instance.all_asset_keys()
-            assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # pyright: ignore[reportAttributeAccessIssue]
+            assert storage.has_secondary_index(ASSET_KEY_INDEX_COLS)  # ty: ignore[unresolved-attribute]

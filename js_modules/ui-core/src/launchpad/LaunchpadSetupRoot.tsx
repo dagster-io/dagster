@@ -4,6 +4,7 @@ import {Redirect, useParams} from 'react-router-dom';
 
 import {
   IExecutionSession,
+  PipelineRunTag,
   applyCreateSession,
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
@@ -61,7 +62,7 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
-  useJobTitle(explorerPath, isJob);
+  useJobTitle(explorerPath, isJob, 'Launchpad');
 
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
@@ -91,11 +92,12 @@ const LaunchpadSetupAllowedRoot = (props: Props) => {
       }
 
       if (Array.isArray(queryString.tags)) {
-        newSession.tags = queryString.tags as any;
+        newSession.tags = queryString.tags as unknown as PipelineRunTag[];
       }
 
       if (Array.isArray(queryString.assetSelection)) {
-        newSession.assetSelection = queryString.assetSelection as any;
+        newSession.assetSelection =
+          queryString.assetSelection as unknown as IExecutionSession['assetSelection'];
       }
 
       onSave((data) => applyCreateSession(data, newSession));

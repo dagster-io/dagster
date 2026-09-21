@@ -245,8 +245,8 @@ def test_partition_key_run_request_schedule():
         repository_def=my_repo, scheduled_execution_time=datetime.datetime(2023, 1, 1)
     ) as context:
         run_requests = my_schedule.evaluate_tick(context).run_requests
-        assert len(run_requests) == 1  # pyright: ignore[reportArgumentType]
-        run_request = run_requests[0]  # pyright: ignore[reportOptionalSubscript]
+        assert len(run_requests) == 1  # ty: ignore[invalid-argument-type]
+        run_request = run_requests[0]  # ty: ignore[not-subscriptable]
         assert run_request.tags.get(PARTITION_NAME_TAG) == "a"
 
 
@@ -268,8 +268,8 @@ def test_dynamic_partition_run_request_schedule():
         repository_def=my_repo, scheduled_execution_time=datetime.datetime(2023, 1, 1)
     ) as context:
         run_requests = my_schedule.evaluate_tick(context).run_requests
-        assert len(run_requests) == 2  # pyright: ignore[reportArgumentType]
-        for request in run_requests:  # pyright: ignore[reportOptionalIterable]
+        assert len(run_requests) == 2  # ty: ignore[invalid-argument-type]
+        for request in run_requests:  # ty: ignore[not-iterable]
             assert request.tags.get(PARTITION_NAME_TAG) == "1"
 
 

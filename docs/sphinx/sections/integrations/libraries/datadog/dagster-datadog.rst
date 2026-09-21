@@ -1,5 +1,6 @@
+#######################
 dagster-datadog library
------------------------
+#######################
 
 This library provides an integration with Datadog, to support publishing metrics to Datadog from
 within Dagster ops.
@@ -18,8 +19,9 @@ to ensure the datadog agent is running on the host you're sending metrics from.
   :annotation: ResourceDefinition
 
 
+******
 Legacy
-======
+******
 
 .. autoconfigurable:: datadog_resource
   :annotation: ResourceDefinition

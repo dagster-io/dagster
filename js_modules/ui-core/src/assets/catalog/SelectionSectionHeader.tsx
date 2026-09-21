@@ -1,4 +1,4 @@
-import {Box, Icon, IconName, Subtitle, UnstyledButton} from '@dagster-io/ui-components';
+import {Box, Heading, Icon, IconName, UnstyledButton} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import {useDeferredValue} from 'react';
 
@@ -47,9 +47,9 @@ export const SelectionSectionHeader = ({
             padding={{horizontal: 24, vertical: 2}}
           >
             <Icon name={icon} />
-            <Subtitle>
+            <Heading size={14} weight={500}>
               {label} ({numberFormatter.format(count)})
-            </Subtitle>
+            </Heading>
             <div className={clsx(styles.icon, isOpen && styles.isOpen)}>
               <Icon name="arrow_drop_down" />
             </div>

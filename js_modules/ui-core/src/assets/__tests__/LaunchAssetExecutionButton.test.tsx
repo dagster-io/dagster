@@ -2,14 +2,19 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {MemoryRouter} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
+import {AppContext} from '../../app/AppContext';
 import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
+import {PermissionsContext, extractPermissions} from '../../app/Permissions';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
+import {buildPermission} from '../../graphql/builders';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
-import {TestProvider} from '../../testing/TestProvider';
+import {PERMISSIONS_ALLOW_ALL} from '../../testing/permissionsAllowAll';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import * as WorkspaceContextUtil from '../../workspace/WorkspaceContext/util';
 import {ADDITIONAL_REQUIRED_KEYS_WARNING} from '../AssetDefinedInMultipleReposNotice';
@@ -50,6 +55,16 @@ const workspaceMocks = buildWorkspaceMocks([]);
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
+
+const testValue = {
+  basePath: '',
+  rootServerURI: '',
+  telemetryEnabled: false,
+};
+
+const permissions = Object.keys(PERMISSIONS_ALLOW_ALL).map((permission) =>
+  buildPermission({permission, value: true, disabledReason: null}),
+);
 
 const flagSpy = jest.spyOn(WorkspaceContextUtil, 'useFeatureFlagForCodeLocation');
 
@@ -753,14 +768,27 @@ function renderButton({
   ];
 
   render(
-    <TestProvider>
-      <CustomConfirmationProvider>
-        <CustomAlertProvider />
-        <MockedProvider mocks={mocks}>
-          <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
-        </MockedProvider>
-      </CustomConfirmationProvider>
-    </TestProvider>,
+    <RecoilRoot>
+      <AppContext.Provider value={testValue}>
+        <PermissionsContext.Provider
+          value={{
+            unscopedPermissions: extractPermissions(permissions),
+            locationPermissions: {},
+            loading: false,
+            rawUnscopedData: [],
+          }}
+        >
+          <MemoryRouter>
+            <CustomConfirmationProvider>
+              <CustomAlertProvider />
+              <MockedProvider mocks={mocks}>
+                <LaunchAssetExecutionButton scope={scope} preferredJobName={preferredJobName} />
+              </MockedProvider>
+            </CustomConfirmationProvider>
+          </MemoryRouter>
+        </PermissionsContext.Provider>
+      </AppContext.Provider>
+    </RecoilRoot>,
   );
 }
 

@@ -19,6 +19,10 @@ jest.mock('../PipelineOrJobDisambiguationRoot', () => ({
   PipelineOrJobDisambiguationRoot: () => <div>pipeline or job disambiguation placeholder</div>,
 }));
 
+jest.mock('../JobAutomationRoot', () => ({
+  JobAutomationRoot: () => <div>job automation placeholder</div>,
+}));
+
 jest.mock('../../nav/PipelineNav', () => ({
   ...jest.requireActual('../../nav/PipelineNav'),
   PipelineNav: () => <div />,
@@ -42,7 +46,7 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 // Mock useJobPermissions to control job-specific permissions in tests
 const mockUseJobPermissions = jest.fn();
 jest.mock('../../app/useJobPermissions', () => ({
-  useJobPermissions: (...args: any[]) => mockUseJobPermissions(...args),
+  useJobPermissions: (...args: unknown[]) => mockUseJobPermissions(...args),
 }));
 
 const REPO_NAME = 'foo';
@@ -70,6 +74,19 @@ describe('PipelineRoot', () => {
 
     const overviewDummy = await screen.findByText(/pipeline overview placeholder/i);
     expect(overviewDummy).toBeVisible();
+  });
+
+  it('renders automation route', async () => {
+    render(
+      <RecoilRoot>
+        <MemoryRouter initialEntries={[`${path}/automation`]}>
+          <PipelineRoot repoAddress={repoAddress} />
+        </MemoryRouter>
+      </RecoilRoot>,
+    );
+
+    const automationDummy = await screen.findByText(/job automation placeholder/i);
+    expect(automationDummy).toBeVisible();
   });
 
   it('renders playground route', async () => {

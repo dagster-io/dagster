@@ -61,7 +61,7 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
         default=None,
         description="Defines how to translate an Omni object into an AssetSpec object.",
     )
-    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.versioned_state_storage()
+    defs_state: ResolvedDefsStateConfig = DefsStateConfigArgs.local_filesystem()
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
@@ -70,11 +70,11 @@ class OmniComponent(StateBackedComponent, dg.Model, dg.Resolvable):
     async def write_state_to_path(self, state_path: Path) -> None:
         """Fetch documents from Omni API and write state to path."""
         state = await self.workspace.fetch_omni_state()
-        state_path.write_text(dg.serialize_value(state))
+        state_path.write_text(dg.serialize_value(state), encoding="utf-8")
 
     def load_state_from_path(self, state_path: Path) -> OmniWorkspaceData:
         """Load state from path using Dagster's deserialization system."""
-        return dg.deserialize_value(state_path.read_text(), OmniWorkspaceData)
+        return dg.deserialize_value(state_path.read_text(encoding="utf-8"), OmniWorkspaceData)
 
     def _get_default_omni_spec(
         self, context: dg.ComponentLoadContext, data: OmniTranslatorData, workspace: OmniWorkspace

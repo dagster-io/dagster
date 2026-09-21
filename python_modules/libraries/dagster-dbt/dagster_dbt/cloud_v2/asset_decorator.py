@@ -75,7 +75,7 @@ def dbt_cloud_assets(
     if any([spec for spec in specs if spec.group_name]) and group_name:
         raise DagsterInvariantViolationError(
             f"Cannot set group_name parameter on dbt_cloud_assets for dbt Cloud workspace with account "
-            f"{workspace.account_name}, project {workspace.project_name} and environment {workspace.environment_name} -"
+            f"{workspace.credentials.account_id}, project {workspace.project_id} and environment {workspace.environment_id} -"
             f" one or more of the dbt Cloud asset specs have a group_name defined."
         )
 

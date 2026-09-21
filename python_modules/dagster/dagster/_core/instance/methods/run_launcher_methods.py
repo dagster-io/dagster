@@ -2,7 +2,7 @@ import sys
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional
 
-from dagster import check
+import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -82,12 +82,12 @@ class RunLauncherMethods:
             from dagster._core.events import EngineEventData
 
             error = serializable_error_info_from_exc_info(sys.exc_info())
-            self.report_engine_event(  # type: ignore[attr-defined]
+            self.report_engine_event(  # ty: ignore[unresolved-attribute]
                 error.message,
                 run,
                 EngineEventData.engine_error(error),
             )
-            self.report_run_failed(run)  # type: ignore[attr-defined]
+            self.report_run_failed(run)  # ty: ignore[unresolved-attribute]
             raise
 
         return submitted_run
@@ -118,7 +118,7 @@ class RunLauncherMethods:
             event_type_value=DagsterEventType.PIPELINE_STARTING.value,
             job_name=run.job_name,
         )
-        self.report_dagster_event(launch_started_event, run_id=run.run_id)  # type: ignore[attr-defined]
+        self.report_dagster_event(launch_started_event, run_id=run.run_id)  # ty: ignore[unresolved-attribute]
 
         run = self.get_run_by_id(run_id)
         if run is None:
@@ -130,12 +130,12 @@ class RunLauncherMethods:
             self.run_launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=workspace))
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
-            self.report_engine_event(  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+            self.report_engine_event(  # ty: ignore[unresolved-attribute]
                 error.message,
                 run,
                 EngineEventData.engine_error(error),
             )
-            self.report_run_failed(run)  # type: ignore[attr-defined]
+            self.report_run_failed(run)  # ty: ignore[unresolved-attribute]
             raise
 
         return run
@@ -168,7 +168,7 @@ class RunLauncherMethods:
                 f"Run {run_id} is not in a state that can be resumed"
             )
 
-        self.report_engine_event(  # type: ignore[attr-defined]
+        self.report_engine_event(  # ty: ignore[unresolved-attribute]
             RESUME_RUN_LOG_MESSAGE,
             run,
         )
@@ -183,12 +183,12 @@ class RunLauncherMethods:
             )
         except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
-            self.report_engine_event(  # type: ignore[attr-defined]  # type: ignore[attr-defined]
+            self.report_engine_event(  # ty: ignore[unresolved-attribute]
                 error.message,
                 run,
                 EngineEventData.engine_error(error),
             )
-            self.report_run_failed(run)  # type: ignore[attr-defined]
+            self.report_run_failed(run)  # ty: ignore[unresolved-attribute]
             raise
 
         return run

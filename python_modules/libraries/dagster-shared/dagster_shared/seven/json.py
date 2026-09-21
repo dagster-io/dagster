@@ -9,7 +9,7 @@ from json import (
 try:
     from json import JSONDecodeError
 except ImportError:
-    JSONDecodeError = ValueError
+    JSONDecodeError = ValueError  # ty: ignore[invalid-assignment]
 
 dump = partial(dump_, sort_keys=True)
 

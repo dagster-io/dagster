@@ -1,7 +1,8 @@
 .. currentmodule:: dagster_polars
 
+######################
 dagster-polars library
-======================
+######################
 
 This library provides Dagster integration with `Polars <https://pola.rs>`_.
 It allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster's `@asset` and `@op`.
@@ -12,8 +13,10 @@ A comprehensive list of `dagster-polars` behavior for supported type annotations
 
 **Note:** This is a community-supported integration. For support, see the `Dagster Community Integrations repository <https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-polars>`_.
 
+************
 Installation
-------------
+************
+
 .. code-block::
 
     pip install dagster-polars
@@ -22,8 +25,9 @@ Installation
 Some IOManagers (like :py:class:`PolarsDeltaIOManager`) may require additional dependencies, which are provided with extras like `dagster-polars[delta]`.
 Please check the documentation for each IOManager for more details.
 
+**********
 Quickstart
-----------
+**********
 
 Common filesystem-based IOManagers features highlights, using :py:class:`PolarsParquetIOManager` as an example (see :py:class:`BasePolarsUPathIOManager` for the full list of features provided by `dagster-polars`):
 
@@ -92,8 +96,9 @@ This mode should be preferred for true partitioning.
 
 .. _Types:
 
-Type Annotations
-----------------
+****************
+Type annotations
+****************
 
 Type aliases like `DataFrameWithPartitions` are provided by :py:mod:`dagster_polars.types` for convenience.
 
@@ -125,8 +130,9 @@ Type aliases like `DataFrameWithPartitions` are provided by :py:mod:`dagster_pol
 
 Generic builtins (like `tuple[...]` instead of `Tuple[...]`) are supported for Python >= 3.9.
 
-API Documentation
------------------
+*****************
+API documentation
+*****************
 
 .. autoconfigurable:: BasePolarsUPathIOManager
   :annotation: IOManagerDefinition

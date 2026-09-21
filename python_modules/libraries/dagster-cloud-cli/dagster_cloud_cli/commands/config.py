@@ -32,7 +32,10 @@ def set_deployment(
 
     config = read_config()
     new_config = DagsterPlusCliConfig(
-        **{**config.__dict__, "default_deployment": deployment},
+        **{  # ty: ignore[invalid-argument-type]
+            **config.__dict__,
+            "default_deployment": deployment,
+        },
     )
     write_config(new_config)
 

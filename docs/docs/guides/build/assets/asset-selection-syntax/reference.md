@@ -4,7 +4,7 @@ sidebar_position: 100
 title: Asset selection syntax reference
 ---
 
-This page contains a full list of the filters, layers, operands, and functions you can use to construct your own asset selection queries. For a list of common queries, see "[Asset selection examples](/guides/build/assets/asset-selection-syntax/examples)".
+This page contains a full list of the filters, layers, operands, and functions you can use to construct your own asset selection queries. For a list of common queries, see [Asset selection examples](/guides/build/assets/asset-selection-syntax/examples).
 
 ## Filters
 
@@ -18,7 +18,8 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Group** | `group:"team1"` | Selects assets in the group `team1`. Matches the group name exactly, including any `/` separators. | OSS, Dagster+, Dagster+ branch deployments |
+| **Group with wildcard** | `group:"team1/*"` | Selects assets in [nested groups](/guides/build/assets/metadata-and-tags/groups#nested-groups) under `team1`. Does not select assets in `team1` itself. | OSS, Dagster+, Dagster+ branch deployments |
 | **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Column tag** | `column_tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
@@ -29,7 +30,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 
 :::info Wildcard matching
 
-Only the `key` filter supports wildcard matching.
+Only the `key` and `group` filters support wildcard matching. A selection containing `*` must be quoted.
 
 :::
 

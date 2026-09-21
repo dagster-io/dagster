@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {HTMLInputProps, InputGroupProps2, Intent} from '@blueprintjs/core';
 import {
   Box,
   Button,
@@ -12,8 +10,8 @@ import {
   Spinner,
   Suggest,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {gql} from '../apollo-client';
 import {
@@ -33,6 +31,7 @@ import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/ConfigEditorConfigPicker.module.css';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorPipelinePresetFragment;
@@ -113,7 +112,7 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
   };
 
   return (
-    <PickerContainer>
+    <div className={styles.pickerContainer}>
       {isJob || configGenerators.length < 1 ? null : (
         <ConfigEditorConfigGeneratorPicker
           label={label()}
@@ -131,7 +130,7 @@ export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) =
           partitionSetDetails={partitionSetDetails}
         />
       ) : null}
-    </PickerContainer>
+    </div>
   );
 };
 
@@ -194,10 +193,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     </SortButton>
   ) : undefined;
 
-  const inputProps: InputGroupProps2 & HTMLInputProps = {
+  const inputProps: NonNullable<React.ComponentProps<typeof Suggest<string>>['inputProps']> = {
     placeholder: 'Partition',
     style: {width: 180},
-    intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
+    intent: (loading ? !!value : !!selected) ? 'none' : 'danger',
     rightElement,
   };
 
@@ -388,31 +387,6 @@ const ConfigEditorConfigGeneratorPicker = React.memo(
   },
 );
 
-export const SortButton = styled.button`
-  border: 0;
-  cursor: pointer;
-  padding: 4px;
-  margin: 3px 3px 0 0;
-  background-color: ${Colors.backgroundLighter()};
-  border-radius: 4px;
-  transition: background-color 100ms;
-
-  :focus {
-    background-color: ${Colors.backgroundLighterHover()};
-    outline: none;
-  }
-  :hover {
-    background-color: ${Colors.backgroundLight()};
-  }
-`;
-
-const PickerContainer = styled.div`
-  display: flex;
-  justify: space-between;
-  align-items: center;
-  gap: 6px;
-`;
-
 export const CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT = gql`
   fragment ConfigEditorGeneratorPipelineFragment on Pipeline {
     id
@@ -454,3 +428,10 @@ export const CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT = gql`
     solidSelection
   }
 `;
+
+export const SortButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentPropsWithoutRef<'button'>
+>((props, ref) => {
+  return <button {...props} ref={ref} className={clsx(styles.sortButton, props.className)} />;
+});

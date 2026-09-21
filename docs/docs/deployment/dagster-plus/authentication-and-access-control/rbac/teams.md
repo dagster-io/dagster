@@ -51,8 +51,8 @@ Navigate to the **Organization Settings > Teams** tab and locate the team you wa
 Navigate to the **Organization Settings > Teams** tab and locate the team you want to manage roles for. Then:
 
 1. Click the **Edit** button in the **Actions** column.
-2. In the **Roles** tab, click the **Edit team role** button next to the deployment where you want to modify the team's role.
-3. In the window that displays, select the team role for the deployment. This [role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for this team for all code locations in the deployment.
+2. In the **Roles** tab, click the **Edit team role** button next to the deployment or branch deployment where you want to modify the team's role.
+3. In the window that displays, select the team role for the deployment or branch deployment. This [role](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for this team for all code locations in the deployment or branch deployment.
 4. Click **Save**.
 5. To set permissions for individual [code locations](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions) in a deployment:
    1. Click the toggle to the left of the deployment to open a list of code locations.

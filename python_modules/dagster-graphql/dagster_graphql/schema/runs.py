@@ -111,7 +111,7 @@ class GraphenePipelineRuns(graphene.Interface):
 
 class GrapheneRuns(graphene.ObjectType):
     results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
-    count = graphene.Int()
+    count = graphene.NonNull(graphene.Int)
 
     class Meta:
         interfaces = (GraphenePipelineRuns,)

@@ -7,16 +7,17 @@ from graphene import ResolveInfo
 from dagster_graphql.schema.env_vars import (
     GrapheneEnvVarWithConsumers,
     GrapheneEnvVarWithConsumersList,
-    GrapheneEnvVarWithConsumersListOrError,
 )
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation
 
+    from dagster_graphql.schema.errors import GraphenePythonError
+
 
 def get_utilized_env_vars_or_error(
     graphene_info, repository_selector
-) -> GrapheneEnvVarWithConsumersListOrError:
+) -> "GrapheneEnvVarWithConsumersList | GraphenePythonError":
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 

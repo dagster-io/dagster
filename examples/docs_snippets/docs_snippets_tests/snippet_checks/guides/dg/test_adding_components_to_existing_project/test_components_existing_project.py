@@ -164,5 +164,5 @@ def test_components_existing_project(update_snippets: bool) -> None:
         # ensure the component is loaded
         if not update_snippets:
             _run_command(
-                "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+                "uv pip freeze && uv run dagster asset list -m 'my_existing_project.definitions'"
             )

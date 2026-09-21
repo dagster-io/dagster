@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster_pyspark.resources import PySparkResource
 from dagster_shared.seven.temp_dir import get_system_temp_directory
+from pandas import DataFrame as PandasDataFrame
 from pyspark.sql import DataFrame as PySparkDataFrame
 
 
@@ -46,7 +47,7 @@ class PartitionedParquetIOManager(ConfigurableIOManager):
 
         context.add_output_metadata({"row_count": row_count, "path": path})
 
-    def load_input(self, context) -> PySparkDataFrame | str:
+    def load_input(self, context) -> PandasDataFrame | PySparkDataFrame | str:
         path = self._get_path(context)
         if context.dagster_type.typing_type == PySparkDataFrame:
             # return pyspark dataframe

@@ -317,9 +317,7 @@ def test_bind_resource_to_instigator_by_name() -> None:
     out_txt.clear()
 
     assert (
-        defs.resolve_job_def(
-            cast("str", defs.resolve_schedule_def("hello_world_schedule").job_name)
-        )
+        defs.resolve_job_def(defs.resolve_schedule_def("hello_world_schedule").job_name)
         .execute_in_process()
         .success
     )
@@ -332,10 +330,10 @@ def test_bind_io_manager_default() -> None:
     outputs = []
 
     class MyIOManager(dg.ConfigurableIOManager):
-        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _) -> None:  # ty: ignore[invalid-method-override]
             pass
 
-        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _, obj) -> None:  # ty: ignore[invalid-method-override]
             outputs.append(obj)
 
     @dg.op
@@ -362,17 +360,17 @@ def test_bind_io_manager_override() -> None:
     outputs = []
 
     class MyIOManager(dg.ConfigurableIOManager):
-        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _) -> None:  # ty: ignore[invalid-method-override]
             pass
 
-        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _, obj) -> None:  # ty: ignore[invalid-method-override]
             outputs.append(obj)
 
     class MyOtherIOManager(dg.ConfigurableIOManager):
-        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def load_input(self, _) -> None:  # ty: ignore[invalid-method-override]
             pass
 
-        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
+        def handle_output(self, _, obj) -> None:  # ty: ignore[invalid-method-override]
             pass
 
     @dg.op

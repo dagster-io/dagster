@@ -221,11 +221,6 @@ def step_run_ref_to_step_context(
         execution_step,
         step_run_ref.known_state or KnownExecutionState(),
     )
-    # Since for_step is abstract for IPlanContext, its return type is IStepContext.
-    # Since we are launching from a PlanExecutionContext, the type will always be
-    # StepExecutionContext.
-    step_execution_context = cast("StepExecutionContext", step_execution_context)
-
     return step_execution_context
 
 

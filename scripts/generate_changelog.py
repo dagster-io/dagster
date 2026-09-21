@@ -1406,12 +1406,12 @@ def generate_changelog(new_version: str, prev_version: str | None = None) -> Non
 
             # Only write if generation was successful (not cancelled)
             if new_text and not new_text.startswith("No changelog generated"):
-                with open(CHANGELOG_PATH) as f:
+                with open(CHANGELOG_PATH, encoding="utf-8") as f:
                     current_changelog = f.read()
 
                 new_changelog = new_text + current_changelog[1:]
 
-                with open(CHANGELOG_PATH, "w") as f:
+                with open(CHANGELOG_PATH, "w", encoding="utf-8") as f:
                     f.write(new_changelog)
 
                 console.print("\n🎉 Interactive changelog generation complete!", style="bold green")

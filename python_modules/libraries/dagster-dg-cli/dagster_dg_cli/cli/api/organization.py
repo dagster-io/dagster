@@ -5,6 +5,7 @@ from dagster_dg_core.utils import DgClickCommand, DgClickGroup
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.config_utils import dg_api_options
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dg_cli.cli.api.client import create_dg_api_graphql_client
 from dagster_dg_cli.cli.api.formatters import format_organization_settings, format_saml_result
@@ -20,7 +21,7 @@ from dagster_dg_cli.cli.response_schema import dg_response_schema
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.organization", cls="OrganizationSettings"
+    module="dagster_rest_resources.schemas.organization", cls="DgApiOrganizationSettings"
 )
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
@@ -32,13 +33,21 @@ def get_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Get settings for the organization."""
+    """Get settings for the organization.
+
+    Example::
+
+        $ dg api organization settings get
+        sso_default_role: VIEWER
+        domain_allowlist:
+        - example.com
+    """
     config = DagsterPlusCliConfig.create_for_organization(
         organization=organization,
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.organization import DgApiOrganizationApi
+    from dagster_rest_resources.api.organization import DgApiOrganizationApi
 
     api = DgApiOrganizationApi(client)
 
@@ -57,7 +66,7 @@ def get_settings_command(
     help="Output in JSON format for machine readability",
 )
 @dg_response_schema(
-    module="dagster_dg_cli.api_layer.schemas.organization", cls="OrganizationSettings"
+    module="dagster_rest_resources.schemas.organization", cls="OrganizationSettings"
 )
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
@@ -70,11 +79,17 @@ def set_settings_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Set organization settings from a YAML file."""
-    import yaml
+    """Set organization settings from a YAML file.
 
-    with open(file_path) as f:
-        settings_dict = yaml.safe_load(f)
+    Example::
+
+        $ dg api organization settings set organization-settings.yaml
+        sso_default_role: EDITOR
+        domain_allowlist:
+        - example.com
+    """
+    with open(file_path, encoding="utf-8") as f:
+        settings_dict = safe_load_yaml(f)
 
     if not isinstance(settings_dict, dict):
         raise click.ClickException(
@@ -86,14 +101,12 @@ def set_settings_command(
         user_token=api_token,
     )
     client = create_dg_api_graphql_client(ctx, config, view_graphql=view_graphql)
-    from dagster_dg_cli.api_layer.api.organization import DgApiOrganizationApi
+    from dagster_rest_resources.api.organization import DgApiOrganizationApi
 
     api = DgApiOrganizationApi(client)
 
     with handle_api_errors(ctx, output_json):
-        from dagster_dg_cli.api_layer.schemas.organization import OrganizationSettings
-
-        settings = api.update_organization_settings(OrganizationSettings(settings=settings_dict))
+        settings = api.update_organization_settings(settings_dict)
         output = format_organization_settings(settings, as_json=output_json)
         click.echo(output)
 
@@ -106,7 +119,7 @@ def set_settings_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.saml", cls="SamlOperationResult")
+@dg_response_schema(module="dagster_dg_cli.cli.api.schema", cls="SamlOperationResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -118,7 +131,13 @@ def upload_saml_metadata_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Upload identity provider SAML metadata to enable SSO."""
+    """Upload identity provider SAML metadata to enable SSO.
+
+    Example::
+
+        $ dg api organization saml upload idp-metadata.xml
+        The identity provider metadata was successfully uploaded.
+    """
     import requests
 
     if not api_token:
@@ -153,7 +172,7 @@ def upload_saml_metadata_command(
                 f" {response.text}"
             )
 
-        from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
+        from dagster_dg_cli.cli.api.schema import SamlOperationResult
 
         result = SamlOperationResult(
             message="The identity provider metadata was successfully uploaded."
@@ -168,7 +187,7 @@ def upload_saml_metadata_command(
     is_flag=True,
     help="Output in JSON format for machine readability",
 )
-@dg_response_schema(module="dagster_dg_cli.api_layer.schemas.saml", cls="SamlOperationResult")
+@dg_response_schema(module="dagster_dg_cli.cli.api.schema", cls="SamlOperationResult")
 @dg_api_options(organization_scoped=True)
 @cli_telemetry_wrapper
 @click.pass_context
@@ -179,7 +198,13 @@ def remove_saml_metadata_command(
     api_token: str,
     view_graphql: bool,
 ) -> None:
-    """Remove identity provider SAML metadata to disable SSO."""
+    """Remove identity provider SAML metadata to disable SSO.
+
+    Example::
+
+        $ dg api organization saml remove
+        The identity provider metadata was successfully removed.
+    """
     import requests
 
     if not api_token:
@@ -206,7 +231,7 @@ def remove_saml_metadata_command(
 
         response.raise_for_status()
 
-        from dagster_dg_cli.api_layer.schemas.saml import SamlOperationResult
+        from dagster_dg_cli.cli.api.schema import SamlOperationResult
 
         result = SamlOperationResult(
             message="The identity provider metadata was successfully removed."

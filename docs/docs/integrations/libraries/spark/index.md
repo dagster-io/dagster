@@ -29,7 +29,7 @@ With Pipes, the code inside the asset or op definition submits a Spark job to an
 
 You can either use one of the available Pipes Clients or make your own. The available Pipes Clients for popular Spark providers are:
 
-- [Databricks](/integrations/external-pipelines/databricks-pipeline)
+- [Databricks](/integrations/libraries/databricks/pipes)
 - [AWS Glue](/integrations/external-pipelines/aws/aws-glue-pipeline)
 - [AWS EMR](/integrations/external-pipelines/aws/aws-emr-pipeline)
 - [AWS EMR on EKS](/integrations/external-pipelines/aws/aws-emr-containers-pipeline)
@@ -40,3 +40,22 @@ Existing Spark jobs can be used with Pipes without any modifications. In this ca
 Additionally, it's possible to send events to Dagster from the job by utilizing the `dagster_pipes` module. This requires minimal code changes on the job side.
 
 This approach also works for Spark jobs written in Java or Scala, although we don't have Pipes implementations for emitting events from those languages yet.
+
+## Spark Declarative Pipelines (SDP) Integration
+
+Dagster also provides native support for the new **Spark Declarative Pipelines (SDP)** framework (Spark 4.0+). For organizations using SDP to define datasets via decorators or SQL, Dagster offers a dedicated component to seamlessly orchestrate these pipelines without duplicating code.
+
+The `SparkDeclarativePipelineComponent` leverages the `spark-pipelines` CLI to automatically discover your datasets and dependencies using `spark-pipelines dry-run`.
+
+**Key benefits include:**
+
+- **Auto-Discovery:** No need to manually define `AssetSpec`s. The component infers Materialized Views and Streaming Tables automatically at load time.
+- **Incremental & Full Refresh:** Natively supports both `--refresh` and `--full-refresh` execution modes.
+- **Real-time Observability:** Streams execution logs and events directly back to the Dagster UI during execution.
+- **UI Clutter Reduction:** Pipeline-scoped intermediate datasets (Temporary Views) are automatically filtered out from the Dagster lineage unless explicitly overridden.
+
+You can quickly initialize a new SDP component in your Dagster project using the `dg` CLI:
+
+```bash
+dg scaffold component dagster_spark.SparkDeclarativePipelineComponent my_sdp_pipeline --pipeline-spec-path ./path/to/spark-pipeline.yml
+```

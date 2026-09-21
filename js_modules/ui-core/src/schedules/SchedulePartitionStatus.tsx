@@ -1,4 +1,4 @@
-import {Box, ButtonLink, Caption, Colors} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Colors, Text} from '@dagster-io/ui-components';
 import qs from 'qs';
 import {memo, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
@@ -85,13 +85,17 @@ export const SchedulePartitionStatus = memo((props: Props) => {
 
   const loadable = () => {
     if (loading) {
-      return <Caption style={{color: Colors.textLight()}}>Loading…</Caption>;
+      return (
+        <Text size={12} color="textLight">
+          Loading…
+        </Text>
+      );
     }
 
     if (!data) {
       return (
         <ButtonLink onClick={onClick}>
-          <Caption>Show coverage</Caption>
+          <Text size={12}>Show coverage</Text>
         </ButtonLink>
       );
     }
@@ -106,7 +110,11 @@ export const SchedulePartitionStatus = memo((props: Props) => {
       );
     }
 
-    return <Caption style={{color: Colors.textRed()}}>Partition set not found!</Caption>;
+    return (
+      <Text size={12} color="textRed">
+        Partition set not found!
+      </Text>
+    );
   };
 
   return (
@@ -131,13 +139,10 @@ const RetrievedSchedulePartitionStatus = ({
   }
 
   const partitions = partitionSet.partitionStatusesOrError.results;
-  const partitionsByType = {};
+  const partitionsByType: Record<string, typeof partitions> = {};
   partitions.forEach((partition) => {
     const displayStatus = calculateDisplayStatus(partition);
-    (partitionsByType as any)[displayStatus] = [
-      ...((partitionsByType as any)[displayStatus] || []),
-      partition,
-    ];
+    partitionsByType[displayStatus] = [...(partitionsByType[displayStatus] || []), partition];
   });
 
   return (
@@ -156,10 +161,10 @@ const RetrievedSchedulePartitionStatus = ({
                     to={`${partitionURL}?showFailuresAndGapsOnly=true`}
                     style={{color: Colors.textDefault()}}
                   >
-                    {(partitionsByType as any)[status].length}
+                    {partitionsByType[status]?.length}
                   </Link>
                 ) : (
-                  (partitionsByType as any)[status].length
+                  partitionsByType[status]?.length
                 )}
               </td>
             </tr>

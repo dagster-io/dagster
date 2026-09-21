@@ -1,0 +1,7 @@
+.sVGLabeledParentRect {
+  transition:
+  x 250ms ease-out,
+  y 250ms ease-out,
+  width 250ms ease-out,
+  height 250ms ease-out;
+}

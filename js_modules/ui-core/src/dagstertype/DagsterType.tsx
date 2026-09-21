@@ -1,6 +1,5 @@
-import {Box, FontFamily} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
-import styled from 'styled-components';
 
 import {gql} from '../apollo-client';
 import {DagsterTypeFragment} from './types/DagsterType.types';
@@ -10,6 +9,7 @@ import {TableSchema} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {Description} from '../pipelines/Description';
 import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
+import styles from './css/DagsterType.module.css';
 
 export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
   const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
@@ -25,13 +25,6 @@ const _DagsterTypeName = ({type, className}: {type: DagsterTypeFragment; classNa
   const displayName = typeKind === 'standard' ? type.name : `${type.name} (${typeKind})`;
   return <Box className={className}>{displayName}</Box>;
 };
-
-const DagsterTypeName = styled(_DagsterTypeName)`
-  font-family: ${FontFamily.monospace};
-  font-size: 16px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
 
 export const DagsterTypeSummary = ({
   type,
@@ -52,7 +45,7 @@ export const DagsterTypeSummary = ({
     >
       {type.name && (
         <Box>
-          <DagsterTypeName type={type} />
+          <_DagsterTypeName className={styles.dagsterTypeName} type={type} />
         </Box>
       )}
       {type.description && (

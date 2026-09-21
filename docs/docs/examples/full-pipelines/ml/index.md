@@ -6,8 +6,8 @@ last_update:
 sidebar_custom_props:
   logo: images/integrations/pytorch.png
 tags: [code-example]
-canonicalUrl: '/examples/ml'
-slug: '/examples/ml'
+canonicalUrl: '/examples/full-pipelines/ml'
+slug: '/examples/full-pipelines/ml'
 ---
 
 In this example, you'll build a complete CNN-based digit classifier that:

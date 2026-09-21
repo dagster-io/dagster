@@ -15,7 +15,7 @@ from types import TracebackType
 from typing import AbstractSet, Any, cast  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.pack import deserialize_deduped
+from dagster_shared.serdes.pack import deserialize_deduped, serialize_deduped
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
@@ -23,12 +23,13 @@ from dagster._core.definitions.asset_daemon_cursor import (
     LegacyAssetDaemonCursorWrapper,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetJobKey, EntityKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.automation_condition_sensor_definition import (
     EMIT_BACKFILLS_METADATA_KEY,
+    asset_job_keys_from_sensor_metadata,
 )
 from dagster._core.definitions.automation_tick_evaluation_context import (
     AutomationTickEvaluationContext,
@@ -56,6 +57,7 @@ from dagster._core.execution.submit_asset_runs import (
     RunRequestExecutionData,
     get_job_execution_data_from_run_request,
     submit_asset_run,
+    submit_job_entity_run,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_origin import RemoteInstigatorOrigin
@@ -84,12 +86,30 @@ from dagster._core.utils import (
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
 from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sensor_state_for_tick
-from dagster._daemon.utils import DaemonErrorCapture
+from dagster._daemon.utils import DaemonErrorCapture, shuffled_round_robin_by_key
 from dagster._serdes import serialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
+# Classes that benefit from columnar packing in the cursor.  These are
+# high-repetition classes (thousands of instances) where deduplication saves
+# significant space and speeds up deserialization.  Low-repetition classes
+# (singletons, metadata entries) are serialized inline to avoid the
+# hashing overhead of the columnar collector.
+_CURSOR_COLUMNAR_CLASSES: frozenset[str] = frozenset(
+    {
+        "AutomationConditionNodeCursor",
+        "AssetSubset",
+        "AssetKey",
+        "AutomationConditionCursor",
+        "TimeWindow",
+        "TimestampWithTimezone",
+        "TimeWindowPartitionsSubset",
+        "TimeWindowPartitionsDefinition",
+    }
+)
+
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
 _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 _MIGRATED_CURSOR_TO_SENSORS_KEY = "MIGRATED_CURSOR_TO_SENSORS"
@@ -214,14 +234,61 @@ def _serialize_asset_daemon_cursor(cursor: AssetDaemonCursor) -> str:
 def asset_daemon_cursor_to_instigator_serialized_cursor(cursor: AssetDaemonCursor) -> str:
     """This method compresses the serialized cursor and returns a b64 encoded string to be stored
     as a string value.
-    """
-    # increment the version if the cursor format changes
-    VERSION = "0"
 
-    serialized_bytes = _serialize_asset_daemon_cursor(cursor).encode("utf-8")
+    When DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR is set, uses version "1" with columnar
+    packing (serialize_deduped) for smaller payloads and faster deserialization. Otherwise
+    uses the original version "0" format. Deploy the reader change first before enabling the
+    writer via the env var.
+    """
+    if os.environ.get("DAGSTER_WRITE_COMPRESSED_ASSET_DAEMON_CURSOR"):
+        VERSION = "1"
+        with skip_num_partitions_serialization_ctx():
+            serialized_bytes = serialize_deduped(
+                cursor,
+                columnar_classes=_CURSOR_COLUMNAR_CLASSES,
+            ).encode("utf-8")
+    else:
+        # increment the version if the cursor format changes
+        VERSION = "0"
+        serialized_bytes = _serialize_asset_daemon_cursor(cursor).encode("utf-8")
+
     compressed_bytes = zlib.compress(serialized_bytes)
     encoded_cursor = base64.b64encode(compressed_bytes).decode("utf-8")
     return VERSION + encoded_cursor
+
+
+def _decode_instigator_cursor_payload(encoded_bytes: str) -> str:
+    """Shared decode step: b64 -> zlib decompress -> utf-8 string."""
+    decoded_bytes = base64.b64decode(encoded_bytes)
+    decompressed_bytes = zlib.decompress(decoded_bytes)
+    return decompressed_bytes.decode("utf-8")
+
+
+def _read_v0_instigator_cursor(
+    payload: str, asset_graph: BaseAssetGraph | None
+) -> AssetDaemonCursor:
+    """Original format: zlib(serialize_value(cursor)) -> b64."""
+    deserialized_cursor = deserialize_value(
+        payload, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
+    )
+    if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
+        return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
+    return deserialized_cursor
+
+
+def _read_v1_instigator_cursor(payload: str) -> AssetDaemonCursor:
+    """Columnar-packed format: zlib(serialize_deduped(cursor)) -> b64."""
+    return deserialize_deduped(payload, as_type=AssetDaemonCursor)
+
+
+def _is_foreign_sensor_cursor(serialized_cursor: str) -> bool:
+    """Detects cursors that were copied into a DA sensor's state from a non-DA sensor
+    (e.g. RunStatusSensorCursor) due to a past migration bug. Those cursors
+    are stored as raw serdes-serialized JSON, which always begins with the ``{"__class__":``
+    discriminator. Valid DA cursors are always a version-digit prefix followed by base64
+    and never start with ``{``, so this check does not overlap with any legitimate format.
+    """
+    return serialized_cursor.startswith('{"__class__":')
 
 
 def asset_daemon_cursor_from_instigator_serialized_cursor(
@@ -233,28 +300,29 @@ def asset_daemon_cursor_from_instigator_serialized_cursor(
     if serialized_cursor is None:
         return AssetDaemonCursor.empty()
 
+    if _is_foreign_sensor_cursor(serialized_cursor):
+        # Specifically recover from a past bug migration bug where a non-DA sensor's
+        # cursor (e.g. RunStatusSensorCursor) was written into a default_automation_condition_sensor
+        # state. Treat as empty so the next successful tick overwrites it with a valid DA cursor.
+        # We do NOT generalize this to "any unknown version" on purpose to ensure that other
+        # unexpected states do not wipe out valid cursor state.
+        logging.getLogger(__name__).warning(
+            "Recovered foreign sensor cursor stored in an asset daemon sensor state; treating as empty. "
+            "Cursor prefix: %s",
+            serialized_cursor[:120],
+        )
+        return AssetDaemonCursor.empty()
+
     version, encoded_bytes = serialized_cursor[0], serialized_cursor[1:]
 
+    if version not in ("0", "1"):
+        raise DagsterInvariantViolationError(f"Invalid serialized cursor version: {version}")
+
+    payload = _decode_instigator_cursor_payload(encoded_bytes)
+
     if version == "1":
-        # Columnar-packed format: zlib(serialize_deduped(cursor)) -> b64
-        decoded_bytes = base64.b64decode(encoded_bytes)
-        decompressed_bytes = zlib.decompress(decoded_bytes)
-        decompressed_str = decompressed_bytes.decode("utf-8")
-        return deserialize_deduped(decompressed_str, as_type=AssetDaemonCursor)
-
-    if version == "0":
-        # Original format: zlib(serialize_value(cursor)) -> b64
-        decoded_bytes = base64.b64decode(encoded_bytes)
-        decompressed_bytes = zlib.decompress(decoded_bytes)
-        decompressed_str = decompressed_bytes.decode("utf-8")
-        deserialized_cursor = deserialize_value(
-            decompressed_str, (LegacyAssetDaemonCursorWrapper, AssetDaemonCursor)
-        )
-        if isinstance(deserialized_cursor, LegacyAssetDaemonCursorWrapper):
-            return deserialized_cursor.get_asset_daemon_cursor(asset_graph)
-        return deserialized_cursor
-
-    raise DagsterInvariantViolationError(f"Invalid serialized cursor version: {version}")
+        return _read_v1_instigator_cursor(payload)
+    return _read_v0_instigator_cursor(payload, asset_graph)
 
 
 class AutoMaterializeLaunchContext:
@@ -316,9 +384,9 @@ class AutoMaterializeLaunchContext:
 
     def __exit__(
         self,
-        exception_type: type[BaseException],
-        exception_value: Exception,
-        traceback: TracebackType,
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         if exception_value and isinstance(exception_value, KeyboardInterrupt):
             return
@@ -528,9 +596,11 @@ class AssetDaemon(DagsterDaemon):
                 code_location = location_entry.code_location
                 if code_location:
                     for repo in code_location.get_repositories().values():
-                        for sensor in repo.get_sensors():
-                            if sensor.sensor_type.is_handled_by_asset_daemon:
-                                eligible_sensors_and_repos.append((sensor, repo))
+                        eligible_sensors_and_repos.extend(
+                            (sensor, repo)
+                            for sensor in repo.get_sensors()
+                            if sensor.sensor_type.is_handled_by_asset_daemon
+                        )
 
             if not eligible_sensors_and_repos:
                 return
@@ -576,7 +646,12 @@ class AssetDaemon(DagsterDaemon):
 
                 self._checked_migrations = True
 
-            for sensor, repo in eligible_sensors_and_repos:
+            # Round-robin across code locations so a single code location with many sensors
+            # cannot consistently push sensors from other code locations to the back of the
+            # thread pool queue.
+            for sensor, repo in shuffled_round_robin_by_key(
+                eligible_sensors_and_repos, key=lambda sr: sr[0].handle.location_name
+            ):
                 selector_id = sensor.selector_id
                 if sensor.get_current_instigator_state(
                     all_sensor_states.get(selector_id)
@@ -742,7 +817,7 @@ class AssetDaemon(DagsterDaemon):
         for instigator_state in all_sensor_states.values():
             # only migrate instigators with the name "default_auto_materialize_sensor" and are
             # handled by the asset daemon
-            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" and (
+            if instigator_state.origin.instigator_name != "default_auto_materialize_sensor" or not (
                 instigator_state.sensor_instigator_data
                 and instigator_state.sensor_instigator_data.sensor_type
                 and instigator_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
@@ -844,11 +919,21 @@ class AssetDaemon(DagsterDaemon):
                 eligible_keys = workspace_asset_graph.get_all_asset_keys()
                 eligibility_graph = workspace_asset_graph
 
-            auto_materialize_entity_keys = {
+            auto_materialize_entity_keys: set[EntityKey] = {
                 target_key
                 for target_key in eligible_keys
                 if eligibility_graph.get(target_key).automation_condition is not None
             }
+            if sensor:
+                # Each sensor owns the job keys recorded in its metadata (the default sensor
+                # claims all job keys not explicitly distributed), so jobs are evaluated by
+                # exactly one sensor.
+                auto_materialize_entity_keys |= asset_job_keys_from_sensor_metadata(sensor.metadata)
+            else:
+                # The sensorless daemon mode (`auto_materialize: use_sensors: false`): the
+                # single global evaluation owns every conditioned job, added directly from
+                # the graph being evaluated
+                auto_materialize_entity_keys |= eligibility_graph.automatable_asset_job_keys
             num_target_entities = len(auto_materialize_entity_keys)
 
             auto_observe_asset_keys = {
@@ -1099,6 +1184,9 @@ class AssetDaemon(DagsterDaemon):
                 evaluation_id=evaluation_id,
                 asset_graph=asset_graph,
                 asset_selection=asset_selection,
+                asset_job_keys={
+                    key for key in auto_materialize_entity_keys if isinstance(key, AssetJobKey)
+                },
                 instance=instance,
                 cursor=stored_cursor,
                 materialize_run_tags={
@@ -1160,7 +1248,9 @@ class AssetDaemon(DagsterDaemon):
             # code server moving into an error state or an asset being renamed) causes problems
             async_code_server_tasks = []
             for run_request_index, run_request in enumerate(run_requests):
-                if not run_request.requires_backfill_daemon():
+                # Skip backfill requests (handled separately) and job entity requests
+                # (they have no asset selection, so no execution plan to pre-fetch)
+                if not run_request.requires_backfill_daemon() and run_request.entity_keys:
                     async_code_server_tasks.append(
                         get_job_execution_data_from_run_request(
                             asset_graph,
@@ -1285,6 +1375,28 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
             return reserved_run_id, check.not_none(asset_graph_subset.asset_keys)
+        elif run_request.is_job_entity_request:
+            # job-entity run: a traditional whole-job run rather than an asset run
+            submitted_run = await submit_job_entity_run(
+                run_id=reserved_run_id,
+                run_request=run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        AUTO_MATERIALIZE_TAG: "true",
+                        AUTOMATION_CONDITION_TAG: "true",
+                        ASSET_EVALUATION_ID_TAG: str(evaluation_id),
+                    }
+                ),
+                run_request_index=i,
+                instance=instance,
+                workspace_process_context=workspace_process_context,
+                workspace=workspace,
+                asset_graph=workspace.asset_graph,
+                run_request_execution_data_cache=run_request_execution_data_cache,
+                debug_crash_flags=debug_crash_flags,
+                logger=self._logger,
+            )
+            return submitted_run.run_id, {AssetJobKey(check.not_none(run_request.job_name))}
         else:
             submitted_run = await submit_asset_run(
                 run_id=reserved_run_id,

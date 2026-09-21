@@ -29,9 +29,12 @@ import dagster_sling
 
 ...
 
+
 def test_scaffold_sling():
     with dg.components.testing.create_defs_folder_sandbox() as sandbox:
-        defs_path = sandbox.scaffold_component(component_cls=dagster_sling.SlingReplicationCollectionComponent)
+        defs_path = sandbox.scaffold_component(
+            component_cls=dagster_sling.SlingReplicationCollectionComponent
+        )
         assert (defs_path / "defs.yaml").exists()
         assert (defs_path / "replication.yaml").exists()
 ```
@@ -49,6 +52,7 @@ import dagster as dg
 import dagster_dlt
 
 ...
+
 
 def test_dlt_component():
     with dg.components.testing.create_defs_folder_sandbox() as sandbox:
@@ -75,6 +79,7 @@ import dagster_snowflake
 
 ...
 
+
 def test_snowflake_component():
     with dg.components.testing.create_defs_folder_sandbox() as sandbox:
         sandbox.scaffold_component(
@@ -85,7 +90,7 @@ def test_snowflake_component():
                 "attributes": {
                     "sql_template": "SELECT * FROM MY_TABLE;",
                     "assets": [{"key": "TESTDB/TESTSCHEMA/TEST_TABLE"}],
-                    "connection": "{{ load_component_at_path('sql_connection_component') }}",
+                    "connection": "{{ context.load_component('sql_connection_component') }}",
                 },
             },
         )

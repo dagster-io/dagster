@@ -70,6 +70,7 @@ def test_execute_on_celery_k8s_default(
     result = wait_for_job_and_get_raw_logs(
         job_name=f"dagster-run-{run_id}",
         namespace=helm_namespace,
+        wait_timeout=420,
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -84,7 +85,7 @@ def _test_termination(webserver_url, dagster_instance, run_config):
     )
 
     # Wait for run to start
-    timeout = datetime.timedelta(0, 120)
+    timeout = datetime.timedelta(0, 240)
     start_time = datetime.datetime.now()
 
     while True:

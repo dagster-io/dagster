@@ -1,0 +1,54 @@
+.sideNavItem {
+  border-radius: 8px;
+  display: block;
+  font-size: 14px;
+  line-height: 20px;
+  text-decoration: none;
+  transition: 100ms background-color linear;
+  user-select: none;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.inactive {
+  background-color: transparent;
+  color: var(--color-text-default);
+
+  &:focus {
+    background-color: var(--color-background-light);
+  }
+
+  &:hover,
+  &:active {
+    background-color: var(--color-background-light-hover);
+    color: var(--color-text-default);
+    text-decoration: none;
+  }
+
+  .iconAndLabel .iconGlobal {
+    background-color: var(--color-text-default);
+  }
+}
+
+.active {
+  background-color: var(--color-background-blue);
+  color: var(--color-text-blue);
+
+  &:focus {
+    background-color: var(--color-background-blue);
+  }
+
+  &:hover,
+  &:active {
+    background-color: var(--color-background-blue);
+    color: var(--color-text-blue);
+    text-decoration: none;
+  }
+
+  .iconAndLabel .iconGlobal {
+    background-color: var(--color-text-blue);
+  }
+}

@@ -1,7 +1,9 @@
-from typing import Any
+from typing import Any, Optional
 
 from dagster import Config, ConfigurableResource, IAttachDifferentObjectToOpContext, resource
+from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from databricks.sdk.core import CredentialsStrategy
 from pydantic import Field, model_validator
 
 from dagster_databricks.databricks import DatabricksClient
@@ -31,6 +33,37 @@ class AzureServicePrincipalCredentials(Config):
 class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """Resource which provides a Python client for interacting with Databricks within an
     op or asset.
+
+    Supports four mutually exclusive authentication methods:
+
+    - **PAT**: Provide ``token``.
+    - **OAuth M2M**: Provide ``oauth_credentials`` (client ID + secret).
+    - **Azure service principal**: Provide ``azure_credentials``.
+    - **Custom CredentialsStrategy**: Pass a ``credentials_strategy`` instance to the
+      constructor. This supports any authentication flow backed by the Databricks SDK's
+      ``CredentialsStrategy`` protocol, including OIDC federation, external IdP token
+      exchange, and other custom auth flows. Because ``CredentialsStrategy`` is not
+      a serializable config type, it is accepted as a constructor argument and stored
+      outside of Dagster's config schema machinery.
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster import job
+        from dagster_databricks import DatabricksClientResource
+        from my_auth import MyCredentialsStrategy
+
+        @job(
+            resource_defs={
+                "databricks": DatabricksClientResource(
+                    host="https://my-workspace.cloud.databricks.com",
+                    credentials_strategy=MyCredentialsStrategy(),
+                )
+            }
+        )
+        def my_job():
+            ...
     """
 
     host: str | None = Field(
@@ -59,6 +92,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             " This is no longer used and will be removed in a 0.21."
         ),
     )
+    credentials_strategy: ResourceDependency[Optional[CredentialsStrategy]] = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]  # noqa: UP045
 
     @model_validator(mode="before")
     def has_token_or_oauth_credentials(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -70,8 +104,9 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             raise ValueError(
                 "Must provide one of token or oauth_credentials or azure_credentials, not multiple"
             )
-        elif not len(present):
-            raise ValueError("Must provide one of token or oauth_credentials or azure_credentials")
+        # Zero serializable credentials is allowed here — credentials_strategy may be
+        # supplied via the constructor. Enforcement of at least one auth method is done
+        # in get_client() where credentials_strategy is visible.
         return values
 
     @classmethod
@@ -79,6 +114,26 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
         return True
 
     def get_client(self) -> DatabricksClient:
+        credentials_strategy: CredentialsStrategy | None = self.credentials_strategy
+
+        has_serializable_credentials = (
+            self.token is not None
+            or self.oauth_credentials is not None
+            or self.azure_credentials is not None
+        )
+
+        if has_serializable_credentials and credentials_strategy is not None:
+            raise ValueError(
+                "Can only provide one of token, oauth_credentials, azure_credentials, or"
+                " credentials_strategy, not multiple"
+            )
+
+        if not has_serializable_credentials and credentials_strategy is None:
+            raise ValueError(
+                "Must provide one of token, oauth_credentials, azure_credentials, or"
+                " credentials_strategy"
+            )
+
         if self.oauth_credentials:
             client_id = self.oauth_credentials.client_id
             client_secret = self.oauth_credentials.client_secret
@@ -104,6 +159,7 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
             azure_client_id=azure_client_id,
             azure_client_secret=azure_client_secret,
             azure_tenant_id=azure_tenant_id,
+            credentials_strategy=credentials_strategy,
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
@@ -113,4 +169,5 @@ class DatabricksClientResource(ConfigurableResource, IAttachDifferentObjectToOpC
 @dagster_maintained_resource
 @resource(config_schema=DatabricksClientResource.to_config_schema())
 def databricks_client(init_context) -> DatabricksClient:
-    return DatabricksClientResource.from_resource_context(init_context).get_client()
+    with DatabricksClientResource.from_resource_context_cm(init_context) as resource:
+        return resource.get_client()

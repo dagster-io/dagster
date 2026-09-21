@@ -1,0 +1,20 @@
+type: dagster.TemplatedSqlComponent
+
+attributes:
+  sql_template: |
+    SELECT
+      species,
+      count() AS row_count
+    FROM {{ table_name }}
+    GROUP BY species
+    ORDER BY species
+
+  sql_template_vars:
+    table_name: iris.iris_dataset
+
+  connection: "{{ context.load_component('clickhouse_connection') }}"
+
+  assets:
+    - key: analytics/species_counts
+      group_name: analytics
+      kinds: [clickhouse]

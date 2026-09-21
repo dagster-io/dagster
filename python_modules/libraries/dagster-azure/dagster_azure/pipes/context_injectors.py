@@ -30,7 +30,7 @@ class PipesAzureBlobStorageContextInjector(PipesContextInjector):
         self.client = client
 
     @contextmanager
-    def inject_context(self, context: PipesContextData) -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def inject_context(self, context: PipesContextData) -> Iterator[PipesParams]:
         key_prefix = "".join(random.choices(string.ascii_letters, k=30))
         key = os.path.join(key_prefix, _CONTEXT_FILENAME)
 

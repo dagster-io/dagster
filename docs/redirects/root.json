@@ -1,0 +1,47 @@
+[
+  {
+    "source": "/getting-started/hello-dagster",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/what-why-dagster",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/guides/experimental-features",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/guides/best-practices",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/getting-started/overview",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/examples/memoized_development",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/guides/general",
+    "destination": "/",
+    "permanent": true
+  },
+  {
+    "source": "/guides",
+    "destination": "/",
+    "permanent": true
+  }
+]

@@ -3,7 +3,7 @@
     "__typename": "EventConnection",
     "events": [
       {
-        "__typename": "MessageEvent",
+        "__typename": "RunStartEvent",
         "runId": "a34cd75c-cfa9-4e99-8f0a-955492b89afd",
         "message": "Started execution of run for \"dbt_analytics_core_job\".",
         "timestamp": "1771476078297",
@@ -12,7 +12,7 @@
         "eventType": "PIPELINE_START"
       },
       {
-        "__typename": "MessageEvent",
+        "__typename": "AssetMaterializationPlannedEvent",
         "runId": "a34cd75c-cfa9-4e99-8f0a-955492b89afd",
         "message": "dbt_analytics_core_job intends to materialize asset \"my_asset\".",
         "timestamp": "1771476078298",
@@ -21,7 +21,7 @@
         "eventType": "ASSET_MATERIALIZATION_PLANNED"
       }
     ],
-    "cursor": null,
+    "cursor": "",
     "hasMore": false
   }
 }

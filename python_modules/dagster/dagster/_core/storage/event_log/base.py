@@ -588,6 +588,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """Get concurrency info for key."""
         raise NotImplementedError()
 
+    def get_concurrency_infos(
+        self, concurrency_keys: Sequence[str]
+    ) -> Mapping[str, ConcurrencyKeyInfo]:
+        """Get concurrency info for many keys. Storages override this to batch the reads."""
+        return {key: self.get_concurrency_info(key) for key in dict.fromkeys(concurrency_keys)}
+
     @abstractmethod
     def get_pool_limits(self) -> Sequence[PoolLimit]:
         """Get the set of concurrency limited keys and limits."""
@@ -787,15 +793,17 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         # ignoring partitioned assets. Used purely for the `get_asset_check_partition_info` method across
         # different storage implementations.
         asset_records = self.get_asset_records(keys)
-        latest_unpartitioned_materialization_storage_ids = {}
+        latest_unpartitioned_materialization_storage_ids: dict[AssetKey, int] = {}
         for asset_record in asset_records:
+            storage_id = asset_record.asset_entry.last_materialization_storage_id
             if (
                 asset_record.asset_entry.last_materialization_record is not None
                 and asset_record.asset_entry.last_materialization_record.event_log_entry.get_dagster_event().partition
                 is None
+                and storage_id is not None
             ):
                 latest_unpartitioned_materialization_storage_ids[
                     asset_record.asset_entry.asset_key
-                ] = asset_record.asset_entry.last_materialization_storage_id
+                ] = storage_id
 
         return latest_unpartitioned_materialization_storage_ids

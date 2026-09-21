@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 import tempfile
+import time
 import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, cast
@@ -196,12 +197,42 @@ def execute_notebook(
 
         try:
             papermill_engines.register("dagstermill", DagstermillEngine)
-            papermill.execute_notebook(
-                input_path=parameterized_notebook_path,
-                output_path=executed_notebook_path,
-                engine_name="dagstermill",
-                log_output=True,
-            )
+
+            # Retry on kernel startup failures caused by ZMQ port collisions. When
+            # multiple notebooks execute in parallel, jupyter_client can pre-allocate
+            # the same port for different kernels (TOCTOU race), causing ipykernel to
+            # crash with "Address already in use" which surfaces as "Kernel died before
+            # replying to kernel_info". The failure is instant so retries are cheap.
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    papermill.execute_notebook(
+                        input_path=parameterized_notebook_path,
+                        output_path=executed_notebook_path,
+                        engine_name="dagstermill",
+                        log_output=True,
+                        # Bump kernel-startup timeout from papermill's 60s default
+                        # to 120s. Without this, papermill's default propagates
+                        # through to nbclient and shadows DagstermillEngine's own
+                        # 120s default in `execute_managed_notebook`, leading to
+                        # spurious "Kernel didn't respond in 60 seconds" failures
+                        # on slow / loaded CI hosts.
+                        start_timeout=120,
+                    )
+                    break
+                except RuntimeError as re:
+                    if (
+                        "Kernel died before replying to kernel_info" in str(re)
+                        and attempt < max_retries - 1
+                    ):
+                        step_context.log.warning(
+                            f"Kernel startup failed (attempt {attempt + 1}/{max_retries}),"
+                            " retrying. This is typically caused by a ZMQ port collision when"
+                            " multiple notebooks execute in parallel."
+                        )
+                        time.sleep(1)
+                        continue
+                    raise
 
         except Exception as ex:
             step_context.log.warn(
@@ -209,7 +240,7 @@ def execute_notebook(
             )
 
             if isinstance(ex, ExecutionError):
-                exception_name = ex.ename  # type: ignore
+                exception_name = ex.ename
                 if exception_name in ["RetryRequested", "Failure"]:
                     step_context.log.warn(
                         f"Encountered raised {exception_name} in notebook. Use"
@@ -408,7 +439,7 @@ def define_dagstermill_op(
         required_resource_keys.add(io_mgr_key)
         outs = {
             **outs,
-            cast("str", output_notebook_name): Out(io_manager_key=io_mgr_key),
+            output_notebook_name: Out(io_manager_key=io_mgr_key),
         }
 
     if isinstance(asset_key_prefix, str):

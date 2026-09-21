@@ -1,5 +1,6 @@
+##################
 dagster-ge library
-------------------
+##################
 
 .. currentmodule:: dagster_ge
 

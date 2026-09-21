@@ -38,12 +38,12 @@ export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
 
   const params = useParams();
-  const explorerPath = explorerPathFromString((params as any)['0']);
+  const explorerPath = explorerPathFromString((params as Record<string, string>)['0'] ?? '');
   const {pipelineName, snapshotId} = explorerPath;
   const history = useHistory();
 
   const openInNewTab = useOpenInNewTab();
-  useDocumentTitle(`Snapshot: ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
+  useDocumentTitle(`Snapshots | ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
 
   return (
     <PipelineExplorerContainer

@@ -1,5 +1,6 @@
+#####################
 dagster-azure library
----------------------
+#####################
 
 Utilities for using Azure Storage Accounts with Dagster. This is mostly aimed at Azure Data Lake
 Storage Gen 2 (ADLS2) but also contains some utilities for Azure Blob Storage.
@@ -7,8 +8,9 @@ Storage Gen 2 (ADLS2) but also contains some utilities for Azure Blob Storage.
 
 .. currentmodule:: dagster_azure
 
+**********
 Components
-^^^^^^^^^^
+**********
 
 .. autoclass:: AzureBlobStorageResourceComponent
    :members:
@@ -16,8 +18,9 @@ Components
 .. autoclass:: ADLS2ResourceComponent
    :members:
 
+*********
 Resources
-^^^^^^^^^^
+*********
 
 .. autoconfigurable:: dagster_azure.adls2.ADLS2Resource
   :annotation: ResourceDefinition
@@ -30,15 +33,16 @@ Resources
 
 .. autoclass:: dagster_azure.blob.AzureBlobComputeLogManager
 
-
-I/O Manager
-^^^^^^^^^^^
+***********
+I/O manager
+***********
 
 .. autoconfigurable::  dagster_azure.adls2.ADLS2PickleIOManager
   :annotation: IOManagerDefinition
 
-File Manager
-^^^^^^^^^^^^
+************
+File manager
+************
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
   :annotation: ResourceDefinition
@@ -46,9 +50,9 @@ File Manager
 .. autoclass:: dagster_azure.adls2.ADLS2FileHandle
   :members:
 
-
+*****
 Pipes
-^^^^^
+*****
 
 .. autoclass:: dagster_azure.pipes.PipesAzureBlobStorageContextInjector
 
@@ -56,9 +60,10 @@ Pipes
 
 .. autoclass:: dagster_azure.pipes.clients.PipesAzureMLClient
 
-
+******
 Legacy
-^^^^^^^
+******
+
 .. autoconfigurable::  dagster_azure.adls2.ConfigurablePickledObjectADLS2IOManager
   :annotation: IOManagerDefinition
 

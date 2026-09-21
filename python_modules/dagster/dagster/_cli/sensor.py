@@ -164,7 +164,7 @@ def execute_start_command(
                     instance.start_sensor(sensor)
                 print_fn(f"Started all sensors for repository {repo.name}")
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+                raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
         else:
             if not sensor_name:
                 raise click.UsageError("Missing sensor name argument")
@@ -172,7 +172,7 @@ def execute_start_command(
                 sensor = repo.get_sensor(sensor_name)
                 instance.start_sensor(sensor)
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+                raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
             print_fn(f"Started sensor {sensor_name}")
 
@@ -212,7 +212,7 @@ def execute_stop_command(
                 sensor,
             )
         except DagsterInvariantViolationError as ex:
-            raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
+            raise click.UsageError(ex)  # ty: ignore[invalid-argument-type]
 
         print_fn(f"Stopped sensor {sensor_name}")
 
@@ -297,7 +297,7 @@ def execute_preview_command(
             )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            print_fn(f"Failed to resolve sensor for {sensor.name} : {error_info.to_string()}")  # pyright: ignore[reportPossiblyUnboundVariable]
+            print_fn(f"Failed to resolve sensor for {sensor.name} : {error_info.to_string()}")
             return
 
         if not sensor_runtime_data.run_requests:
@@ -401,12 +401,12 @@ def execute_cursor_command(
             instance.update_instigator_state(
                 job_state.with_data(
                     SensorInstigatorData(
-                        last_tick_timestamp=job_state.instigator_data.last_tick_timestamp,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-                        last_run_key=job_state.instigator_data.last_run_key,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                        last_tick_timestamp=job_state.instigator_data.last_tick_timestamp,  # ty: ignore[unresolved-attribute]
+                        last_run_key=job_state.instigator_data.last_run_key,  # ty: ignore[unresolved-attribute]
                         min_interval=sensor.min_interval_seconds,
                         cursor=cursor_value,
-                        last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-                        last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+                        last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,  # ty: ignore[unresolved-attribute]
+                        last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,  # ty: ignore[unresolved-attribute]
                         sensor_type=sensor.sensor_type,
                     ),
                 )

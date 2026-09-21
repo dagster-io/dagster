@@ -24,9 +24,9 @@ class DagsterModel(BaseModel):
         ignored_types=(cached_property,),
     )
 
-    def model_copy(self, *, update: dict[str, Any] | None = None) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def model_copy(self, *, update: dict[str, Any] | None = None) -> Self:  # ty: ignore[invalid-method-override]
         return super().model_copy(update=update)
 
     @classmethod
-    def model_construct(cls, **kwargs: Any) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def model_construct(cls, **kwargs: Any) -> Self:  # ty: ignore[invalid-method-override]
         return super().model_construct(**kwargs)

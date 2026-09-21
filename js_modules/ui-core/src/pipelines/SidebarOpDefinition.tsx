@@ -1,7 +1,6 @@
-import {Box, Colors, ConfigTypeSchema, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Box, Colors, ConfigTypeSchema, Icon} from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {Description} from './Description';
 import {
@@ -32,6 +31,7 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import styles from './css/SidebarOpDefinition.module.css';
 
 interface SidebarOpDefinitionProps {
   definition: SidebarOpDefinitionFragment;
@@ -169,9 +169,13 @@ export const SidebarOpDefinition = (props: SidebarOpDefinitionProps) => {
       {definition.assetNodes.length > 0 && (
         <SidebarSection title="Yielded Assets">
           {definition.assetNodes.map((node) => (
-            <AssetNodeListItem key={node.id} to={assetDetailsPathForKey(node.assetKey)}>
+            <Link
+              className={styles.assetNodeListItem}
+              key={node.id}
+              to={assetDetailsPathForKey(node.assetKey)}
+            >
               <Icon name="asset" /> {displayNameForAssetKey(node.assetKey)}
-            </AssetNodeListItem>
+            </Link>
           ))}
         </SidebarSection>
       )}
@@ -295,22 +299,3 @@ const InvocationList = ({
     </>
   );
 };
-
-const AssetNodeListItem = styled(Link)`
-  user-select: none;
-  padding: 12px 24px;
-  cursor: pointer;
-  border-bottom: 1px solid ${Colors.keylineDefault()};
-  display: flex;
-  gap: 6px;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background: ${Colors.backgroundLight()};
-  }
-
-  font-family: ${FontFamily.monospace};
-`;

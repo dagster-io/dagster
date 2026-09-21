@@ -6,9 +6,9 @@ import dagster as dg
 @dg.asset
 def report_to_datadog(datadog: DatadogResource):
     datadog_client = datadog.get_client()
-    datadog_client.event("Man down!", "This server needs assistance.")
-    datadog_client.gauge("users.online", 1001, tags=["protocol:http"])
-    datadog_client.increment("page.views")
+    datadog_client.event("Man down!", "This server needs assistance.")  # ty: ignore[unresolved-attribute]
+    datadog_client.gauge("users.online", 1001, tags=["protocol:http"])  # ty: ignore[unresolved-attribute]
+    datadog_client.increment("page.views")  # ty: ignore[unresolved-attribute]
 
 
 defs = dg.Definitions(

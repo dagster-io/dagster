@@ -1,6 +1,22 @@
+/** Internal type. DO NOT USE DIRECTLY. */
+type Exact<T extends {[key: string]: unknown}> = {[K in keyof T]: T[K]};
+/** Internal type. DO NOT USE DIRECTLY. */
+export type Incremental<T> =
+  | T
+  | {[P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never};
 // Generated GraphQL types, do not edit manually.
 
 import * as Types from '../../graphql/types';
+
+export type ConfiguredValueType = 'ENV_VAR' | 'SECRET' | 'VALUE';
+
+export type NestedResourceType = 'ANONYMOUS' | 'TOP_LEVEL';
+
+export type ResourceSelector = {
+  repositoryLocationName: string;
+  repositoryName: string;
+  resourceName: string;
+};
 
 export type ResourceDetailsFragment = {
   __typename: 'ResourceDetails';
@@ -51,7 +67,7 @@ export type ResourceDetailsFragment = {
   jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string; opHandleIDs: Array<string>}>;
 };
 
-export type ResourceRootQueryVariables = Types.Exact<{
+export type ResourceRootQueryVariables = Exact<{
   resourceSelector: Types.ResourceSelector;
 }>;
 

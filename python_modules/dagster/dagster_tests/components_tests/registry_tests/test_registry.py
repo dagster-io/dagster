@@ -108,12 +108,13 @@ def _get_editable_package_root(pkg_name: str) -> str:
 def test_components_from_dagster():
     common_deps: list[str] = []
     for pkg_name in [
-        "dagster-shared",
         "dagster-cloud-cli",
+        "dagster-dg-cli",
         "dagster-dg-core",
         "dagster-pipes",
+        "dagster-rest-resources",
+        "dagster-shared",
         "dagster",
-        "dagster-dg-cli",
     ]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
@@ -150,6 +151,42 @@ def test_all_components_have_defined_summary():
             assert get_package_entry_snap(EnvRegistryKey("a", "a"), component_type).summary, (
                 f"Component {component_name} has no summary defined"
             )
+
+
+def test_produces_declared_on_spec_flows_to_snap_and_json():
+    from dagster_shared.serdes.objects.package_entry import json_for_component_type
+
+    class ProducingComponent(dg.Component):
+        @classmethod
+        def get_spec(cls):
+            return dg.ComponentTypeSpec(produces=["asset", "schedule"])
+
+        def build_defs(self, context):
+            pass
+
+    key = EnvRegistryKey(name="ProducingComponent", namespace="dagster_test")
+    snap = get_package_entry_snap(key, ProducingComponent)
+    assert snap.produces == ["asset", "schedule"]
+
+    component_data = snap.get_feature_data("component")
+    assert component_data is not None
+    assert json_for_component_type(key, snap, component_data)["produces"] == ["asset", "schedule"]
+
+
+def test_produces_defaults_to_empty_when_not_declared():
+    class PlainComponent(dg.Component):
+        def build_defs(self, context):
+            pass
+
+    snap = get_package_entry_snap(EnvRegistryKey("a", "a"), PlainComponent)
+    assert snap.produces == []
+
+
+def test_produces_rejects_unknown_kind():
+    import dagster._check as check
+
+    with pytest.raises(check.CheckError, match="Invalid produces kind"):
+        dg.ComponentTypeSpec(produces=["asset", "bogus"])
 
 
 # Our pyproject.toml installs local dagster components
@@ -194,15 +231,15 @@ def isolated_venv_with_component_lib_dagster_foo(
                 r"<ENTRY_POINT_GROUP>", entry_point_group, DAGSTER_FOO_PYPROJECT_TOML
             )
 
-            with open("dagster-foo/pyproject.toml", "w") as f:
+            with open("dagster-foo/pyproject.toml", "w", encoding="utf-8") as f:
                 f.write(pyproject_toml_content)
 
             os.makedirs("dagster-foo/dagster_foo/lib/sub")
 
-            with open("dagster-foo/dagster_foo/lib/__init__.py", "w") as f:
+            with open("dagster-foo/dagster_foo/lib/__init__.py", "w", encoding="utf-8") as f:
                 f.write(DAGSTER_FOO_LIB_ROOT)
 
-            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w") as f:
+            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w", encoding="utf-8") as f:
                 f.write(_generate_test_component_source(2))
 
             if pre_install_hook:
@@ -217,11 +254,13 @@ def isolated_venv_with_component_lib_dagster_foo(
                 "-e",
                 _get_editable_package_root("dagster-shared"),
                 "-e",
-                _get_editable_package_root("dagster-cloud-cli"),
+                _get_editable_package_root("dagster-dg-cli"),
                 "-e",
                 _get_editable_package_root("dagster-dg-core"),
                 "-e",
-                _get_editable_package_root("dagster-dg-cli"),
+                _get_editable_package_root("dagster-cloud-cli"),
+                "-e",
+                _get_editable_package_root("dagster-rest-resources"),
                 "-e",
                 "dagster-foo",
             ]

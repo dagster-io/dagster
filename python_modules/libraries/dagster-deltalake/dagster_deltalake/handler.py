@@ -6,7 +6,12 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster._core.storage.db_io_manager import (
+    DbTypeHandler,
+    TablePartitionDimension,
+    TableSlice,
+    escape_sql_string_literal,
+)
 from deltalake import CommitProperties, DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,
@@ -109,7 +114,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         custom_metadata = metadata.get("custom_metadata") or main_custom_metadata
         commit_props = None
         if custom_metadata and isinstance(custom_metadata, dict):
-            commit_props = CommitProperties(custom_metadata=custom_metadata)
+            commit_props = CommitProperties(custom_metadata=cast("dict[str, str]", custom_metadata))
 
         # Prepare write parameters
         write_params = {
@@ -130,7 +135,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
         if predicate is not None:
             write_params["predicate"] = predicate
 
-        write_deltalake(**write_params)
+        write_deltalake(**write_params)  # ty: ignore[no-matching-overload]
 
         # TODO make stats computation configurable on type handler
         dt = DeltaTable(connection.table_uri, storage_options=connection.storage_options)
@@ -284,8 +289,8 @@ def _get_partition_stats(dt: DeltaTable, table_slice: TableSlice | None = None):
     table = files_table.join(actions_table, keys="path")
 
     stats = {
-        "size_bytes": MetadataValue.int(pc.sum(table.column("size_bytes")).as_py()),
-        "num_rows": MetadataValue.int(pc.sum(table.column("num_records")).as_py()),
+        "size_bytes": MetadataValue.int(pc.sum(table.column("size_bytes")).as_py()),  # ty: ignore[unresolved-attribute]
+        "num_rows": MetadataValue.int(pc.sum(table.column("num_records")).as_py()),  # ty: ignore[unresolved-attribute]
     }
 
     return table, stats
@@ -306,11 +311,14 @@ def _format_predicate_value(value) -> str | None:
 
     # Format based on type
     if hasattr(value, "strftime"):  # datetime-like object
-        return f"'{value.strftime('%Y-%m-%d')}'"  # type: ignore[attr-defined]
+        # strftime output is safe (digits, dashes, colons, spaces) but escape
+        # defensively in case a custom format is ever introduced
+        formatted = value.strftime("%Y-%m-%d")  # type: ignore[attr-defined]
+        return f"'{escape_sql_string_literal(formatted)}'"
     elif isinstance(value, str):
-        return f"'{value}'"
+        return f"'{escape_sql_string_literal(value)}'"
     else:
-        return str(value)
+        raise ValueError(f"Unsupported partition predicate value type: {type(value).__name__}")
 
 
 def _build_partition_predicate(partition_dimensions, table_schema) -> str | None:

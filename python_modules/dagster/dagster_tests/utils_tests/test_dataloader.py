@@ -39,7 +39,7 @@ async def batch_load_fn(keys: list[str]):
 
 class ThingLoader(DataLoader[str, Thing]):
     def __init__(self):
-        super().__init__(batch_load_fn=batch_load_fn)  # pyright: ignore[reportArgumentType]
+        super().__init__(batch_load_fn=batch_load_fn)  # ty: ignore[invalid-argument-type]
 
 
 def test_basic() -> None:
@@ -93,7 +93,7 @@ def test_exception() -> None:
 
     class Thrower(DataLoader[str, str]):
         def __init__(self):
-            super().__init__(batch_load_fn=batch_load_fn)  # pyright: ignore[reportArgumentType]
+            super().__init__(batch_load_fn=batch_load_fn)  # ty: ignore[invalid-argument-type]
 
     async def _test():
         loader = Thrower()
@@ -125,7 +125,7 @@ def test_bad_load_fn():
     async def _oops(wrong, args, here): ...
 
     async def _test():
-        loader = DataLoader(_oops)  # pyright: ignore[reportArgumentType]
+        loader = DataLoader(_oops)  # ty: ignore[invalid-argument-type]
         done, pending = await asyncio.wait(
             (loader.load(1),),
             timeout=0.01,
@@ -134,7 +134,7 @@ def test_bad_load_fn():
         assert len(done) == 1
 
         with pytest.raises(TypeError):
-            done[0].result()  # pyright: ignore[reportIndexIssue]
+            done[0].result()  # ty: ignore[not-subscriptable]
 
     asyncio.run(_test())
 

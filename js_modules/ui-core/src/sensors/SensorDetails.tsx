@@ -2,17 +2,16 @@ import {
   Box,
   Button,
   FontFamily,
+  Heading,
   Icon,
   MetadataTableWIP,
   PageHeader,
-  Subtitle1,
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {SensorAlertDetails} from '@shared/sensors/SensorAlertDetails';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
@@ -30,6 +29,7 @@ import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {SensorFragment} from './types/SensorFragment.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
+import styles from './css/SensorDetails.module.css';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -114,11 +114,11 @@ export const SensorDetails = ({
     <>
       <PageHeader
         title={
-          <Subtitle1 style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 4}}>
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
-          </Subtitle1>
+          </Heading>
         }
         icon="sensors"
         tags={
@@ -185,14 +185,14 @@ export const SensorDetails = ({
           {(sensor.targets && sensor.targets.length) || assetSelection ? (
             <tr>
               <td>Target</td>
-              <TargetCell>
+              <td className={styles.targetCell}>
                 <AutomationTargetList
                   targets={sensor.targets}
                   repoAddress={repoAddress}
                   assetSelection={assetSelection || null}
                   automationType={sensor.sensorType}
                 />
-              </TargetCell>
+              </td>
             </tr>
           ) : null}
           <tr>
@@ -264,9 +264,3 @@ export const SensorDetails = ({
     </>
   );
 };
-
-const TargetCell = styled.td`
-  button {
-    line-height: 20px;
-  }
-`;

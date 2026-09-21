@@ -1,0 +1,10 @@
+.sessionSettingsBar {
+  color: var(--color-accent-reversed);
+  display: flex;
+  position: relative;
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-background-default);
+  align-items: center;
+  height: 47px;
+  padding: 8px 10px;
+}

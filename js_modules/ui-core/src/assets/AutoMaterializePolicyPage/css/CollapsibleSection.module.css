@@ -1,0 +1,11 @@
+.sectionHeader {
+  background-color: var(--color-background-light);
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+
+  &:focus {
+    outline: none;
+  }
+}

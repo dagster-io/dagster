@@ -6,6 +6,7 @@ import time
 from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 
 from dagster import (
     DagsterEvent,
@@ -32,6 +33,9 @@ from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorksp
 from dagster._daemon.daemon import DaemonIterator, IntervalDaemon
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.tags import TagConcurrencyLimitsCounter
+
+if TYPE_CHECKING:
+    from dagster._utils.concurrency import ConcurrencyKeyInfo
 
 PAGE_SIZE = int(os.getenv("DAGSTER_RUN_QUEUE_PAGE_SIZE", "100"))
 
@@ -243,6 +247,9 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         concurrency_keys = None
         pool_limits = None
+        # Shared across the per-page counters so each pool is fetched at most once per iteration.
+        # Without this the pass costs O(pages * pools) storage round trips.
+        concurrency_info_by_key: dict[str, ConcurrencyKeyInfo] = {}
 
         while has_more:
             queued_runs = instance.get_runs(
@@ -289,6 +296,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         pool_limits=pool_limits,
                         slot_count_offset=run_queue_config.op_concurrency_slot_buffer,
                         pool_granularity=concurrency_config.pool_config.pool_granularity,
+                        concurrency_info_by_key=concurrency_info_by_key,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")

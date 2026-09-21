@@ -1,6 +1,7 @@
-import {Box, Colors, Icon, Subheading, Tooltip} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
-import styled from 'styled-components';
+
+import styles from './css/CollapsibleSection.module.css';
 
 interface Props {
   header: React.ReactNode;
@@ -21,7 +22,9 @@ export const CollapsibleSection = ({header, details, headerRightSide, children}:
           }}
         >
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, grow: 1}}>
-            <Subheading>{header}</Subheading>
+            <Heading size={14} weight={600}>
+              {header}
+            </Heading>
             {details ? (
               <Tooltip content={details} placement="top">
                 <Icon color={Colors.accentGray()} name="info" />
@@ -47,7 +50,7 @@ export const Collapsible = ({
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   return (
     <Box flex={{direction: 'column'}} border="bottom">
-      <SectionHeader onClick={() => setIsCollapsed(!isCollapsed)}>
+      <button className={styles.sectionHeader} onClick={() => setIsCollapsed(!isCollapsed)}>
         <Box
           flex={{direction: 'row', alignItems: 'center', gap: 6}}
           padding={{vertical: 8, horizontal: 12}}
@@ -59,20 +62,8 @@ export const Collapsible = ({
           />
           <div>{header}</div>
         </Box>
-      </SectionHeader>
+      </button>
       {isCollapsed ? null : children}
     </Box>
   );
 };
-
-const SectionHeader = styled.button`
-  background-color: ${Colors.backgroundLight()};
-  border: 0;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-
-  :focus {
-    outline: none;
-  }
-`;

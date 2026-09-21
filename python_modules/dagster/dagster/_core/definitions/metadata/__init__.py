@@ -158,7 +158,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
     elif isinstance(raw_value, int):
         return MetadataValue.int(raw_value)
     elif isinstance(raw_value, (list, dict)):
-        return MetadataValue.json(raw_value)
+        return MetadataValue.json(raw_value)  # ty: ignore[invalid-argument-type]
     elif isinstance(raw_value, os.PathLike):
         return MetadataValue.path(raw_value)
     elif isinstance(raw_value, AssetKey):
@@ -209,7 +209,7 @@ class MetadataFieldSerializer(FieldSerializer):
             for k, v in metadata_dict.items()
         ]
 
-    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
+    def unpack(  # ty: ignore[invalid-method-override]
         self,
         metadata_entries: list["MetadataEntry"],
         whitelist_map: WhitelistMap,

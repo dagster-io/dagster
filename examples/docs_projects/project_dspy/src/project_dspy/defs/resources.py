@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import dspy
+import dspy  # ty: ignore[unresolved-import]
 from dagster import ConfigurableResource, get_dagster_logger
 from pydantic import Field
 

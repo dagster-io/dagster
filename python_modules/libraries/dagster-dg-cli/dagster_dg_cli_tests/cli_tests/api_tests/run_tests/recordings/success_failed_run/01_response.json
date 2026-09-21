@@ -5,8 +5,22 @@
     "endTime": 1757703554.673739,
     "id": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
     "jobName": "snowflake_insights_import",
+    "runConfigYaml": "ops: {}\n",
     "runId": "4db16a22-4124-4d43-bd4c-ea0aeaa78172",
     "startTime": 1757703550.780887,
-    "status": "FAILURE"
+    "stats": {
+      "__typename": "RunStatsSnapshot",
+      "expectations": 1,
+      "materializations": 2,
+      "stepsFailed": 0,
+      "stepsSucceeded": 3
+    },
+    "status": "FAILURE",
+    "tags": [
+      {
+        "key": "dagster/partition",
+        "value": "2024-01-01"
+      }
+    ]
   }
 }

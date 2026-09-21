@@ -1,0 +1,137 @@
+.ticksWrapper {
+  position: relative;
+  height: 100px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--color-keyline-default);
+}
+
+.timeAxisWrapper {
+  height: 24px;
+}
+
+/* The timeline is .ticksWrapper above .timeAxisWrapper; a placeholder of the same height
+   keeps the section from resizing when the first load finishes. */
+.timelinePlaceholder {
+  height: 124px;
+  display: grid;
+  place-content: center;
+}
+
+.tick {
+  cursor: pointer;
+  position: absolute;
+  top: 10px;
+  height: 80px;
+  will-change: transform, width;
+  border-radius: 2px;
+  color: var(--color-background-default);
+}
+
+.tick div {
+  place-content: center;
+  display: grid;
+}
+
+.tickInner {
+  height: 80px;
+}
+
+/* A batch opens a popover on hover but has nothing to click through to. */
+.tickBatch {
+  cursor: default;
+}
+
+.tickSuccess {
+  background: var(--color-accent-green);
+}
+
+.tickSuccess:hover {
+  background: var(--color-accent-green-hover);
+}
+
+.tickFailure {
+  background: var(--color-accent-red);
+}
+
+.tickFailure:hover {
+  background: var(--color-accent-red-hover);
+}
+
+.tickStarted {
+  background: var(--color-accent-lavender);
+}
+
+.tickStarted:hover {
+  background: var(--color-accent-lavender-hover);
+}
+
+.tickSkipped {
+  background: var(--color-background-disabled);
+}
+
+.tickSkipped:hover {
+  background: var(--color-accent-gray-hover);
+}
+
+.gridTick {
+  position: absolute;
+  top: 0;
+  height: 124px;
+  will-change: transform;
+}
+
+.gridTickLine {
+  position: absolute;
+  top: 0;
+  height: 108px;
+  width: 1px;
+  background: var(--color-keyline-default);
+}
+
+/* Labeled gridlines are darker, so it's clear which line a label belongs to. */
+.gridTickMajor .gridTickLine {
+  background: var(--color-border-default);
+}
+
+.gridTickTime {
+  height: 16px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.nowIndicator {
+  position: absolute;
+  top: 0;
+  height: 126px;
+  width: 2px;
+  background: var(--color-accent-primary);
+}
+
+.nowIndicator::after {
+  content: 'Now';
+  position: absolute;
+  left: 0;
+  background: var(--color-accent-primary);
+  color: var(--color-accent-reversed);
+  bottom: 0;
+  font-size: 12px;
+  padding: 3px 4px;
+}
+
+.batchList {
+  width: 320px;
+}
+
+.batchListScroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* The label sits right of the line, or left of it when the line is against the edge. */
+.nowIndicatorLabelLeft::after {
+  left: auto;
+  right: 0;
+}

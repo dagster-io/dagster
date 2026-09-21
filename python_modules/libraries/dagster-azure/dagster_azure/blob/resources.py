@@ -104,11 +104,11 @@ class AzureBlobStorageResource(ConfigurableResource):
 
     def _raw_credential(self) -> Any:
         if self.credential.credential_type == "sas":
-            return self.credential.token
+            return self.credential.token  # ty: ignore[unresolved-attribute]
         if self.credential.credential_type == "key":
-            return self.credential.key
+            return self.credential.key  # ty: ignore[unresolved-attribute]
         if self.credential.credential_type == "default_azure_credential":
-            return DefaultAzureCredential(**self.credential.kwargs)
+            return DefaultAzureCredential(**self.credential.kwargs)  # ty: ignore[unresolved-attribute]
         if self.credential.credential_type == "anonymous":
             return None
         raise Exception(

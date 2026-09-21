@@ -1,4 +1,4 @@
-import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
+import {Box, Button, Heading, useViewport} from '@dagster-io/ui-components';
 import React, {useEffect, useMemo, useState} from 'react';
 
 import {JobBackfillsTable} from './JobBackfillsTable';
@@ -119,7 +119,9 @@ export const AssetJobPartitionsView = React.memo(
           border="bottom"
           padding={{vertical: 16, horizontal: 24}}
         >
-          <Subheading>Status</Subheading>
+          <Heading size={14} weight={600}>
+            Status
+          </Heading>
           <Box flex={{gap: 8}}>
             <Button onClick={() => setShowAssets(!showAssets)}>
               {showAssets ? 'Hide per-asset status' : 'Show per-asset status'}
@@ -187,7 +189,9 @@ export const AssetJobPartitionsView = React.memo(
           border="top-and-bottom"
           style={{marginBottom: -1}}
         >
-          <Subheading>Backfill history</Subheading>
+          <Heading size={14} weight={600}>
+            Backfill history
+          </Heading>
         </Box>
         <Box margin={{bottom: 20}}>
           <JobBackfillsTable
@@ -243,7 +247,9 @@ const AssetJobPartitionGraphs = React.memo(
     return (
       <>
         <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
-          <Subheading>Run duration</Subheading>
+          <Heading size={14} weight={600}>
+            Run duration
+          </Heading>
         </Box>
 
         <Box margin={24}>
@@ -256,7 +262,9 @@ const AssetJobPartitionGraphs = React.memo(
           />
         </Box>
         <Box padding={{horizontal: 24, vertical: 16}} border="top-and-bottom">
-          <Subheading>Step durations</Subheading>
+          <Heading size={14} weight={600}>
+            Step durations
+          </Heading>
         </Box>
         <Box margin={24}>
           <PartitionGraph

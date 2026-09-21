@@ -13,7 +13,7 @@ const path = ['test'];
 
 export const EmptyState = () => {
   return (
-    <MockedProvider mocks={[Evaluations.None(path, true)]}>
+    <MockedProvider mocks={[Evaluations.None(path)]}>
       <AssetAutomaterializePolicyPage assetKey={{path}} />
     </MockedProvider>
   );
@@ -21,7 +21,7 @@ export const EmptyState = () => {
 
 export const Errors = () => {
   return (
-    <MockedProvider mocks={[Evaluations.Errors(path), Evaluations.Errors(path, true)]}>
+    <MockedProvider mocks={[Evaluations.Errors(path)]}>
       <AssetAutomaterializePolicyPage assetKey={{path}} />
     </MockedProvider>
   );
@@ -29,18 +29,8 @@ export const Errors = () => {
 
 export const Controlled = () => {
   return (
-    <div>
-      <MockedProvider
-        mocks={[
-          Evaluations.Some(path),
-          Evaluations.SinglePartitioned(path, '9798'),
-          Evaluations.SinglePartitioned(path, '28'),
-        ]}
-      >
-        <div>
-          <AssetAutomaterializePolicyPage assetKey={{path}} />
-        </div>
-      </MockedProvider>
-    </div>
+    <MockedProvider mocks={[Evaluations.Some(path)]}>
+      <AssetAutomaterializePolicyPage assetKey={{path}} />
+    </MockedProvider>
   );
 };

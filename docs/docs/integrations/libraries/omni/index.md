@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-omni
 pypi: https://pypi.org/project/dagster-omni
 sidebar_custom_props:
+  component: true
   logo: images/integrations/omni.png
 partnerlink: https://omni.co/
 canonicalUrl: '/integrations/libraries/omni'
@@ -25,7 +26,7 @@ The [dagster-omni](/integrations/libraries/omni) library provides an `OmniCompon
 
 :::
 
-## 1. Prepare a Dagster project
+## Step 1: Prepare a Dagster project
 
 To begin, you'll need a Dagster project. You can use an [existing components-ready project](/guides/build/projects/moving-to-components/migrating-project) or create a new one:
 
@@ -41,7 +42,7 @@ Finally, add the `dagster-omni` library to the project:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/omni-component/2-add-omni.txt" />
 
-## 2. Scaffold an Omni component definition
+## Step 2: Scaffold an Omni component definition
 
 Now that you have a Dagster project, you can scaffold an Omni component definition:
 

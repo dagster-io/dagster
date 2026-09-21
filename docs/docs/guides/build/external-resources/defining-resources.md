@@ -22,7 +22,7 @@ The following example demonstrates defining a subclass of <PyObject section="res
 
 You can define methods on the resource class which depend on config values.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" dedent="4" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" dedent="4" title="src/<project_name>/defs/assets.py" />
 
 Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
@@ -38,7 +38,7 @@ To specify resource dependencies on a sensor, annotate the resource type as a pa
 
 [Schedules](/guides/automate/schedules) can use resources in case your schedule logic needs to interface with an external tool or to make your schedule logic more testable.
 
-To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information, see "[Using resources in schedules](/guides/automate/schedules/using-resources-in-schedules).
+To specify resource dependencies on a schedule, annotate the resource type as a parameter to the schedule's function. For more information, see [Using resources in schedules](/guides/automate/schedules/using-resources-in-schedules).
 
 ## With jobs
 
@@ -46,8 +46,8 @@ The following example defines a subclass of <PyObject section="resources" module
 
 You can define methods on the resource class which depend on config values.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" dedent="4" title="src/<project_name>/defs/assets.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" dedent="4" title="src/<project_name>/defs/assets.py" />
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops_defs" endBefore="end_new_resources_configurable_defs_ops_defs" dedent="4" title="src/<project_name>/defs/resources.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/build/external_resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops_defs" endBefore="end_new_resources_configurable_defs_ops_defs" dedent="4" title="src/<project_name>/defs/resources.py" />
 
 There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/guides/operate/configuration/advanced-config-types) for a more comprehensive overview of the available config types.

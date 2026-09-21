@@ -19,7 +19,7 @@ def test_dagster_internal_init_class_follow_rules(cls: type):
         f"{cls.__name__} does not have dagster_internal_init method"
     )
 
-    dagster_internal_init_params = signature(cls.dagster_internal_init).parameters
+    dagster_internal_init_params = signature(cls.dagster_internal_init).parameters  # ty: ignore[invalid-argument-type]
 
     init_params = signature(cls.__init__).parameters
     # check __new__ instead of __init__ for namedtuples
@@ -27,7 +27,7 @@ def test_dagster_internal_init_class_follow_rules(cls: type):
         # drop cls parameter
         init_params = {k: v for k, v in signature(cls.__new__).parameters.items() if k != "cls"}
 
-    dagster_internal_init_return = signature(cls.dagster_internal_init).return_annotation
+    dagster_internal_init_return = signature(cls.dagster_internal_init).return_annotation  # ty: ignore[invalid-argument-type]
 
     assert dagster_internal_init_return == cls or dagster_internal_init_return == cls.__name__, (
         f"{cls.__name__}.dagster_internal_init has a different return type than the class itself"

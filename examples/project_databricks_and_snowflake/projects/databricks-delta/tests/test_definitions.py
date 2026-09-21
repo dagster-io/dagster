@@ -1,6 +1,6 @@
 import dagster as dg
 
-from databricks_delta.definitions import defs  # type: ignore[import-not-found]
+from databricks_delta.definitions import defs
 
 
 def test_definitions_load():

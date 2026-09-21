@@ -39,10 +39,10 @@ def scaffold_component(
 
     # backcompat -- dagster_dg_cli.plugin entry point
     if dg_context.has_registry_module_entry_point:
-        with open(module_path / "__init__.py") as f:
+        with open(module_path / "__init__.py", encoding="utf-8") as f:
             lines = f.readlines()
         lines.append(f"from {module_name} import {class_name} as {class_name}\n")
-        with open(module_path / "__init__.py", "w") as f:
+        with open(module_path / "__init__.py", "w", encoding="utf-8") as f:
             f.writelines(lines)
 
     # no plugin entry point, add to project plugin modules

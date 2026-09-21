@@ -16,30 +16,36 @@ export const RunsFeedRootMockRuns = buildQueryMock<RunsFeedRootQuery, RunsFeedRo
       hasMore: false,
       results: [
         // No backfill, non-partitioned
-        buildRun({
-          jobName: 'simple',
-          tags: [buildPipelineTag({key: DagsterTag.FromUI, value: 'true'})],
-          runStatus: RunStatus.SUCCESS,
-        }),
+        addPreviewSelectionToRun(
+          buildRun({
+            jobName: 'simple',
+            tags: [buildPipelineTag({key: DagsterTag.FromUI, value: 'true'})],
+            runStatus: RunStatus.SUCCESS,
+          }),
+        ),
         // No backfill, partitioned
-        buildRun({
-          jobName: 'partitioned',
-          tags: [
-            buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
-            buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
-          ],
-          runStatus: RunStatus.SUCCESS,
-        }),
+        addPreviewSelectionToRun(
+          buildRun({
+            jobName: 'partitioned',
+            tags: [
+              buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
+              buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
+            ],
+            runStatus: RunStatus.SUCCESS,
+          }),
+        ),
         // Backfill, partitioned
-        buildRun({
-          jobName: 'backfill_partitioned',
-          tags: [
-            buildPipelineTag({key: DagsterTag.Backfill, value: 'abcd'}),
-            buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
-            buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
-          ],
-          runStatus: RunStatus.SUCCESS,
-        }),
+        addPreviewSelectionToRun(
+          buildRun({
+            jobName: 'backfill_partitioned',
+            tags: [
+              buildPipelineTag({key: DagsterTag.Backfill, value: 'abcd'}),
+              buildPipelineTag({key: DagsterTag.Partition, value: '2020-01-01'}),
+              buildPipelineTag({key: DagsterTag.FromUI, value: 'true'}),
+            ],
+            runStatus: RunStatus.SUCCESS,
+          }),
+        ),
       ],
     },
   },
@@ -69,5 +75,15 @@ function addStatusToPartitionBackfill(backfill: ReturnType<typeof buildPartition
   return {
     ...backfill,
     backfillStatus: backfill.status,
+  };
+}
+
+// The feed fragment aliases the bounded selection fields (assetSelection -> assetSelectionPreview,
+// etc.); mock builders emit the un-aliased names, so map them across here.
+function addPreviewSelectionToRun(run: ReturnType<typeof buildRun>) {
+  return {
+    ...run,
+    assetSelectionPreview: run.assetSelection,
+    assetCheckSelectionPreview: run.assetCheckSelection,
   };
 }

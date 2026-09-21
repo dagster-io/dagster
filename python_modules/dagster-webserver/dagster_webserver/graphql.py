@@ -147,7 +147,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             )
 
         query = data.get("query")
-        variables: str | None | dict[str, Any] = data.get("variables")
+        variables: str | dict[str, Any] | None = data.get("variables")
         operation_name = data.get("operationName")
 
         if query is None:
@@ -313,6 +313,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
             if isawaitable(gql_result):
                 gql_result = await gql_result
 
+        assert isinstance(gql_result, ExecutionResult)
         response_data: dict[str, Any] = {"data": gql_result.data}
 
         if gql_result.errors:

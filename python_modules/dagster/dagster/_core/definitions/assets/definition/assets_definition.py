@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Callable, TypeVar, cast  # n
 from dagster_shared.record import replace
 
 import dagster._check as check
-from dagster._annotations import beta_param, deprecated_param, public
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, AssetOrCheckKey
 from dagster._core.definitions.assets.definition.asset_dep import AssetDep
 from dagster._core.definitions.assets.definition.asset_graph_computation import (
     AssetGraphComputation,
@@ -81,7 +81,7 @@ ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
 def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
-    return "_".join(asset_key.path).replace("-", "_")
+    return "_".join(asset_key.path).replace("-", "_").replace(".", "_")
 
 
 @public
@@ -344,7 +344,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         unique_partitions_defs = {
             spec.partitions_def for spec in normalized_specs if spec.partitions_def is not None
         }
-        if len(unique_partitions_defs) > 1 and not can_subset:
+        # Unexecutable assets (node_def is None) are required to have can_subset=False, so this
+        # check would be unsatisfiable for them. Nothing is subset if nothing executes.
+        if len(unique_partitions_defs) > 1 and not can_subset and node_def is not None:
             raise DagsterInvalidDefinitionError(
                 "If different AssetSpecs have different partitions_defs, can_subset must be True"
             )
@@ -422,7 +424,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     @beta_param(param="resource_defs")
-    @deprecated_param(param="legacy_freshness_policies_by_output_name", breaking_version="1.12.0")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -439,8 +440,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         descriptions_by_output_name: Mapping[str, str] | None = None,
         metadata_by_output_name: Mapping[str, ArbitraryMetadataMapping | None] | None = None,
         tags_by_output_name: Mapping[str, Mapping[str, str] | None] | None = None,
-        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy | None]
-        | None = None,
         automation_conditions_by_output_name: Mapping[str, AutomationCondition | None]
         | None = None,
         backfill_policy: BackfillPolicy | None = None,
@@ -499,17 +498,14 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 tags to be associated with each of the output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
-            legacy_freshness_policies_by_output_name (Optional[Mapping[str, Optional[LegacyFreshnessPolicy]]]): Defines a
-                LegacyFreshnessPolicy to be associated with some or all of the output assets for this node.
-                Keys are the names of the outputs, and values are the LegacyFreshnessPolicies to be attached
-                to the associated asset.
             automation_conditions_by_output_name (Optional[Mapping[str, Optional[AutomationCondition]]]): Defines an
                 AutomationCondition to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
-            owners_by_key (Optional[Mapping[AssetKey, Sequence[str]]]): Defines
-                owners to be associated with each of the asset keys for this node.
+            owners_by_output_name (Optional[Mapping[str, Sequence[str]]]): Defines the owners to be
+                associated with each of the output assets for this node. Keys are names of the
+                outputs, and values are sequences of owner strings (user emails or team names).
 
         """
         return AssetsDefinition._from_node(
@@ -527,7 +523,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             tags_by_output_name=tags_by_output_name,
-            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=_resolve_automation_conditions_by_output_name(
                 automation_conditions_by_output_name,
                 auto_materialize_policies_by_output_name,
@@ -541,7 +536,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     @staticmethod
-    @deprecated_param(param="legacy_freshness_policies_by_output_name", breaking_version="1.12.0")
     def from_op(
         op_def: OpDefinition,
         *,
@@ -556,8 +550,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         descriptions_by_output_name: Mapping[str, str] | None = None,
         metadata_by_output_name: Mapping[str, ArbitraryMetadataMapping | None] | None = None,
         tags_by_output_name: Mapping[str, Mapping[str, str] | None] | None = None,
-        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy | None]
-        | None = None,
         automation_conditions_by_output_name: Mapping[str, AutomationCondition | None]
         | None = None,
         backfill_policy: BackfillPolicy | None = None,
@@ -609,10 +601,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 tags to be associated with each othe output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
-            legacy_freshness_policies_by_output_name (Optional[Mapping[str, Optional[LegacyFreshnessPolicy]]]): Defines a
-                LegacyFreshnessPolicy to be associated with some or all of the output assets for this node.
-                Keys are the names of the outputs, and values are the LegacyFreshnessPolicies to be attached
-                to the associated asset.
             automation_conditions_by_output_name (Optional[Mapping[str, Optional[AutomationCondition]]]): Defines an
                 AutomationCondition to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
@@ -632,7 +620,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             descriptions_by_output_name=descriptions_by_output_name,
             metadata_by_output_name=metadata_by_output_name,
             tags_by_output_name=tags_by_output_name,
-            legacy_freshness_policies_by_output_name=legacy_freshness_policies_by_output_name,
             automation_conditions_by_output_name=_resolve_automation_conditions_by_output_name(
                 automation_conditions_by_output_name,
                 auto_materialize_policies_by_output_name,
@@ -658,8 +645,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         descriptions_by_output_name: Mapping[str, str] | None = None,
         metadata_by_output_name: Mapping[str, ArbitraryMetadataMapping | None] | None = None,
         tags_by_output_name: Mapping[str, Mapping[str, str] | None] | None = None,
-        legacy_freshness_policies_by_output_name: Mapping[str, LegacyFreshnessPolicy | None]
-        | None = None,
         code_versions_by_output_name: Mapping[str, str | None] | None = None,
         automation_conditions_by_output_name: Mapping[str, AutomationCondition | None]
         | None = None,
@@ -770,9 +755,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             tags_by_key=_output_dict_to_asset_dict(tags_by_output_name),
             owners_by_key=_output_dict_to_asset_dict(owners_by_output_name),
             group_names_by_key=group_names_by_key,
-            legacy_freshness_policies_by_key=_output_dict_to_asset_dict(
-                legacy_freshness_policies_by_output_name
-            ),
+            legacy_freshness_policies_by_key=None,
             automation_conditions_by_key=_output_dict_to_asset_dict(
                 automation_conditions_by_output_name
             ),
@@ -976,7 +959,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         }
 
     @cached_property
-    def entity_keys_by_output_name(self) -> Mapping[str, EntityKey]:
+    def entity_keys_by_output_name(self) -> Mapping[str, AssetOrCheckKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -986,11 +969,11 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         )
 
     @cached_property
-    def output_names_by_entity_key(self) -> Mapping[EntityKey, str]:
+    def output_names_by_entity_key(self) -> Mapping[AssetOrCheckKey, str]:
         return reverse_dict(self.entity_keys_by_output_name)
 
     @property
-    def asset_and_check_keys(self) -> AbstractSet[EntityKey]:
+    def asset_and_check_keys(self) -> AbstractSet[AssetOrCheckKey]:
         return set(self.keys).union(self.check_keys)
 
     @cached_property
@@ -1297,9 +1280,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             ) -> None:
                 if isinstance(new_value, Mapping):
                     if key in new_value:
-                        replace_dict[attr_name] = new_value[key]
+                        replace_dict[attr_name] = new_value[key]  # ty: ignore[invalid-assignment, invalid-argument-type]
                 elif new_value:
-                    replace_dict[attr_name] = new_value
+                    replace_dict[attr_name] = new_value  # ty: ignore[invalid-assignment]
 
                 old_value = getattr(spec, attr_name)
                 if old_value and old_value != default_value and attr_name in replace_dict:
@@ -1417,7 +1400,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             selected_asset_keys, selected_asset_check_keys
         )
         return self.__class__.dagster_internal_init(
-            **{
+            **{  # ty: ignore[invalid-argument-type]
                 **self.get_attributes_dict(),
                 "node_def": subsetted_computation.node_def,
                 "selected_asset_keys": subsetted_computation.selected_asset_keys,
@@ -1980,7 +1963,7 @@ def get_partition_mappings_from_deps(
     return partition_mappings
 
 
-def unique_id_from_asset_and_check_keys(entity_keys: Iterable["EntityKey"]) -> str:
+def unique_id_from_asset_and_check_keys(entity_keys: Iterable["AssetOrCheckKey"]) -> str:
     """Generate a unique ID from the provided asset keys.
 
     This is useful for generating op names that don't have collisions.
@@ -2008,7 +1991,7 @@ def replace_specs_on_asset(
     # If there are no changes to the dependency structure, we don't need to make any changes to the underlying node.
     if not assets_def.is_executable or (not added_dep_keys and not removed_dep_keys):
         return assets_def.__class__.dagster_internal_init(
-            **{**assets_def.get_attributes_dict(), "specs": replaced_specs}
+            **{**assets_def.get_attributes_dict(), "specs": replaced_specs}  # ty: ignore[invalid-argument-type]
         )
 
     # Otherwise, there are changes to the dependency structure. We need to update the node_def.
@@ -2043,7 +2026,7 @@ def replace_specs_on_asset(
     )
 
     return assets_def.__class__.dagster_internal_init(
-        **{
+        **{  # ty: ignore[invalid-argument-type]
             **assets_def.get_attributes_dict(),
             "node_def": assets_def.op.with_replaced_properties(
                 name=assets_def.op.name, ins=all_ins

@@ -203,13 +203,13 @@ def test_wrong_argument_to_job():
         dg.DagsterInvalidDefinitionError,
         match="You have passed a lambda or function non_solid_func",
     ):
-        dg.GraphDefinition(node_defs=[non_solid_func], name="test")  # pyright: ignore[reportArgumentType]
+        dg.GraphDefinition(node_defs=[non_solid_func], name="test")  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
         match="You have passed a lambda or function <lambda>",
     ):
-        dg.GraphDefinition(node_defs=[lambda x: x], name="test")  # pyright: ignore[reportArgumentType]
+        dg.GraphDefinition(node_defs=[lambda x: x], name="test")  # ty: ignore[invalid-argument-type]
 
 
 def test_descriptions():
@@ -288,28 +288,28 @@ def test_op_docstring():
 
     assert foo_op.__doc__ == "FOO_DOCSTRING."
     assert foo_op.description == "FOO_DOCSTRING."
-    assert foo_op.__name__ == "foo_op"
+    assert foo_op.__name__ == "foo_op"  # ty: ignore[unresolved-attribute]
     assert bar_op.__doc__ == "BAR_DOCSTRING."
     assert bar_op.description == "BAR_DOCSTRING."
-    assert bar_op.__name__ == "bar_op"
+    assert bar_op.__name__ == "bar_op"  # ty: ignore[unresolved-attribute]
     assert baz_op.__doc__ == "BAZ_DOCSTRING."
     assert baz_op.description == "BAZ_DOCSTRING."
-    assert baz_op.__name__ == "baz_op"
+    assert baz_op.__name__ == "baz_op"  # ty: ignore[unresolved-attribute]
     assert quux_op.__doc__ == "QUUX_DOCSTRING."
     assert quux_op.description == "QUUX_DOCSTRING."
-    assert quux_op.__name__ == "quux_op"
+    assert quux_op.__name__ == "quux_op"  # ty: ignore[unresolved-attribute]
     assert comp_graph.__doc__ == "COMP_DOCSTRING."
     assert comp_graph.description == "COMP_DOCSTRING."
-    assert comp_graph.__name__ == "comp_graph"
+    assert comp_graph.__name__ == "comp_graph"  # ty: ignore[unresolved-attribute]
     assert the_job.__doc__ == "THE_DOCSTRING."
     assert the_job.description == "THE_DOCSTRING."
-    assert the_job.__name__ == "the_job"  # pyright: ignore[reportAttributeAccessIssue]
+    assert the_job.__name__ == "the_job"  # ty: ignore[unresolved-attribute]
     assert the_op.__doc__ == "OP_DOCSTRING."
     assert the_op.description == "OP_DOCSTRING."
-    assert the_op.__name__ == "the_op"
+    assert the_op.__name__ == "the_op"  # ty: ignore[unresolved-attribute]
     assert the_graph.__doc__ == "GRAPH_DOCSTRING."
     assert the_graph.description == "GRAPH_DOCSTRING."
-    assert the_graph.__name__ == "the_graph"
+    assert the_graph.__name__ == "the_graph"  # ty: ignore[unresolved-attribute]
 
 
 def test_op_yields_single_bare_value():
@@ -418,7 +418,7 @@ def test_ins():
 
 
 def test_ins_dagster_types():
-    assert dg.In(dagster_type=None)  # pyright: ignore[reportArgumentType]
+    assert dg.In(dagster_type=None)  # ty: ignore[invalid-argument-type]
     assert dg.In(dagster_type=int)
     assert dg.In(dagster_type=list)
     assert dg.In(dagster_type=list[int])  # typing type
@@ -854,13 +854,13 @@ def test_yield_event_ordering():
         assert log.user_message == "A log"
 
         first = relevant_event_logs[0]
-        assert first.dagster_event.event_specific_data.materialization.label == "first"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert first.dagster_event.event_specific_data.materialization.label == "first"  # ty: ignore[unresolved-attribute]
 
         second = relevant_event_logs[1]
-        assert second.dagster_event.event_specific_data.materialization.label == "second"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert second.dagster_event.event_specific_data.materialization.label == "second"  # ty: ignore[unresolved-attribute]
 
         third = relevant_event_logs[2]
-        assert third.dagster_event.event_specific_data.materialization.label == "third"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+        assert third.dagster_event.event_specific_data.materialization.label == "third"  # ty: ignore[unresolved-attribute]
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
@@ -876,8 +876,8 @@ def test_metadata_logging():
     assert result.success
     assert result.output_for_node("basic") == "baz"
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata) == 1  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert events[1].event_specific_data.metadata["foo"].text == "bar"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert len(events[1].event_specific_data.metadata) == 1
+    assert events[1].event_specific_data.metadata["foo"].text == "bar"
 
 
 def test_metadata_logging_multiple_entries():
@@ -890,9 +890,9 @@ def test_metadata_logging_multiple_entries():
     result = execute_op_in_graph(basic)
     assert result.success
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata) == 2  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert events[1].event_specific_data.metadata["foo"].text == "second_value"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert events[1].event_specific_data.metadata["boo"].text == "bot"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert len(events[1].event_specific_data.metadata) == 2
+    assert events[1].event_specific_data.metadata["foo"].text == "second_value"
+    assert events[1].event_specific_data.metadata["boo"].text == "bot"
 
 
 def test_log_event_multi_output():
@@ -923,8 +923,8 @@ def test_log_metadata_multi_output():
     first_output_event = events[1]
     second_output_event = events[3]
 
-    assert "foo" in first_output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert "bar" in second_output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "foo" in first_output_event.event_specific_data.metadata
+    assert "bar" in second_output_event.event_specific_data.metadata
 
 
 def test_log_metadata_after_output():
@@ -959,17 +959,17 @@ def test_log_metadata_multiple_dynamic_outputs():
     assert result.success
     events = result.all_node_events
     output_event_one = events[1]
-    assert output_event_one.event_specific_data.mapping_key == "one"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert "one" in output_event_one.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert output_event_one.event_specific_data.mapping_key == "one"
+    assert "one" in output_event_one.event_specific_data.metadata
     output_event_two = events[3]
-    assert output_event_two.event_specific_data.mapping_key == "two"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert "two" in output_event_two.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert output_event_two.event_specific_data.mapping_key == "two"
+    assert "two" in output_event_two.event_specific_data.metadata
     output_event_three = events[5]
-    assert output_event_three.event_specific_data.mapping_key == "three"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert "three" in output_event_three.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert output_event_three.event_specific_data.mapping_key == "three"
+    assert "three" in output_event_three.event_specific_data.metadata
     output_event_four = events[7]
-    assert output_event_four.event_specific_data.mapping_key == "four"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    assert "four" in output_event_four.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert output_event_four.event_specific_data.mapping_key == "four"
+    assert "four" in output_event_four.event_specific_data.metadata
 
 
 def test_log_metadata_after_dynamic_output():
@@ -1201,9 +1201,9 @@ def test_generic_dynamic_output():
 def test_generic_dynamic_output_type_mismatch():
     @dg.op
     def basic() -> list[dg.DynamicOutput[int]]:
-        return [
+        return [  # ty: ignore[invalid-return-type]
             dg.DynamicOutput(mapping_key="1", value=1),
-            dg.DynamicOutput(mapping_key="2", value="2"),  # type: ignore
+            dg.DynamicOutput(mapping_key="2", value="2"),
         ]
 
     with pytest.raises(
@@ -1254,11 +1254,11 @@ def test_generic_dynamic_output_mix_with_regular():
 def test_generic_dynamic_output_mix_with_regular_type_mismatch():
     @dg.op(out={"regular": dg.Out(), "dynamic": dg.DynamicOut()})
     def basic() -> tuple[dg.Output[int], list[dg.DynamicOutput[str]]]:
-        return (
+        return (  # ty: ignore[invalid-return-type]
             dg.Output(5),
             [
                 dg.DynamicOutput(mapping_key="1", value="foo"),
-                dg.DynamicOutput(mapping_key="2", value=5),  # type: ignore
+                dg.DynamicOutput(mapping_key="2", value=5),
             ],
         )
 
