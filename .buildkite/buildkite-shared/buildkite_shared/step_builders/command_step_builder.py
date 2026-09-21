@@ -110,13 +110,9 @@ class CommandStepBuilder:
         self._k8s_secrets = []
         self._k8s_volume_mounts = []
         self._k8s_volumes = []
-        self._docker_settings = None
-        # Concrete env vars set via `.with_env({...})`. Source of truth on
-        # both queue paths: on k8s these become podSpec container env
-        # entries; on docker they're merged into the docker plugin's
-        # `environment` list as `KEY=value`. Bare-name passthroughs belong
-        # in the `on_*_image(env=[...])` parameter / agent envFrom chain —
-        # not here.
+        self._image_settings = None
+        # Concrete env vars set via `.with_env({...})`; these become podSpec
+        # container env entries.
         self._env: dict[str, str] = {}
 
         retry: dict[str, Any] = {
@@ -192,54 +188,43 @@ class CommandStepBuilder:
         self,
         image: str,
         *,
-        env: list[str] | None = None,
         account_id: str | None = AWS_ACCOUNT_ID,
         region: str = AWS_ECR_REGION,
     ) -> Self:
-        settings = self._base_docker_settings(env)
-        settings["image"] = f"{account_id}.dkr.ecr.{region}.amazonaws.com/{image}"
-        settings["network"] = "kind"
-        self._docker_settings = settings
+        self._image_settings = {"image": f"{account_id}.dkr.ecr.{region}.amazonaws.com/{image}"}
         return self
 
     def on_specific_image(
         self, image: str, extra_docker_plugin_args: dict[str, object] = {}
     ) -> Self:
         settings = {"image": image, **extra_docker_plugin_args}
-        if self._docker_settings:
-            self._docker_settings.update(settings)
+        if self._image_settings:
+            self._image_settings.update(settings)
         else:
-            self._docker_settings = settings
+            self._image_settings = settings
         return self
 
     def on_test_image(
         self,
         ver: str = AvailablePythonVersion.get_cloud().value,
         image_version: str = BUILDKITE_TEST_IMAGE_VERSION,
-        env: list[str] | None = None,
     ) -> Self:
         return self.on_python_image(
             image=f"buildkite-test:py{ver}-{image_version}",
-            env=env,
         ).with_ecr_login()
 
-    def on_integration_slim_image(self, env: list[str] | None = None) -> Self:
-        return self.on_python_image(
-            image=BUILDKITE_TEST_IMAGE_PY_SLIM,
-            env=env,
-        )
+    def on_integration_slim_image(self) -> Self:
+        return self.on_python_image(image=BUILDKITE_TEST_IMAGE_PY_SLIM)
 
     def on_integration_image(
         self,
         ver: str = AvailablePythonVersion.get_cloud().value,
-        env: list[str] | None = None,
         image_name: str = BASE_IMAGE_NAME,
         image_version: str = BASE_IMAGE_TAG,
         ecr_account_ids: list[str | None] = [AWS_ACCOUNT_ID],
     ) -> Self:
         return self.on_python_image(
             image=f"{image_name}:py{ver}-{image_version}",
-            env=env,
         ).with_ecr_login(ecr_account_ids)
 
     def with_ecr_login(self, ecr_account_ids: list[str | None] = [AWS_ACCOUNT_ID]) -> Self:
@@ -253,26 +238,6 @@ class CommandStepBuilder:
                     "region": "us-west-2",
                 }
             }
-        )
-        return self
-
-    def with_ecr_passthru(self) -> Self:
-        assert self._docker_settings
-        assert self._docker_settings["environment"]
-        assert self._docker_settings["volumes"]
-        self._docker_settings["environment"] = [
-            *self._docker_settings["environment"],
-            "BUILDKITE_DOCKER_CONFIG_TEMP_DIRECTORY",
-            "DOCKER_CONFIG=/tmp/.docker",
-        ]
-        self._docker_settings["volumes"] = list(
-            set(
-                [
-                    *[v for v in self._docker_settings["volumes"]],
-                    # share auth with the docker buildkite-test
-                    "$$BUILDKITE_DOCKER_CONFIG_TEMP_DIRECTORY/config.json:/tmp/.docker/config.json",
-                ]
-            )
         )
         return self
 
@@ -357,69 +322,10 @@ class CommandStepBuilder:
             },
         }
 
-    def _base_docker_settings(self, env: list[str] | None = None) -> dict[str, object]:
-        return {
-            "shell": ["/bin/bash", "-xeuc"],
-            "mount-ssh-agent": True,
-            "propagate-environment": False,
-            "expand-volume-vars": True,
-            "volumes": ["/var/run/docker.sock:/var/run/docker.sock", "/tmp:/tmp"],
-            "environment": [
-                "PYTEST_ADDOPTS",
-                "PYTEST_PLUGINS",
-                "BUILDKITE",
-                "BUILDKITE_BUILD_CHECKOUT_PATH",
-                "BUILDKITE_BUILD_URL",
-                "BUILDKITE_ORGANIZATION_SLUG",
-                "BUILDKITE_PIPELINE_SLUG",
-                "BUILDKITE_BRANCH",
-                "BUILDKITE_COMMIT",
-                "BUILDKITE_MESSAGE",
-            ]
-            + [
-                # these are exposed via the ECR plugin and then threaded through
-                # to kubernetes. see https://github.com/buildkite-plugins/ecr-buildkite-plugin
-                "AWS_SECRET_ACCESS_KEY",
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SESSION_TOKEN",
-                "AWS_REGION",
-                "AWS_ACCOUNT_ID",
-                "UV_DEFAULT_INDEX",
-                # `uv`'s 48h-old-package cutoff, set in the buildkite pre-command
-                # hook to mirror the workspace's `[tool.uv].exclude-newer`. Has
-                # to be allowlisted here or it gets stripped at the docker
-                # boundary (`propagate-environment: False` above).
-                "UV_EXCLUDE_NEWER",
-                # `tox` CLI-override that appends `UV_*` to every testenv's
-                # passenv so the cutoff above survives into the test subprocess
-                # — same docker-boundary reason.
-                "TOX_OVERRIDE",
-            ]
-            + [
-                # needed by our own stuff
-                "DAGSTER_INTERNAL_GIT_REPO_DIR",
-                "DAGSTER_GIT_REPO_DIR",
-                "COMBINED_COMMIT_HASH",
-                "DAGSTER_COMMIT_HASH",
-                "INTERNAL_COMMIT_HASH",
-            ]
-            + [
-                # tox related env variables. ideally these are in
-                # the test specification themselves, but for now this is easier
-                "AWS_DEFAULT_REGION",
-                "SNOWFLAKE_ACCOUNT",
-                "SNOWFLAKE_USER",
-                "SNOWFLAKE_PASSWORD",
-            ]
-            + ["PYTEST_DEBUG_TEMPROOT=/tmp"]
-            + (env or []),
-            "mount-buildkite-agent": True,
-        }
-
     def _base_k8s_settings(self) -> Mapping[Any, Any]:
         buildkite_shell = "/bin/bash -e -c"
-        assert self._docker_settings
-        image = str(self._docker_settings["image"])
+        assert self._image_settings
+        image = str(self._image_settings["image"])
         # no skip
         if image == "hashicorp/terraform:light" or "/datadog-ci:" in image or "/alpine:" in image:
             buildkite_shell = "/bin/sh -e -c"
@@ -599,7 +505,7 @@ class CommandStepBuilder:
                 "serviceAccountName": "buildkite-job",
                 "containers": [
                     {
-                        "image": self._docker_settings["image"],
+                        "image": self._image_settings["image"],
                         "env": [
                             {
                                 "name": "BUILDKITE_SHELL",
@@ -644,17 +550,10 @@ class CommandStepBuilder:
         # to actually execute the specified command (like "terraform fmt -check
         # -recursive"). Some images require /bin/bash, others don't have it, so
         # there's some setting munging done in _base_k8s_settings as well.
-        if self._docker_settings:
+        if self._image_settings:
             k8s_settings = self._base_k8s_settings()
-            # Propagate concrete env vars set via .with_env({...}) into
-            # the pod's container env. Intentionally do NOT auto-pickup
-            # KEY=value entries from self._docker_settings["environment"]:
-            # that list holds docker-plugin-specific settings like
-            # `DOCKER_CONFIG=/tmp/.docker` (added by with_ecr_passthru())
-            # which have no meaning on k8s and actively break ECR auth
-            # here — EKS pods get ECR auth via the ecr-docker-login
-            # initContainer writing /work/.docker/config.json, not via
-            # DOCKER_CONFIG redirection.
+            # Propagate concrete env vars set via .with_env({...}) into the
+            # pod's container env.
             container_env = k8s_settings["podSpec"]["containers"][0]["env"]
             container_env.extend({"name": k, "value": v} for k, v in self._env.items())
             self._step["plugins"] = [{"kubernetes": k8s_settings}]
@@ -663,7 +562,7 @@ class CommandStepBuilder:
             # the user container under agent-stack-k8s; exported env vars
             # are visible to subsequent command hooks. setdefault guards
             # the unusual case where a step has _secrets without
-            # _docker_settings.
+            # _image_settings.
             self._step.setdefault("plugins", []).append(
                 {SM_PLUGIN: {"region": "us-west-1", "env": self._secrets}}
             )

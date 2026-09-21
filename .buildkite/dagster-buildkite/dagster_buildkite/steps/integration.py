@@ -185,14 +185,6 @@ def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelSte
     return PackageSpec(
         oss_path(os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests")),
         skip_run_fn=skip_if_not_azure_commit,
-        env_vars=[
-            "TEST_AZURE_TENANT_ID",
-            "TEST_AZURE_CLIENT_ID",
-            "TEST_AZURE_CLIENT_SECRET",
-            "TEST_AZURE_STORAGE_ACCOUNT_ID",
-            "TEST_AZURE_CONTAINER_ID",
-            "TEST_AZURE_ACCESS_KEY",
-        ],
     ).build_steps(ctx)
 
 
@@ -251,14 +243,6 @@ def build_integration_suite_steps(
 ) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         directory,
-        env_vars=[
-            "AIRFLOW_HOME",
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GOOGLE_APPLICATION_CREDENTIALS",
-        ],
         pytest_extra_cmds=pytest_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=pytest_tox_factors,

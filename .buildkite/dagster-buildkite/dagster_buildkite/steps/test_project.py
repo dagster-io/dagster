@@ -69,13 +69,6 @@ def build_test_project_steps() -> list[GroupStepConfiguration]:
         .skip(skip_if_version_not_needed(version))
         .on_python_image(
             image=f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
-            env=[
-                "AIRFLOW_HOME",
-                "AWS_ACCOUNT_ID",
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-            ],
         )
         .with_ecr_login()
         .with_docker()  # build.sh runs `docker build`; final step `docker push`

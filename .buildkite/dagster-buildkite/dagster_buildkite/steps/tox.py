@@ -31,7 +31,6 @@ def build_tox_step(
     tox_file: str | None = None,
     extra_commands_pre: list[str] | None = None,
     extra_commands_post: list[str] | None = None,
-    env: list[str] | None = None,
     depends_on: list[str] | Sequence[str] | None = None,
     timeout_in_minutes: int | None = None,
     skip_reason: str | None = None,
@@ -40,7 +39,6 @@ def build_tox_step(
     concurrency_group: str | None = None,
     resources: ResourceRequests | None = None,
     soft_fail: bool = False,
-    ecr_passthru: bool = False,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
@@ -59,7 +57,6 @@ def build_tox_step(
         tox_file=tox_file,
         extra_commands_pre=extra_commands_pre,
         extra_commands_post=extra_commands_post,
-        env=env,
         # OSS tox suites broadly use docker-compose-backed fixtures (postgres,
         # redis, kafka, redpanda), so opt the whole factory in.
         with_docker=True,
@@ -72,7 +69,6 @@ def build_tox_step(
         concurrency_group=concurrency_group,
         resources=resources,
         soft_fail=soft_fail,
-        ecr_passthru=ecr_passthru,
         section_header=section_header,
     )
 

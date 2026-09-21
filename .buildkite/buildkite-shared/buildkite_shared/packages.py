@@ -139,9 +139,9 @@ class PackageSpec:
         python version (the "cloud" version).
 
     Image selection:
-      * `image="test"` (default): `.on_test_image(python_version, env=env_vars)`.
-      * `image="integration"`: `.on_integration_image(env=env_vars, ecr_account_ids=ecr_account_ids)`.
-      * `image="integration_slim"`: `.on_integration_slim_image(env=env_vars)`.
+      * `image="test"` (default): `.on_test_image(python_version)`.
+      * `image="integration"`: `.on_integration_image(ecr_account_ids=ecr_account_ids)`.
+      * `image="integration_slim"`: `.on_integration_slim_image()`.
 
     Group wrapping: `is_group=None` (default) wraps in a GroupStep only when
     there are 2+ resulting steps. `is_group=True/False` forces the behavior.
@@ -183,7 +183,6 @@ class PackageSpec:
     resources: ResourceRequests | None = None
     concurrency: int | None = None
     concurrency_group: str | None = None
-    env_vars: list[str] | None = None
 
     # Pre/post commands
     pytest_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
@@ -203,7 +202,6 @@ class PackageSpec:
     # Image / docker
     image: ToxImage = "test"
     with_docker: bool = True
-    ecr_passthru: bool = False
     ecr_account_ids: list[str | None] | None = None
 
     # Group wrapping
@@ -446,7 +444,6 @@ class PackageSpec:
                     tox_file=self.tox_file,
                     extra_commands_pre=extra_pre,
                     extra_commands_post_cd=extra_post_cd,
-                    env=self.env_vars,
                     image=resolved_image,
                     python_version=py_version if resolved_image == "test" else None,
                     ecr_account_ids=self.ecr_account_ids,
@@ -471,7 +468,6 @@ class PackageSpec:
                     ),
                     soft_fail=factor.soft_fail if factor else False,
                     with_docker=self.with_docker,
-                    ecr_passthru=self.ecr_passthru,
                     command_wrapper=self.command_wrapper,
                     mutator=self.mutator,
                 )
@@ -540,7 +536,6 @@ class PackageSpec:
                 tox_file=self.tox_file,
                 extra_commands_pre=extra_pre,
                 extra_commands_post_cd=extra_post_cd,
-                env=self.env_vars,
                 image=resolved_image,
                 python_version=py_version if resolved_image == "test" else None,
                 ecr_account_ids=self.ecr_account_ids,
@@ -563,7 +558,6 @@ class PackageSpec:
                 ),
                 soft_fail=True,
                 with_docker=self.with_docker,
-                ecr_passthru=self.ecr_passthru,
                 command_wrapper=_refresh_wrapper,
                 mutator=self.mutator,
             )
