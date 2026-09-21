@@ -26,6 +26,7 @@ export const PageHeader = (props: Props) => {
     >
       {title && (
         <Box
+          className={styles.titleRow}
           padding={{vertical: 8}}
           style={{minHeight: 52, alignContent: 'center'}}
           flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8}}

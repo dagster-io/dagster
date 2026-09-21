@@ -55,9 +55,11 @@ interface Props {
   run: RunActionsMenuRunFragment;
   onAddTag?: (token: RunFilterToken) => void;
   anchorLabel?: React.ReactNode;
+  // Render only the dropdown trigger, without the "View run" anchor button.
+  iconOnly?: boolean;
 }
 
-export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) => {
+export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel, iconOnly}: Props) => {
   const canCreateIssue = useCanCreateIssueForRun(run.status);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
@@ -124,8 +126,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
   return (
     <>
       {reexecute.launchpadElement}
-      <JoinedButtons>
-        <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
+      <MenuAnchorWrapper iconOnly={!!iconOnly} runId={run.id} anchorLabel={anchorLabel}>
         <Popover
           content={
             <Menu>
@@ -243,9 +244,9 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
             }
           }}
         >
-          <Button icon={<Icon name="expand_more" />} />
+          <Button icon={<Icon name="expand_more" />} aria-label="Run actions" />
         </Popover>
-      </JoinedButtons>
+      </MenuAnchorWrapper>
       {run.hasTerminatePermission ? (
         <TerminationDialog
           isOpen={visibleDialog === 'terminate'}
@@ -502,3 +503,25 @@ export const PIPELINE_ENVIRONMENT_QUERY = gql`
     }
   }
 `;
+
+const MenuAnchorWrapper = ({
+  iconOnly,
+  runId,
+  anchorLabel,
+  children,
+}: {
+  iconOnly: boolean;
+  runId: string;
+  anchorLabel: React.ReactNode;
+  children: React.ReactNode;
+}) => {
+  if (iconOnly) {
+    return <>{children}</>;
+  }
+  return (
+    <JoinedButtons>
+      <AnchorButton to={`/runs/${runId}`}>{anchorLabel ?? 'View run'}</AnchorButton>
+      {children}
+    </JoinedButtons>
+  );
+};

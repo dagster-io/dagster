@@ -2,6 +2,7 @@ import clsx from 'clsx';
 import * as React from 'react';
 
 import styles from './css/LogsScrollingTableHeader.module.css';
+import {LayoutContext} from '../app/LayoutProvider';
 import {getJSONForKey} from '../util/getJSONForKey';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';
@@ -21,7 +22,7 @@ export const ColumnWidthsContext = React.createContext({
   onChange: (_: typeof ColumnWidths) => {},
 });
 
-export class ColumnWidthsProvider extends React.Component<
+class ColumnWidthsProviderDesktop extends React.Component<
   {children: React.ReactNode; onWidthsChanged?: (widths: typeof ColumnWidths) => void},
   typeof ColumnWidths
 > {
@@ -48,6 +49,30 @@ export class ColumnWidthsProvider extends React.Component<
     );
   }
 }
+
+// On mobile the columns are fixed narrow widths (no resizing), and the Op
+// column is hidden so the log message keeps a usable width.
+const MOBILE_COLUMN_WIDTHS = {
+  eventType: 108,
+  solid: 0,
+  timestamp: 117,
+};
+
+export const ColumnWidthsProvider = (props: {
+  children: React.ReactNode;
+  onWidthsChanged?: (widths: typeof ColumnWidths) => void;
+}) => {
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+  const mobileValue = React.useMemo(() => ({...MOBILE_COLUMN_WIDTHS, onChange: () => {}}), []);
+  if (isMobileScreen) {
+    return (
+      <ColumnWidthsContext.Provider value={mobileValue}>
+        {props.children}
+      </ColumnWidthsContext.Provider>
+    );
+  }
+  return <ColumnWidthsProviderDesktop {...props} />;
+};
 
 interface HeaderProps extends Omit<React.HTMLProps<HTMLDivElement>, 'onResize'> {
   width: number;
@@ -128,6 +153,7 @@ export class Header extends React.Component<HeaderProps, HeaderState> {
 
 export const Headers = () => {
   const widths = React.useContext(ColumnWidthsContext);
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
   return (
     <HeadersContainer>
       <Header
@@ -136,9 +162,14 @@ export const Headers = () => {
       >
         Timestamp
       </Header>
-      <Header width={widths.solid} onResize={(width) => widths.onChange({...widths, solid: width})}>
-        Op
-      </Header>
+      {!isMobileScreen ? (
+        <Header
+          width={widths.solid}
+          onResize={(width) => widths.onChange({...widths, solid: width})}
+        >
+          Op
+        </Header>
+      ) : null}
       <Header
         width={widths.eventType}
         onResize={(width) => widths.onChange({...widths, eventType: width})}

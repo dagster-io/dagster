@@ -17,3 +17,11 @@
 .refreshButton :global(.iconGlobal):hover {
   color: var(--color-accent-gray-hover);
 }
+
+/* Keep in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .refreshButton {
+    padding: 14px;
+    margin: -14px;
+  }
+}

@@ -1,5 +1,5 @@
 import {Box, Button, Icon, Tooltip, showToast} from '@dagster-io/ui-components';
-import {useCallback, useState} from 'react';
+import {useCallback, useContext, useState} from 'react';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
@@ -11,7 +11,9 @@ import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
+import {LayoutContext} from '../app/LayoutProvider';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
+import {withMiddleTruncation} from '../app/Util';
 import {ReexecutionStrategy} from '../graphql/types';
 import {isNewTabClick} from '../hooks/useOpenInNewTab';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
@@ -267,6 +269,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
   const primary = artifactsPersisted && preferredRerun ? preferredRerun : full;
 
+  const {isMobileScreen} = useContext(LayoutContext).nav;
+
   const tooltip = () => {
     if (jobError?.tooltip) {
       return jobError?.tooltip;
@@ -275,7 +279,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   };
 
   return (
-    <Box flex={{direction: 'row', gap: 8}}>
+    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
       <Box flex={{direction: 'row'}}>
         <LaunchButtonDropdown
           runCount={1}
@@ -285,7 +289,9 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             primary.scope === '*'
               ? `Re-execute all (*)`
               : primary.scope
-                ? `Re-execute (${primary.scope})`
+                ? // On mobile, long step/asset names would otherwise push the button
+                  // offscreen. Desktop shows the full scope unchanged.
+                  `Re-execute (${isMobileScreen ? withMiddleTruncation(primary.scope, {maxLength: 24}) : primary.scope})`
                 : `Re-execute ${primary.title}`
           }
           tooltip={tooltip()}

@@ -44,3 +44,28 @@
   vertical-align: top;
   box-shadow: none !important;
 }
+
+/* On narrow screens the two-column layout squeezes values to a few
+   characters per line; stack the key above the value instead. The row and
+   cells carry inline flex styles, so these need !important. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .structuredContentTable,
+  .structuredContentTable tbody,
+  .structuredContentTable tbody > tr,
+  .structuredContentTable tbody > tr > td {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .structuredContentTable tbody > tr > td {
+    border-right: none;
+  }
+
+  .structuredContentTable td:first-child {
+    padding-bottom: 0;
+    border-bottom: none;
+    font-size: 11px;
+  }
+}

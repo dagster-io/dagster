@@ -3,6 +3,7 @@ import {
   Button,
   Icon,
   Menu,
+  MenuDivider,
   MenuItem,
   Popover,
   Tooltip,
@@ -27,6 +28,7 @@ import {useMutation} from '../apollo-client';
 import {isExternalRun} from './externalRuns';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
+import {LayoutContext} from '../app/LayoutProvider';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
 import {
@@ -34,6 +36,7 @@ import {
   FreeConcurrencySlotsMutationVariables,
 } from '../instance/types/ConcurrencyQueries.types';
 import {AnchorButton} from '../ui/AnchorButton';
+import {MenuLink} from '../ui/MenuLink';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
 type VisibleDialog =
@@ -55,6 +58,9 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   const {rootServerURI} = useContext(AppContext);
   const {refetch} = useContext(RunsQueryRefetchContext);
+  // On a phone the header keeps a single overflow menu; the job link, tags
+  // and pools buttons move inside it so the run status and logs stay above the fold.
+  const {isMobileScreen} = useContext(LayoutContext).nav;
 
   const history = useHistory();
 
@@ -83,9 +89,9 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   return (
     <div>
-      <Box flex={{direction: 'row', gap: 8}}>
+      <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
         <RunAlertNotifications runId={run.id} />
-        {jobLink.disabledReason ? (
+        {isMobileScreen ? null : jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason}>
             <Button icon={<Icon name={jobLink.icon} />} disabled>
               {jobLink.label}
@@ -96,19 +102,44 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             {jobLink.label}
           </AnchorButton>
         )}
-        <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
-          View tags and config
-        </Button>
-        {run.allPools && run.allPools.length ? (
+        {isMobileScreen ? null : (
+          <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
+            View tags and config
+          </Button>
+        )}
+        {!isMobileScreen && run.allPools && run.allPools.length ? (
           <Tooltip content="View pools" position="top">
             <Button icon={<Icon name="concurrency" />} onClick={() => setVisibleDialog('pools')} />
           </Tooltip>
         ) : null}
-        {!isExternalRun(run) || run.hasDeletePermission ? (
+        {isMobileScreen || !isExternalRun(run) || run.hasDeletePermission ? (
           <Popover
             position="bottom-right"
             content={
               <Menu>
+                {isMobileScreen ? (
+                  <>
+                    <MenuLink
+                      icon={jobLink.icon}
+                      text={jobLink.label}
+                      to={jobLink.to}
+                      disabled={!!jobLink.disabledReason}
+                    />
+                    <MenuItem
+                      icon="tag"
+                      text="View tags and config"
+                      onClick={() => setVisibleDialog('config')}
+                    />
+                    {run.allPools && run.allPools.length ? (
+                      <MenuItem
+                        icon="concurrency"
+                        text="View pools"
+                        onClick={() => setVisibleDialog('pools')}
+                      />
+                    ) : null}
+                    <MenuDivider />
+                  </>
+                ) : null}
                 {!isExternalRun(run) ? (
                   <>
                     <AISummaryForRunMenuItem run={run} />

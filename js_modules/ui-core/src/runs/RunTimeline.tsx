@@ -28,6 +28,7 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import styles from './css/RunTimeline.module.css';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
+import {LayoutContext} from '../app/LayoutProvider';
 import {COMMON_COLLATOR} from '../app/Util';
 import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
@@ -45,12 +46,38 @@ import {RepoAddress} from '../workspace/types';
 import '../util/dayjsExtensions';
 
 const ROW_HEIGHT = 32;
+// On mobile the row name stacks above its timeline track rather than sitting in
+// a left gutter, so a row needs to fit two lines. Must match the media-query
+// overrides in css/RunTimeline.module.css.
+const MOBILE_ROW_HEIGHT = 56;
 const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
 const EMPTY_STATE_HEIGHT = 110;
 const LEFT_SIDE_SPACE_ALLOTTED = 320;
 const LABEL_WIDTH = 268;
 const MIN_DATE_WIDTH_PCT = 10;
+
+// On mobile the label stacks above the track, so no horizontal space is
+// reserved for it and the track spans the full container width. The label is
+// sized by CSS rather than an inline width.
+const useTimelineWidths = () => {
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+  return isMobileScreen
+    ? {
+        leftAllotted: 0,
+        labelWidth: undefined,
+        rowHeight: MOBILE_ROW_HEIGHT,
+        minChunkWidth: MOBILE_MIN_CHUNK_WIDTH,
+        minMultipleWidth: MOBILE_MIN_WIDTH_FOR_MULTIPLE,
+      }
+    : {
+        leftAllotted: LEFT_SIDE_SPACE_ALLOTTED,
+        labelWidth: LABEL_WIDTH,
+        rowHeight: ROW_HEIGHT,
+        minChunkWidth: MIN_CHUNK_WIDTH,
+        minMultipleWidth: MIN_WIDTH_FOR_MULTIPLE,
+      };
+};
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
@@ -85,6 +112,7 @@ interface Props {
 export const RunTimeline = (props: Props) => {
   const {loading = false, rows, rangeMs} = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
+  const {rowHeight} = useTimelineWidths();
   const {
     viewport: {width},
     containerProps: {ref: measureRef},
@@ -147,7 +175,10 @@ export const RunTimeline = (props: Props) => {
   const rowVirtualizer = useVirtualizer({
     count: flattened.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (_: number) => 32,
+    // Section headers keep their fixed height; job rows are taller on mobile,
+    // where the label stacks above the track.
+    estimateSize: (index: number) =>
+      flattened[index]?.type === 'header' ? SECTION_HEADER_HEIGHT : rowHeight,
     overscan: 40,
   });
 
@@ -166,7 +197,7 @@ export const RunTimeline = (props: Props) => {
     (accum, repoKey) => accum + buckets[repoKey]!.length,
     0,
   );
-  const height = repoOrder.length * SECTION_HEADER_HEIGHT + ROW_HEIGHT * expandedJobCount;
+  const height = repoOrder.length * SECTION_HEADER_HEIGHT + rowHeight * expandedJobCount;
   const duplicateRepoNames = findDuplicateRepoNames(
     repoOrder.map((repoKey) => repoAddressFromPath(repoKey)?.name || ''),
   );
@@ -181,7 +212,9 @@ export const RunTimeline = (props: Props) => {
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
         border="top-and-bottom"
       >
-        Runs
+        {/* The band stays (the time axis is positioned over it), but on mobile
+            the axis starts at left: 0, so the label would sit underneath it. */}
+        <span className={styles.runsLabel}>Runs</span>
       </Box>
       <div style={{position: 'relative'}}>
         <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyObjects ? height : 0} />
@@ -508,7 +541,13 @@ export const TimeDividers = (props: TimeDividersProps) => {
         ))}
         {now >= start && now <= end ? (
           <>
-            <div className={styles.timelineMarker} style={{left: msToLeft(now)}}>
+            {/* The pill is hidden on phones (see css): "now" sits at the far
+                right of the range, where it collides with the last hour label.
+                The tick line below still marks the exact time. */}
+            <div
+              className={clsx(styles.timelineMarker, styles.nowMarker)}
+              style={{left: msToLeft(now)}}
+            >
               Now
             </div>
             <div
@@ -541,6 +580,11 @@ export const TimeDividers = (props: TimeDividersProps) => {
 
 const MIN_CHUNK_WIDTH = 4;
 const MIN_WIDTH_FOR_MULTIPLE = 12;
+// A short run in a wide time window collapses to the minimum width. 4px is a
+// sliver you can neither see nor hit with a finger, so mobile floors it at a
+// tappable size.
+const MOBILE_MIN_CHUNK_WIDTH = 14;
+const MOBILE_MIN_WIDTH_FOR_MULTIPLE = 20;
 
 const RunTimelineRow = ({
   row,
@@ -556,7 +600,8 @@ const RunTimelineRow = ({
   width: number;
 }) => {
   const [start, end] = rangeMs;
-  const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
+  const {leftAllotted, labelWidth, minChunkWidth, minMultipleWidth} = useTimelineWidths();
+  const width = containerWidth - leftAllotted;
   const {runs} = row;
 
   // Batch overlapping runs in this row.
@@ -566,12 +611,12 @@ const RunTimelineRow = ({
       start,
       end,
       width,
-      minChunkWidth: MIN_CHUNK_WIDTH,
-      minMultipleWidth: MIN_WIDTH_FOR_MULTIPLE,
+      minChunkWidth,
+      minMultipleWidth,
     });
 
     return batches;
-  }, [runs, start, end, width]);
+  }, [runs, start, end, width, minChunkWidth, minMultipleWidth]);
 
   if (!row.runs.length) {
     return null;
@@ -581,7 +626,7 @@ const RunTimelineRow = ({
     <TimelineRowContainer height={height} start={top}>
       <div className={styles.rowName}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
-        <div style={{width: LABEL_WIDTH}}>
+        <div style={{width: labelWidth}}>
           {row.path ? (
             <Link to={row.path}>
               <MiddleTruncate text={row.name} />
@@ -654,7 +699,15 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
             ? 'No runs or scheduled ticks in this time period.'
             : 'No runs in this time period.'}
         </div>
-        <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+        <Box
+          flex={{
+            direction: 'row',
+            gap: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            wrap: 'wrap',
+          }}
+        >
           <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
             Launch a run
           </AnchorButton>

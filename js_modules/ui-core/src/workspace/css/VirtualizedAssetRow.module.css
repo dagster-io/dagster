@@ -1,4 +1,68 @@
 .rowGrid {
+  composes: mobileCardGrid from '../../ui/css/MobileTableCard.module.css';
   display: grid;
   height: 100%;
+}
+
+.tableHeader {
+  composes: mobileHiddenHeader from '../../ui/css/MobileTableCard.module.css';
+}
+
+/* Phone: two dense lines with the actions menu spanning both.
+     [check] [name .................] [menu]
+     [check] [status ...............] [menu]
+   The checkbox column only renders when the catalog's "Select" mode is on. The
+   code-location column is a middle-truncated repo string whose suffix is the
+   same for every asset — pure noise on a phone — so it is dropped; the
+   location filter above the table covers that need. Keep the max-width value
+   in sync with MOBILE_BREAKPOINT_PX in ui-components breakpoints.ts. */
+.description {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .rowGrid {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      'check name menu'
+      'check status menu';
+    column-gap: 4px;
+    row-gap: 2px;
+    align-items: center;
+    height: auto;
+    padding: 6px 4px 6px 8px;
+  }
+
+  /* No checkbox column: collapse its track. */
+  .rowGrid:not(:has(.cellCheckbox)) {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      'name menu'
+      'status menu';
+  }
+
+  .cellCheckbox {
+    grid-area: check;
+  }
+
+  .cellRepo,
+  .description {
+    display: none !important;
+  }
+
+  .cellName {
+    grid-area: name;
+  }
+
+  .cellStatus {
+    grid-area: status;
+    font-size: 12px;
+  }
+
+  .cellMenu {
+    grid-area: menu;
+  }
 }

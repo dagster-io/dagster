@@ -51,6 +51,7 @@ import {
   PipelineRunTag,
   SessionBase,
 } from '../app/ExecutionSessionStorage';
+import {LayoutContext} from '../app/LayoutProvider';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useJobPermissions} from '../app/useJobPermissions';
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
@@ -155,11 +156,27 @@ const reducer = (state: ILaunchpadSessionState, action: Action) => {
 
 const LaunchButtonContainer = ({
   launchpadType,
+  isMobileScreen,
   children,
 }: {
   launchpadType: LaunchpadType;
+  isMobileScreen: boolean;
   children: React.ReactNode;
 }) => {
+  if (isMobileScreen) {
+    // A bar pinned below the editor: the floating desktop button would sit on
+    // top of the config text, and a thumb expects the primary action at the bottom.
+    return (
+      <Box
+        flex={{direction: 'row', justifyContent: 'flex-end'}}
+        border="top"
+        padding={{horizontal: 12, vertical: 8}}
+        className={styles.mobileLaunchBar}
+      >
+        {children}
+      </Box>
+    );
+  }
   if (launchpadType === 'asset') {
     return (
       <Box flex={{direction: 'row'}} border="top" padding={{right: 12, vertical: 8}}>
@@ -556,6 +573,10 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const splitPanelRef = React.useRef<SplitPanelContainerHandle>(null);
 
+  // On mobile the config-schema help panel is hidden: it assumes a keyboard
+  // (Ctrl+Space hints) and squeezes the editor to an unusable width.
+  const {isMobileScreen} = React.useContext(LayoutContext).nav;
+
   const repositorySelector = React.useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
   const partitionSetDetails = usePartitionSetDetailsForLaunchpad({
     pipelineName: pipeline.name,
@@ -784,9 +805,9 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
       </Dialog>
       <SplitPanelContainer
         axis="vertical"
-        identifier="execution"
+        identifier={isMobileScreen ? 'execution-mobile' : 'execution'}
         firstMinSize={100}
-        firstInitialPercent={75}
+        firstInitialPercent={isMobileScreen ? 100 : 75}
         first={
           <>
             <LoadingOverlay isLoading={configLoading} message={LOADING_CONFIG_FOR_PARTITION} />
@@ -794,12 +815,14 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
               {sessionSettingsItems()}
 
               <div className={styles.sessionSettingsSpacer} />
-              <LaunchpadConfigExpansionButton
-                axis="horizontal"
-                firstInitialPercent={75}
-                getSize={splitPanelRef.current?.getSize}
-                changeSize={splitPanelRef.current?.changeSize}
-              />
+              {!isMobileScreen ? (
+                <LaunchpadConfigExpansionButton
+                  axis="horizontal"
+                  firstInitialPercent={75}
+                  getSize={splitPanelRef.current?.getSize}
+                  changeSize={splitPanelRef.current?.changeSize}
+                />
+              ) : null}
             </SessionSettingsBar>
             {pipeline.tags.length || tagsFromSession.length ? (
               <Box
@@ -842,16 +865,25 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                 </Box>
               </Box>
             ) : null}
-            <SplitPanelContainer
-              ref={splitPanelRef}
-              axis="horizontal"
-              identifier="execution-editor"
-              firstMinSize={100}
-              firstInitialPercent={70}
-              first={
+            {isMobileScreen ? (
+              <Box
+                padding={{vertical: 8, horizontal: 12}}
+                border={{side: 'bottom', color: Colors.borderDefault()}}
+                flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+                background={Colors.backgroundLight()}
+              >
+                <Icon name="info" color={Colors.accentGray()} />
+                <Text size={12} color="textLight">
+                  Run config is read-only on small screens. Launch with the config shown, or edit it
+                  on a desktop.
+                </Text>
+              </Box>
+            ) : null}
+            {(() => {
+              const configEditor = (
                 <NewConfigEditor
                   ref={editor}
-                  readOnly={false}
+                  readOnly={isMobileScreen}
                   configSchema={runConfigSchema}
                   configCode={currentSession.runConfigYaml}
                   onConfigChange={onConfigChange}
@@ -862,14 +894,28 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
                   }}
                   checkConfig={checkConfig}
                 />
-              }
-              second={
-                <ConfigEditorHelp
-                  context={editorHelpContext}
-                  allInnerTypes={runConfigSchema?.allConfigTypes || []}
+              );
+              // On mobile the help panel is dropped and the editor spans the
+              // full width; desktop keeps the split editor/help layout.
+              return isMobileScreen ? (
+                configEditor
+              ) : (
+                <SplitPanelContainer
+                  ref={splitPanelRef}
+                  axis="horizontal"
+                  identifier="execution-editor"
+                  firstMinSize={100}
+                  firstInitialPercent={70}
+                  first={configEditor}
+                  second={
+                    <ConfigEditorHelp
+                      context={editorHelpContext}
+                      allInnerTypes={runConfigSchema?.allConfigTypes || []}
+                    />
+                  }
                 />
-              }
-            />
+              );
+            })()}
           </>
         }
         second={
@@ -893,7 +939,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
           </>
         }
       />
-      <LaunchButtonContainer launchpadType={launchpadType}>
+      <LaunchButtonContainer launchpadType={launchpadType} isMobileScreen={isMobileScreen}>
         {submitActionButton()}
       </LaunchButtonContainer>
     </>

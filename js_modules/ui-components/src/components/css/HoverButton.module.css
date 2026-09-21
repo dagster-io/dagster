@@ -10,3 +10,14 @@
 .button.button:hover {
   background-color: var(--color-background-light-hover);
 }
+
+/* Keep in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .button.button {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

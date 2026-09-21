@@ -28,3 +28,18 @@
 .graphQueryInputFlexWrap > * {
   width: 100%;
 }
+
+/* Mobile: the graph toolbar packs the sidebar toggle, fullscreen toggle, search
+   input and filters onto a single row, which squeezes the input to a few dozen
+   pixels. Let the row wrap and give the input its own full-width line. Keep the
+   max-width value in sync with MOBILE_BREAKPOINT_PX in breakpoints.ts. */
+@media (max-width: 768px) {
+  .topbarWrapper > div > div {
+    flex-wrap: wrap;
+  }
+
+  .graphQueryInputFlexWrap {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+}
