@@ -12,15 +12,22 @@ from pydantic import Field
 from dagster_aws import __file__ as dagster_aws_init_py
 
 
-def construct_boto_client_retry_config(max_attempts):
+def construct_boto_client_retry_config(max_attempts, botocore_config=None):
     check.int_param(max_attempts, "max_attempts")
+    botocore_config = check.opt_dict_param(botocore_config, "botocore_config", key_type=str)
 
     # retry mode option was introduced in botocore 1.15.0
     # https://botocore.amazonaws.com/v1/documentation/api/1.15.0/reference/config.html
     retry_config = {"max_attempts": max_attempts}
     if version.parse(botocore_version) >= version.parse("1.15.0"):
         retry_config["mode"] = "standard"
-    return Config(retries=retry_config)  # ty: ignore[invalid-argument-type]
+
+    config_kwargs = {**botocore_config}
+    retries_override = check.opt_dict_param(
+        config_kwargs.get("retries"), "botocore_config['retries']"
+    )
+    config_kwargs["retries"] = {**retry_config, **retries_override}
+    return Config(**config_kwargs)  # ty: ignore[invalid-argument-type]
 
 
 T = TypeVar("T")
