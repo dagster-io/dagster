@@ -5,6 +5,8 @@ body {
   overflow: hidden;
   display: flex;
   flex: 1 1;
+  /* Stop Mobile Safari inflating text in landscape. */
+  -webkit-text-size-adjust: 100%;
 }
 
 #root {
@@ -14,4 +16,10 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+/* On phones, 100vh includes the area under the browser toolbar. */
+body.dagster-mobile,
+body.dagster-mobile #root {
+  height: 100dvh;
 }

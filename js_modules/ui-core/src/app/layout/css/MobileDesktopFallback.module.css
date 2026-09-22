@@ -1,0 +1,14 @@
+/* Rendered inside the zoomed-out 1280px viewport, so sizes are in vw to hold a constant
+   physical size (3.6vw ≈ 14px on a 390px-wide phone). */
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1vw 4vw;
+  padding: 2.5vw 4vw;
+  font-size: 3.6vw;
+  line-height: 1.4;
+  color: var(--color-text-blue);
+  background-color: var(--color-background-blue);
+  box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+}

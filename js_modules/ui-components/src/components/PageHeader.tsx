@@ -18,12 +18,7 @@ interface Props {
 export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
-    <Box
-      className={styles.container}
-      background={Colors.backgroundDefault()}
-      padding={{horizontal: 24}}
-      border="bottom"
-    >
+    <Box className={styles.container} background={Colors.backgroundDefault()} border="bottom">
       {title && (
         <Box
           padding={{vertical: 8}}
