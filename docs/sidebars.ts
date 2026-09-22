@@ -14,7 +14,12 @@ const sidebars: SidebarsConfig = {
         {
           type: 'category',
           label: 'AI tools',
-          items: ['getting-started/ai-tools/skills', 'getting-started/ai-tools/dagster-mcp'],
+          link: {type: 'doc', id: 'getting-started/ai-tools/index'},
+          items: [
+            'getting-started/ai-tools/skills',
+            'getting-started/ai-tools/dagster-mcp',
+            'getting-started/ai-tools/plugin',
+          ],
         },
         {
           type: 'link',
