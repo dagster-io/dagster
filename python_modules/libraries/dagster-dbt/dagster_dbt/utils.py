@@ -17,6 +17,19 @@ if TYPE_CHECKING:
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
 
+# Manifest collections holding nodes that participate in the selection graph. Mirrors the
+# collections dbt itself walks in `Manifest.build_parent_and_child_maps`; keep in sync with it.
+_GRAPH_MEMBER_COLLECTIONS = (
+    "nodes",
+    "sources",
+    "exposures",
+    "functions",
+    "metrics",
+    "semantic_models",
+    "saved_queries",
+    "unit_tests",
+)
+
 clean_name = clean_name_lower
 
 
@@ -204,30 +217,15 @@ def _select_unique_ids_from_manifest(
     child_map = manifest_json["child_map"]
 
     digraph = DiGraph(incoming_graph_data=child_map)
-
-    # dbt-fusion manifests (manifest schema v2+) omit nodes that have neither
-    # parents nor children from `child_map`, whereas dbt-core keys `child_map`
-    # by every node. As a result a node with no `source()`/`ref()` calls (and
-    # nothing referencing it) never lands in the selection graph, so
-    # `NodeSelector` silently drops it from the asset graph with no error.
-    # Add any selectable unique_ids that are missing from the graph so isolated
-    # nodes stay selectable. This is a no-op for well-formed dbt-core manifests.
+    # dbt-fusion omits nodes with neither parents nor children from `child_map`, and a node
+    # absent from the graph can never be selected. Add every graph member back so isolated
+    # nodes stay selectable; a no-op for dbt-core, which keys `child_map` by every node.
     # See https://github.com/dagster-io/dagster/issues/33801.
-    selectable_unique_ids = {
+    digraph.add_nodes_from(
         unique_id
-        for collection in (
-            "nodes",
-            "sources",
-            "exposures",
-            "metrics",
-            "semantic_models",
-            "saved_queries",
-            "unit_tests",
-            "functions",
-        )
+        for collection in _GRAPH_MEMBER_COLLECTIONS
         for unique_id in manifest_json.get(collection, {})
-    }
-    digraph.add_nodes_from(selectable_unique_ids - set(digraph.nodes))
+    )
 
     graph = graph_selector.Graph(digraph)
 
