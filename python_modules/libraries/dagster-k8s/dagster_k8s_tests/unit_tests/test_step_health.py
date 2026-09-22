@@ -260,6 +260,109 @@ def test_other_step_resource_init_failure_does_not_hide_unfinished_step(health_c
     assert not handler.check_step_health(context).is_healthy
 
 
+@pytest.mark.parametrize(
+    "retry_mode,race_attempt",
+    [(RetryMode.DISABLED, 0), (RetryMode.ENABLED, 0), (RetryMode.ENABLED, 1)],
+)
+def test_resource_init_failure_between_event_tail_and_health_check(
+    health_check, retry_mode, race_attempt
+):
+    handler, instance, batch_api, _ = health_check
+    context, plan_context, execution_plan, executor = _context(
+        instance, handler, retry_mode=retry_mode
+    )
+    launched_attempts = []
+    racing_step_context = None
+
+    def launch_step(step_context):
+        nonlocal racing_step_context
+        args = step_context.execute_step_args
+        attempt = args.known_state.get_retry_state().get_attempt_count("work")
+        launched_attempts.append(attempt)
+        if attempt < race_attempt:
+            # Reach a later generation without STEP_START, as resource initialization
+            # failures may happen before the step ever starts executing.
+            _report(step_context, DagsterEventType.RESOURCE_INIT_FAILURE)
+            _set_job_status(batch_api, "Complete", succeeded=1)
+        elif attempt == race_attempt:
+            racing_step_context = step_context
+            _set_job_status(batch_api, active=1)
+        else:
+            _set_job_status(batch_api, "Complete", succeeded=1)
+            return _execute_step_command_body(args, instance, step_context.dagster_run)
+        return iter(())
+
+    pop_events = executor._pop_events  # noqa: SLF001
+    check_step_health = handler.check_step_health
+    poll_count = 0
+    injected = False
+    failure_not_yet_tailed = False
+    health_checks_before_tail = []
+
+    def pop_events_then_fail_resource(*args):
+        nonlocal poll_count, injected, failure_not_yet_tailed
+        poll_count += 1
+        assert poll_count <= 10, "Resource initialization failure left the executor in progress"
+        events = pop_events(*args)
+        failure_not_yet_tailed = False
+        if racing_step_context is not None and not injected:
+            # The worker's final event and Job completion become visible after the
+            # executor has already taken its event-log snapshot for this iteration.
+            assert not any(event.is_resource_init_failure for event in events)
+            _report(racing_step_context, DagsterEventType.RESOURCE_INIT_FAILURE)
+            _set_job_status(batch_api, "Complete", succeeded=1)
+            injected = True
+            failure_not_yet_tailed = True
+        return events
+
+    def observe_health_check(step_context):
+        if failure_not_yet_tailed:
+            health_checks_before_tail.append(
+                step_context.execute_step_args.known_state.get_retry_state().get_attempt_count(
+                    "work"
+                )
+            )
+        return check_step_health(step_context)
+
+    with (
+        mock.patch.object(handler, "launch_step", side_effect=launch_step),
+        mock.patch.object(handler, "check_step_health", side_effect=observe_health_check),
+        mock.patch.object(executor, "_pop_events", side_effect=pop_events_then_fail_resource),
+    ):
+        events = list(executor.execute(plan_context, execution_plan))
+
+    assert health_checks_before_tail == [race_attempt]
+    assert sum(event.is_resource_init_failure for event in events) == race_attempt + 1
+    # Verify both the yielded events and persisted log: a duplicate failure/retry can
+    # already have been written even if the executor exits before tailing it.
+    stored_events = [
+        entry.get_dagster_event()
+        for entry in instance.all_logs(context.dagster_run.run_id)
+        if entry.is_dagster_event
+    ]
+    for event_stream in (events, stored_events):
+        outcomes = [
+            event.event_type
+            for event in event_stream
+            if event.is_step_failure or event.is_step_up_for_retry or event.is_step_success
+        ]
+        if retry_mode == RetryMode.DISABLED:
+            assert launched_attempts == [0]
+            assert outcomes == [DagsterEventType.STEP_FAILURE]
+        elif race_attempt == 0:
+            assert launched_attempts == [0, 1]
+            assert outcomes == [DagsterEventType.STEP_UP_FOR_RETRY, DagsterEventType.STEP_SUCCESS]
+        else:
+            assert launched_attempts == [0, 1]
+            assert outcomes == [DagsterEventType.STEP_UP_FOR_RETRY, DagsterEventType.STEP_FAILURE]
+    stats = instance.get_run_step_stats(context.dagster_run.run_id)[0]
+    assert stats.status == (
+        StepEventStatus.SUCCESS
+        if retry_mode == RetryMode.ENABLED and race_attempt == 0
+        else StepEventStatus.FAILURE
+    )
+
+
 @pytest.mark.parametrize("condition_type", ["Complete", "Failed"])
 @pytest.mark.parametrize("phase", ["Pending", "Running", "Unknown", None])
 @pytest.mark.parametrize("terminating", [False, True])
