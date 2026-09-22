@@ -14,6 +14,7 @@ import {useMemo} from 'react';
 import {AutomationBulkActionMenu} from './AutomationBulkActionMenu';
 import {AutomationTabs} from './AutomationTabs';
 import {AutomationsTable} from './AutomationsTable';
+import styles from './css/MergedAutomationRoot.module.css';
 import {useAutomations} from './useAutomations';
 import {useTrackPageView} from '../app/analytics';
 import {useAutoMaterializeSensorFlag} from '../assets/AutoMaterializeSensorFlag';
@@ -194,7 +195,7 @@ export const MergedAutomationRoot = () => {
     return (
       <Box flex={{direction: 'column'}} style={{overflow: 'hidden'}}>
         {viewerHasAnyInstigationPermission ? (
-          <Box padding={{horizontal: 24, bottom: 2}} border="bottom">
+          <Box border="bottom" className={styles.selectAllRow}>
             <CheckAllBox
               checkedCount={checkedCount}
               totalCount={permissionedKeysOnScreen.length}
@@ -229,12 +230,12 @@ export const MergedAutomationRoot = () => {
         }
       />
       {automaterializeSensorsFlagState === 'has-global-amp' ? (
-        <Box padding={{horizontal: 24}} border="bottom">
+        <Box border="bottom" className={styles.tabsRow}>
           <AutomationTabs tab="schedules-and-sensors" />
         </Box>
       ) : null}
       <Box
-        padding={{horizontal: 20, vertical: 12}}
+        className={styles.filterRow}
         flex={{
           direction: 'row',
           alignItems: 'center',

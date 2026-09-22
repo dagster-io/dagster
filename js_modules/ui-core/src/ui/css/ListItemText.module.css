@@ -1,0 +1,13 @@
+/* Text in a `ListItem`'s left side. Each flex level on the way down needs `min-width: 0`
+   so that a long name truncates with an ellipsis instead of being clipped by the controls
+   on the right. */
+
+.text {
+  min-width: 0;
+}
+
+.line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

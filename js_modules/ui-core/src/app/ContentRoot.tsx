@@ -82,10 +82,10 @@ export const ContentRoot = memo(() => {
           <Route path="/overview">
             <OverviewRoot />
           </Route>
-          <Route path="/jobs">
+          <Route path="/jobs" mobile="supported">
             <JobsRoot />
           </Route>
-          <Route path="/automation">
+          <Route path="/automation" mobile="supported">
             <MergedAutomationRoot />
           </Route>
           <Route path="/deployment">

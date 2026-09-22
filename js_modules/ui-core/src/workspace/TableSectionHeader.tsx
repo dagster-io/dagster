@@ -21,7 +21,7 @@ export const TableSectionHeader = (props: TableSectionHeaderProps) => {
     >
       <Box
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
-        padding={{horizontal: 24}}
+        className={styles.sectionHeaderContent}
       >
         {children}
         <Box flex={{alignItems: 'center', gap: 8}}>

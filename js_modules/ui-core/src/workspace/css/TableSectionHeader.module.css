@@ -14,6 +14,10 @@
   text-align: left;
 }
 
+.sectionHeaderContent {
+  padding: 0 var(--page-gutter, 24px);
+}
+
 .sectionHeaderButton:focus,
 .sectionHeaderButton:active {
   outline: none;

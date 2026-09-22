@@ -13,6 +13,8 @@ body.dagster-mobile {
   );
   --page-gutter: 16px;
   --page-header-inset-left: var(--mobile-nav-button-clearance);
+  --list-item-gutter: var(--page-gutter);
+  --horizontal-controls-gap: 4px;
   /* Mobile Safari zooms the page when a text field under 16px is focused. */
   --input-font-size: 16px;
 }
