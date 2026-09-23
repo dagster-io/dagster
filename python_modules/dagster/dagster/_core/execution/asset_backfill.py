@@ -84,6 +84,7 @@ class AssetBackfillStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     MATERIALIZED = "MATERIALIZED"
     FAILED = "FAILED"
+    SKIPPED = "SKIPPED"
 
 
 class PartitionedAssetBackfillStatus(
@@ -144,6 +145,7 @@ class AssetBackfillData(NamedTuple):
     requested_subset: AssetGraphSubset
     failed_and_downstream_subset: AssetGraphSubset
     backfill_start_time: TimestampWithTimezone
+    skipped_subset: AssetGraphSubset = AssetGraphSubset()
 
     @property
     def backfill_start_timestamp(self) -> float:
@@ -168,6 +170,9 @@ class AssetBackfillData(NamedTuple):
         self, failed_and_downstream_subset: AssetGraphSubset
     ) -> "AssetBackfillData":
         return self._replace(failed_and_downstream_subset=failed_and_downstream_subset)
+
+    def with_skipped_subset(self, skipped_subset: AssetGraphSubset) -> "AssetBackfillData":
+        return self._replace(skipped_subset=skipped_subset)
 
     def get_targeted_partitions_without_materialization_status(self) -> AssetGraphSubset:
         """Returns the subset of targeted partitions that have neither been materialized nor
@@ -372,13 +377,18 @@ class AssetBackfillData(NamedTuple):
                     if asset_key in self.requested_subset.asset_keys
                     else target_subset.subset_value.empty_subset()
                 )
+                skipped_subset = (
+                    self.skipped_subset.get_partitions_subset(asset_key)
+                    if asset_key in self.skipped_subset.asset_keys
+                    else target_subset.subset_value.empty_subset()
+                )
 
                 # The failed subset includes partitions that failed and their downstream partitions.
                 # The downstream partitions are not included in the requested subset, so we determine
                 # the in progress subset by subtracting partitions that are failed and requested.
                 requested_and_failed_subset = failed_subset & requested_subset
                 in_progress_subset = requested_subset - (
-                    requested_and_failed_subset | materialized_subset
+                    requested_and_failed_subset | materialized_subset | skipped_subset
                 )
 
                 return PartitionedAssetBackfillStatus(
@@ -388,6 +398,7 @@ class AssetBackfillData(NamedTuple):
                         AssetBackfillStatus.MATERIALIZED: len(materialized_subset),
                         AssetBackfillStatus.FAILED: len(failed_subset - materialized_subset),
                         AssetBackfillStatus.IN_PROGRESS: len(in_progress_subset),
+                        AssetBackfillStatus.SKIPPED: len(skipped_subset),
                     },
                 )
             else:
@@ -397,6 +408,7 @@ class AssetBackfillData(NamedTuple):
                 materialized = bool(
                     asset_key in self.materialized_subset.non_partitioned_asset_keys
                 )
+                skipped = asset_key in self.skipped_subset.non_partitioned_asset_keys
                 in_progress = bool(asset_key in self.requested_subset.non_partitioned_asset_keys)
 
                 if failed:
@@ -405,6 +417,8 @@ class AssetBackfillData(NamedTuple):
                     return UnpartitionedAssetBackfillStatus(
                         asset_key, AssetBackfillStatus.MATERIALIZED
                     )
+                if skipped:
+                    return UnpartitionedAssetBackfillStatus(asset_key, AssetBackfillStatus.SKIPPED)
                 if in_progress:
                     return UnpartitionedAssetBackfillStatus(
                         asset_key, AssetBackfillStatus.IN_PROGRESS
@@ -479,6 +493,11 @@ class AssetBackfillData(NamedTuple):
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
             backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
+            skipped_subset=AssetGraphSubset.from_storage_dict(
+                storage_dict["serialized_skipped_subset"], asset_graph
+            )
+            if "serialized_skipped_subset" in storage_dict
+            else AssetGraphSubset(),
         )
 
     @classmethod
@@ -628,6 +647,9 @@ class AssetBackfillData(NamedTuple):
                     asset_graph=asset_graph
                 ),
                 "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
+                    asset_graph=asset_graph
+                ),
+                "serialized_skipped_subset": self.skipped_subset.to_storage_dict(
                     asset_graph=asset_graph
                 ),
             }
@@ -1169,26 +1191,47 @@ async def execute_asset_backfill_iteration(
         ):
             logger.warning(
                 f"Backfill {backfill.backfill_id} has partitions with no materialization status"
-                f" despite all runs being complete. Marking them as failed:\n"
+                f" despite all runs being complete. Marking them as skipped or failed:\n"
                 f"{_asset_graph_subset_to_str(partitions_without_status, asset_graph)}"
+            )
+            unmaterialized_by_successful_runs = _get_failed_asset_graph_subset(
+                asset_graph_view,
+                backfill.backfill_id,
+                materialized_subset=updated_backfill_data.materialized_subset,
+                run_statuses=[DagsterRunStatus.SUCCESS],
+            )
+            skipped_subset = (
+                partitions_without_status
+                & _get_failed_and_downstream_asset_graph_subset(
+                    backfill.backfill_id,
+                    updated_backfill_data,
+                    asset_graph_view,
+                    updated_backfill_data.materialized_subset,
+                    partitions_without_status & unmaterialized_by_successful_runs,
+                )
             )
             failed_and_downstream_subset = _get_failed_and_downstream_asset_graph_subset(
                 backfill.backfill_id,
                 updated_backfill_data,
                 asset_graph_view,
                 updated_backfill_data.materialized_subset,
-                partitions_without_status | updated_backfill_data.failed_and_downstream_subset,
+                (partitions_without_status - skipped_subset)
+                | updated_backfill_data.failed_and_downstream_subset,
             )
             updated_backfill_data = updated_backfill_data.with_failed_and_downstream_subset(
                 failed_and_downstream_subset
-            )
+            ).with_skipped_subset(skipped_subset - failed_and_downstream_subset)
             updated_backfill = (
                 updated_backfill.with_asset_backfill_data(
                     updated_backfill_data,
                     dynamic_partitions_store=instance,
                     asset_graph=asset_graph,
                 )
-                .with_status(BulkActionStatus.COMPLETED_FAILED)
+                .with_status(
+                    BulkActionStatus.COMPLETED_FAILED
+                    if failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0
+                    else BulkActionStatus.COMPLETED_SUCCESS
+                )
                 .with_end_timestamp(get_current_timestamp())
             )
             instance.update_backfill(updated_backfill)
@@ -2203,6 +2246,10 @@ def _get_failed_asset_graph_subset(
     asset_graph_view: AssetGraphView,
     backfill_id: str,
     materialized_subset: AssetGraphSubset,
+    run_statuses: Sequence[DagsterRunStatus] = (
+        DagsterRunStatus.CANCELED,
+        DagsterRunStatus.FAILURE,
+    ),
 ) -> AssetGraphSubset:
     """Returns asset subset that materializations were requested for as part of the backfill, but were
     not successfully materialized.
@@ -2221,7 +2268,7 @@ def _get_failed_asset_graph_subset(
     runs = instance_queryer.instance.get_runs(
         filters=RunsFilter(
             tags={BACKFILL_ID_TAG: backfill_id},
-            statuses=[DagsterRunStatus.CANCELED, DagsterRunStatus.FAILURE],
+            statuses=run_statuses,
         )
     )
 

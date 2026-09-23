@@ -42,6 +42,7 @@ export const ASSET_BACKFILL_DETAILS_FRAGMENT = gql`
         numPartitionsInProgress
         numPartitionsMaterialized
         numPartitionsFailed
+        numPartitionsSkipped
       }
       ... on UnpartitionedAssetStatus {
         assetKey {
@@ -50,6 +51,7 @@ export const ASSET_BACKFILL_DETAILS_FRAGMENT = gql`
         inProgress
         materialized
         failed
+        skipped
       }
     }
   }
