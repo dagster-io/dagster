@@ -172,6 +172,77 @@ export const autoRetryInBackfillRun = runEntry({
   ],
 });
 
+// Statuses
+
+export const notStartedRun = runEntry({
+  id: 'not-started-run-id',
+  runStatus: RunStatus.NOT_STARTED,
+  startTime: null,
+  endTime: null,
+});
+
+export const queuedRun = runEntry({
+  id: 'queued-run-id',
+  runStatus: RunStatus.QUEUED,
+  startTime: null,
+  endTime: null,
+});
+
+export const startingRun = runEntry({
+  id: 'starting-run-id',
+  runStatus: RunStatus.STARTING,
+  startTime: null,
+  endTime: null,
+});
+
+export const startedRun = runEntry({
+  id: 'started-run-id',
+  runStatus: RunStatus.STARTED,
+  startTime: LIVE_STARTED_AT,
+  endTime: null,
+});
+
+export const startedRunWithoutStartTime = runEntry({
+  id: 'started-no-start-run-id',
+  runStatus: RunStatus.STARTED,
+  startTime: null,
+  endTime: null,
+});
+
+export const managedRun = runEntry({
+  id: 'managed-run-id',
+  runStatus: RunStatus.MANAGED,
+  startTime: LIVE_STARTED_AT,
+  endTime: null,
+});
+
+export const cancelingRun = runEntry({
+  id: 'canceling-run-id',
+  runStatus: RunStatus.CANCELING,
+  startTime: LIVE_STARTED_AT,
+  endTime: null,
+});
+
+export const succeededRun = runEntry({id: 'succeeded-run-id'});
+
+export const failedRun = runEntry({id: 'failed-run-id', runStatus: RunStatus.FAILURE});
+
+export const failedWillRetryRun = runEntry({
+  id: 'failed-retry-run-id',
+  runStatus: RunStatus.FAILURE,
+  tags: [tag('dagster/will_retry', 'true')],
+});
+
+export const canceledRun = runEntry({id: 'canceled-run-id', runStatus: RunStatus.CANCELED});
+
+/** A failed launch is reported with its end time as its start time. */
+export const failedToStartRun = runEntry({
+  id: 'failed-to-start-run-id',
+  runStatus: RunStatus.FAILURE,
+  startTime: ENDED_AT,
+  endTime: ENDED_AT,
+});
+
 // Backfills
 
 export const assetBackfill = backfillEntry({

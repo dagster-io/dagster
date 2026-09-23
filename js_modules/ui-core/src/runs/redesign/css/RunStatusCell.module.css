@@ -1,0 +1,31 @@
+@keyframes status-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.pulse {
+  animation: status-pulse 750ms ease-in-out infinite alternate;
+}
+
+/* Right-aligned over a shared minimum width so counters and relative text line up down the column. */
+.timing {
+  display: inline-block;
+  min-width: 68px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timing:focus-visible {
+  border-radius: 4px;
+  box-shadow: var(--color-focus-ring) 0 0 0 2px;
+  outline: none;
+}
+
+.popoverHeading {
+  padding: 12px 12px 0;
+}
