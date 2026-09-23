@@ -1,0 +1,34 @@
+.cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.initiator {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.label {
+  min-width: 0;
+}
+
+/* Tags carry short, already-abbreviated values; the label absorbs the squeeze instead. */
+.tag {
+  flex-shrink: 0;
+}
+
+.idLink {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
