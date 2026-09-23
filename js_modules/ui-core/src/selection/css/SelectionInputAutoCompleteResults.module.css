@@ -1,3 +1,11 @@
+/* The dropdown matches the input's width, but must never grow past the viewport: with no
+   cap, a long recent-search row sizes the container instead of truncating inside it. */
+.results {
+  --results-max-width: calc(100vw - 2 * var(--page-gutter, 24px));
+  min-width: min(var(--results-target-width, 0px), var(--results-max-width));
+  max-width: var(--results-max-width);
+}
+
 .keyHintWrapper {
   border-radius: 8px;
   padding: 4px;

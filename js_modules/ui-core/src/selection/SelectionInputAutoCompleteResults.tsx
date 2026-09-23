@@ -13,6 +13,7 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
 
 import {Suggestion} from './SelectionAutoCompleteProvider';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {assertExists} from '../util/invariant';
 import styles from './css/SelectionInputAutoCompleteResults.module.css';
@@ -98,6 +99,7 @@ type SelectionInputAutoCompleteResultsProps = {
 
 export const SelectionInputAutoCompleteResults = React.memo(
   ({results, width, onSelect, selectedIndex, loading}: SelectionInputAutoCompleteResultsProps) => {
+    const isMobile = useIsMobile();
     const menuRef = React.useRef<HTMLDivElement | null>(null);
     const rowVirtualizer = useVirtualizer({
       count: results.list.length,
@@ -119,7 +121,10 @@ export const SelectionInputAutoCompleteResults = React.memo(
     const totalHeight = rowVirtualizer.getTotalSize();
 
     return (
-      <div style={{minWidth: width}}>
+      <div
+        className={styles.results}
+        style={{'--results-target-width': `${width ?? 0}px`} as React.CSSProperties}
+      >
         <Menu>
           <Container ref={menuRef} style={{maxHeight: '300px', overflowY: 'auto'}}>
             <Inner totalHeight={totalHeight}>
@@ -151,29 +156,31 @@ export const SelectionInputAutoCompleteResults = React.memo(
             padding={{vertical: 4, horizontal: 12}}
             style={{color: Colors.textLight(), backgroundColor: Colors.backgroundGray()}}
           >
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <div className={styles.keyHintWrapper}>
-                  <Icon name="arrow_upward" size={12} style={{margin: 0}} />
-                </div>
-                <div className={styles.keyHintWrapper}>
-                  <Icon name="arrow_downward" size={12} style={{margin: 0}} />
-                </div>
-                <Text size={12}>to navigate</Text>
+            {isMobile ? null : (
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                  <div className={styles.keyHintWrapper}>
+                    <Icon name="arrow_upward" size={12} style={{margin: 0}} />
+                  </div>
+                  <div className={styles.keyHintWrapper}>
+                    <Icon name="arrow_downward" size={12} style={{margin: 0}} />
+                  </div>
+                  <Text size={12}>to navigate</Text>
+                </Box>
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                  <div className={styles.keyHintWrapper}>
+                    <Text size={12}>Tab</Text>
+                  </div>
+                  <Text size={12}>to select</Text>
+                </Box>
+                <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                  <div className={styles.keyHintWrapper}>
+                    <Text size={12}>Enter</Text>
+                  </div>
+                  <Text size={12}>to search</Text>
+                </Box>
               </Box>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <div className={styles.keyHintWrapper}>
-                  <Text size={12}>Tab</Text>
-                </div>
-                <Text size={12}>to select</Text>
-              </Box>
-              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
-                <div className={styles.keyHintWrapper}>
-                  <Text size={12}>Enter</Text>
-                </div>
-                <Text size={12}>to search</Text>
-              </Box>
-            </Box>
+            )}
             <a
               href="https://docs.dagster.io/guides/build/assets/asset-selection-syntax"
               target="_blank"
