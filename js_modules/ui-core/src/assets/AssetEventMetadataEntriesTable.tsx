@@ -22,6 +22,7 @@ import {
   AssetObservationFragment,
   AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {Timestamp} from '../app/time/Timestamp';
 import {
   HIDDEN_METADATA_ENTRY_LABELS,
@@ -93,6 +94,7 @@ export const AssetEventMetadataEntriesTable = ({
   renderMetadataKeyExtra,
   renderMetadataValueExtra,
 }: Props) => {
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
   const [view, setView] = useState<'table' | 'plots'>('table');
@@ -160,21 +162,39 @@ export const AssetEventMetadataEntriesTable = ({
     return emptyState;
   }
 
+  const filterInputField = (
+    <TextInput
+      value={filter}
+      fill={isMobile}
+      style={{minWidth: isMobile ? 0 : 250}}
+      icon="search"
+      onChange={(e) => setFilter(e.target.value)}
+      placeholder="Filter metadata keys"
+    />
+  );
+
+  // The flex item is TextInput's own container, which keeps a min-content floor of its
+  // own; the wrapper is what lets the filter give up width to the Table/Plots toggle.
+  const filterInput = isMobile ? (
+    <div className={styles.filterInput}>{filterInputField}</div>
+  ) : (
+    filterInputField
+  );
+
   return (
     <>
       {showFilter && (
         <Box
           padding={{bottom: 12}}
-          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+          flex={{
+            direction: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: isMobile ? 8 : 0,
+          }}
         >
           {view === 'table' ? (
-            <TextInput
-              value={filter}
-              style={{minWidth: 250}}
-              icon="search"
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Filter metadata keys"
-            />
+            filterInput
           ) : assetHasDefinedPartitions ? (
             <ButtonGroup
               activeItems={new Set([plotView])}
