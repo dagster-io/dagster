@@ -384,6 +384,13 @@ def _workspace_opts_to_serialized_cli_args(workspace_opts: WorkspaceOpts) -> Seq
         for module_name in workspace_opts.module_name:
             args.extend(("--module-name", module_name))
 
+    if workspace_opts.package_name:
+        for package_name in workspace_opts.package_name:
+            args.extend(("--package-name", package_name))
+
+    if workspace_opts.autoload_defs_module_name:
+        args.extend(("--autoload-defs-module-name", workspace_opts.autoload_defs_module_name))
+
     if workspace_opts.attribute:
         args.extend(("--attribute", workspace_opts.attribute))
 

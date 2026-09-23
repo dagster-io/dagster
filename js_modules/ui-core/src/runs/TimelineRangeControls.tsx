@@ -30,7 +30,7 @@ export const TimelineRangeControls = ({
   onPageLater,
   nowLabel = 'Now',
 }: Props) => (
-  <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
+  <Box flex={{direction: 'row', gap: 16, alignItems: 'center', justifyContent: 'space-between'}}>
     <ButtonGroup<HourWindow>
       activeItems={new Set(hourWindow ? [hourWindow] : [])}
       buttons={HOUR_WINDOW_BUTTONS}

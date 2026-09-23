@@ -2030,7 +2030,6 @@ provides-extras = ["kubernetes"]
 
 [package.metadata.requires-dev]
 test = [
-    { name = "connexion", specifier = "<3.0.0" },
     { name = "dagster", extras = ["test"], editable = "../dagster" },
     { name = "dagster-aws", editable = "../libraries/dagster-aws" },
     { name = "dagster-gcp", editable = "../libraries/dagster-gcp" },
@@ -2040,24 +2039,13 @@ test = [
     { name = "dagster-shared", editable = "../libraries/dagster-shared" },
     { name = "dagster-test", editable = "../dagster-test" },
 ]
-test-airflow1 = [
-    { name = "apache-airflow", marker = "python_full_version < '3.12'", specifier = ">=1.0.0,<2.0.0" },
-    { name = "boto3", marker = "python_full_version < '3.12'", specifier = ">=1.26.7" },
-    { name = "kubernetes", marker = "python_full_version < '3.12'", specifier = ">=10.0.1" },
-    { name = "markupsafe", marker = "python_full_version < '3.12'", specifier = "<=2.0.1" },
-    { name = "marshmallow-sqlalchemy", marker = "python_full_version < '3.12'", specifier = "<0.26.0" },
-    { name = "sqlalchemy", marker = "python_full_version < '3.12'", specifier = ">=1.0,<1.4.0" },
-    { name = "wtforms", marker = "python_full_version < '3.12'", specifier = "<3.0.0" },
-]
 test-airflow2 = [
-    { name = "apache-airflow", marker = "python_full_version < '3.12'", specifier = ">=2.0.0,<2.8" },
-    { name = "apache-airflow-providers-apache-spark", marker = "python_full_version < '3.12'" },
-    { name = "apache-airflow-providers-docker", marker = "python_full_version < '3.12'", specifier = ">=3.2.0,<4" },
-    { name = "apache-airflow-providers-http", marker = "python_full_version < '3.12'", specifier = "<4.1.1" },
-    { name = "boto3", marker = "python_full_version < '3.12'", specifier = ">=1.26.7" },
-    { name = "flask-session", marker = "python_full_version < '3.12'", specifier = "<0.6.0" },
-    { name = "kubernetes", marker = "python_full_version < '3.12'", specifier = ">=10.0.1" },
-    { name = "pendulum", marker = "python_full_version < '3.12'", specifier = "<3.0.0" },
+    { name = "apache-airflow", marker = "python_full_version < '3.13'", specifier = ">=2.11,<3" },
+    { name = "apache-airflow-providers-apache-spark", marker = "python_full_version < '3.13'" },
+    { name = "apache-airflow-providers-docker", marker = "python_full_version < '3.13'" },
+    { name = "apache-airflow-providers-http", marker = "python_full_version < '3.13'" },
+    { name = "boto3", marker = "python_full_version < '3.13'", specifier = ">=1.26.7" },
+    { name = "kubernetes", marker = "python_full_version < '3.13'", specifier = ">=10.0.1" },
 ]
 
 [[package]]
@@ -2502,7 +2490,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../dagster" },
-    { name = "dbt-core", specifier = ">=1.7,<1.12" },
+    { name = "dbt-core", specifier = ">=1.7,<1.13" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx" },
@@ -2532,6 +2520,7 @@ test = [
 ]
 test-dbt110 = [{ name = "dbt-core", specifier = "==1.10.*" }]
 test-dbt111 = [{ name = "dbt-core", specifier = "==1.11.*" }]
+test-dbt112 = [{ name = "dbt-core", specifier = "==1.12.*" }]
 test-dbt17 = [
     { name = "dbt-bigquery", marker = "python_full_version < '3.13'", specifier = "==1.7.*" },
     { name = "dbt-core", marker = "python_full_version < '3.13'", specifier = "==1.7.*,>=1.7.10" },

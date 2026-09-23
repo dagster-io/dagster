@@ -221,6 +221,7 @@ def _get_workspace_load_target_from_cli_opts(
             socket=None,
             host=workspace_opts.grpc_host or "localhost",
             location_name=None,
+            use_ssl=workspace_opts.use_ssl,
         )
     elif workspace_opts.grpc_socket:
         _check_attrs_falsey(
@@ -232,6 +233,7 @@ def _get_workspace_load_target_from_cli_opts(
             socket=workspace_opts.grpc_socket,
             host=workspace_opts.grpc_host or "localhost",
             location_name=None,
+            use_ssl=workspace_opts.use_ssl,
         )
     else:
         _raise_cli_usage_error()

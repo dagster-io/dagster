@@ -1,0 +1,56 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 12px var(--page-gutter, 24px);
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  width: 30%;
+  min-width: 250px;
+  overflow-y: auto;
+  box-shadow: inset 1px 0 var(--color-keyline-default);
+  padding: 12px 12px 12px var(--page-gutter, 24px);
+}
+
+/* Mobile: the two columns stack, and the page becomes the only scroll region — nested
+   scrollers inside a phone-height page trap the gesture. */
+
+:global(.dagster-mobile) .container {
+  flex-direction: column;
+  height: auto;
+  overflow: visible;
+}
+
+:global(.dagster-mobile) .left,
+:global(.dagster-mobile) .right {
+  width: auto;
+  min-width: 0;
+  overflow: visible;
+}
+
+:global(.dagster-mobile) .left {
+  padding-bottom: 0;
+}
+
+:global(.dagster-mobile) .right {
+  box-shadow: none;
+  padding: 0 var(--page-gutter) 12px;
+}
+
+:global(.dagster-mobile) .statusGrid {
+  gap: 16px 8px;
+}

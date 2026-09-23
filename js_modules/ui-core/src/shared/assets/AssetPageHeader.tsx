@@ -17,6 +17,7 @@ import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
 import styles from './css/AssetPageHeader.module.css';
+import {useIsMobile} from '../../app/layout/IsMobileContext';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../../assets/globalAssetGraphPathToString';
 import {AnchorButton} from '../../ui/AnchorButton';
@@ -40,6 +41,7 @@ export const AssetPageHeader = ({
   ...extra
 }: Props) => {
   const copyableString = tokenForAssetKey(assetKey);
+  const isMobile = useIsMobile();
 
   const location = useLocation();
   const assetSelection = getAssetSelectionQueryString(location.search);
@@ -70,13 +72,24 @@ export const AssetPageHeader = ({
       href: item.href ? appendSelection(item.href) : undefined,
     }));
 
+    // The leading crumbs are the same on every asset and eat most of the width on a
+    // phone, so the asset key stands alone there — unless it's empty, as on the catalog
+    // itself, where they are the only title.
+    if (isMobile && keyPathItems.length) {
+      return keyPathItems;
+    }
+
     return [...headerItems, ...keyPathItems];
-  }, [assetKey.path, headerBreadcrumbs, assetSelection]);
+  }, [assetKey.path, headerBreadcrumbs, assetSelection, isMobile]);
 
   return (
     <PageHeader
       title={
-        <Box flex={{alignItems: 'center', gap: 4}} style={{maxWidth: '600px'}}>
+        <Box
+          className={styles.title}
+          flex={{alignItems: 'center', gap: 4}}
+          style={{maxWidth: '600px'}}
+        >
           <Title>
             <Breadcrumbs
               items={breadcrumbs}

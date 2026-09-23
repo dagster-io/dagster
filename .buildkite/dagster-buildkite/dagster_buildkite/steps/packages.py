@@ -6,7 +6,7 @@ from pathlib import Path
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.packages import PackageSpec, build_steps_from_package_specs
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
+from buildkite_shared.step_builders.command_step_builder import ResourceRequests
 from buildkite_shared.step_builders.step_builder import StepConfiguration
 from buildkite_shared.tox import ToxFactor
 from buildkite_shared.utils import (
@@ -286,7 +286,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # snippets in all python versions since we are testing the core code exercised by the
             # snippets against all supported python versions.
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             pytest_tox_factors=[
                 ToxFactor("all"),
                 ToxFactor("integrations"),
@@ -388,7 +387,6 @@ def _example_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             oss_path("examples/airlift-federation-tutorial"),
             force_run_fn=BuildkiteContext.has_dagster_airlift_changes,
             timeout_in_minutes=30,
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             # Two airflow standalone stacks + dagster share one pod. 2 vCPU starved
             # the SQLite writers under load (scheduler died with "database is
             # locked", failing test_load_metrics); 4 vCPU matches the old c5.xlarge
@@ -451,15 +449,12 @@ def test_subfolders(tests_folder_name: str) -> Iterable[str]:
 
 def tox_factors_for_folder(
     tests_folder_name: str,
-    queue_overrides: Mapping[str, BuildkiteQueue] | None = None,
     resources_overrides: Mapping[str, ResourceRequests] | None = None,
 ) -> list[ToxFactor]:
-    queues = queue_overrides or {}
     resources = resources_overrides or {}
     return [
         ToxFactor(
             f"{tests_folder_name}__{subfolder_name}",
-            queue=queues.get(subfolder_name),
             resources=resources.get(subfolder_name),
         )
         for subfolder_name in test_subfolders(tests_folder_name)
@@ -482,7 +477,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         PackageSpec(oss_path("python_modules/dagit")),
         PackageSpec(
             oss_path("python_modules/dagster"),
-            env_vars=["AWS_ACCOUNT_ID"],
             pytest_tox_factors=[
                 ToxFactor("api_tests"),
                 ToxFactor("asset_defs_tests"),
@@ -748,33 +742,18 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                     concurrency_group="dagster-dbt-fusion-snowflake",
                 )
             ],
-            env_vars=[
-                "SNOWFLAKE_ACCOUNT",
-                "SNOWFLAKE_USER",
-                "SNOWFLAKE_BUILDKITE_PRIVATE_KEY",
-            ],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake"),
-            env_vars=[
-                "SNOWFLAKE_ACCOUNT",
-                "SNOWFLAKE_USER",
-                "SNOWFLAKE_DEMO_PRIVATE_KEY",
-            ],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airlift"),
-            env_vars=[
-                "AIRLIFT_MWAA_TEST_ENV_NAME",
-                "AIRLIFT_MWAA_TEST_PROFILE",
-                "AIRLIFT_MWAA_TEST_REGION",
-            ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-airbyte"),
@@ -813,9 +792,9 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         #     ],
         #     pytest_extra_cmds=airflow_extra_cmds,
         #     pytest_tox_factors=[
-        #         ToxFactor("default-airflow2"),
-        #         ToxFactor("localdb-airflow2"),
-        #         ToxFactor("persistentdb-airflow2"),
+        #         ToxFactor("default"),
+        #         ToxFactor("localdb"),
+        #         ToxFactor("persistentdb"),
         #     ],
         # ),
         PackageSpec(
@@ -826,7 +805,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 ToxFactor("serial"),
                 ToxFactor("plus"),
             ],
-            env_vars=["SHELL"],
             force_run_fn=BuildkiteContext.has_dg_or_component_integration_or_rest_resource_changes,
             # general/slow/serial tests depend on dagster-dbt which does not support Python 3.14
             unsupported_python_versions=(
@@ -842,12 +820,10 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-azure"),
-            env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
         ),
         PackageSpec(
             # Single rabbitmq sibling container; default dind sizing is enough.
             oss_path("python_modules/libraries/dagster-celery"),
-            env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
         ),
         PackageSpec(
@@ -858,7 +834,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # bump docker_memory_limit 4Gi → 8Gi to give dind headroom for
             # concurrent decompression and image-pull buffers.
             oss_path("python_modules/libraries/dagster-celery-docker"),
-            env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=celery_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
             resources=ResourceRequests(
@@ -880,7 +855,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # saturation shape as dagster-celery-docker above — bump
             # docker_memory_limit 4Gi → 8Gi alongside that package.
             oss_path("python_modules/libraries/dagster-docker"),
-            env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             pytest_extra_cmds=docker_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
             resources=ResourceRequests(
@@ -921,7 +895,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse"),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -930,7 +903,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-pandas"),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -939,7 +911,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-clickhouse-polars"),
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             resources=_CLICKHOUSE_TESTCONTAINERS_RESOURCES,
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_12,
@@ -954,32 +925,14 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-gcp"),
-            env_vars=[
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-                "GCP_PROJECT_ID",
-            ],
             pytest_extra_cmds=gcp_creds_extra_cmds,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-gcp-pandas"),
-            env_vars=[
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-                "GCP_PROJECT_ID",
-            ],
             pytest_extra_cmds=gcp_creds_extra_cmds,
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-gcp-pyspark"),
-            env_vars=[
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-                "GCP_PROJECT_ID",
-            ],
             pytest_extra_cmds=gcp_creds_extra_cmds,
             # spark-bigquery connector not yet compatible with Spark 4.x (required for PySpark on 3.14)
             unsupported_python_versions=[AvailablePythonVersion.V3_14],
@@ -992,12 +945,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-k8s"),
-            env_vars=[
-                "AWS_ACCOUNT_ID",
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-            ],
             pytest_tox_factors=[
                 ToxFactor("kubernetes_12"),
                 ToxFactor("kubernetes_35"),
@@ -1035,18 +982,15 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pandas"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-pyspark"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # pyspark<4 not available
             ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake-polars"),
-            env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_BUILDKITE_PRIVATE_KEY"],
         ),
         PackageSpec(
             # Single sibling postgres container via dagster_test.fixtures; default
@@ -1067,7 +1011,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-twilio"),
-            env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-wandb"),
@@ -1104,7 +1047,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 AvailablePythonVersion.V3_13,
                 AvailablePythonVersion.V3_14,
             ],
-            queue=BuildkiteQueue.KUBERNETES_EKS,
             # One airflow standalone stack + dagster per split carries the same
             # SQLite-lock risk as the federation tutorial, so match its 4 vCPU
             # sizing (#24950).
@@ -1121,13 +1063,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # runs, so let one build at a time have it.
             concurrency=1,
             concurrency_group="dagster-dbt-cloud-kitchen-sink",
-            env_vars=[
-                "KS_DBT_CLOUD_ACCOUNT_ID",
-                "KS_DBT_CLOUD_ACCESS_URL",
-                "KS_DBT_CLOUD_TOKEN",
-                "KS_DBT_CLOUD_PROJECT_ID",
-                "KS_DBT_CLOUD_ENVIRONMENT_ID",
-            ],
             unsupported_python_versions=[
                 AvailablePythonVersion.V3_14,  # dbt-core incompatible
             ],
@@ -1146,7 +1081,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             ],
             unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
             timeout_in_minutes=25,
-            ecr_passthru=True,
         ),
     ]
 

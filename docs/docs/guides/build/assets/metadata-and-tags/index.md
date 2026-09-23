@@ -11,7 +11,7 @@ slug: "/guides/build/assets/metadata-and-tags"
 Using metadata in Dagster, you can:
 
 - Attach ownership information
-- Organize assets with tags
+- Organize assets with groups and tags
 - Attach rich, complex information such as a Markdown description, a table schema, or a time series
 - Link assets with their source code
 
@@ -29,11 +29,18 @@ In a large organization, it's important to know which individuals and teams are 
 
 :::tip
 With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/guides/observe/alerts) for more information.
+
+You can also grant permissions to users and teams that apply to the definitions they own. For more information, see [User roles and permissions](/deployment/dagster-plus/authentication-and-access-control/rbac/user-roles-permissions#owned-definitions).
+
 :::
+
+## Organizing assets with groups \{#groups}
+
+Every asset belongs to a [**group**](/guides/build/assets/metadata-and-tags/groups), which is the most basic way to organize assets in Dagster. An asset can belong to only one group, and group names can be nested to build a hierarchy that the asset graph renders as nested boxes.
 
 ## Organizing assets with tags \{#tags}
 
-[**Tags**](/guides/build/assets/metadata-and-tags/tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
+[**Tags**](/guides/build/assets/metadata-and-tags/tags) can be used to add more flexible organization to assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 

@@ -1,0 +1,25 @@
+/* The picker replaces the tab row in the mobile layout, so it carries the row's height. */
+.pickerTarget {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  background-color: var(--color-background-default);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--color-border-default);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  padding: 6px 12px;
+}
+
+.picker:active {
+  background-color: var(--color-background-default-hover);
+}

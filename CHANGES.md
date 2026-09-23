@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.13.24 (core) / 0.29.24 (libraries)
+
+### New
+
+- Loading a project whose root module is not importable now raises an error explaining that the project package is likely not installed, instead of a bare `ModuleNotFoundError`.
+- [dagster-cloud] The ECS agent now supports cross-account service discovery. When the Cloud Map namespace lives in a different AWS account from the agent, the agent registers code server tasks in Cloud Map directly and reconciles them on an interval, configurable with the new `service_discovery_reconcile_interval` option (default 300 seconds). Same-account deployments are unchanged.
+- [dagster-dbt] `fetch_column_metadata()` now emits column lineage for dbt snapshots on dbt 1.12 and later, and no longer logs a warning and traceback for them on earlier versions.
+
+### Bugfixes
+
+- Fixed a bug where a job that included a `@multi_asset` with `can_subset=True` and specs using different partitions definitions failed to resolve with `DagsterInvalidDefinitionError` when one of its unselected dependencies was converted to an external asset. (Thanks, [@Terroface](https://github.com/Terroface)!)
+- Fixed `--use-ssl` being silently ignored when connecting to a gRPC code server via `--grpc-port` or `--grpc-socket`, which caused an insecure channel to be used. Also fixed `dagster dev --use-legacy-code-server-behavior` silently dropping `--package-name` and `--autoload-defs-module-name` when launching the webserver and daemon.
+- Fixed a bug where a callable object with a custom `__signature__` had its type hints read from `__call__` instead, causing resource parameters to be misinterpreted as asset inputs or dropped from a sensor's required resources.
+- [ui] Fixed an issue where asset health and other live data could remain stale after a failed refresh until the page was reloaded.
+- [dagster-airflow] Fixed a bug where every Airflow task log line was written twice to the compute logs on Airflow 2.9 and later.
+- [dagster-dbt] Fixed an `AttributeError` raised when a `DbtProject`'s `project_dir` was a string rather than a `Path`, which could happen after the project was round-tripped through Dagster metadata.
+- [dagster-dbt] Fixed the type annotation of `build_schedule_from_dbt_selection` so that non-string `tags` values, which already worked at runtime, no longer fail type checking, matching `define_asset_job`.
+- [dagster-k8s] Fixed a bug where a Dagster Pipes Kubernetes run whose pod had a failing init container would hang until the wait timed out (a day by default) instead of failing with the init container's error.
+
+### Documentation
+
+- Added a guide on code-backed and UI-managed alert policies in Dagster+.
+- Added documentation for owner-scoped RBAC in Dagster+.
+- Added a page on asset groups and nested groups, and corrected the asset selection syntax reference to note that wildcard matching is not limited to the `key` filter.
+
+## 1.13.23 (core) / 0.29.23 (libraries)
+
+### New
+
+- In Dagster+, alert policies can now target deployment capacity metrics — queued runs and in-progress runs — evaluated over a rolling window with aggregations such as max.
+- In Dagster+ Serverless, fast deploys now build a Docker image instead of a Python executable when the target environment cannot run one: Serverless on Kubernetes, or a Harbor image registry. Set `DAGSTER_CLOUD_DISABLE_PEX_DOCKER_REDIRECT` to opt out.
+- Component definition files can now use the `.yml` extension in addition to `.yaml`, as can `dagster.yaml` and `workspace.yaml`. `.yaml` still takes precedence when both are present.
+- The `dagster-k8s`, `dagster-celery-k8s`, and `user-code-example` images are now published as multi-platform images supporting both amd64 and arm64.
+- [cli] `dagster project from-example` now produces a components-layout project that installs with `uv sync` outside the Dagster repo.
+- [ui] Updated the Prefect kind tag icon, which now adapts to dark mode.
+
+### Bugfixes
+
+- [ui] Fixed an issue where pages that refresh automatically stopped polling after a failed request.
+- [ui] Fixed an issue where the Catalog assets folder tree could jump back to the top while scrolling.
+- [dagster-dbt] The dbt Cloud client now tolerates a trailing slash in `access_url`, treats deleting an already-deleted job as success, and includes dbt Cloud's error response body when logging request failures.
+- [dagster-prefect] Failure messages now name the Prefect run state consistently across Python versions.
+
 ## 1.13.22 (core) / 0.29.22 (libraries)
 
 ### New

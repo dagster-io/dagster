@@ -17,7 +17,12 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import DbtCliResource, DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dagster_dbt.dagster_dbt_translator import (
+    DagsterDbtTranslator,
+    DagsterDbtTranslatorSettings,
+    _attach_sql_model_code_reference,
+)
+from dagster_shared.record import as_dict
 
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
 
@@ -139,3 +144,41 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
         assert isinstance(source_reference, UrlCodeReference)
         line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]  # ty: ignore[unresolved-attribute]
         assert source_reference.url.endswith(f"test_code_references.py#L{line_no}")
+
+
+def test_attach_code_reference_with_string_project_dir(
+    test_jaffle_shop_manifest: dict[str, Any],
+) -> None:
+    """Test that _attach_sql_model_code_reference works when project_dir is a string,
+    as happens after serialization/deserialization through Dagster's metadata system.
+    """
+    # Pick a model node from the manifest that has original_file_path
+    nodes = test_jaffle_shop_manifest.get("nodes", {})
+    model_node = next(
+        (props for props in nodes.values() if props.get("resource_type") == "model"),
+        None,
+    )
+    assert model_node is not None, "Expected at least one model node in manifest"
+
+    # Bypass record type checking to build the state deserialization leaves behind: a real
+    # DbtProject whose project_dir is still a plain string because __new__ never coerced it.
+    project = DbtProject(project_dir=os.fspath(test_jaffle_shop_path))
+    project_with_str_dir = DbtProject.__nt_new__(  # ty: ignore[unresolved-attribute]
+        DbtProject,
+        **{**as_dict(project), "project_dir": str(test_jaffle_shop_path)},
+    )
+    assert isinstance(project_with_str_dir.project_dir, str)
+    assert not isinstance(project_with_str_dir.project_dir, Path)
+
+    # This would previously raise: AttributeError: 'str' object has no attribute 'joinpath'
+    result = _attach_sql_model_code_reference(
+        existing_metadata={},
+        dbt_resource_props=model_node,
+        project=project_with_str_dir,
+    )
+
+    assert "dagster/code_references" in result
+    references = result["dagster/code_references"].code_references
+    assert len(references) == 1
+    assert isinstance(references[0], LocalFileCodeReference)
+    assert os.path.exists(references[0].file_path), references[0].file_path

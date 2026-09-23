@@ -240,6 +240,7 @@ class GrpcServerTarget(WorkspaceLoadTarget):
     port: int | None
     socket: str | None
     location_name: str | None
+    use_ssl: bool = False
 
     def create_origins(self) -> Sequence[GrpcServerCodeLocationOrigin]:
         return [
@@ -248,6 +249,7 @@ class GrpcServerTarget(WorkspaceLoadTarget):
                 socket=self.socket,
                 host=self.host,
                 location_name=self.location_name,
+                use_ssl=self.use_ssl,
             )
         ]
 

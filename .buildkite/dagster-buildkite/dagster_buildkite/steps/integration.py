@@ -9,7 +9,7 @@ from buildkite_shared.packages import (
     UnsupportedVersionsFunction,
 )
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import BuildkiteQueue, ResourceRequests
+from buildkite_shared.step_builders.command_step_builder import ResourceRequests
 from buildkite_shared.step_builders.resource_presets import KIND_TEST_RESOURCES
 from buildkite_shared.step_builders.step_builder import TopLevelStepConfiguration
 from buildkite_shared.tox import ToxFactor
@@ -68,7 +68,6 @@ def build_backcompat_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         ctx,
         pytest_extra_cmds=backcompat_extra_cmds,
         pytest_tox_factors=tox_factors,
-        queue=BuildkiteQueue.KUBERNETES_EKS,
         resources=_BACKCOMPAT_RESOURCES,
     )
 
@@ -141,7 +140,6 @@ def build_celery_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConf
         directory,
         ctx,
         pytest_tox_factors,
-        queue=BuildkiteQueue.KUBERNETES_EKS,
         resources=KIND_TEST_RESOURCES,
         force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=celery_k8s_integration_suite_pytest_extra_cmds,
@@ -161,7 +159,6 @@ def build_daemon_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigur
         ctx,
         pytest_tox_factors,
         pytest_extra_cmds=daemon_pytest_extra_cmds,
-        queue=BuildkiteQueue.KUBERNETES_EKS,
         resources=_DAEMON_RESOURCES,
     )
 
@@ -188,14 +185,6 @@ def build_azure_live_test_suite_steps(ctx: BuildkiteContext) -> list[TopLevelSte
     return PackageSpec(
         oss_path(os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests")),
         skip_run_fn=skip_if_not_azure_commit,
-        env_vars=[
-            "TEST_AZURE_TENANT_ID",
-            "TEST_AZURE_CLIENT_ID",
-            "TEST_AZURE_CLIENT_SECRET",
-            "TEST_AZURE_STORAGE_ACCOUNT_ID",
-            "TEST_AZURE_CONTAINER_ID",
-            "TEST_AZURE_ACCESS_KEY",
-        ],
     ).build_steps(ctx)
 
 
@@ -231,7 +220,6 @@ def build_k8s_suite_steps(ctx: BuildkiteContext) -> list[TopLevelStepConfigurati
         pytest_tox_factors,
         force_run_fn=BuildkiteContext.has_helm_changes,
         pytest_extra_cmds=k8s_integration_suite_pytest_extra_cmds,
-        queue=BuildkiteQueue.KUBERNETES_EKS,
         resources=KIND_TEST_RESOURCES,
     )
 
@@ -246,7 +234,6 @@ def build_integration_suite_steps(
     ctx: BuildkiteContext,
     pytest_tox_factors: list[ToxFactor] | None = None,
     pytest_extra_cmds: PytestExtraCommandsFunction | None = None,
-    queue=None,
     force_run_fn: Callable[[BuildkiteContext], bool] | None = None,
     unsupported_python_versions: list[AvailablePythonVersion]
     | UnsupportedVersionsFunction
@@ -256,19 +243,10 @@ def build_integration_suite_steps(
 ) -> list[TopLevelStepConfiguration]:
     return PackageSpec(
         directory,
-        env_vars=[
-            "AIRFLOW_HOME",
-            "AWS_ACCOUNT_ID",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "BUILDKITE_SECRETS_BUCKET",
-            "GOOGLE_APPLICATION_CREDENTIALS",
-        ],
         pytest_extra_cmds=pytest_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
         pytest_tox_factors=pytest_tox_factors,
         timeout_in_minutes=30,
-        queue=queue,
         resources=resources,
         force_run_fn=force_run_fn,
         unsupported_python_versions=unsupported_python_versions,

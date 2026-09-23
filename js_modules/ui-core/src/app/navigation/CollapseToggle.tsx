@@ -1,8 +1,8 @@
 import {Button, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
-import {ShortcutHandler} from '../ShortcutHandler';
 import {NavCollapseContext} from './NavCollapseProvider';
+import {ShortcutHandler} from '../ShortcutHandler';
 
 const isAltBShortcut = (event: KeyboardEvent) => {
   return (
@@ -11,7 +11,11 @@ const isAltBShortcut = (event: KeyboardEvent) => {
 };
 
 export const CollapseToggle = () => {
-  const {isCollapsed, toggleCollapsed} = useContext(NavCollapseContext);
+  const {isCollapsed, toggleCollapsed, canCollapse} = useContext(NavCollapseContext);
+
+  if (!canCollapse) {
+    return null;
+  }
 
   return (
     <ShortcutHandler

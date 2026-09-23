@@ -254,6 +254,28 @@ class KubernetesWaitingReasons:
     CreateContainerConfigError = "CreateContainerConfigError"
 
 
+def _init_container_will_be_retried(pod: kubernetes.client.V1Pod, container_name: str) -> bool:
+    """Whether the kubelet will restart this init container after it fails.
+
+    An init container may carry its own restart policy, which overrides the pod's - a native
+    sidecar is an init container with `restartPolicy: Always`. An unknown restart policy is
+    treated as Never so that a failure is surfaced rather than waited on indefinitely.
+    """
+    if not pod.spec:
+        return False
+
+    container_policy = next(
+        (
+            # absent on kubernetes client versions predating sidecar support
+            getattr(container, "restart_policy", None)
+            for container in (pod.spec.init_containers or [])
+            if container.name == container_name
+        ),
+        None,
+    )
+    return (container_policy or pod.spec.restart_policy) in ("OnFailure", "Always")
+
+
 class DagsterKubernetesClient:
     def __init__(self, batch_api, core_api, logger, sleeper, timer):
         self.batch_api = batch_api
@@ -802,11 +824,18 @@ class DagsterKubernetesClient:
             elif state.terminated is not None:
                 container_name = container_status.name
                 if state.terminated.exit_code != 0:
-                    if container_name in initcontainers and pod.status.phase == "Pending":
-                        # An init container may restart while the pod is initializing.
-                        # Do not mark it as exited before a retry succeeds or the pod fails.
+                    if (
+                        container_name in initcontainers
+                        and pod.status.phase not in ("Failed", "Succeeded")
+                        and _init_container_will_be_retried(pod, container_name)
+                    ):
+                        self.logger(
+                            f'Init container "{container_name}" in {pod_name} failed and will be'
+                            " restarted, waiting for the retry..."
+                        )
                         self.sleeper(wait_time_between_attempts)
                         continue
+
                     tail_lines = int(
                         os.getenv("DAGSTER_K8S_WAIT_FOR_POD_FAILURE_LOG_LINE_COUNT", "100")
                     )
@@ -820,6 +849,15 @@ class DagsterKubernetesClient:
                     )
 
                     self.logger(msg)
+
+                    # A non-retryable init failure can leave later containers unstarted.
+                    # Once the pod has run, preserve sidecar and main-container diagnostics.
+                    if container_name in initcontainers and pod.status.phase in (None, "Pending"):
+                        debug_info = self.get_pod_debug_info(pod_name, namespace, pod=pod)
+                        raise DagsterK8sError(
+                            f"Pod {pod_name} failed to initialize:\n{msg}\n{debug_info}"
+                        )
+
                     error_logs.append(msg)
                 elif container_name in initcontainers:
                     self.logger(

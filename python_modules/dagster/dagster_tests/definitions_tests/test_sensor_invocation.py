@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
@@ -120,6 +121,42 @@ def test_sensor_invocation_resources_callable() -> None:
     assert cast(
         "dg.RunRequest",
         weird_sensor(dg.build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})),
+    ).run_config == {"foo": "foo"}
+
+
+def test_sensor_invocation_resources_callable_custom_signature() -> None:
+    class MyResource(dg.ConfigurableResource):
+        a_str: str
+
+    def evaluation_signature(my_resource: MyResource) -> dg.RunRequest:
+        raise NotImplementedError
+
+    # A wrapper that forwards to an inner function and advertises its signature. The resource
+    # parameter is only visible through `__signature__`; `__call__` takes `**kwargs`.
+    class Wrapper:
+        def __init__(self, fn):
+            self.__signature__ = inspect.signature(fn)
+
+        def __call__(self, **kwargs):
+            return dg.RunRequest(
+                run_key=None, run_config={"foo": kwargs["my_resource"].a_str}, tags={}
+            )
+
+    wrapped_sensor = dg.SensorDefinition(
+        name="wrapped", evaluation_fn=Wrapper(evaluation_signature)
+    )
+
+    assert wrapped_sensor.required_resource_keys == {"my_resource"}
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=(r"Resource with key 'my_resource' required by sensor 'wrapped' was not provided."),
+    ):
+        wrapped_sensor()
+
+    assert cast(
+        "dg.RunRequest",
+        wrapped_sensor(dg.build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})),
     ).run_config == {"foo": "foo"}
 
 

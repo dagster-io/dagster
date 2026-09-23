@@ -75,7 +75,7 @@ export const OverviewActivityRoot = () => {
             <OverviewAssetsRoot Header={header} TabButton={tabButton} />
           </Route>
         )}
-        <Route path="/overview/activity/timeline">
+        <Route path="/overview/activity/timeline" mobile="supported">
           <OverviewTimelineRoot Header={header} TabButton={tabButton} />
         </Route>
         <Route

@@ -1,0 +1,20 @@
+/* The variables the mobile layout sets for page content. Components and pages consume
+   them with desktop fallbacks; nothing here overrides another component's CSS.
+
+   Set on body (not the app container) so portals such as dialogs inherit them too. A plain
+   stylesheet rather than a CSS module because the selector has no local class, and it is
+   imported by AppContainer so it applies wherever the layout is rendered (Storybook too). */
+body.dagster-mobile {
+  --mobile-nav-button-inset-top: 8px;
+  --mobile-nav-button-inset-left: 16px;
+  --mobile-nav-button-size: 32px;
+  --mobile-nav-button-clearance: calc(
+    var(--mobile-nav-button-inset-left) + var(--mobile-nav-button-size) + 8px
+  );
+  --page-gutter: 16px;
+  --page-header-inset-left: var(--mobile-nav-button-clearance);
+  --list-item-gutter: var(--page-gutter);
+  --horizontal-controls-gap: 4px;
+  /* Mobile Safari zooms the page when a text field under 16px is focused. */
+  --input-font-size: 16px;
+}
