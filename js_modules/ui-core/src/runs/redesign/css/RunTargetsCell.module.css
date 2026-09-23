@@ -1,0 +1,28 @@
+.cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tag {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.partitionText {
+  max-width: 160px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 320px;
+}
+
+.previewTitle {
+  font-weight: 600;
+}

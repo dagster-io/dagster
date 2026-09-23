@@ -1,4 +1,6 @@
 import {
+  buildAssetCheckhandle,
+  buildAssetKey,
   buildPartitionBackfill,
   buildPipelineTag,
   buildRepositoryOrigin,
@@ -269,4 +271,79 @@ export const inProgressBackfill = backfillEntry({
   isAssetBackfill: true,
   startTime: LIVE_STARTED_AT,
   endTime: null,
+});
+
+// Selections
+
+const salesDaily = buildAssetKey({path: ['sales', 'daily']});
+const slashAsset = buildAssetKey({path: ['a/b']});
+const nestedAsset = buildAssetKey({path: ['a', 'b']});
+
+const manyAssets = Array.from({length: 25}, (_, index) =>
+  buildAssetKey({path: ['warehouse', `table_${index}`]}),
+);
+
+export const completeSelectionRun = runEntry({
+  id: 'complete-selection-run-id',
+  jobName: REAL_JOB_NAME,
+  assetSelectionPreview: [salesDaily, slashAsset, nestedAsset],
+  assetSelectionCount: 3,
+});
+
+export const incompleteSelectionRun = runEntry({
+  id: 'incomplete-selection-run-id',
+  assetSelectionPreview: manyAssets,
+  assetSelectionCount: 40,
+});
+
+export const unknownSelectionsRun = runEntry({
+  id: 'unknown-selection-run-id',
+  jobName: REAL_JOB_NAME,
+  assetSelectionPreview: null,
+  assetCheckSelectionPreview: null,
+});
+
+export const emptyWholeJobRun = runEntry({id: 'whole-job-run-id', jobName: REAL_JOB_NAME});
+
+export const emptyHiddenAssetJobRun = runEntry({id: 'empty-hidden-job-run-id'});
+
+export const checksOnlyRun = runEntry({
+  id: 'checks-only-run-id',
+  jobName: REAL_JOB_NAME,
+  assetCheckSelectionPreview: [
+    buildAssetCheckhandle({assetKey: salesDaily, name: 'freshness'}),
+    buildAssetCheckhandle({assetKey: salesDaily, name: 'row_count'}),
+  ],
+  assetCheckSelectionCount: 2,
+});
+
+export const assetsKnownChecksUnknownRun = runEntry({
+  id: 'assets-known-checks-unknown-run-id',
+  assetSelectionPreview: [salesDaily],
+  assetSelectionCount: 1,
+  assetCheckSelectionPreview: null,
+});
+
+export const checksKnownAssetsUnknownRun = runEntry({
+  id: 'checks-known-assets-unknown-run-id',
+  assetSelectionPreview: null,
+  assetCheckSelectionPreview: [buildAssetCheckhandle({assetKey: salesDaily, name: 'freshness'})],
+  assetCheckSelectionCount: 1,
+});
+
+export const singlePartitionRun = runEntry({
+  id: 'single-partition-run-id',
+  assetSelectionPreview: [salesDaily],
+  assetSelectionCount: 1,
+  tags: [tag(DagsterTag.Partition, '2026-09-08')],
+});
+
+export const partitionRangeRun = runEntry({
+  id: 'partition-range-run-id',
+  assetSelectionPreview: [salesDaily],
+  assetSelectionCount: 1,
+  tags: [
+    tag(DagsterTag.AssetPartitionRangeStart, '2026-09-01'),
+    tag(DagsterTag.AssetPartitionRangeEnd, '2026-09-08'),
+  ],
 });
