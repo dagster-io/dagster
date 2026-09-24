@@ -15,7 +15,7 @@ from buildkite_shared.utils import (
     oss_path,
 )
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
-from dagster_buildkite.steps.test_project import test_project_depends_fn
+from dagster_buildkite.steps.test_project import test_project_depends_fn, test_project_gate_cmds
 from dagster_buildkite.utils import wait_for_mysql_container
 
 _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111", "dbt112"]
@@ -165,8 +165,15 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     ]
 
 
+def celery_docker_extra_cmds(
+    version: AvailablePythonVersion, factor: ToxFactor | None
+) -> list[str]:
+    return [*test_project_gate_cmds(), *celery_extra_cmds(version, factor)]
+
+
 def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
     return [
+        *test_project_gate_cmds(),
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
     ]
@@ -834,7 +841,7 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
             # bump docker_memory_limit 4Gi → 8Gi to give dind headroom for
             # concurrent decompression and image-pull buffers.
             oss_path("python_modules/libraries/dagster-celery-docker"),
-            pytest_extra_cmds=celery_extra_cmds,
+            pytest_extra_cmds=celery_docker_extra_cmds,
             pytest_step_dependencies=test_project_depends_fn,
             resources=ResourceRequests(
                 cpu="1000m",
