@@ -1612,14 +1612,15 @@ class DagsterCloudUserCodeLauncher(
                         )
                         self._trigger_recovery_server_restart(deployment_location)
                     elif deployment_location in self._control_plane_error_locations:
-                        self._logger.info(
-                            "Code server for %s:%s recovered from a control plane error. "
-                            "Scheduling a metadata re-upload.",
-                            deployment_name,
-                            location_name,
-                        )
                         with self._metadata_lock:
-                            self._upload_locations.add(deployment_location)
+                            if deployment_location in self._desired_entries:
+                                self._logger.info(
+                                    "Code server for %s:%s recovered from a control plane error. "
+                                    "Scheduling a metadata re-upload.",
+                                    deployment_name,
+                                    location_name,
+                                )
+                                self._upload_locations.add(deployment_location)
                 except Exception as e:
                     if (
                         isinstance(e, DagsterUserCodeUnreachableError)
