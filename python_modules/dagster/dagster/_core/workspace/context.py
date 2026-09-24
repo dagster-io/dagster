@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -1176,7 +1177,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
         load_time = get_current_timestamp()
         if isinstance(location, GrpcServerCodeLocation):
-            version_key = location.server_id
+            # A refresh can correct image metadata without changing the server ID during a rollout.
+            version_key = json.dumps([location.server_id, location.container_image])
         else:
             version_key = str(load_time)
 
