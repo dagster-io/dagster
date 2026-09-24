@@ -38,13 +38,20 @@ class StorageMethods:
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialization storage id for each partition for a given asset key.
 
         Returns a mapping of partition to storage id.
         """
+        # Only forward the cursor when set, so storage implementations that predate the
+        # parameter keep working for callers that don't use it.
+        if after_cursor is None:
+            return self._event_storage.get_latest_storage_id_by_partition(
+                asset_key, event_type, partitions
+            )
         return self._event_storage.get_latest_storage_id_by_partition(
-            asset_key, event_type, partitions
+            asset_key, event_type, partitions, after_cursor=after_cursor
         )
 
     @traced

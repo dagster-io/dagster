@@ -1926,15 +1926,20 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
-        Returns a mapping of partition to storage id.
+        Returns a mapping of partition to storage id. Partitions whose latest event is not after
+        ``after_cursor`` are omitted.
         """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [event_type], asset_partitions=list(partitions) if partitions else None
+            asset_key,
+            [event_type],
+            asset_partitions=list(partitions) if partitions else None,
+            after_cursor=after_cursor,
         )
         latest_event_ids_by_partition = db_select(
             [
