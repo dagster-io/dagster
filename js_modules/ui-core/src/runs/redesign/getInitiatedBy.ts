@@ -16,11 +16,16 @@ export type Initiator =
   | {kind: 'backfill'}
   | {kind: 'manual'};
 
+export type TickIdentifier = {
+  tickId: string;
+  instigationSelector: InstigationSelector;
+};
+
 export type InitiatedBy = {
   initiator: Initiator;
   user: string | null;
   parentBackfillId: string | null;
-  tick: {tickId: string; instigationSelector: InstigationSelector} | null;
+  tick: TickIdentifier | null;
 };
 
 const getScheduleOrSensorPath = (repoAddress: RepoAddress | null, prefix: string, name: string) =>
@@ -109,7 +114,7 @@ const getUser = (entry: MappedRunsFeedEntry, tags: Map<string, string>): string 
 const getTick = (
   tags: Map<string, string>,
   repoAddress: RepoAddress | null,
-): InitiatedBy['tick'] => {
+): TickIdentifier | null => {
   if (repoAddress === null) {
     return null;
   }

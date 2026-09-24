@@ -292,7 +292,7 @@ export const RunStatusCell = ({entry}: RunStatusCellProps) => {
           usePortal
           position="bottom-left"
           hoverOpenDelay={100}
-          // The timing text is the row's one tab stop; the step statistics are a hover extra.
+          // Hover-only; the timing text is the cell's tab stop.
           openOnTargetFocus={false}
           content={
             <>

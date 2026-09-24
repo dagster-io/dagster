@@ -1,4 +1,4 @@
-import {MockedProvider} from '@apollo/client/testing';
+import {showToast} from '@dagster-io/ui-components';
 
 import {RunInitiatedByCell} from '../RunInitiatedByCell';
 import {
@@ -23,21 +23,24 @@ export default {
 };
 
 const CellTemplate = ({entry}: {entry: MappedRunsFeedEntry}) => (
-  <MockedProvider mocks={[]}>
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        // Fixed-width so cell truncation is visible
-        width: 420,
-        height: 48,
-        padding: '0 16px',
-        border: '1px solid var(--color-keyline-default)',
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      // Fixed-width so cell truncation is visible
+      width: 420,
+      height: 48,
+      padding: '0 16px',
+      border: '1px solid var(--color-keyline-default)',
+    }}
+  >
+    <RunInitiatedByCell
+      entry={entry}
+      onOpenTickDetails={() => {
+        showToast({message: 'The tick dialog opens here.', intent: 'none'});
       }}
-    >
-      <RunInitiatedByCell entry={entry} />
-    </div>
-  </MockedProvider>
+    />
+  </div>
 );
 
 export const Schedule = () => <CellTemplate entry={scheduleRun} />;

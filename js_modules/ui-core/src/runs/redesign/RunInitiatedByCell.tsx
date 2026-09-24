@@ -1,12 +1,10 @@
 import {ButtonLink, Colors, Icon, IconName, MiddleTruncate, Tag} from '@dagster-io/ui-components';
 import {UserDisplay} from '@shared/runs/UserDisplay';
-import {useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import styles from './css/RunInitiatedByCell.module.css';
-import {InitiatedBy, Initiator, getInitiatedBy} from './getInitiatedBy';
+import {Initiator, TickIdentifier, getInitiatedBy} from './getInitiatedBy';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
-import {TickDetailsDialog} from '../../instigation/TickDetailsDialog';
 import {shortenId} from '../../util/shortenId';
 import {getBackfillPath} from '../RunsFeedUtils';
 
@@ -87,32 +85,25 @@ const BackfillTag = ({backfillId}: BackfillTagProps) => (
   </Tag>
 );
 
-type ViewTickTagProps = {
-  tick: NonNullable<InitiatedBy['tick']>;
+type TickDetailsTagProps = {
+  tick: TickIdentifier;
+  onOpenTickDetails: (tick: TickIdentifier, triggerElement: HTMLElement) => void;
 };
 
-const ViewTickTag = ({tick}: ViewTickTagProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <>
-      <Tag icon="checklist" className={styles.tag}>
-        <ButtonLink onClick={() => setIsOpen(true)}>View tick</ButtonLink>
-      </Tag>
-      <TickDetailsDialog
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        tickId={tick.tickId}
-        instigationSelector={tick.instigationSelector}
-      />
-    </>
-  );
-};
+const TickDetailsTag = ({tick, onOpenTickDetails}: TickDetailsTagProps) => (
+  <Tag icon="checklist" className={styles.tag}>
+    <ButtonLink onClick={(event) => onOpenTickDetails(tick, event.currentTarget)}>
+      View tick
+    </ButtonLink>
+  </Tag>
+);
 
 type RunInitiatedByCellProps = {
   entry: MappedRunsFeedEntry;
+  onOpenTickDetails: (tick: TickIdentifier, triggerElement: HTMLElement) => void;
 };
 
-export const RunInitiatedByCell = ({entry}: RunInitiatedByCellProps) => {
+export const RunInitiatedByCell = ({entry, onOpenTickDetails}: RunInitiatedByCellProps) => {
   const {initiator, user, parentBackfillId, tick} = getInitiatedBy(entry);
   const {icon, label, href} = getInitiatorDisplay(initiator);
 
@@ -137,7 +128,7 @@ export const RunInitiatedByCell = ({entry}: RunInitiatedByCellProps) => {
           <UserDisplay email={user} />
         </span>
       )}
-      {tick && <ViewTickTag tick={tick} />}
+      {tick && <TickDetailsTag tick={tick} onOpenTickDetails={onOpenTickDetails} />}
     </div>
   );
 };

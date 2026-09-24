@@ -1,19 +1,9 @@
-import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
-import {buildInstigationState, buildInstigationTick} from '../../../graphql/builders';
-import {InstigationTickStatus, InstigationType} from '../../../graphql/types';
-import {JOB_SELECTED_TICK_QUERY} from '../../../instigation/TickDetailsDialog';
-import {
-  SelectedTickQuery,
-  SelectedTickQueryVariables,
-} from '../../../instigation/types/TickDetailsDialog.types';
-import {buildQueryMock} from '../../../testing/mocking';
 import {RunInitiatedByCell} from '../RunInitiatedByCell';
 import {
-  FIXTURE_NOW_MS,
   autoRetryInBackfillRun,
   backfillChildRun,
   defaultAutomationSensorRun,
@@ -26,43 +16,10 @@ import {
 } from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
 
-const tickMock = buildQueryMock<SelectedTickQuery, SelectedTickQueryVariables>({
-  query: JOB_SELECTED_TICK_QUERY,
-  variables: {
-    instigationSelector: {
-      name: 'hourly_schedule',
-      repositoryName: 'my_repo',
-      repositoryLocationName: 'my_location',
-    },
-    tickId: 'tick-id',
-  },
-  data: {
-    instigationStateOrError: buildInstigationState({
-      id: 'hourly_schedule-state-id',
-      tick: buildInstigationTick({
-        id: 'tick-id',
-        tickId: 'tick-id',
-        instigationType: InstigationType.SCHEDULE,
-        status: InstigationTickStatus.SUCCESS,
-        timestamp: FIXTURE_NOW_MS / 1000 - 600,
-        requestedAssetMaterializationCount: 0,
-        requestedJobRunCount: 1,
-        runIds: [],
-        originRunIds: [],
-        runs: [],
-        error: null,
-        skipReason: null,
-      }),
-    }),
-  },
-});
-
-const renderCell = (entry: MappedRunsFeedEntry) =>
+const renderCell = (entry: MappedRunsFeedEntry, onOpenTickDetails = jest.fn()) =>
   render(
     <MemoryRouter>
-      <MockedProvider mocks={[tickMock]}>
-        <RunInitiatedByCell entry={entry} />
-      </MockedProvider>
+      <RunInitiatedByCell entry={entry} onOpenTickDetails={onOpenTickDetails} />
     </MemoryRouter>,
   );
 
@@ -113,10 +70,25 @@ describe('RunInitiatedByCell', () => {
     expect(await screen.findByTitle('pat@example.com')).toBeVisible();
   });
 
-  it('opens the tick details dialog from the tick affordance', async () => {
+  it('reports the tick and its button when the affordance is used', async () => {
     const user = userEvent.setup();
-    renderCell(scheduleRunWithTick);
-    await user.click(await screen.findByRole('button', {name: 'View tick'}));
-    expect(await screen.findByText(/Tick for hourly_schedule/)).toBeVisible();
+    const onOpenTickDetails = jest.fn();
+    renderCell(scheduleRunWithTick, onOpenTickDetails);
+
+    const button = await screen.findByRole('button', {name: 'View tick'});
+    await user.click(button);
+
+    expect(onOpenTickDetails).toHaveBeenCalledTimes(1);
+    expect(onOpenTickDetails).toHaveBeenCalledWith(
+      {
+        tickId: 'tick-id',
+        instigationSelector: {
+          name: 'hourly_schedule',
+          repositoryName: 'my_repo',
+          repositoryLocationName: 'my_location',
+        },
+      },
+      button,
+    );
   });
 });
