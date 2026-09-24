@@ -32,9 +32,7 @@ export const buildEvaluationRecordsForList = (length: number) => {
       }),
       timestamp: (now - ONE_MINUTE * ii) / 1000,
       numRequested: Math.random() > 0.5 ? 1 : 0,
-      runIds: Array.from({length: Math.floor(Math.random() * 5)}).map(() =>
-        faker.datatype.uuid().slice(0, 8),
-      ),
+      runIds: Array.from({length: Math.floor(Math.random() * 5)}).map(() => faker.datatype.uuid()),
       isLegacy: false,
       rootUniqueId: 'my-root',
       evaluationNodes: [

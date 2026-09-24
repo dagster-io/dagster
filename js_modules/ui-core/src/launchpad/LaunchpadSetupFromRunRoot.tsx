@@ -18,6 +18,7 @@ import {useJobPermissions} from '../app/useJobPermissions';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
+import {shortenId} from '../util/shortenId';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -103,7 +104,7 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
         }
 
         // Name the session after this run ID.
-        const newSession: Partial<IExecutionSession> = {name: `From run ${run.id.slice(0, 8)}`};
+        const newSession: Partial<IExecutionSession> = {name: `From run ${shortenId(run.id)}`};
 
         if (typeof runConfigYaml === 'string') {
           newSession.runConfigYaml = runConfigYaml;

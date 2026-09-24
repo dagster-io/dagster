@@ -9,6 +9,7 @@ import {AnalyticsContext} from '../../../app/analytics';
 import {buildPythonError, buildRunsFeedConnection} from '../../../graphql/builders';
 import possibleTypes from '../../../graphql/possibleTypes.generated.json';
 import {RunStatus, RunsFeedView, RunsFilter} from '../../../graphql/types';
+import {shortenId} from '../../../util/shortenId';
 import {RUNS_FEED_QUERY} from '../RunsFeedQuery';
 import {RunsPage} from '../RunsPage';
 import {buildBackfillSummary, buildRunSummary} from '../__fixtures__/RunsFeedEntries.fixtures';
@@ -91,7 +92,7 @@ const renderPage = (
   return {history};
 };
 
-const findRunLink = (id: string) => screen.findByRole('link', {name: `Run ${id.slice(0, 8)}`});
+const findRunLink = (id: string) => screen.findByRole('link', {name: `Run ${shortenId(id)}`});
 
 describe('RunsPage', () => {
   it('renders entries from the first page', async () => {

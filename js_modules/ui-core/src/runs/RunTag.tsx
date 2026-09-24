@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TagAction, TagActionsPopover} from '../ui/TagActions';
+import {shortenId} from '../util/shortenId';
 
 export enum DagsterTag {
   AutomationCondition = 'dagster/from_automation_condition',
@@ -93,7 +94,7 @@ export const RunTag = ({tag, actions}: IRunTagProps) => {
   const displayValue = React.useMemo(() => {
     switch (key) {
       case DagsterTag.SnapshotID:
-        return value.slice(0, 8);
+        return shortenId(value);
       default:
         return value;
     }

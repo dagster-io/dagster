@@ -15,11 +15,7 @@ const Template = (props: DeletionDialogProps) => (
   </MockedProvider>
 );
 
-const ids = [
-  faker.datatype.uuid().slice(0, 8),
-  faker.datatype.uuid().slice(0, 8),
-  faker.datatype.uuid().slice(0, 8),
-];
+const ids = [faker.datatype.uuid(), faker.datatype.uuid(), faker.datatype.uuid()];
 
 export const Success = {
   render: (args: DeletionDialogProps) => <Template {...args} />,

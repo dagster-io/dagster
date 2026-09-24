@@ -39,6 +39,7 @@ import {
   useComputeLogFileKeyForSelection,
 } from './useComputeLogFileKeyForSelection';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
+import {shortenId} from '../util/shortenId';
 
 interface RunProps {
   runId: string;
@@ -69,7 +70,7 @@ export const Run = memo((props: RunProps) => {
   });
 
   const documentTitle = useMemo(() => {
-    const shortId = runId.slice(0, 8);
+    const shortId = shortenId(runId);
     if (!run) {
       return `Runs | ${shortId}`;
     }

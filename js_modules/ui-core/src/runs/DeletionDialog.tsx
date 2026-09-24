@@ -14,6 +14,7 @@ import {useEffect, useReducer, useRef} from 'react';
 import {NavigationBlock} from './NavigationBlock';
 import {DELETE_MUTATION} from './RunUtils';
 import {useMutation} from '../apollo-client';
+import {shortenId} from '../util/shortenId';
 import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
 
 export interface Props {
@@ -251,7 +252,7 @@ export const DeletionDialog = (props: Props) => {
                 <li key={runId}>
                   <Box flex={{direction: 'row', gap: 8}}>
                     <Text size={14} family="mono">
-                      {runId.slice(0, 8)}
+                      {shortenId(runId)}
                     </Text>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Box>

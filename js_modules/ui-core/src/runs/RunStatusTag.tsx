@@ -4,6 +4,7 @@ import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../graphql/types';
+import {shortenId} from '../util/shortenId';
 
 const statusToIntent = (status: RunStatus) => {
   switch (status) {
@@ -106,7 +107,7 @@ export const RunStatusTagWithID = ({runId, status}: {runId: string; status: RunS
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
         <Text size={12} family="mono">
-          {runId.slice(0, 8)}
+          {shortenId(runId)}
         </Text>
       </Box>
     </Tag>

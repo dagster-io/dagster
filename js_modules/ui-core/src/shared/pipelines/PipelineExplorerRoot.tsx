@@ -31,6 +31,7 @@ import {
   explorerPathToString,
 } from '../../pipelines/PipelinePathUtils';
 import {Loading} from '../../ui/Loading';
+import {shortenId} from '../../util/shortenId';
 import {buildPipelineSelector, useJob} from '../../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../../workspace/types';
 
@@ -43,7 +44,7 @@ export const PipelineExplorerSnapshotRoot = () => {
   const history = useHistory();
 
   const openInNewTab = useOpenInNewTab();
-  useDocumentTitle(`Snapshots | ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
+  useDocumentTitle(`Snapshots | ${pipelineName}${snapshotId ? `@${shortenId(snapshotId)}` : ''}`);
 
   return (
     <PipelineExplorerContainer

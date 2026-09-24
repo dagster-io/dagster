@@ -3,6 +3,7 @@ import {useMemo} from 'react';
 
 import {DefsStateManagementType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import {shortenId} from '../util/shortenId';
 import {DefsStateInfoFragment} from './types/CodeLocationDefsStateQuery.types';
 
 interface Props {
@@ -39,13 +40,6 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
       .sort((a, b) => (b.currentTimestamp || 0) - (a.currentTimestamp || 0));
   }, [latestDefsStateInfo, defsStateInfo]);
 
-  const truncateVersion = (version: string | null) => {
-    if (!version) {
-      return '—';
-    }
-    return version.length > 8 ? version.substring(0, 8) : version;
-  };
-
   const renderVersionCell = (
     version: string | null,
     managementType: DefsStateManagementType | null,
@@ -78,7 +72,7 @@ export const CodeLocationDefsStateComparison = ({latestDefsStateInfo, defsStateI
     return (
       <Tooltip content={version} placement="top">
         <Tag>
-          <span style={{fontFamily: FontFamily.monospace}}>{truncateVersion(version)}</span>
+          <span style={{fontFamily: FontFamily.monospace}}>{shortenId(version)}</span>
         </Tag>
       </Tooltip>
     );

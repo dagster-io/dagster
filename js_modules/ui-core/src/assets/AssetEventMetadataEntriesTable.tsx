@@ -39,9 +39,10 @@ import {
 } from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {shortenId} from '../util/shortenId';
 import {RepoAddress} from '../workspace/types';
 import styles from './css/AssetEventMetadataEntriesTable.module.css';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 type TableEvent = Pick<
   | AssetObservationFragment
@@ -109,7 +110,7 @@ export const AssetEventMetadataEntriesTable = ({
     const eventRows = event
       ? event.metadataEntries.map((entry) => ({
           tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()}${
-            event.runId ? ` in run ${event.runId?.slice(0, 8)}` : ``
+            event.runId ? ` in run ${shortenId(event.runId)}` : ``
           }`,
           icon: 'materialization' as const,
           timestamp: event.timestamp,
@@ -121,7 +122,7 @@ export const AssetEventMetadataEntriesTable = ({
     const observationRows = (observations || []).flatMap((o) =>
       o.metadataEntries.map((entry) => ({
         tooltip: `Observed ${dayjs(Number(o.timestamp)).fromNow()}${
-          o.runId ? ` in run ${o.runId.slice(0, 8)}` : ``
+          o.runId ? ` in run ${shortenId(o.runId)}` : ``
         }`,
         icon: 'observation' as const,
         timestamp: o.timestamp,

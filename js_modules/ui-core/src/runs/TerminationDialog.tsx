@@ -20,6 +20,7 @@ import {useMutation} from '../apollo-client';
 import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
 import {TerminateRunPolicy} from '../graphql/types';
 import {testId} from '../testing/testId';
+import {shortenId} from '../util/shortenId';
 
 export interface Props {
   isOpen: boolean;
@@ -341,7 +342,7 @@ export const TerminationDialog = (props: Props) => {
                 <li key={runId}>
                   <Box flex={{direction: 'row', gap: 8}}>
                     <Text size={14} family="mono">
-                      {runId.slice(0, 8)}
+                      {shortenId(runId)}
                     </Text>
                     {errors[runId] ? <div>{errors[runId]?.message}</div> : null}
                   </Box>
