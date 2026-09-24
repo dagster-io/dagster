@@ -27,7 +27,7 @@ import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {RunTags, tagsAsYamlString} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {
   PipelineEnvironmentQuery,

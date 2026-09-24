@@ -11,7 +11,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
-import {RunFilterToken} from '../runs/RunsFilterInput';
+import {RunFilterToken} from '../runs/RunsFilterUtils';
 
 interface DataState {
   runs: PartitionMatrixStepRunFragment[];

@@ -18,13 +18,13 @@ import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__
 import {DagsterTag} from '../RunTag';
 import {
   RUN_TAG_KEYS_QUERY,
-  RunFilterToken,
   RunsFilterInputProps,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
   useTagDataFilterValues,
 } from '../RunsFilterInput';
+import {RunFilterToken} from '../RunsFilterUtils';
 import {buildRunTagValuesQueryMockedResponse} from '../__fixtures__/RunsFilterInput.fixtures';
 import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
 

@@ -1,33 +1,16 @@
-import {Tabs, TokenizingFieldValue} from '@dagster-io/ui-components';
-import isEqual from 'lodash/isEqual';
+import {Tabs} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
+import {getRunsFeedDocumentTitle, getSelectedRunsFeedTab} from './RunsFeedUtils';
+import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterUtils';
 import {gql, useQuery} from '../apollo-client';
 import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {TabLink} from '../ui/TabLink';
 
-type SelectedTab = ReturnType<typeof useSelectedRunsFeedTab>;
-
-const getDocumentTitle = (selected: SelectedTab) => {
-  switch (selected) {
-    case 'all':
-      return 'Runs | All';
-    case 'backfills':
-      return 'Runs | All backfills';
-    case 'failed':
-      return 'Runs | Failed';
-    case 'in-progress':
-      return 'Runs | In progress';
-    case 'queued':
-      return 'Runs | Queued';
-    default:
-      return 'Runs';
-  }
-};
+type SelectedTab = ReturnType<typeof getSelectedRunsFeedTab>;
 
 export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {}) => {
   const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
@@ -55,7 +38,7 @@ export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {
 
   const [filterTokens] = useQueryPersistedRunFilters();
 
-  useDocumentTitle(getDocumentTitle(selectedTab));
+  useDocumentTitle(getRunsFeedDocumentTitle(selectedTab));
 
   const urlForStatus = (statuses: RunStatus[], nextView?: RunsFeedView) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
@@ -82,28 +65,6 @@ export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {
   );
 
   return {tabs, queryResult};
-};
-
-export const useSelectedRunsFeedTab = (
-  filterTokens: TokenizingFieldValue[],
-  view: RunsFeedView,
-) => {
-  if (view === RunsFeedView.BACKFILLS) {
-    return 'backfills';
-  }
-  const statusTokens = new Set(
-    filterTokens.filter((token) => token.token === 'status').map((token) => token.value),
-  );
-  if (isEqual(queuedStatuses, statusTokens)) {
-    return 'queued';
-  }
-  if (isEqual(inProgressStatuses, statusTokens)) {
-    return 'in-progress';
-  }
-  if (isEqual(failedStatuses, statusTokens)) {
-    return 'failed';
-  }
-  return 'all';
 };
 
 export const RUN_FEED_TABS_COUNT_QUERY = gql`

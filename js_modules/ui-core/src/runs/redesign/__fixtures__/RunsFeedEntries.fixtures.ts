@@ -31,7 +31,9 @@ const repositoryOrigin = buildRepositoryOrigin({
   repositoryLocationName: 'my_location',
 });
 
-const buildRunSummary = (overrides: Partial<RunSummaryFragment> = {}): RunSummaryFragment => ({
+export const buildRunSummary = (
+  overrides: Partial<RunSummaryFragment> = {},
+): RunSummaryFragment => ({
   ...buildRun({
     id: 'a1b2c3d4-1111-2222-3333-444455556666',
     runId: 'a1b2c3d4-1111-2222-3333-444455556666',
@@ -52,7 +54,7 @@ const buildRunSummary = (overrides: Partial<RunSummaryFragment> = {}): RunSummar
   ...overrides,
 });
 
-const buildBackfillSummary = (
+export const buildBackfillSummary = (
   overrides: Partial<BackfillSummaryFragment> = {},
 ): BackfillSummaryFragment => ({
   ...buildPartitionBackfill({

@@ -27,7 +27,7 @@ import {
   queuedStatuses,
   successStatuses,
 } from '../../runs/RunStatuses';
-import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
+import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterUtils';
 import {testId} from '../../testing/testId';
 import {numberFormatter} from '../../ui/formatters';
 

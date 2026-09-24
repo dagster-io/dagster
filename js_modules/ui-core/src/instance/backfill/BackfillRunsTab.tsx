@@ -9,12 +9,12 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {DagsterTag} from '../../runs/RunTag';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
+import {useRunsFilterInput} from '../../runs/RunsFilterInput';
 import {
   RunFilterTokenType,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-  useRunsFilterInput,
-} from '../../runs/RunsFilterInput';
+} from '../../runs/RunsFilterUtils';
 import {TimelineRangeControls} from '../../runs/TimelineRangeControls';
 import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
 

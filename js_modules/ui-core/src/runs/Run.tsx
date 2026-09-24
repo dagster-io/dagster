@@ -20,7 +20,7 @@ import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {runsPathWithFilters} from './RunsFilterInput';
+import {runsPathWithFilters} from './RunsFilterUtils';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
