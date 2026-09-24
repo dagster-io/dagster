@@ -300,6 +300,17 @@ def test_webserver_db_pool_recycle(deployment_template: HelmTemplate):
     assert f"--db-pool-recycle {pool_recycle_s}" in command
 
 
+def test_webserver_db_pool_pre_ping(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(dbPoolPrePing=False)
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert "--no-db-pool-pre-ping" in command
+
+
 def test_webserver_db_pool_max_overflow(deployment_template: HelmTemplate):
     pool_max_overflow_s = 30
     helm_values = DagsterHelmValues.construct(

@@ -149,3 +149,18 @@ def test_statement_timeouts(conn_string):
         with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
             with instance._schedule_storage.connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
                 conn.execute(db.text("select sleep(1)")).fetchone()
+
+
+@pytest.mark.parametrize("pool_pre_ping", [True, False])
+def test_pool_pre_ping(conn_string, pool_pre_ping):
+    parse_result = urlparse(conn_string)
+    hostname = parse_result.hostname
+    port = parse_result.port
+
+    with instance_for_test(overrides=safe_load_yaml(full_mysql_config(hostname, port))) as instance:
+        instance.optimize_for_webserver(
+            statement_timeout=500, pool_recycle=-1, max_overflow=20, pool_pre_ping=pool_pre_ping
+        )
+        assert instance._run_storage._engine.pool._pre_ping is pool_pre_ping  # noqa: SLF001
+        assert instance._event_storage._engine.pool._pre_ping is pool_pre_ping  # noqa: SLF001
+        assert instance._schedule_storage._engine.pool._pre_ping is pool_pre_ping  # noqa: SLF001
