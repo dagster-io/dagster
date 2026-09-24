@@ -7,6 +7,13 @@ class Service(BaseModel):
     port: int
 
 
+class Pool(BaseModel):
+    size: int | None = None
+    maxOverflow: int | None = None
+    recycle: int | None = None
+    mode: str | None = None
+
+
 class PostgreSQL(BaseModel):
     image: ExternalImage
     enabled: bool
@@ -17,3 +24,4 @@ class PostgreSQL(BaseModel):
     postgresqlParams: dict
     postgresqlScheme: str | None = None
     service: Service
+    pool: Pool | None = None
