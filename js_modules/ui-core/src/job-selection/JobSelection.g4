@@ -18,6 +18,7 @@ traversalAllowedExpr:
 // Attribute expressions for specific attributes
 attributeExpr:
 	NAME COLON keyValue # NameExpr
+	| GROUP COLON keyValue # GroupExpr
 	| CODE_LOCATION COLON value # CodeLocationExpr;
 
 // Value can be a quoted or unquoted string
@@ -41,6 +42,7 @@ RPAREN: ')';
 
 // Tokens for attributes
 NAME: 'name';
+GROUP: 'group';
 CODE_LOCATION: 'code_location';
 
 // Tokens for strings

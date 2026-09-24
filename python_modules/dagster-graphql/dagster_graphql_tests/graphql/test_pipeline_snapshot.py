@@ -1,6 +1,8 @@
 from unittest import mock
 
 import pytest
+from dagster import job, op
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster_graphql.implementation.fetch_pipelines import _get_job_snapshot_from_instance
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
@@ -274,3 +276,54 @@ def test_fetch_snapshot_or_error_by_snap_and_selector(
     assert not result.errors
     assert result.data
     assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineSnapshot"
+
+
+SNAPSHOT_GROUP_NAME_QUERY = """
+query PipelineSnapshotGroupNameQuery($snapshotId: String!) {
+    pipelineSnapshotOrError(snapshotId: $snapshotId) {
+        __typename
+        ... on PipelineSnapshot {
+            name
+            groupName
+        }
+    }
+}
+"""
+
+
+@op
+def group_name_op(): ...
+
+
+@job(group_name="operational/maintenance")
+def grouped_job():
+    group_name_op()
+
+
+@job
+def ungrouped_job():
+    group_name_op()
+
+
+@pytest.mark.parametrize(
+    "job_def, expected_group_name",
+    [(grouped_job, "operational/maintenance"), (ungrouped_job, "default")],
+)
+def test_job_group_name(
+    graphql_context: WorkspaceRequestContext, job_def: JobDefinition, expected_group_name: str
+):
+    instance = graphql_context.instance
+    result = job_def.execute_in_process(instance=instance)
+    assert result.success
+    run = instance.get_run_by_id(result.run_id)
+    assert run and run.job_snapshot_id
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        SNAPSHOT_GROUP_NAME_QUERY,
+        {"snapshotId": run.job_snapshot_id},
+    )
+
+    assert not result.errors
+    assert result.data
+    assert result.data["pipelineSnapshotOrError"]["groupName"] == expected_group_name

@@ -19,6 +19,7 @@ export const WORKSPACE_PIPELINE_FRAGMENT = gql`
     name
     isJob
     isAssetJob
+    groupName
     externalJobSource
     pipelineSnapshotId
     automationCondition {

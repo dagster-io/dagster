@@ -25,6 +25,8 @@ You can target one or multiple assets, or create multiple jobs that target overl
 
 <CodeExample path="docs_snippets/docs_snippets/guides/build/assets/asset-jobs/asset-jobs.py" language="python" startAfter="start_marker_jobs" endBefore="end_marker_jobs" title="src/<project_name>/defs/jobs.py" />
 
+To organize a set of related asset jobs in the Dagster UI, pass the `group_name` argument to `define_asset_job`. For more information, see [Job groups](/guides/build/jobs/job-groups).
+
 ## Making asset jobs available to Dagster tools
 
 Jobs are loaded automatically with [`dg`](/api/clis) and there is no need to explicity define a [`Definitions`](/api/dagster/definitions) object for them. If you include schedules or sensors, the [code location](/guides/build/projects) will automatically include jobs that those schedules or sensors target.

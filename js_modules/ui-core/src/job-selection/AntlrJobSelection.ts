@@ -13,6 +13,7 @@ type JobSelectionQueryResult<T> = {
 export type Job = {
   name: string;
   repo: RepoAddress;
+  groupName?: string | null;
 };
 
 export const parseJobSelectionQuery = <T extends Job>(

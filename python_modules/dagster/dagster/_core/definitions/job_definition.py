@@ -57,9 +57,11 @@ from dagster._core.definitions.resource_requirement import (
     ensure_requirements_satisfied,
 )
 from dagster._core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
     check_valid_name,
     validate_definition_owner,
+    validate_group_name,
 )
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -121,6 +123,7 @@ class JobDefinition(IHasInternalInit):
     _subset_selection_data: OpSelectionData | AssetSelectionData | None
     input_values: Mapping[str, object]
     _owners: Sequence[str] | None
+    _group_name: str | None
     _automation_condition: "AutomationCondition | None"
 
     def __init__(
@@ -145,6 +148,7 @@ class JobDefinition(IHasInternalInit):
         input_values: Mapping[str, object] | None = None,
         _was_explicitly_provided_resources: bool | None = None,
         owners: Sequence[str] | None = None,
+        group_name: str | None = None,
         _automation_condition: "AutomationCondition[AssetJobKey] | None" = None,
     ):
         from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -230,6 +234,8 @@ class JobDefinition(IHasInternalInit):
             for owner in owners:
                 validate_definition_owner(owner, "job", self._name)
         self._owners = owners
+        validate_group_name(group_name, "job")
+        self._group_name = group_name
         for input_name in sorted(list(self.input_values.keys())):
             if not graph_def.has_input(input_name):
                 raise DagsterInvalidDefinitionError(
@@ -284,6 +290,7 @@ class JobDefinition(IHasInternalInit):
         input_values: Mapping[str, object] | None,
         _was_explicitly_provided_resources: bool | None,
         owners: Sequence[str] | None,
+        group_name: str | None,
         _automation_condition: "AutomationCondition[AssetJobKey] | None",
     ) -> "JobDefinition":
         return JobDefinition(
@@ -305,6 +312,7 @@ class JobDefinition(IHasInternalInit):
             input_values=input_values,
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
             owners=owners,
+            group_name=group_name,
             _automation_condition=_automation_condition,
         )
 
@@ -382,6 +390,19 @@ class JobDefinition(IHasInternalInit):
     @property
     def owners(self) -> Sequence[str] | None:
         return self._owners
+
+    @public
+    @property
+    def group_name(self) -> str:
+        """The group this job belongs to. Jobs that were defined without a `group_name`
+        belong to the default group.
+        """
+        return self._group_name or DEFAULT_GROUP_NAME
+
+    @property
+    def specified_group_name(self) -> str | None:
+        """The group name that was explicitly provided for this job, if any."""
+        return self._group_name
 
     @property
     def automation_condition(self) -> "AutomationCondition | None":
@@ -865,6 +886,7 @@ class JobDefinition(IHasInternalInit):
             _subset_selection_data=None,  # this is added below
             _was_explicitly_provided_resources=True,
             owners=self._owners,
+            group_name=self._group_name,
             _automation_condition=self._automation_condition,
         ).get_subset(
             op_selection=op_selection,
@@ -1189,6 +1211,7 @@ class JobDefinition(IHasInternalInit):
                 "resource_defs" in kwargs or self._was_provided_resources
             ),
             owners=self._owners,
+            group_name=self._group_name,
             _automation_condition=self._automation_condition,
         )
         resolved_kwargs = {**base_kwargs, **kwargs}  # base kwargs overwritten for conflicts
