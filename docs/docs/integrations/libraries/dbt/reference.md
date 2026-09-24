@@ -572,6 +572,8 @@ Once your dbt models have been materialized, you can view the row count data in 
 
 To use this feature, you'll need to be on at least `dagster>=1.8.0` and `dagster-dbt>=0.24.0`.
 
+This feature is not supported on the dbt Fusion engine. For more information, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion#limitations).
+
 :::
 
 Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags) and [column lineage](/guides/build/assets/metadata-and-tags), as [materialization metadata](/guides/build/assets/metadata-and-tags).

@@ -26,11 +26,9 @@ The [`dagster-dbt` library](/integrations/libraries/dbt/dagster-dbt) provides a 
 
 :::
 
-:::tip dbt Fusion is supported as of 1.11.5
+:::tip dbt Fusion
 
-Dagster supports dbt Fusion as of the 1.11.5 release. Dagster will automatically detect which engine you have installed. If you're currently using core, to migrate uninstall dbt-core and install dbt Fusion. For more information please reference the dbt [docs](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-fusion).
-
-This feature is still in preview pending dbt Fusion GA.
+Dagster supports the dbt Fusion engine as of the 1.11.5 release. Support is in preview and has known limitations, including no supported column-level metadata or column lineage. For setup instructions and the full list of gaps, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion).
 
 :::
 
