@@ -453,6 +453,19 @@ dagster-user-deployments:
       nodeSelector: {}
       affinity: {}
       tolerations: []
+      # Support topology spread constraints for user code pod assignment. See:
+      # https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/
+      #
+      # Example:
+      #
+      # topologySpreadConstraints:
+      #   - maxSkew: 1
+      #     topologyKey: topology.kubernetes.io/zone
+      #     whenUnsatisfiable: ScheduleAnyway
+      #     labelSelector:
+      #       matchLabels:
+      #         deployment: k8s-example-user-code-1
+      topologySpreadConstraints: []
       podSecurityContext: {}
       securityContext: {}
       resources: {}
@@ -483,6 +496,16 @@ dagster-user-deployments:
       # Strategy to follow when replacing old pods with new pods. See:
       # https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
       deploymentStrategy: {}
+
+      # Creates a PodDisruptionBudget for the user code deployment, limiting how many of its
+      # pods can be down simultaneously due to voluntary disruptions (e.g. node drains). When
+      # enabled, exactly one of minAvailable or maxUnavailable must be set. See:
+      # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+      podDisruptionBudget:
+        enabled: false
+        # minAvailable: ~
+        # maxUnavailable: 1
+        # unhealthyPodEvictionPolicy: AlwaysAllow
 
       service:
         annotations: {}

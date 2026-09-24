@@ -7,6 +7,13 @@ class UserDeploymentIncludeConfigInLaunchedRuns(BaseModel):
     enabled: bool
 
 
+class UserDeploymentPodDisruptionBudget(BaseModel):
+    enabled: bool = False
+    minAvailable: int | str | None = None
+    maxUnavailable: int | str | None = None
+    unhealthyPodEvictionPolicy: str | None = None
+
+
 ReadinessProbeWithEnabled = create_model(
     "ReadinessProbeWithEnabled", __base__=(kubernetes.ReadinessProbe), enabled=(bool, ...)
 )
@@ -28,6 +35,8 @@ class UserDeployment(BaseModel):
     nodeSelector: kubernetes.NodeSelector | None = None
     affinity: kubernetes.Affinity | None = None
     tolerations: kubernetes.Tolerations | None = None
+    topologySpreadConstraints: kubernetes.TopologySpreadConstraints | None = None
+    podDisruptionBudget: UserDeploymentPodDisruptionBudget | None = None
     podSecurityContext: kubernetes.PodSecurityContext | None = None
     securityContext: kubernetes.SecurityContext | None = None
     resources: kubernetes.Resources | None = None
