@@ -59,6 +59,8 @@ import dagster._check as check
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if TYPE_CHECKING:
+    import multiprocessing.synchronize
+
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryDefinition,
@@ -369,10 +371,8 @@ def _termination_handler(
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 def start_termination_thread(
-    should_stop_event: threading.Event, is_done_event: threading.Event
+    should_stop_event: "multiprocessing.synchronize.Event", is_done_event: threading.Event
 ) -> None:
-    check.inst_param(should_stop_event, "should_stop_event", ttype=type(multiprocessing.Event()))
-
     int_thread = threading.Thread(
         target=_termination_handler,
         args=(should_stop_event, is_done_event),
