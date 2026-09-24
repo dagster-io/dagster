@@ -265,6 +265,67 @@ def test_dbt_profile_configuration() -> None:
 
 
 @pytest.mark.parametrize(
+    ("explicit_profile", "explicit_target", "env", "expected_profile", "expected_target"),
+    [
+        # DBT_PROFILE / DBT_TARGET are honored when the resource sets neither, so the
+        # in-process adapter resolves the same profile as the dbt subprocess.
+        (None, None, {"DBT_PROFILE": "env_profile", "DBT_TARGET": "prod"}, "env_profile", "prod"),
+        # Explicit resource config always wins over the env vars.
+        (
+            "arg_profile",
+            "arg_target",
+            {"DBT_PROFILE": "env_profile", "DBT_TARGET": "prod"},
+            "arg_profile",
+            "arg_target",
+        ),
+        # Nothing set: pass None through so dbt applies its own profiles.yml default.
+        (None, None, {}, None, None),
+    ],
+    ids=["env_var_honored", "explicit_arg_wins", "no_override"],
+)
+def test_initialize_dbt_core_adapter_honors_target_profile_env_vars(
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockerFixture,
+    explicit_profile: str | None,
+    explicit_target: str | None,
+    env: dict[str, str],
+    expected_profile: str | None,
+    expected_target: str | None,
+) -> None:
+    # https://github.com/dagster-io/dagster/issues/33818 - the in-process adapter
+    # used for metadata calls ignored DBT_PROFILE / DBT_TARGET while the dbt
+    # subprocess honored them (via dbt's own CLI layer), so the two paths could
+    # resolve different profiles/targets.
+    class _StopAdapterInit(Exception):
+        """Raised to short-circuit adapter init right after profile resolution."""
+
+    monkeypatch.delenv("DBT_PROFILE", raising=False)
+    monkeypatch.delenv("DBT_TARGET", raising=False)
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+
+    # Capture the overrides Dagster passes to dbt, then stop before any real
+    # adapter / warehouse connection is created.
+    mock_load_profile = mocker.patch(
+        "dbt.config.runtime.load_profile", side_effect=_StopAdapterInit
+    )
+
+    resource = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path),
+        profile=explicit_profile,
+        target=explicit_target,
+    )
+
+    with pytest.raises(_StopAdapterInit):
+        resource._initialize_dbt_core_adapter(["run"])  # noqa: SLF001
+
+    # load_profile(project_dir, cli_vars, profile_name_override, target_override)
+    _, _, passed_profile, passed_target = mock_load_profile.call_args.args
+    assert passed_profile == expected_profile
+    assert passed_target == expected_target
+
+
+@pytest.mark.parametrize(
     "profiles_dir", [None, test_jaffle_shop_path, os.fspath(test_jaffle_shop_path)]
 )
 def test_dbt_profiles_dir_configuration(profiles_dir: str | Path) -> None:
