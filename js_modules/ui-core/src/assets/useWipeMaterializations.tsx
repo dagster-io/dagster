@@ -3,6 +3,7 @@ import {AssetWipeDialog} from '@shared/assets/AssetWipeDialog';
 import React, {useContext, useMemo, useState} from 'react';
 
 import {RefetchQueriesFunction} from '../apollo-client';
+import {assetHasWipePermission} from './assetWipePermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PermissionsContext} from '../app/Permissions';
 
@@ -26,18 +27,9 @@ export const useWipeMaterializations = ({
     if (selected.length === 0) {
       return false;
     }
-    // Deployment-wide permission grants access to all assets
-    if (unscopedPermissions.canWipeAssets?.enabled) {
-      return true;
-    }
-    return selected.every((a) => {
-      // Location-scoped permission grants access to assets in that location
-      if (a.locationName && locationPermissions[a.locationName]?.canWipeAssets?.enabled) {
-        return true;
-      }
-      // Per-asset permission from the definition (owner-based)
-      return !!a.definitionHasWipePermission;
-    });
+    return selected.every((asset) =>
+      assetHasWipePermission(asset, unscopedPermissions, locationPermissions),
+    );
   }, [selected, unscopedPermissions, locationPermissions]);
 
   const {
