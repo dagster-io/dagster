@@ -4,7 +4,7 @@ import {AntlrOpSelectionVisitor} from './AntlrOpSelectionVisitor';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {OpSelectionLexer} from './generated/OpSelectionLexer';
 import {OpSelectionParser} from './generated/OpSelectionParser';
-import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
+import {AntlrInputErrorListener} from '../selection/AntlrInputErrorListener';
 
 type OpSelectionQueryResult<T extends GraphQueryItem> = {
   all: T[];

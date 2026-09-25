@@ -43,6 +43,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
   private createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
   private supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
+  private supportsNot: SelectionAutoCompleteProvider['supportsNot'];
 
   public list: Array<Suggestion> = [];
 
@@ -59,6 +60,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getAllResults,
     createOperatorSuggestion,
     supportsTraversal,
+    supportsNot,
   }: {
     line: string;
     cursorIndex: number;
@@ -69,6 +71,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
     createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
     supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
+    supportsNot: SelectionAutoCompleteProvider['supportsNot'];
   }) {
     super({line, cursorIndex});
     this.getAttributeResultsMatchingQuery = getAttributeResultsMatchingQuery;
@@ -80,6 +83,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this._startReplacementIndex = cursorIndex;
     this._stopReplacementIndex = cursorIndex;
     this.supportsTraversal = supportsTraversal;
+    this.supportsNot = supportsNot;
   }
 
   set startReplacementIndex(newValue: number) {
@@ -420,13 +424,11 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     options: {excludeNot?: boolean; excludePlus?: boolean} = {},
   ) {
     const value = _value.trim();
-    if (value) {
-      this.list.push(
-        this.getSubstringResultMatchingQuery({
-          query: value,
-          textCallback,
-        }),
-      );
+    const substringResult = value
+      ? this.getSubstringResultMatchingQuery({query: value, textCallback})
+      : null;
+    if (substringResult) {
+      this.list.push(substringResult);
     }
     this.addAttributeResults(value, textCallback);
     this.addFunctionResults(value, textCallback, true);
@@ -440,7 +442,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       );
     }
 
-    if (!options.excludeNot && 'not'.startsWith(value)) {
+    if (this.supportsNot && !options.excludeNot && 'not'.startsWith(value)) {
       this.list.push(
         this.createOperatorSuggestion({
           text: textCallback('not '),

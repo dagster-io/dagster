@@ -3,7 +3,7 @@ import {CharStream, CommonTokenStream} from 'antlr4ng';
 import {AntlrAutomationSelectionVisitor} from './AntlrAutomationSelectionVisitor';
 import {AutomationSelectionLexer} from './generated/AutomationSelectionLexer';
 import {AutomationSelectionParser} from './generated/AutomationSelectionParser';
-import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
+import {AntlrInputErrorListener} from '../selection/AntlrInputErrorListener';
 import {Automation} from './input/useAutomationSelectionAutoCompleteProvider';
 
 export const parseAutomationSelectionQuery = <T extends Automation>(

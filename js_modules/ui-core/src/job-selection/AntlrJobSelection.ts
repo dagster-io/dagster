@@ -3,7 +3,7 @@ import {CharStream, CommonTokenStream} from 'antlr4ng';
 import {AntlrJobSelectionVisitor} from './AntlrJobSelectionVisitor';
 import {JobSelectionLexer} from './generated/JobSelectionLexer';
 import {JobSelectionParser} from './generated/JobSelectionParser';
-import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
+import {AntlrInputErrorListener} from '../selection/AntlrInputErrorListener';
 import {RepoAddress} from '../workspace/types';
 
 type JobSelectionQueryResult<T> = {
