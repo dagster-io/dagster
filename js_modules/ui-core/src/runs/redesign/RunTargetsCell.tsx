@@ -2,9 +2,10 @@ import {IconName, MiddleTruncate, Tag, Tooltip, UnstyledButton} from '@dagster-i
 import {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 
+import {buildTagMap} from './buildTagMap';
 import styles from './css/RunTargetsCell.module.css';
+import {getRepoAddress} from './getRepoAddress';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
-import {buildTagMap, getRepoAddress} from './utils';
 import {
   displayNameForAssetKey,
   isHiddenAssetGroupJob,

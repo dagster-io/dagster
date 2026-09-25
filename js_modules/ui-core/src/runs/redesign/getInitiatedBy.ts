@@ -1,5 +1,6 @@
+import {buildTagMap} from './buildTagMap';
+import {getRepoAddress} from './getRepoAddress';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
-import {buildTagMap, getRepoAddress} from './utils';
 import {InstigationSelector} from '../../graphql/types';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
