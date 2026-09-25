@@ -1,0 +1,24 @@
+{
+  "dataset_id": "geo-facts-eval",
+  "dataset_semver": "1.0.0",
+  "examples": [
+    {
+      "question_id": "q1",
+      "question": "How tall is the Eiffel Tower?",
+      "reference_answer": "The Eiffel Tower stands 330 meters tall.",
+      "expected_citation_ids": ["doc1"]
+    },
+    {
+      "question_id": "q2",
+      "question": "Where is Mount Everest located?",
+      "reference_answer": "Mount Everest lies in the Himalayas on the border of Nepal and China.",
+      "expected_citation_ids": ["doc3"]
+    },
+    {
+      "question_id": "q3",
+      "question": "How long is the Great Wall of China?",
+      "reference_answer": "The Great Wall of China is over 13000 miles long.",
+      "expected_citation_ids": ["doc2"]
+    }
+  ]
+}
