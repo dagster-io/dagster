@@ -79,8 +79,6 @@ class ExecutorDefinition(NamedConfigurableDefinition):
             be met in order for the executor to be usable for a particular job execution.
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`Executor`
-        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
-            executor.
         description (Optional[str]): A description of the executor.
     """
 

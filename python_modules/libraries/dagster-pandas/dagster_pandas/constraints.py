@@ -574,8 +574,6 @@ class MultiAggregateConstraintWithMetadata(MultiColumnConstraintWithMetadata):
         resulting_exception (type): the response to generate if validation fails. Subclass of
                                     ConstraintWithMetadataException
         raise_or_typecheck (Optional[bool]):  whether to raise an exception (true) or a failed typecheck (false)
-        type_for_internal (Optional[type]): what type to use for internal validators.  Subclass of
-                                            ConstraintWithMetadata
         name (Optional[str]): what to call the constraint, defaults to the class name.
     """
 

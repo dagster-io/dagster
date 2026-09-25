@@ -532,8 +532,6 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
-        cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
-            If set, this will be used to read stderr/stdout logs.
         include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
         log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on DBFS.
     """
