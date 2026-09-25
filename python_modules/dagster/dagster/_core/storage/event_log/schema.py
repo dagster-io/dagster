@@ -258,6 +258,11 @@ db.Index(
     ),
     mysql_length={"asset_key": 64, "dagster_event_type": 64, "partition": 64},
 )
+# supports event-log retention purges (range scan on timestamp)
+db.Index(
+    "idx_event_timestamp",
+    SqlEventLogStorageTable.c.timestamp,
+)
 db.Index(
     "idx_dynamic_partitions",
     DynamicPartitionsTable.c.partitions_def_name,

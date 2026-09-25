@@ -295,6 +295,15 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def delete_events(self, run_id: str) -> None:
         """Remove events for a given run id."""
 
+    def purge_events(self, before_timestamp: float) -> int:
+        """Delete non-asset event rows older than the given UTC timestamp.
+
+        Asset materializations, observations, planned events, checks, freshness, health and wipe
+        events are always preserved. Default is a no-op; SQL backends override. Returns the number
+        of rows deleted (0 when unimplemented).
+        """
+        return 0
+
     @abstractmethod
     def upgrade(self) -> None:
         """This method should perform any schema migrations necessary to bring an
