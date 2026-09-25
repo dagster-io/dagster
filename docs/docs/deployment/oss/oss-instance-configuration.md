@@ -279,6 +279,20 @@ The <PyObject section="libraries" integration="aws" module="dagster_aws" object=
 </TabItem>
 </Tabs>
 
+#### Compute log capture and process output
+
+On POSIX systems, while compute logs are being captured, Dagster echoes the captured output back to the original `stdout`/`stderr` streams using a `tail` subprocess. This keeps step output visible outside of compute log storage — for example, in `kubectl logs` or in log collectors that read container output.
+
+By default, the `tail` process is terminated as soon as the capture completes. Because `tail` polls the captured file approximately once per second, output written in the final moments of a step — such as the stack trace of a failing step — may be missing from the echoed stream, even though it is stored in compute log storage.
+
+To avoid losing the end of the echoed output, set the `DAGSTER_COMPUTE_LOG_TAIL_WAIT_AFTER_FINISH` environment variable in the processes that execute runs and steps (for example, on launched run and step pods in Kubernetes). Its value is the number of seconds to wait before terminating the `tail` process once capture completes; the default is `0`:
+
+```shell
+DAGSTER_COMPUTE_LOG_TAIL_WAIT_AFTER_FINISH=2
+```
+
+This setting only affects what is echoed back to the process output. The contents of compute log storage are always complete, regardless of this value.
+
 ### Local artifact storage
 
 The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
