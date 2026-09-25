@@ -1611,6 +1611,16 @@ class DagsterCloudUserCodeLauncher(
                             f"Code server for {deployment_name}:{location_name} unexpectedly moved into an error state. Deploying a new code server. Observed error: \n{response_or_error.to_string()}"
                         )
                         self._trigger_recovery_server_restart(deployment_location)
+                    elif deployment_location in self._control_plane_error_locations:
+                        with self._metadata_lock:
+                            if deployment_location in self._desired_entries:
+                                self._logger.info(
+                                    "Code server for %s:%s recovered from a control plane error. "
+                                    "Scheduling a metadata re-upload.",
+                                    deployment_name,
+                                    location_name,
+                                )
+                                self._upload_locations.add(deployment_location)
                 except Exception as e:
                     if (
                         isinstance(e, DagsterUserCodeUnreachableError)

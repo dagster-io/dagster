@@ -801,6 +801,80 @@ def test_recovery_after_failed_redeploy(user_code_launcher: UserCodeTestLauncher
         assert isinstance(recovered_servers[("dep1", "location1")], ServerEndpoint)
 
 
+def test_healthy_server_reuploads_metadata_after_control_plane_error(
+    user_code_launcher: UserCodeTestLauncher,
+):
+    user_code_launcher.start(run_reconcile_thread=False)
+
+    location_key = ("dep1", "location1")
+    metadata_map: UserCodeLauncherEntryMap = {
+        location_key: UserCodeLauncherEntry(
+            CodeLocationDeployData("test_image:tag1", python_file="foo.py"), time.time()
+        )
+    }
+    user_code_launcher.update_grpc_metadata(
+        metadata_map,
+        control_plane_error_locations=set(),
+        control_plane_outdated_locations=set(),
+    )
+    user_code_launcher.reconcile()
+
+    endpoint = user_code_launcher.get_grpc_endpoints()[location_key]
+    assert isinstance(endpoint, ServerEndpoint)
+
+    user_code_launcher.update_grpc_metadata(
+        metadata_map,
+        control_plane_error_locations={location_key},
+        control_plane_outdated_locations=set(),
+    )
+    with mock.patch.object(
+        user_code_launcher,
+        "_make_check_on_running_server_endpoint",
+        return_value=lambda: None,
+    ):
+        user_code_launcher._check_server_health({location_key: endpoint}, 300)
+
+    assert location_key in user_code_launcher._upload_locations
+    user_code_launcher.reconcile()
+    assert user_code_launcher.uploaded_locations == ["location1"]
+
+
+def test_healthy_server_does_not_reupload_metadata_for_removed_location(
+    user_code_launcher: UserCodeTestLauncher,
+):
+    user_code_launcher.start(run_reconcile_thread=False)
+
+    location_key = ("dep1", "location1")
+    metadata_map: UserCodeLauncherEntryMap = {
+        location_key: UserCodeLauncherEntry(
+            CodeLocationDeployData("test_image:tag1", python_file="foo.py"), time.time()
+        )
+    }
+    user_code_launcher.update_grpc_metadata(
+        metadata_map,
+        control_plane_error_locations=set(),
+        control_plane_outdated_locations=set(),
+    )
+    user_code_launcher.reconcile()
+
+    endpoint = user_code_launcher.get_grpc_endpoints()[location_key]
+    assert isinstance(endpoint, ServerEndpoint)
+
+    user_code_launcher.update_grpc_metadata(
+        {},
+        control_plane_error_locations={location_key},
+        control_plane_outdated_locations=set(),
+    )
+    with mock.patch.object(
+        user_code_launcher,
+        "_make_check_on_running_server_endpoint",
+        return_value=lambda: None,
+    ):
+        user_code_launcher._check_server_health({location_key: endpoint}, 300)
+
+    assert location_key not in user_code_launcher._upload_locations
+
+
 def test_redeploy_when_server_moves_to_error_state(user_code_launcher: UserCodeTestLauncher):
     user_code_launcher.start(run_reconcile_thread=False)
 
