@@ -1,11 +1,13 @@
 import asyncio
+import contextvars
 import inspect
 import shutil
 import tempfile
 from abc import abstractmethod
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Coroutine
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional, TypeVar
 from uuid import uuid4
 
 from dagster_shared import check
@@ -32,6 +34,27 @@ from dagster.components.utils.project_paths import get_local_state_path
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+
+_T = TypeVar("_T")
+
+
+def _run_coroutine_sync(coro: Coroutine[Any, Any, _T]) -> _T:
+    """Run a coroutine to completion from synchronous code.
+
+    Uses ``asyncio.run`` when no event loop is running. When called from within a
+    running loop (e.g. ``dg utils refresh-defs-state``), ``asyncio.run`` raises
+    ``RuntimeError``, so run the coroutine in a worker thread with its own event
+    loop, copying the current context so ContextVars propagate to it.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+
+    context = contextvars.copy_context()
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(context.run, asyncio.run, coro).result()
 
 
 @public
@@ -217,7 +240,7 @@ class StateBackedComponent(Component):
                 # automatically refresh in local dev unless the user opts out
                 (using_dagster_dev() and self.defs_state_config.refresh_if_dev)
             ):
-                version = asyncio.run(self.refresh_state(context.project_root))
+                version = _run_coroutine_sync(self.refresh_state(context.project_root))
                 defs_load_context.add_defs_state_info(key, version)
 
         with DefinitionsLoadContext.get().state_path(
