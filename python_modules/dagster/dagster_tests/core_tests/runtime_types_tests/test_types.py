@@ -1,5 +1,6 @@
 import re
 import typing
+from typing import Generic, TypeVar
 
 import dagster as dg
 import pytest
@@ -657,3 +658,76 @@ def test_tuple_inner_types_not_mutable():
     assert isinstance(inner_types[0], ListType)
     assert inner_types[0].inner_type == inner_types[1]
     assert len(inner_types) == 2
+
+
+T = TypeVar("T")
+
+
+class GenericContainer(Generic[T]):
+    """Stands in for library generics such as `pandera.typing.polars.DataFrame`, whose values are
+    instances of an unparameterized base class rather than of the annotation itself.
+    """
+
+
+class Schema:
+    pass
+
+
+def test_generic_annotation_resolves_to_unchecked_type():
+    dagster_type = resolve_dagster_type(GenericContainer[Schema])
+
+    # The origin is preserved so that IO managers can still dispatch on it, but the type parameter
+    # is not checked -- Dagster has no way to derive a runtime check from it.
+    assert dagster_type.typing_type is GenericContainer
+    assert dagster_type.display_name == "GenericContainer[Schema]"
+    assert dagster_type.description and "not validated" in dagster_type.description
+
+    # The check passes for any value, including one that is not an instance of the origin, and
+    # records that the parameters went unchecked on the input/output event.
+    type_check = dagster_type.type_check(None, "not a GenericContainer")  # pyright: ignore[reportArgumentType]
+    assert type_check.success
+    assert type_check.description and "not validated" in type_check.description
+
+
+def test_generic_annotation_cached_per_parameterization():
+    assert resolve_dagster_type(GenericContainer[Schema]) is resolve_dagster_type(
+        GenericContainer[Schema]
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[Schema]).key
+        != resolve_dagster_type(GenericContainer[int]).key
+    )
+
+
+def test_generic_annotation_resolves_when_nested():
+    assert (
+        resolve_dagster_type(GenericContainer[Schema] | None).display_name
+        == "GenericContainer[Schema]?"
+    )
+    assert (
+        resolve_dagster_type(list[GenericContainer[Schema]]).display_name
+        == "[GenericContainer[Schema]]"
+    )
+
+
+def test_unsupported_typing_constructs_still_raise():
+    for annotation in (typing.Callable[[int], str], type[GenericContainer]):
+        with pytest.raises(dg.DagsterInvalidDefinitionError, match="Invalid type"):
+            resolve_dagster_type(annotation)
+
+
+def test_generic_annotation_does_not_claim_origin_in_registry():
+    U = TypeVar("U")
+
+    class OtherContainer(Generic[U]):
+        pass
+
+    resolve_dagster_type(OtherContainer[Schema])
+
+    # Resolving the parameterized annotation must not auto-register the origin, or it would lock
+    # users out of the mapping they are pointed at to get real validation.
+    mapped = dg.DagsterType(type_check_fn=lambda _, value: value == "ok", name="Mapped")
+    dg.make_python_type_usable_as_dagster_type(OtherContainer, mapped)
+
+    # And once mapped, the mapping wins over the unchecked fallback.
+    assert resolve_dagster_type(OtherContainer[Schema]) is mapped
