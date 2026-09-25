@@ -7,6 +7,34 @@ Expand the name of the chart.
 {{- end -}}
 
 {{/*
+Normalize the user-code deployments value into a list.
+Accepts either a list of deployment entries or a map keyed by deployment name.
+For the map form, the key becomes each entry's `name` (the key wins over any `name` field).
+Emits YAML that call sites parse with `fromYamlArray`.
+
+NOTE: this helper is intentionally duplicated verbatim in
+  helm/dagster/templates/helpers/_helpers.tpl
+so it is available whether the subchart is rendered under the umbrella chart or
+standalone. Keep both copies in sync when making changes.
+*/}}
+{{- define "dagsterUserDeployments.deploymentsList" -}}
+{{- $deployments := . -}}
+{{- if kindIs "map" $deployments -}}
+{{- $list := list -}}
+{{- range $name, $deployment := $deployments -}}
+{{- $entry := merge (dict "name" $name) (deepCopy $deployment) -}}
+{{- $list = append $list $entry -}}
+{{- end -}}
+{{- $list | toYaml -}}
+{{- else -}}
+{{- range $deployment := (default (list) $deployments) -}}
+{{- if not $deployment.name }}{{ fail "each user deployment must set 'name' (or be provided as a name-keyed map)" }}{{- end }}
+{{- end -}}
+{{- (default (list) $deployments) | toYaml -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
