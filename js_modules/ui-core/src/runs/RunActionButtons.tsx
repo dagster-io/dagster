@@ -5,16 +5,16 @@ import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
 import {getReexecutionParamsForSelection} from './RunUtils';
-import {StepSelection} from './StepSelection';
-import {TerminationDialog, TerminationDialogResult} from './TerminationDialog';
+import {StepSelection } from './StepSelection';
+import {TerminationDialog, TerminationDialogResult } from './TerminationDialog';
 import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {ReexecutionStrategy} from '../graphql/types';
+import {ReexecutionStrategy, RunStatus} from '../graphql/types';
 import {isNewTabClick} from '../hooks/useOpenInNewTab';
-import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
+import {LaunchButtonConfiguration, LaunchButtonDropdown } from '../launchpad/LaunchButton';
 import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
@@ -145,7 +145,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     disabled: !canRunAllSteps(run),
     onClick: (e) => {
       const openInNewTab = isNewTabClick(e);
-      return reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey, {openInNewTab});
+      return reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey, { openInNewTab });
     },
   };
 
@@ -212,26 +212,31 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   };
 
   const fromFailureEnabled = canRunFromFailure(run);
+  const isCanceled = run.status === RunStatus.CANCELED;
 
   const fromFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From failure',
+    title: isCanceled ? 'From cancellation' : 'From failure',
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
-      ? 'Retry is only enabled when the pipeline has failed.'
-      : 'Retry the pipeline run, skipping steps that completed successfully. Shift-click to adjust tags.',
+      ? isCanceled
+        ? 'Retry is only enabled when the pipeline has been canceled.'
+        : 'Retry is only enabled when the pipeline has failed.'
+      : 'Retry the pipeline run, skipping steps that completed successfully.',
     onClick: (e) => {
       const openInNewTab = isNewTabClick(e);
-      return reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey, {openInNewTab});
+      return reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey, { openInNewTab });
     },
   };
 
   const fromAssetFailure: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
-    title: 'From asset failure',
+    title: isCanceled ? 'From asset cancellation' : 'From asset failure',
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
-      ? 'Retry is only enabled when the pipeline has failed.'
+      ? isCanceled
+        ? 'Retry is only enabled when the pipeline has been canceled.'
+        : 'Retry is only enabled when the pipeline has failed.'
       : 'Retry the pipeline run, selecting only assets that did not complete successfully. Shift-click to adjust tags.',
     onClick: (e) => {
       const openInNewTab = isNewTabClick(e);
@@ -255,11 +260,11 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     selected,
     fromSelected,
     fromFailure,
-    run.executionPlan?.assetKeys.length ? fromAssetFailure : null,
+    run.executionPlan?.assetKeys?.length ? fromAssetFailure : null,
   ].filter(Boolean) as LaunchButtonConfiguration[];
   const preferredRerun = selection.present
     ? selected
-    : fromFailureEnabled && currentRunIsFromFailure
+    : fromFailureEnabled
       ? fromFailure
       : currentRunSelection?.present
         ? same
@@ -275,8 +280,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   };
 
   return (
-    <Box flex={{direction: 'row', gap: 8}}>
-      <Box flex={{direction: 'row'}}>
+    <Box flex={{ direction: 'row', gap: 8 }}>
+      <Box flex={{ direction: 'row' }}>
         <LaunchButtonDropdown
           runCount={1}
           primary={primary}
@@ -299,10 +304,10 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   );
 };
 
-const StepSelectionDescription = ({selection}: {selection: StepSelection | null}) => (
+const StepSelectionDescription = ({selection}: {selection: StepSelection | null }) => (
   <div style={{paddingLeft: '10px'}}>
     {(selection?.keys || []).map((step) => (
-      <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>
+      <span key={step} style={{ display: 'block' }}>{`* ${step}`}</span>
     ))}
   </div>
 );
