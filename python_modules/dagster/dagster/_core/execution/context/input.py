@@ -1,6 +1,7 @@
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Union
+import warnings
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
@@ -71,6 +72,7 @@ class InputContext:
         asset_partitions_subset: PartitionsSubset | None = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
         instance: DagsterInstance | None = None,
+        warn_on_step_context_use: bool = False,
         # deprecated
         metadata: ArbitraryMetadataMapping | None = None,
     ):
@@ -98,6 +100,7 @@ class InputContext:
 
         self._asset_partitions_subset = asset_partitions_subset
         self._asset_partitions_def = asset_partitions_def
+        self._warn_on_step_context_use = warn_on_step_context_use
 
         if isinstance(resources, Resources):
             self._resources_cm = None
@@ -338,6 +341,12 @@ class InputContext:
 
     @public
     @property
+    def has_partition_keys(self) -> bool:
+        """Whether the current run covers multiple partitions (i.e. has partition keys)."""
+        return self.has_asset_partitions
+
+    @public
+    @property
     def asset_partition_key(self) -> str:
         """The partition key for input asset.
 
@@ -429,6 +438,57 @@ class InputContext:
             )
 
         return time_window_for_partition_key_range(partitions_def, self.asset_partition_key_range)
+
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for the input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_key_range. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+        return self.asset_partition_key_range
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        """The partition keys for the input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_keys. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+        return self.asset_partition_keys
+
+    @public
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_time_window. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+        return self.asset_partitions_time_window
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -573,6 +633,7 @@ def build_input_context(
     asset_partition_key_range: PartitionKeyRange | None = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
     instance: DagsterInstance | None = None,
+    warn_on_step_context_use: bool = False,
     # deprecated
     metadata: ArbitraryMetadataMapping | None = None,
 ) -> "InputContext":
@@ -671,6 +732,7 @@ def build_input_context(
         asset_partitions_subset=asset_partitions_subset,
         asset_partitions_def=asset_partitions_def,
         instance=instance,
+        warn_on_step_context_use=warn_on_step_context_use,
     )
 
 
