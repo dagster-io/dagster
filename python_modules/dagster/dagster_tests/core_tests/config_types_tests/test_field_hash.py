@@ -31,6 +31,20 @@ def test_hash_diff():
         {"same_name": dg.Field(int, description="desc")}
     )
 
+    assert _hash({"same_name": dg.Field(str)}) != _hash(
+        {"same_name": dg.Field(str, is_secret=True)}
+    )
+
+
+def test_construct_dicts_differing_only_by_is_secret():
+    plain_dict = dg.Shape(fields={"a_token": dg.Field(str)})
+    secret_dict = dg.Shape(fields={"a_token": dg.Field(str, is_secret=True)})
+
+    assert plain_dict is not secret_dict
+    assert plain_dict.key != secret_dict.key
+    assert plain_dict.fields["a_token"].is_secret is False
+    assert secret_dict.fields["a_token"].is_secret is True
+
 
 def test_construct_same_dicts():
     int_dict_1 = dg.Shape(fields={"an_int": dg.Field(int)})

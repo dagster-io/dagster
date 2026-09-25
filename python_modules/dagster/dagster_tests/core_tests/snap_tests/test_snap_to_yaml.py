@@ -221,6 +221,59 @@ def test_print_root_with_secret_fields(instance) -> None:
     assert "key_456" not in yaml_output
 
 
+def job_defs_with_matching_plain_and_secret_config():
+    """Two config classes that differ only by is_secret, plain one declared first."""
+
+    class PlainOpConfig(dg.Config):
+        webhook_url: str = PyField(default="https://example.test/hook", description="the hook")
+
+    class SecretOpConfig(dg.Config):
+        webhook_url: str = PyField(
+            default="https://example.test/hook",
+            description="the hook",
+            json_schema_extra={"dagster__is_secret": True},
+        )
+
+    @dg.op
+    def plain_op(config: PlainOpConfig):
+        pass
+
+    @dg.op
+    def secret_op(config: SecretOpConfig):
+        pass
+
+    @dg.job
+    def plain_job():
+        plain_op()
+
+    @dg.job
+    def secret_job():
+        secret_op()
+
+    return dg.Definitions(jobs=[plain_job, secret_job])
+
+
+def _default_values_yaml_for_job(repo: RemoteRepository, job_name: str) -> str:
+    a_job = repo.get_full_job(job_name)
+    root_config_key = a_job.root_config_key
+    assert root_config_key
+    root_type = a_job.config_schema_snapshot.get_config_snap(root_config_key)
+    return default_values_yaml_from_type_snap(a_job.config_schema_snapshot, root_type)
+
+
+def test_print_root_secret_field_matching_earlier_plain_field(instance) -> None:
+    """A secret field is still masked when an identical non-secret field was declared first."""
+    repo = _remote_repository_for_function(instance, job_defs_with_matching_plain_and_secret_config)
+
+    secret_yaml_output = _default_values_yaml_for_job(repo, "secret_job")
+    assert "webhook_url: '********'" in secret_yaml_output
+    assert "https://example.test/hook" not in secret_yaml_output
+
+    # the non-secret field keeps its value
+    plain_yaml_output = _default_values_yaml_for_job(repo, "plain_job")
+    assert "webhook_url: https://example.test/hook" in plain_yaml_output
+
+
 class AuthToken(dg.Config):
     auth_type: Literal["token"] = "token"
     token: str
