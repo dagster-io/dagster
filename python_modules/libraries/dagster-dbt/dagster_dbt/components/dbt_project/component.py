@@ -48,7 +48,7 @@ from dagster_dbt.dbt_project_manager import (
     NoopDbtProjectManager,
     RemoteGitDbtProjectManager,
 )
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES, iter_asset_resource_props
 
 
 @dataclass
@@ -440,7 +440,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
         matching_model_ids = [
             unique_id
-            for unique_id, value in manifest["nodes"].items()
+            for unique_id, value in iter_asset_resource_props(manifest)
             if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
         ]
 

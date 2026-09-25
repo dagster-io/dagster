@@ -14,8 +14,10 @@ from dagster_dbt.compat import DBT_PYTHON_VERSION
 if TYPE_CHECKING:
     from dagster_dbt.core.resource import DbtProject
 
-# dbt resource types that may be considered assets
-ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+# dbt resource types that may be considered assets. Note that functions (dbt UDFs, available in
+# dbt-core 1.11+) are stored in the top-level `functions` collection of the manifest rather than
+# alongside models, seeds, and snapshots in `nodes`.
+ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot", "function"]
 
 # Manifest collections holding nodes that participate in the selection graph. Mirrors the
 # collections dbt itself walks in `Manifest.build_parent_and_child_maps`; keep in sync with it.
@@ -31,6 +33,18 @@ _GRAPH_MEMBER_COLLECTIONS = (
 )
 
 clean_name = clean_name_lower
+
+
+def iter_asset_resource_props(
+    manifest_json: Mapping[str, Any],
+) -> Iterator[tuple[str, Mapping[str, Any]]]:
+    """Iterate over the resources in a manifest that may be represented as Dagster assets.
+
+    dbt functions (UDFs) are stored in the top-level `functions` collection of the manifest, so
+    they must be iterated over separately from models, seeds, and snapshots.
+    """
+    yield from manifest_json["nodes"].items()
+    yield from manifest_json.get("functions", {}).items()
 
 
 def default_node_info_to_asset_key(node_info: Mapping[str, Any]) -> AssetKey:

@@ -40,7 +40,12 @@ from dagster_shared.record import replace
 
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, select_unique_ids
+from dagster_dbt.utils import (
+    ASSET_RESOURCE_TYPES,
+    dagster_name_fn,
+    iter_asset_resource_props,
+    select_unique_ids,
+)
 
 if TYPE_CHECKING:
     from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -173,7 +178,7 @@ def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: 
 
     matching_model_ids = [
         unique_id
-        for unique_id, value in manifest["nodes"].items()
+        for unique_id, value in iter_asset_resource_props(manifest)
         if value["name"] == model_name and value["resource_type"] in ASSET_RESOURCE_TYPES
     ]
 
@@ -481,7 +486,7 @@ def get_asset_keys_to_resource_props(
 ) -> Mapping[AssetKey, Mapping[str, Any]]:
     return {
         translator.get_asset_key(node): node
-        for node in manifest["nodes"].values()
+        for _, node in iter_asset_resource_props(manifest)
         if node["resource_type"] in ASSET_RESOURCE_TYPES
     }
 
@@ -861,7 +866,6 @@ def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
             resource_type == "metric",
             resource_type == "semantic_model",
             resource_type == "saved_query",
-            resource_type == "function",
             resource_type == "model"
             and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
         ]
@@ -912,7 +916,7 @@ def _build_child_map(manifest: Mapping[str, Any]) -> Mapping[str, AbstractSet[st
         return manifest["child_map"]
 
     child_map = defaultdict(set)
-    for unique_id, node in manifest["nodes"].items():
+    for unique_id, node in iter_asset_resource_props(manifest):
         for upstream_unique_id in get_upstream_unique_ids(manifest, node):
             child_map[upstream_unique_id].add(unique_id)
     return child_map
@@ -1316,30 +1320,34 @@ def get_dbt_test_names_for_check_keys(
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
 
 
+# the top-level collections of a dbt manifest that contain resources keyed by unique id
+MANIFEST_RESOURCE_COLLECTIONS = (
+    "nodes",
+    "sources",
+    "exposures",
+    "metrics",
+    "semantic_models",
+    "saved_queries",
+    "unit_tests",
+    # dbt functions (UDFs) are stored in their own collection, available in dbt-core 1.11+
+    "functions",
+)
+
+
+def find_node(manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any] | None:
+    """Find a node by unique_id in manifest_json, returning None if it does not exist."""
+    for collection in MANIFEST_RESOURCE_COLLECTIONS:
+        node = manifest.get(collection, {}).get(unique_id)
+        if node is not None:
+            return node
+
+    return None
+
+
 def get_node(manifest: Mapping[str, Any], unique_id: str) -> Mapping[str, Any]:
     """Find a node by unique_id in manifest_json."""
-    if unique_id in manifest["nodes"]:
-        return manifest["nodes"][unique_id]
+    node = find_node(manifest, unique_id)
+    if node is None:
+        check.failed(f"Could not find {unique_id} in dbt manifest")
 
-    if unique_id in manifest["sources"]:
-        return manifest["sources"][unique_id]
-
-    if unique_id in manifest["exposures"]:
-        return manifest["exposures"][unique_id]
-
-    if unique_id in manifest["metrics"]:
-        return manifest["metrics"][unique_id]
-
-    if unique_id in manifest.get("semantic_models", {}):
-        return manifest["semantic_models"][unique_id]
-
-    if unique_id in manifest.get("saved_queries", {}):
-        return manifest["saved_queries"][unique_id]
-
-    if unique_id in manifest.get("unit_tests", {}):
-        return manifest["unit_tests"][unique_id]
-
-    if unique_id in manifest.get("functions", {}):
-        return manifest["functions"][unique_id]
-
-    check.failed(f"Could not find {unique_id} in dbt manifest")
+    return node

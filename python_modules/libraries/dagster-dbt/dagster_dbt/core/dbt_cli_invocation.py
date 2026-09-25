@@ -111,7 +111,7 @@ class DbtCliInvocation:
     )
 
     def _get_columns_from_dbt_resource_props(
-        self, adapter: BaseAdapter, dbt_resource_props: dict[str, Any]
+        self, adapter: BaseAdapter, dbt_resource_props: Mapping[str, Any]
     ) -> RelationData:
         """Given a dbt resource properties dictionary, fetches the resource's column metadata from
         the database, or returns the cached metadata if it has already been fetched.
