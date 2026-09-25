@@ -10,7 +10,7 @@ If we think about the code for our three assets (`customers`, `orders`, and `pay
 
 These assets are a great candidate for a [custom component](/guides/build/components/creating-new-components). Components generate `Definitions` through a configuration layer. There are built-in components that let you integrate with common workflows (such as turning Python scripts into assets), or dynamically generate `Definitions` for tools like [dbt](/integrations/libraries/dbt) or [Fivetran](/integrations/libraries/fivetran). With custom components, you can define your own specific use cases.
 
-In this step, you will use a custom component to streamline the development of similar assets and replace their `Definitions` in your project with a Component that can generate them from a a YAML configuration file instead.
+In this step, you will use a custom component to streamline the development of similar assets and replace their `Definitions` in your project with a Component that can generate them from a YAML configuration file instead.
 
 ![2048 resolution](/images/tutorial/dagster-tutorial/overviews/components.png)
 

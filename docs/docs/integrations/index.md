@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: You can integrate third-party tools with with Dagster through Dagster-supported and community-supported libraries, or by using Dagster Pipes to build and manage external pipelines.
+description: You can integrate third-party tools with Dagster through Dagster-supported and community-supported libraries, or by using Dagster Pipes to build and manage external pipelines.
 canonicalUrl: '/integrations'
 slug: '/integrations'
 ---
