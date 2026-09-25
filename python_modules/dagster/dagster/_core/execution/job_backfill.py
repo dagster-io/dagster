@@ -29,6 +29,7 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
@@ -381,9 +382,8 @@ def submit_backfill_runs(
     )
     assert isinstance(partition_set_execution_data, PartitionSetExecutionParamSnap)
 
-    # Partition-scoped run config is prohibited at the definitions level for a jobs that materialize
-    # ranges, so we can assume that all partition data will have the same run config and tags as the
-    # first partition.
+    # Partition-scoped run config is prohibited at the definitions level for jobs that materialize
+    # ranges, so we can reuse the first partition's run config and non-partition tags.
     tags_by_key_or_range: Mapping[str | PartitionKeyRange, Mapping[str, str]]
     run_config_by_key_or_range: Mapping[str | PartitionKeyRange, Mapping[str, Any]]
     if isinstance(partition_names_or_ranges[0], PartitionKeyRange):
@@ -400,7 +400,7 @@ def submit_backfill_runs(
         tags = {
             k: v
             for k, v in partition_set_execution_data.partition_data[0].tags.items()
-            if k != PARTITION_NAME_TAG
+            if k != PARTITION_NAME_TAG and not k.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
         }
         run_config_by_key_or_range = {r: run_config for r in partition_names_or_ranges}
         tags_by_key_or_range = {
