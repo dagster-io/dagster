@@ -657,6 +657,62 @@ def test_cleanup_after_force_terminate(
     assert run and run.status == DagsterRunStatus.CANCELED
 
 
+def test_run_remains_canceled_when_steps_finish_after_force_terminate(
+    instance: DagsterInstance,
+    workspace: WorkspaceRequestContext,
+):
+    # Simulates force-termination (MARK_AS_CANCELED_IMMEDIATELY) where the cancellation
+    # request never reaches the run worker: the run is marked CANCELED while the worker
+    # is mid-step, the step then finishes successfully, and the run should stay CANCELED
+    # instead of flipping to SUCCESS (#34175).
+    remote_job = workspace.get_code_location("test").get_repository("nope").get_full_job("slow_job")
+    run = instance.create_run_for_job(
+        job_def=slow_job,
+        remote_job_origin=remote_job.get_remote_origin(),
+        job_code_origin=remote_job.get_python_origin(),
+    )
+
+    run_id = run.run_id
+
+    instance.launch_run(run.run_id, workspace)
+
+    poll_for_step_start(instance, run_id, message="slow_sudop")
+
+    # simulate the run being marked as canceled while the worker is still executing,
+    # without the termination request reaching the worker
+    instance.report_run_canceling(run)
+    instance.report_run_canceled(run)
+
+    # wait for the run worker to finish executing the step and exit
+    poll_for_event(
+        instance,
+        run_id,
+        event_type="ENGINE_EVENT",
+        message="Process for run exited",
+    )
+
+    logs = instance.all_logs(run_id)
+    _check_event_log_contains(
+        logs,
+        [
+            ("STEP_SUCCESS", 'Finished execution of step "slow_sudop"'),
+            (
+                "ENGINE_EVENT",
+                "Execution of steps finished successfully after the run was forcibly marked"
+                " as canceled.",
+            ),
+        ],
+    )
+    assert not any(
+        event.is_dagster_event
+        and event.get_dagster_event().event_type == DagsterEventType.PIPELINE_SUCCESS
+        for event in logs
+    )
+
+    run = instance.get_run_by_id(run_id)
+    assert run and run.status == DagsterRunStatus.CANCELED
+
+
 def _get_engine_events(event_records):
     return [
         er
