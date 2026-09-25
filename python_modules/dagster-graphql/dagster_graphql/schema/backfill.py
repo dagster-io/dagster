@@ -296,6 +296,9 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
                         numPartitionsFailed=asset_status.partitions_counts_by_status[
                             AssetBackfillStatus.FAILED
                         ],
+                        numPartitionsSkipped=asset_status.partitions_counts_by_status[
+                            AssetBackfillStatus.SKIPPED
+                        ],
                     )
                 )
             else:
@@ -309,6 +312,7 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
                         materialized=asset_status.backfill_status
                         is AssetBackfillStatus.MATERIALIZED,
                         failed=asset_status.backfill_status is AssetBackfillStatus.FAILED,
+                        skipped=asset_status.backfill_status is AssetBackfillStatus.SKIPPED,
                     )
                 )
 
