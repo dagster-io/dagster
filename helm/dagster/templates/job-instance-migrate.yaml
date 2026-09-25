@@ -82,5 +82,8 @@ spec:
         {{- end }}
       nodeSelector: {{ $_.Values.dagsterWebserver.nodeSelector | toYaml | nindent 8 }}
       affinity: {{ $_.Values.dagsterWebserver.affinity | toYaml | nindent 8 }}
-      tolerations: {{ $_.Values.dagsterWebserver.tolerations | toYaml | nindent 8 }}
+      {{- with $_.Values.dagsterWebserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 {{- end }}
