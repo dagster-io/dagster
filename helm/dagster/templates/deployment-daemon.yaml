@@ -168,8 +168,10 @@ spec:
         {{- end }}
       affinity:
         {{- toYaml .Values.dagsterDaemon.affinity | nindent 8 }}
+      {{- with .Values.dagsterDaemon.tolerations }}
       tolerations:
-        {{- toYaml .Values.dagsterDaemon.tolerations | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.dagsterDaemon.schedulerName }}
       schedulerName: {{ .Values.dagsterDaemon.schedulerName }}
       {{- end }}
