@@ -50,6 +50,7 @@ class _Op:
         ins: Mapping[str, In] | None = None,
         out: Out | Mapping[str, Out] | None = None,
         pool: str | None = None,
+        pool_slots: int | None = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.decorator_takes_context = check.bool_param(
@@ -64,6 +65,7 @@ class _Op:
         self.code_version = code_version
         self.retry_policy = retry_policy
         self.pool = pool
+        self.pool_slots = pool_slots
 
         # config will be checked within OpDefinition
         self.config_schema = config_schema
@@ -132,6 +134,7 @@ class _Op:
             retry_policy=self.retry_policy,
             version=None,  # code_version has replaced version
             pool=self.pool,
+            pool_slots=self.pool_slots,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -155,6 +158,7 @@ def op(
     retry_policy: RetryPolicy | None = ...,
     code_version: str | None = ...,
     pool: str | None = None,
+    pool_slots: int | None = None,
 ) -> _Op: ...
 
 
@@ -176,6 +180,7 @@ def op(
     retry_policy: RetryPolicy | None = None,
     code_version: str | None = None,
     pool: str | None = None,
+    pool_slots: int | None = None,
 ) -> Union["OpDefinition", _Op]:
     """Create an op with the specified parameters from the decorated function.
 
@@ -218,6 +223,10 @@ def op(
         code_version (Optional[str]): Version of the logic encapsulated by the op. If set,
             this is used as a default version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this
+            op's execution.
+        pool_slots (Optional[int]): The number of slots this op occupies in its concurrency
+            pool while executing. Must be a positive integer. Defaults to 1.
 
     Examples:
         .. code-block:: python
@@ -270,6 +279,7 @@ def op(
         ins=ins,
         out=out,
         pool=pool,
+        pool_slots=pool_slots,
     )
 
 
