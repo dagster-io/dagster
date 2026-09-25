@@ -283,8 +283,11 @@ class DbtCliEventMessage(ABC):
         return (
             resource_props["resource_type"] in REFABLE_NODE_TYPES
             and materialized_type != "ephemeral"
-            and self._get_node_status() == NodeStatus.Success
+            and self._is_successful_model_execution(materialized_type)
         )
+
+    def _is_successful_model_execution(self, materialized_type: str | None) -> bool:
+        return self._get_node_status() == NodeStatus.Success
 
     def _is_test_execution_event(self, manifest: Mapping[str, Any]) -> bool:
         resource_props = self._get_resource_props(self._unique_id, manifest)
@@ -625,6 +628,18 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
     @property
     def is_result_event(self) -> bool:
         return self.raw_event["info"]["name"] == "NodeFinished"
+
+    def _is_successful_model_execution(self, materialized_type: str | None) -> bool:
+        if self._get_node_status() == NodeStatus.Success:
+            return True
+
+        run_result = self._raw_data.get("run_result", {})
+        return (
+            materialized_type == "dynamic_table"
+            and self._get_node_status() == NodeStatus.Warn
+            and run_result.get("status") == NodeStatus.Warn
+            and run_result.get("adapter_response", {}).get("code") == "skip"
+        )
 
     def _get_check_passed(self) -> bool:
         node_status = self._get_node_status()

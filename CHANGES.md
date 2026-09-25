@@ -18,6 +18,7 @@
 - [dagster-dbt] Fixed an `AttributeError` raised when a `DbtProject`'s `project_dir` was a string rather than a `Path`, which could happen after the project was round-tripped through Dagster metadata.
 - [dagster-dbt] Fixed the type annotation of `build_schedule_from_dbt_selection` so that non-string `tags` values, which already worked at runtime, no longer fail type checking, matching `define_asset_job`.
 - [dagster-k8s] Fixed a bug where a Dagster Pipes Kubernetes run whose pod had a failing init container would hang until the wait timed out (a day by default) instead of failing with the init container's error.
+- [dagster-dbt] Fixed dbt Fusion Snowflake dynamic-table no-ops being omitted from model completion events.
 
 ### Documentation
 
