@@ -9,16 +9,19 @@ export const TABLE_HEADER_HEIGHT = 32;
 export const HeaderRow = ({
   children,
   templateColumns,
+  minWidth,
   sticky = false,
 }: {
   children: React.ReactNode;
   templateColumns: string;
+  /** Set when columns have pixel widths, allowing the table to scroll horizontally. */
+  minWidth?: number;
   sticky?: boolean;
 }) => (
   <Box
     border="top-and-bottom"
     className={clsx(styles.headerRow, sticky && styles.headerRowSticky)}
-    style={{gridTemplateColumns: templateColumns}}
+    style={{gridTemplateColumns: templateColumns, minWidth}}
   >
     {children}
   </Box>
@@ -75,16 +78,18 @@ export const Container = React.forwardRef<HTMLDivElement, React.HTMLAttributes<H
 
 export type InnerProps = {
   totalHeight: number;
+  /** Set when columns have pixel widths, allowing the table to scroll horizontally. */
+  minWidth?: number;
   children?: React.ReactNode;
 };
 
 export const Inner = React.forwardRef<
   HTMLDivElement,
   InnerProps & React.HTMLAttributes<HTMLDivElement>
->(({totalHeight, children, className, ...rest}, ref) => (
+>(({totalHeight, minWidth, children, className, ...rest}, ref) => (
   <div
     className={clsx(styles.inner, className)}
-    style={{height: `${totalHeight}px`}}
+    style={{height: `${totalHeight}px`, minWidth}}
     ref={ref}
     {...rest}
   >
