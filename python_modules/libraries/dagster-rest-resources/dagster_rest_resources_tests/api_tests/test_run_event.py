@@ -222,6 +222,40 @@ class TestGetEventsFiltered:
         assert result.has_more is True
         assert client.get_run_events.call_count == 2
 
+    def test_filter_cursor_does_not_skip_matching_events(self):
+        # A server that honors `limit` and uses the index of the next event as its cursor.
+        all_events = [
+            _make_run_start_event(message="match-1"),
+            _make_run_start_event(message="debug", level=LogLevel.DEBUG),
+            _make_run_start_event(message="debug", level=LogLevel.DEBUG),
+            _make_run_start_event(message="match-2"),
+            _make_run_start_event(message="match-3"),
+            _make_run_start_event(message="match-4"),
+            _make_run_start_event(message="match-5"),
+        ]
+
+        def get_run_events(run_id, limit, after_cursor):
+            start = int(after_cursor) if after_cursor else 0
+            end = min(start + limit, len(all_events))
+            return GetRunEvents(
+                logsForRun=_make_event_connection(
+                    events=all_events[start:end],
+                    cursor=str(end),
+                    has_more=end < len(all_events),
+                )
+            )
+
+        client = Mock(spec=IGraphQLClient)
+        client.get_run_events.side_effect = get_run_events
+        api = DgApiRunEventApi(_client=client)
+
+        first = api.get_events(_RUN_ID, levels=("INFO",), limit=3)
+        assert [e.message for e in first.items] == ["match-1", "match-2", "match-3"]
+        assert first.has_more is True
+
+        second = api.get_events(_RUN_ID, levels=("INFO",), limit=3, after_cursor=first.cursor)
+        assert [e.message for e in second.items] == ["match-4", "match-5"]
+
     def test_filters_paginates_until_no_more(self):
         client = Mock(spec=IGraphQLClient)
         page1 = GetRunEvents(

@@ -147,7 +147,12 @@ class DgApiRunEventApi:
         has_more = True
 
         for _ in range(_MAX_PAGES):
-            page = self._fetch_single_page(run_id=run_id, limit=limit, after_cursor=cursor)
+            # Only ask for as many events as are still needed, so a page can't match more events
+            # than fit under `limit`: truncating them would drop events that the returned cursor
+            # has already moved past, and paging on with that cursor would never return them.
+            page = self._fetch_single_page(
+                run_id=run_id, limit=limit - len(events), after_cursor=cursor
+            )
 
             events.extend(
                 e
