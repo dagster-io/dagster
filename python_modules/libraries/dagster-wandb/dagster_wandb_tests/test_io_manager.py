@@ -176,6 +176,12 @@ def init_mock():
         yield mock
 
 
+@pytest.fixture(autouse=True)
+def api_mock():
+    with patch("wandb.Api") as mock:
+        yield mock
+
+
 def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
     init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
@@ -2619,7 +2625,7 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_alias(
 
 
 def test_wandb_artifacts_io_manager_load_partitioned_input(
-    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
+    init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock, api_mock
 ):
     run_mock.configure_mock(
         name=WANDB_RUN_NAME,
@@ -2661,6 +2667,9 @@ def test_wandb_artifacts_io_manager_load_partitioned_input(
     assert manager.load_input(context) == run_mock.use_artifact.return_value
 
     run_mock.use_artifact.assert_called_with(
+        f"{WANDB_ENTITY}/{WANDB_PROJECT}/{ARTIFACT_NAME}.{PARTITION_KEY}:{EXTRA_ALIAS}"
+    )
+    api_mock.return_value.artifact.assert_called_once_with(
         f"{WANDB_ENTITY}/{WANDB_PROJECT}/{ARTIFACT_NAME}.{PARTITION_KEY}:{EXTRA_ALIAS}"
     )
 
