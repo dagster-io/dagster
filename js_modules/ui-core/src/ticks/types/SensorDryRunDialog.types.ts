@@ -31,6 +31,7 @@ export type SensorDryRunMutation = {
           __typename: 'TickEvaluation';
           cursor: string | null;
           skipReason: string | null;
+          assetEvents: Array<string> | null;
           runRequests: Array<{
             __typename: 'RunRequest';
             runConfigYaml: string;
@@ -83,4 +84,46 @@ export type DynamicPartitionRequestFragment = {
   type: Types.DynamicPartitionsRequestType;
 };
 
-export const SensorDryRunMutationVersion = '41baf2a82bbd8cd13f8c34ca3dfdd506fef6d5607c366328e20a50ebac662d0a';
+export type ReportSensorTickAssetEventsMutationVariables = Exact<{
+  assetEvents: Array<string> | string;
+  idempotencyKeys: Array<string> | string;
+}>;
+
+export type ReportSensorTickAssetEventsMutation = {
+  __typename: 'Mutation';
+  reportSensorTickAssetEvents:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'ReportSensorTickAssetEventsPartialFailure';
+        remainingAssetEvents: Array<string>;
+        reportedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+        error: {
+          __typename: 'PythonError';
+          message: string;
+          stack: Array<string>;
+          errorChain: Array<{
+            __typename: 'ErrorChainLink';
+            isExplicitLink: boolean;
+            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+          }>;
+        };
+      }
+    | {
+        __typename: 'ReportSensorTickAssetEventsSuccess';
+        assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      }
+    | {__typename: 'UnauthorizedError'};
+};
+
+export const SensorDryRunMutationVersion = 'f7fb6e82a40377ce40403c137eff1f7efa15f950c9cf118c7f5d4596f968b0ef';
+
+export const ReportSensorTickAssetEventsMutationVersion = '4bedfb8944c25bb85ee26b47515770766ed39d6e18aa53ad12d96fcda5ee0d80';

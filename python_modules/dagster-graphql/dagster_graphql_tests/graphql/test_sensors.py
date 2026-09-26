@@ -1,8 +1,10 @@
 import datetime
 import os
 import sys
+from unittest import mock
 
 import pytest
+from dagster import AssetKey, AssetMaterialization
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_origin import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
@@ -22,6 +24,7 @@ from dagster._core.utils import make_new_backfill_id, make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
+from dagster._serdes import deserialize_value
 from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
@@ -434,10 +437,37 @@ mutation($selectorData: SensorSelector!, $cursor: String) {
           partitionsDefName
           type
         }
+        assetEvents
       }
     }
     ... on SensorNotFoundError {
       sensorName
+    }
+  }
+}
+"""
+
+REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION = """
+mutation($assetEvents: [String!]!, $idempotencyKeys: [String!]!) {
+  reportSensorTickAssetEvents(assetEvents: $assetEvents, idempotencyKeys: $idempotencyKeys) {
+    __typename
+    ... on ReportSensorTickAssetEventsSuccess {
+      assetKeys {
+        path
+      }
+    }
+    ... on ReportSensorTickAssetEventsPartialFailure {
+      reportedAssetKeys {
+        path
+      }
+      remainingAssetEvents
+      error {
+        message
+      }
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }
@@ -692,6 +722,154 @@ class TestSensors(NonLaunchableGraphQLContextTestMatrix):
             evaluation_result["dynamicPartitionsRequests"][1]["type"]
             == GrapheneDynamicPartitionsRequestType.DELETE_PARTITIONS
         )
+
+    def test_dry_run_with_asset_events(self, graphql_context: WorkspaceRequestContext):
+        instigator_selector = infer_sensor_selector(graphql_context, "asset_events_sensor")
+        result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": None},
+        )
+        assert result.data
+        assert result.data["sensorDryRun"]["__typename"] == "DryRunInstigationTick"
+        evaluation_result = result.data["sensorDryRun"]["evaluationResult"]
+        assert evaluation_result["error"] is None
+        asset_events = [deserialize_value(e) for e in evaluation_result["assetEvents"]]
+        assert len(asset_events) == 1
+        assert isinstance(asset_events[0], AssetMaterialization)
+        assert asset_events[0].asset_key == AssetKey("dry_run_asset_events_asset")
+        assert asset_events[0].partition == "a_partition"
+
+    def test_report_sensor_tick_asset_events(self, graphql_context: WorkspaceRequestContext):
+        assert graphql_context.instance.all_asset_keys() == []
+
+        instigator_selector = infer_sensor_selector(graphql_context, "asset_events_sensor")
+        dry_run_result = execute_dagster_graphql(
+            graphql_context,
+            SENSOR_DRY_RUN_MUTATION,
+            variables={"selectorData": instigator_selector, "cursor": None},
+        )
+        asset_events = dry_run_result.data["sensorDryRun"]["evaluationResult"]["assetEvents"]
+        assert len(asset_events) == 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+            variables={"assetEvents": asset_events, "idempotencyKeys": ["key-0"]},
+        )
+
+        assert result.data
+        assert (
+            result.data["reportSensorTickAssetEvents"]["__typename"]
+            == "ReportSensorTickAssetEventsSuccess"
+        )
+        assert result.data["reportSensorTickAssetEvents"]["assetKeys"] == [
+            {"path": ["dry_run_asset_events_asset"]}
+        ]
+
+        records = graphql_context.instance.fetch_materializations(
+            AssetKey("dry_run_asset_events_asset"), ascending=True, limit=2
+        ).records
+        assert len(records) == 1
+        assert records[0].partition_key == "a_partition"
+
+    def test_report_sensor_tick_asset_events_partial_failure(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        from dagster._serdes import serialize_value
+
+        events = [
+            AssetMaterialization(asset_key=AssetKey("asset_one")),
+            AssetMaterialization(asset_key=AssetKey("asset_two")),
+            AssetMaterialization(asset_key=AssetKey("asset_three")),
+        ]
+        serialized_events = [serialize_value(event) for event in events]
+
+        real_report_runless_asset_event = graphql_context.instance.report_runless_asset_event
+        call_count = 0
+
+        def report_runless_asset_event_fails_on_second_call(asset_event):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 2:
+                raise Exception("simulated storage failure")
+            return real_report_runless_asset_event(asset_event)
+
+        with mock.patch.object(
+            graphql_context.instance,
+            "report_runless_asset_event",
+            side_effect=report_runless_asset_event_fails_on_second_call,
+        ):
+            result = execute_dagster_graphql(
+                graphql_context,
+                REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+                variables={
+                    "assetEvents": serialized_events,
+                    "idempotencyKeys": ["key-0", "key-1", "key-2"],
+                },
+            )
+
+        assert result.data
+        payload = result.data["reportSensorTickAssetEvents"]
+        assert payload["__typename"] == "ReportSensorTickAssetEventsPartialFailure"
+        assert payload["reportedAssetKeys"] == [{"path": ["asset_one"]}]
+        assert payload["remainingAssetEvents"] == serialized_events[1:]
+        assert "simulated storage failure" in payload["error"]["message"]
+
+        # the first event, reported before the simulated failure, was actually persisted
+        records = graphql_context.instance.fetch_materializations(
+            AssetKey("asset_one"), ascending=True, limit=2
+        ).records
+        assert len(records) == 1
+
+        # the second and third events were not persisted
+        assert (
+            graphql_context.instance.fetch_materializations(
+                AssetKey("asset_two"), ascending=True, limit=2
+            ).records
+            == []
+        )
+        assert (
+            graphql_context.instance.fetch_materializations(
+                AssetKey("asset_three"), ascending=True, limit=2
+            ).records
+            == []
+        )
+
+    def test_report_sensor_tick_asset_events_idempotent_retry(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        # Simulates a blind retry after the client never received the first response
+        # (e.g. a dropped connection) -- resending the exact same events with the exact
+        # same idempotency keys must not duplicate what was already persisted.
+        from dagster._serdes import serialize_value
+
+        events = [
+            AssetMaterialization(asset_key=AssetKey("idempotent_asset_one")),
+            AssetMaterialization(asset_key=AssetKey("idempotent_asset_two")),
+        ]
+        serialized_events = [serialize_value(event) for event in events]
+        idempotency_keys = ["retry-key-one", "retry-key-two"]
+
+        for _ in range(2):
+            result = execute_dagster_graphql(
+                graphql_context,
+                REPORT_SENSOR_TICK_ASSET_EVENTS_MUTATION,
+                variables={"assetEvents": serialized_events, "idempotencyKeys": idempotency_keys},
+            )
+            assert result.data
+            payload = result.data["reportSensorTickAssetEvents"]
+            assert payload["__typename"] == "ReportSensorTickAssetEventsSuccess"
+            assert {tuple(k["path"]) for k in payload["assetKeys"]} == {
+                ("idempotent_asset_one",),
+                ("idempotent_asset_two",),
+            }
+
+        for asset_name in ["idempotent_asset_one", "idempotent_asset_two"]:
+            records = graphql_context.instance.fetch_materializations(
+                AssetKey(asset_name), ascending=True, limit=5
+            ).records
+            assert len(records) == 1
 
     def test_dry_run_failure(self, graphql_context: WorkspaceRequestContext):
         instigator_selector = infer_sensor_selector(graphql_context, "always_error_sensor")
