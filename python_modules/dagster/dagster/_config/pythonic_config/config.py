@@ -183,6 +183,8 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
 
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     def __init__(self, **config_dict) -> None:
         """This constructor is overridden to handle any remapping of raw config dicts to
         the appropriate config classes. For example, discriminated unions are represented
@@ -197,6 +199,15 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field.alias if field.alias else field_key: (field_key, field)
             for field_key, field in model_fields(self.__class__).items()
         }
+        populate_by_name = model_config(self.__class__).get("populate_by_name")
+        if populate_by_name:
+            field_info_by_config_key.update(
+                {
+                    field_key: (field_key, field)
+                    for field_key, field in model_fields(self.__class__).items()
+                }
+            )
+
         for config_key, value in config_dict.items():
             field_info = field_info_by_config_key.get(config_key)
             field = None
@@ -245,7 +256,11 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
 
         for field_key, field in model_fields(self.__class__).items():
             config_key = field.alias if field.alias else field_key
-            if field.is_required() and config_key not in modified_data_by_config_key:
+            if (
+                field.is_required()
+                and config_key not in modified_data_by_config_key
+                and (not populate_by_name or field_key not in modified_data_by_config_key)
+            ):
                 modified_data_by_config_key[config_key] = (
                     field.default if field.default != PydanticUndefined else None
                 )

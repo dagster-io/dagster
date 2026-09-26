@@ -228,10 +228,14 @@ class ConfigurableResourceFactory(  # ty: ignore[conflicting-metaclass]
 
         # We pull the values from the Pydantic config object, which may cast values
         # to the correct type under the hood - useful in particular for enums
+        fields = model_fields(self.__class__)
+        data_without_resources_config_keys = {
+            fields[key].alias or key if key in fields else key for key in data_without_resources
+        }
         casted_data_without_resources = {
             k: v
             for k, v in self._convert_to_config_dictionary().items()
-            if k in data_without_resources
+            if k in data_without_resources_config_keys
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
 
