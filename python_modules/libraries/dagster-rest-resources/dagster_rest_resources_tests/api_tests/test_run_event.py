@@ -213,14 +213,29 @@ class TestGetEventsFiltered:
             )
         )
 
-        client.get_run_events.side_effect = [page1, page2]
+        # The limit is reached at the first event of page 2, so page 2 is re-read up to that event
+        # to get a cursor that doesn't skip the second one.
+        page2_reread = GetRunEvents(
+            logsForRun=_make_event_connection(
+                events=[_make_run_start_event()],
+                cursor="cur-2-partial",
+                has_more=True,
+            )
+        )
+
+        client.get_run_events.side_effect = [page1, page2, page2_reread]
 
         result = DgApiRunEventApi(_client=client).get_events(_RUN_ID, levels=("INFO",), limit=3)
 
         assert len(result.items) == 3
-        assert result.cursor == "cur-2"
+        assert result.cursor == "cur-2-partial"
         assert result.has_more is True
-        assert client.get_run_events.call_count == 2
+        assert client.get_run_events.call_count == 3
+        assert client.get_run_events.call_args.kwargs == {
+            "run_id": _RUN_ID,
+            "limit": 1,
+            "after_cursor": "cur-1",
+        }
 
     def test_filter_cursor_does_not_skip_matching_events(self):
         # A server that honors `limit` and uses the index of the next event as its cursor.
@@ -255,6 +270,37 @@ class TestGetEventsFiltered:
 
         second = api.get_events(_RUN_ID, levels=("INFO",), limit=3, after_cursor=first.cursor)
         assert [e.message for e in second.items] == ["match-4", "match-5"]
+
+    def test_sparse_filter_keeps_full_page_size(self):
+        # Two matches 150 events apart: pages must keep asking for `limit` events so the search
+        # reaches the second match well within the page cap.
+        all_events = [
+            _make_run_start_event(
+                message=f"event-{i}",
+                level=LogLevel.INFO if i in (0, 150) else LogLevel.DEBUG,
+            )
+            for i in range(200)
+        ]
+
+        def get_run_events(run_id, limit, after_cursor):
+            start = int(after_cursor) if after_cursor else 0
+            end = min(start + limit, len(all_events))
+            return GetRunEvents(
+                logsForRun=_make_event_connection(
+                    events=all_events[start:end],
+                    cursor=str(end),
+                    has_more=end < len(all_events),
+                )
+            )
+
+        client = Mock(spec=IGraphQLClient)
+        client.get_run_events.side_effect = get_run_events
+
+        result = DgApiRunEventApi(_client=client).get_events(_RUN_ID, levels=("INFO",), limit=2)
+
+        assert [e.message for e in result.items] == ["event-0", "event-150"]
+        assert result.cursor == "151"
+        assert result.has_more is True
 
     def test_filters_paginates_until_no_more(self):
         client = Mock(spec=IGraphQLClient)

@@ -142,35 +142,43 @@ class DgApiRunEventApi:
         level_filter = {lv.upper() for lv in levels} if levels else None
         step_key_filter = [sk.lower() for sk in step_keys] if step_keys else None
 
-        events: list[DgApiRunEvent] = []
-        cursor = after_cursor
-        has_more = True
-
-        for _ in range(_MAX_PAGES):
-            # Only ask for as many events as are still needed, so a page can't match more events
-            # than fit under `limit`: truncating them would drop events that the returned cursor
-            # has already moved past, and paging on with that cursor would never return them.
-            page = self._fetch_single_page(
-                run_id=run_id, limit=limit - len(events), after_cursor=cursor
-            )
-
-            events.extend(
-                e
-                for e in page.items
-                if (not type_filter or (e.event_type or "").upper() in type_filter)
+        def _matches(e: DgApiRunEvent) -> bool:
+            return (
+                (not type_filter or (e.event_type or "").upper() in type_filter)
                 and (not level_filter or e.level.upper() in level_filter)
                 and (
                     not step_key_filter
                     or any(sk in (e.step_key or "").lower() for sk in step_key_filter)
                 )
             )
+
+        events: list[DgApiRunEvent] = []
+        cursor = after_cursor
+        has_more = True
+
+        for _ in range(_MAX_PAGES):
+            page_start_cursor = cursor
+            page = self._fetch_single_page(run_id=run_id, limit=limit, after_cursor=cursor)
             cursor = page.cursor or None
             has_more = page.has_more
 
-            if len(events) >= limit:
-                events = events[:limit]
-                break
-            if not has_more:
+            for i, e in enumerate(page.items):
+                if not _matches(e):
+                    continue
+                events.append(e)
+                if len(events) == limit:
+                    if i < len(page.items) - 1:
+                        # The limit was reached before the end of the page, but the page's cursor
+                        # points past all of it: paging on from there would skip the rest of the
+                        # page. Re-read the page up to this event to get a cursor right after it.
+                        page = self._fetch_single_page(
+                            run_id=run_id, limit=i + 1, after_cursor=page_start_cursor
+                        )
+                        cursor = page.cursor or None
+                        has_more = True
+                    break
+
+            if len(events) >= limit or not has_more:
                 break
 
         return DgApiRunEventList(
