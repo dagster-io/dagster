@@ -301,7 +301,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
             .label("rank")
         )
-        subquery = db_subquery(
+        ranked = (
             db_select(
                 [
                     JobTickTable.c.id,
@@ -314,15 +314,14 @@ class SqlScheduleStorage(ScheduleStorage):
             .where(JobTickTable.c.selector_id.in_(selector_ids))
         )
         if statuses:
-            subquery = subquery.where(
-                JobTickTable.c.status.in_([status.value for status in statuses])
-            )
+            ranked = ranked.where(JobTickTable.c.status.in_([status.value for status in statuses]))
+        subquery = db_subquery(ranked)
 
-        query = (
-            db_select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
-            .order_by(subquery.c.rank.asc())
-            .where(subquery.c.rank <= limit)
+        query = db_select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body]).order_by(
+            subquery.c.rank.asc()
         )
+        if limit is not None:
+            query = query.where(subquery.c.rank <= limit)
 
         rows = self.execute(query)
         results = defaultdict(list)
