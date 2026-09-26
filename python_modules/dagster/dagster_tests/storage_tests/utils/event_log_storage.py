@@ -81,6 +81,7 @@ from dagster._core.storage.event_log.migration import (
 )
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import (
@@ -94,6 +95,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._time import get_current_datetime
 from dagster._utils.concurrency import ConcurrencySlotStatus
 from dagster_shared import seven
+from sqlalchemy import event as sqlalchemy_event
 
 # py36 & 37 list.append not hashable
 
@@ -4166,6 +4168,114 @@ class TestEventLogStorage:
             assert info and info.storage_id
             info = storage.get_latest_planned_materialization_info(asset_key=b)
             assert not info
+
+    def test_get_latest_planned_materialization_info_for_keys(self, storage, instance):
+        a, b, missing = [dg.AssetKey([name]) for name in ["a", "b", "missing"]]
+        run_ids = sorted([make_new_run_id(), make_new_run_id()], reverse=True)
+        with create_and_delete_test_runs(instance, run_ids):
+            for key, run_id, timestamp, partition in [
+                (a, run_ids[0], 300.0, "foo"),
+                (b, run_ids[0], 400.0, None),
+                # Latest means storage ID, not timestamp or lexicographic run ID.
+                (a, run_ids[1], 200.0, "bar"),
+            ]:
+                storage.store_event(
+                    dg.EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id,
+                        timestamp=timestamp,
+                        dagster_event=dg.DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(key, partition),
+                        ),
+                    )
+                )
+            storage.store_event(
+                dg.EventLogEntry(
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_ids[0],
+                    timestamp=500.0,
+                    dagster_event=dg.DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(dg.AssetMaterialization(a)),
+                    ),
+                )
+            )
+            keys = [missing, b, a, b]
+            assert storage.get_latest_planned_materialization_info_for_keys([]) == {}
+            result = storage.get_latest_planned_materialization_info_for_keys(keys)
+            assert result == {
+                key: storage.get_latest_planned_materialization_info(key) for key in keys
+            }
+            assert result[a].run_id == run_ids[1]
+            assert result[b].run_id == run_ids[0]
+            assert result[missing] is None
+            assert storage.get_latest_planned_materialization_info(a, "foo").run_id == run_ids[0]
+
+    def test_get_latest_planned_materialization_info_for_keys_wipe(self, storage, instance):
+        key = dg.AssetKey("wiped")
+        run_id = make_new_run_id()
+        with create_and_delete_test_runs(instance, [run_id]):
+
+            def store_plan(timestamp):
+                storage.store_event(
+                    dg.EventLogEntry(
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id=run_id,
+                        timestamp=timestamp,
+                        dagster_event=dg.DagsterEvent(
+                            DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                            "nonce",
+                            event_specific_data=AssetMaterializationPlannedData(key),
+                        ),
+                    )
+                )
+
+            store_plan(time.time() - 100)
+            storage.wipe_asset(key)
+            assert storage.get_latest_planned_materialization_info_for_keys([key]) == {key: None}
+            store_plan(time.time() + 100)
+            valid = storage.get_latest_planned_materialization_info(key)
+            assert valid is not None
+            # A newer ID with a pre-wipe timestamp must be removed BEFORE MAX(id).
+            store_plan(time.time() - 100)
+            assert storage.get_latest_planned_materialization_info_for_keys([key]) == {key: valid}
+            assert storage.get_latest_planned_materialization_info(key) == valid
+
+    @pytest.mark.parametrize("count", [0, 1, 8, 64, 200, 201])
+    def test_get_latest_planned_materialization_info_for_keys_queries(self, storage, count):
+        if not isinstance(storage, (SqlEventLogStorage, LegacyEventLogStorage)):
+            pytest.skip("SQL batching; third-party backends may use the singular fallback")
+        # Legacy storage opens its underlying index lazily, including an Alembic read.
+        storage.get_maximum_record_id()
+        statements = []
+
+        def record_query(conn, cursor, statement, parameters, context, executemany):
+            if statement.lstrip().upper().startswith("SELECT"):
+                statements.append(statement)
+
+        keys = [dg.AssetKey(f"asset_{i}") for i in range(count)]
+        sqlalchemy_event.listen(db.engine.Engine, "before_cursor_execute", record_query)
+        try:
+            with mock.patch.object(
+                storage,
+                "get_latest_planned_materialization_info",
+                side_effect=AssertionError("batch must not call the singular API"),
+            ):
+                assert storage.get_latest_planned_materialization_info_for_keys(
+                    keys
+                ) == dict.fromkeys(keys)
+        finally:
+            sqlalchemy_event.remove(db.engine.Engine, "before_cursor_execute", record_query)
+        assert len(statements) == 2 * ((count + 199) // 200)
 
     def test_get_latest_planned_materialization_info_partitioned(self, storage, instance):
         a = dg.AssetKey(["a"])

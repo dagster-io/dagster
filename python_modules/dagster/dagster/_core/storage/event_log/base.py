@@ -182,7 +182,7 @@ class AssetCheckSummaryRecord(
 
 
 @record
-class PlannedMaterializationInfo:
+class PlannedMaterializationInfo(LoadableBy[AssetKey]):
     """Internal representation of an planned materialization event, containing storage_id / run_id.
 
     Users should not invoke this class directly.
@@ -190,6 +190,18 @@ class PlannedMaterializationInfo:
 
     storage_id: int
     run_id: str
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[AssetKey], context: LoadingContext
+    ) -> Iterable[Optional["PlannedMaterializationInfo"]]:
+        keys = list(keys)
+        records_by_key = (
+            context.instance.event_log_storage.get_latest_planned_materialization_info_for_keys(
+                keys
+            )
+        )
+        return [records_by_key.get(key) for key in keys]
 
 
 @record
@@ -744,6 +756,19 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         partition: str | None = None,
     ) -> PlannedMaterializationInfo | None:
         raise NotImplementedError()
+
+    def get_latest_planned_materialization_info_for_keys(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, PlannedMaterializationInfo | None]:
+        """Return the latest planned event for each key, without filtering by partition.
+
+        Storages can override this to batch reads. The default preserves the singular
+        method's behavior for existing storage implementations.
+        """
+        return {
+            key: self.get_latest_planned_materialization_info(key)
+            for key in dict.fromkeys(asset_keys)
+        }
 
     @abstractmethod
     def get_updated_data_version_partitions(
