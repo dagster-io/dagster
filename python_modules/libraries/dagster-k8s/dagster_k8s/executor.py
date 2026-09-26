@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.execution.step_dependency_config import (
     StepDependencyConfig,
@@ -399,12 +399,65 @@ class K8sStepHandler(StepHandler):
             return CheckStepHealthResult.unhealthy(
                 reason=f"Kubernetes job {job_name} for step {step_key} could not be found."
             )
-        if status.failed:
+        terminal_conditions = {
+            condition.type
+            for condition in status.conditions or []
+            if condition.status == "True" and condition.type in {"Complete", "Failed"}
+        }
+        if not terminal_conditions or status.active:
+            return CheckStepHealthResult.healthy()
+
+        # On older Kubernetes versions, a Job can have a terminal condition while its
+        # pods are still terminating. Do not trigger a Dagster retry while a worker
+        # belonging to this Job could still be executing the step.
+        pods = self._api_client.get_pods_in_job(job_name, container_context.namespace)
+        if any(not pod.status or pod.status.phase not in {"Succeeded", "Failed"} for pod in pods):
+            return CheckStepHealthResult.healthy()
+
+        # The executor may not have consumed the worker's last event yet. Check the
+        # current attempt, including STEP_UP_FOR_RETRY, which closes an attempt but
+        # leaves the overall step status IN_PROGRESS. A previous attempt's retry
+        # event must not hide a replacement worker that exited without running.
+        known_state = step_handler_context.execute_step_args.known_state
+        attempt = known_state.get_retry_state().get_attempt_count(step_key) if known_state else 0
+        step_stats = step_handler_context.instance.get_run_step_stats(
+            step_handler_context.execute_step_args.run_id, step_keys=[step_key]
+        )
+        if (
+            step_stats
+            and len(step_stats[0].attempts_list) > attempt
+            and step_stats[0].attempts_list[attempt].end_time is not None
+        ):
+            return CheckStepHealthResult.healthy()
+
+        if "Failed" in terminal_conditions:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Discovered failed Kubernetes job {job_name} for step {step_key}.",
             )
 
-        return CheckStepHealthResult.healthy()
+        # Resource initialization can fail before STEP_START. The executor handles
+        # that event itself, so leave it to emit the failure/retry rather than racing
+        # it here. Retry events delimit attempts even when they never started.
+        retry_count = 0
+        resource_init_failed = False
+        for entry in step_handler_context.instance.all_logs(
+            step_handler_context.execute_step_args.run_id,
+            of_type={DagsterEventType.RESOURCE_INIT_FAILURE, DagsterEventType.STEP_UP_FOR_RETRY},
+        ):
+            event = entry.get_dagster_event()
+            if event.step_key == step_key:
+                if event.is_step_up_for_retry:
+                    retry_count += 1
+                    resource_init_failed = False
+                else:
+                    resource_init_failed = True
+        if resource_init_failed and retry_count == attempt:
+            return CheckStepHealthResult.healthy()
+
+        return CheckStepHealthResult.unhealthy(
+            reason=f"Kubernetes job {job_name} for step {step_key} completed without a terminal "
+            f"Dagster event for attempt {attempt + 1}.",
+        )
 
     def terminate_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_key = self._get_step_key(step_handler_context)
