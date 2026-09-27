@@ -197,9 +197,12 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             res = result.fetchone()
             result.close()
 
-            # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew
+            # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew.
+            # pg_notify() is used instead of the NOTIFY command: NOTIFY is a utility statement and
+            # does not accept bind parameters, which breaks under psycopg3 (SQLAlchemy 2.1's default
+            # postgres driver). pg_notify is a regular SQL function, so the payload can stay bound.
             conn.execute(
-                db.text(f"""NOTIFY {CHANNEL_NAME}, :notify_id; """),
+                db.text(f"SELECT pg_notify('{CHANNEL_NAME}', :notify_id)"),
                 {"notify_id": res[0] + "_" + str(res[1])},  # type: ignore
             )
             event_id = int(res[1])  # type: ignore
