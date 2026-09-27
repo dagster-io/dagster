@@ -50,6 +50,8 @@ if TYPE_CHECKING:
 
 CHANNEL_NAME = "run_events"
 
+# psycopg3 uses server-side bind parameters (e.g. ``$1``), which PostgreSQL\'s\n# NOTIFY utility statement does not accept for its payload. ``pg_notify`` is a\n# regular SQL function, so both its channel and payload can remain safely bound.\n_NOTIFY_STATEMENT = db.text("SELECT pg_notify(:channel_name, :notify_id)")
+
 
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     """Postgres-backed event log storage.
@@ -199,8 +201,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
             # LISTEN/NOTIFY no longer used for pg event watch - preserved here to support version skew
             conn.execute(
-                db.text(f"""NOTIFY {CHANNEL_NAME}, :notify_id; """),
-                {"notify_id": res[0] + "_" + str(res[1])},  # type: ignore
+                _NOTIFY_STATEMENT,
+                {
+                    "channel_name": CHANNEL_NAME,
+                    "notify_id": res[0] + "_" + str(res[1]),  # type: ignore
+                },
             )
             event_id = int(res[1])  # type: ignore
 
