@@ -50,7 +50,10 @@ if TYPE_CHECKING:
 
 CHANNEL_NAME = "run_events"
 
-# psycopg3 uses server-side bind parameters (e.g. ``$1``), which PostgreSQL\'s\n# NOTIFY utility statement does not accept for its payload. ``pg_notify`` is a\n# regular SQL function, so both its channel and payload can remain safely bound.\n_NOTIFY_STATEMENT = db.text("SELECT pg_notify(:channel_name, :notify_id)")
+# psycopg3 uses server-side bind parameters (e.g. ``$1``), which PostgreSQL's
+# NOTIFY utility statement does not accept for its payload. ``pg_notify`` is a
+# regular SQL function, so both its channel and payload can remain safely bound.
+_NOTIFY_STATEMENT = db.text("SELECT pg_notify(:channel_name, :notify_id)")
 
 
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
