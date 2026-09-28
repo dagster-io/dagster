@@ -192,9 +192,29 @@ def test_io_manager_asset_metadata() -> None:
     not RUN_BUILDKITE_BIGQUERY_TESTS,
     reason="Requires Buildkite BigQuery credentials",
 )
-@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+@pytest.mark.parametrize(
+    "io_manager,preserve_column_case",
+    [
+        (io_manager, preserve_column_case)
+        for preserve_column_case in [False, True]
+        for io_manager in [
+            bigquery_pandas_io_manager.configured(
+                {**SHARED_BUILDKITE_BQ_CONFIG, "preserve_column_case": preserve_column_case}
+            ),
+            BigQueryPandasIOManager(
+                project=EnvVar("GCP_PROJECT_ID"),
+                preserve_column_case=preserve_column_case,
+            ),
+        ]
+    ],
+)
 @pytest.mark.integration
-def test_io_manager_with_bigquery_pandas(io_manager):
+def test_io_manager_with_bigquery_pandas(io_manager, preserve_column_case):
+    columns = ["lower", "UPPER", "MixedCase"]
+    expected_read_columns = columns if preserve_column_case else [name.lower() for name in columns]
+    expected_stored_columns = (
+        columns if preserve_column_case else [name.upper() for name in columns]
+    )
     with temporary_bigquery_table(schema_name=SCHEMA) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
@@ -208,11 +228,11 @@ def test_io_manager_with_bigquery_pandas(io_manager):
             }
         )
         def emit_pandas_df() -> pd.DataFrame:
-            return pd.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+            return pd.DataFrame({"lower": ["bar", "baz"], "UPPER": [1, 2], "MixedCase": [3, 4]})
 
         @op
         def read_pandas_df(df: pd.DataFrame) -> None:
-            assert set(df.columns) == {"foo", "quux"}
+            assert list(df.columns) == expected_read_columns
             assert len(df.index) == 2
 
         @job(
@@ -223,6 +243,10 @@ def test_io_manager_with_bigquery_pandas(io_manager):
 
         res = io_manager_test_job.execute_in_process()
         assert res.success
+
+        with bigquery.Client(project=SHARED_BUILDKITE_BQ_CONFIG["project"]) as client:
+            table = client.get_table(f"{client.project}.{SCHEMA}.{table_name}")
+            assert [field.name for field in table.schema] == expected_stored_columns
 
         # run again to ensure table is properly deleted
         res = io_manager_test_job.execute_in_process()

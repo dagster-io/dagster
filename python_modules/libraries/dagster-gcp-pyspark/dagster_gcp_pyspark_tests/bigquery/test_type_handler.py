@@ -268,10 +268,31 @@ def test_build_bigquery_pyspark_io_manager():
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
-@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+@pytest.mark.parametrize(
+    "io_manager,preserve_column_case",
+    [
+        (io_manager, preserve_column_case)
+        for preserve_column_case in [False, True]
+        for io_manager in [
+            bigquery_pyspark_io_manager.configured(
+                {**SHARED_BUILDKITE_BQ_CONFIG, "preserve_column_case": preserve_column_case}
+            ),
+            BigQueryPySparkIOManager(
+                project=EnvVar("GCP_PROJECT_ID"),
+                temporary_gcs_bucket="gcs_io_manager_test",
+                preserve_column_case=preserve_column_case,
+            ),
+        ]
+    ],
+)
 @pytest.mark.integration
 @pytest.mark.flaky(reruns=1)
-def test_io_manager_with_bigquery_pyspark(spark, io_manager):
+def test_io_manager_with_bigquery_pyspark(spark, io_manager, preserve_column_case):
+    columns = ["lower", "UPPER", "MixedCase"]
+    expected_read_columns = columns if preserve_column_case else [name.lower() for name in columns]
+    expected_stored_columns = (
+        columns if preserve_column_case else [name.upper() for name in columns]
+    )
     with temporary_bigquery_table(
         schema_name=SCHEMA,
     ) as table_name:
@@ -282,14 +303,13 @@ def test_io_manager_with_bigquery_pyspark(spark, io_manager):
             out={table_name: Out(dagster_type=DataFrame, metadata={"schema": SCHEMA})},
         )
         def emit_pyspark_df(_):
-            columns = ["foo", "quux"]
-            data = [("bar", 1), ("baz", 2)]
+            data = [("bar", 1, 3), ("baz", 2, 4)]
             df = spark.createDataFrame(data).toDF(*columns)
             return df
 
         @op
         def read_pyspark_df(df: DataFrame) -> None:
-            assert set([f.name for f in df.schema.fields]) == {"foo", "quux"}
+            assert df.columns == expected_read_columns
             assert df.count() == 2
 
         @job(resource_defs={"io_manager": io_manager})
@@ -298,6 +318,10 @@ def test_io_manager_with_bigquery_pyspark(spark, io_manager):
 
         res = io_manager_test_job.execute_in_process()
         assert res.success
+
+        with bigquery.Client(project=SHARED_BUILDKITE_BQ_CONFIG["project"]) as client:
+            table = client.get_table(f"{client.project}.{SCHEMA}.{table_name}")
+            assert [field.name for field in table.schema] == expected_stored_columns
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE BigQuery DB")
