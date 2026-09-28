@@ -228,3 +228,45 @@ def test_requires_typed_event_stream_subsettable_multi_asset():
 
     with raises_missing_output_error():
         dg.materialize([asset_subsettable_none], selection=["bar"])
+
+
+def test_can_subset_multi_asset_subset_execution_no_output_not_found_error():
+    """Regression test for GitHub issue #33648.
+
+    Non-selected outputs on a can_subset=True multi-asset must not raise
+    DagsterStepOutputNotFoundError when the op correctly skips them.
+    """
+
+    @dg.multi_asset(
+        outs={"a": dg.AssetOut(), "b": dg.AssetOut()},
+        can_subset=True,
+    )
+    def multi_with_required_outs(context: dg.AssetExecutionContext):
+        if "a" in context.op_execution_context.selected_output_names:
+            yield dg.Output(1, output_name="a")
+        if "b" in context.op_execution_context.selected_output_names:
+            yield dg.Output(2, output_name="b")
+
+    # Select only "a" — "b" not selected, not yielded, must NOT raise
+    result = dg.materialize([multi_with_required_outs], selection=["a"])
+    assert result.success
+
+    # Select only "b" — same symmetry
+    result = dg.materialize([multi_with_required_outs], selection=["b"])
+    assert result.success
+
+    # Select all — both must be yielded
+    result = dg.materialize([multi_with_required_outs])
+    assert result.success
+
+    # Negative case: selected required output NOT yielded → must still raise
+    @dg.multi_asset(
+        outs={"a": dg.AssetOut(), "b": dg.AssetOut()},
+        can_subset=True,
+    )
+    def incomplete_multi_asset(context: dg.AssetExecutionContext):
+        yield dg.Output(1, output_name="a")
+        # "b" is selected but intentionally not yielded
+
+    with pytest.raises(dg.DagsterStepOutputNotFoundError):
+        dg.materialize([incomplete_multi_asset])  # both selected by default
