@@ -23,7 +23,6 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,
-    DagsterRun,
     RunPartitionData,
     RunsFilter,
 )
@@ -451,9 +450,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         else:
             self._partition_run_data = (
                 graphene_info.context.instance.run_storage.get_run_partition_data(
-                    runs_filter=RunsFilter(
-                        tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id)
-                    )
+                    runs_filter=RunsFilter(backfill_id=self._backfill_job.backfill_id)
                 )
             )
         return self._partition_run_data
@@ -462,9 +459,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         self, instance: DagsterInstance, partition_set: RemotePartitionSet
     ) -> Sequence[RunPartitionData]:
         partitions_def = partition_set.get_partitions_definition()
-        records = instance.get_run_records(
-            RunsFilter(tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id))
-        )
+        records = instance.get_run_records(RunsFilter(backfill_id=self._backfill_job.backfill_id))
         with partition_loading_context(dynamic_partitions_store=instance):
             return [
                 RunPartitionData(
@@ -495,7 +490,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         instance = graphene_info.context.instance
         records = instance.get_run_records(
             filters=RunsFilter(
-                tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id),
+                backfill_id=self._backfill_job.backfill_id,
                 statuses=NOT_FINISHED_STATUSES,
             ),
             limit=limit,
@@ -510,7 +505,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         instance = graphene_info.context.instance
         records = instance.get_run_records(
             filters=RunsFilter(
-                tags=DagsterRun.tags_for_backfill_id(self._backfill_job.backfill_id),
+                backfill_id=self._backfill_job.backfill_id,
                 statuses=CANCELABLE_RUN_STATUSES,
             ),
             limit=limit,
@@ -526,7 +521,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if limit is None:
             limit = instance.get_default_graphql_run_records_limit()
         records = instance.get_run_records(
-            filters=RunsFilter.for_backfill(self._backfill_job.backfill_id),
+            filters=RunsFilter(backfill_id=self._backfill_job.backfill_id),
             limit=limit,
         )
         return [GrapheneRun(record) for record in records]

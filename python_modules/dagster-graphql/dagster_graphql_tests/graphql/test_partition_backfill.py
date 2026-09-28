@@ -600,7 +600,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 time.sleep(0.1)
                 assert time.time() - start < 60, "timed out waiting for file"
 
-        runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+        runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
         assert len(runs) == 1
         assert runs[0].status == DagsterRunStatus.STARTED
 
@@ -629,7 +629,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
             assert time.time() - start < 60, "timed out waiting for backfill to cancel"
 
-        runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+        runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
         assert len(runs) == 1
         assert runs[0].status == DagsterRunStatus.CANCELED
 
@@ -792,7 +792,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 time.sleep(0.1)
                 assert time.time() - start < 60, "timed out waiting for file"
 
-        runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+        runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
         assert len(runs) == 1
         assert runs[0].status == DagsterRunStatus.STARTED
 
@@ -817,7 +817,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             _execute_job_backfill_iteration_with_side_effects(graphql_context, backfill_id)
             assert time.time() - start < 60, "timed out waiting for backfill to fail"
 
-        runs = graphql_context.instance.get_runs(RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}))
+        runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
         assert len(runs) == 1
         assert runs[0].status == DagsterRunStatus.CANCELED
 
@@ -903,9 +903,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
                 assert time.time() - start < 60, "timed out waiting for backfill to cancel"
 
-            runs = graphql_context.instance.get_runs(
-                RunsFilter(tags={BACKFILL_ID_TAG: backfill_id})
-            )
+            runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
             assert len(runs) == 1
             assert runs[0].status == DagsterRunStatus.CANCELED
 
@@ -980,9 +978,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             ):
                 _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
 
-            runs = graphql_context.instance.get_runs(
-                RunsFilter(tags={BACKFILL_ID_TAG: backfill_id})
-            )
+            runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
             assert len(runs) == 1
             assert runs[0].status == DagsterRunStatus.CANCELED
 
@@ -1080,9 +1076,7 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
                 _execute_backfill_iteration_with_side_effects(graphql_context, backfill_id)
                 assert time.time() - start < 60, "timed out waiting for backfill to fail"
 
-            runs = graphql_context.instance.get_runs(
-                RunsFilter(tags={BACKFILL_ID_TAG: backfill_id})
-            )
+            runs = graphql_context.instance.get_runs(RunsFilter(backfill_id=backfill_id))
             assert len(runs) == 1
             assert runs[0].status == DagsterRunStatus.CANCELED
 
