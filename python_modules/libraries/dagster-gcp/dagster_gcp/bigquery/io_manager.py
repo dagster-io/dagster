@@ -332,6 +332,15 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
             " queries (loading and reading from tables)."
         ),
     )
+    preserve_column_case: bool = Field(
+        default=False,
+        description=(
+            "When using Pandas or PySpark DataFrames, preserve column name casing on writes"
+            " and reads. Defaults to False for compatibility: writes uppercase column names"
+            " and reads lowercase them. When enabled, existing uppercase table columns will"
+            " be loaded with uppercase names."
+        ),
+    )
     write_mode: BigQueryWriteMode = Field(
         default=BigQueryWriteMode.TRUNCATE,
         description="Write mode to use for non-partitioned table cleanup: truncate, append, or replace.",

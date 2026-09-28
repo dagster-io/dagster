@@ -18,6 +18,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_input_context,
     build_output_context,
     fs_io_manager,
     instance_for_test,
@@ -25,6 +26,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._config import process_config
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -93,13 +95,30 @@ def test_handle_output_empty_dataframe():
     connection.load_table_from_dataframe.assert_not_called()
 
 
-def test_handle_output_nonempty_dataframe():
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+@pytest.mark.parametrize(
+    "schema",
+    [bigquery_pandas_io_manager.config_schema, BigQueryPandasIOManager.to_config_schema()],
+)
+def test_preserve_column_case_config(preserve_column_case, schema):
+    config = {"project": "my-project"}
+    if preserve_column_case is not None:
+        config["preserve_column_case"] = preserve_column_case
+    result = process_config(schema.as_field().config_type, config)
+
+    assert result.success
+    assert result.value["preserve_column_case"] is bool(preserve_column_case)
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+def test_handle_output_nonempty_dataframe(preserve_column_case):
+    config = {} if preserve_column_case is None else {"preserve_column_case": preserve_column_case}
     handler = BigQueryPandasTypeHandler()
-    df = pd.DataFrame({"foo": ["a", "b"], "bar": [1, 2]})
+    df = pd.DataFrame({"lower": ["a", "b"], "UPPER": [1, 2], "MixedCase": [3, 4]})
     connection = MagicMock()
     mock_job = MagicMock()
     connection.load_table_from_dataframe.return_value = mock_job
-    output_context = build_output_context(resource_config={"location": "us"})
+    output_context = build_output_context(resource_config={"location": "us", **config})
 
     handler.handle_output(
         output_context,
@@ -113,7 +132,29 @@ def test_handle_output_nonempty_dataframe():
     )
 
     connection.load_table_from_dataframe.assert_called_once()
+    written_df = connection.load_table_from_dataframe.call_args.kwargs["dataframe"]
+    expected = df if preserve_column_case else df.rename(columns=str.upper)
+    pd.testing.assert_frame_equal(written_df, expected)
     mock_job.result.assert_called_once()
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+def test_load_input_preserves_column_case(preserve_column_case):
+    config = {} if preserve_column_case is None else {"preserve_column_case": preserve_column_case}
+    handler = BigQueryPandasTypeHandler()
+    expected = pd.DataFrame({"lower": ["a", "b"], "UPPER": [1, 2], "MixedCase": [3, 4]})
+    connection = MagicMock()
+    connection.query.return_value.to_dataframe.return_value = expected.copy()
+
+    result = handler.load_input(
+        build_input_context(resource_config=config),
+        TableSlice(table="my_table", schema="my_schema", database="my_db"),
+        connection,
+    )
+
+    if not preserve_column_case:
+        expected = expected.rename(columns=str.lower)
+    pd.testing.assert_frame_equal(result, expected)
 
 
 @pytest.mark.skipif(

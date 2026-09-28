@@ -3,7 +3,7 @@ import time
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas
 import pandas_gbq
@@ -28,6 +28,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._config import process_config
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -97,6 +98,73 @@ def temporary_bigquery_table(schema_name: str) -> Iterator[str]:
         bq_client.query(
             f"drop table {SHARED_BUILDKITE_BQ_CONFIG['project']}.{schema_name}.{table_name}"
         ).result()
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+@pytest.mark.parametrize(
+    "schema",
+    [bigquery_pyspark_io_manager.config_schema, BigQueryPySparkIOManager.to_config_schema()],
+)
+def test_preserve_column_case_config(preserve_column_case, schema):
+    config = {"project": "my-project"}
+    if preserve_column_case is not None:
+        config["preserve_column_case"] = preserve_column_case
+    result = process_config(schema.as_field().config_type, config)
+
+    assert result.success
+    assert result.value["preserve_column_case"] is bool(preserve_column_case)
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+def test_handle_output_preserves_column_case(preserve_column_case):
+    config = {} if preserve_column_case is None else {"preserve_column_case": preserve_column_case}
+    columns = ["lower", "UPPER", "MixedCase"]
+    df = MagicMock(spec=DataFrame)
+    df.columns = columns
+    df.schema = StructType([StructField(name, StringType()) for name in columns])
+    df.isEmpty.return_value = False
+
+    BigQueryPySparkTypeHandler().handle_output(
+        build_output_context(resource_config=config),
+        TableSlice(table="my_table", schema="my_schema", database="my_db"),
+        df,
+        None,
+    )
+
+    if preserve_column_case:
+        df.toDF.assert_not_called()
+        written_df = df
+    else:
+        df.toDF.assert_called_once_with("LOWER", "UPPER", "MIXEDCASE")
+        written_df = df.toDF.return_value
+    written_df.write.format.assert_called_once_with("bigquery")
+    written_df.write.format.return_value.options.return_value.mode.assert_called_once_with("append")
+    written_df.write.format.return_value.options.return_value.mode.return_value.save.assert_called_once()
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+def test_load_input_preserves_column_case(preserve_column_case):
+    config = {} if preserve_column_case is None else {"preserve_column_case": preserve_column_case}
+    columns = ["lower", "UPPER", "MixedCase"]
+    df = MagicMock(spec=DataFrame)
+    df.columns = columns
+
+    with patch("pyspark.sql.SparkSession.builder") as builder:
+        spark = builder.getOrCreate.return_value
+        spark.read.format.return_value.options.return_value.load.return_value = df
+
+        result = BigQueryPySparkTypeHandler().load_input(
+            build_input_context(resource_config=config),
+            TableSlice(table="my_table", schema="my_schema", database="my_db"),
+            None,
+        )
+
+    if preserve_column_case:
+        assert result.columns == columns
+        df.toDF.assert_not_called()
+    else:
+        df.toDF.assert_called_once_with("lower", "upper", "mixedcase")
+        assert result is df.toDF.return_value
 
 
 @pytest.mark.integration
