@@ -83,7 +83,7 @@ def retry_pg_creation_fn(fn: Callable[[], T], retry_limit: int = 5, retry_wait: 
             if (
                 isinstance(exc, sqlalchemy.exc.ProgrammingError)
                 and exc.orig
-                and exc.orig.pgcode != "42P07"
+                and exc.orig.diag.sqlstate != "42P07"
             ):
                 raise
 
