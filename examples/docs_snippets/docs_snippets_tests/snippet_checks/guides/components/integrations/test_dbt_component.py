@@ -420,3 +420,36 @@ def test_components_docs_dbt_project(
         _run_command(
             cmd="dg launch --assets '*' --partition '2023-01-01'",
         )
+
+        # Microbatch variant of the partitioned config. Keeps the out-of-sequence `20b`
+        # name because the guide presents it as an alternative to `20-defs.yaml` rather
+        # than a further step.
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_dbt.DbtProjectComponent
+
+                template_vars_module: .template_vars
+                attributes:
+                  project: '{{ context.project_root }}/dbt'
+                  select: "customers"
+                  translation:
+                    group_name: dbt_models
+                    description: "Transforms data using dbt model {{ node.name }}"
+                  cli_args:
+                    - build
+                    - --event-time-start
+                    - "{{ partition_key }}"
+                    - --event-time-end
+                    - "{{ partition_time_window.end.strftime('%Y-%m-%d') }}"
+                post_processing:
+                  assets:
+                    - target: "*"
+                      attributes:
+                        partitions_def: "{{ daily_partitions_def }}"
+                """
+            ),
+            snippet_path="20b-microbatch-defs.yaml",
+        )
+        _run_command(cmd="dg list defs")

@@ -102,16 +102,16 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
 
 Now that you have a Dagster project, you can scaffold a dbt component definition that points to an external Git repository. You'll need to provide the Git URL and the path to the dbt project within the repository:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-1-scaffold-dbt-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component-remote/remote-1-scaffold-dbt-component.txt" />
 
 The `dg scaffold defs` call will generate a `defs.yaml` file in your project structure:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-2-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component-remote/remote-2-tree.txt" />
 
 In its scaffolded form, the `defs.yaml` file contains the configuration for your remote dbt project:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-3-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component-remote/remote-3-component.yaml"
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
