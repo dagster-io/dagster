@@ -2,30 +2,37 @@ import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import * as React from 'react';
 
+import {
+  PartitionDateFilter,
+  RECENT_PARTITIONS_LABEL,
+  recentPartitionsFilter,
+} from './partitionDateFilter';
 import {TimeContext} from '../app/time/TimeContext';
 import {testId} from '../testing/testId';
 import {DateRangeDialog} from '../ui/DateRangeDialog';
 import '../util/dayjsExtensions';
 
+const ALL_TIME_LABEL = 'All time';
+
 interface DateRangeOption {
   key: string;
   label: string;
-  getRange: (tz: string) => [dayjs.Dayjs, dayjs.Dayjs] | null;
+  getRange: (tz: string) => {from: dayjs.Dayjs; to: dayjs.Dayjs} | null;
 }
 
 const HIGH_RESOLUTION_OPTIONS: DateRangeOption[] = [
   {
     key: 'today',
     label: 'Today',
-    getRange: (tz) => [dayjs().tz(tz).startOf('day'), dayjs().tz(tz).endOf('day')],
+    getRange: (tz) => ({from: dayjs().tz(tz).startOf('day'), to: dayjs().tz(tz).endOf('day')}),
   },
   {
     key: 'last_2_days',
     label: 'Last 2 days',
-    getRange: (tz) => [
-      dayjs().tz(tz).subtract(1, 'day').startOf('day'),
-      dayjs().tz(tz).endOf('day'),
-    ],
+    getRange: (tz) => ({
+      from: dayjs().tz(tz).subtract(1, 'day').startOf('day'),
+      to: dayjs().tz(tz).endOf('day'),
+    }),
   },
 ];
 
@@ -33,67 +40,60 @@ const DATE_RANGE_OPTIONS: DateRangeOption[] = [
   {
     key: 'last_7',
     label: 'Last 7 days',
-    getRange: (tz) => [
-      dayjs().tz(tz).subtract(7, 'day').startOf('day'),
-      dayjs().tz(tz).endOf('day'),
-    ],
+    getRange: (tz) => ({
+      from: dayjs().tz(tz).subtract(7, 'day').startOf('day'),
+      to: dayjs().tz(tz).endOf('day'),
+    }),
   },
   {
     key: 'last_30',
     label: 'Last 30 days',
-    getRange: (tz) => [
-      dayjs().tz(tz).subtract(30, 'day').startOf('day'),
-      dayjs().tz(tz).endOf('day'),
-    ],
+    getRange: (tz) => ({
+      from: dayjs().tz(tz).subtract(30, 'day').startOf('day'),
+      to: dayjs().tz(tz).endOf('day'),
+    }),
   },
   {
     key: 'last_90',
-    label: 'Last 90 days',
-    getRange: (tz) => [
-      dayjs().tz(tz).subtract(90, 'day').startOf('day'),
-      dayjs().tz(tz).endOf('day'),
-    ],
+    label: RECENT_PARTITIONS_LABEL,
+    getRange: (tz) => recentPartitionsFilter(tz),
   },
   {
     key: 'this_month',
     label: 'This month',
-    getRange: (tz) => [dayjs().tz(tz).startOf('month'), dayjs().tz(tz).endOf('day')],
+    getRange: (tz) => ({from: dayjs().tz(tz).startOf('month'), to: dayjs().tz(tz).endOf('day')}),
   },
   {
     key: 'last_month',
     label: 'Last month',
-    getRange: (tz) => [
-      dayjs().tz(tz).subtract(1, 'month').startOf('month'),
-      dayjs().tz(tz).subtract(1, 'month').endOf('month'),
-    ],
+    getRange: (tz) => ({
+      from: dayjs().tz(tz).subtract(1, 'month').startOf('month'),
+      to: dayjs().tz(tz).subtract(1, 'month').endOf('month'),
+    }),
   },
-  {key: 'all_time', label: 'All time', getRange: () => null},
+  {key: 'all_time', label: ALL_TIME_LABEL, getRange: () => null},
   {key: 'custom', label: 'Custom\u2026', getRange: () => null},
 ];
 
 /**
  * Renders a date-range dropdown button with preset options and a custom date
- * range dialog. Manages its own transient UI state (menu open, dialog open,
- * display label) and notifies the parent of filter changes via callback.
+ * range dialog. The active range is owned by the parent; the button label comes
+ * from the filter itself so a filter applied elsewhere (e.g. a default window)
+ * is described correctly here.
  */
 export const PartitionDateRangeSelector = ({
   filter,
   onFilterChange,
   isHighResolution,
 }: {
-  filter: [dayjs.Dayjs, dayjs.Dayjs] | null;
-  onFilterChange: (filter: [dayjs.Dayjs, dayjs.Dayjs] | null) => void;
+  filter: PartitionDateFilter | null;
+  onFilterChange: (filter: PartitionDateFilter | null) => void;
   isHighResolution: boolean;
 }) => {
   const {resolvedTimezone} = React.useContext(TimeContext);
   const [showCustomDialog, setShowCustomDialog] = React.useState(false);
-  const [label, setLabel] = React.useState('All time');
 
-  React.useEffect(() => {
-    if (!filter) {
-      setLabel('All time');
-    }
-  }, [filter]);
+  const label = filter?.label ?? ALL_TIME_LABEL;
 
   const options = React.useMemo(
     () =>
@@ -106,8 +106,8 @@ export const PartitionDateRangeSelector = ({
       setShowCustomDialog(true);
       return;
     }
-    setLabel(option.label);
-    onFilterChange(option.getRange(resolvedTimezone));
+    const range = option.getRange(resolvedTimezone);
+    onFilterChange(range ? {...range, label: option.label} : null);
   };
 
   const handleCustomApply = (value: [number | null, number | null]) => {
@@ -131,8 +131,7 @@ export const PartitionDateRangeSelector = ({
         timeZone: resolvedTimezone,
       });
 
-      setLabel(`${fromLabel} \u2013 ${toLabel}`);
-      onFilterChange([from, to]);
+      onFilterChange({from, to, label: `${fromLabel} \u2013 ${toLabel}`});
     }
   };
 
