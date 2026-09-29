@@ -359,6 +359,8 @@ EXCLUDE_MISSING_PUBLIC = {
     "dagster_pipes.PipesMessageWriter",
     "dagster_pipes.PipesMessageWriterChannel",
     "dagster_pipes.PipesParamsLoader",
+    "dagster_pipes.PipesPrefectLogsMessageWriter",
+    "dagster_pipes.PipesPrefectLogsMessageWriterChannel",
     "dagster_pipes.PipesS3ContextLoader",
     "dagster_pipes.PipesS3MessageWriter",
     "dagster_pipes.PipesS3MessageWriterChannel",
