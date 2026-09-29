@@ -148,6 +148,20 @@ wheels = [
 ]
 
 [[package]]
+name = "azure-mgmt-appcontainers"
+version = "4.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-mgmt-core" },
+    { name = "msrest" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/01/e84cadcf7d71fdff9a79218c8fb165ab20ce6e64af8526be485039897fa5/azure_mgmt_appcontainers-4.0.0.tar.gz", hash = "sha256:1731136ca0166c5fbc21a58cd37ea76787d20989e7f95dc12ae627efaf1dc3a5", size = 213877, upload-time = "2025-10-24T07:28:42.834Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3e/1a/cb62ec5f12b2c7cf89e1a1607478ae3befd14420139f4cfc1dfea567645b/azure_mgmt_appcontainers-4.0.0-py3-none-any.whl", hash = "sha256:2338025ac0c3dc8867dbcda80d7446aaad3f3e8875e7cc71892e833f9ee7e0ef", size = 331814, upload-time = "2025-10-24T07:28:44.084Z" },
+]
+
+[[package]]
 name = "azure-mgmt-core"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -895,8 +909,14 @@ dependencies = [
     { name = "dagster" },
 ]
 
+[package.optional-dependencies]
+container-apps = [
+    { name = "azure-mgmt-appcontainers" },
+]
+
 [package.dev-dependencies]
 test = [
+    { name = "azure-mgmt-appcontainers" },
     { name = "dagster", extra = ["test"] },
     { name = "dagster-pipes" },
     { name = "dagster-pyspark" },
@@ -910,13 +930,16 @@ requires-dist = [
     { name = "azure-ai-ml", specifier = ">=1.28.0,<2.0.0" },
     { name = "azure-core", specifier = ">=1.7.0,<2.0.0" },
     { name = "azure-identity", specifier = ">=1.7.0,<2.0.0" },
+    { name = "azure-mgmt-appcontainers", marker = "extra == 'container-apps'", specifier = ">=3.0.0,<5.0.0" },
     { name = "azure-storage-blob", specifier = ">=12.5.0,<13.0.0" },
     { name = "azure-storage-file-datalake", specifier = ">=12.5,<13.0.0" },
     { name = "dagster", editable = "../../dagster" },
 ]
+provides-extras = ["container-apps"]
 
 [package.metadata.requires-dev]
 test = [
+    { name = "azure-mgmt-appcontainers", specifier = ">=3.0.0,<5.0.0" },
     { name = "dagster", extras = ["test"], editable = "../../dagster" },
     { name = "dagster-pipes", editable = "../../dagster-pipes" },
     { name = "dagster-pyspark", editable = "../dagster-pyspark" },
@@ -1086,7 +1109,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [

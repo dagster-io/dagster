@@ -41,7 +41,7 @@ dependencies = [
   "dagster-airflow",
   "dagster-airlift[mwaa]",      # pulls airflow
   "dagster-aws[stubs]",
-  "dagster-azure",
+  "dagster-azure[container_apps]",
   "dagster-celery",
   "dagster-celery-docker",
   "dagster-celery-k8s",
