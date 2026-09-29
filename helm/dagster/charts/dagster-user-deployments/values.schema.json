@@ -596,6 +596,18 @@
                     "default": null,
                     "title": "Schedulername"
                 },
+                "priorityClassName": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Priorityclassname"
+                },
                 "initContainers": {
                     "anyOf": [
                         {
