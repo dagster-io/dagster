@@ -33,6 +33,18 @@ SNIPPETS_DIR = (
     / "dbt-component"
 )
 
+# Snippets the dbt guide embeds by path rather than generating through this test. They
+# are used as fixtures below so that the guide's copy is the thing actually exercised.
+GROUP_SNIPPETS_DIR = (
+    DAGSTER_ROOT
+    / "examples"
+    / "docs_snippets"
+    / "docs_snippets"
+    / "integrations"
+    / "dbt"
+    / "component"
+)
+
 
 def test_components_docs_dbt_project(
     update_snippets: bool,
@@ -170,6 +182,38 @@ def test_components_docs_dbt_project(
             cmd="dg list defs",
             snippet_path=f"{context.get_next_snip_number()}-list-defs.txt",
         )
+
+        # Exercise the template-var UDF group assignment against the files the guide
+        # embeds directly, then restore the defs.yaml the narrative continues from.
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "template_vars.py",
+            contents=(GROUP_SNIPPETS_DIR / "group-template-vars.py").read_text(),
+        )
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
+            contents=(GROUP_SNIPPETS_DIR / "group-defs.yaml").read_text(),
+        )
+        group_output = _run_command(cmd="dg list defs")
+        assert "staging" in group_output, group_output
+
+        context.create_file(
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "defs.yaml",
+            contents=textwrap.dedent(
+                """\
+                type: dagster_dbt.DbtProjectComponent
+
+                attributes:
+                  project: '{{ context.project_root }}/dbt'
+                  select: "customers"
+                  translation:
+                    group_name: dbt_models
+                    description: "Transforms data using dbt model {{ node.name }}"
+                """
+            ),
+        )
+        (
+            Path("src") / "my_project" / "defs" / "dbt_ingest" / "template_vars.py"
+        ).unlink()
 
         # Test dbt run
         _run_command(
