@@ -17,6 +17,7 @@ import {useIsMobileLayout} from './layout/LayoutMode';
 import {
   MobileRouteStatus,
   MobileRouteStatusContext,
+  RouteContentContext,
   RouteDepthContext,
   useClaimMobileRouteStatus,
 } from './layout/mobileRouteStatus';
@@ -118,10 +119,13 @@ const Wrapper = memo(({children, isNestingRoute, mobile}: WrapperProps & {childr
     }
   }, [path, pathname, depth, isNestingRoute, isRedirect, status, setCurrentPage, claimStatus]);
 
+  const contentType = isValidElement(content) ? content.type : null;
+  const routeContent = useMemo(() => ({type: contentType, pathname}), [contentType, pathname]);
+
   return (
     <RouteDepthContext.Provider value={depth}>
       <MobileRouteStatusContext.Provider value={status}>
-        {content}
+        <RouteContentContext.Provider value={routeContent}>{content}</RouteContentContext.Provider>
       </MobileRouteStatusContext.Provider>
     </RouteDepthContext.Provider>
   );
