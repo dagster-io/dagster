@@ -1358,7 +1358,7 @@ def manage_state_command(
     deployment_name = location.deployment_name
     is_branch = location.is_branch_deployment
     if file:
-        contents = load_python_file(file, None)
+        contents = load_python_file(file, None, add_uuid_suffix=True)
         projects = find_objects_in_module_of_types(contents, DbtProject)
     elif components:
         from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component
