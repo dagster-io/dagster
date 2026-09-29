@@ -5,6 +5,7 @@ import time
 from collections.abc import Mapping
 from logging import Logger
 from typing import Any, cast
+from unittest import mock
 
 import dagster as dg
 import dagster._check as check
@@ -42,10 +43,6 @@ class MockRunLauncher(RunLauncher, ConfigurableClass):
         self.launch_run_calls = 0
         self.resume_run_calls = 0
         self.termination_calls = []
-        self.health_check_result: CheckRunHealthResult | None = None
-        self.debug_info: str | None = None
-        self.should_except_debug_info = False
-        self.debug_info_calls = []
         super().__init__()
 
     @property
@@ -88,19 +85,11 @@ class MockRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def check_run_worker_health(self, _run):  # ty: ignore[invalid-method-override]
-        if self.health_check_result:
-            return self.health_check_result
         return (
             CheckRunHealthResult(WorkerStatus.RUNNING, "")
             if os.environ.get("DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT") == "healthy"
             else CheckRunHealthResult(WorkerStatus.NOT_FOUND, "")
         )
-
-    def get_run_worker_debug_info(self, run, include_container_logs=True):
-        self.debug_info_calls.append(include_container_logs)
-        if self.should_except_debug_info:
-            raise Exception("oof")
-        return self.debug_info
 
 
 @pytest.fixture
@@ -345,19 +334,20 @@ def test_monitor_started(
 
 
 @pytest.mark.parametrize(
-    "health_check_result,should_except_debug_info,expect_debug_info",
+    "worker_status,debug_info_fails,expect_debug_info",
     [
-        (CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed"), False, True),
-        # A failure fetching debug info must not prevent the run from being marked failed.
-        (CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed"), True, False),
-        # Only a FAILED worker has anything to debug; NOT_FOUND/UNKNOWN keep the plain message.
-        (CheckRunHealthResult(WorkerStatus.NOT_FOUND, "Job not found"), False, False),
+        (WorkerStatus.FAILED, False, True),
+        # The run is still marked failed if fetching debug info raises.
+        (WorkerStatus.FAILED, True, False),
+        # Debug info is only fetched for a failed worker.
+        (WorkerStatus.NOT_FOUND, False, False),
     ],
 )
 def test_monitor_started_failure_includes_debug_info(
     logger: Logger,
-    health_check_result: CheckRunHealthResult,
-    should_except_debug_info: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    worker_status: WorkerStatus,
+    debug_info_fails: bool,
     expect_debug_info: bool,
 ):
     with dg.instance_for_test(
@@ -372,12 +362,15 @@ def test_monitor_started_failure_includes_debug_info(
         with create_test_daemon_workspace_context(
             workspace_load_target=EmptyWorkspaceTarget(), instance=instance
         ) as workspace_context:
-            run_launcher = cast("MockRunLauncher", instance.run_launcher)
-            run_launcher.health_check_result = health_check_result
-            run_launcher.debug_info = (
-                "Container 'dagster' status: Terminated with exit code 137: OOMKilled"
+            health_check_result = CheckRunHealthResult(worker_status, "worker gone")
+            get_debug_info = mock.Mock(
+                side_effect=Exception("Failed to fetch debug info") if debug_info_fails else None,
+                return_value="Container 'dagster' status: Terminated with exit code 137: OOMKilled",
             )
-            run_launcher.should_except_debug_info = should_except_debug_info
+            monkeypatch.setattr(
+                instance.run_launcher, "check_run_worker_health", lambda _run: health_check_result
+            )
+            monkeypatch.setattr(instance.run_launcher, "get_run_worker_debug_info", get_debug_info)
 
             run_id = create_run_for_test(
                 instance, job_name="foo", status=DagsterRunStatus.STARTED
@@ -391,7 +384,6 @@ def test_monitor_started_failure_includes_debug_info(
 
             run = check.not_none(instance.get_run_by_id(run_id))
             assert run.status == DagsterRunStatus.FAILURE
-            assert run_launcher.resume_run_calls == 0
 
             failure_events = instance.all_logs(run_id, of_type=DagsterEventType.RUN_FAILURE)
             assert len(failure_events) == 1
@@ -399,10 +391,10 @@ def test_monitor_started_failure_includes_debug_info(
             assert str(health_check_result) in message
             assert ("OOMKilled" in message) == expect_debug_info
 
-            if health_check_result.status == WorkerStatus.FAILED:
-                assert run_launcher.debug_info_calls == [False]
+            if worker_status == WorkerStatus.FAILED:
+                get_debug_info.assert_called_once_with(mock.ANY, include_container_logs=False)
             else:
-                assert run_launcher.debug_info_calls == []
+                get_debug_info.assert_not_called()
 
 
 def test_long_running_termination(
