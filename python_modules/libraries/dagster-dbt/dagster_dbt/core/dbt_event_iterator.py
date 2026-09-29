@@ -19,7 +19,6 @@ from dagster._utils import pushd
 from typing_extensions import TypeVar
 
 from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props
-from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.dbt_cli_event import EventHistoryMetadata, _build_column_lineage_metadata
 
 if TYPE_CHECKING:
@@ -232,6 +231,10 @@ class DbtEventIterator(Iterator[T]):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
+        check.invariant(
+            self._dbt_cli_invocation.cli_version.major < 2,
+            "Row count metadata not supported for dbt Fusion.",
+        )
         return self._attach_metadata(_fetch_row_count_metadata)
 
     @public
@@ -252,7 +255,8 @@ class DbtEventIterator(Iterator[T]):
                 yielded in the order they are emitted by dbt.
         """
         check.invariant(
-            DBT_PYTHON_VERSION is not None, "Column metadata not supported for dbt Fusion."
+            self._dbt_cli_invocation.cli_version.major < 2,
+            "Column metadata not supported for dbt Fusion.",
         )
         fetch_metadata = lambda invocation, event: _fetch_column_metadata(
             invocation, event, with_column_lineage
