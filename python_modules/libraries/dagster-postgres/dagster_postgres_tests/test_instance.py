@@ -6,10 +6,11 @@ import psycopg2.extensions
 import pytest
 import sqlalchemy as db
 import sqlalchemy.exc  # ensure db.exc submodule is statically resolvable
+from dagster._config import process_config
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster_postgres.utils import get_conn_string
+from dagster_postgres.utils import get_conn_string, pg_config, pg_url_from_config
 from dagster_shared.yaml_utils import safe_load_yaml
 
 
@@ -246,7 +247,7 @@ def test_specify_pg_params(hostname):
     with instance_for_test(
         overrides=safe_load_yaml(params_specified_pg_config(hostname))
     ) as instance:
-        postgres_url = f"postgresql://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
+        postgres_url = f"postgresql+psycopg2://test:test@{hostname}:5432/test?application_name=myapp&connect_timeout=10&options=-c%20synchronous_commit%3Doff"
 
         assert instance._event_storage.postgres_url == postgres_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         assert instance._run_storage.postgres_url == postgres_url  # noqa: SLF001  # ty: ignore[unresolved-attribute]
@@ -267,12 +268,12 @@ def test_conn_str():
         db_name=db_name,
         hostname=hostname,
     )
-    assert conn_str == f"postgresql://{url_wo_scheme}"
+    assert conn_str == f"postgresql+psycopg2://{url_wo_scheme}"
     parsed = urlparse(conn_str)
     assert unquote(parsed.username) == username  # ty: ignore[invalid-argument-type]
     assert unquote(parsed.password) == password  # ty: ignore[invalid-argument-type]
     assert parsed.hostname == hostname
-    assert parsed.scheme == "postgresql"
+    assert parsed.scheme == "postgresql+psycopg2"
 
     custom_scheme = "postgresql+dialect"
     conn_str = get_conn_string(
@@ -289,6 +290,27 @@ def test_conn_str():
     assert unquote(parsed.password) == password  # ty: ignore[invalid-argument-type]
     assert parsed.hostname == hostname
     assert parsed.scheme == custom_scheme
+
+
+def test_default_pg_driver():
+    config = process_config(
+        pg_config(),
+        {
+            "postgres_db": {
+                "username": "test",
+                "password": "test",
+                "hostname": "localhost",
+                "db_name": "test",
+            }
+        },
+    )
+    assert config.success
+
+    engine = db.create_engine(pg_url_from_config(config.value))
+    try:
+        assert engine.dialect.driver == "psycopg2"
+    finally:
+        engine.dispose()
 
 
 def test_configured_other_schema(hostname):
