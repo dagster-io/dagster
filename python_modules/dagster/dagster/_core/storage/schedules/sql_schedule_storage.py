@@ -492,6 +492,7 @@ class SqlScheduleStorage(ScheduleStorage):
                             "asset_key": evaluation.key.to_db_string(),
                             "asset_evaluation_body": serialize_value(evaluation),
                             "num_requested": evaluation.num_requested,
+                            "create_timestamp": get_current_datetime(),
                         }
                     ]
                 )
