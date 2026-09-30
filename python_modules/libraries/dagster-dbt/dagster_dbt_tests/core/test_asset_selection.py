@@ -528,3 +528,77 @@ def test_select_unique_ids_includes_isolated_fusion_models(
     )
 
     assert selected == expected_unique_ids
+
+
+def _test_node(unique_id: str, name: str, attached_node: str) -> dict[str, Any]:
+    return {
+        **_model_node(unique_id, name, depends_on=[attached_node]),
+        "resource_type": "test",
+        "attached_node": attached_node,
+        "config": {"enabled": True, "tags": [], "severity": "ERROR"},
+    }
+
+
+def _manifest_with_tested_model(indirect_selection: str) -> dict[str, Any]:
+    return {
+        "nodes": {
+            "model.test.parent": _model_node("model.test.parent", "parent"),
+            "test.test.not_null_parent_id": _test_node(
+                "test.test.not_null_parent_id", "not_null_parent_id", "model.test.parent"
+            ),
+        },
+        "sources": {},
+        "metrics": {},
+        "exposures": {},
+        "selectors": {
+            "selector.test.tested": {
+                "name": "tested",
+                "definition": {
+                    "method": "fqn",
+                    "value": "parent",
+                    "indirect_selection": indirect_selection,
+                },
+            }
+        },
+        "child_map": {
+            "model.test.parent": ["test.test.not_null_parent_id"],
+            "test.test.not_null_parent_id": [],
+        },
+        "parent_map": {
+            "model.test.parent": [],
+            "test.test.not_null_parent_id": ["model.test.parent"],
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "indirect_selection, expected_unique_ids",
+    [
+        pytest.param("eager", {"model.test.parent", "test.test.not_null_parent_id"}, id="eager"),
+        pytest.param(
+            "cautious", {"model.test.parent", "test.test.not_null_parent_id"}, id="cautious"
+        ),
+        pytest.param(
+            "buildable", {"model.test.parent", "test.test.not_null_parent_id"}, id="buildable"
+        ),
+        pytest.param("empty", {"model.test.parent"}, id="empty"),
+    ],
+)
+def test_select_unique_ids_selector_with_indirect_selection(
+    indirect_selection: str, expected_unique_ids: set[str]
+) -> None:
+    """A YAML selector whose criteria set ``indirect_selection`` overrides the global eager flag,
+    so dbt reads ``depends_on_nodes`` from the selected node's tests. Nodes are dict shims built
+    from ``manifest.json``, which has no ``depends_on_nodes`` key, so this used to raise
+    ``TypeError: 'NoneType' object is not iterable``.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/34244.
+    """
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*",
+        exclude="",
+        selector="tested",
+        manifest_json=_manifest_with_tested_model(indirect_selection),
+    )
+
+    assert selected == expected_unique_ids
