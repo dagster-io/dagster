@@ -180,7 +180,8 @@ def test_connection_leak(hostname, conn_string):
         for _ in range(num_instances)
     ]
 
-    conn = psycopg2.connect(conn_string)
+    # psycopg2 expects a libpq URI, not SQLAlchemy's driver-qualified URL.
+    conn = psycopg2.connect(conn_string.replace("postgresql+psycopg2://", "postgresql://", 1))
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     with conn.cursor() as curs:
         # count open connections
