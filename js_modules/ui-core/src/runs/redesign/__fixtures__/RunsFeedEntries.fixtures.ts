@@ -80,8 +80,6 @@ export const runEntry = (overrides: Partial<RunSummaryFragment> = {}) =>
 export const backfillEntry = (overrides: Partial<BackfillSummaryFragment> = {}) =>
   mapRunsFeedEntry(buildBackfillSummary(overrides));
 
-// Initiators
-
 export const manualRun = runEntry({id: 'manual-run-id'});
 
 export const manualRunWithUser = runEntry({
@@ -116,11 +114,11 @@ export const sensorRun = runEntry({
   tags: [tag(DagsterTag.SensorName, 'files_sensor')],
 });
 
+// Recognized by its sensor name alone, without an automation condition tag.
 export const defaultAutomationSensorRun = runEntry({
   id: 'default-da-run-id',
   tags: [
     tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
-    tag(DagsterTag.AutomationCondition, 'true'),
     tag(DagsterTag.TickId, 'tick-id'),
   ],
 });
@@ -175,8 +173,6 @@ export const autoRetryInBackfillRun = runEntry({
     tag(DagsterTag.User, 'pat@example.com'),
   ],
 });
-
-// Statuses
 
 export const notStartedRun = runEntry({
   id: 'not-started-run-id',
@@ -247,8 +243,6 @@ export const failedToStartRun = runEntry({
   endTime: ENDED_AT,
 });
 
-// Backfills
-
 export const assetBackfill = backfillEntry({
   id: 'asset-backfill-id',
   isAssetBackfill: true,
@@ -274,8 +268,6 @@ export const inProgressBackfill = backfillEntry({
   startTime: LIVE_STARTED_AT,
   endTime: null,
 });
-
-// Selections
 
 const salesDaily = buildAssetKey({path: ['sales', 'daily']});
 const slashAsset = buildAssetKey({path: ['a/b']});

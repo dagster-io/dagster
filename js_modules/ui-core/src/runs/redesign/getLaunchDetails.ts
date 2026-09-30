@@ -9,10 +9,9 @@ import {DagsterTag} from '../RunTag';
 const DEFAULT_AUTOMATION_SENSOR_NAME = 'default_automation_condition_sensor';
 
 export type Initiator =
-  | {kind: 'reexecution'; parentRunId: string; isAutomatic: boolean}
   | {kind: 'schedule'; name: string; href: string | null}
   | {kind: 'sensor'; name: string; href: string | null}
-  | {kind: 'declarative-automation'; label: string; href: string | null}
+  | {kind: 'declarative-automation'; name: string | null; href: string | null}
   | {kind: 'auto-observation'}
   | {kind: 'backfill'}
   | {kind: 'manual'};
@@ -22,7 +21,7 @@ export type TickIdentifier = {
   instigationSelector: InstigationSelector;
 };
 
-export type InitiatedBy = {
+export type LaunchDetails = {
   initiator: Initiator;
   user: string | null;
   parentBackfillId: string | null;
@@ -32,20 +31,7 @@ export type InitiatedBy = {
 const getScheduleOrSensorPath = (repoAddress: RepoAddress | null, prefix: string, name: string) =>
   repoAddress !== null ? workspacePathFromAddress(repoAddress, `${prefix}/${name}`) : null;
 
-const getInitiator = (
-  entry: MappedRunsFeedEntry,
-  tags: Map<string, string>,
-  repoAddress: RepoAddress | null,
-): Initiator => {
-  // Re-execution wins; a parent backfill is still reported separately.
-  if (entry.__typename === 'Run' && entry.parentRunId !== null) {
-    return {
-      kind: 'reexecution',
-      parentRunId: entry.parentRunId,
-      isAutomatic: entry.isAutomaticRetry,
-    };
-  }
-
+const getInitiator = (tags: Map<string, string>, repoAddress: RepoAddress | null): Initiator => {
   const scheduleName = tags.get(DagsterTag.ScheduleName);
   if (scheduleName !== undefined) {
     return {
@@ -63,7 +49,7 @@ const getInitiator = (
     if (isDefaultSensor || tags.has(DagsterTag.AutomationCondition)) {
       return {
         kind: 'declarative-automation',
-        label: isDefaultSensor ? 'Declarative automation' : sensorName,
+        name: sensorName,
         href,
       };
     }
@@ -81,7 +67,7 @@ const getInitiator = (
   ) {
     return {
       kind: 'declarative-automation',
-      label: 'Declarative automation',
+      name: null,
       href: null,
     };
   }
@@ -98,10 +84,13 @@ const getInitiator = (
 };
 
 // Automation is its own actor, and an automatic retry only inherits its parent's user tag.
-const isLaunchedByUser = (initiator: Initiator) =>
-  (initiator.kind === 'reexecution' && !initiator.isAutomatic) ||
-  initiator.kind === 'backfill' ||
-  initiator.kind === 'manual';
+const isLaunchedByUser = (entry: MappedRunsFeedEntry, initiator: Initiator) => {
+  if (entry.__typename === 'Run' && entry.parentRunId !== null) {
+    return !entry.isAutomaticRetry;
+  }
+
+  return initiator.kind === 'backfill' || initiator.kind === 'manual';
+};
 
 const getUser = (entry: MappedRunsFeedEntry, tags: Map<string, string>): string | null => {
   const taggedUser = tags.get(DagsterTag.User);
@@ -136,14 +125,14 @@ const getTick = (
   };
 };
 
-export const getInitiatedBy = (entry: MappedRunsFeedEntry): InitiatedBy => {
+export const getLaunchDetails = (entry: MappedRunsFeedEntry): LaunchDetails => {
   const tags = buildTagMap(entry.tags);
   const repoAddress = getRepoAddress(entry);
-  const initiator = getInitiator(entry, tags, repoAddress);
+  const initiator = getInitiator(tags, repoAddress);
 
   return {
     initiator,
-    user: isLaunchedByUser(initiator) ? getUser(entry, tags) : null,
+    user: isLaunchedByUser(entry, initiator) ? getUser(entry, tags) : null,
     parentBackfillId: tags.get(DagsterTag.Backfill) ?? null,
     tick: getTick(tags, repoAddress),
   };

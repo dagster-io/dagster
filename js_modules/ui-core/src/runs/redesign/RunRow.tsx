@@ -1,13 +1,12 @@
-import {Box} from '@dagster-io/ui-components';
 import {MouseEvent, useRef} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {RunIDCell} from './RunIDCell';
-import {RunInitiatedByCell} from './RunInitiatedByCell';
+import {RunLaunchCell} from './RunLaunchCell';
 import {RunStatusCell} from './RunStatusCell';
-import {RunTargetsCell} from './RunTargetsCell';
+import {RunTimingCell} from './RunTimingCell';
 import styles from './css/RunRow.module.css';
-import {TickIdentifier} from './getInitiatedBy';
+import {TickIdentifier} from './getLaunchDetails';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {isNewTabClick, useOpenInNewTab} from '../../hooks/useOpenInNewTab';
 
@@ -62,14 +61,12 @@ export const RunRow = ({entry, onOpenTickDetails}: Props) => {
 
   return (
     <div ref={rowRef} className={styles.row} onClick={handleRowClick} onAuxClick={handleRowClick}>
-      <div className={styles.initiatorAndTargets}>
-        <RunInitiatedByCell entry={entry} onOpenTickDetails={onOpenTickDetails} />
-        <RunTargetsCell entry={entry} />
-      </div>
+      <RunLaunchCell entry={entry} onOpenTickDetails={onOpenTickDetails} />
       <RunStatusCell entry={entry} />
-      <Box border="left" padding={{left: 16}}>
-        <RunIDCell entry={entry} />
-      </Box>
+      <div className={styles.divider} />
+      <RunTimingCell entry={entry} />
+      <div className={styles.divider} />
+      <RunIDCell entry={entry} />
     </div>
   );
 };

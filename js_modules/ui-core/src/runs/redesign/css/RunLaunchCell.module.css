@@ -1,10 +1,10 @@
 .cell {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  min-width: 120px;
-  overflow: hidden;
+  gap: 4px;
+  min-width: 0;
 }
 
 .initiator {
@@ -13,6 +13,8 @@
   align-items: center;
   gap: 4px;
   min-width: 0;
+  /* Adds to the tag gap so the label sits 8px from whatever follows it. */
+  margin-right: 4px;
 }
 
 .icon {
@@ -23,12 +25,16 @@
   min-width: 0;
 }
 
-/* Tags carry short, already-abbreviated values; the label absorbs the squeeze instead. */
 .tag {
+  display: inline-flex;
   flex-shrink: 0;
 }
 
 .idLink {
   font-family: var(--font-mono);
   font-variant-ligatures: none;
+}
+
+.partitionText {
+  max-width: 160px;
 }

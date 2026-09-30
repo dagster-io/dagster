@@ -1,0 +1,15 @@
+.cell {
+  justify-self: center;
+}
+
+.timing {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timing:focus-visible {
+  border-radius: 4px;
+  box-shadow: var(--color-focus-ring) 0 0 0 2px;
+  outline: none;
+}

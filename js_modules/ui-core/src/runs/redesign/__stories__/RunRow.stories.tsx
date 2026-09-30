@@ -125,7 +125,7 @@ export const AssetBackfill = () => (
 
 export const Narrow = () => (
   <RowTemplate
-    width={480}
+    width={640}
     entry={runEntry({
       jobName: JOB_NAME,
       tags: [

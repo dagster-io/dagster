@@ -3,34 +3,29 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
 import {buildAssetKey} from '../../../graphql/builders';
-import {RunTargetsCell} from '../RunTargetsCell';
+import {RunTargets} from '../RunTargets';
 import {
   assetBackfill,
   assetsKnownChecksUnknownRun,
-  backfillEntry,
   checksKnownAssetsUnknownRun,
   checksOnlyRun,
   completeSelectionRun,
-  emptyHiddenAssetJobRun,
   emptyWholeJobRun,
   incompleteSelectionRun,
   jobBackfill,
-  partitionRangeRun,
-  partitionSetBackfill,
   runEntry,
-  singlePartitionRun,
   unknownSelectionsRun,
 } from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
 
-const renderCell = (entry: MappedRunsFeedEntry, onViewDetails?: () => void) =>
+const renderCell = (entry: MappedRunsFeedEntry) =>
   render(
     <MemoryRouter>
-      <RunTargetsCell entry={entry} onViewDetails={onViewDetails} />
+      <RunTargets entry={entry} />
     </MemoryRouter>,
   );
 
-describe('RunTargetsCell', () => {
+describe('RunTargets', () => {
   it.each([
     ['3 assets', completeSelectionRun],
     ['1 asset', assetsKnownChecksUnknownRun],
@@ -49,12 +44,6 @@ describe('RunTargetsCell', () => {
       }),
     );
     expect(await screen.findByText('12,000 assets')).toBeVisible();
-  });
-
-  it('shows the job ahead of the counts', async () => {
-    renderCell(completeSelectionRun);
-    const links = await screen.findAllByRole('link');
-    expect(links.map((link) => link.textContent)).toEqual(['daily_etl', '3 assets']);
   });
 
   it('lists the selected assets on hover', async () => {
@@ -91,37 +80,25 @@ describe('RunTargetsCell', () => {
   });
 
   it.each([
-    ['both categories', unknownSelectionsRun],
-    ['the checks', assetsKnownChecksUnknownRun],
-    ['the assets', checksKnownAssetsUnknownRun],
-  ])('offers a way to see targets when %s are unknown', async (_name, entry) => {
+    ['the checks', assetsKnownChecksUnknownRun, '1 asset'],
+    ['the assets', checksKnownAssetsUnknownRun, '1 check'],
+  ])('shows only the known count when %s are unknown', async (_name, entry, label) => {
     renderCell(entry);
-    expect(await screen.findByRole('link', {name: 'View targets'})).toHaveAttribute(
-      'href',
-      entry.href,
-    );
+    const links = await screen.findAllByRole('link');
+    expect(links.map((link) => link.textContent)).toEqual([label]);
   });
 
-  it('shows the job alone for a run that targets the whole job', async () => {
-    renderCell(emptyWholeJobRun);
-    expect(await screen.findByRole('link', {name: 'daily_etl'})).toBeVisible();
-    expect(screen.getAllByRole('link')).toHaveLength(1);
-  });
-
-  it('renders nothing for a hidden asset job run with no recorded targets', () => {
-    const {container} = renderCell(emptyHiddenAssetJobRun);
+  it('renders nothing when both selections are unknown', () => {
+    const {container} = renderCell(unknownSelectionsRun);
     expect(container.textContent).toBe('');
   });
 
-  it.each([
-    ['a single partition key', singlePartitionRun, '2026-09-08'],
-    ['a partition range', partitionRangeRun, '2026-09-01 → 2026-09-08'],
-  ])('labels %s', async (_name, entry, label) => {
-    renderCell(entry);
-    expect(await screen.findByTitle(label)).toBeVisible();
+  it('renders nothing for a run that targets the whole job', () => {
+    const {container} = renderCell(emptyWholeJobRun);
+    expect(container.textContent).toBe('');
   });
 
-  it('links a count tag to the entry when no dialog opener is supplied', async () => {
+  it('links a count tag to the entry', async () => {
     renderCell(completeSelectionRun);
     expect(await screen.findByRole('link', {name: '3 assets'})).toHaveAttribute(
       'href',
@@ -129,25 +106,9 @@ describe('RunTargetsCell', () => {
     );
   });
 
-  it('calls the dialog opener from a count tag when one is supplied', async () => {
-    const user = userEvent.setup();
-    const onViewDetails = jest.fn();
-    renderCell(completeSelectionRun, onViewDetails);
-    await user.click(await screen.findByRole('button', {name: '3 assets'}));
-    expect(onViewDetails).toHaveBeenCalledTimes(1);
-  });
-
-  it.each([
-    ['a job backfill', jobBackfill, 'daily_etl'],
-    ['a partition set backfill', partitionSetBackfill, 'daily_etl_partition_set'],
-  ])('identifies %s', async (_name, entry, label) => {
-    renderCell(entry);
-    expect(await screen.findByText(label)).toBeVisible();
-  });
-
   it.each([
     ['an asset backfill', assetBackfill],
-    ['a backfill with no recorded identity', backfillEntry({id: 'bare-backfill-id'})],
+    ['a job backfill', jobBackfill],
   ])('renders nothing for %s', (_name, entry) => {
     const {container} = renderCell(entry);
     expect(container.textContent).toBe('');

@@ -3,7 +3,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {RunRow} from './RunRow';
 import {RunsFeedSkeleton} from './RunsFeedSkeleton';
 import styles from './css/RunsFeedList.module.css';
-import {TickIdentifier} from './getInitiatedBy';
+import {TickIdentifier} from './getLaunchDetails';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {useRestoreFocus} from '../../hooks/useRestoreFocus';
 import {TickDetailsDialog} from '../../instigation/TickDetailsDialog';
@@ -17,7 +17,8 @@ export const RunsFeedList = ({entries, isLoading}: Props) => {
   const listRef = useRef<HTMLDivElement>(null);
   const [selectedTick, setSelectedTick] = useState<TickIdentifier | null>(null);
 
-  // Fall back to the first remaining link, or the list when it is empty.
+  // If the tick's row left the page while its dialog was open, focus the first available link, or
+  // the list if there are none.
   const getFallbackFocusTarget = useCallback(
     () => listRef.current?.querySelector<HTMLElement>('a[href]') ?? listRef.current,
     [],

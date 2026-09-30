@@ -1,7 +1,8 @@
-/* 128px fits the status icon and timing; 96px fits an eight-character id and divider. */
+/* Fixed timing and id tracks keep the status icon aligned down the list. 96px fits the longest
+   relative time; 80px fits an eight-character id. The 1px tracks hold dividers. */
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px 96px;
+  grid-template-columns: minmax(0, 1fr) auto 1px 96px 1px 80px;
   column-gap: 16px;
   align-items: center;
   min-height: 48px;
@@ -32,11 +33,7 @@
     inset 0 1px 0 0 var(--color-background-blue);
 }
 
-/* Allow the grid column and both child cells to shrink without overflowing. */
-.initiatorAndTargets {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+.divider {
+  height: 20px;
+  background-color: var(--color-keyline-default);
 }

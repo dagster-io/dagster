@@ -10,20 +10,20 @@ const FORMAT = {locale: 'en-US', timezone: 'UTC'};
 
 describe('formatCompactTimeAgo', () => {
   it.each([
-    [0, '0s ago'],
-    [59 * SECOND, '59s ago'],
-    [MINUTE, '1m ago'],
-    [59 * MINUTE + 59 * SECOND, '59m ago'],
-    [HOUR, '1h ago'],
-    [23 * HOUR, '23h ago'],
-    [DAY, '1d ago'],
-    [99 * DAY, '99d ago'],
+    [0, '0 sec ago'],
+    [59 * SECOND, '59 sec ago'],
+    [MINUTE, '1 min ago'],
+    [59 * MINUTE + 59 * SECOND, '59 min ago'],
+    [HOUR, '1 hr ago'],
+    [23 * HOUR, '23 hr ago'],
+    [DAY, '1 day ago'],
+    [99 * DAY, '99 days ago'],
   ])('formats %i ms elapsed as %s', (elapsedMs, text) => {
     expect(formatCompactTimeAgo(NOW_MS, NOW_MS - elapsedMs, FORMAT)).toBe(text);
   });
 
   it('treats a future timestamp as now', () => {
-    expect(formatCompactTimeAgo(NOW_MS, NOW_MS + MINUTE, FORMAT)).toBe('0s ago');
+    expect(formatCompactTimeAgo(NOW_MS, NOW_MS + MINUTE, FORMAT)).toBe('0 sec ago');
   });
 
   it('falls back to a bare short date past 99 days', () => {

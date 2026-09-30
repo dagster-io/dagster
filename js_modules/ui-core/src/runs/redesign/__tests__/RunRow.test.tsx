@@ -103,7 +103,7 @@ describe('RunRow', () => {
     const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     await renderRow(succeededRun);
 
-    await user.click(await screen.findByText('5m ago'));
+    await user.click(await screen.findByText('5 min ago'));
     expect(getCurrentPath()).toBe(RUN_PATH);
   });
 
@@ -134,10 +134,10 @@ describe('RunRow', () => {
     }
 
     const range = document.createRange();
-    range.selectNodeContents(await screen.findByText('5m ago'));
+    range.selectNodeContents(await screen.findByText('5 min ago'));
     selection.removeAllRanges();
     selection.addRange(range);
-    expect(selection.toString()).toBe('5m ago');
+    expect(selection.toString()).toBe('5 min ago');
 
     fireEvent.click(row);
     expect(getCurrentPath()).toBe(LIST_PATH);
@@ -219,7 +219,7 @@ describe('RunRow', () => {
       await screen.findByRole('button', {name: 'View tick'}),
       await screen.findByRole('link', {name: 'daily_etl'}),
       await screen.findByRole('link', {name: '3 assets'}),
-      await screen.findByText('5m ago'),
+      await screen.findByText('5 min ago'),
       await screen.findByRole('link', {name: RUN_ID_LINK_NAME}),
     ];
 
