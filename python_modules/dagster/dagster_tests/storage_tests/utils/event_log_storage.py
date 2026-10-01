@@ -3433,6 +3433,23 @@ class TestEventLogStorage:
             _assert_storage_matches({"p1": latest_storage_ids["p1"]}, partition="p1")
             _assert_storage_matches({"p2": latest_storage_ids["p2"]}, partition="p2")
 
+            # check that we can filter by cursor: only partitions updated after it come back
+            def _after_cursor(after_cursor: int, partition: str | None = None):
+                return storage.get_latest_storage_id_by_partition(
+                    a,
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    partitions={partition} if partition else None,
+                    after_cursor=after_cursor,
+                )
+
+            assert _after_cursor(latest_storage_ids["p1"] - 1) == latest_storage_ids
+            assert _after_cursor(latest_storage_ids["p1"]) == {"p2": latest_storage_ids["p2"]}
+            assert _after_cursor(latest_storage_ids["p2"]) == {}
+            assert _after_cursor(latest_storage_ids["p1"] - 1, partition="p1") == {
+                "p1": latest_storage_ids["p1"]
+            }
+            assert _after_cursor(latest_storage_ids["p1"], partition="p1") == {}
+
             # unrelated asset materialized
             _store_partition_event(b, "p1")
             _store_partition_event(b, "p2")
@@ -5876,6 +5893,45 @@ class TestEventLogStorage:
         info = storage.get_concurrency_info("foo")
         assert info.slot_count == 1
         assert info.limit == 1
+
+    def test_get_concurrency_infos(self, storage: EventLogStorage):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        assert storage.get_concurrency_infos([]) == {}
+
+        run_id = make_new_run_id()
+        storage.set_concurrency_slots("foo", 1)
+        storage.set_concurrency_slots("bar", 2)
+        storage.claim_concurrency_slot("foo", run_id, "step_a")
+        storage.claim_concurrency_slot("foo", run_id, "step_b")
+
+        infos = storage.get_concurrency_infos(["foo", "bar", "unset", "foo"])
+        assert set(infos) == {"foo", "bar", "unset"}
+        assert infos["foo"].slot_count == 1
+        assert infos["foo"].limit == 1
+        assert infos["foo"].active_run_ids == {run_id}
+        assert infos["foo"].pending_step_count == 1
+        assert infos["bar"].slot_count == 2
+        assert infos["bar"].pending_steps == []
+        assert infos["unset"].slot_count == 0
+
+        def _comparable(info):
+            return (
+                info.concurrency_key,
+                info.slot_count,
+                info.limit,
+                info.using_default_limit,
+                sorted((s.run_id, s.step_key) for s in info.claimed_slots),
+                sorted(
+                    (s.run_id, s.step_key, s.assigned_timestamp is not None, s.priority)
+                    for s in info.pending_steps
+                ),
+            )
+
+        for key, info in infos.items():
+            assert _comparable(info) == _comparable(storage.get_concurrency_info(key))
 
     def test_default_concurrency(
         self,

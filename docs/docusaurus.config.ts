@@ -72,6 +72,11 @@ const config: Config = {
       disableSwitch: false,
       respectPrefersColorScheme: true,
     },
+    mermaid: {
+      // Mermaid 12 switched its defaults to the ELK layout engine and the "neo"
+      // look; keep the previous rendering so existing diagrams don't re-layout.
+      options: {layout: 'dagre', look: 'classic'},
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
@@ -195,8 +200,8 @@ const config: Config = {
     footer: {
       logo: {
         alt: 'Dagster Logo',
-        src: 'img/dagster_labs-primary-horizontal.svg',
-        srcDark: 'img/dagster_labs-reversed-horizontal.svg',
+        src: 'img/dagster-logo.svg',
+        srcDark: 'img/dagster-logo-reversed.svg',
         href: '/',
       },
       links: [

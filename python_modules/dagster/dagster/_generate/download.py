@@ -87,6 +87,9 @@ def download_example_from_github(path: str, example: str, version: str):
     click.echo(f"Downloading example '{example}'. This may take a while.")
 
     response = requests.get(_get_url_for_version(version), stream=True)
+    # Without this an HTTP error body is handed to tarfile, which reports the misleading
+    # "not a gzip file" — GitHub rate-limits this endpoint, so a 429 is a realistic outcome.
+    response.raise_for_status()
     with tarfile.open(fileobj=BytesIO(response.raw.read()), mode="r:gz") as tar_file:
         # Extract the selected example folder to destination
         subdir_and_files = [

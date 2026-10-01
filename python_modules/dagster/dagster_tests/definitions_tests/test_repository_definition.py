@@ -1498,7 +1498,9 @@ def test_repository_asset_graph_contains_automatable_job_nodes() -> None:
     conditioned = dg.define_asset_job(
         name="conditioned_job",
         selection=[asset_a, asset_b],
-        automation_condition=dg.AutomationCondition.eager(),
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
     )
     unconditioned = dg.define_asset_job(name="unconditioned_job", selection=[asset_a])
 
@@ -1530,7 +1532,9 @@ def test_directly_provided_job_definition_with_automation_condition() -> None:
     resolved_job = dg.define_asset_job(
         name="direct_job",
         selection=[asset_a],
-        automation_condition=dg.AutomationCondition.eager(),
+        automation_condition=dg.AutomationCondition.all_job_root_assets_match(
+            dg.AutomationCondition.eager()
+        ),
     ).resolve(asset_graph=AssetGraph.from_assets([asset_a]))
     assert isinstance(resolved_job, dg.JobDefinition)
 

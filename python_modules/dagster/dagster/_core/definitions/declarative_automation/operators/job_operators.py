@@ -140,3 +140,10 @@ class AllJobRootAssetsMatchCondition(JobRootAssetsAutomationCondition):
             true_subset = true_subset.compute_intersection(asset_result.true_subset)
 
         return AutomationResult(context, true_subset=true_subset, child_results=asset_results)
+
+
+def contains_job_root_assets_condition(condition: AutomationCondition) -> bool:
+    """Whether any node in the condition tree is a JobRootAssetsAutomationCondition."""
+    if isinstance(condition, JobRootAssetsAutomationCondition):
+        return True
+    return any(contains_job_root_assets_condition(child) for child in condition.children)

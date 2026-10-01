@@ -93,9 +93,11 @@ replication_config = {
     },
 }
 
+
 @sling_assets(replication_config=replication_config)
 def ingest_s3_to_snowflake(context, sling: SlingResource):
     yield from sling.replicate(context=context)
+
 
 defs = Definitions(assets=[ingest_s3_to_snowflake], resources={"sling": sling_resource})
 ```

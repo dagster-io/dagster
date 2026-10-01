@@ -122,6 +122,13 @@ class ProcessUserCodeLauncher(DagsterCloudUserCodeLauncher, ConfigurableClass):
     def requires_images(self) -> bool:
         return False
 
+    def supports_in_place_pin_reload(self, key, desired_entry) -> bool:
+        # Launcher-managed restart: if the subprocess dies, we restart it
+        # ourselves on the next reconcile from the current desired entry. No
+        # platform controller exists to silently revive the process from a
+        # stale spec, so in-place pin reload cannot drift on restart.
+        return True
+
     def get_code_server_resource_limits(
         self, deployment_name: str, location_name: str
     ) -> CloudContainerResourceLimits:

@@ -22,6 +22,7 @@ import sqlalchemy.exc as db_exc
 from dagster_shared.serdes import deserialize_values
 from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection
+from sqlalchemy.sql import FromClause
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -874,10 +875,10 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _apply_tags_table_joins(
         self,
-        table: db.Table,
+        table: FromClause,
         tags: Mapping[str, str | Sequence[str]],
         asset_key: AssetKey | None,
-    ) -> db.Table:
+    ) -> FromClause:
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
         i = 0
         for key, value in tags.items():
@@ -889,7 +890,9 @@ class SqlEventLogStorage(EventLogStorage):
                 tags_table,
                 db.and_(
                     event_id_col == tags_table.c.event_id,
-                    not asset_key or tags_table.c.asset_key == asset_key.to_string(),
+                    db.true()
+                    if asset_key is None
+                    else tags_table.c.asset_key == asset_key.to_string(),
                     tags_table.c.key == key,
                     (
                         tags_table.c.value == value
@@ -1926,15 +1929,20 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
-        Returns a mapping of partition to storage id.
+        Returns a mapping of partition to storage id. Partitions whose latest event is not after
+        ``after_cursor`` are omitted.
         """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [event_type], asset_partitions=list(partitions) if partitions else None
+            asset_key,
+            [event_type],
+            asset_partitions=list(partitions) if partitions else None,
+            after_cursor=after_cursor,
         )
         latest_event_ids_by_partition = db_select(
             [
@@ -2871,53 +2879,53 @@ class SqlEventLogStorage(EventLogStorage):
             return {cast("str", row[0]) for row in rows}
 
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
-        """Get the list of concurrency slots for a given concurrency key.
+        """Get the concurrency slots, limit, and pending steps for a given concurrency key."""
+        return self.get_concurrency_infos([concurrency_key])[concurrency_key]
 
-        Args:
-            concurrency_key (str): The concurrency key to get the slots for.
+    def get_concurrency_infos(
+        self, concurrency_keys: Sequence[str]
+    ) -> Mapping[str, ConcurrencyKeyInfo]:
+        keys = list(dict.fromkeys(concurrency_keys))
+        if not keys:
+            return {}
 
-        Returns:
-            List[Tuple[str, int]]: A list of tuples of run_id and the number of slots it is
-                occupying for the given concurrency key.
-        """
         with self.index_connection() as conn:
-            slot_query = (
+            slot_rows = db_fetch_mappings(
+                conn,
                 db_select(
                     [
+                        ConcurrencySlotsTable.c.concurrency_key,
                         ConcurrencySlotsTable.c.run_id,
                         ConcurrencySlotsTable.c.step_key,
                         ConcurrencySlotsTable.c.deleted,
                     ]
                 )
                 .select_from(ConcurrencySlotsTable)
-                .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
+                .where(ConcurrencySlotsTable.c.concurrency_key.in_(keys)),
             )
-            slot_rows = db_fetch_mappings(conn, slot_query)
-            slot_count = len([slot_row for slot_row in slot_rows if not slot_row["deleted"]])
 
-            limit = slot_count
-            using_default = False
-
-            if self.has_concurrency_limits_table:
-                limit_row = conn.execute(
+            limit_rows_by_key: dict[str, tuple[int, bool]] = {}
+            has_limits_table = self.has_concurrency_limits_table
+            if has_limits_table:
+                limit_rows = conn.execute(
                     db_select(
                         [
+                            ConcurrencyLimitsTable.c.concurrency_key,
                             ConcurrencyLimitsTable.c.limit,
                             ConcurrencyLimitsTable.c.using_default_limit,
                         ]
-                    ).where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
-                ).fetchone()
+                    ).where(ConcurrencyLimitsTable.c.concurrency_key.in_(keys))
+                ).fetchall()
+                limit_rows_by_key = {
+                    cast("str", row[0]): (cast("int", row[1]), cast("bool", row[2]))
+                    for row in limit_rows
+                }
 
-                if limit_row:
-                    limit = cast("int", limit_row[0])
-                    using_default = cast("bool", limit_row[1])
-                elif not slot_count:
-                    limit = self._instance.global_op_concurrency_default_limit
-                    using_default = True
-
-            pending_query = (
+            pending_rows = db_fetch_mappings(
+                conn,
                 db_select(
                     [
+                        PendingStepsTable.c.concurrency_key,
                         PendingStepsTable.c.run_id,
                         PendingStepsTable.c.step_key,
                         PendingStepsTable.c.assigned_timestamp,
@@ -2926,16 +2934,36 @@ class SqlEventLogStorage(EventLogStorage):
                     ]
                 )
                 .select_from(PendingStepsTable)
-                .where(PendingStepsTable.c.concurrency_key == concurrency_key)
+                .where(PendingStepsTable.c.concurrency_key.in_(keys)),
             )
-            pending_rows = db_fetch_mappings(conn, pending_query)
 
-            return ConcurrencyKeyInfo(
-                concurrency_key=concurrency_key,
+        slot_rows_by_key = defaultdict(list)
+        for row in slot_rows:
+            slot_rows_by_key[row["concurrency_key"]].append(row)
+        pending_rows_by_key = defaultdict(list)
+        for row in pending_rows:
+            pending_rows_by_key[row["concurrency_key"]].append(row)
+
+        infos = {}
+        for key in keys:
+            key_slot_rows = slot_rows_by_key[key]
+            slot_count = len([slot_row for slot_row in key_slot_rows if not slot_row["deleted"]])
+
+            limit = slot_count
+            using_default = False
+            if has_limits_table:
+                if key in limit_rows_by_key:
+                    limit, using_default = limit_rows_by_key[key]
+                elif not slot_count:
+                    limit = self._instance.global_op_concurrency_default_limit
+                    using_default = True
+
+            infos[key] = ConcurrencyKeyInfo(
+                concurrency_key=key,
                 slot_count=slot_count,
                 claimed_slots=[
                     ClaimedSlotInfo(run_id=slot_row["run_id"], step_key=slot_row["step_key"])
-                    for slot_row in slot_rows
+                    for slot_row in key_slot_rows
                     if slot_row["run_id"]
                 ],
                 pending_steps=[
@@ -2948,11 +2976,12 @@ class SqlEventLogStorage(EventLogStorage):
                         else None,
                         priority=row["priority"],
                     )
-                    for row in pending_rows
+                    for row in pending_rows_by_key[key]
                 ],
                 limit=limit,
                 using_default_limit=using_default,
             )
+        return infos
 
     def get_concurrency_run_ids(self) -> set[str]:
         with (

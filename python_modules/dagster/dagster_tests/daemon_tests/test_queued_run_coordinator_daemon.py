@@ -3,6 +3,7 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from typing import Any
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -1114,6 +1115,55 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         assert set(self.get_run_ids(instance.run_launcher.queue())) == {run_id_1, run_id_2}
         caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1
         caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1
+
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            {"block_op_concurrency_limited_runs": {"enabled": True}},
+        ],
+    )
+    def test_op_concurrency_info_fetched_once_per_iteration(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+        page_size,
+    ):
+        """Pool state is read once per pool per iteration, independent of how many pages the
+        queued runs span. Each page rebuilds the counter, so without a shared cache a large queue
+        against many pools costs pages * pools storage round trips.
+        """
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        remote_job = self.get_concurrency_job(workspace)
+        foo_key = dg.AssetKey(["prefix", "foo_limited_asset"])
+        bar_key = dg.AssetKey(["prefix", "bar_limited_asset"])
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+        instance.event_log_storage.set_concurrency_slots("bar", 1)
+
+        num_runs = 2 * page_size + 1
+        for i in range(num_runs):
+            self.submit_run(
+                instance,
+                remote_job,
+                workspace,
+                run_id=make_new_run_id(),
+                asset_selection={foo_key if i % 2 else bar_key},
+            )
+
+        with mock.patch.object(
+            instance.event_log_storage,
+            "get_concurrency_infos",
+            wraps=instance.event_log_storage.get_concurrency_infos,
+        ) as get_infos:
+            list(daemon.run_iteration(concurrency_limited_workspace_context))
+
+        fetched = [key for call in get_infos.call_args_list for key in call.args[0]]
+        assert sorted(fetched) == ["bar", "foo"]
+        # one run per pool is launched, the rest stay queued behind the single slot
+        assert len(instance.run_launcher.queue()) == 2
+        assert instance.get_runs_count(dg.RunsFilter(statuses=[DagsterRunStatus.QUEUED])) == (
+            num_runs - 2
+        )
 
     @pytest.mark.flaky(reruns=1)
     @pytest.mark.parametrize(

@@ -7,6 +7,7 @@ tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
 pypi: https://pypi.org/project/dagster-dbt/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/dbt/dbt.svg
 partnerlink: https://www.getdbt.com/
 canonicalUrl: '/integrations/libraries/dbt'
@@ -25,11 +26,9 @@ The [`dagster-dbt` library](/integrations/libraries/dbt/dagster-dbt) provides a 
 
 :::
 
-:::tip dbt Fusion is supported as of 1.11.5
+:::tip dbt Fusion
 
-Dagster supports dbt Fusion as of the 1.11.5 release. Dagster will automatically detect which engine you have installed. If you're currently using core, to migrate uninstall dbt-core and install dbt Fusion. For more information please reference the dbt [docs](https://docs.getdbt.com/docs/dbt-versions/core-upgrade/upgrading-to-fusion).
-
-This feature is still in preview pending dbt Fusion GA.
+Dagster supports the dbt Fusion engine as of the 1.11.5 release. Support is in preview and has known limitations, including no supported column-level metadata or column lineage. For setup instructions and the full list of gaps, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion).
 
 :::
 
@@ -103,16 +102,16 @@ In its scaffolded form, the `defs.yaml` file contains the configuration for your
 
 Now that you have a Dagster project, you can scaffold a dbt component definition that points to an external Git repository. You'll need to provide the Git URL and the path to the dbt project within the repository:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-1-scaffold-dbt-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component-remote/remote-1-scaffold-dbt-component.txt" />
 
 The `dg scaffold defs` call will generate a `defs.yaml` file in your project structure:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-2-tree.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component-remote/remote-2-tree.txt" />
 
 In its scaffolded form, the `defs.yaml` file contains the configuration for your remote dbt project:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/remote-3-component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component-remote/remote-3-component.yaml"
   title="my_project/defs/dbt_ingest/defs.yaml"
   language="yaml"
 />
@@ -174,6 +173,14 @@ You can control which dbt models are included in your component using the `selec
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/11-list-defs.txt" />
 </WideContent>
 
+Note that `stg_customers`, `stg_orders`, and `stg_payments` still appear even though only `customers` was selected. `customers` declares them as dependencies, so Dagster creates a stub [external asset](/guides/build/assets/external-assets) for each one to keep the graph connected. These stubs have no group, kinds, or description, and Dagster will never execute them — only `customers` is actually built by this component.
+
+To pull the upstream models in as real dbt assets instead, use [dbt's graph operators](https://docs.getdbt.com/reference/node-selection/graph-operators) in your selection:
+
+```yaml
+select: '+customers'
+```
+
 ## Step 6: Customize dbt assets
 
 ### Customize dbt asset metadata
@@ -190,11 +197,17 @@ You can customize the properties of the assets emitted by each dbt model using t
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/13-list-defs.txt" />
 </WideContent>
 
+`translation` accepts any attribute of an asset spec: `key`, `key_prefix`, `deps`, `description`, `metadata`, `group_name`, `owners`, `tags`, `kinds`, `code_version`, `skippable`, `automation_condition`, `partitions_def`, and `freshness_policy`. To see the full schema — types, defaults, and per-field documentation — run:
+
+```bash
+dg utils inspect-component dagster_dbt.DbtProjectComponent --defs-yaml-schema
+```
+
 ### Assign asset groups based on dbt model directory
 
 A common pattern is to assign different asset group names based on the dbt model's directory structure (e.g., `staging`, `intermediate`, `marts`). You can achieve this using a [template variable](/guides/build/components/building-pipelines-with-components/using-template-variables) that inspects the model's `fqn` (fully qualified name).
 
-The `node` object available in the `translation` key includes properties from the dbt manifest, including:
+The `node` object available in the `translation` key is the raw node dictionary for the model from your project's `manifest.json`, so every field dbt records there is available. The most commonly used ones are:
 
 - `node.name` - the model name
 - `node.fqn` - the fully qualified name as a list (for example, `["jaffle_shop", "staging", "stg_customers"]`)
@@ -202,9 +215,11 @@ The `node` object available in the `translation` key includes properties from th
 - `node.tags` - tags defined in dbt
 - `node.config` - model configuration
 
+See dbt's [manifest.json reference](https://docs.getdbt.com/reference/artifacts/manifest-json) for the full set of fields. The Python API exposes this same dictionary to <PyObject section="libraries" integration="dbt" module="dagster_dbt" object="DagsterDbtTranslator" /> methods as `dbt_resource_props`.
+
 #### 1. Create a template variable
 
-First, create a template variable that extracts the group name from the `fqn`:
+First, create a template variable that extracts the group name from the `fqn`. A template variable is invoked once at load time and whatever it returns becomes the value in scope, so a variable that needs a per-model argument has to return a _function_, which you then call from `defs.yaml`:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/component/group-template-vars.py"
@@ -297,11 +312,27 @@ The next step is to update the `defs.yaml` file to use the new template var and 
   language="yaml"
 />
 
+:::note
+
+`partitions_def` is also a valid `translation` key, so `translation: {partitions_def: '{{ daily_partitions_def }}'}` produces the same result here. `post_processing` is used above because it applies the partitions definition to every asset the component produces in one place; use `translation` when the partitions definition needs to vary based on the `node`.
+
+:::
+
 Finally, we need to pass in new configuration to the `cli_args` field so that the dbt execution actually changes based on what partition is executing. In particular, we want to pass in values to the `--vars` configuration field that determine the range of time that our incremental models should process.
 
 The specific format of this configuration depends on your specific dbt project setup, but one common pattern is to use a `start_date` and `end_date` parameter for this purpose.
 
-When the `cli_args` field is resolved, it has access to a `context.partition_time_window` object, which is Dagster's representation of the time range that should be processed on the current run. This can be converted into a format recognized by your dbt project using template variables:
+When the `cli_args` field is resolved, three partition template variables are in scope:
+
+| Variable                | Description                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `partition_key`         | The key of the partition being materialized, as a string (for example, `2024-01-15`). |
+| `partition_key_range`   | The `start` and `end` partition keys of the range being materialized.                 |
+| `partition_time_window` | The `start` and `end` `datetime`s of the range being materialized.                    |
+
+These are top-level names, not attributes of the `context` scope used elsewhere in `defs.yaml`. On a run with no partition they resolve to `None`, so only reference them from a component whose assets are all partitioned.
+
+`partition_time_window` is Dagster's representation of the time range that should be processed on the current run. It can be converted into a format recognized by your dbt project using template variables:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/20-defs.yaml"
@@ -315,7 +346,21 @@ Dagster will automatically convert this configuration dictionary into the JSON-e
   <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/integrations/dbt-component/21-list-defs.txt" />
 </WideContent>
 
-If you have multiple different partitions definitions, you will need to create separate `DbtProjectComponent` instances for each `PartitionsDefinition` you want to use. You can filter each component to a selection of dbt models using the `select` configuration option.
+### Mixing partitioned and unpartitioned models
+
+A single component can define both partitioned and unpartitioned assets. Narrow the `post_processing` target from `"*"` to an [asset selection](/guides/build/assets/asset-selection-syntax) matching only your incremental models, and the rest stay unpartitioned:
+
+```yaml
+post_processing:
+  assets:
+    - target: 'key:orders_incremental or key:events_incremental'
+      attributes:
+        partitions_def: '{{ daily_partitions_def }}'
+```
+
+The catch is that `cli_args` is defined once for the whole component. On a run that materializes only the unpartitioned models, `partition_time_window` is `None` and a template like `{{ partition_time_window.start.strftime('%Y-%m-%d') }}` fails. Unless your `cli_args` avoid the partition variables, keep partitioned and unpartitioned models in separate `DbtProjectComponent` instances.
+
+Two _different_ partitions definitions always require separate components, because Dagster cannot materialize assets with differing partitions definitions in a single run. Use the `select` option to filter each component to the models it owns.
 
 ### Microbatch incremental models
 

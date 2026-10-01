@@ -79,6 +79,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._asset_partitions_cache: dict[int | None, dict[AssetKey, set[str]]] = defaultdict(dict)
 
         self._dynamic_partitions_cache: dict[str, Sequence[str]] = {}
+        # cursor-filtered partition storage id mappings, so single-partition lookups for
+        # recently-updated partitions can be served without loading the asset's full history
+        self._storage_ids_after_cursor_by_asset: dict[
+            AssetKey, list[Mapping[AssetKeyPartitionKey, int | None]]
+        ] = defaultdict(list)
 
         self._evaluation_time = evaluation_time if evaluation_time else get_current_datetime()
 
@@ -336,6 +341,34 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return latest_storage_ids
 
+    @cached_method
+    def _get_latest_materialization_or_observation_storage_ids_by_asset_partition_after_cursor(
+        self, *, asset_key: AssetKey, after_cursor: int
+    ) -> Mapping[AssetKeyPartitionKey, int | None]:
+        """Same shape as the unfiltered variant, but only includes partitions whose latest storage
+        id is greater than ``after_cursor``, letting storage skip the rest of the asset's history.
+        """
+        asset_partition = AssetKeyPartitionKey(asset_key)
+        latest_record = self._get_latest_materialization_or_observation_record(
+            asset_partition=asset_partition
+        )
+        latest_storage_ids = {
+            asset_partition: latest_record.storage_id if latest_record is not None else None
+        }
+        if self.asset_graph.get(asset_key).is_partitioned:
+            latest_storage_ids.update(
+                {
+                    AssetKeyPartitionKey(asset_key, partition_key): storage_id
+                    for partition_key, storage_id in self.instance.get_latest_storage_id_by_partition(
+                        asset_key,
+                        event_type=self._event_type_for_key(asset_key),
+                        after_cursor=after_cursor,
+                    ).items()
+                }
+            )
+        self._storage_ids_after_cursor_by_asset[asset_key].append(latest_storage_ids)
+        return latest_storage_ids
+
     def get_latest_materialization_or_observation_storage_id(
         self, asset_partition: AssetKeyPartitionKey
     ) -> int | None:
@@ -350,6 +383,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 asset_partition=asset_partition
             )
             return record.storage_id if record else None
+        # a partition present in a cursor-filtered mapping carries its true latest storage id
+        for storage_ids in self._storage_ids_after_cursor_by_asset.get(
+            asset_partition.asset_key, ()
+        ):
+            if asset_partition in storage_ids:
+                return storage_ids[asset_partition]
         return self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
             asset_key=asset_partition.asset_key
         ).get(asset_partition)
@@ -948,11 +987,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         ):
             return set()
 
-        last_storage_id_by_asset_partition = (
-            self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
-                asset_key=asset_key
+        if asset_partitions is None and after_cursor is not None:
+            # only partitions updated after the cursor matter here, so let storage filter them
+            # instead of loading every partition the asset has ever materialized
+            last_storage_id_by_asset_partition = self._get_latest_materialization_or_observation_storage_ids_by_asset_partition_after_cursor(
+                asset_key=asset_key, after_cursor=after_cursor
             )
-        )
+        else:
+            last_storage_id_by_asset_partition = (
+                self._get_latest_materialization_or_observation_storage_ids_by_asset_partition(
+                    asset_key=asset_key
+                )
+            )
 
         def _effective_storage_id(
             asset_partition: AssetKeyPartitionKey, latest_storage_id: int | None

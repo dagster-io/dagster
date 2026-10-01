@@ -31,6 +31,7 @@ import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWith
 import {InstigationSelector} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {shortenId} from '../util/shortenId';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
@@ -39,7 +40,7 @@ export const RunRoot = () => {
   useTrackPageView();
 
   const {runId} = useParams<{runId: string}>();
-  useDocumentTitle(runId ? `Runs | ${runId.slice(0, 8)}` : 'Runs');
+  useDocumentTitle(runId ? `Runs | ${shortenId(runId)}` : 'Runs');
 
   const queryResult = useQuery<RunRootQuery, RunRootQueryVariables>(RUN_ROOT_QUERY, {
     variables: {runId},
@@ -247,7 +248,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
           {backfillTag.value}
         </Link>
         {' / '}
-        {runId.slice(0, 8)}
+        {shortenId(runId)}
       </Heading>
     );
   }
@@ -256,7 +257,7 @@ const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: strin
     <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 6}}>
       <Link to="/runs">Runs</Link>
       <span>/</span>
-      <span style={{fontFamily: FontFamily.monospace}}>{runId.slice(0, 8)}</span>
+      <span style={{fontFamily: FontFamily.monospace}}>{shortenId(runId)}</span>
     </Heading>
   );
 };

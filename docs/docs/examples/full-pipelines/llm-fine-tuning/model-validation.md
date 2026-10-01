@@ -1,6 +1,6 @@
 ---
 title: Model validation
-description: Validate Fine-Tuned Model
+description: Validate fine-tuned model
 last_update:
   author: Dennis Hume
 sidebar_position: 60

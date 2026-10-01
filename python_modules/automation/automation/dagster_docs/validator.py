@@ -280,7 +280,8 @@ def _read_docstring_from_file(dotted_path: str) -> str | None:
                 target_node = candidates[0]
             else:
                 # Pick the candidate closest to the expected line number
-                target_node = min(candidates, key=lambda n: abs(n.lineno - symbol_info.line_number))
+                expected_line = symbol_info.line_number or 0
+                target_node = min(candidates, key=lambda n: abs(n.lineno - expected_line))
 
         if target_node:
             # Check if the function has a docstring

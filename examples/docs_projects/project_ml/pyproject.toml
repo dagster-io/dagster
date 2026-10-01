@@ -29,3 +29,6 @@ directory_type = "project"
 [tool.dg.project]
 root_module = "project_ml"
 registry_modules = ["project_ml.components.*"]
+
+[tool.uv]
+exclude-newer = "48h"

@@ -897,6 +897,7 @@ class GraphQLEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         res = self._execute_query(
             GET_LATEST_STORAGE_ID_BY_PARTITION,
@@ -904,6 +905,7 @@ class GraphQLEventLogStorage(EventLogStorage, ConfigurableClass):
                 "assetKey": asset_key.to_string(),
                 "eventType": event_type.value,
                 "partitions": list(partitions) if partitions else None,
+                "afterCursor": after_cursor,
             },
         )
         latest_storage_id_result = res["data"]["eventLogs"]["getLatestStorageIdByPartition"]

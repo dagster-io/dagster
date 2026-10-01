@@ -82,6 +82,10 @@ export enum AssetHealthStatus {
   WARNING = 'WARNING',
 }
 
+export type AssetJobKeyInput = {
+  jobName: Scalars['String']['input'];
+};
+
 export type AssetKeyInput = {
   path: Array<Scalars['String']['input']>;
 };

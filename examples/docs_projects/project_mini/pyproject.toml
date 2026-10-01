@@ -35,6 +35,9 @@ registry_modules = [
 ]
 
 # start_uv_sources
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 shared = { path = "./shared", editable = true }
 # end_uv_sources

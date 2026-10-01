@@ -8,11 +8,7 @@ from typing import TypeAlias, cast
 
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.python_version import AvailablePythonVersion
-from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
-    ResourceRequests,
-    StepBuilderMutator,
-)
+from buildkite_shared.step_builders.command_step_builder import ResourceRequests, StepBuilderMutator
 from buildkite_shared.step_builders.group_step_builder import (
     GroupLeafStepConfiguration,
     GroupStepBuilder,
@@ -143,9 +139,9 @@ class PackageSpec:
         python version (the "cloud" version).
 
     Image selection:
-      * `image="test"` (default): `.on_test_image(python_version, env=env_vars)`.
-      * `image="integration"`: `.on_integration_image(env=env_vars, ecr_account_ids=ecr_account_ids)`.
-      * `image="integration_slim"`: `.on_integration_slim_image(env=env_vars)`.
+      * `image="test"` (default): `.on_test_image(python_version)`.
+      * `image="integration"`: `.on_integration_image()`.
+      * `image="integration_slim"`: `.on_integration_slim_image()`.
 
     Group wrapping: `is_group=None` (default) wraps in a GroupStep only when
     there are 2+ resulting steps. `is_group=True/False` forces the behavior.
@@ -184,9 +180,9 @@ class PackageSpec:
 
     # Per-step config
     timeout_in_minutes: int | None = None
-    queue: BuildkiteQueue | None = None
     resources: ResourceRequests | None = None
-    env_vars: list[str] | None = None
+    concurrency: int | None = None
+    concurrency_group: str | None = None
 
     # Pre/post commands
     pytest_extra_cmds: list[str] | PytestExtraCommandsFunction | None = None
@@ -206,8 +202,6 @@ class PackageSpec:
     # Image / docker
     image: ToxImage = "test"
     with_docker: bool = True
-    ecr_passthru: bool = False
-    ecr_account_ids: list[str | None] | None = None
 
     # Group wrapping
     is_group: bool | None = None
@@ -449,17 +443,22 @@ class PackageSpec:
                     tox_file=self.tox_file,
                     extra_commands_pre=extra_pre,
                     extra_commands_post_cd=extra_post_cd,
-                    env=self.env_vars,
                     image=resolved_image,
                     python_version=py_version if resolved_image == "test" else None,
-                    ecr_account_ids=self.ecr_account_ids,
-                    queue=(factor.queue if factor and factor.queue else self.queue),
                     depends_on=dependencies,
                     skip_reason=skip_reason,
                     pytest_args=pytest_args,
                     section_header=self._section_header(tox_env),
-                    concurrency=factor.concurrency if factor else None,
-                    concurrency_group=(factor.concurrency_group if factor else None),
+                    concurrency=(
+                        factor.concurrency
+                        if factor and factor.concurrency is not None
+                        else self.concurrency
+                    ),
+                    concurrency_group=(
+                        factor.concurrency_group
+                        if factor and factor.concurrency_group is not None
+                        else self.concurrency_group
+                    ),
                     resources=(
                         factor.resources
                         if factor and factor.resources is not None
@@ -467,7 +466,6 @@ class PackageSpec:
                     ),
                     soft_fail=factor.soft_fail if factor else False,
                     with_docker=self.with_docker,
-                    ecr_passthru=self.ecr_passthru,
                     command_wrapper=self.command_wrapper,
                     mutator=self.mutator,
                 )
@@ -536,23 +534,27 @@ class PackageSpec:
                 tox_file=self.tox_file,
                 extra_commands_pre=extra_pre,
                 extra_commands_post_cd=extra_post_cd,
-                env=self.env_vars,
                 image=resolved_image,
                 python_version=py_version if resolved_image == "test" else None,
-                ecr_account_ids=self.ecr_account_ids,
-                queue=(factor.queue if factor and factor.queue else self.queue),
                 depends_on=dependencies,
                 skip_reason=skip_reason,
                 pytest_args=pytest_args,
                 section_header=self._section_header(tox_env),
-                concurrency=factor.concurrency if factor else None,
-                concurrency_group=(factor.concurrency_group if factor else None),
+                concurrency=(
+                    factor.concurrency
+                    if factor and factor.concurrency is not None
+                    else self.concurrency
+                ),
+                concurrency_group=(
+                    factor.concurrency_group
+                    if factor and factor.concurrency_group is not None
+                    else self.concurrency_group
+                ),
                 resources=(
                     factor.resources if factor and factor.resources is not None else self.resources
                 ),
                 soft_fail=True,
                 with_docker=self.with_docker,
-                ecr_passthru=self.ecr_passthru,
                 command_wrapper=_refresh_wrapper,
                 mutator=self.mutator,
             )

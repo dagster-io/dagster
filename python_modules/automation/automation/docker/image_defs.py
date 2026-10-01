@@ -97,7 +97,7 @@ def k8s_example_editable_cm(cwd: str) -> Iterator[None]:
 @contextlib.contextmanager
 def k8s_webserver_editable_cm(cwd: str) -> Iterator[None]:
     print(
-        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster UI"
+        "!!!!! WARNING: You must call `just rebuild_ui` after making changes to the Dagster UI"
         " !!!!\n"
     )
     with copy_directories(
@@ -163,7 +163,7 @@ def user_code_example_editable_cm(cwd: str) -> Iterator[None]:
 @contextlib.contextmanager
 def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
     print(
-        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster"
+        "!!!!! WARNING: You must call `just rebuild_ui` after making changes to the Dagster"
         " UI!!!!\n"
     )
     with copy_directories(
@@ -181,7 +181,7 @@ def dagster_k8s_editable_cm(cwd: str) -> Iterator[None]:
 @contextlib.contextmanager
 def dagster_celery_k8s_editable_cm(cwd: str) -> Iterator[None]:
     print(
-        "!!!!! WARNING: You must call `make rebuild_ui` after making changes to the Dagster"
+        "!!!!! WARNING: You must call `just rebuild_ui` after making changes to the Dagster"
         " UI!!!!\n"
     )
     with copy_directories(

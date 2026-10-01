@@ -111,7 +111,7 @@ To use the `EnvVar` approach, call the `get_value()` method on the Dagster <PyOb
 ```python
 import dagster as dg
 
-database_name = dg.EnvVar('DATABASE_NAME').get_value()
+database_name = dg.EnvVar("DATABASE_NAME").get_value()
 ```
 
 ### From Dagster configuration
@@ -231,12 +231,10 @@ This section is only applicable to Dagster+.
 You can determine the current deployment type ([branch deployment](/deployment/dagster-plus/deploying-code/branch-deployments) or [full deployment](/deployment/dagster-plus/deploying-code/full-deployments)) at runtime with the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable. Using this information, you can write code that executes differently when in a branch deployment or a full deployment.
 
 ```python
-
 def get_current_env():
-  is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
-  assert is_branch_depl != None  # env var must be set
-  return "branch" if is_branch_depl else "prod"
-
+    is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+    assert is_branch_depl != None  # env var must be set
+    return "branch" if is_branch_depl else "prod"
 ```
 
 This function checks the value of `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` and, if equal to `1`, returns a variable with the value of `branch`. This indicates that the current deployment is a branch deployment. Otherwise, the deployment is a full deployment and `is_branch_depl` will be returned with a value of `prod`.

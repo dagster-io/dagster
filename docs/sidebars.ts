@@ -11,7 +11,16 @@ const sidebars: SidebarsConfig = {
         'getting-started/quickstart-serverless',
         'getting-started/installation',
         'getting-started/concepts',
-        'getting-started/ai-tools',
+        {
+          type: 'category',
+          label: 'AI tools',
+          link: {type: 'doc', id: 'getting-started/ai-tools/index'},
+          items: [
+            'getting-started/ai-tools/skills',
+            'getting-started/ai-tools/dagster-mcp',
+            'getting-started/ai-tools/plugin',
+          ],
+        },
         {
           type: 'link',
           label: 'Dagster University',

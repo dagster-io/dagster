@@ -12,6 +12,13 @@ core.workflow(
     origin = git.origin(
         url =  "file:///workspace/build/buildkite",
         ref = "master",
+
+        # Without this copybara appends `refs/tags/*:refs/tags/*` to its fetch so it can run
+        # `git describe`. The origin is the Buildkite agent's checkout, which is treeless
+        # (`--filter tree:0`), and git's upload-pack will not lazy-fetch while serving a fetch —
+        # so any tag pointing outside `ref`'s history fails the whole fetch with
+        # "fatal: bad tree object". This workflow syncs a branch and never uses versions.
+        describe_version = False,
     ),
     destination = git.destination(
         url = "https://github.com/dagster-io/internal.git",

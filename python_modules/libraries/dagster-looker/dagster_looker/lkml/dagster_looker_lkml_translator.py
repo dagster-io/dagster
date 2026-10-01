@@ -89,7 +89,7 @@ def build_deps_for_looker_view(
                 sql_table_name.replace("`", ""), dialect=custom_bigquery_dialect_inst
             )
         except ParseError as e:
-            logger.warn(
+            logger.warning(
                 f"Failed to parse derived table SQL for view `{sql_table_name}`"
                 f" in file `{lookml_view_path.name}`."
                 " The upstream dependencies for the view will be omitted.\n\n"
@@ -151,7 +151,7 @@ def build_deps_for_looker_view(
             if isinstance(source, exp.Table)
         ]
     except Exception as e:
-        logger.warn(
+        logger.warning(
             f"Failed to parse derived table SQL for view `{lookml_view_props['name']}`"
             f" in file `{lookml_view_path.name}`."
             " The upstream dependencies for the view will be omitted.\n\n"

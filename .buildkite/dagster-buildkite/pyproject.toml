@@ -35,6 +35,9 @@ test = [
     "flaky",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 buildkite-shared = { path = "../buildkite-shared", editable = true }
 dagster-shared = { path = "../../python_modules/libraries/dagster-shared", editable = true }

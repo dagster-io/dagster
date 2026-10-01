@@ -269,10 +269,7 @@ payload = {
     "asset_key": "ASSET_KEY",
     "metadata": {"rows": 10},
 }
-headers = {
-    "Content-Type": "application/json",
-    "Dagster-Cloud-Api-Token": "TOKEN"
-}
+headers = {"Content-Type": "application/json", "Dagster-Cloud-Api-Token": "TOKEN"}
 
 response = requests.request("POST", url, json=payload, headers=headers)
 response.raise_for_status()

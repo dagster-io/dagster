@@ -7,7 +7,8 @@ from dagster_rest_resources.__generated__.enums import InstigationTickStatus
 from dagster_rest_resources.__generated__.input_types import ScheduleSelector, SensorSelector
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.tick import DgApiTick, DgApiTickList
@@ -53,11 +54,11 @@ class DgApiTickApi:
             case "Sensor":
                 return self._build_tick_list(result.sensor_state.ticks)  # ty: ignore[unresolved-attribute]
             case "SensorNotFoundError":
-                raise DagsterPlusGraphqlError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Sensor not found: {result.message}")  # ty: ignore[unresolved-attribute]
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching sensor ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -89,9 +90,9 @@ class DgApiTickApi:
             case "Schedule":
                 return self._build_tick_list(result.schedule_state.ticks)  # ty: ignore[unresolved-attribute]
             case "ScheduleNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching schedule ticks: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -110,18 +111,18 @@ class DgApiTickApi:
                         if entity.name == name
                     )
                 if not matches:
-                    raise DagsterPlusGraphqlError(f"{entity_type.capitalize()} not found: {name}")
+                    raise DagsterPlusClientError(f"{entity_type.capitalize()} not found: {name}")
                 if len(matches) > 1:
                     origins = [f"{loc}@{rn}" for loc, rn in matches]
-                    raise DagsterPlusGraphqlError(
+                    raise DagsterPlusClientError(
                         f"Multiple {entity_type}s with name '{name}': {', '.join(origins)}"
                     )
 
                 return matches[0]
             case "RepositoryNotFoundError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusClientError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing repositories: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 

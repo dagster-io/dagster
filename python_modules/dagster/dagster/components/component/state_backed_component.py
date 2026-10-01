@@ -242,7 +242,7 @@ class StateBackedComponent(Component):
         """
 
     @abstractmethod
-    def write_state_to_path(self, state_path: Path) -> None | Awaitable[None]:
+    def write_state_to_path(self, state_path: Path) -> Awaitable[None] | None:
         """Fetches and writes required state to a local file. This method can be
         implemented as either sync or async.
 

@@ -20,13 +20,11 @@ def test_build_llm_resource_defaults_to_embedded_backend(monkeypatch) -> None:
 
     assert isinstance(resource, EmbeddedLLMResource)
     assert "Trail Socks" in resource.generate(
-        (
-            "Write cleaner catalog copy for Trail Socks. "
-            "Use category outdoor gear. "
-            "Context: Product facts: Product: Trail Socks. "
-            "Category: outdoor gear. "
-            "Description: Merino blend trail socks for weekend hikes."
-        )
+        "Write cleaner catalog copy for Trail Socks. "
+        "Use category outdoor gear. "
+        "Context: Product facts: Product: Trail Socks. "
+        "Category: outdoor gear. "
+        "Description: Merino blend trail socks for weekend hikes."
     )
     assert resource.runtime_metadata()["llm_backend"] == "embedded"
 

@@ -48,6 +48,7 @@ run_ht_sync_orgs = hightouch_sync_op.configured(
     {"sync_id": HT_ORG}, name="hightouch_sfdc_organizations"
 )
 
+
 # And create a job with the defined resources, specifying the dependencies.
 @job(
     resource_defs={
@@ -58,6 +59,7 @@ def ht_sfdc_job():
 
     ht_orgs = run_ht_sync_orgs(start_after=ht_contacts)
     run_ht_sync_workspaces(start_after=ht_orgs)
+
 
 # And we schedule it to run every 30 mins.
 every_30_schedule = ScheduleDefinition(job=ht_sfdc_job, cron_schedule="*/30 * * * *")

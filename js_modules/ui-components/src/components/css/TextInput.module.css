@@ -11,7 +11,7 @@
   flex: 1;
   flex-grow: 0;
   font-family: var(--font-family);
-  font-size: 14px;
+  font-size: var(--input-font-size, 14px);
   font-weight: 400;
   position: relative;
 
@@ -28,7 +28,7 @@
   border-radius: 8px;
   color: var(--color-text-default);
   flex-grow: 1;
-  font-size: 14px;
+  font-size: var(--input-font-size, 14px);
   line-height: 20px;
   padding: 6px 6px 6px 12px;
   margin: 0;

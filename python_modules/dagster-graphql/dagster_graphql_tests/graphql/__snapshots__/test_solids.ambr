@@ -323,6 +323,14 @@
             }),
             dict({
               'pipeline': dict({
+                'name': 'job_with_automation_condition',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_one',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
                 'name': 'two_assets_job',
               }),
               'solidHandle': dict({
@@ -340,6 +348,14 @@
             dict({
               'pipeline': dict({
                 'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_two',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'job_with_automation_condition',
               }),
               'solidHandle': dict({
                 'handleID': 'asset_two',

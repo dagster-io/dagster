@@ -85,7 +85,7 @@ defs = Definitions(
         "io_manager": BigQueryIOManager(
             project=EnvVar("GCP_PROJECT"),
             dataset="my_dataset",
-            write_mode="replace"  # Change write mode here
+            write_mode="replace",  # Change write mode here
         )
     }
 )

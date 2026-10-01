@@ -1,10 +1,11 @@
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, Sequence
+
+from dagster_shared.record import LegacyNamedTupleMixin, as_dict, record
 
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
-from dagster_shared.record import LegacyNamedTupleMixin, record, as_dict
 
 
 @whitelist_for_serdes(

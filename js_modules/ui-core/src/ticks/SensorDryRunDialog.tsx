@@ -16,7 +16,7 @@ import {
   Tooltip,
   showToast,
 } from '@dagster-io/ui-components';
-import {useCallback, useMemo, useState} from 'react';
+import {ReactNode, useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {DynamicPartitionRequests} from './DynamicPartitionRequests';
@@ -29,6 +29,7 @@ import {
   SensorDryRunMutationVariables,
 } from './types/SensorDryRunDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
@@ -89,6 +90,11 @@ export const SensorDryRunDialog = (props: Props) => {
 
 const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Props) => {
   const trackEvent = useTrackEvent();
+
+  const {
+    permissions: {canEditDynamicPartitions},
+    disabledReasons: {canEditDynamicPartitions: canEditDynamicPartitionsDisabledReason},
+  } = usePermissionsForLocation(repoAddress.location);
 
   const [sensorDryRun] = useMutation<SensorDryRunMutation, SensorDryRunMutationVariables>(
     EVALUATE_SENSOR_MUTATION,
@@ -223,17 +229,29 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       return;
     }
 
+    if (dynamicPartitionRequests?.length && !canEditDynamicPartitions) {
+      showCustomAlert({
+        title: 'Insufficient permissions',
+        body:
+          canEditDynamicPartitionsDisabledReason ||
+          'You do not have permission to create or delete dynamic partitions for this code location.',
+      });
+      return;
+    }
+
     trackEvent('launch-all-sensor');
     setLaunching(true);
 
     try {
       if (dynamicPartitionRequests?.length) {
+        const partitionErrors: Array<{title: string; body: ReactNode}> = [];
+
         await Promise.all(
           dynamicPartitionRequests.map(async (request) => {
             if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
               await Promise.all(
                 (request.partitionKeys || []).map(async (partitionKey) => {
-                  await createPartition({
+                  const result = await createPartition({
                     variables: {
                       repositorySelector: {
                         repositoryName: repoAddress.name,
@@ -243,10 +261,31 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                       partitionKey,
                     },
                   });
+                  const data = result.data?.addDynamicPartition;
+                  switch (data?.__typename) {
+                    case 'AddDynamicPartitionSuccess':
+                    // matches the daemon, which skips partitions that already exist
+                    case 'DuplicateDynamicPartitionError':
+                      return;
+                    case 'UnauthorizedError':
+                      partitionErrors.push({
+                        title: 'Insufficient permissions',
+                        body:
+                          data.message ??
+                          'You do not have permission to create dynamic partitions.',
+                      });
+                      return;
+                    case 'PythonError':
+                      partitionErrors.push({
+                        title: 'Could not add partition',
+                        body: <PythonErrorInfo error={data} />,
+                      });
+                      return;
+                  }
                 }),
               );
             } else if (request.partitionKeys && request.partitionKeys.length) {
-              await deletePartition({
+              const result = await deletePartition({
                 variables: {
                   repositorySelector: {
                     repositoryName: repoAddress.name,
@@ -256,9 +295,34 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                   partitionKeys: request.partitionKeys,
                 },
               });
+              const data = result.data?.deleteDynamicPartitions;
+              switch (data?.__typename) {
+                case 'DeleteDynamicPartitionsSuccess':
+                  return;
+                case 'UnauthorizedError':
+                  partitionErrors.push({
+                    title: 'Insufficient permissions',
+                    body:
+                      data.message ?? 'You do not have permission to delete dynamic partitions.',
+                  });
+                  return;
+                case 'PythonError':
+                  partitionErrors.push({
+                    title: 'Could not delete partitions',
+                    body: <PythonErrorInfo error={data} />,
+                  });
+                  return;
+              }
             }
           }),
         );
+
+        const firstPartitionError = partitionErrors[0];
+        if (firstPartitionError) {
+          showCustomAlert({title: firstPartitionError.title, body: firstPartitionError.body});
+          setLaunching(false);
+          return;
+        }
       }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
@@ -272,6 +336,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     onClose();
   }, [
     canApply,
+    canEditDynamicPartitions,
+    canEditDynamicPartitionsDisabledReason,
     createPartition,
     deletePartition,
     dynamicPartitionRequests,

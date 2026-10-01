@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import dagster as dg
 
@@ -8,7 +8,7 @@ from summit_financial.jobs import summit_risk_scoring_job
 
 
 def _schedule_tags(context: dg.ScheduleEvaluationContext) -> dict[str, str]:
-    scheduled_time = context.scheduled_execution_time or datetime.now()
+    scheduled_time = context.scheduled_execution_time or datetime.now(timezone.utc)
     orchestration_date = scheduled_time.date().isoformat()
     return {
         # Beacon's cross-location sensor uses this tag to correlate same-day upstream runs.

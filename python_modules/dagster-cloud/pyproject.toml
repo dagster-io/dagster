@@ -55,6 +55,7 @@ insights = ["pyarrow"]
 docker = ["docker", "dagster-docker==1!0+dev"]
 kubernetes = ["kubernetes", "dagster-k8s==1!0+dev"]
 ecs = ["dagster-aws==1!0+dev", "boto3"]
+aca = ["dagster-azure[container_apps]==1!0+dev", "azure-identity>=1.15.0"]
 sandbox = ["supervisor"]
 pex = ["boto3"]
 serverless = ["boto3"]
@@ -99,12 +100,16 @@ test = [
     "wordcloud",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster = { path = "../dagster", editable = true }
 dagster-pipes = { path = "../dagster-pipes", editable = true }
 dagster-shared = { path = "../libraries/dagster-shared", editable = true }
 dagster-test = { path = "../dagster-test", editable = true }
 dagster-aws = { path = "../libraries/dagster-aws", editable = true }
+dagster-azure = { path = "../libraries/dagster-azure", editable = true }
 dagster-cloud-cli = { path = "../libraries/dagster-cloud-cli", editable = true }
 dagster-dbt = { path = "../libraries/dagster-dbt", editable = true }
 dagster-dg-cli = { path = "../libraries/dagster-dg-cli", editable = true }

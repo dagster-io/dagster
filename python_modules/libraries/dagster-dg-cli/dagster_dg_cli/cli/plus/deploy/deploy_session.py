@@ -176,6 +176,7 @@ def init_deploy_session(
 
 def build_artifact(
     dg_context: DgContext,
+    *,
     agent_type: DgPlusAgentType,
     build_strategy: "BuildStrategy",
     pex_build_method: "BuildMethod",

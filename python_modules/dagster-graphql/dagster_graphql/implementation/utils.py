@@ -69,7 +69,7 @@ def require_permission_check(
         if iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            async def _async_fn(self, graphene_info, *args, **kwargs):
                 result = await fn(self, graphene_info, *args, **kwargs)
                 if not graphene_info.context.was_permission_checked(permission):
                     raise Exception(f"Permission {permission} was never checked during the request")
@@ -79,7 +79,7 @@ def require_permission_check(
         else:
 
             @functools.wraps(fn)
-            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            def _fn(self, graphene_info, *args, **kwargs):
                 result = fn(self, graphene_info, *args, **kwargs)
 
                 if not graphene_info.context.was_permission_checked(permission):
@@ -99,7 +99,7 @@ def check_permission(
         if iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            async def _async_fn(self, graphene_info, *args, **kwargs):
                 assert_permission(graphene_info, permission)
 
                 return await fn(self, graphene_info, *args, **kwargs)
@@ -108,7 +108,7 @@ def check_permission(
         else:
 
             @functools.wraps(fn)
-            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            def _fn(self, graphene_info, *args, **kwargs):
                 assert_permission(graphene_info, permission)
 
                 return fn(self, graphene_info, *args, **kwargs)

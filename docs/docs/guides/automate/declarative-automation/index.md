@@ -98,6 +98,13 @@ To customize this behavior, see the [customizing on_missing](/guides/automate/de
 
 </Tabs>
 
+## Automating asset checks and jobs
+
+Automation conditions can be attached to targets other than assets:
+
+- Automation conditions can be used to execute asset checks independently of the assets they target. For more information, see [Automating asset checks](/guides/automate/declarative-automation/automating-asset-checks).
+- An automation condition can be attached to an asset job, so that the entire job is launched as a single run when the condition becomes true. For more information, see [Automating jobs](/guides/automate/declarative-automation/automating-jobs).
+
 ## Testing declarative automations
 
 To test automation conditions in isolation without starting the automation daemon, use <PyObject section="assets" module="dagster" object="evaluate_automation_conditions" />. Usage examples covering missing assets, same-code-location dependencies, and cross-code-location dependencies are available in the [API reference](/api/dagster/assets#testing-declarative-automations).

@@ -36,3 +36,6 @@ root_module = "project_dagster_modal_pipes"
 registry_modules = [
     "project_dagster_modal_pipes.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

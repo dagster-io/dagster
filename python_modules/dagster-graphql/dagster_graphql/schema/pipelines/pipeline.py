@@ -17,6 +17,7 @@ from dagster._core.remote_representation.code_location import is_implicit_asset_
 from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.remote_representation.external_data import (
     DEFAULT_MODE_NAME,
+    JobRefSnap,
     PartitionExecutionErrorSnap,
     PresetSnap,
 )
@@ -59,6 +60,7 @@ from dagster_graphql.implementation.utils import (
     has_permission_for_run,
 )
 from dagster_graphql.schema.asset_health import GrapheneAssetHealth
+from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.dagster_types import (
     GrapheneDagsterType,
     GrapheneDagsterTypeOrError,
@@ -1259,6 +1261,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     hasLaunchExecutionPermission = graphene.NonNull(graphene.Boolean)
     hasLaunchReexecutionPermission = graphene.NonNull(graphene.Boolean)
     nodeNames = non_null_list(graphene.String)
+    automationCondition = graphene.Field(GrapheneAutomationCondition)
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -1281,6 +1284,27 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
     def resolve_nodeNames(self, _graphene_info: ResolveInfo):
         return self._remote_job.node_names
+
+    def resolve_automationCondition(self, graphene_info: ResolveInfo):
+        if self._batch_loader:
+            repository = self._batch_loader.repository
+        else:
+            code_location = graphene_info.context.get_code_location(
+                self._remote_job.repository_handle.location_name
+            )
+            repository = code_location.get_repository(
+                self._remote_job.repository_handle.repository_name
+            )
+        if not repository.has_job(self._remote_job.name):
+            return None
+        job_entry = repository.get_job_map_entry(self._remote_job.name)
+        if isinstance(job_entry, JobRefSnap):
+            automation_condition = job_entry.automation_condition
+        else:
+            automation_condition = job_entry.job.automation_condition
+        if automation_condition is not None:
+            return GrapheneAutomationCondition(automation_condition.get_snapshot())
+        return None
 
     def resolve_presets(self, _graphene_info: ResolveInfo):
         return [

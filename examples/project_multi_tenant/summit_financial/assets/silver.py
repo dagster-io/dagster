@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import pandas as pd
 import dagster as dg
+import pandas as pd
 
 from shared.metadata import add_dataframe_preview_metadata
 

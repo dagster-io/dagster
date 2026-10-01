@@ -4,7 +4,6 @@ export enum FeatureFlag {
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagAssetGraphGroupsPerCodeLocation = 'flagAssetGraphGroupsPerCodeLocation',
   flagSkipOptionalResourceDefaultsInRunConfig = 'flagSkipOptionalResourceDefaultsInRunConfig',
-  flagComponentInstanceUI = 'flagComponentInstanceUI',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

@@ -22,6 +22,7 @@ import {
   AssetObservationFragment,
   AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {Timestamp} from '../app/time/Timestamp';
 import {
   HIDDEN_METADATA_ENTRY_LABELS,
@@ -38,9 +39,10 @@ import {
 } from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {shortenId} from '../util/shortenId';
 import {RepoAddress} from '../workspace/types';
 import styles from './css/AssetEventMetadataEntriesTable.module.css';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 
 type TableEvent = Pick<
   | AssetObservationFragment
@@ -93,6 +95,7 @@ export const AssetEventMetadataEntriesTable = ({
   renderMetadataKeyExtra,
   renderMetadataValueExtra,
 }: Props) => {
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState('');
   const [displayedCount, setDisplayedCount] = useState(displayedByDefault);
   const [view, setView] = useState<'table' | 'plots'>('table');
@@ -107,7 +110,7 @@ export const AssetEventMetadataEntriesTable = ({
     const eventRows = event
       ? event.metadataEntries.map((entry) => ({
           tooltip: `Materialized ${dayjs(Number(event.timestamp)).fromNow()}${
-            event.runId ? ` in run ${event.runId?.slice(0, 8)}` : ``
+            event.runId ? ` in run ${shortenId(event.runId)}` : ``
           }`,
           icon: 'materialization' as const,
           timestamp: event.timestamp,
@@ -119,7 +122,7 @@ export const AssetEventMetadataEntriesTable = ({
     const observationRows = (observations || []).flatMap((o) =>
       o.metadataEntries.map((entry) => ({
         tooltip: `Observed ${dayjs(Number(o.timestamp)).fromNow()}${
-          o.runId ? ` in run ${o.runId.slice(0, 8)}` : ``
+          o.runId ? ` in run ${shortenId(o.runId)}` : ``
         }`,
         icon: 'observation' as const,
         timestamp: o.timestamp,
@@ -160,21 +163,39 @@ export const AssetEventMetadataEntriesTable = ({
     return emptyState;
   }
 
+  const filterInputField = (
+    <TextInput
+      value={filter}
+      fill={isMobile}
+      style={{minWidth: isMobile ? 0 : 250}}
+      icon="search"
+      onChange={(e) => setFilter(e.target.value)}
+      placeholder="Filter metadata keys"
+    />
+  );
+
+  // The flex item is TextInput's own container, which keeps a min-content floor of its
+  // own; the wrapper is what lets the filter give up width to the Table/Plots toggle.
+  const filterInput = isMobile ? (
+    <div className={styles.filterInput}>{filterInputField}</div>
+  ) : (
+    filterInputField
+  );
+
   return (
     <>
       {showFilter && (
         <Box
           padding={{bottom: 12}}
-          flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+          flex={{
+            direction: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: isMobile ? 8 : 0,
+          }}
         >
           {view === 'table' ? (
-            <TextInput
-              value={filter}
-              style={{minWidth: 250}}
-              icon="search"
-              onChange={(e) => setFilter(e.target.value)}
-              placeholder="Filter metadata keys"
-            />
+            filterInput
           ) : assetHasDefinedPartitions ? (
             <ButtonGroup
               activeItems={new Set([plotView])}

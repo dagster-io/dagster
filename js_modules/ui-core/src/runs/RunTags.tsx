@@ -3,7 +3,7 @@ import {memo, useMemo} from 'react';
 import * as yaml from 'yaml';
 
 import {DagsterTag, RunTag, TagType} from './RunTag';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
 import {TagAction} from '../ui/TagActions';

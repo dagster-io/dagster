@@ -488,7 +488,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
+        """Returns the latest storage id per partition for the asset. If ``after_cursor`` is set,
+        partitions whose latest event id is not greater than it are omitted.
+        """
         pass
 
     @abstractmethod
@@ -587,6 +591,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
         """Get concurrency info for key."""
         raise NotImplementedError()
+
+    def get_concurrency_infos(
+        self, concurrency_keys: Sequence[str]
+    ) -> Mapping[str, ConcurrencyKeyInfo]:
+        """Get concurrency info for many keys. Storages override this to batch the reads."""
+        return {key: self.get_concurrency_info(key) for key in dict.fromkeys(concurrency_keys)}
 
     @abstractmethod
     def get_pool_limits(self) -> Sequence[PoolLimit]:

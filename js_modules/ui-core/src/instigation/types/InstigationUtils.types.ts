@@ -93,6 +93,7 @@ export type HistoryTickFragment = {
   instigationType: Types.InstigationType;
   skipReason: string | null;
   requestedAssetMaterializationCount: number;
+  requestedJobRunCount: number;
   runIds: Array<string>;
   originRunIds: Array<string>;
   logKey: Array<string> | null;
@@ -115,4 +116,16 @@ export type HistoryTickFragment = {
     skippedPartitionKeys: Array<string>;
     type: Types.DynamicPartitionsRequestType;
   }>;
+};
+
+export type TimelineTickFragment = {
+  __typename: 'InstigationTick';
+  id: string;
+  tickId: string;
+  status: Types.InstigationTickStatus;
+  timestamp: number;
+  endTimestamp: number | null;
+  instigationType: Types.InstigationType;
+  requestedAssetMaterializationCount: number;
+  runIds: Array<string>;
 };

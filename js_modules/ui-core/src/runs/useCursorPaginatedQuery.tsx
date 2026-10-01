@@ -1,6 +1,8 @@
 import {CursorPaginationProps} from '@dagster-io/ui-components';
 import {DocumentNode} from 'graphql';
+import {History} from 'history';
 import {useState} from 'react';
+import {useHistory} from 'react-router-dom';
 
 import {useQuery} from '../apollo-client';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -8,6 +10,50 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 interface CursorPaginationQueryVariables {
   cursor?: string | null;
   limit?: number | null;
+}
+
+type SavedCursorStack = {
+  cursor: string;
+  stack: string[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSavedCursorStack(value: unknown): value is SavedCursorStack {
+  return (
+    isRecord(value) &&
+    typeof value.cursor === 'string' &&
+    Array.isArray(value.stack) &&
+    value.stack.every((item) => typeof item === 'string')
+  );
+}
+
+function getSavedCursorStack(history: History, queryKey: string, cursor: string | undefined) {
+  const state = history.location.state;
+  const saved =
+    isRecord(state) && isRecord(state.cursorStacks) ? state.cursorStacks[queryKey] : null;
+
+  // Filter changes clear the cursor, so a matching cursor means the stack belongs to this query.
+  if (cursor !== undefined && isSavedCursorStack(saved) && saved.cursor === cursor) {
+    return saved.stack;
+  }
+
+  return [];
+}
+
+/**
+ * Saves the stack on the current history entry so Back and reload can restore previous pages.
+ * Passing `null` removes it. Other `location.state` fields are kept.
+ */
+function saveCursorStack(history: History, queryKey: string, saved: SavedCursorStack | null) {
+  const state = isRecord(history.location.state) ? history.location.state : {};
+  const {[queryKey]: _previous, ...otherStacks} = isRecord(state.cursorStacks)
+    ? state.cursorStacks
+    : {};
+  const cursorStacks = saved ? {...otherStacks, [queryKey]: saved} : otherStacks;
+  history.replace({...history.location, state: {...state, cursorStacks}});
 }
 
 /**
@@ -32,10 +78,12 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   nextCursorForResult: (result: T) => string | undefined;
   hasMoreForResult?: (result: T) => boolean;
 }) {
-  const [cursorStack, setCursorStack] = useState<string[]>(() => []);
-  const [cursor, setCursor] = useQueryPersistedState<string | undefined>({
-    queryKey: options.queryKey || 'cursor',
-  });
+  const queryKey = options.queryKey || 'cursor';
+  const history = useHistory();
+  const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey});
+  const [cursorStack, setCursorStack] = useState<string[]>(() =>
+    getSavedCursorStack(history, queryKey, cursor),
+  );
 
   // If you don't provide a hasMoreForResult function for extracting hasMore from
   // the response, we fall back to an old approach that fetched one extra item
@@ -68,22 +116,26 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
     hasNextCursor,
     popCursor: () => {
       const nextStack = [...cursorStack];
-      setCursor(nextStack.pop());
+      const prevCursor = nextStack.pop();
+      setCursor(prevCursor);
       setCursorStack(nextStack);
+      const saved = prevCursor ? {cursor: prevCursor, stack: nextStack} : null;
+      saveCursorStack(history, queryKey, saved);
     },
     advanceCursor: () => {
-      if (cursor) {
-        setCursorStack((current) => [...current, cursor]);
-      }
+      const nextStack = cursor ? [...cursorStack, cursor] : [];
       const nextCursor = queryResult.data && options.nextCursorForResult(queryResult.data);
       if (!nextCursor) {
         return;
       }
+      setCursorStack(nextStack);
       setCursor(nextCursor);
+      saveCursorStack(history, queryKey, {cursor: nextCursor, stack: nextStack});
     },
     reset: () => {
       setCursorStack([]);
       setCursor(undefined);
+      saveCursorStack(history, queryKey, null);
     },
   };
 

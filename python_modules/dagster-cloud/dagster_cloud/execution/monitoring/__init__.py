@@ -49,11 +49,17 @@ class ProcessResourceLimits(TypedDict):
     memory_limit: str | None
 
 
+class AcaContainerResourceLimits(TypedDict):
+    cpu_limit: str | None
+    memory_limit: str | None
+
+
 class CloudContainerResourceLimits(TypedDict):
     ecs: NotRequired[ECSContainerResourceLimits]
     k8s: NotRequired[K8sContainerResourceLimits]
     serverless: NotRequired[ServerlessContainerResourceLimits]
     process: NotRequired[ProcessResourceLimits]
+    aca: NotRequired[AcaContainerResourceLimits]
 
 
 class CloudCodeServerUtilizationMetrics(DagsterCodeServerUtilizationMetrics):

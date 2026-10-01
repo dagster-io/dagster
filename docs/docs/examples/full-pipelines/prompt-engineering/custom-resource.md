@@ -1,5 +1,5 @@
 ---
-title: Custom Resource
+title: Custom resource
 description: Creating a custom resource
 last_update:
   author: Dennis Hume

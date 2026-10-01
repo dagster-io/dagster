@@ -24,12 +24,14 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+
 def main():
     output_dir = Path("/tmp/data")
     output_dir.mkdir(exist_ok=True)
     data = {"extracted_at": datetime.now().isoformat(), "records": [1, 2, 3]}
     (output_dir / "data.json").write_text(json.dumps(data))
     print(f"Extracted {len(data['records'])} records")
+
 
 if __name__ == "__main__":
     main()

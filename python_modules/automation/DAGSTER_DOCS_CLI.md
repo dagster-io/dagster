@@ -142,7 +142,7 @@ dagster-docs watch docstrings --symbol dagster.asset --verbose
 
 ## Development Notes
 
-- All code changes must pass `make ruff` formatting and linting
+- All code changes must pass `just ruff` formatting and linting
 - Helper functions are designed to be unit testable
 - CLI follows Click framework conventions
 - Error messages use `click.echo(err=True)` for stderr output

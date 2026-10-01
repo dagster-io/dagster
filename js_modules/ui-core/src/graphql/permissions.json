@@ -18,5 +18,6 @@
   {"permission": "edit_dynamic_partitions"},
   {"permission": "toggle_auto_materialize"},
   {"permission": "edit_concurrency_limit"},
-  {"permission": "edit_app_managed_components"}
+  {"permission": "edit_app_managed_components"},
+  {"permission": "refresh_component_state"}
 ]

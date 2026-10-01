@@ -7,6 +7,7 @@ tags: [dagster-supported, bi, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau
 pypi: https://pypi.org/project/dagster-tableau
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/tableau.svg
 partnerlink: https://www.tableau.com/
 canonicalUrl: '/integrations/libraries/tableau'

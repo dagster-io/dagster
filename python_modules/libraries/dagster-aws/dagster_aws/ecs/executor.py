@@ -192,7 +192,7 @@ class EcsStepHandler(StepHandler):
         self._cluster_arn = current_task["clusterArn"]
         self._task_definition_arn = current_task["taskDefinitionArn"]
 
-        self._run_task_kwargs = {
+        self._run_task_kwargs: dict[str, Any] = {
             "taskDefinition": current_task["taskDefinitionArn"],
             **run_launcher_kwargs,
             **run_task_kwargs,

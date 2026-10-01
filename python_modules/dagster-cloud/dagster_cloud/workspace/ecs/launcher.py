@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 from collections.abc import Collection, Mapping, Sequence
 from typing import Any, cast
 
@@ -60,6 +61,13 @@ EcsServerHandleType = Service
 
 CONTAINER_NAME = "dagster"
 
+# Cross-account service discovery only (Client.uses_cross_account_service_discovery): how often
+# the agent checks that Cloud Map matches each code server's running ECS tasks. Configurable via
+# service_discovery_reconcile_interval.
+DEFAULT_SERVICE_DISCOVERY_RECONCILE_INTERVAL_SECONDS = 300
+# How long agent shutdown waits for an in-flight reconciliation pass before giving up on it.
+SERVICE_DISCOVERY_RECONCILE_SHUTDOWN_TIMEOUT_SECONDS = 30
+
 
 class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], ConfigurableClass):
     def __init__(
@@ -93,6 +101,7 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
         run_task_definition_prefix: str = "run",
         assign_public_ip: bool | None = None,
         service_discovery_role_arn: str | None = None,
+        service_discovery_reconcile_interval: int | None = None,
         repository_credentials: str | None = None,
         **kwargs,
     ):
@@ -101,6 +110,16 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
         self.service_discovery = boto3.client("servicediscovery")
         self.secrets_manager = boto3.client("secretsmanager")
         self.service_discovery_role_arn = service_discovery_role_arn
+        self.service_discovery_reconcile_interval_seconds = check.opt_int_param(
+            service_discovery_reconcile_interval,
+            "service_discovery_reconcile_interval",
+            DEFAULT_SERVICE_DISCOVERY_RECONCILE_INTERVAL_SECONDS,
+        )
+        check.invariant(
+            self.service_discovery_reconcile_interval_seconds > 0,
+            "service_discovery_reconcile_interval must be a positive number of seconds, got"
+            f" {self.service_discovery_reconcile_interval_seconds}",
+        )
 
         self.cluster = cluster
         self.subnets = subnets
@@ -195,6 +214,64 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
             service_discovery_role_arn=self.service_discovery_role_arn,
         )
         super().__init__(**kwargs)
+
+        self._service_discovery_reconcile_shutdown_event = threading.Event()
+        self._service_discovery_reconcile_thread: threading.Thread | None = None
+
+    def start(self, *args, **kwargs):
+        super().start(*args, **kwargs)
+
+        if self.client.uses_cross_account_service_discovery:
+            self._logger.info(
+                "Starting service discovery reconciliation thread (every"
+                f" {self.service_discovery_reconcile_interval_seconds}s)"
+            )
+            self._service_discovery_reconcile_thread = threading.Thread(
+                target=self._service_discovery_reconcile_thread_target,
+                args=(self._service_discovery_reconcile_shutdown_event,),
+                name="service-discovery-reconcile",
+                daemon=True,
+            )
+            self._service_discovery_reconcile_thread.start()
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        if self._service_discovery_reconcile_thread:
+            self._service_discovery_reconcile_shutdown_event.set()
+            self._service_discovery_reconcile_thread.join(
+                timeout=SERVICE_DISCOVERY_RECONCILE_SHUTDOWN_TIMEOUT_SECONDS
+            )
+            if self._service_discovery_reconcile_thread.is_alive():
+                self._logger.warning(
+                    "Service discovery reconciliation thread did not stop within"
+                    f" {SERVICE_DISCOVERY_RECONCILE_SHUTDOWN_TIMEOUT_SECONDS}s; continuing shutdown without it"
+                )
+        super().__exit__(exception_type, exception_value, traceback)
+
+    def _service_discovery_reconcile_thread_target(self, shutdown_event: threading.Event):
+        while True:
+            shutdown_event.wait(self.service_discovery_reconcile_interval_seconds)
+            if shutdown_event.is_set():
+                break
+
+            try:
+                self._reconcile_service_discovery()
+            except Exception:
+                self._logger.exception("Error while reconciling service discovery instances")
+
+    def _reconcile_service_discovery(self) -> None:
+        """Cross-account only: bring Cloud Map in line with the running tasks of every ECS service
+        this agent owns, standalone gRPC servers and multipex servers alike.
+        """
+        handles = self.client.list_services(
+            tags={"dagster/agent_id": self._instance.instance_uuid}, logger=self._logger
+        )
+        for handle in handles:
+            try:
+                self.client.reconcile_service_discovery_instances(handle, logger=self._logger)
+            except Exception:
+                self._logger.exception(
+                    f"Error while reconciling service discovery instances for {handle.name}"
+                )
 
     @property
     def show_debug_cluster_info(self) -> bool:
@@ -326,7 +403,21 @@ class EcsUserCodeLauncher(DagsterCloudUserCodeLauncher[EcsServerHandleType], Con
                         "API calls. Use this when the Cloud Map namespace lives in a different AWS account "
                         "than the ECS agent (e.g., centralized networking in AWS Organizations). The agent's "
                         "task role must have sts:AssumeRole permission for this role, and the target role "
-                        "must trust the agent's task role."
+                        "must trust the agent's task role. When the namespace is in another account "
+                        "the agent registers code server tasks in Cloud Map itself (ECS cannot), so "
+                        "the role also needs servicediscovery:RegisterInstance."
+                    ),
+                ),
+                "service_discovery_reconcile_interval": Field(
+                    IntSource,
+                    is_required=False,
+                    default_value=DEFAULT_SERVICE_DISCOVERY_RECONCILE_INTERVAL_SECONDS,
+                    description=(
+                        "How often, in seconds, the agent checks that AWS Cloud Map matches the running "
+                        "tasks of each code server. Only used when the namespace is in another account "
+                        "(see service_discovery_role_arn); there a task that ECS replaces stays "
+                        "unreachable in DNS until the next check. Lower values shorten that window at "
+                        "the cost of more ECS and Cloud Map API calls per code server."
                     ),
                 ),
             },

@@ -71,25 +71,29 @@ td_resource = TeradataResource(
     database=os.getenv("TERADATA_DATABASE"),
 )
 
+
 @op(required_resource_keys={"teradata"})
 def drop_existing_table(context):
-     context.resources.teradata.drop_table("people")
-     return "Tables Dropped"
+    context.resources.teradata.drop_table("people")
+    return "Tables Dropped"
+
 
 @op(required_resource_keys={"teradata", "s3"})
 def ingest_s3_to_teradata(context, status):
     if status == "Tables Dropped":
-        context.resources.teradata.s3_to_teradata(s3_resource, os.getenv("AWS_S3_LOCATION"), "people")
+        context.resources.teradata.s3_to_teradata(
+            s3_resource, os.getenv("AWS_S3_LOCATION"), "people"
+        )
     else:
         raise DagsterError("Tables not dropped")
 
+
 @job(resource_defs={"teradata": td_resource, "s3": s3_resource})
 def example_job():
-     ingest_s3_to_teradata(drop_existing_table())
+    ingest_s3_to_teradata(drop_existing_table())
 
-defs = Definitions(
-    jobs=[example_job]
-)
+
+defs = Definitions(jobs=[example_job])
 ```
 
 The `s3_to_teradata` method is used to load data from an S3 bucket into a Teradata table. It leverages Teradata Vantage Native Object Store (NOS), which allows direct querying and loading of external object store data (like AWS S3) into Teradata tables.
@@ -138,25 +142,32 @@ td_resource = TeradataResource(
     database=os.getenv("TERADATA_DATABASE"),
 )
 
+
 @op(required_resource_keys={"teradata"})
 def drop_existing_table(context):
-     context.resources.teradata.drop_table("people")
-     return "Tables Dropped"
+    context.resources.teradata.drop_table("people")
+    return "Tables Dropped"
+
 
 @op(required_resource_keys={"teradata", "azure"})
 def ingest_azure_to_teradata(context, status):
     if status == "Tables Dropped":
-        context.resources.teradata.azure_blob_to_teradata(azure_resource, "/az/akiaxox5jikeotfww4ul.blob.core.windows.net/td-usgs/CSVDATA/09380000/2018/06/", "people", True)
+        context.resources.teradata.azure_blob_to_teradata(
+            azure_resource,
+            "/az/akiaxox5jikeotfww4ul.blob.core.windows.net/td-usgs/CSVDATA/09380000/2018/06/",
+            "people",
+            True,
+        )
     else:
         raise DagsterError("Tables not dropped")
 
+
 @job(resource_defs={"teradata": td_resource, "azure": azure_resource})
 def example_job():
-     ingest_azure_to_teradata(drop_existing_table())
+    ingest_azure_to_teradata(drop_existing_table())
 
-defs = Definitions(
-    jobs=[example_job]
-)
+
+defs = Definitions(jobs=[example_job])
 ```
 
 The `azure_blob_to_teradata` method is used to load data from Azure Data Lake Storage (ADLS) into a Teradata table. This method leverages Teradata Vantage Native Object Store (NOS) to directly query and load external object store data (such as Azure Blob Storage) into Teradata.
@@ -216,6 +227,7 @@ from .assets import jaffle_shop_dbt_assets
 from .project import jaffle_shop_project
 from .schedules import schedules
 
+
 @op(required_resource_keys={"teradata"})
 def create_compute_cluster(context):
     context.resources.teradata.create_teradata_compute_cluster(
@@ -227,18 +239,18 @@ def create_compute_cluster(context):
     )
     return "Compute Cluster Created"
 
+
 @op(required_resource_keys={"teradata", "dbt"})
 def run_dbt(context, status):
     if status == "Compute Cluster Created":
         materialize(
             [jaffle_shop_dbt_assets],
-            resources={
-                "dbt": DbtCliResource(project_dir=jaffle_shop_project)
-            }
+            resources={"dbt": DbtCliResource(project_dir=jaffle_shop_project)},
         )
         return "DBT Run Completed"
     else:
         raise DagsterError("DBT Run Failed")
+
 
 @op(required_resource_keys={"teradata"})
 def drop_compute_cluster(context, status):
@@ -247,9 +259,11 @@ def drop_compute_cluster(context, status):
     else:
         raise DagsterError("DBT Run Failed")
 
+
 @job(resource_defs={"teradata": teradata_resource, "dbt": DbtCliResource})
 def example_job():
     drop_compute_cluster(run_dbt(create_compute_cluster()))
+
 
 defs = Definitions(
     assets=[jaffle_shop_dbt_assets],
@@ -384,7 +398,7 @@ output = bteq_operator(
     file_path="script.sql",
     remote_host="example.com",
     remote_user="user",
-    ssh_key_path="/path/to/key.pem"
+    ssh_key_path="/path/to/key.pem",
 )
 ```
 
@@ -453,7 +467,7 @@ This could be:
 return_code = ddl_operator(
     ddl=[
         "CREATE TABLE employees (id INT, name VARCHAR(100));",
-        "CREATE INDEX idx_name ON employees(name);"
+        "CREATE INDEX idx_name ON employees(name);",
     ]
 )
 ```
@@ -466,7 +480,7 @@ return_code = ddl_operator(
     remote_host="td-server.example.com",
     remote_user="td_admin",
     ssh_key_path="/home/td_admin/.ssh/id_rsa",
-    ddl_job_name="drop_sales_table"
+    ddl_job_name="drop_sales_table",
 )
 ```
 
@@ -479,7 +493,7 @@ return_code = ddl_operator(
     remote_user="teradata",
     remote_password="password123",
     error_list=[3807],  # Ignore 'database already exists' error
-    ddl_job_name="create_reporting_db"
+    ddl_job_name="create_reporting_db",
 )
 ```
 
@@ -489,12 +503,13 @@ return_code = ddl_operator(
 from dagster import asset
 from dagster_teradata import DdlOperator
 
+
 @asset
 def create_tables(context):
     context.resources.teradata.ddl_operator(
         ddl=[
             "CREATE TABLE sales (id INTEGER, amount DECIMAL(10,2));",
-            "CREATE TABLE customers (cust_id INTEGER, name VARCHAR(100));"
+            "CREATE TABLE customers (cust_id INTEGER, name VARCHAR(100));",
         ]
     )
 ```
@@ -580,7 +595,7 @@ def file_to_table_load(context):
         source_file_name="/data/customers.csv",
         target_table="customers",
         source_format="Delimited",
-        source_text_delimiter="|"
+        source_text_delimiter="|",
     )
 ```
 
@@ -595,7 +610,7 @@ def table_to_file_export(context):
         source_table="sales",
         target_file_name="/data/sales_export.csv",
         target_format="Delimited",
-        target_text_delimiter=","
+        target_text_delimiter=",",
     )
 ```
 
@@ -609,7 +624,7 @@ def table_to_table_transfer(context):
     context.resources.teradata.tdload_operator(
         source_table="staging_sales",
         target_table="prod_sales",
-        insert_stmt="INSERT INTO prod_sales SELECT * FROM staging_sales WHERE amount > 1000"
+        insert_stmt="INSERT INTO prod_sales SELECT * FROM staging_sales WHERE amount > 1000",
     )
 ```
 
@@ -622,7 +637,7 @@ Export data using a custom SQL query.
 def custom_export(context):
     context.resources.teradata.tdload_operator(
         select_stmt="SELECT customer_id, SUM(amount) FROM sales GROUP BY customer_id",
-        target_file_name="/data/customer_totals.csv"
+        target_file_name="/data/customer_totals.csv",
     )
 ```
 
@@ -632,8 +647,7 @@ def custom_export(context):
 @asset
 def use_job_var_file(context):
     context.resources.teradata.tdload_operator(
-        tdload_job_var_file="/config/load_job_vars.txt",
-        tdload_options="-j my_load_job"
+        tdload_job_var_file="/config/load_job_vars.txt", tdload_options="-j my_load_job"
     )
 ```
 
@@ -648,7 +662,7 @@ def remote_tpt_operation(context):
         remote_host="td-prod.company.com",
         remote_user="tdadmin",
         ssh_key_path="/home/user/.ssh/td_key",
-        remote_working_dir="/tmp/tpt_work"
+        remote_working_dir="/tmp/tpt_work",
     )
 ```
 
@@ -661,7 +675,7 @@ def custom_tpt_options(context):
         source_table="large_table",
         target_file_name="/data/export.csv",
         tdload_options="-f CSV -m 4 -s ,",  # Format: CSV, 4 streams, comma separator
-        tdload_job_name="custom_export_job"
+        tdload_job_name="custom_export_job",
     )
 ```
 

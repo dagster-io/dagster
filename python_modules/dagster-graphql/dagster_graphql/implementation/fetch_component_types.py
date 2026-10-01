@@ -77,6 +77,7 @@ def _to_component_type_info(
         description=component_json.get("description"),
         owners=component_json.get("owners"),
         tags=component_json.get("tags"),
+        produces=component_json.get("produces"),
         isAppManaged=_is_app_managed(schema),
     )
 

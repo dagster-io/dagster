@@ -129,7 +129,7 @@ After analysis, the command prepares you to:
 
 1. Create a new branch: `git checkout -b fix-issue-12345`
 2. Implement the solution following the todo list
-3. Run `make ruff` after all Python changes (mandatory)
+3. Run `just ruff` after all Python changes (mandatory)
 4. Run tests: `pytest path/to/tests`
 5. Create PR linking the issue
 

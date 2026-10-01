@@ -108,6 +108,7 @@ export const config: VercelConfig = {
       '/examples/ge_example',
       'https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations',
     ),
+    routes.redirect('/guides/labs/dagster-mcp', '/getting-started/ai-tools/dagster-mcp'),
     routes.redirect('/changelog', '/about/changelog', {
       has: [
         {

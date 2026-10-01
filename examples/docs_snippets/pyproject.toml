@@ -41,8 +41,8 @@ full = [
     "slack_sdk",
     "syrupy",
     "xgboost",
-    "apache-airflow<3.0.0; python_version < '3.12'",
-    "apache-airflow>=3.2; python_version >= '3.12'",
+    "apache-airflow<3.0.0; python_version < '3.13'",
+    "apache-airflow>=3.2; python_version >= '3.13'",
     "pytest-httpserver",
 ]
 
@@ -130,6 +130,9 @@ test-docs-snapshot = [
     "selenium",
     "typer==0.16.0",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster = { path = "../../python_modules/dagster", editable = true }

@@ -22,13 +22,9 @@ ENV chocolateyUseWindowsCompression false
 RUN iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')); \
     choco feature disable --name showDownloadProgress
 
-# # Install gnuwin32-coreutils for make
-# RUN choco install -y gnuwin32-coreutils.install
-RUN choco install -y make
-
 RUN git clone https://github.com/dagster-io/dagster.git; \
     cd dagster; \
-    make install_dev_python_modules
+    python scripts/install_dev_python_modules.py -q
 
 RUN pip freeze --exclude-editable | Out-File -FilePath C:\snapshot-reqs.txt
 

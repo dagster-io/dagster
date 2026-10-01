@@ -101,6 +101,15 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 | Observations     | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                        |
 | Step failures    | The number of times steps failed when computing this object. Steps that retry and succeed aren't included in this metric.                                                                                                                   |
 | Run concurrency  | Number of runs executing concurrently in this deployment. Each chart bucket shows the peak (maximum) concurrent count within that time window.                                                                                              |
+| Runs in progress | Number of in-progress runs (launching or executing) occupying run slots in this deployment.                                                                                                                                                 |
+| Runs queued      | Number of runs waiting in the queue in this deployment. Runs queue when the deployment is at its `max_concurrent_runs` limit or blocked by concurrency rules.                                                                               |
+| Run queue time   | Time from when a run is enqueued to when it starts executing. Helps understand queue capacity and wait times.                                                                                                                               |
+
+:::note
+
+Capacity metrics like runs queued, runs in progress, and run queue time are best viewed with the **Max** aggregation, which shows the peak value within each time window.
+
+:::
 
 ## Track cost metrics for external services \{#track-cost-metrics}
 

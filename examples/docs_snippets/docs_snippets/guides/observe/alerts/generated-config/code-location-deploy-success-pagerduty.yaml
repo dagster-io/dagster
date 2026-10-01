@@ -1,0 +1,10 @@
+# alert_policies.yaml
+
+alert_policies:
+- description: Sends a PagerDuty alert when a code location is successfully deployed.
+  event_types:
+  - CODE_LOCATION_DEPLOY_SUCCESS
+  name: code-location-deploy-success-pagerduty
+  notification_service:
+    pagerduty:
+      integration_key: <pagerduty_integration_key>

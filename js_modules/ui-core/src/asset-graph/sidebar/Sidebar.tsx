@@ -12,10 +12,15 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
 import {AssetSidebarNode} from './AssetSidebarNode';
-import {FolderNodeType, getDisplayName, nodePathKey} from './util';
+import {buildSidebarSearchValues} from './searchValues';
+import {
+  SIDEBAR_COLLATOR as COLLATOR,
+  FolderNodeType,
+  compareAssetNodesByDisplayName,
+  nodePathKey,
+} from './util';
 import {LayoutContext} from '../../app/LayoutProvider';
 import {useFeatureFlags} from '../../app/useFeatureFlags';
-import {AssetKey} from '../../assets/types';
 import {useQueryAndLocalStoragePersistedState} from '../../hooks/useQueryAndLocalStoragePersistedState';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {invariant} from '../../util/invariant';
@@ -32,8 +37,6 @@ import {
 } from '../Utils';
 import {SearchFilter} from '../sidebar/SearchFilter';
 
-const COLLATOR = new Intl.Collator(navigator.language, {sensitivity: 'base', numeric: true});
-
 export const AssetGraphExplorerSidebar = React.memo(
   ({
     assetGraphData,
@@ -42,7 +45,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     selectNode: _selectNode,
     explorerPath,
     onChangeExplorerPath,
-    allAssetKeys,
     hideSidebar,
     viewType,
     onFilterToGroup,
@@ -54,7 +56,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-    allAssetKeys: AssetKey[];
     hideSidebar: () => void;
     viewType: AssetGraphViewType;
     onFilterToGroup: (group: AssetGroup) => void;
@@ -125,27 +126,6 @@ export const AssetGraphExplorerSidebar = React.memo(
     const [selectedNode, setSelectedNode] = React.useState<
       null | {id: string; path: string} | {id: string}
     >(null);
-
-    const rootNodes = React.useMemo(
-      () =>
-        Object.keys(graphData.nodes)
-          .filter(
-            (id) =>
-              // When we filter to a subgraph, the nodes at the root aren't real roots, but since
-              // their upstream graph is cutoff we want to show them as roots in the sidebar.
-              // Find these nodes by filtering on whether there parent nodes are in assetGraphData
-              !Object.keys(graphData.upstream[id] ?? {}).filter((id) => graphData.nodes[id]).length,
-          )
-          .sort((a, b) =>
-            COLLATOR.compare(
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              getDisplayName(graphData.nodes[a]!),
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              getDisplayName(graphData.nodes[b]!),
-            ),
-          ),
-      [graphData],
-    );
 
     const renderedNodes = React.useMemo(() => {
       return flagAssetGraphGroupsPerCodeLocation
@@ -236,11 +216,11 @@ export const AssetGraphExplorerSidebar = React.memo(
           behavior: 'smooth',
         });
       }
-      // Only scroll if the rootNodes changes or the selected node changes
+      // Only scroll if the graph data changes or the selected node changes
       // otherwise opening/closing nodes will cause us to scroll again because the index changes
       // if we toggle a node above the selected node
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedNode, rootNodes, rowVirtualizer]);
+    }, [selectedNode, graphData, rowVirtualizer]);
 
     return (
       <div style={{display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)', height: '100%'}}>
@@ -254,13 +234,12 @@ export const AssetGraphExplorerSidebar = React.memo(
           }}
         >
           <SearchFilter
-            values={React.useMemo(() => {
-              return allAssetKeys.map((key) => ({
-                value: JSON.stringify(key.path),
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                label: key.path[key.path.length - 1]!,
-              }));
-            }, [allAssetKeys])}
+            // Scoped to the assets the sidebar tree is built from, so a result
+            // is always a row the user can actually be taken to.
+            values={React.useMemo(
+              () => buildSidebarSearchValues(graphData.nodes),
+              [graphData.nodes],
+            )}
             onSelectValue={selectNode}
           />
           <Tooltip content="Hide sidebar">
@@ -435,6 +414,8 @@ function flattenGroupTree(
   pathPrefix: string[],
   out: FolderNodeType[],
 ) {
+  // `segment` is the leaf name AssetSidebarNode renders for a group row, so
+  // sorting on it orders the folders by the label the user actually sees.
   const sorted = Array.from(roots.values()).sort((a, b) => COLLATOR.compare(a.segment, b.segment));
   for (const node of sorted) {
     out.push({
@@ -457,20 +438,18 @@ function flattenGroupTree(
     // Only emit direct asset rows so each asset appears exactly once in the
     // tree (otherwise an ancestor with rolled-up assets would duplicate every
     // descendant asset at its own level).
-    [...node.directAssets]
-      .sort((a, b) => COLLATOR.compare(a.id, b.id))
-      .forEach((assetNode) => {
-        out.push({
-          id: assetNode.id,
-          path: [...pathPrefix, node.segment, tokenForAssetKey(assetNode.assetKey)].join(':'),
-          level: assetLevel,
-        });
+    [...node.directAssets].sort(compareAssetNodesByDisplayName).forEach((assetNode) => {
+      out.push({
+        id: assetNode.id,
+        path: [...pathPrefix, node.segment, tokenForAssetKey(assetNode.assetKey)].join(':'),
+        level: assetLevel,
       });
+    });
     flattenGroupTree(node.children, openNodes, assetLevel, [...pathPrefix, node.segment], out);
   }
 }
 
-function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Set<string>) {
+export function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Set<string>) {
   const leafGroups: Record<string, {groupName: string; assets: GraphNode[]}> = {};
 
   Object.values(nodes).forEach((node) => {
@@ -487,15 +466,13 @@ function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Se
   if (!renderGroupsLayer) {
     const out: FolderNodeType[] = [];
     Object.entries(leafGroups).forEach(([_id, group]) => {
-      [...group.assets]
-        .sort((a, b) => COLLATOR.compare(a.id, b.id))
-        .forEach((assetNode) => {
-          out.push({
-            id: assetNode.id,
-            path: [group.groupName, tokenForAssetKey(assetNode.assetKey)].join(':'),
-            level: 1,
-          });
+      [...group.assets].sort(compareAssetNodesByDisplayName).forEach((assetNode) => {
+        out.push({
+          id: assetNode.id,
+          path: [group.groupName, tokenForAssetKey(assetNode.assetKey)].join(':'),
+          level: 1,
         });
+      });
     });
     return out;
   }
@@ -510,7 +487,7 @@ function buildRenderedNodes(nodes: {[assetId: string]: GraphNode}, openNodes: Se
   return folderNodes;
 }
 
-function buildRenderedNodesWithCodeLocations(
+export function buildRenderedNodesWithCodeLocations(
   nodes: {[assetId: string]: GraphNode},
   openNodes: Set<string>,
 ) {

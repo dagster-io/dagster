@@ -1,3 +1,4 @@
+import logging
 import uuid
 from unittest.mock import MagicMock
 
@@ -6,7 +7,6 @@ import responses
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
-from dagster_shared.check import CheckError
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
@@ -79,6 +79,7 @@ def test_invalid_workbook(
     get_workbooks: MagicMock,
     get_workbook: MagicMock,
     workbook_id: str,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
@@ -97,14 +98,16 @@ def test_invalid_workbook(
     resource = clazz(**resource_args)
     resource.build_client()
 
-    # Test invalid workbook
+    # An invalid workbook response must not bring down the entire workspace load: it should be
+    # skipped with a warning rather than raising and failing the whole code location.
     # Clear side_effect first so return_value takes precedence
     get_workbook.side_effect = None
     get_workbook.return_value = {"data": {"workbooks": None}}
-    with pytest.raises(
-        CheckError, match=f"Invalid data for Tableau workbook for id {workbook_id}."
-    ):
-        resource.get_or_fetch_workspace_data()
+    with caplog.at_level(logging.WARNING):
+        workspace_data = resource.get_or_fetch_workspace_data()
+
+    assert workbook_id not in workspace_data.workbooks_by_id
+    assert "Skipping" in caplog.text
 
 
 @responses.activate

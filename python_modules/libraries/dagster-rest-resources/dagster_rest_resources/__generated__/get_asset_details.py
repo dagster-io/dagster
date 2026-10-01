@@ -6,6 +6,7 @@ from typing import Annotated, Literal, Optional, Union
 from pydantic import Field
 
 from .base_model import BaseModel
+from .enums import AssetHealthStatus
 
 
 class GetAssetDetails(BaseModel):
@@ -23,6 +24,15 @@ class GetAssetDetailsAssetsOrErrorAssetConnection(BaseModel):
 class GetAssetDetailsAssetsOrErrorAssetConnectionNodes(BaseModel):
     id: str
     key: "GetAssetDetailsAssetsOrErrorAssetConnectionNodesKey"
+    latest_materialization_timestamp: Optional[float] = Field(
+        alias="latestMaterializationTimestamp"
+    )
+    latest_failed_to_materialize_timestamp: Optional[float] = Field(
+        alias="latestFailedToMaterializeTimestamp"
+    )
+    asset_health: Optional[
+        "GetAssetDetailsAssetsOrErrorAssetConnectionNodesAssetHealth"
+    ] = Field(alias="assetHealth")
     definition: Optional["GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinition"]
 
 
@@ -30,10 +40,21 @@ class GetAssetDetailsAssetsOrErrorAssetConnectionNodesKey(BaseModel):
     path: list[str]
 
 
+class GetAssetDetailsAssetsOrErrorAssetConnectionNodesAssetHealth(BaseModel):
+    asset_health: AssetHealthStatus = Field(alias="assetHealth")
+    materialization_status: AssetHealthStatus = Field(alias="materializationStatus")
+    asset_checks_status: AssetHealthStatus = Field(alias="assetChecksStatus")
+    freshness_status: AssetHealthStatus = Field(alias="freshnessStatus")
+
+
 class GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinition(BaseModel):
     description: Optional[str]
     group_name: str = Field(alias="groupName")
+    compute_kind: Optional[str] = Field(alias="computeKind")
     kinds: list[str]
+    freshness_policy: Optional[
+        "GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionFreshnessPolicy"
+    ] = Field(alias="freshnessPolicy")
     dependency_keys: list[
         "GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionDependencyKeys"
     ] = Field(alias="dependencyKeys")
@@ -80,6 +101,13 @@ class GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinition(BaseModel):
         "GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionBackfillPolicy"
     ] = Field(alias="backfillPolicy")
     job_names: list[str] = Field(alias="jobNames")
+
+
+class GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionFreshnessPolicy(
+    BaseModel
+):
+    maximum_lag_minutes: float = Field(alias="maximumLagMinutes")
+    cron_schedule: Optional[str] = Field(alias="cronSchedule")
 
 
 class GetAssetDetailsAssetsOrErrorAssetConnectionNodesDefinitionDependencyKeys(

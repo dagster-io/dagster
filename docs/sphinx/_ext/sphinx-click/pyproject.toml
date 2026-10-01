@@ -45,6 +45,7 @@ test-click8-async = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-click8"}, {group = "test-click8-async"}],
 ]

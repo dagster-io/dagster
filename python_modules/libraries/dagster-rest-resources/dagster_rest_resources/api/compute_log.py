@@ -12,7 +12,7 @@ from dagster_rest_resources.schemas.compute_log import (
     DgApiStepComputeLog,
     DgApiStepComputeLogLink,
 )
-from dagster_rest_resources.schemas.exception import DagsterPlusGraphqlError
+from dagster_rest_resources.schemas.exception import DagsterPlusClientError, DagsterPlusServerError
 
 _MAX_PAGES = 100
 
@@ -126,9 +126,9 @@ class DgApiComputeLogApi:
                     after_cursor = new_cursor
 
                 case "RunNotFoundError":
-                    raise DagsterPlusGraphqlError(f"Error fetching logs for run: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusClientError(f"Error fetching logs for run: {result.message}")  # ty: ignore[unresolved-attribute]
                 case "PythonError":
-                    raise DagsterPlusGraphqlError(f"Error fetching logs for run: {result.message}")  # ty: ignore[unresolved-attribute]
+                    raise DagsterPlusServerError(f"Error fetching logs for run: {result.message}")  # ty: ignore[unresolved-attribute]
                 case _ as unreachable:
                     assert_never(unreachable)
 

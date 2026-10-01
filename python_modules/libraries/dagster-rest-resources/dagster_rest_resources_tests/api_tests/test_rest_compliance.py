@@ -16,6 +16,7 @@ from dagster_rest_resources.api.compute_log import DgApiComputeLogApi
 from dagster_rest_resources.api.deployment import DgApiDeploymentApi
 from dagster_rest_resources.api.issue import DgApiIssueApi
 from dagster_rest_resources.api.job import DgApiJobApi
+from dagster_rest_resources.api.metrics import DgApiMetricsApi
 from dagster_rest_resources.api.organization import DgApiOrganizationApi
 from dagster_rest_resources.api.run import DgApiRunApi
 from dagster_rest_resources.api.run_event import DgApiRunEventApi
@@ -36,6 +37,7 @@ ALL_API_CLASSES = [
     DgApiDeploymentApi,
     DgApiIssueApi,
     DgApiJobApi,
+    DgApiMetricsApi,
     DgApiOrganizationApi,
     DgApiRunEventApi,
     DgApiRunApi,

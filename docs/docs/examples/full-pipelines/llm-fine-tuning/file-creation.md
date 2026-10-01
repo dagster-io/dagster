@@ -1,6 +1,6 @@
 ---
 title: File creation
-description: File Creation and File Validation
+description: File creation and file validation
 last_update:
   author: Dennis Hume
 sidebar_position: 40

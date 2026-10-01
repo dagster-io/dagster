@@ -16,6 +16,13 @@
   min-height: 30px;
 }
 
+/* The list is allowed to shrink to the container so its items truncate rather than
+   overflow: once collapsed, or with two items or fewer where there is nothing to
+   collapse. The measuring path above needs max-content and runs in neither case. */
+.breadcrumbsFit {
+  max-width: 100%;
+}
+
 .breadcrumbItem {
   display: flex;
   align-items: center;

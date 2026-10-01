@@ -47,7 +47,7 @@ def validate_column(column: Column):
             "Use MySQLCompatibilityTypes.UniqueText or a fixed-length db.String(123) instead."
         )
     elif (
-        column.server_default
+        isinstance(column.server_default, db.DefaultClause)
         and isinstance(column.server_default.arg, db_sql_elements.TextClause)
         and str(column.server_default.arg) == "CURRENT_TIMESTAMP"
     ):

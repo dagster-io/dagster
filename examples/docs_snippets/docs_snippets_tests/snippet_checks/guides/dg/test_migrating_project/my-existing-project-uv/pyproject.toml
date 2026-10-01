@@ -16,3 +16,6 @@ dev = [
 [build-system]
 requires = ["hatchling>=1.19.0"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+exclude-newer = "48h"

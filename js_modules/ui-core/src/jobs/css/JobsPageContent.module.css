@@ -1,0 +1,4 @@
+/* Horizontal padding follows the page gutter (16px in the mobile layout). */
+.filterRow {
+  padding: 12px var(--page-gutter, 24px);
+}

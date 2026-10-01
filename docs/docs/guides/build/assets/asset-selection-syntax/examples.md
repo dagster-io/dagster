@@ -52,7 +52,8 @@ Selects all assets on the paths between the `raw_data_a` or `raw_data_b` assets 
     <TabItem value="python" label="Python">
     ```python
     assets_on_path_job = define_asset_job(
-        name="assets_on_path_job", selection='(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")'
+        name="assets_on_path_job",
+        selection='(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")',
     )
     ```
     </TabItem>
@@ -106,7 +107,8 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
     <TabItem value="python" label="Python">
     ```python
     sensitive_to_public_asset_job = define_asset_job(
-        name="sensitive_to_public_asset_job", selection='group:"sensitive_data"+ and +group:"public_data"'
+        name="sensitive_to_public_asset_job",
+        selection='group:"sensitive_data"+ and +group:"public_data"',
     )
     ```
     </TabItem>
@@ -133,7 +135,8 @@ Selects all assets on the path between the `raw_data_c` asset and `summary_stats
     <TabItem value="python" label="Python">
     ```python
     middle_asset_job = define_asset_job(
-        name="middle_asset_job", selection='key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
+        name="middle_asset_job",
+        selection='key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"',
     )
     ```
     </TabItem>
@@ -250,7 +253,8 @@ Selects all assets owned by `nora.dagster@example.com` **excluding** any assets 
     <TabItem value="python" label="Python">
     ```python
     data_eng_not_private_job = define_asset_job(
-        name="data_eng_not_private_job", selection='owner:"nora.dagster@example.com" and not tag:"customer_data"'
+        name="data_eng_not_private_job",
+        selection='owner:"nora.dagster@example.com" and not tag:"customer_data"',
     )
     ```
     </TabItem>
@@ -279,7 +283,8 @@ Selects assets that are either owned by the sales team and of kind `csv`, **or**
     <TabItem value="python" label="Python">
     ```python
     sales_csv_public_job = define_asset_job(
-        name="sales_csv_public_job", selection='(owner:"team:sales" and kind:"csv") or group:"public_data"'
+        name="sales_csv_public_job",
+        selection='(owner:"team:sales" and kind:"csv") or group:"public_data"',
     )
     ```
     </TabItem>

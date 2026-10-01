@@ -9,7 +9,7 @@ import dagster_shared.seven as seven
 from dagster_shared.cli import python_pointer_options
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
-from dagster._cli.utils import assert_no_remaining_opts
+from dagster._cli.utils import assert_no_remaining_opts, resolve_serialized_defs_state_info
 from dagster._cli.workspace.cli_target import PythonPointerOpts
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -257,6 +257,8 @@ def start_command(
 
     logger.info("Starting %s", server_desc)
 
+    resolved_defs_state_info = resolve_serialized_defs_state_info(defs_state_info, logger)
+
     server_termination_event = threading.Event()
 
     threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
@@ -277,8 +279,8 @@ def start_command(
         server_heartbeat=heartbeat,
         server_heartbeat_timeout=heartbeat_timeout,
         heartbeat_ttl=heartbeat_ttl,
-        defs_state_info=deserialize_value(defs_state_info, DefsStateInfo)
-        if defs_state_info
+        defs_state_info=deserialize_value(resolved_defs_state_info, DefsStateInfo)
+        if resolved_defs_state_info
         else None,
     )
     server = DagsterGrpcServer(

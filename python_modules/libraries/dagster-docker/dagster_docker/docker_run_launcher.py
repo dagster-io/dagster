@@ -105,7 +105,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         client = self._get_client(container_context)
 
-        container_kwargs = {**container_context.container_kwargs}
+        container_kwargs: dict[str, Any] = {**container_context.container_kwargs}
         labels = container_kwargs.pop("labels", {})
 
         container_kwargs.pop("stop_timeout", None)

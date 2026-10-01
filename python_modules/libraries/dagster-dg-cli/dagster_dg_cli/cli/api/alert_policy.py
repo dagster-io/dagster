@@ -69,7 +69,7 @@ def list_alert_policies_command(
     api = DgApiAlertPolicyApi(client)
 
     with handle_api_errors(ctx, output_json):
-        policies = api.list_alert_policies()
+        policies = api.list_alert_policies_as_document()
         output = format_alert_policies(policies, as_json=output_json)
         click.echo(output)
 

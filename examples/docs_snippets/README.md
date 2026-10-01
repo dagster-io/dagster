@@ -12,6 +12,7 @@ Please use the following code style to keep imports short:
 ```python
 import dagster as dg
 
+
 @dg.asset
 def my_cool_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult:
     return dg.MaterializeResult(
@@ -27,7 +28,7 @@ Snippet tests live in `docs_snippets_tests`.
 
 ### Prerequisites
 
-Before running tests, you will need to create a virtual environment and run `make dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
+Before running tests, you will need to create a virtual environment and run `just dev_install` in the root folder of the Dagster repo, then set the `DAGSTER_GIT_REPO_DIR` environment variable.
 
 ### Test all code loads into Python
 

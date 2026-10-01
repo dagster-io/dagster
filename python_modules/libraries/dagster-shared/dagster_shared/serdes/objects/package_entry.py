@@ -2,11 +2,29 @@ import json
 import textwrap
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from enum import Enum
 from itertools import groupby
 from typing import Any, Literal, TypeAlias, TypedDict, overload
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
+
+
+class ComponentProducesKind(str, Enum):
+    """The kinds of Dagster primitives a component can declare it produces.
+
+    Single source of truth for the allowable values of ``produces`` on
+    ``ComponentTypeSpec`` and ``EnvRegistryObjectSnap`` — ``ComponentTypeSpec``
+    validates authored values against it. Stored on the wire as plain strings
+    (the enum's values), so it is not itself serialized.
+    """
+
+    ASSET = "asset"
+    ASSET_CHECK = "asset_check"
+    SCHEDULE = "schedule"
+    SENSOR = "sensor"
+    JOB = "job"
+    RESOURCE = "resource"
 
 
 def _generate_invalid_component_typename_error_message(typename: str) -> str:
@@ -98,6 +116,12 @@ class EnvRegistryObjectSnap:
     owners: Sequence[str] | None
     tags: Sequence[str] | None
     feature_data: Sequence[EnvRegistryObjectFeatureData]
+    # Kinds of Dagster primitives the component creates, constrained to the
+    # ``ComponentProducesKind`` vocabulary (validated where authors declare it,
+    # on ``ComponentTypeSpec``). Held as plain strings to keep the serialized
+    # form stable; defaulted so snaps serialized before this field deserialize
+    # cleanly.
+    produces: Sequence[str] | None = None
 
     @property
     def features(self) -> Sequence[EnvRegistryObjectFeature]:
@@ -176,6 +200,7 @@ class ComponentTypeJson(TypedDict):
     example: str
     schema: str
     description: str | None
+    produces: Sequence[str] | None
 
 
 class ComponentTypeNamespaceJson(TypedDict):
@@ -225,4 +250,5 @@ def json_for_component_type(
         example=sample_yaml,
         schema=json.dumps(component_type_data.schema, sort_keys=True),
         description=entry.description,
+        produces=entry.produces,
     )

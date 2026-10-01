@@ -3,18 +3,18 @@
     "__typename": "AssetConnection",
     "nodes": [
       {
-        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
-        "key": {
-          "path": [
-            "aws",
-            "cloud-prod",
-            "workspace_staging_assets"
-          ]
+        "assetHealth": {
+          "assetChecksStatus": "HEALTHY",
+          "assetHealth": "HEALTHY",
+          "freshnessStatus": "HEALTHY",
+          "materializationStatus": "HEALTHY"
         },
         "definition": {
-          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
-          "groupName": "aws_stages",
-          "kinds": [],
+          "automationCondition": null,
+          "backfillPolicy": null,
+          "computeKind": null,
+          "dependedByKeys": [],
+          "dependencies": [],
           "dependencyKeys": [
             {
               "path": [
@@ -24,16 +24,26 @@
               ]
             }
           ],
+          "description": "Snowflake stages for AWS data, creates new stages for new assets, refreses existing stages.",
+          "freshnessPolicy": null,
+          "groupName": "aws_stages",
+          "jobNames": [],
+          "kinds": [],
           "metadataEntries": [],
-          "automationCondition": null,
-          "partitionDefinition": null,
-          "dependencies": [],
-          "dependedByKeys": [],
           "owners": [],
-          "tags": [],
-          "backfillPolicy": null,
-          "jobNames": []
-        }
+          "partitionDefinition": null,
+          "tags": []
+        },
+        "id": "dagster_open_platform.__repository__.[\"aws\", \"cloud-prod\", \"workspace_staging_assets\"]",
+        "key": {
+          "path": [
+            "aws",
+            "cloud-prod",
+            "workspace_staging_assets"
+          ]
+        },
+        "latestFailedToMaterializeTimestamp": null,
+        "latestMaterializationTimestamp": null
       }
     ]
   }

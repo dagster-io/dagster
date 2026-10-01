@@ -119,6 +119,7 @@ Quick reference for Python packages in the Dagster repository.
 **dagster-datahub**: `python_modules/libraries/dagster-datahub`
 **dagster-github**: `python_modules/libraries/dagster-github`
 **dagster-hightouch**: `python_modules/libraries/dagster-hightouch`
+**dagster-prefect**: `python_modules/libraries/dagster-prefect`
 **dagster-managed-elements**: `python_modules/libraries/dagster-managed-elements`
 **dagster-rest-resources**: `python_modules/libraries/dagster-rest-resources`
 **dagster-shared**: `python_modules/libraries/dagster-shared`

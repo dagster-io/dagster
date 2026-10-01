@@ -153,6 +153,42 @@ def test_all_components_have_defined_summary():
             )
 
 
+def test_produces_declared_on_spec_flows_to_snap_and_json():
+    from dagster_shared.serdes.objects.package_entry import json_for_component_type
+
+    class ProducingComponent(dg.Component):
+        @classmethod
+        def get_spec(cls):
+            return dg.ComponentTypeSpec(produces=["asset", "schedule"])
+
+        def build_defs(self, context):
+            pass
+
+    key = EnvRegistryKey(name="ProducingComponent", namespace="dagster_test")
+    snap = get_package_entry_snap(key, ProducingComponent)
+    assert snap.produces == ["asset", "schedule"]
+
+    component_data = snap.get_feature_data("component")
+    assert component_data is not None
+    assert json_for_component_type(key, snap, component_data)["produces"] == ["asset", "schedule"]
+
+
+def test_produces_defaults_to_empty_when_not_declared():
+    class PlainComponent(dg.Component):
+        def build_defs(self, context):
+            pass
+
+    snap = get_package_entry_snap(EnvRegistryKey("a", "a"), PlainComponent)
+    assert snap.produces == []
+
+
+def test_produces_rejects_unknown_kind():
+    import dagster._check as check
+
+    with pytest.raises(check.CheckError, match="Invalid produces kind"):
+        dg.ComponentTypeSpec(produces=["asset", "bogus"])
+
+
 # Our pyproject.toml installs local dagster components
 DAGSTER_FOO_PYPROJECT_TOML = """
 [build-system]

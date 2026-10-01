@@ -101,12 +101,12 @@ Represents a single event from a run execution.
 
 ```python
 class RunEvent(BaseModel):
-    run_id: str                    # The run identifier
-    message: str                   # Human-readable event message
-    timestamp: str                 # ISO 8601 timestamp string
-    level: RunEventLevel          # Event severity level
-    step_key: Optional[str]       # Step identifier (may be None for run-level events)
-    event_type: str               # Event type identifier
+    run_id: str  # The run identifier
+    message: str  # Human-readable event message
+    timestamp: str  # ISO 8601 timestamp string
+    level: RunEventLevel  # Event severity level
+    step_key: Optional[str]  # Step identifier (may be None for run-level events)
+    event_type: str  # Event type identifier
 ```
 
 ### RunEventLevel Enum
@@ -128,10 +128,10 @@ Represents a paginated response containing multiple run events.
 
 ```python
 class RunEventList(BaseModel):
-    items: list[RunEvent]         # List of run events
-    total: int                    # Total number of events returned
-    cursor: Optional[str]         # Pagination cursor for next page
-    has_more: bool               # Whether more events are available
+    items: list[RunEvent]  # List of run events
+    total: int  # Total number of events returned
+    cursor: Optional[str]  # Pagination cursor for next page
+    has_more: bool  # Whether more events are available
 ```
 
 ### Model Configuration
@@ -328,11 +328,9 @@ if result["logsForRun"]["hasMore"]:
     cursor = result["logsForRun"]["cursor"]
 
     # Next page request
-    next_result = client.execute(RUN_EVENTS_QUERY, {
-        "runId": run_id,
-        "limit": 100,
-        "afterCursor": cursor
-    })
+    next_result = client.execute(
+        RUN_EVENTS_QUERY, {"runId": run_id, "limit": 100, "afterCursor": cursor}
+    )
 ```
 
 ## Error Response Patterns

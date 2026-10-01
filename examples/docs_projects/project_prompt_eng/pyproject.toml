@@ -33,3 +33,6 @@ root_module = "project_prompt_eng"
 registry_modules = [
     "project_prompt_eng.components.*",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

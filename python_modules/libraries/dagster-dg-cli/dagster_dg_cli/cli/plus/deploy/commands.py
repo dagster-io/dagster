@@ -24,7 +24,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes import serialize_value
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
-from dagster_dg_cli.cli.plus.build import get_agent_type
+from dagster_dg_cli.cli.plus.build import get_agent_type_and_platform
 from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import deploy_configure_group
 from dagster_dg_cli.cli.plus.deploy.deploy_session import (
@@ -45,6 +45,14 @@ DEFAULT_STATEDIR_PATH = os.path.join(get_system_temp_directory(), "dg-build-stat
 
 def _get_statedir():
     return os.getenv("DAGSTER_BUILD_STATEDIR", DEFAULT_STATEDIR_PATH)
+
+
+def _resolve_agent_type(
+    agent_type_str: str | None, plus_config: DagsterPlusCliConfig
+) -> DgPlusAgentType:
+    if not agent_type_str:
+        return get_agent_type_and_platform(plus_config)[0]
+    return DgPlusAgentType(agent_type_str.upper())
 
 
 def _get_snapshot_base_deployment_conditions():
@@ -256,10 +264,7 @@ def deploy_group(
 
     statedir = _get_statedir()
 
-    if agent_type_str:
-        agent_type = DgPlusAgentType(agent_type_str.upper())
-    else:
-        agent_type = get_agent_type(plus_config)
+    agent_type = _resolve_agent_type(agent_type_str, plus_config)
 
     build_strategy_enum = BuildStrategy(build_strategy)
     pex_build_method_enum = BuildMethod(pex_build_method)
@@ -282,13 +287,13 @@ def deploy_group(
 
     build_artifact(
         dg_context,
-        agent_type,
-        build_strategy_enum,
-        pex_build_method_enum,
-        statedir,
-        bool(use_editable_dagster),
-        python_version,
-        location_names,
+        agent_type=agent_type,
+        build_strategy=build_strategy_enum,
+        pex_build_method=pex_build_method_enum,
+        statedir=statedir,
+        use_editable_dagster=bool(use_editable_dagster),
+        python_version=python_version,
+        location_names=location_names,
     )
 
     finish_deploy_session(dg_context, statedir, location_names)
@@ -465,11 +470,10 @@ def build_and_push_command(
 
     _validate_location_names(dg_context, location_names, cli_config)
 
-    if agent_type_str:
-        agent_type = DgPlusAgentType(agent_type_str.upper())
-    else:
-        plus_config = DagsterPlusCliConfig.get()
-        agent_type = get_agent_type(plus_config)
+    plus_config = (
+        DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
+    )
+    agent_type = _resolve_agent_type(agent_type_str, plus_config)
 
     build_strategy_enum = BuildStrategy(build_strategy)
     pex_build_method_enum = BuildMethod(pex_build_method)
@@ -478,13 +482,13 @@ def build_and_push_command(
 
     build_artifact(
         dg_context,
-        agent_type,
-        build_strategy_enum,
-        pex_build_method_enum,
-        statedir,
-        bool(use_editable_dagster),
-        python_version,
-        location_names,
+        agent_type=agent_type,
+        build_strategy=build_strategy_enum,
+        pex_build_method=pex_build_method_enum,
+        statedir=statedir,
+        use_editable_dagster=bool(use_editable_dagster),
+        python_version=python_version,
+        location_names=location_names,
     )
 
 

@@ -29,7 +29,11 @@ test = [
     "dagster-pandas",
     "dagster-dbt",
     "pytest",
+    "pytest-rerunfailures",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster = { path = "../../../dagster", editable = true }

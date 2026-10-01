@@ -7,6 +7,7 @@ tags: [community-supported, bi, component]
 source: https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-evidence
 pypi: https://pypi.org/project/dagster-evidence/
 sidebar_custom_props:
+  component: true
   logo: images/integrations/evidence.svg
   community: true
 partnerlink: https://evidence.dev/

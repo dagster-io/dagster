@@ -186,6 +186,7 @@
 | `sigma`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/sigma.svg" width={20} height={20} />                                     |
 | `slack`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-slack-color.svg" width={20} height={20} />                          |
 | `sling`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-sling-color.svg" width={20} height={20} />                          |
+| `slurm`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-slurm-color.png" width={20} height={20} />                          |
 | `snowflake`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-snowflake-color.svg" width={20} height={20} />                      |
 | `snowpark`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-snowflake-color.svg" width={20} height={20} />                      |
 | `soda`                | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-soda-color.svg" width={20} height={20} />                           |

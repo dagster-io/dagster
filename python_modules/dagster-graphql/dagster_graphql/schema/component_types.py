@@ -68,6 +68,15 @@ class GrapheneComponentTypeInfo(graphene.ObjectType):
     description = graphene.String()
     owners = graphene.List(graphene.NonNull(graphene.String))
     tags = graphene.List(graphene.NonNull(graphene.String))
+    produces = graphene.List(
+        graphene.NonNull(graphene.String),
+        description=(
+            "The kinds of Dagster primitives instances of this component create (e.g."
+            " ``asset``, ``schedule``, ``sensor``). Declared on the component's spec;"
+            " used for picker filtering and contextual entry points. Empty when the"
+            " component declares none."
+        ),
+    )
     isAppManaged = graphene.NonNull(
         graphene.Boolean,
         description=(
