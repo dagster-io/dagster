@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.13.25 (core) / 0.29.25 (libraries)
+
+### New
+
+- Improved the performance of declarative automation for partitioned assets with a long materialization history.
+- [ui] The UI now has a mobile layout for phones, with a new navigation menu and mobile versions of the Home, Jobs, Automation, Timeline, Asset Catalog, and Asset Overview pages. Pages without a mobile version show a banner with an option to always use the desktop site, which can also be set in user settings.
+- [ui] When launching a time-partitioned asset, the partition selector now shows the most recent 90 days by default, with an option to show all partitions.
+- [dagster-aws] The ECS run launcher now supports resuming run workers, so run monitoring's `max_resume_run_attempts` can be set above 0 on ECS deployments.
+- [dagster-prefect] The Prefect Pipes clients now read messages through Prefect's logs API by default, so a shared filesystem or bucket is no longer needed. Prefect deployments work without changes to the flow. Flows and tasks that open a Pipes session must pass `message_writer=PipesPrefectLogsMessageWriter()`.
+
+### Bugfixes
+
+- [dg] Fixed `AttributeError: module 'dbt' has no attribute 'contracts'` when passing a file named `dbt.py` to `dg plus integrations dbt manage-manifest` and `dagster-cloud ci manage-state`.
+- [dagster-dbt] Fixed an issue where dbt Fusion models with no `ref()` or `source()` calls were silently left out of asset selection, including in `DbtProjectComponent`.
+- [ui] Fixed an issue where pressing Newer on paginated lists such as Runs jumped to the first page after using the browser Back button or reloading the page.
+
+### Documentation
+
+- Added a dbt Fusion page to the dbt integration docs.
+
 ## 1.13.24 (core) / 0.29.24 (libraries)
 
 ### New
