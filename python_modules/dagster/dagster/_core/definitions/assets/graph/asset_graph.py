@@ -388,14 +388,9 @@ def executable_in_same_run(
         if child_handle != parent_handle:
             return False
 
-    # partitions definitions must match, unless the parent is unpartitioned:
-    # an unpartitioned asset materializes in full, so it can always execute
-    # in the same run as any of its partitioned downstreams, regardless of
-    # which downstream partitions are selected. The converse does not hold:
-    # an unpartitioned child depends on all partitions of its parent and so
-    # cannot execute alongside a single parent partition.
+    # partitions definitions must match
     if child_node.partitions_def != parent_node.partitions_def:
-        return parent_node.partitions_def is None
+        return False
 
     # unpartitioned assets can always execute together
     if child_node.partitions_def is None:

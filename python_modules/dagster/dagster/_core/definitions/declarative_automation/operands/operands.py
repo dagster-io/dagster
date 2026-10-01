@@ -160,8 +160,21 @@ class WillBeRequestedCondition(SubsetAutomationCondition[AssetOrCheckKey]):
             child_key=root_key,
             parent_key=context.key,
         ):
-            return False
-        elif not isinstance(context.key, AssetKey):
+            # assets with differing partition schemes cannot be combined into
+            # a single run, but an unpartitioned parent materializes in full,
+            # so a request for it covers every partition of a partitioned
+            # child. propagate its requested status across that boundary even
+            # though run-request construction places them in separate runs.
+            # the converse does not hold: an unpartitioned child depends on
+            # all partitions of its parent, so a single parent partition
+            # request does not cover it.
+            if not (
+                context.asset_graph.get(context.key).partitions_def is None
+                and context.asset_graph.get(root_key).partitions_def is not None
+            ):
+                return False
+
+        if not isinstance(context.key, AssetKey):
             return True
         else:
             # if the parent is an asset key, it must be materializable in order
