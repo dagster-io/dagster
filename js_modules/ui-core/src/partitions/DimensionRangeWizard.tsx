@@ -1,5 +1,4 @@
 import {Box, Button, ButtonLink, Colors, Icon, JoinedButtons} from '@dagster-io/ui-components';
-import dayjs from 'dayjs';
 import * as React from 'react';
 
 import {CreatePartitionDialog} from './CreatePartitionDialog';
@@ -8,7 +7,8 @@ import {OrdinalPartitionSelector} from './OrdinalPartitionSelector';
 import {PartitionDateRangeSelector} from './PartitionDateRangeSelector';
 import {PartitionStatus, PartitionStatusHealthSource} from './PartitionStatus';
 import {convertToPartitionSelection} from './SpanRepresentation';
-import {detectDatePartitions, parsePartitionDate} from './isDateFormattedPartitions';
+import {detectDatePartitions} from './isDateFormattedPartitions';
+import {PartitionDateFilter, filterPartitionKeysByDate} from './partitionDateFilter';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 import {Range, rangesClippedToSelection} from '../assets/usePartitionHealthData';
 import {PartitionDefinitionType, RunStatus} from '../graphql/types';
@@ -27,6 +27,8 @@ export const DimensionRangeWizard = ({
   repoAddress,
   refetch,
   showQuickSelectOptionsForStatuses,
+  dateFilter: controlledDateFilter,
+  onDateFilterChange,
 }: {
   selected: string[];
   setSelected: (selected: string[]) => void;
@@ -37,6 +39,10 @@ export const DimensionRangeWizard = ({
   repoAddress?: RepoAddress;
   refetch?: () => Promise<void>;
   showQuickSelectOptionsForStatuses: boolean;
+  // Pass both to control the date window from the parent, e.g. to open with a
+  // default window and message about the partitions it hides.
+  dateFilter?: PartitionDateFilter | null;
+  onDateFilterChange?: (filter: PartitionDateFilter | null) => void;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
   const isDynamic = dimensionType === PartitionDefinitionType.DYNAMIC;
@@ -48,24 +54,21 @@ export const DimensionRangeWizard = ({
     [isTimeseries, partitionKeys],
   );
 
-  const [dateFilter, setDateFilter] = React.useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
+  const [uncontrolledDateFilter, setUncontrolledDateFilter] =
+    React.useState<PartitionDateFilter | null>(null);
+  const suppliedDateFilter = onDateFilterChange
+    ? (controlledDateFilter ?? null)
+    : uncontrolledDateFilter;
+  const setDateFilter = onDateFilterChange ?? setUncontrolledDateFilter;
 
-  const filteredPartitionKeys = React.useMemo(() => {
-    if (!dateFilter) {
-      return partitionKeys;
-    }
-    const [from, to] = dateFilter;
-    return partitionKeys.filter((key) => {
-      const parsed = parsePartitionDate(key);
-      if (!parsed) {
-        return false;
-      }
-      return (
-        (parsed.isAfter(from) || parsed.isSame(from, 'second')) &&
-        (parsed.isBefore(to) || parsed.isSame(to, 'second'))
-      );
-    });
-  }, [dateFilter, partitionKeys]);
+  // A date window can only narrow keys that carry a date prefix, so ignore one
+  // that a parent applied uniformly across dimensions.
+  const dateFilter = datePartitionInfo ? suppliedDateFilter : null;
+
+  const filteredPartitionKeys = React.useMemo(
+    () => filterPartitionKeysByDate(partitionKeys, dateFilter),
+    [dateFilter, partitionKeys],
+  );
 
   // Build a health object with ranges clipped and re-indexed to the filtered key space
   const filteredHealth = React.useMemo((): PartitionStatusHealthSource => {
@@ -109,19 +112,11 @@ export const DimensionRangeWizard = ({
     'all' | 'failed' | 'missing' | 'failed_and_missing' | 'latest' | 'custom'
   >('custom');
 
-  // Track whether the date filter just changed so we can distinguish
-  // "filter changed while on custom" from "user cleared their selection".
-  const prevFilterRef = React.useRef(dateFilter);
-  const filterJustChanged = prevFilterRef.current !== dateFilter;
-  React.useEffect(() => {
-    prevFilterRef.current = dateFilter;
-  }, [dateFilter]);
-
   // Use refs so that the effect below doesn't re-fire when `health` or
   // `setSelected` get new (but semantically equal) references on each render.
   // The parent (DimensionRangeWizards) passes inline objects/closures for these
   // props, so their identity changes every render cycle.
-  const healthRef = useUpdatingRef(health);
+  const healthRef = useUpdatingRef(filteredHealth);
   const setSelectedRef = useUpdatingRef(setSelected);
 
   const applySelectState = React.useCallback(
@@ -153,17 +148,25 @@ export const DimensionRangeWizard = ({
   );
 
   // Re-apply the left-hand select state when the filtered keys change (unless custom).
-  // When the date filter changes while on "custom", auto-select all filtered keys so
-  // the user isn't left with an empty selection.
   React.useEffect(() => {
-    if (selectState === 'custom') {
-      if (filterJustChanged) {
-        setSelectedRef.current(filteredPartitionKeys);
-      }
-    } else {
+    if (selectState !== 'custom') {
       applySelectState(selectState, filteredPartitionKeys);
     }
-  }, [filteredPartitionKeys, selectState, applySelectState, filterJustChanged, setSelectedRef]);
+  }, [filteredPartitionKeys, selectState, applySelectState]);
+
+  // Moving the window replaces a custom selection with everything now visible,
+  // so the user is never left with an empty selection or with hidden keys still
+  // selected. Only user action does this - a window applied programmatically
+  // (a default, say) leaves the selection alone.
+  const handleDateFilterChange = React.useCallback(
+    (next: PartitionDateFilter | null) => {
+      setDateFilter(next);
+      if (selectState === 'custom') {
+        setSelectedRef.current(filterPartitionKeysByDate(partitionKeys, next));
+      }
+    },
+    [partitionKeys, selectState, setDateFilter, setSelectedRef],
+  );
 
   // When the user directly edits the input or drags on the partition bar while
   // a preset tab is active, switch to Custom and keep their edit.
@@ -242,7 +245,7 @@ export const DimensionRangeWizard = ({
       {datePartitionInfo && (
         <PartitionDateRangeSelector
           filter={dateFilter}
-          onFilterChange={setDateFilter}
+          onFilterChange={handleDateFilterChange}
           isHighResolution={datePartitionInfo.isHighResolution}
         />
       )}
@@ -327,7 +330,7 @@ export const DimensionRangeWizard = ({
                   <ButtonLink
                     color={Colors.linkDefault()}
                     underline="hover"
-                    onClick={() => setDateFilter(null)}
+                    onClick={() => handleDateFilterChange(null)}
                   >
                     Clear
                   </ButtonLink>

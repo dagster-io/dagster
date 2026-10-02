@@ -36,22 +36,24 @@ import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/display/placeholder';
 
 type SelectionAutoCompleteInputProps = {
-  id: string; // Used for logging
+  /** Names the analytics event, `<id>-selection-query`. */
+  id: string;
   placeholder: string;
   linter: (content: string) => SyntaxError[];
   value: string;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
   onErrorStateChange?: (errors: SyntaxError[]) => void;
+  /** Omit to make the input read only. */
   onChange?: (value: string) => void;
-  // Omitting onChange will make the input read only
   onSubmit?: (value: string) => void;
   className?: string;
 
-  // Providing a key enables the "recent searches" section shown when the input is empty.
+  /** Enables the "recent searches" section shown when the input is empty. */
   recentSearchesKey?: string;
 
-  wildcardAttributeName: string;
+  /** Bare terms are rewritten to `attr:"*term*"` on commit. Omit to leave them as typed. */
+  wildcardAttributeName?: string;
 };
 
 const emptyArray: SyntaxError[] = [];

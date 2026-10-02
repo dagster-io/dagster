@@ -5,6 +5,7 @@ import {gql, useQuery} from '../apollo-client';
 import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
+import {shortenId} from '../util/shortenId';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext/util';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
@@ -75,7 +76,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
     <PageHeader
       title={
         <Heading size={16} weight={600} family="mono">
-          {explorerPath.snapshotId?.slice(0, 8)}
+          {shortenId(snapshotId)}
         </Heading>
       }
       tags={

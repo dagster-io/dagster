@@ -850,7 +850,6 @@ provides-extras = ["kubernetes"]
 
 [package.metadata.requires-dev]
 test = [
-    { name = "connexion", specifier = "<3.0.0" },
     { name = "dagster", extras = ["test"], editable = "../../../python_modules/dagster" },
     { name = "dagster-aws", editable = "../../../python_modules/libraries/dagster-aws" },
     { name = "dagster-gcp", editable = "../../../python_modules/libraries/dagster-gcp" },
@@ -860,24 +859,13 @@ test = [
     { name = "dagster-shared", editable = "../../../python_modules/libraries/dagster-shared" },
     { name = "dagster-test", editable = "../../../python_modules/dagster-test" },
 ]
-test-airflow1 = [
-    { name = "apache-airflow", marker = "python_full_version < '3.12'", specifier = ">=1.0.0,<2.0.0" },
-    { name = "boto3", marker = "python_full_version < '3.12'", specifier = ">=1.26.7" },
-    { name = "kubernetes", marker = "python_full_version < '3.12'", specifier = ">=10.0.1" },
-    { name = "markupsafe", marker = "python_full_version < '3.12'", specifier = "<=2.0.1" },
-    { name = "marshmallow-sqlalchemy", marker = "python_full_version < '3.12'", specifier = "<0.26.0" },
-    { name = "sqlalchemy", marker = "python_full_version < '3.12'", specifier = ">=1.0,<1.4.0" },
-    { name = "wtforms", marker = "python_full_version < '3.12'", specifier = "<3.0.0" },
-]
 test-airflow2 = [
-    { name = "apache-airflow", marker = "python_full_version < '3.12'", specifier = ">=2.0.0,<2.8" },
-    { name = "apache-airflow-providers-apache-spark", marker = "python_full_version < '3.12'" },
-    { name = "apache-airflow-providers-docker", marker = "python_full_version < '3.12'", specifier = ">=3.2.0,<4" },
-    { name = "apache-airflow-providers-http", marker = "python_full_version < '3.12'", specifier = "<4.1.1" },
-    { name = "boto3", marker = "python_full_version < '3.12'", specifier = ">=1.26.7" },
-    { name = "flask-session", marker = "python_full_version < '3.12'", specifier = "<0.6.0" },
-    { name = "kubernetes", marker = "python_full_version < '3.12'", specifier = ">=10.0.1" },
-    { name = "pendulum", marker = "python_full_version < '3.12'", specifier = "<3.0.0" },
+    { name = "apache-airflow", marker = "python_full_version < '3.13'", specifier = ">=2.11,<3" },
+    { name = "apache-airflow-providers-apache-spark", marker = "python_full_version < '3.13'" },
+    { name = "apache-airflow-providers-docker", marker = "python_full_version < '3.13'" },
+    { name = "apache-airflow-providers-http", marker = "python_full_version < '3.13'" },
+    { name = "boto3", marker = "python_full_version < '3.13'", specifier = ">=1.26.7" },
+    { name = "kubernetes", marker = "python_full_version < '3.13'", specifier = ">=10.0.1" },
 ]
 
 [[package]]

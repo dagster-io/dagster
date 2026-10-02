@@ -16,13 +16,13 @@ import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {RunsFeedError} from '../runs/RunsFeedError';
 import {RunsFeedTable} from '../runs/RunsFeedTable';
+import {useRunsFilterInput} from '../runs/RunsFilterInput';
 import {
   RunFilterToken,
   RunFilterTokenType,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
-  useRunsFilterInput,
-} from '../runs/RunsFilterInput';
+} from '../runs/RunsFilterUtils';
 import {useRunsFeedEntries} from '../runs/useRunsFeedEntries';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {repoAddressAsTag} from '../workspace/repoAddressAsString';

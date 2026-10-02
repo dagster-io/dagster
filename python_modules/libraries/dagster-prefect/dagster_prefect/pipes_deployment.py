@@ -6,8 +6,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
 from dagster._core.pipes.context import PipesSession
-from dagster._core.pipes.utils import PipesEnvContextInjector, PipesTempFileMessageReader
+from dagster._core.pipes.utils import PipesEnvContextInjector
 
+from dagster_prefect.message_readers import PipesPrefectLogsMessageReader
 from dagster_prefect.pipes import BasePipesPrefectClient, PrefectRun
 
 # Work pool job variable carrying environment overrides for a flow run. Present in the
@@ -20,16 +21,16 @@ class PipesPrefectDeploymentClient(BasePipesPrefectClient):
     """Launches a Prefect deployment run and materializes when the flow run finishes.
 
     The Pipes bootstrap payload is injected as environment variables through the deployment
-    run's job variables, so the flow's own signature is untouched. The only change to the
-    flow is opening a Pipes session:
+    run's job variables, so the flow's own signature is untouched. Opening a Pipes session in
+    the flow is optional, to report metadata and asset checks back:
 
     .. code-block:: python
 
-        from dagster_pipes import open_dagster_pipes
+        from dagster_pipes import PipesPrefectLogsMessageWriter, open_dagster_pipes
 
         @flow
         def refresh_orders(as_of: str = "latest") -> None:
-            with open_dagster_pipes() as pipes:
+            with open_dagster_pipes(message_writer=PipesPrefectLogsMessageWriter()) as pipes:
                 pipes.report_asset_materialization(metadata={"rows": 100})
 
     That line is safe outside Dagster too — run standalone, `open_dagster_pipes` warns and
@@ -88,9 +89,7 @@ class PipesPrefectDeploymentClient(BasePipesPrefectClient):
         return PipesEnvContextInjector()
 
     def _default_message_reader(self) -> PipesMessageReader:
-        # Only correct when the worker executing the flow shares a filesystem with the
-        # Dagster step. Pass a blob-store reader for a worker anywhere else.
-        return PipesTempFileMessageReader()
+        return PipesPrefectLogsMessageReader(prefect=self.prefect)
 
     def _job_variables_with_pipes_env(
         self, session: PipesSession, job_variables: Mapping[str, Any] | None

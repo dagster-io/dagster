@@ -69,15 +69,7 @@ def build_test_project_steps() -> list[GroupStepConfiguration]:
         .skip(skip_if_version_not_needed(version))
         .on_python_image(
             image=f"buildkite-build-test-project-image:py{AvailablePythonVersion.V3_11.value}-{BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION}",
-            env=[
-                "AIRFLOW_HOME",
-                "AWS_ACCOUNT_ID",
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-            ],
         )
-        .with_ecr_login()
         .with_docker()  # build.sh runs `docker build`; final step `docker push`
         .build()
         for version in py_versions
@@ -101,6 +93,19 @@ def test_project_depends_fn(version: AvailablePythonVersion, _) -> list[str]:
         return [_test_project_step_key(version)]
     else:
         return []
+
+
+def test_project_gate_cmds() -> list[str]:
+    """Forward the integration gate into the test process.
+
+    The pipeline is generated on an agent that has CI_DISABLE_INTEGRATION_TESTS
+    set, but the tox steps run on a fleet that doesn't. Without it the repo-root
+    conftest never skips `integration`-marked tests, and they try to pull the
+    test-project image that `test_project_depends_fn` declined to build.
+    """
+    if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        return ["export CI_DISABLE_INTEGRATION_TESTS=1"]
+    return []
 
 
 def skip_if_version_not_needed(version: AvailablePythonVersion) -> str | None:

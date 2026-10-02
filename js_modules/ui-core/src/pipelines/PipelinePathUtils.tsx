@@ -2,6 +2,8 @@ import {Text} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
+import {shortenId} from '../util/shortenId';
+
 export type ExplorerPath = {
   pipelineName: string;
   snapshotId?: string;
@@ -98,7 +100,7 @@ export const PipelineSnapshotLink = (props: {
   size: 'small' | 'normal';
 }) => {
   const snapshotLink = getPipelineSnapshotLink(props.pipelineName, props.snapshotId);
-  const linkElem = <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>;
+  const linkElem = <Link to={snapshotLink}>{shortenId(props.snapshotId)}</Link>;
   return props.size === 'small' ? (
     <Text size={12} family="mono">
       {linkElem}

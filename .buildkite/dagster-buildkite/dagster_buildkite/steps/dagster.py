@@ -3,7 +3,6 @@ import os
 from buildkite_shared.context import BuildkiteContext
 from buildkite_shared.packages import get_general_python_step_skip_reason
 from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
     CommandStepBuilder,
     CommandStepConfiguration,
     ResourceRequests,
@@ -140,7 +139,6 @@ def build_repo_wide_ty_steps(ctx: BuildkiteContext) -> list[CommandStepConfigura
             f"just -f {oss_path('justfile')} ty",
         )
         .skip(get_general_python_step_skip_reason(ctx, other_paths=["ty"]))
-        .on_queue(BuildkiteQueue.KUBERNETES_EKS)
         .resources(ResourceRequests(cpu="2000m", memory="8Gi", ephemeral_storage="15Gi"))
         .build(),
     ]

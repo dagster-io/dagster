@@ -3433,6 +3433,23 @@ class TestEventLogStorage:
             _assert_storage_matches({"p1": latest_storage_ids["p1"]}, partition="p1")
             _assert_storage_matches({"p2": latest_storage_ids["p2"]}, partition="p2")
 
+            # check that we can filter by cursor: only partitions updated after it come back
+            def _after_cursor(after_cursor: int, partition: str | None = None):
+                return storage.get_latest_storage_id_by_partition(
+                    a,
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    partitions={partition} if partition else None,
+                    after_cursor=after_cursor,
+                )
+
+            assert _after_cursor(latest_storage_ids["p1"] - 1) == latest_storage_ids
+            assert _after_cursor(latest_storage_ids["p1"]) == {"p2": latest_storage_ids["p2"]}
+            assert _after_cursor(latest_storage_ids["p2"]) == {}
+            assert _after_cursor(latest_storage_ids["p1"] - 1, partition="p1") == {
+                "p1": latest_storage_ids["p1"]
+            }
+            assert _after_cursor(latest_storage_ids["p1"], partition="p1") == {}
+
             # unrelated asset materialized
             _store_partition_event(b, "p1")
             _store_partition_event(b, "p2")

@@ -22,6 +22,7 @@ import sqlalchemy.exc as db_exc
 from dagster_shared.serdes import deserialize_values
 from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection
+from sqlalchemy.sql import FromClause
 
 import dagster._check as check
 from dagster._core.assets import AssetDetails
@@ -874,10 +875,10 @@ class SqlEventLogStorage(EventLogStorage):
 
     def _apply_tags_table_joins(
         self,
-        table: db.Table,
+        table: FromClause,
         tags: Mapping[str, str | Sequence[str]],
         asset_key: AssetKey | None,
-    ) -> db.Table:
+    ) -> FromClause:
         event_id_col = table.c.id if table == SqlEventLogStorageTable else table.c.event_id
         i = 0
         for key, value in tags.items():
@@ -889,7 +890,9 @@ class SqlEventLogStorage(EventLogStorage):
                 tags_table,
                 db.and_(
                     event_id_col == tags_table.c.event_id,
-                    not asset_key or tags_table.c.asset_key == asset_key.to_string(),
+                    db.true()
+                    if asset_key is None
+                    else tags_table.c.asset_key == asset_key.to_string(),
                     tags_table.c.key == key,
                     (
                         tags_table.c.value == value
@@ -1926,15 +1929,20 @@ class SqlEventLogStorage(EventLogStorage):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         """Fetch the latest materialzation storage id for each partition for a given asset key.
 
-        Returns a mapping of partition to storage id.
+        Returns a mapping of partition to storage id. Partitions whose latest event is not after
+        ``after_cursor`` are omitted.
         """
         check.inst_param(asset_key, "asset_key", AssetKey)
 
         latest_event_ids_by_partition_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key, [event_type], asset_partitions=list(partitions) if partitions else None
+            asset_key,
+            [event_type],
+            asset_partitions=list(partitions) if partitions else None,
+            after_cursor=after_cursor,
         )
         latest_event_ids_by_partition = db_select(
             [

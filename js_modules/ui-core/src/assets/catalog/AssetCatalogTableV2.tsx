@@ -22,7 +22,6 @@ import {AssetCatalogAlerts} from '@shared/assets/catalog/AssetCatalogAlerts';
 import {AssetCatalogTabs} from '@shared/assets/catalog/AssetCatalogTabs';
 import {useCatalogExtraDropdownOptions} from '@shared/assets/catalog/useCatalogExtraDropdownOptions';
 import {AssetCatalogInsights} from '@shared/assets/insights/AssetCatalogInsights';
-import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
@@ -37,7 +36,7 @@ import {
 import {AssetHealthGroupBy, GROUP_BY_ITEMS} from './AttributeStatusHeaderRow';
 import {SelectedAssetsPopoverContent} from './SelectedAssetsPopoverContent';
 import {isHealthGroupBy, useAssetCatalogGroupAndSortBy} from './useAssetCatalogGroupAndSortBy';
-import {useConnectionLocationNames} from './useConnectionLocationNames';
+import {useCatalogAssets} from './useCatalogAssets';
 import {useFullScreen} from '../../app/AppTopNav/AppTopNavContext';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {currentPageAtom, useTrackEvent} from '../../app/analytics';
@@ -47,7 +46,6 @@ import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelect
 import {useAllAssets} from '../../assets/AssetsCatalogTable';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../../hooks/useSelectionReducer';
-import {useStateWithStorage} from '../../hooks/useStateWithStorage';
 import {useBlockTraceUntilTrue} from '../../performance/TraceContext';
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../../ui/IndeterminateLoadingBar';
@@ -55,39 +53,24 @@ import {numberFormatter} from '../../ui/formatters';
 import {AssetsEmptyState} from '../AssetsEmptyState';
 import {LaunchAssetExecutionButton} from '../LaunchAssetExecutionButton';
 import {asAssetKeyInput} from '../asInput';
-import {filterConnectionDuplicates} from '../overview/useLinkedAsset';
 import {AssetTableFragment} from '../types/AssetTableFragment.types';
 
 const SPLIT_PANEL_IDENTIFIER = 'asset-catalog-table';
 
 export const AssetCatalogTableV2 = React.memo(() => {
-  const {assets, loading: assetsLoading, error} = useAllAssets();
+  const {
+    allAssets: assets,
+    catalogAssets: assetsAfterConnectionFilter,
+    assetsLoading,
+    favorites,
+    favoritesLoading,
+    error,
+    connectionLocationNames,
+    hideConnectionAssets,
+    setHideConnectionAssets,
+  } = useCatalogAssets();
   useBlockTraceUntilTrue('useAllAssets', !assetsLoading);
   const trackEvent = useTrackEvent();
-
-  const {favorites, loading: favoritesLoading} = useFavoriteAssets();
-
-  const penultimateAssets = useMemo(() => {
-    if (!favorites) {
-      return assets ?? [];
-    }
-    return (assets ?? []).filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
-  }, [favorites, assets]);
-
-  const connectionLocationNames = useConnectionLocationNames();
-
-  const [hideConnectionAssets, setHideConnectionAssets] = useStateWithStorage<boolean>(
-    'dagster.hide-connection-assets',
-    (v) => v ?? true,
-  );
-
-  const assetsAfterConnectionFilter = useMemo(() => {
-    if (!hideConnectionAssets || !connectionLocationNames.size) {
-      return penultimateAssets;
-    }
-
-    return filterConnectionDuplicates(penultimateAssets, connectionLocationNames);
-  }, [penultimateAssets, hideConnectionAssets, connectionLocationNames]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 

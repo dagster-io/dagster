@@ -6,7 +6,7 @@ import {memo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {DagsterTag} from './RunTag';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import {RunTagsFragment} from './types/RunTagsFragment.types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {RepoAddress} from '../workspace/types';

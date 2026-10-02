@@ -18,6 +18,7 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
+import {LayoutModeProvider} from './layout/LayoutModeProvider';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {
   ApolloClient,
@@ -190,39 +191,41 @@ export const AppProvider = (props: AppProviderProps) => {
   );
 
   return (
-    <AppContext.Provider value={appContextValue}>
-      <WebSocketProvider websocketClient={websocketClient}>
-        <ApolloProvider client={apolloClient}>
-          <PermissionsProvider>
-            <BrowserRouter basename={basePath || ''}>
-              <GlobalStyleProvider />
-              <Toaster richColors />
-              <CompatRouter>
-                <TimeProvider>
-                  <CodeLinkProtocolProvider>
-                    <WorkspaceProvider>
-                      <AssetLiveDataProvider>
-                        <DeploymentStatusProvider include={statusPolling}>
-                          <CustomConfirmationProvider>
-                            <AnalyticsContext.Provider value={analytics}>
-                              <InstancePageContext.Provider value={instancePageValue}>
-                                <LayoutProvider>{props.children}</LayoutProvider>
-                              </InstancePageContext.Provider>
-                            </AnalyticsContext.Provider>
-                          </CustomConfirmationProvider>
-                          <CustomTooltipProvider />
-                          <CustomAlertProvider />
-                          <AssetRunLogObserver />
-                        </DeploymentStatusProvider>
-                      </AssetLiveDataProvider>
-                    </WorkspaceProvider>
-                  </CodeLinkProtocolProvider>
-                </TimeProvider>
-              </CompatRouter>
-            </BrowserRouter>
-          </PermissionsProvider>
-        </ApolloProvider>
-      </WebSocketProvider>
-    </AppContext.Provider>
+    <LayoutModeProvider>
+      <AppContext.Provider value={appContextValue}>
+        <WebSocketProvider websocketClient={websocketClient}>
+          <ApolloProvider client={apolloClient}>
+            <PermissionsProvider>
+              <BrowserRouter basename={basePath || ''}>
+                <GlobalStyleProvider />
+                <Toaster richColors />
+                <CompatRouter>
+                  <TimeProvider>
+                    <CodeLinkProtocolProvider>
+                      <WorkspaceProvider>
+                        <AssetLiveDataProvider>
+                          <DeploymentStatusProvider include={statusPolling}>
+                            <CustomConfirmationProvider>
+                              <AnalyticsContext.Provider value={analytics}>
+                                <InstancePageContext.Provider value={instancePageValue}>
+                                  <LayoutProvider>{props.children}</LayoutProvider>
+                                </InstancePageContext.Provider>
+                              </AnalyticsContext.Provider>
+                            </CustomConfirmationProvider>
+                            <CustomTooltipProvider />
+                            <CustomAlertProvider />
+                            <AssetRunLogObserver />
+                          </DeploymentStatusProvider>
+                        </AssetLiveDataProvider>
+                      </WorkspaceProvider>
+                    </CodeLinkProtocolProvider>
+                  </TimeProvider>
+                </CompatRouter>
+              </BrowserRouter>
+            </PermissionsProvider>
+          </ApolloProvider>
+        </WebSocketProvider>
+      </AppContext.Provider>
+    </LayoutModeProvider>
   );
 };

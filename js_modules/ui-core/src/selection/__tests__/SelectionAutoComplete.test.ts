@@ -1329,6 +1329,38 @@ describe('createAssetSelectionHint', () => {
     });
   });
 
+  it('should not suggest a wildcard search without a primary attribute', () => {
+    const selectionHint = createSelectionAutoComplete(
+      createProvider({
+        attributesMap,
+        attributeToIcon: {
+          key: 'magnify_glass',
+          tag: 'magnify_glass',
+          owner: 'magnify_glass',
+          group: 'magnify_glass',
+          kind: 'magnify_glass',
+          code_location: 'magnify_glass',
+        },
+      }),
+    );
+    const texts = testAutocomplete('asset|', selectionHint).list?.map(({text}) => text);
+
+    expect(testAutocomplete('asset|').list).toContainEqual(
+      expect.objectContaining({text: 'key:"*asset*"'}),
+    );
+    expect(texts).not.toContainEqual(expect.stringContaining('*'));
+    expect(texts).toContain('key:"asset1"');
+  });
+
+  it('should not suggest not if supportsNot is false', () => {
+    const selectionHint = createSelectionAutoComplete({...provider, supportsNot: false});
+
+    expect(testAutocomplete('n|').list).toContainEqual(expect.objectContaining({text: 'not '}));
+    expect(testAutocomplete('n|', selectionHint).list).not.toContainEqual(
+      expect.objectContaining({text: 'not '}),
+    );
+  });
+
   it('should not suggest functions if empty array passed in', () => {
     const provider = createProvider({
       attributesMap: {

@@ -156,7 +156,10 @@ export const Breadcrumbs = ({
   if (collapseCount === 0 || items.length <= 2) {
     return (
       <div ref={containerRef} className={clsx(styles.breadcrumbsContainer, className)}>
-        <ul ref={listRef} className={styles.breadcrumbs}>
+        <ul
+          ref={listRef}
+          className={clsx(styles.breadcrumbs, items.length <= 2 && styles.breadcrumbsFit)}
+        >
           {items.map((item, i) => (
             <li key={i} className={styles.breadcrumbItem}>
               {i > 0 ? <Separator /> : null}
@@ -173,7 +176,7 @@ export const Breadcrumbs = ({
 
   return (
     <div ref={containerRef} className={clsx(styles.breadcrumbsContainer, className)}>
-      <ul ref={listRef} className={styles.breadcrumbs}>
+      <ul ref={listRef} className={clsx(styles.breadcrumbs, styles.breadcrumbsFit)}>
         <li className={styles.breadcrumbItem}>{renderItem(firstItem, 0)}</li>
         <li className={styles.breadcrumbItem}>
           <Separator />

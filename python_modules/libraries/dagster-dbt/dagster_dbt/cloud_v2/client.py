@@ -2,7 +2,11 @@ import datetime
 import logging
 import os
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import (
+    Mapping,
+    Sequence,
+    Set as AbstractSet,
+)
 from typing import Any, cast
 
 import requests
@@ -10,7 +14,7 @@ from dagster import Failure, get_dagster_logger
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.cached_method import cached_method
 from dagster_shared.dagster_model import DagsterModel
-from pydantic import Field
+from pydantic import Field, field_validator
 from requests.exceptions import RequestException
 
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
@@ -55,6 +59,13 @@ class DbtCloudWorkspaceClient(DagsterModel):
         description="Time (in seconds) after which the requests to dbt Cloud are declared timed out.",
     )
 
+    @field_validator("access_url")
+    @classmethod
+    def _normalize_access_url(cls, value: str) -> str:
+        # Strip any trailing slash (common with single-tenant custom URLs) so URL
+        # composition never produces a `//` path, which dbt Cloud's edge 404s.
+        return value.rstrip("/")
+
     @property
     @cached_method
     def _log(self) -> logging.Logger:
@@ -93,7 +104,13 @@ class DbtCloudWorkspaceClient(DagsterModel):
         data: Mapping[str, Any] | None = None,
         params: Mapping[str, Any] | None = None,
         session_attr: str = "_get_session",
+        tolerated_error_statuses: AbstractSet[int] = frozenset(),
     ) -> requests.Response:
+        """Makes a request to the dbt Cloud API, retrying on errors.
+
+        Error responses whose status code is in ``tolerated_error_statuses`` are
+        returned as-is (no retry, no raise) so callers can handle them explicitly.
+        """
         url = f"{base_url}/{endpoint}" if endpoint else base_url
 
         num_retries = 0
@@ -107,11 +124,22 @@ class DbtCloudWorkspaceClient(DagsterModel):
                     params=params,
                     timeout=self.request_timeout,
                 )
+                if response.status_code in tolerated_error_statuses:
+                    return response
                 response.raise_for_status()
                 return response
             except RequestException as e:
+                # The default HTTPError message has no detail beyond the status
+                # line; dbt Cloud puts the actionable reason in the body. Decode
+                # only a prefix — an edge/proxy error page can be huge.
+                body = (
+                    e.response.content[:2048].decode("utf-8", errors="replace")[:400]
+                    if e.response is not None
+                    else None
+                )
+                detail = f" body={body!r}" if body else ""
                 self._log.error(
-                    f"Request to dbt Cloud API failed for url {url} with method {method} : {e}"
+                    f"Request to dbt Cloud API failed for url {url} with method {method} : {e}{detail}"
                 )
                 if num_retries == self.request_max_retries:
                     break
@@ -205,17 +233,28 @@ class DbtCloudWorkspaceClient(DagsterModel):
             base_url=self.api_v2_url,
         ).json()["data"]
 
-    def destroy_job(self, job_id: int) -> Mapping[str, Any]:
+    def destroy_job(self, job_id: int) -> Mapping[str, Any] | None:
         """Destroys a given dbt Cloud job.
 
+        Idempotent: a 404 means the job is already gone, which is the desired
+        end-state of a delete, so it is treated as success. Note dbt Cloud also
+        returns 404 for job IDs the token cannot see, so a misconfigured
+        account/token makes deletes report success without deleting.
+
         Returns:
-            Dict[str, Any]: Parsed json data representing the API response.
+            Optional[Dict[str, Any]]: Parsed json data representing the API response,
+                or None if the job was already gone.
         """
-        return self._make_request(
+        response = self._make_request(
             method="delete",
             endpoint=f"jobs/{job_id}",
             base_url=self.api_v2_url,
-        ).json()["data"]
+            tolerated_error_statuses=frozenset({404}),
+        )
+        if response.status_code == 404:
+            self._log.info(f"Job {job_id} was already deleted in dbt Cloud; treating as success.")
+            return None
+        return response.json()["data"]
 
     def trigger_job_run(
         self, job_id: int, steps_override: Sequence[str] | None = None

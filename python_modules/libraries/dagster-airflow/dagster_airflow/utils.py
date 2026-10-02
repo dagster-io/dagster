@@ -56,17 +56,23 @@ def normalized_name(dag_name, task_name=None) -> str:
 
 @contextmanager
 def replace_airflow_logger_handlers() -> Generator[None, None, None]:
-    prev_airflow_handlers = logging.getLogger("airflow.task").handlers
+    task_logger = logging.getLogger("airflow.task")
+    prev_airflow_handlers = task_logger.handlers
+    prev_propagate = task_logger.propagate
     try:
         # Redirect airflow handlers to stdout / compute logs
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
-        root = logging.getLogger("airflow.task")
-        root.handlers = [handler]
+        task_logger.handlers = [handler]
+        # airflow 2.9+ propagates task records to the root logger, which has its
+        # own stdout handler — without this every line lands in the compute logs
+        # twice, under two different timestamp formats.
+        task_logger.propagate = False
         yield
     finally:
         # Restore previous log handlers
-        logging.getLogger("airflow.task").handlers = prev_airflow_handlers
+        task_logger.handlers = prev_airflow_handlers
+        task_logger.propagate = prev_propagate
 
 
 def serialize_connections(connections: list[Connection] = []) -> list[Mapping[str, str | None]]:

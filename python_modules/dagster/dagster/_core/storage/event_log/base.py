@@ -488,7 +488,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
+        """Returns the latest storage id per partition for the asset. If ``after_cursor`` is set,
+        partitions whose latest event id is not greater than it are omitted.
+        """
         pass
 
     @abstractmethod

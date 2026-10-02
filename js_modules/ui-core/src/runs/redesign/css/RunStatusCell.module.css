@@ -1,0 +1,16 @@
+@keyframes status-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.pulse {
+  animation: status-pulse 750ms ease-in-out infinite alternate;
+}
+
+.popoverHeading {
+  padding: 12px 12px 0;
+}

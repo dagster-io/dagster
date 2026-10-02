@@ -609,9 +609,14 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_key: "AssetKey",
         event_type: "DagsterEventType",
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
+        if after_cursor is None:
+            return self._storage.event_log_storage.get_latest_storage_id_by_partition(
+                asset_key, event_type, partitions
+            )
         return self._storage.event_log_storage.get_latest_storage_id_by_partition(
-            asset_key, event_type, partitions
+            asset_key, event_type, partitions, after_cursor=after_cursor
         )
 
     def get_latest_tags_by_partition(
