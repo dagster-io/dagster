@@ -29,7 +29,7 @@ name = "ty-airflow"
 version = "0.0.0"
 description = "ty environment for the airflow-bound packages, pinned to sqlalchemy 1.x."
 # Pinned to 3.12 (not 3.13+) deliberately: dagster-airlift resolves
-# `apache-airflow==2.9.3` below 3.13 and `apache-airflow>=3.0.0` at or
+# `apache-airflow>=2.11,<3` below 3.13 and `apache-airflow>=3.0.0` at or
 # above it. 3.12 is what the checked code's airflow-2 paths run on.
 requires-python = ">=3.12,<3.13"
 

@@ -36,15 +36,12 @@ in-airflow = [
 # Namely, the dagster-webserver and the constrained airflow packages.
 tutorial = [
     "dagster-webserver==1!0+dev",
-    # Requirements for python versions under 3.13 (airflow 2.x).
-    "apache-airflow==2.9.3; python_version < '3.13'",
-    "marshmallow==3.20.1; python_version < '3.13'",
-    "pendulum>=2.0.0,<4.0.0; python_version < '3.13'",
-    # Flask-session 0.6, connexion 3.x, and fastapi >=0.118 are incompatible with
-    # certain airflow 2.x-provided utilities. airflow 3.x (used on 3.13+) does
-    # not have these conflicts.
-    "flask-session<0.6.0; python_version < '3.13'",
-    "connexion<3.0.0; python_version < '3.13'",  # https://github.com/apache/airflow/issues/35234
+    # Requirements for python versions under 3.13 (airflow 2.x). 2.11 is the
+    # final 2.x line; it bounds marshmallow, pendulum, flask-session and
+    # connexion itself, so no companion pins are needed here.
+    "apache-airflow>=2.11,<3; python_version < '3.13'",
+    # fastapi >=0.118 is incompatible with certain airflow 2.x-provided
+    # utilities. airflow 3.x (used on 3.13+) does not have this conflict.
     "fastapi<0.118; python_version < '3.13'",  # https://github.com/apache/airflow/discussions/57769#discussioncomment-14861217
     # Requirements for python versions 3.13 and above (airflow 3.x).
     "apache-airflow>=3.0.0; python_version >= '3.13'",
@@ -68,11 +65,7 @@ test = [
     "boto3",
     "dagster-webserver==1!0+dev",
     # Requirements for python versions under 3.13 (airflow 2.x).
-    "apache-airflow==2.9.3; python_version < '3.13'",
-    "marshmallow==3.20.1; python_version < '3.13'",
-    "pendulum>=2.0.0,<4.0.0; python_version < '3.13'",
-    "flask-session<0.6.0; python_version < '3.13'",
-    "connexion<3.0.0; python_version < '3.13'",
+    "apache-airflow>=2.11,<3; python_version < '3.13'",
     # Requirements for python versions 3.13 and above (airflow 3.x).
     "apache-airflow>=3.0.0; python_version >= '3.13'",
     "marshmallow==3.23.1; python_version >= '3.13'",
