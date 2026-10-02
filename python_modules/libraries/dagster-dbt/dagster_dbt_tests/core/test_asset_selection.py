@@ -602,3 +602,116 @@ def test_select_unique_ids_selector_with_indirect_selection(
     )
 
     assert selected == expected_unique_ids
+
+
+def _manifest_with_multi_parent_test(indirect_selection: str) -> dict[str, Any]:
+    """``parent`` depends on ``upstream``. A relationships test attached to ``parent`` also
+    depends on ``other``, which is neither selected nor upstream of the selection.
+    """
+    return {
+        "nodes": {
+            "model.test.upstream": _model_node("model.test.upstream", "upstream"),
+            "model.test.parent": _model_node(
+                "model.test.parent", "parent", depends_on=["model.test.upstream"]
+            ),
+            "model.test.other": _model_node("model.test.other", "other"),
+            "test.test.relationships_parent_other": {
+                **_test_node(
+                    "test.test.relationships_parent_other",
+                    "relationships_parent_other",
+                    "model.test.parent",
+                ),
+                "depends_on": {
+                    "nodes": ["model.test.parent", "model.test.other"],
+                    "macros": [],
+                },
+            },
+            "test.test.relationships_parent_upstream": {
+                **_test_node(
+                    "test.test.relationships_parent_upstream",
+                    "relationships_parent_upstream",
+                    "model.test.parent",
+                ),
+                "depends_on": {
+                    "nodes": ["model.test.parent", "model.test.upstream"],
+                    "macros": [],
+                },
+            },
+        },
+        "sources": {},
+        "metrics": {},
+        "exposures": {},
+        "selectors": {
+            "selector.test.tested": {
+                "name": "tested",
+                "definition": {
+                    "method": "fqn",
+                    "value": "parent",
+                    "indirect_selection": indirect_selection,
+                },
+            }
+        },
+        "child_map": {
+            "model.test.upstream": [
+                "model.test.parent",
+                "test.test.relationships_parent_upstream",
+            ],
+            "model.test.parent": [
+                "test.test.relationships_parent_other",
+                "test.test.relationships_parent_upstream",
+            ],
+            "model.test.other": ["test.test.relationships_parent_other"],
+            "test.test.relationships_parent_other": [],
+            "test.test.relationships_parent_upstream": [],
+        },
+        "parent_map": {
+            "model.test.upstream": [],
+            "model.test.parent": ["model.test.upstream"],
+            "model.test.other": [],
+            "test.test.relationships_parent_other": ["model.test.parent", "model.test.other"],
+            "test.test.relationships_parent_upstream": [
+                "model.test.parent",
+                "model.test.upstream",
+            ],
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "indirect_selection, expected_unique_ids",
+    [
+        # eager selects every test attached to the selected model
+        pytest.param(
+            "eager",
+            {
+                "model.test.parent",
+                "test.test.relationships_parent_other",
+                "test.test.relationships_parent_upstream",
+            },
+            id="eager",
+        ),
+        # cautious only selects tests whose parents are all selected
+        pytest.param("cautious", {"model.test.parent"}, id="cautious"),
+        # buildable selects tests whose other parents are selected or upstream of the selection
+        pytest.param(
+            "buildable",
+            {"model.test.parent", "test.test.relationships_parent_upstream"},
+            id="buildable",
+        ),
+        pytest.param("empty", {"model.test.parent"}, id="empty"),
+    ],
+)
+def test_select_unique_ids_selector_indirect_selection_modes_differ(
+    indirect_selection: str, expected_unique_ids: set[str]
+) -> None:
+    """A test depending on a model outside the selection must be handled differently by each
+    ``indirect_selection`` mode, following dbt's documented semantics.
+    """
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*",
+        exclude="",
+        selector="tested",
+        manifest_json=_manifest_with_multi_parent_test(indirect_selection),
+    )
+
+    assert selected == expected_unique_ids
