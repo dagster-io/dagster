@@ -162,6 +162,19 @@ def monitor_started_run(
                         f"Detected run worker status {check_health_result}. Marking run"
                         f" {run.run_id} as failed."
                     )
+
+                if check_health_result.status == WorkerStatus.FAILED:
+                    debug_info = None
+                    try:
+                        debug_info = instance.run_launcher.get_run_worker_debug_info(
+                            run, include_container_logs=False
+                        )
+                    except Exception:
+                        logger.exception("Failure fetching debug info for failed run worker")
+
+                    if debug_info:
+                        msg = msg + f"\n{debug_info}"
+
                 logger.info(msg)
                 instance.report_run_failed(run, msg)
                 # Return rather than immediately checking for a timeout, since we just failed
