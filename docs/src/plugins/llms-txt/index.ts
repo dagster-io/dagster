@@ -50,7 +50,7 @@ module.exports = function (context, options) {
 
       const docsPluginRouteConfig = routes.filter((route) => route.plugin.name === 'docusaurus-plugin-content-docs')[0];
 
-      const allDocsRouteConfig = docsPluginRouteConfig.routes?.filter((route) => route.path === '/')[0];
+      const allDocsRouteConfig = docsPluginRouteConfig.routes?.filter((route) => route.path === context.baseUrl)[0];
 
       if (!allDocsRouteConfig?.props?.version) {
         return;
