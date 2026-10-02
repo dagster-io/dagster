@@ -6,6 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "dagster.workers.fullname" $ -}}-{{- $queue.name }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: celery
