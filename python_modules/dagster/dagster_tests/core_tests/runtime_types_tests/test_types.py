@@ -683,6 +683,33 @@ def test_generic_annotation_resolves_to_unchecked_type():
     assert type_check.description and "not validated" in type_check.description
 
 
+def test_generic_annotated_assets_materialize():
+    @dg.asset
+    def upstream() -> GenericContainer[Schema]:
+        # Like a pandera DataFrame, the value is not an instance of the annotated class.
+        return "not a GenericContainer"  # ty: ignore[invalid-return-type]
+
+    @dg.asset
+    def downstream(upstream: GenericContainer[Schema]) -> None:
+        pass
+
+    result = dg.materialize([upstream, downstream])
+    assert result.success
+
+    output_event = next(
+        event
+        for event in result.events_for_node("upstream")
+        if event.event_type == DagsterEventType.STEP_OUTPUT
+    )
+    output_check = output_event.step_output_data.type_check_data
+    assert output_check and output_check.success
+    assert output_check.description and "not validated" in output_check.description
+
+    input_check = _type_check_data_for_input(result, op_name="downstream", input_name="upstream")
+    assert input_check and input_check.success
+    assert input_check.description and "not validated" in input_check.description
+
+
 def test_generic_annotation_cached_per_parameterization():
     assert resolve_dagster_type(GenericContainer[Schema]) is resolve_dagster_type(
         GenericContainer[Schema]
