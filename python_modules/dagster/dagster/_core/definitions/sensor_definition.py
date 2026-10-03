@@ -54,7 +54,10 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.instance.types import CachingDynamicPartitionsLoader
+from dagster._core.instance.types import (
+    CachingDynamicPartitionsLoader,
+    DynamicPartitionsStoreAfterRequests,
+)
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import get_current_datetime
@@ -1032,6 +1035,7 @@ class SensorDefinition(IHasInternalInit):
                 *self.validate_backfill_requests(
                     run_requests_for_backfill_daemon,
                     context,
+                    dynamic_partitions_requests,
                 ),
             ]
         ]
@@ -1130,30 +1134,51 @@ class SensorDefinition(IHasInternalInit):
         self,
         run_requests: Sequence[RunRequest],
         context: SensorEvaluationContext,
+        dynamic_partitions_requests: Sequence[
+            AddDynamicPartitionsRequest | DeleteDynamicPartitionsRequest
+        ],
     ) -> Sequence[RunRequest]:
+        resolved_run_requests = []
         for run_request in run_requests:
             asset_selection = check.not_none(
                 self._asset_selection,
-                "Can only yield RunRequests with asset_graph_subset for sensors with an asset_selection",
+                "Can only yield backfill RunRequests from sensors with an asset_selection",
             )
 
-            if run_request.asset_graph_subset:
+            if run_request.asset_partition_key_range is not None:
+                asset_keys = set(check.not_none(run_request.asset_selection))
+            elif run_request.asset_graph_subset is not None:
                 asset_keys = run_request.asset_graph_subset.asset_keys
             else:
                 check.invariant(
                     False,
-                    "RunRequest must have an asset_graph_subset to launch a backfill.",
+                    "RunRequest must have an asset partition range or asset graph subset to launch a backfill.",
                 )
 
+            asset_graph = check.not_none(context.repository_def).asset_graph
             unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
-                check.not_none(context.repository_def).asset_graph
+                asset_graph
             )
             if unexpected_asset_keys:
                 raise DagsterInvalidSubsetError(
                     "RunRequest includes asset keys that are not part of sensor's asset_selection:"
                     f" {unexpected_asset_keys}"
                 )
-        return run_requests
+
+            if run_request.asset_partition_key_range is not None:
+                resolved_run_requests.append(
+                    run_request.with_resolved_asset_partition_range(
+                        asset_graph=asset_graph,
+                        dynamic_partitions_store=DynamicPartitionsStoreAfterRequests.from_requests(
+                            context.caching_dynamic_partitions_loader or context.instance,
+                            dynamic_partitions_requests,
+                        ),
+                    )
+                )
+            else:
+                resolved_run_requests.append(run_request)
+
+        return resolved_run_requests
 
     @property
     def _target(self) -> AutomationTarget | None:
