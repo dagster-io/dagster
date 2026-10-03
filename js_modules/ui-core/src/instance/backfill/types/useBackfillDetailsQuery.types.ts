@@ -55,6 +55,7 @@ export type AssetBackfillDetailsFragment = {
         numPartitionsInProgress: number;
         numPartitionsMaterialized: number;
         numPartitionsFailed: number;
+        numPartitionsSkipped: number;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
     | {
@@ -62,6 +63,7 @@ export type AssetBackfillDetailsFragment = {
         inProgress: boolean;
         materialized: boolean;
         failed: boolean;
+        skipped: boolean;
         assetKey: {__typename: 'AssetKey'; path: Array<string>};
       }
   >;
@@ -112,6 +114,7 @@ export type BackfillDetailsQuery = {
                 numPartitionsInProgress: number;
                 numPartitionsMaterialized: number;
                 numPartitionsFailed: number;
+                numPartitionsSkipped: number;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
             | {
@@ -119,6 +122,7 @@ export type BackfillDetailsQuery = {
                 inProgress: boolean;
                 materialized: boolean;
                 failed: boolean;
+                skipped: boolean;
                 assetKey: {__typename: 'AssetKey'; path: Array<string>};
               }
           >;
@@ -197,6 +201,7 @@ export type BackfillDetailsBackfillFragment = {
           numPartitionsInProgress: number;
           numPartitionsMaterialized: number;
           numPartitionsFailed: number;
+          numPartitionsSkipped: number;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
       | {
@@ -204,6 +209,7 @@ export type BackfillDetailsBackfillFragment = {
           inProgress: boolean;
           materialized: boolean;
           failed: boolean;
+          skipped: boolean;
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
         }
     >;
@@ -234,4 +240,4 @@ export type BackfillDetailsBackfillFragment = {
   } | null;
 };
 
-export const BackfillDetailsQueryVersion = 'c0c5cc85d99dff8397bbc7bdd3bce9d5edda6704c0ddeba5a6498fab0919fd14';
+export const BackfillDetailsQueryVersion = 'd83ad009d5406881dcbc2116fad459075ff1a4602a1279e9b0acfbcc9a9f9f33';

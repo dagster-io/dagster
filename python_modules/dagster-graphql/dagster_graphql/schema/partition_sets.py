@@ -164,6 +164,7 @@ class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
     numPartitionsInProgress = graphene.NonNull(graphene.Int)
     numPartitionsMaterialized = graphene.NonNull(graphene.Int)
     numPartitionsFailed = graphene.NonNull(graphene.Int)
+    numPartitionsSkipped = graphene.NonNull(graphene.Int)
 
 
 class GrapheneUnpartitionedAssetStatus(graphene.ObjectType):
@@ -174,6 +175,7 @@ class GrapheneUnpartitionedAssetStatus(graphene.ObjectType):
     inProgress = graphene.NonNull(graphene.Boolean)
     materialized = graphene.NonNull(graphene.Boolean)
     failed = graphene.NonNull(graphene.Boolean)
+    skipped = graphene.NonNull(graphene.Boolean)
 
 
 class GrapheneAssetBackfillStatus(graphene.Union):

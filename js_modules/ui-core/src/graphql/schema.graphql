@@ -3330,6 +3330,7 @@ type AssetPartitionsStatusCounts {
   numPartitionsInProgress: Int!
   numPartitionsMaterialized: Int!
   numPartitionsFailed: Int!
+  numPartitionsSkipped: Int!
 }
 
 type UnpartitionedAssetStatus {
@@ -3337,6 +3338,7 @@ type UnpartitionedAssetStatus {
   inProgress: Boolean!
   materialized: Boolean!
   failed: Boolean!
+  skipped: Boolean!
 }
 
 union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
