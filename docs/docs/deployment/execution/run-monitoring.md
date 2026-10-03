@@ -57,6 +57,37 @@ The below code example shows how to set a run timeout of 10 seconds on a per-job
   title="src/my_project/assets.py"
 />
 
+### Precedence of the tag over the deployment-wide setting
+
+When a run carries a `dagster/max_runtime` tag, that value **replaces**
+`run_monitoring.max_runtime_seconds` for that run instead of being combined with it. The two values
+are not intersected, so the tag can raise the limit as well as lower it: with
+`max_runtime_seconds: 7200` in your deployment, a run tagged
+`{"dagster/max_runtime": 14400}` is allowed to run for four hours.
+
+The resolution order for a single run is:
+
+1. The run's `dagster/max_runtime` tag, if set.
+2. Otherwise, the deployment-wide `run_monitoring.max_runtime_seconds`, if set.
+3. Otherwise, no maximum runtime is enforced.
+
+:::warning
+
+If the tag value cannot be parsed as a number, the run has **no** maximum runtime — the deployment-wide
+`run_monitoring.max_runtime_seconds` is not used as a fallback. The daemon logs a
+`Invalid max runtime value: <value>` warning and leaves the run alone, so a typo such as
+`{"dagster/max_runtime": "10m"}` silently opts a job out of run timeouts.
+
+:::
+
+:::note
+
+`dagster/max_runtime_seconds` is accepted as an alias for `dagster/max_runtime` and behaves
+identically. Prefer `dagster/max_runtime`, which is the value of the `dagster.MAX_RUNTIME_SECONDS_TAG`
+constant.
+
+:::
+
 ## Freeing concurrency slots after run completion
 
 When using [op concurrency limits](/guides/operate/managing-concurrency) with the `dagster/concurrency_key` tag, concurrency slots are claimed by steps during execution. If a run is cancelled or fails while steps hold concurrency slots, those slots can become stale and permanently block the concurrency pool. Without cleanup, this results in a deadlock where no future runs can claim slots for that concurrency key.
