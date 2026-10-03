@@ -3,20 +3,24 @@ export const PREFIX_PLACEHOLDER = '__PATH_PREFIX__';
 export const TELEMETRY_PLACEHOLDER = '__TELEMETRY_ENABLED__';
 export const LIVE_DATA_POLL_RATE_PLACEHOLDER = '__LIVE_DATA_POLL_RATE__';
 export const INSTANCE_ID_PLACEHOLDER = '__INSTANCE_ID__';
+export const UI_LABEL_PLACEHOLDER = '__UI_LABEL__';
+export const UI_INTENT_PLACEHOLDER = '__UI_INTENT__';
 
-let value:
-  | {pathPrefix: string; telemetryEnabled: boolean; liveDataPollRate?: number; instanceId: string}
-  | undefined = undefined;
-
-// Determine the path prefix value, which is set server-side.
-// This value will be used for prefixing paths for the GraphQL
-// endpoint and dynamically loaded bundles.
-export const extractInitializationData = (): {
+export interface InitializationData {
   pathPrefix: string;
   telemetryEnabled: boolean;
   liveDataPollRate?: number;
   instanceId: string;
-} => {
+  uiLabel?: string;
+  uiIntent?: string;
+}
+
+let value: InitializationData | undefined = undefined;
+
+// Determine the path prefix value, which is set server-side.
+// This value will be used for prefixing paths for the GraphQL
+// endpoint and dynamically loaded bundles.
+export const extractInitializationData = (): InitializationData => {
   if (!value) {
     value = {pathPrefix: '', telemetryEnabled: false, instanceId: ''};
     const element = document.getElementById(ELEMENT_ID);
@@ -33,6 +37,12 @@ export const extractInitializationData = (): {
       }
       if (parsed.instanceId !== INSTANCE_ID_PLACEHOLDER) {
         value.instanceId = parsed.instanceId;
+      }
+      if (parsed.uiLabel && parsed.uiLabel !== UI_LABEL_PLACEHOLDER) {
+        value.uiLabel = parsed.uiLabel;
+      }
+      if (parsed.uiIntent && parsed.uiIntent !== UI_INTENT_PLACEHOLDER) {
+        value.uiIntent = parsed.uiIntent;
       }
     }
   }
