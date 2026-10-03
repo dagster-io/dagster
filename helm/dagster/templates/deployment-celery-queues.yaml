@@ -150,6 +150,9 @@ spec:
     {{- if $celeryK8sRunLauncherConfig.schedulerName }}
       schedulerName: {{ $celeryK8sRunLauncherConfig.schedulerName }}
     {{- end }}
+    {{- if $celeryK8sRunLauncherConfig.priorityClassName }}
+      priorityClassName: {{ $celeryK8sRunLauncherConfig.priorityClassName | quote }}
+    {{- end }}
 ---
 {{ end }}
 {{ end }}

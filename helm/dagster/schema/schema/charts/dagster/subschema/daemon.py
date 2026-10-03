@@ -111,6 +111,7 @@ class Daemon(BaseModel, extra="forbid"):
     schedules: Schedules
     backfills: Backfills | None = None
     schedulerName: str | None = None
+    priorityClassName: str | None = None
     logFormat: str | None = None
     volumeMounts: list[kubernetes.VolumeMount] | None = None
     volumes: list[kubernetes.Volume] | None = None

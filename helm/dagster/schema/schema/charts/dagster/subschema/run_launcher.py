@@ -47,6 +47,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     labels: dict[str, str] | None = None
     failPodOnRunFailure: bool | None = None
     schedulerName: str | None = None
+    priorityClassName: str | None = None
     jobNamespace: str | None = None
 
     model_config = ConfigDict(extra="forbid")
