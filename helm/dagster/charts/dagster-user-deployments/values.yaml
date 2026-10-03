@@ -28,6 +28,25 @@ includeInstance: false
 # pipeline execution use the same image, we recommend using a unique tag (ie not "latest").
 #
 # All user code will be invoked within the images.
+#
+# "deployments" may be provided either as a list (shown below) or as a map keyed by
+# deployment name. The map form lets layered values files (e.g. a base file plus a
+# per-environment override) deep-merge by key instead of replacing the whole list, so
+# an override can change a single field of a single deployment. When the map form is
+# used, the map key is the deployment name and the per-entry "name" field is optional.
+#
+# Example map form:
+#
+# deployments:
+#   k8s-example-user-code-1:
+#     image:
+#       repository: "docker.io/dagster/user-code-example"
+#       tag: ~
+#       pullPolicy: Always
+#     dagsterApiGrpcArgs:
+#       - "-f"
+#       - "/example_project/example_repo/repo.py"
+#     port: 3030
 ####################################################################################################
 deployments:
   - name: "k8s-example-user-code-1"
