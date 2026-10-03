@@ -8,6 +8,7 @@ at parity with dbt core / dbt Cloud -- without standing up a real dbt project or
 connection.
 """
 
+import copy
 import datetime
 import json
 import os
@@ -18,6 +19,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest import mock
 
+import dateutil.parser
 import pytest
 from dagster import (
     AssetCheckKey,
@@ -34,6 +36,7 @@ from dagster_shared.serdes.objects.models.defs_state_info import DefsStateManage
 pytest.importorskip("dagster_dbt")
 
 import dagster_snowflake.components.dbt_project.component as comp_mod
+from dagster_dbt.cloud_v2.run_handler import COMPLETED_AT_TIMESTAMP_METADATA_KEY
 from dagster_snowflake.components.dbt_project.component import (
     _QUERY_TAG_MARKER,
     SnowflakeDbtProjectComponent,
@@ -320,6 +323,54 @@ _RUN_RESULTS = {
         },
     ],
 }
+
+
+@pytest.mark.parametrize("status", ["success", "no-op", "reused"])
+def test_run_results_to_events_non_error_statuses_materialize(status: str) -> None:
+    """`no-op` (dbt-core 1.10+) and `reused` (dbt-core 1.12+) are terminal, non-error statuses
+    meaning dbt did not rebuild the node, so the model must still be materialized. Keeps this
+    component at parity with `DbtCloudJobRunResults.to_default_asset_events`.
+    """
+    run_results = copy.deepcopy(_RUN_RESULTS)
+    run_results["metadata"]["generated_at"] = "2024-01-01T00:00:09Z"
+    # Only the model result matters here; the test-node branch needs its own check-key wiring.
+    run_results["results"] = [run_results["results"][0]]
+    run_results["results"][0]["status"] = status
+    if status != "success":
+        # dbt records no timings for a node it never built.
+        run_results["results"][0]["timing"] = []
+
+    fake_translator = mock.MagicMock()
+    fake_translator.get_asset_spec.return_value = SimpleNamespace(key=AssetKey(["customers"]))
+
+    component = _make_component()
+    with mock.patch.object(comp_mod, "validate_translator", return_value=fake_translator):
+        events = list(component._run_results_to_events(run_results, _MANIFEST))  # noqa: SLF001
+
+    mats = [e for e in events if isinstance(e, AssetMaterialization)]
+    assert len(mats) == 1
+    assert mats[0].metadata["status"].value == status
+    # A timing-less result must not fall back to wall-clock time: the metadata timestamp is
+    # persisted and compared across runs, so it has to come from the run itself.
+    expected = dateutil.parser.parse(run_results["metadata"]["generated_at"]).timestamp()
+    if status != "success":
+        assert mats[0].metadata[COMPLETED_AT_TIMESTAMP_METADATA_KEY].value == expected
+
+
+@pytest.mark.parametrize("status", ["error", "fail", "skipped", "runtime error"])
+def test_run_results_to_events_error_statuses_do_not_materialize(status: str) -> None:
+    run_results = copy.deepcopy(_RUN_RESULTS)
+    run_results["results"] = [run_results["results"][0]]
+    run_results["results"][0]["status"] = status
+
+    fake_translator = mock.MagicMock()
+    fake_translator.get_asset_spec.return_value = SimpleNamespace(key=AssetKey(["customers"]))
+
+    component = _make_component()
+    with mock.patch.object(comp_mod, "validate_translator", return_value=fake_translator):
+        events = list(component._run_results_to_events(run_results, _MANIFEST))  # noqa: SLF001
+
+    assert [e for e in events if isinstance(e, AssetMaterialization)] == []
 
 
 def test_execute_submits_async_and_sets_query_tag():
