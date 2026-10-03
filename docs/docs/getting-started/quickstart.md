@@ -178,7 +178,8 @@ src
 Next, create a `sample_data.csv` file. This file will act as the data source for your Dagster pipeline:
 
 ```shell
-mkdir src/dagster_quickstart/defs/data && touch src/dagster_quickstart/defs/data/sample_data.csv
+mkdir -p src/dagster_quickstart/defs/data && \
+  touch src/dagster_quickstart/defs/data/sample_data.csv
 ```
 
 In your preferred editor, copy the following data into this file:
