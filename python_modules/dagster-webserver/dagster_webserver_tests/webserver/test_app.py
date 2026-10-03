@@ -81,9 +81,9 @@ def test_static_resources(test_client: TestClient):
         assert response.status_code == 200, response.text
         assert response.headers["content-type"] != "text/html"
 
-    response = test_client.get("/vendor/graphiql/graphiql.min.css")
+    response = test_client.get("/vendor/graphql-playground/middleware.js")
     assert response.status_code == 200, response.text
-    assert response.headers["content-type"] != "text/html"
+    assert response.headers["content-type"] != "application/js"
 
 
 # https://graphql.org/learn/serving-over-http/

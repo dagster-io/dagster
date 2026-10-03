@@ -136,6 +136,10 @@ class SettingsMethods:
         return self.run_monitoring_settings.get("max_resume_run_attempts", 0)
 
     @property
+    def run_monitoring_unknown_status_threshold(self) -> int:
+        return self.run_monitoring_settings.get("unknown_status_threshold", 3)
+
+    @property
     def run_monitoring_poll_interval_seconds(self) -> int:
         return self.run_monitoring_settings.get("poll_interval_seconds", 120)
 
