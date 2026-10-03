@@ -114,7 +114,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def path(path: str | PathLike) -> "PathMetadataValue":
+    def path(path: str | PathLike[str]) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`PathMetadataValue`.
 
@@ -137,7 +137,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    def notebook(path: str | PathLike) -> "NotebookMetadataValue":
+    def notebook(path: str | PathLike[str]) -> "NotebookMetadataValue":
         """Static constructor for a metadata value wrapping a notebook path as
         :py:class:`NotebookMetadataValue`.
 
@@ -578,7 +578,7 @@ class PathMetadataValue(MetadataValue[str], IHaveNew):
 
     fspath: str
 
-    def __new__(cls, path: str | PathLike | None):
+    def __new__(cls, path: str | PathLike[str] | None):
         return super().__new__(
             cls,
             # coerces to str
@@ -610,7 +610,7 @@ class NotebookMetadataValue(MetadataValue[str], IHaveNew):
 
     fspath: str
 
-    def __new__(cls, path: str | PathLike | None):
+    def __new__(cls, path: str | PathLike[str] | None):
         return super().__new__(
             cls,
             # coerces to str
