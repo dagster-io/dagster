@@ -15,7 +15,7 @@ from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
 from dagster._utils.backoff import backoff
 from dagster._utils.cached_method import cached_method
-from google.api_core.exceptions import Forbidden, ServiceUnavailable, TooManyRequests
+from google.api_core.exceptions import Forbidden, NotFound, ServiceUnavailable, TooManyRequests
 from google.cloud import storage
 from pydantic import Field
 from upath import UPath
@@ -64,7 +64,13 @@ class PickledObjectGCSIOManager(UPathIOManager):
         return None
 
     def load_from_path(self, context: InputContext, path: UPath) -> Any:
-        bytes_obj = self.bucket_obj.blob(path.as_posix()).download_as_bytes()
+        try:
+            bytes_obj = self.bucket_obj.blob(path.as_posix()).download_as_bytes()
+        except NotFound:
+            # Translate GCS NotFound into FileNotFoundError so UPathIOManager's
+            # `allow_missing_partitions` metadata is honored (e.g. when used with
+            # MultiToSingleDimensionPartitionMapping). Mirrors S3 IO manager behavior.
+            raise FileNotFoundError(f"Could not find file {path} in GCS bucket {self.bucket}")
         return pickle.loads(bytes_obj)
 
     def dump_to_path(self, context: OutputContext, obj: Any, path: UPath) -> None:
