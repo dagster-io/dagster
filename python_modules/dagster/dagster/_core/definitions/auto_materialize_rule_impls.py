@@ -32,7 +32,7 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
-from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
+from dagster._utils.schedules import batched_cron_string_iterator, reverse_cron_string_iterator
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -101,14 +101,15 @@ class MaterializeOnCronRule(
             )
             return [previous_dt]
         missed_ticks = []
-        for dt in cron_string_iterator(
+        for batch in batched_cron_string_iterator(
             start_timestamp=context.legacy_context.previous_evaluation_timestamp,
             cron_string=self.cron_schedule,
             execution_timezone=self.timezone,
         ):
-            if dt > context.legacy_context.evaluation_time:
-                break
-            missed_ticks.append(dt)
+            for dt in batch:
+                if dt > context.legacy_context.evaluation_time:
+                    return missed_ticks
+                missed_ticks.append(dt)
         return missed_ticks
 
     def get_new_candidate_asset_partitions(
