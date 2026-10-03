@@ -83,16 +83,16 @@ class DagsterRunStatus(Enum):
     CANCELED = "CANCELED"
 
 
-# These statuses that indicate a run may be using compute resources
-IN_PROGRESS_RUN_STATUSES = [
+# Statuses in which a run has a worker (or is getting one) and occupies a concurrency slot.
+ACTIVE_RUN_STATUSES = [
     DagsterRunStatus.STARTING,
     DagsterRunStatus.STARTED,
     DagsterRunStatus.CANCELING,
 ]
 
-# This serves as an explicit list of run statuses that indicate that the run is not using compute
-# resources. This and the enum above should cover all run statuses.
-NON_IN_PROGRESS_RUN_STATUSES = [
+# Statuses in which a run holds no worker and no concurrency slot. This and ACTIVE_RUN_STATUSES
+# partition the run statuses, so adding a status forces a decision about how the run queue counts it.
+NON_ACTIVE_RUN_STATUSES = [
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.NOT_STARTED,
     DagsterRunStatus.SUCCESS,

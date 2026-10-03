@@ -20,8 +20,8 @@ from dagster._core.remote_origin import (
     RemoteRepositoryOrigin,
 )
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
-    NON_IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
+    NON_ACTIVE_RUN_STATUSES,
     DagsterRunStatus,
 )
 from dagster._core.storage.tags import (
@@ -70,16 +70,14 @@ def test_queued_job_origin_check():
         dg.DagsterRun(job_name="foo").with_status(DagsterRunStatus.QUEUED)
 
 
-def test_in_progress_statuses():
+def test_active_statuses():
     """If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses."""
     for status in dg.DagsterRunStatus:
-        in_progress = status in IN_PROGRESS_RUN_STATUSES
-        non_in_progress = status in NON_IN_PROGRESS_RUN_STATUSES
-        assert in_progress != non_in_progress  # should be in exactly one of the two
+        active = status in ACTIVE_RUN_STATUSES
+        non_active = status in NON_ACTIVE_RUN_STATUSES
+        assert active != non_active  # should be in exactly one of the two
 
-    assert len(IN_PROGRESS_RUN_STATUSES) + len(NON_IN_PROGRESS_RUN_STATUSES) == len(
-        dg.DagsterRunStatus
-    )
+    assert len(ACTIVE_RUN_STATUSES) + len(NON_ACTIVE_RUN_STATUSES) == len(dg.DagsterRunStatus)
 
 
 def test_runs_filter_supports_nonempty_run_ids():

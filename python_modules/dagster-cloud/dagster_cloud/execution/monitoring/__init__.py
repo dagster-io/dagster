@@ -10,7 +10,7 @@ import dagster._check as check
 import grpc
 from dagster import DagsterInstance, DagsterRunStatus
 from dagster._core.launcher import CheckRunHealthResult, WorkerStatus
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
+from dagster._core.storage.dagster_run import ACTIVE_RUN_STATUSES, RunsFilter
 from dagster._grpc.server import DagsterCodeServerUtilizationMetrics
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -269,7 +269,7 @@ def get_cloud_run_worker_statuses(
         with DagsterInstance.from_ref(
             instance.ref_for_deployment(deployment_name)
         ) as scoped_instance:
-            runs = scoped_instance.get_runs(RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+            runs = scoped_instance.get_runs(RunsFilter(statuses=ACTIVE_RUN_STATUSES))
             statuses_for_deployment: list[CloudRunWorkerStatus] = []
             for run in runs:
                 if is_isolated_run(run):

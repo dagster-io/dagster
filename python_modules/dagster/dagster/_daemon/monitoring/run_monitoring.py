@@ -10,7 +10,7 @@ from dagster import (
 from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
     DagsterRunStatus,
     RunRecord,
     RunsFilter,
@@ -195,7 +195,7 @@ def execute_run_monitoring_iteration(
     run_records = list(
         instance.get_run_records(
             filters=RunsFilter(
-                statuses=IN_PROGRESS_RUN_STATUSES
+                statuses=ACTIVE_RUN_STATUSES
                 + [DagsterRunStatus.CANCELING, DagsterRunStatus.NOT_STARTED]
             )
         )
