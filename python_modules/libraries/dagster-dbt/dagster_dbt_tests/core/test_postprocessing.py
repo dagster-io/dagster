@@ -1,6 +1,7 @@
 import json
 import os
 from decimal import Decimal
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest import mock
 
@@ -15,8 +16,9 @@ from dagster._core.definitions.metadata.metadata_value import MetadataValue, Tab
 from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, DbtDagsterEventType
-from dagster_dbt.core.dbt_event_iterator import _get_dbt_resource_props_from_event
+from dagster_dbt.core.dbt_event_iterator import DbtEventIterator, _get_dbt_resource_props_from_event
 from dagster_dbt.core.resource import DbtCliResource
+from packaging import version
 
 from dagster_dbt_tests.conftest import _create_dbt_invocation
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
@@ -67,6 +69,24 @@ def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[s
         "dagster/row_count" in event.materialization.metadata
         for event in result.get_asset_materialization_events()
     )
+
+
+@pytest.mark.parametrize(
+    ("method", "metadata_type"),
+    [
+        ("fetch_column_metadata", "Column metadata"),
+        ("fetch_row_counts", "Row count metadata"),
+    ],
+)
+def test_fusion_metadata_is_not_supported(method: str, metadata_type: str) -> None:
+    invocation = SimpleNamespace(
+        cli_version=version.parse("2.0.0"),
+        adapter=None,
+        postprocessing_threadpool_num_threads=1,
+    )
+
+    with pytest.raises(check.CheckError, match=f"{metadata_type} not supported for dbt Fusion"):
+        getattr(DbtEventIterator(iter([]), invocation), method)()
 
 
 @pytest.fixture(name="test_jaffle_shop_manifest_snowflake")
