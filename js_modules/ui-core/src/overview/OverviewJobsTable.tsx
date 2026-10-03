@@ -2,7 +2,14 @@ import {Container, Inner, TABLE_HEADER_HEIGHT} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useMemo, useRef} from 'react';
 
+import {JobGroupSectionHeader} from './JobGroupSectionHeader';
 import {OVERVIEW_COLLAPSED_KEY} from './OverviewExpansionKey';
+import {
+  DEFAULT_JOB_GROUP_NAME,
+  JobGroupNode,
+  allJobGroupPaths,
+  buildJobGroupTree,
+} from '../jobs/jobGroups';
 import {findDuplicateRepoNames} from '../ui/findDuplicateRepoNames';
 import {useRepoExpansionState} from '../ui/useRepoExpansionState';
 import {VirtualizedObserveJobRow} from '../workspace/VirtualizedObserveJobRow';
@@ -10,12 +17,15 @@ import {DynamicRepoRow} from '../workspace/VirtualizedWorkspaceTable';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
+type Job = {
+  isJob: boolean;
+  name: string;
+  groupName?: string | null;
+};
+
 type Repository = {
   repoAddress: RepoAddress;
-  jobs: {
-    isJob: boolean;
-    name: string;
-  }[];
+  jobs: Job[];
 };
 
 interface Props {
@@ -23,14 +33,46 @@ interface Props {
 }
 
 type RowType =
-  | {type: 'header'; repoAddress: RepoAddress; jobCount: number}
+  | {type: 'header'; repoAddress: RepoAddress}
+  | {
+      type: 'group';
+      repoAddress: RepoAddress;
+      groupName: string;
+      groupKey: string;
+      depth: number;
+    }
   | {type: 'job'; repoAddress: RepoAddress; isJob: boolean; name: string};
+
+export const groupExpansionKey = (repoKey: string, groupName: string) =>
+  `${repoKey}:group:${groupName}`;
 
 export const OverviewJobsTable = ({repos}: Props) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
-  const allKeys = useMemo(
-    () => repos.map(({repoAddress}) => repoAddressAsHumanString(repoAddress)),
+
+  // Group sections are only rendered for repos that actually make use of job groups, so that
+  // users who have not adopted them see the same flat list as before.
+  const groupedRepos = useMemo(
+    () =>
+      repos.map(({repoAddress, jobs}) => {
+        const repoKey = repoAddressAsHumanString(repoAddress);
+        const groups = buildJobGroupTree(jobs);
+        const showGroups =
+          groups.length > 1 ||
+          groups.some(({path, children}) => path !== DEFAULT_JOB_GROUP_NAME || children.length);
+        return {repoAddress, repoKey, groups, showGroups};
+      }),
     [repos],
+  );
+
+  const allKeys = useMemo(
+    () =>
+      groupedRepos.flatMap(({repoKey, groups, showGroups}) => [
+        repoKey,
+        ...(showGroups
+          ? allJobGroupPaths(groups).map((path) => groupExpansionKey(repoKey, path))
+          : []),
+      ]),
+    [groupedRepos],
   );
 
   const {expandedKeys, onToggle, onToggleAll} = useRepoExpansionState(
@@ -39,18 +81,44 @@ export const OverviewJobsTable = ({repos}: Props) => {
   );
 
   const flattened: RowType[] = useMemo(() => {
+    const expandedKeySet = new Set(expandedKeys);
     const flat: RowType[] = [];
-    repos.forEach(({repoAddress, jobs}) => {
-      flat.push({type: 'header', repoAddress, jobCount: jobs.length});
-      const repoKey = repoAddressAsHumanString(repoAddress);
-      if (expandedKeys.includes(repoKey)) {
-        jobs.forEach(({isJob, name}) => {
-          flat.push({type: 'job', repoAddress, isJob, name});
-        });
+
+    groupedRepos.forEach(({repoAddress, repoKey, groups, showGroups}) => {
+      flat.push({type: 'header', repoAddress});
+
+      if (!expandedKeySet.has(repoKey)) {
+        return;
       }
+
+      const pushGroups = (nodes: JobGroupNode<Job>[]) => {
+        nodes.forEach((node) => {
+          const groupKey = groupExpansionKey(repoKey, node.path);
+          if (showGroups) {
+            flat.push({
+              type: 'group',
+              repoAddress,
+              groupName: node.name,
+              groupKey,
+              depth: node.depth,
+            });
+            // Collapsing a group hides its jobs and every nested subgroup beneath it.
+            if (!expandedKeySet.has(groupKey)) {
+              return;
+            }
+          }
+          pushGroups(node.children);
+          node.jobs.forEach(({isJob, name}) => {
+            flat.push({type: 'job', repoAddress, isJob, name});
+          });
+        });
+      };
+
+      pushGroups(groups);
     });
+
     return flat;
-  }, [repos, expandedKeys]);
+  }, [groupedRepos, expandedKeys]);
 
   const duplicateRepoNames = findDuplicateRepoNames(repos.map(({repoAddress}) => repoAddress.name));
 
@@ -59,7 +127,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
     getScrollElement: () => parentRef.current,
     estimateSize: (ii: number) => {
       const row = flattened[ii];
-      return row?.type === 'header' ? TABLE_HEADER_HEIGHT : 64;
+      return row?.type === 'job' ? 64 : TABLE_HEADER_HEIGHT;
     },
     overscan: 10,
   });
@@ -83,8 +151,7 @@ export const OverviewJobsTable = ({repos}: Props) => {
             {items.map(({index, key}) => {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               const row: RowType = flattened[index]!;
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              const type = row!.type;
+              const type = row.type;
 
               if (type === 'header') {
                 return (
@@ -99,6 +166,19 @@ export const OverviewJobsTable = ({repos}: Props) => {
                     showLocation={duplicateRepoNames.has(row.repoAddress.name)}
                     rightElement={<></>}
                   />
+                );
+              }
+
+              if (type === 'group') {
+                return (
+                  <div key={key} ref={rowVirtualizer.measureElement} data-index={index}>
+                    <JobGroupSectionHeader
+                      groupName={row.groupName}
+                      depth={row.depth}
+                      expanded={expandedKeys.includes(row.groupKey)}
+                      onClick={() => onToggle(row.groupKey)}
+                    />
+                  </div>
                 );
               }
 

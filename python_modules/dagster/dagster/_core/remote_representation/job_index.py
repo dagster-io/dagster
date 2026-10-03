@@ -3,6 +3,7 @@ from typing import Any
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.snap import DependencyStructureIndex, JobSnap
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
@@ -66,6 +67,10 @@ class JobIndex:
     @property
     def owners(self):
         return self.job_snapshot.owners
+
+    @property
+    def group_name(self) -> str:
+        return getattr(self.job_snapshot, "group_name", None) or DEFAULT_GROUP_NAME
 
     @property
     def job_snapshot_id(self) -> str:
