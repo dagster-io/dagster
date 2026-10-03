@@ -56,6 +56,29 @@ def test_with_replaced_asset_keys():
     assert replaced.keys_by_output_name["result"] == dg.AssetKey(["prefix1", "asset1_changed"])
 
 
+def test_asset_keyword_only_dependencies():
+    @dg.asset
+    def first_dependency():
+        return "first"
+
+    @dg.asset
+    def second_dependency():
+        return "second"
+
+    @dg.asset
+    def combined_asset(*, first_dependency: str, second_dependency: str) -> str:
+        return f"{first_dependency}-{second_dependency}"
+
+    assert combined_asset.keys_by_input_name == {
+        "first_dependency": dg.AssetKey("first_dependency"),
+        "second_dependency": dg.AssetKey("second_dependency"),
+    }
+    assert combined_asset.dependency_keys == {
+        dg.AssetKey("first_dependency"),
+        dg.AssetKey("second_dependency"),
+    }
+
+
 @pytest.mark.parametrize(
     "subset,expected_keys,expected_inputs,expected_outputs",
     [
