@@ -84,6 +84,11 @@ class IExecutionStep:
 
     @property
     @abstractmethod
+    def pool_slots(self) -> int | None:
+        pass
+
+    @property
+    @abstractmethod
     def step_inputs(
         self,
     ) -> Sequence[StepInput | UnresolvedCollectStepInput | UnresolvedMappedStepInput]:
@@ -127,6 +132,7 @@ class ExecutionStep(
             ("logging_tags", Mapping[str, str]),
             ("key", str),
             ("pool", str | None),
+            ("pool_slots", int | None),
         ],
     ),
     IExecutionStep,
@@ -143,6 +149,7 @@ class ExecutionStep(
         pool: str | None,
         logging_tags: Mapping[str, str] | None = None,
         key: str | None = None,
+        pool_slots: int | None = None,
     ):
         return super().__new__(
             cls,
@@ -158,6 +165,7 @@ class ExecutionStep(
             },
             tags=tags or {},
             pool=check.opt_str_param(pool, "pool"),
+            pool_slots=check.opt_int_param(pool_slots, "pool_slots"),
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
@@ -228,6 +236,7 @@ class UnresolvedMappedExecutionStep(
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
             ("pool", str | None),
+            ("pool_slots", int | None),
         ],
     ),
     IExecutionStep,
@@ -242,6 +251,7 @@ class UnresolvedMappedExecutionStep(
         step_outputs: Sequence[StepOutput],
         tags: Mapping[str, str] | None,
         pool: str | None,
+        pool_slots: int | None = None,
     ):
         return super().__new__(
             cls,
@@ -259,6 +269,7 @@ class UnresolvedMappedExecutionStep(
             },
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
             pool=check.opt_str_param(pool, "pool"),
+            pool_slots=check.opt_int_param(pool_slots, "pool_slots"),
         )
 
     @property
@@ -364,6 +375,7 @@ class UnresolvedMappedExecutionStep(
                     step_outputs=self.step_outputs,
                     tags=self.tags,
                     pool=self.pool,
+                    pool_slots=self.pool_slots,
                 )
             )
 
@@ -390,6 +402,7 @@ class UnresolvedCollectExecutionStep(
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
             ("pool", str | None),
+            ("pool_slots", int | None),
         ],
     ),
     IExecutionStep,
@@ -404,6 +417,7 @@ class UnresolvedCollectExecutionStep(
         step_outputs: Sequence[StepOutput],
         tags: Mapping[str, str] | None,
         pool: str | None,
+        pool_slots: int | None = None,
     ):
         return super().__new__(
             cls,
@@ -421,6 +435,7 @@ class UnresolvedCollectExecutionStep(
             },
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
             pool=check.opt_str_param(pool, "pool"),
+            pool_slots=check.opt_int_param(pool_slots, "pool_slots"),
         )
 
     @property
@@ -501,4 +516,5 @@ class UnresolvedCollectExecutionStep(
             step_outputs=self.step_outputs,
             tags=self.tags,
             pool=self.pool,
+            pool_slots=self.pool_slots,
         )

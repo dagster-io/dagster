@@ -152,6 +152,8 @@ PendingStepsTable = db.Table(
     db.Column("priority", db.Integer),
     db.Column("assigned_timestamp", db.DateTime),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    # number of slots this step occupies in the pool; NULL is read as 1
+    db.Column("slots", db.Integer, nullable=True),
 )
 
 AssetCheckExecutionsTable = db.Table(

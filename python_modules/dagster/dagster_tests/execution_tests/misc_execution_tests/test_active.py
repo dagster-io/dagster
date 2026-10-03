@@ -250,7 +250,7 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
     def global_concurrency_keys(self) -> set[str]:
         return {"foo"}
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):  # ty: ignore[invalid-method-override]
+    def claim(self, concurrency_key: str, step_key: str, priority: int = 0, pool_slots: int = 1):  # ty: ignore[invalid-method-override]
         self._pending_claims.add(step_key)
         return False
 
