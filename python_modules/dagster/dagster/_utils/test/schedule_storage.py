@@ -732,6 +732,27 @@ class TestScheduleStorage:
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
 
+    def test_ticks_batched_by_status_and_unlimited(self, storage):
+        if not storage.supports_batch_queries:
+            pytest.skip("storage cannot batch")
+
+        now = time.time()
+        success = storage.create_tick(
+            self.build_sensor_tick(now - 1, status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        skipped = storage.create_tick(
+            self.build_sensor_tick(now, status=TickStatus.SKIPPED, name="sensor_one")
+        )
+
+        by_status = storage.get_batch_ticks(["sensor_one"], limit=1, statuses=[TickStatus.SUCCESS])
+        assert [tick.tick_id for tick in by_status["sensor_one"]] == [success.tick_id]
+
+        unlimited = storage.get_batch_ticks(["sensor_one"])
+        assert [tick.tick_id for tick in unlimited["sensor_one"]] == [
+            skipped.tick_id,
+            success.tick_id,
+        ]
+
     def test_auto_materialize_asset_evaluations(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")
