@@ -739,6 +739,160 @@ def test_upath_io_manager_async_allow_missing_partitions(
     assert len(downstream_asset_data) == 1, "1 partition should be missing"
 
 
+@pytest.mark.parametrize("materialized_days", [(1, 2, 3, 4), (1, 3)])
+def test_upath_io_manager_async_allow_missing_partitions_keeps_keys_aligned(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+    materialized_days: tuple[int, ...],
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @dg.asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @dg.asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": dg.AssetIn(
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-4),
+                metadata={"allow_missing_partitions": True},
+            )
+        },
+    )
+    def downstream_asset(upstream_asset: dict[str, str]):
+        return upstream_asset
+
+    materialized_keys = [
+        (start + timedelta(days=days)).strftime(daily.fmt) for days in materialized_days
+    ]
+    for partition_key in materialized_keys:
+        dg.materialize([upstream_asset], partition_key=partition_key)
+
+    result = dg.materialize(
+        [upstream_asset.to_source_asset(), downstream_asset],
+        partition_key=(start + timedelta(days=4)).strftime(daily.fmt),
+    )
+    downstream_asset_data = result.output_for_node("downstream_asset", "result")
+    # every upstream partition returns its own partition key, so a key mapped to
+    # anything but itself means the results were shifted onto the wrong keys
+    assert downstream_asset_data == {key: key for key in materialized_keys}
+
+
+def test_upath_io_manager_async_fail_on_missing_partitions_error_message(
+    tmp_path: Path,
+    daily: DailyPartitionsDefinition,
+    start: datetime,
+):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+
+    @dg.asset(partitions_def=daily, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @dg.asset(
+        partitions_def=daily,
+        io_manager_def=manager,
+        ins={
+            "upstream_asset": dg.AssetIn(
+                partition_mapping=dg.TimeWindowPartitionMapping(start_offset=-2)
+            )
+        },
+    )
+    def downstream_asset(upstream_asset: dict[str, str]):
+        return upstream_asset
+
+    for days in (1, 2):
+        dg.materialize(
+            [upstream_asset],
+            partition_key=(start + timedelta(days=days)).strftime(daily.fmt),
+        )
+
+    # only the first of the 3 mapped partitions is missing
+    with pytest.raises(RuntimeError, match="1 partitions could not be loaded"):
+        dg.materialize(
+            [upstream_asset.to_source_asset(), downstream_asset],
+            partition_key=(start + timedelta(days=2)).strftime(daily.fmt),
+        )
+
+
+def test_upath_io_manager_async_multipartitions_backcompat_path(tmp_path: Path):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "abc": dg.StaticPartitionsDefinition(["a", "b"]),
+            "n": dg.StaticPartitionsDefinition(["1"]),
+        }
+    )
+
+    @dg.asset(partitions_def=partitions_def, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @dg.asset(io_manager_def=manager)
+    def downstream_asset(upstream_asset: dict[str, str]):
+        return upstream_asset
+
+    dg.materialize([upstream_asset], partition_key=dg.MultiPartitionKey({"abc": "a", "n": "1"}))
+
+    # very old Dagster versions stored multipartitions in a flat "b|1" file instead of "b/1"
+    backcompat_path = UPath(tmp_path) / "upstream_asset" / "b|1"
+    backcompat_path.parent.mkdir(parents=True, exist_ok=True)
+    with backcompat_path.open("w") as file:
+        json.dump("b|1", file)
+
+    result = dg.materialize([upstream_asset.to_source_asset(), downstream_asset])
+    assert result.output_for_node("downstream_asset", "result") == {"a|1": "a|1", "b|1": "b|1"}
+
+
+def test_upath_io_manager_async_multipartitions_allow_missing_partitions(tmp_path: Path):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "abc": dg.StaticPartitionsDefinition(["a", "b"]),
+            "n": dg.StaticPartitionsDefinition(["1"]),
+        }
+    )
+
+    @dg.asset(partitions_def=partitions_def, io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @dg.asset(
+        io_manager_def=manager,
+        ins={"upstream_asset": dg.AssetIn(metadata={"allow_missing_partitions": True})},
+    )
+    def downstream_asset(upstream_asset: dict[str, str]):
+        return upstream_asset
+
+    # "b|1" is missing from both the normal and the backcompat location
+    dg.materialize([upstream_asset], partition_key=dg.MultiPartitionKey({"abc": "a", "n": "1"}))
+
+    result = dg.materialize([upstream_asset.to_source_asset(), downstream_asset])
+    assert result.output_for_node("downstream_asset", "result") == {"a|1": "a|1"}
+
+
+def test_upath_io_manager_async_keeps_falsy_partition_values(tmp_path: Path):
+    manager = AsyncJSONIOManager(base_dir=str(tmp_path))
+    values: dict[str, Any] = {"a": 0, "b": "", "c": [], "d": False}
+
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(list(values)), io_manager_def=manager)
+    def upstream_asset(context: AssetExecutionContext):
+        return values[context.partition_key]
+
+    @dg.asset(io_manager_def=manager)
+    def downstream_asset(upstream_asset: dict[str, Any]):
+        return upstream_asset
+
+    for partition_key in values:
+        dg.materialize([upstream_asset], partition_key=partition_key)
+
+    result = dg.materialize([upstream_asset.to_source_asset(), downstream_asset])
+    assert result.output_for_node("downstream_asset", "result") == values
+
+
 def test_upath_can_transition_from_non_partitioned_to_partitioned(
     tmp_path: Path, daily: DailyPartitionsDefinition, start: datetime
 ):

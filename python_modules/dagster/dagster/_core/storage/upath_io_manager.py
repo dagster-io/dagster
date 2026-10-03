@@ -377,6 +377,48 @@ class UPathIOManager(IOManager):
             else:
                 raise e
 
+    async def _load_partition_from_path_async(
+        self,
+        context: InputContext,
+        partition_key: str,
+        path: "UPath",
+        backcompat_path: Optional["UPath"] = None,
+    ) -> Any:
+        """Same as `_load_partition_from_path`, but for async `load_from_path`.
+
+        An async `load_from_path` only raises once it's awaited, so the awaits have to happen
+        inside the try blocks for the backcompat and missing partition handling to run at all.
+        """
+        allow_missing_partitions = (
+            context.definition_metadata.get("allow_missing_partitions", False)
+            if context.definition_metadata is not None
+            else False
+        )
+
+        try:
+            context.log.debug(self.get_loading_input_partition_log_message(path, partition_key))
+            return await self.load_from_path(context=context, path=path)
+        except FileNotFoundError as e:
+            if backcompat_path is not None:
+                try:
+                    obj = await self.load_from_path(context=context, path=backcompat_path)
+                    context.log.debug(
+                        f"File not found at {path}. Loaded instead from backcompat path:"
+                        f" {backcompat_path}"
+                    )
+                    return obj
+                except FileNotFoundError:
+                    if allow_missing_partitions:
+                        context.log.warning(self.get_missing_partition_log_message(partition_key))
+                        return None
+                    else:
+                        raise e
+            if allow_missing_partitions:
+                context.log.warning(self.get_missing_partition_log_message(partition_key))
+                return None
+            else:
+                raise e
+
     def load_partitions_async(self, context: InputContext):
         """Same as `load_partitions`, but for async."""
         paths = self._get_paths_for_partitions(context)  # paths for normal partitions
@@ -389,7 +431,7 @@ class UPathIOManager(IOManager):
 
             tasks = [
                 loop.create_task(
-                    self._load_partition_from_path(
+                    self._load_partition_from_path_async(
                         context,
                         partition_key,
                         paths[partition_key],
@@ -401,42 +443,22 @@ class UPathIOManager(IOManager):
 
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            # need to handle missing partitions here because exceptions don't get propagated from async calls
-            allow_missing_partitions = (
-                context.definition_metadata.get("allow_missing_partitions", False)
-                if context.definition_metadata is not None
-                else False
-            )
-
-            results_without_errors = []
-            found_errors = False
+            # exceptions don't get propagated from async calls, so they are handled here
+            objs = {}
+            failed_partitions = 0
             for partition_key, result in zip(context.asset_partition_keys, results):
-                if isinstance(result, FileNotFoundError):
-                    if allow_missing_partitions:
-                        context.log.warning(self.get_missing_partition_log_message(partition_key))
-                    else:
-                        context.log.error(str(result))
-                        found_errors = True
-                elif isinstance(result, Exception):
+                if isinstance(result, Exception):
                     context.log.error(str(result))
-                    found_errors = True
-                else:
-                    results_without_errors.append(result)
+                    failed_partitions += 1
+                elif result is not None:  # in case some partitions were skipped
+                    objs[partition_key] = result
 
-                if found_errors:
-                    raise RuntimeError(
-                        f"{len(paths) - len(results_without_errors)} partitions could not be loaded"
-                    )
+            if failed_partitions:
+                raise RuntimeError(f"{failed_partitions} partitions could not be loaded")
 
-            return results_without_errors
+            return objs
 
-        awaited_objects = asyncio.run(collect())
-
-        return {
-            partition_key: awaited_object
-            for partition_key, awaited_object in zip(context.asset_partition_keys, awaited_objects)
-            if awaited_object is not None
-        }
+        return asyncio.run(collect())
 
     def _load_partitions(self, context: InputContext) -> dict[str, Any]:
         # load multiple partitions
