@@ -293,6 +293,18 @@ ASSET_CHECK_EVENTS = {
     DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
 }
 
+# event types that retention policies will never delete; everything else is fair game
+RETAINED_EVENT_TYPES = (
+    ASSET_EVENTS
+    | ASSET_CHECK_EVENTS
+    | {
+        DagsterEventType.ASSET_HEALTH_CHANGED,
+        DagsterEventType.ASSET_WIPED,
+    }
+)
+
+PURGEABLE_EVENT_TYPES = {e for e in DagsterEventType} - RETAINED_EVENT_TYPES
+
 
 class RunFailureReasonSerializer(EnumSerializer):
     def unpack(self, value: str):
