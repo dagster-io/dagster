@@ -8,6 +8,8 @@ title: workspace.yaml reference (Dagster OSS)
 
 If you are just getting started with Dagster OSS, use a [workspace](/guides/build/projects/workspaces/creating-workspaces) with a `dg.toml` configuration file instead of a `workspace.yaml` file. If you have an older setup with a workspace.yaml file, we recommend [migrating to a workspace](/guides/build/projects/workspaces/migrating-workspace-yaml) with a `dg.toml` file.
 
+If you need to connect to an already-running code server (for example, using a `grpc_server` code location), continue to use `workspace.yaml`. See the [gRPC server](#grpc-server) section below.
+
 :::
 
 import DagsterOSS from '@site/docs/partials/\_DagsterOSS.md';
