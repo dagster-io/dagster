@@ -42,6 +42,8 @@ class GetRunEventsLogsForRunEventConnection(BaseModel):
                 "GetRunEventsLogsForRunEventConnectionEventsRunStartingEvent",
                 "GetRunEventsLogsForRunEventConnectionEventsRunCancelingEvent",
                 "GetRunEventsLogsForRunEventConnectionEventsRunCanceledEvent",
+                "GetRunEventsLogsForRunEventConnectionEventsRunSuspendedEvent",
+                "GetRunEventsLogsForRunEventConnectionEventsRunResumedEvent",
                 "GetRunEventsLogsForRunEventConnectionEventsRunSuccessEvent",
                 "GetRunEventsLogsForRunEventConnectionEventsStepWorkerStartedEvent",
                 "GetRunEventsLogsForRunEventConnectionEventsStepWorkerStartingEvent",
@@ -304,6 +306,26 @@ class GetRunEventsLogsForRunEventConnectionEventsRunCancelingEvent(BaseModel):
 
 class GetRunEventsLogsForRunEventConnectionEventsRunCanceledEvent(BaseModel):
     typename__: Literal["RunCanceledEvent"] = Field(alias="__typename")
+    run_id: str = Field(alias="runId")
+    message: str
+    timestamp: str
+    level: LogLevel
+    step_key: Optional[str] = Field(alias="stepKey")
+    event_type: Optional[DagsterEventType] = Field(alias="eventType")
+
+
+class GetRunEventsLogsForRunEventConnectionEventsRunSuspendedEvent(BaseModel):
+    typename__: Literal["RunSuspendedEvent"] = Field(alias="__typename")
+    run_id: str = Field(alias="runId")
+    message: str
+    timestamp: str
+    level: LogLevel
+    step_key: Optional[str] = Field(alias="stepKey")
+    event_type: Optional[DagsterEventType] = Field(alias="eventType")
+
+
+class GetRunEventsLogsForRunEventConnectionEventsRunResumedEvent(BaseModel):
+    typename__: Literal["RunResumedEvent"] = Field(alias="__typename")
     run_id: str = Field(alias="runId")
     message: str
     timestamp: str

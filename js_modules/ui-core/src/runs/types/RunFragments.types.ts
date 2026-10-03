@@ -78,7 +78,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type StepKind = 'COMPUTE' | 'UNRESOLVED_COLLECT' | 'UNRESOLVED_MAPPED';
 
@@ -3001,6 +3002,15 @@ export type RunDagsterRunEventFragment_RunFailureEvent = {
   } | null;
 };
 
+export type RunDagsterRunEventFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
 export type RunDagsterRunEventFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -3021,6 +3031,15 @@ export type RunDagsterRunEventFragment_RunStartingEvent = {
 
 export type RunDagsterRunEventFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+};
+
+export type RunDagsterRunEventFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   timestamp: string;
   level: Types.LogLevel;
@@ -3554,9 +3573,11 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_RunDequeuedEvent
   | RunDagsterRunEventFragment_RunEnqueuedEvent
   | RunDagsterRunEventFragment_RunFailureEvent
+  | RunDagsterRunEventFragment_RunResumedEvent
   | RunDagsterRunEventFragment_RunStartEvent
   | RunDagsterRunEventFragment_RunStartingEvent
   | RunDagsterRunEventFragment_RunSuccessEvent
+  | RunDagsterRunEventFragment_RunSuspendedEvent
   | RunDagsterRunEventFragment_StepExpectationResultEvent
   | RunDagsterRunEventFragment_StepWorkerStartedEvent
   | RunDagsterRunEventFragment_StepWorkerStartingEvent;

@@ -456,6 +456,7 @@ export enum RunStatus {
   STARTED = 'STARTED',
   STARTING = 'STARTING',
   SUCCESS = 'SUCCESS',
+  SUSPENDED = 'SUSPENDED',
 }
 
 export enum RunsFeedView {

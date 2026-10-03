@@ -54,6 +54,7 @@ const runStatusFavicon = (status: RunStatus) => {
       return '/favicon-run-success.svg';
     case RunStatus.STARTING:
     case RunStatus.STARTED:
+    case RunStatus.SUSPENDED:
     case RunStatus.CANCELING:
       return '/favicon-run-pending.svg';
     default:

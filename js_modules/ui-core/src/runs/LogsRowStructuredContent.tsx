@@ -199,6 +199,8 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
     case 'RunEnqueuedEvent':
     case 'RunDequeuedEvent':
     case 'RunStartingEvent':
+    case 'RunSuspendedEvent':
+    case 'RunResumedEvent':
     case 'RunCancelingEvent':
     case 'ResourceInitStartedEvent':
     case 'ResourceInitSuccessEvent':

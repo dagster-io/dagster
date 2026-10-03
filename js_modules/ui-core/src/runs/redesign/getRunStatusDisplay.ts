@@ -52,6 +52,14 @@ const RUN_STATUS_DISPLAYS = {
     timingColor: 'textBlue',
     isPulsing: false,
   },
+  [RunStatus.SUSPENDED]: {
+    icon: 'status',
+    iconColor: Colors.accentBlue(),
+    label: 'Suspended',
+    timingMode: 'elapsed-since-start',
+    timingColor: 'textBlue',
+    isPulsing: false,
+  },
   [RunStatus.MANAGED]: {
     icon: 'spinner',
     iconColor: Colors.accentBlue(),

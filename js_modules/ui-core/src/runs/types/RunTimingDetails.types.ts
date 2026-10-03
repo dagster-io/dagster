@@ -15,7 +15,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type RunTimingFragment = {
   __typename: 'Run';

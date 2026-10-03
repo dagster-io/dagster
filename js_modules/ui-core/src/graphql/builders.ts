@@ -1300,9 +1300,11 @@ type DagsterRunEvent =
   | RunDequeuedEvent
   | RunEnqueuedEvent
   | RunFailureEvent
+  | RunResumedEvent
   | RunStartEvent
   | RunStartingEvent
   | RunSuccessEvent
+  | RunSuspendedEvent
   | StepExpectationResultEvent
   | StepWorkerStartedEvent
   | StepWorkerStartingEvent;
@@ -5253,6 +5255,19 @@ type RunRequest = {
   tags: Array<PipelineTag>;
 };
 
+type RunResumedEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'RunResumedEvent';
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
 type RunStartEvent = MessageEvent &
   RunEvent & {
     __typename: 'RunStartEvent';
@@ -5313,6 +5328,19 @@ type RunStepStats = PipelineRunStepStats & {
 type RunSuccessEvent = MessageEvent &
   RunEvent & {
     __typename: 'RunSuccessEvent';
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
+type RunSuspendedEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'RunSuspendedEvent';
     eventType: Maybe<DagsterEventType>;
     level: LogLevel;
     message: Scalars['String']['output'];
@@ -15440,6 +15468,30 @@ export const buildRunRequest = (
   };
 };
 
+export const buildRunResumedEvent = (
+  overrides?: Partial<RunResumedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunResumedEvent'} & RunResumedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunResumedEvent');
+  return {
+    __typename: 'RunResumedEvent',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sollers',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'tempora',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'tabesco',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'voco',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'concedo',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'aer',
+  };
+};
+
 export const buildRunStartEvent = (
   overrides?: Partial<RunStartEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -15568,6 +15620,30 @@ export const buildRunSuccessEvent = (
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'alter',
     timestamp:
       overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'subiungo',
+  };
+};
+
+export const buildRunSuspendedEvent = (
+  overrides?: Partial<RunSuspendedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunSuspendedEvent'} & RunSuspendedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunSuspendedEvent');
+  return {
+    __typename: 'RunSuspendedEvent',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'arcus',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'sonitus',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'addo',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'thema',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'denuo',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'qui',
   };
 };
 

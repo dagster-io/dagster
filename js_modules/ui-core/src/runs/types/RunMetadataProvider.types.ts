@@ -478,6 +478,13 @@ export type RunMetadataProviderMessageFragment_RunFailureEvent = {
   stepKey: string | null;
 };
 
+export type RunMetadataProviderMessageFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
 export type RunMetadataProviderMessageFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -494,6 +501,13 @@ export type RunMetadataProviderMessageFragment_RunStartingEvent = {
 
 export type RunMetadataProviderMessageFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
+export type RunMetadataProviderMessageFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   timestamp: string;
   stepKey: string | null;
@@ -560,9 +574,11 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_RunDequeuedEvent
   | RunMetadataProviderMessageFragment_RunEnqueuedEvent
   | RunMetadataProviderMessageFragment_RunFailureEvent
+  | RunMetadataProviderMessageFragment_RunResumedEvent
   | RunMetadataProviderMessageFragment_RunStartEvent
   | RunMetadataProviderMessageFragment_RunStartingEvent
   | RunMetadataProviderMessageFragment_RunSuccessEvent
+  | RunMetadataProviderMessageFragment_RunSuspendedEvent
   | RunMetadataProviderMessageFragment_StepExpectationResultEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartedEvent
   | RunMetadataProviderMessageFragment_StepWorkerStartingEvent;

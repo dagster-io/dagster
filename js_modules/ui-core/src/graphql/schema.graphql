@@ -1527,6 +1527,8 @@ union DagsterRunEvent =
   | RunStartingEvent
   | RunCancelingEvent
   | RunCanceledEvent
+  | RunSuspendedEvent
+  | RunResumedEvent
   | RunSuccessEvent
   | StepWorkerStartedEvent
   | StepWorkerStartingEvent
@@ -1565,6 +1567,28 @@ type HealthChangedEvent implements MessageEvent & StepEvent & DisplayableEvent {
   stepStats: RunStepStats!
   partition: String
   tags: [EventTag!]!
+}
+
+type RunSuspendedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type RunResumedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
 }
 
 type LogsCapturedEvent implements MessageEvent {
@@ -1698,6 +1722,7 @@ enum RunStatus {
   MANAGED
   STARTING
   STARTED
+  SUSPENDED
   SUCCESS
   FAILURE
   CANCELING

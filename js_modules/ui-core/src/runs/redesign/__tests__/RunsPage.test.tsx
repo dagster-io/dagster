@@ -153,8 +153,8 @@ describe('RunsPage', () => {
     },
     {
       name: 'in-progress',
-      tokens: ['status:STARTED', 'status:STARTING', 'status:CANCELING'],
-      statuses: [RunStatus.STARTED, RunStatus.STARTING, RunStatus.CANCELING],
+      tokens: ['status:STARTED', 'status:STARTING', 'status:SUSPENDED', 'status:CANCELING'],
+      statuses: [RunStatus.STARTED, RunStatus.STARTING, RunStatus.SUSPENDED, RunStatus.CANCELING],
       title: 'Runs | In progress',
     },
   ])('lists individual runs for the $name status link', async ({tokens, statuses, title}) => {
