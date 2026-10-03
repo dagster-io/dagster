@@ -874,13 +874,9 @@ class TypeHintInferredDagsterType(DagsterType):
 
 
 _GENERIC_FALLBACK_CACHE: t.Dict[object, DagsterType] = {}
-"""Memoizes the DagsterType for a parameterized generic annotation, keyed by the annotation."""
 
 
 def _short_type_name(annotation_arg: object) -> str:
-    # Recurse into unions and parameterized classes, so that `Frame[list[int]]` and
-    # `Frame[list[str]]` do not both render as `Frame[list]`. Other parameterized constructs,
-    # e.g. `Literal["a"]`, render with `str`.
     if annotation_arg is type(None):
         return "None"
     origin = get_origin(annotation_arg)
@@ -931,8 +927,7 @@ class UncheckedGenericDagsterType(DagsterType):
 
 
 def _is_unchecked_generic_origin(origin: object) -> bool:
-    # Limited to classes defined outside the stdlib typing machinery, so that annotations Dagster
-    # deliberately does not accept -- `Callable[..., X]`, `type[X]` -- keep raising.
+    # Excludes the stdlib typing machinery so that `Callable[..., X]` and `type[X]` keep raising.
     return isinstance(origin, type) and origin.__module__ not in (
         "builtins",
         "typing",
@@ -941,11 +936,8 @@ def _is_unchecked_generic_origin(origin: object) -> bool:
 
 
 def _resolve_unchecked_generic(annotation: object, origin: type) -> DagsterType:
-    # A DagsterType mapped to the origin wins, so that
-    # `make_python_type_usable_as_dagster_type(Foo, my_type)` also covers `Foo[Bar]`. Read only:
-    # resolving an annotation must not claim the origin's registry slot. Entries auto-registered
-    # from a bare `Foo` annotation are skipped -- their isinstance check is the one annotation-only
-    # generics never satisfy.
+    # An explicit mapping for the origin wins. Auto-registered isinstance checks are skipped, since
+    # annotation-only generics never pass them. Read only, so the origin's slot stays free.
     registered = _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(origin)
     if registered is not None and not isinstance(
         registered, TypeHintInferredDagsterType
@@ -1046,7 +1038,6 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     if isinstance(dagster_type, type):
         return resolve_python_type_to_dagster_type(dagster_type)
 
-    # A parameterized generic, e.g. `Foo[Bar]`: resolve it with its parameters left unchecked.
     origin = get_origin(dagster_type)
     if _is_unchecked_generic_origin(origin):
         return _resolve_unchecked_generic(dagster_type, t.cast(type, origin))
