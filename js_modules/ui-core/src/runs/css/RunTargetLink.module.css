@@ -1,0 +1,13 @@
+/*
+ * BaseTag caps its label at 400px. The Target column is resizable, so that cap
+ * would leave dead space in a wider column while the job name stayed ellipsized;
+ * here the column width is the only limit.
+ */
+.target {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.target :global(.BaseTag) > span {
+  max-width: 100%;
+}
