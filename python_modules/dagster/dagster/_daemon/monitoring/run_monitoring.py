@@ -10,7 +10,7 @@ from dagster import (
 from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.dagster_run import (
-    ACTIVE_RUN_STATUSES,
+    IN_PROGRESS_RUN_STATUSES,
     DagsterRunStatus,
     RunRecord,
     RunsFilter,
@@ -195,7 +195,7 @@ def execute_run_monitoring_iteration(
     run_records = list(
         instance.get_run_records(
             filters=RunsFilter(
-                statuses=ACTIVE_RUN_STATUSES
+                statuses=IN_PROGRESS_RUN_STATUSES
                 + [DagsterRunStatus.CANCELING, DagsterRunStatus.NOT_STARTED]
             )
         )
@@ -218,6 +218,14 @@ def execute_run_monitoring_iteration(
                 monitor_starting_run(instance, run_record, logger)
             elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
                 monitor_started_run(instance, workspace, run_record, logger)
+            elif run_record.dagster_run.status == DagsterRunStatus.SUSPENDED:
+                # No worker to check; time spent suspended still counts toward the runtime limit.
+                check_run_timeout(
+                    instance,
+                    run_record,
+                    logger,
+                    float(instance.run_monitoring_max_runtime_seconds),
+                )
             elif (
                 instance.run_monitoring_cancel_timeout_seconds > 0
                 and run_record.dagster_run.status == DagsterRunStatus.CANCELING

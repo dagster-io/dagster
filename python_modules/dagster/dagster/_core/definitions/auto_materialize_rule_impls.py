@@ -30,7 +30,7 @@ from dagster._core.definitions.partitions.definition import (
 from dagster._core.definitions.partitions.utils import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.storage.dagster_run import ACTIVE_RUN_STATUSES, RunsFilter
+from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
@@ -1149,7 +1149,7 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
         )
         if planned_materialization_info:
             dagster_run = instance.get_run_by_id(planned_materialization_info.run_id)
-            if dagster_run and dagster_run.status in ACTIVE_RUN_STATUSES:
+            if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
                 return AutomationResult(
                     context,
                     context.asset_graph_view.legacy_get_asset_subset_from_valid_subset(

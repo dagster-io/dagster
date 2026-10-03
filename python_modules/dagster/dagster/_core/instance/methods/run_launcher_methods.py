@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.dagster_run import ACTIVE_RUN_STATUSES
+from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -163,7 +163,7 @@ class RunLauncherMethods:
             raise DagsterInvariantViolationError(
                 f"Could not load run {run_id} that was passed to resume_run"
             )
-        if run.status not in ACTIVE_RUN_STATUSES:
+        if run.status not in IN_PROGRESS_RUN_STATUSES:
             raise DagsterInvariantViolationError(
                 f"Run {run_id} is not in a state that can be resumed"
             )

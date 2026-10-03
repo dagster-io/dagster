@@ -70,6 +70,12 @@ class DagsterRunStatus(Enum):
     # Runs that have been launched and execution has started.
     STARTED = "STARTED"
 
+    # Runs that have started and are waiting on external work with no run worker, on purpose.
+    # TODO: nothing writes this status yet. Before anything does, decide how to handle version
+    # skew: an older agent or code server raises on an unknown enum member when it reads a
+    # suspended run, so suspension must be gated on the versions that will read it.
+    SUSPENDED = "SUSPENDED"
+
     # Runs that have successfully completed.
     SUCCESS = "SUCCESS"
 
@@ -99,6 +105,14 @@ NON_ACTIVE_RUN_STATUSES = [
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.MANAGED,
     DagsterRunStatus.CANCELED,
+    DagsterRunStatus.SUSPENDED,
+]
+
+# Statuses in which a run has started and not finished. A suspended run is in progress but
+# has no worker and holds no slot, so it is not active.
+IN_PROGRESS_RUN_STATUSES = [
+    *ACTIVE_RUN_STATUSES,
+    DagsterRunStatus.SUSPENDED,
 ]
 
 FINISHED_STATUSES = [
@@ -110,6 +124,7 @@ FINISHED_STATUSES = [
 NOT_FINISHED_STATUSES = [
     DagsterRunStatus.STARTING,
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.CANCELING,
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.NOT_STARTED,

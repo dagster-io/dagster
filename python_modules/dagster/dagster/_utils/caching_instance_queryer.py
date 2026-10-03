@@ -31,7 +31,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
 from dagster._core.storage.dagster_run import (
-    ACTIVE_RUN_STATUSES,
+    IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunRecord,
@@ -215,7 +215,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             else:
                 dagster_run = self.instance.get_run_by_id(planned_materialization_run_id)
                 value = dagster_run is not None and dagster_run.status in [
-                    *ACTIVE_RUN_STATUSES,
+                    *IN_PROGRESS_RUN_STATUSES,
                     # an asset is considered to be "in progress" if there is planned work for it that has not
                     # yet completed, which is not identical to the "in progress" status of the run
                     DagsterRunStatus.QUEUED,

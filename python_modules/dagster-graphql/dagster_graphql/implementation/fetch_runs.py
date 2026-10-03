@@ -168,10 +168,12 @@ PENDING_STATUSES = [
     DagsterRunStatus.NOT_STARTED,
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.CANCELING,
 ]
 IN_PROGRESS_STATUSES = [
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.CANCELING,
 ]
 

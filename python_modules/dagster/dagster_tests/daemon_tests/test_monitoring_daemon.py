@@ -25,6 +25,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.run_monitoring import (
+    execute_run_monitoring_iteration,
     monitor_canceling_run,
     monitor_started_run,
     monitor_starting_run,
@@ -158,6 +159,21 @@ def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: 
         dagster_event=launch_started_event,
     )
 
+    instance.handle_new_event(event_record)
+
+
+def report_suspended_event(instance, run, timestamp):
+    event_record = dg.EventLogEntry(
+        user_message="",
+        level=logging.INFO,
+        job_name=run.job_name,
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=timestamp,
+        dagster_event=dg.DagsterEvent(
+            event_type_value=DagsterEventType.RUN_SUSPENDED.value, job_name=run.job_name
+        ),
+    )
     instance.handle_new_event(event_record)
 
 
@@ -395,6 +411,36 @@ def test_monitor_started_failure_includes_debug_info(
                 get_debug_info.assert_called_once_with(mock.ANY, include_container_logs=False)
             else:
                 get_debug_info.assert_not_called()
+
+
+def test_monitor_suspended(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
+    initial = create_datetime(2021, 1, 1)
+    with freeze_time(initial):
+        run = create_run_for_test(
+            instance,
+            job_name="foo",
+            status=DagsterRunStatus.STARTING,
+            tags={dg.MAX_RUNTIME_SECONDS_TAG: "500"},
+        )
+        report_started_event(instance, run, initial.timestamp())
+        report_suspended_event(instance, run, initial.timestamp())
+    assert check.not_none(instance.get_run_by_id(run.run_id)).status == DagsterRunStatus.SUSPENDED
+
+    # The worker is gone on purpose, so an unhealthy check must not fail or resume the run.
+    with freeze_time(initial + datetime.timedelta(seconds=100)):
+        list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert check.not_none(instance.get_run_by_id(run.run_id)).status == DagsterRunStatus.SUSPENDED
+    assert run_launcher.resume_run_calls == 0
+    assert not run_launcher.termination_calls
+
+    # Time spent suspended counts toward the maximum runtime.
+    with freeze_time(initial + datetime.timedelta(seconds=501)):
+        list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert check.not_none(instance.get_run_by_id(run.run_id)).status == DagsterRunStatus.FAILURE
+    assert len(run_launcher.termination_calls) == 1
 
 
 def test_long_running_termination(
