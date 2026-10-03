@@ -703,8 +703,44 @@ class AssetGraphView(LoadingContext):
                 if cache_value
                 else self.get_empty_subset(key=key)
             )
-        value = self._queryer.get_in_progress_asset_subset(asset_key=key).value
+        value = await self._compute_run_in_progress_unpartitioned(key)
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    async def _compute_run_in_progress_unpartitioned(self, key: AssetKey) -> bool:
+        from dagster._core.storage.dagster_run import (
+            IN_PROGRESS_RUN_STATUSES,
+            DagsterRunStatus,
+            RunRecord,
+        )
+        from dagster._core.storage.event_log.base import PlannedMaterializationInfo
+
+        # missing() reads this blocking-prefetched snapshot too. The async loader
+        # has a separate cache and can observe materializations from later in the tick.
+        asset_record = self._queryer.get_asset_record(key)
+        asset_entry = asset_record.asset_entry if asset_record else None
+        last_materialized_run_id = (
+            asset_entry.last_materialization_record.run_id
+            if asset_entry and asset_entry.last_materialization_record
+            else None
+        )
+        if self.instance.event_log_storage.asset_records_have_last_planned_and_failed_materializations:
+            planned_run_id = (
+                asset_entry.last_planned_materialization_run_id if asset_entry else None
+            )
+        else:
+            planned_info = await PlannedMaterializationInfo.gen(self, key)
+            planned_run_id = planned_info.run_id if planned_info else None
+
+        if not planned_run_id or last_materialized_run_id == planned_run_id:
+            return False
+
+        # Match the legacy queryer: only the latest planned run is considered, even
+        # if an older run is still running. Queued work also counts as in progress.
+        run = await RunRecord.gen(self, planned_run_id)
+        return run is not None and run.dagster_run.status in [
+            *IN_PROGRESS_RUN_STATUSES,
+            DagsterRunStatus.QUEUED,
+        ]
 
     async def _compute_backfill_in_progress_asset_subset(
         self, key: AssetKey
@@ -715,12 +751,10 @@ class AssetGraphView(LoadingContext):
     async def _compute_execution_failed_unpartitioned(self, key: AssetKey) -> bool:
         from dagster._core.event_api import AssetRecordsFilter
         from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
-        from dagster._core.storage.event_log.base import AssetRecord
+        from dagster._core.storage.event_log.base import AssetRecord, PlannedMaterializationInfo
         from dagster._utils.storage import get_materialization_chunk_size
 
-        planned_materialization_info = (
-            self.instance.event_log_storage.get_latest_planned_materialization_info(key)
-        )
+        planned_materialization_info = await PlannedMaterializationInfo.gen(self, key)
         if not planned_materialization_info:
             # has never been planned
             return False
