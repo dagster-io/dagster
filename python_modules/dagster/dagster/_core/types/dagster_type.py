@@ -1,3 +1,4 @@
+import types
 import typing as t
 from abc import abstractmethod
 from collections.abc import Iterator as TypingIterator
@@ -872,6 +873,84 @@ class TypeHintInferredDagsterType(DagsterType):
         return self.python_type.__name__
 
 
+_GENERIC_FALLBACK_CACHE: t.Dict[object, DagsterType] = {}
+
+
+def _short_type_name(annotation_arg: object) -> str:
+    if annotation_arg is type(None):
+        return "None"
+    origin = get_origin(annotation_arg)
+    args = get_args(annotation_arg)
+    if args and origin in (t.Union, types.UnionType):
+        return " | ".join(_short_type_name(arg) for arg in args)
+    if args and isinstance(origin, type):
+        return f"{origin.__name__}[{', '.join(_short_type_name(arg) for arg in args)}]"
+    if args:
+        return str(annotation_arg)
+    return getattr(annotation_arg, "__name__", None) or str(annotation_arg)
+
+
+class UncheckedGenericDagsterType(DagsterType):
+    """Created from a parameterized generic annotation whose type parameters Dagster cannot check,
+    e.g. `pandera.typing.polars.DataFrame[MySchema]`. Checking a type parameter requires logic
+    specific to the library that defined it, so values are not validated against the parameters.
+    """
+
+    def __init__(self, annotation: t.Any, origin: type):
+        rendered = str(annotation)
+        note = "Type parameters not validated."
+
+        def _type_check(_context, _value) -> TypeCheck:
+            return TypeCheck(success=True, description=note)
+
+        self.origin = origin
+        # DagsterType.__init__ reads display_name, so this has to be set beforehand.
+        args = ", ".join(_short_type_name(arg) for arg in get_args(annotation))
+        self._display_name = f"{origin.__name__}[{args}]"
+
+        super().__init__(
+            key=f"_UncheckedGeneric[{rendered}]",
+            description=(
+                f"{note} To validate values of `{rendered}`, set `dagster_type` explicitly, or map"
+                f" the unparameterized `{origin.__name__}` to a DagsterType with"
+                " `make_python_type_usable_as_dagster_type`."
+            ),
+            metadata={"unchecked_type_parameters": MetadataValue.text(rendered)},
+            type_check_fn=_type_check,
+            # Preserved so that IO managers can still dispatch on the unparameterized type.
+            typing_type=origin,
+        )
+
+    @property
+    def display_name(self) -> str:
+        return self._display_name
+
+
+def _is_unchecked_generic_origin(origin: object) -> bool:
+    # Excludes the stdlib typing machinery so that `Callable[..., X]` and `type[X]` keep raising.
+    return isinstance(origin, type) and origin.__module__ not in (
+        "builtins",
+        "typing",
+        "collections.abc",
+    )
+
+
+def _resolve_unchecked_generic(annotation: object, origin: type) -> DagsterType:
+    # An explicit mapping for the origin wins. Auto-registered isinstance checks are skipped, since
+    # annotation-only generics never pass them. Read only, so the origin's slot stays free.
+    registered = _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(origin)
+    if registered is not None and not isinstance(
+        registered, TypeHintInferredDagsterType
+    ):
+        return registered
+
+    if annotation not in _GENERIC_FALLBACK_CACHE:
+        _GENERIC_FALLBACK_CACHE[annotation] = UncheckedGenericDagsterType(
+            annotation, origin
+        )
+    return _GENERIC_FALLBACK_CACHE[annotation]
+
+
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._core.definitions.result import MaterializeResult, ObserveResult
@@ -958,6 +1037,10 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
 
     if isinstance(dagster_type, type):
         return resolve_python_type_to_dagster_type(dagster_type)
+
+    origin = get_origin(dagster_type)
+    if _is_unchecked_generic_origin(origin):
+        return _resolve_unchecked_generic(dagster_type, t.cast(type, origin))
 
     raise DagsterInvalidDefinitionError(
         DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
