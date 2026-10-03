@@ -1,3 +1,4 @@
+import types
 import typing as t
 from abc import abstractmethod
 from collections.abc import Iterator as TypingIterator
@@ -877,6 +878,19 @@ _GENERIC_FALLBACK_CACHE: t.Dict[object, DagsterType] = {}
 
 
 def _short_type_name(annotation_arg: object) -> str:
+    # Recurse into unions and parameterized classes, so that `Frame[list[int]]` and
+    # `Frame[list[str]]` do not both render as `Frame[list]`. Other parameterized constructs,
+    # e.g. `Literal["a"]`, render with `str`.
+    if annotation_arg is type(None):
+        return "None"
+    origin = get_origin(annotation_arg)
+    args = get_args(annotation_arg)
+    if args and origin in (t.Union, types.UnionType):
+        return " | ".join(_short_type_name(arg) for arg in args)
+    if args and isinstance(origin, type):
+        return f"{origin.__name__}[{', '.join(_short_type_name(arg) for arg in args)}]"
+    if args:
+        return str(annotation_arg)
     return getattr(annotation_arg, "__name__", None) or str(annotation_arg)
 
 
@@ -898,7 +912,7 @@ class UncheckedGenericDagsterType(DagsterType):
         args = ", ".join(_short_type_name(arg) for arg in get_args(annotation))
         self._display_name = f"{origin.__name__}[{args}]"
 
-        super(UncheckedGenericDagsterType, self).__init__(
+        super().__init__(
             key=f"_UncheckedGeneric[{rendered}]",
             description=(
                 f"{note} To validate values of `{rendered}`, set `dagster_type` explicitly, or map"
@@ -929,9 +943,13 @@ def _is_unchecked_generic_origin(origin: object) -> bool:
 def _resolve_unchecked_generic(annotation: object, origin: type) -> DagsterType:
     # A DagsterType mapped to the origin wins, so that
     # `make_python_type_usable_as_dagster_type(Foo, my_type)` also covers `Foo[Bar]`. Read only:
-    # resolving an annotation must not claim the origin's registry slot.
+    # resolving an annotation must not claim the origin's registry slot. Entries auto-registered
+    # from a bare `Foo` annotation are skipped -- their isinstance check is the one annotation-only
+    # generics never satisfy.
     registered = _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(origin)
-    if registered is not None:
+    if registered is not None and not isinstance(
+        registered, TypeHintInferredDagsterType
+    ):
         return registered
 
     if annotation not in _GENERIC_FALLBACK_CACHE:

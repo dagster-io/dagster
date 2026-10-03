@@ -684,7 +684,7 @@ def test_generic_annotation_resolves_to_unchecked_type():
 
     # The check passes for any value, including one that is not an instance of the origin, and
     # records that the parameters went unchecked on the input/output event.
-    type_check = dagster_type.type_check(None, "not a GenericContainer")  # pyright: ignore[reportArgumentType]
+    type_check = dagster_type.type_check(None, "not a GenericContainer")  # ty: ignore[invalid-argument-type]
     assert type_check.success
     assert type_check.description and "not validated" in type_check.description
 
@@ -710,8 +710,33 @@ def test_generic_annotation_resolves_when_nested():
     )
 
 
+def test_generic_annotation_display_name_renders_nested_parameters():
+    assert (
+        resolve_dagster_type(GenericContainer[list[int]]).display_name
+        == "GenericContainer[list[int]]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[list[str]]).display_name
+        == "GenericContainer[list[str]]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[int | None]).display_name
+        == "GenericContainer[int | None]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[typing.Optional[Schema]]).display_name  # noqa: UP045
+        == "GenericContainer[Schema | None]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[GenericContainer[Schema]]).display_name
+        == "GenericContainer[GenericContainer[Schema]]"
+    )
+
+
 def test_unsupported_typing_constructs_still_raise():
-    for annotation in (typing.Callable[[int], str], type[GenericContainer]):
+    # `typing.Type` rather than `type[...]`: on Python 3.10, `type[X]` is itself an instance of
+    # `type`, so it resolves as a plain class instead of reaching the generic handling.
+    for annotation in (typing.Callable[[int], str], typing.Type[GenericContainer]):  # noqa: UP006
         with pytest.raises(dg.DagsterInvalidDefinitionError, match="Invalid type"):
             resolve_dagster_type(annotation)
 
@@ -731,3 +756,18 @@ def test_generic_annotation_does_not_claim_origin_in_registry():
 
     # And once mapped, the mapping wins over the unchecked fallback.
     assert resolve_dagster_type(OtherContainer[Schema]) is mapped
+
+
+def test_generic_annotation_ignores_auto_registered_origin():
+    U = TypeVar("U")
+
+    class BareFirstContainer(Generic[U]):
+        pass
+
+    # A bare `BareFirstContainer` annotation auto-registers an isinstance check for the origin.
+    # Annotation-only generics never satisfy it, so the parameterized annotation must not use it.
+    resolve_dagster_type(BareFirstContainer)
+    dagster_type = resolve_dagster_type(BareFirstContainer[Schema])
+
+    assert dagster_type.display_name == "BareFirstContainer[Schema]"
+    assert dagster_type.type_check(None, "not a BareFirstContainer").success  # ty: ignore[invalid-argument-type]
