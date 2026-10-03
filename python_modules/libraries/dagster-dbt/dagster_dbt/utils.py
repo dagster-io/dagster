@@ -107,29 +107,13 @@ def _build_selection_child_map(manifest_json: Mapping[str, Any]) -> Mapping[str,
     depends_on, matching the structure dbt writes into manifests that include a
     child map.
     """
-    child_map: dict[str, set[str]] = {}
-    for container in (
-        "nodes",
-        "sources",
-        "exposures",
-        "functions",
-        "metrics",
-        "semantic_models",
-        "saved_queries",
-        "unit_tests",
-    ):
-        for unique_id in manifest_json.get(container) or {}:
-            child_map.setdefault(unique_id, set())
-    for container in (
-        "nodes",
-        "exposures",
-        "functions",
-        "metrics",
-        "semantic_models",
-        "saved_queries",
-        "unit_tests",
-    ):
-        for unique_id, resource in (manifest_json.get(container) or {}).items():
+    child_map: dict[str, set[str]] = {
+        unique_id: set()
+        for collection in _GRAPH_MEMBER_COLLECTIONS
+        for unique_id in manifest_json.get(collection) or {}
+    }
+    for collection in _GRAPH_MEMBER_COLLECTIONS:
+        for unique_id, resource in (manifest_json.get(collection) or {}).items():
             for parent_unique_id in resource.get("depends_on", {}).get("nodes", []):
                 if parent_unique_id in child_map:
                     child_map[parent_unique_id].add(unique_id)
