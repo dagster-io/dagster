@@ -42,6 +42,7 @@ class Webserver(BaseModel, extra="forbid"):
     dbStatementTimeout: int | None = None
     dbPoolRecycle: int | None = None
     dbPoolMaxOverflow: int | None = None
+    dbPoolSize: int | None = None
     logLevel: str | None = None
     logFormat: str | None = None
     schedulerName: str | None = None
