@@ -26,7 +26,7 @@ Airlift is a toolkit for observing Airflow instances from within Dagster and for
 
 ### REST API Availability
 
-Airlift depends on the the availability of Airflow’s REST API. Airflow’s REST API was made stable in its 2.0 release (Dec 2020) and was introduced experimentally in 1.10 in August 2018. Currently Airflow requires the availability of the REST API.
+Airlift depends on the availability of Airflow’s REST API. Airflow’s REST API was made stable in its 2.0 release (Dec 2020) and was introduced experimentally in 1.10 in August 2018. Currently Airflow requires the availability of the REST API.
 
 - **OSS:** Stable as of 2.00
 - **MWAA**

@@ -73,7 +73,7 @@ Next, invoke a subprocess that executes the external code from the asset using t
 Let’s take a look at what this code does:
 
 - The `PipesSubprocessClient` resource used by the asset exposes a `run` method.
-- When the asset is executed, this method will synchronously execute the subprocess in in a pipes session, and it will return a `PipesClientCompletedInvocation` object.
+- When the asset is executed, this method will synchronously execute the subprocess in a pipes session, and it will return a `PipesClientCompletedInvocation` object.
 - This object contains a `get_materialize_result` method, which you can use to access the <PyObject section="assets" module="dagster" object="MaterializeResult" /> event reported by the subprocess. We'll talk about how to report events from the subprocess in the next section.
 - Lastly, return the result of the subprocess.
 
