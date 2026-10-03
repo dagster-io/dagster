@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from dagster import FloatMetadataValue
-from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage
+from dagster import AssetMaterialization, FloatMetadataValue
+from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage, DbtFusionCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 
@@ -224,3 +224,57 @@ def test_log_test_result_without_node_info():
         )
     )
     assert events == []
+
+
+def test_fusion_dynamic_table_noop_emits_materialization():
+    unique_id = "model.test.dynamic_table"
+    raw_event = {
+        "info": {"name": "NodeFinished", "invocation_id": "test", "msg": "Finished node"},
+        "data": {
+            "node_info": {
+                "unique_id": unique_id,
+                "resource_type": "model",
+                "materialized": "dynamic_table",
+                "node_status": "warn",
+                "node_started_at": "2026-09-23T00:00:00Z",
+                "node_finished_at": "2026-09-23T00:00:01Z",
+            },
+            "run_result": {
+                "status": "warn",
+                "adapter_response": {"code": "skip", "rows_affected": -1},
+            },
+        },
+    }
+    manifest = {
+        "nodes": {
+            unique_id: {
+                "unique_id": unique_id,
+                "name": "dynamic_table",
+                "resource_type": "model",
+                "materialized": "dynamic_table",
+                "database": "db",
+                "schema": "schema",
+                "alias": "dynamic_table",
+                "path": "models/dynamic_table.sql",
+                "config": {"schema": "schema"},
+                "description": "",
+            }
+        }
+    }
+
+    events = list(
+        DbtFusionCliEventMessage(
+            raw_event=raw_event, event_history_metadata={}
+        ).to_default_asset_events(manifest, DagsterDbtTranslator())
+    )
+
+    assert len(events) == 1
+    assert isinstance(events[0], AssetMaterialization)
+
+    raw_event["data"]["run_result"]["adapter_response"]["code"] = "other"
+    non_noop_events = list(
+        DbtFusionCliEventMessage(
+            raw_event=raw_event, event_history_metadata={}
+        ).to_default_asset_events(manifest, DagsterDbtTranslator())
+    )
+    assert non_noop_events == []
