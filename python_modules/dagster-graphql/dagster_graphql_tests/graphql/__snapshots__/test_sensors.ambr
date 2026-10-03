@@ -82,6 +82,26 @@
     }),
     dict({
       'description': None,
+      'minIntervalSeconds': 30,
+      'name': 'asset_events_sensor',
+      'sensorState': dict({
+        'runs': list([
+        ]),
+        'runsCount': 0,
+        'status': 'STOPPED',
+        'ticks': list([
+        ]),
+      }),
+      'targets': list([
+        dict({
+          'mode': 'default',
+          'pipelineName': 'no_config_job',
+          'solidSelection': None,
+        }),
+      ]),
+    }),
+    dict({
+      'description': None,
       'minIntervalSeconds': 60,
       'name': 'custom_interval_sensor',
       'sensorState': dict({
