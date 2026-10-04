@@ -40,3 +40,18 @@ def test_partition_dimensions_to_dnf(test_schema) -> None:
     ]
     dnf = partition_dimensions_to_dnf(parts, test_schema, True)
     assert dnf == [("date_col", "=", "2020-01-02")]
+
+
+def test_partition_dimensions_to_dnf_time_window_against_string_column(test_schema) -> None:
+    """A time-partitioned asset whose Delta column is actually typed 'string' (rather than
+    'date'/'timestamp') should fail with a clear schema-mismatch error, not a confusing
+    'array partition values' error from `_value_dnf`.
+    """
+    parts = [
+        TablePartitionDimension(
+            partitions=TimeWindow(datetime(2020, 1, 2), datetime(2020, 2, 3)),
+            partition_expr="string_col",
+        )
+    ]
+    with pytest.raises(ValueError, match=r"time-partitioned.*typed 'string'"):
+        partition_dimensions_to_dnf(parts, test_schema, True)
