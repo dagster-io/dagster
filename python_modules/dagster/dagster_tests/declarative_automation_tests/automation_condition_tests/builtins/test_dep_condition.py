@@ -1,4 +1,6 @@
 from collections.abc import Sequence
+from datetime import datetime, timezone
+from typing import Literal
 
 import dagster as dg
 import pytest
@@ -124,6 +126,68 @@ async def test_dep_missing_partitioned(is_any: bool) -> None:
     else:
         # now partition 2 has all parents true
         assert result.true_subset.size == 2
+
+
+@pytest.mark.parametrize(
+    ("allow_nonexistent_upstream_partitions", "expected_requested_partitions"),
+    [
+        (False, {"2024-01-01", "2024-01-02"}),
+        (True, {"2023-12-31", "2024-01-01", "2024-01-02"}),
+    ],
+)
+@pytest.mark.parametrize("parent_kind", ["materializable", "source", "observable_source"])
+def test_any_deps_missing_with_required_but_nonexistent_partition(
+    allow_nonexistent_upstream_partitions: bool,
+    expected_requested_partitions: set[str],
+    parent_kind: Literal["materializable", "source", "observable_source"],
+) -> None:
+    parent_partitions_def = dg.DailyPartitionsDefinition(start_date="2024-01-01")
+    child_partitions_def = dg.DailyPartitionsDefinition(start_date="2023-12-31")
+
+    @dg.asset(partitions_def=parent_partitions_def)
+    def parent() -> None: ...
+
+    @dg.asset(
+        deps=[
+            dg.AssetDep(
+                parent,
+                partition_mapping=dg.TimeWindowPartitionMapping(
+                    allow_nonexistent_upstream_partitions=allow_nonexistent_upstream_partitions
+                ),
+            )
+        ],
+        partitions_def=child_partitions_def,
+        automation_condition=(
+            dg.AutomationCondition.missing() & ~dg.AutomationCondition.any_deps_missing()
+        ),
+    )
+    def child() -> None: ...
+
+    if parent_kind == "materializable":
+        parent_def = parent
+        event_type = dg.AssetMaterialization
+    elif parent_kind == "source":
+        parent_def = parent.to_source_asset()
+        event_type = dg.AssetMaterialization
+    else:
+        parent_def = dg.SourceAsset(
+            key=parent.key,
+            partitions_def=parent_partitions_def,
+            observe_fn=lambda _: dg.DataVersionsByPartition({}),
+        )
+        event_type = dg.AssetObservation
+
+    instance = dg.DagsterInstance.ephemeral()
+    for partition_key in ["2024-01-01", "2024-01-02"]:
+        instance.report_runless_asset_event(event_type(parent.key, partition=partition_key))
+
+    result = dg.evaluate_automation_conditions(
+        defs=dg.Definitions(assets=[parent_def, child]),
+        instance=instance,
+        evaluation_time=datetime(2024, 1, 3, tzinfo=timezone.utc),
+    )
+
+    assert result.get_requested_partitions(child.key) == expected_requested_partitions
 
 
 @pytest.mark.asyncio
