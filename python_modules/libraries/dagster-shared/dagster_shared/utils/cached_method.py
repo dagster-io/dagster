@@ -186,7 +186,7 @@ def make_cached_method_cache_key(
         k, v = next(iter(canonical_kwargs.items()))
         type_v = type(v)
         if type_v is str or type_v is int:
-            return f"{k}.{v}"
+            return (k, v)
 
     return _HashedSeq(tuple(sorted(canonical_kwargs.items())))
 
