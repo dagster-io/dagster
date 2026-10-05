@@ -298,12 +298,13 @@ def _step_output_error_checked_user_event_sequence(
                     )
                     yield Output(output_name=step_output_def.name, value=None)
             elif not step_output_def.is_dynamic:
-                raise DagsterStepOutputNotFoundError(
-                    f"Core compute for {op_label} did not return an output for non-optional "
-                    f'output "{step_output_def.name}"',
-                    step_key=step.key,
-                    output_name=step_output_def.name,
-                )
+                if step_output.name in selected_output_names:
+                    raise DagsterStepOutputNotFoundError(
+                        f"Core compute for {op_label} did not return an output for non-optional "
+                        f'output "{step_output_def.name}"',
+                        step_key=step.key,
+                        output_name=step_output_def.name,
+                    )
 
 
 def do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: Any) -> TypeCheck:
