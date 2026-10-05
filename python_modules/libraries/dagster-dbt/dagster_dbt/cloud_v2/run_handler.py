@@ -27,6 +27,13 @@ COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
 logger = get_dagster_logger()
 
+# Defines the set of dbt node statuses that represent successful execution.
+# In addition to "success", dbt-core v1.10+ returns "no-op" for nodes whose
+# upstream hasn't changed (cached/up-to-date), and v1.12+ returns "reused" for
+# nodes whose results were reused from a previous run. Both are valid non-error
+# outcomes and should produce a materialization in Dagster.
+_DBT_SUCCESS_STATUSES = frozenset({"success", "no-op", "reused"})
+
 
 @record
 class DbtCloudJobRunHandler:
@@ -189,7 +196,7 @@ class DbtCloudJobRunResults:
 
             if (
                 resource_type in REFABLE_NODE_TYPES
-                and result_status == NodeStatus.Success
+                and result_status in _DBT_SUCCESS_STATUSES
                 and not is_ephemeral
             ):
                 spec = asset_specs[0]
