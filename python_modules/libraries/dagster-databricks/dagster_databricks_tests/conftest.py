@@ -1,5 +1,14 @@
 import pytest
+from databricks.sdk.config import Config
 from databricks.sdk.service.jobs import JobsHealthMetric, JobsHealthOperator
+
+
+@pytest.fixture(autouse=True)
+def skip_databricks_host_metadata(monkeypatch):
+    # Since databricks-sdk 0.99, Config.__init__ queries {host}/.well-known/databricks-config
+    # and retries unreachable test hosts for up to 5 minutes before falling back to explicit
+    # config. raising=False keeps older SDK versions, which lack the method, working.
+    monkeypatch.setattr(Config, "_resolve_host_metadata", lambda self: None, raising=False)
 
 
 @pytest.fixture
