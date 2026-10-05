@@ -2341,6 +2341,49 @@ def test_wandb_artifacts_io_manager_load_input(
     run_mock.use_artifact.return_value.verify.assert_called_with(root=EndsWith(LOCAL_ARTIFACT_PATH))
 
 
+def test_wandb_artifacts_io_manager_load_input_uses_api_fallback(
+    init_mock, login_mock, run_mock, log_artifact_mock, pickle_artifact_content_mock, api_mock
+):
+    fallback_artifact = MagicMock(
+        spec=Artifact,
+        id=ARTIFACT_ID,
+        name=ARTIFACT_NAME,
+        type=ARTIFACT_TYPE,
+        version=ARTIFACT_VERSION,
+        size=ARTIFACT_SIZE,
+        description=ARTIFACT_DESCRIPTION,
+    )
+    api_mock.return_value.artifact.return_value = fallback_artifact
+    run_mock.configure_mock(
+        name=WANDB_RUN_NAME,
+        id=WANDB_RUN_ID,
+        entity=WANDB_ENTITY,
+        project=WANDB_PROJECT,
+        path=WANDB_RUN_PATH,
+        url=WANDB_RUN_URL,
+        use_artifact=MagicMock(side_effect=RuntimeError("SDK lookup failure")),
+    )
+
+    manager = wandb_artifacts_io_manager(
+        build_init_resource_context(
+            resources={
+                "wandb_config": {"entity": WANDB_ENTITY, "project": WANDB_PROJECT},
+                "wandb_resource": wandb_resource_configured,
+            },
+        )
+    )
+    artifact_uri = f"{WANDB_ENTITY}/{WANDB_PROJECT}/{ARTIFACT_NAME}:latest"
+    context = build_input_context(
+        definition_metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME}},
+    )
+
+    assert manager.load_input(context) is fallback_artifact
+    run_mock.use_artifact.assert_called_once_with(artifact_uri)
+    api_mock.return_value.artifact.assert_called_once_with(artifact_uri)
+    fallback_artifact.download.assert_called_once_with(root=EndsWith(LOCAL_ARTIFACT_PATH))
+    fallback_artifact.verify.assert_called_once_with(root=EndsWith(LOCAL_ARTIFACT_PATH))
+
+
 def test_wandb_artifacts_io_manager_load_input_get(
     init_mock, login_mock, run_mock, artifact_mock, log_artifact_mock, pickle_artifact_content_mock
 ):
