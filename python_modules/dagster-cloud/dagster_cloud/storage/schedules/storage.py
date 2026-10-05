@@ -12,6 +12,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
+    InstigatorTickSummary,
     TickData,
     TickStatus,
 )
@@ -140,6 +141,17 @@ class GraphQLScheduleStorage(ScheduleStorage["DagsterCloudAgentInstance"], Confi
         raise NotImplementedError("Not callable from user cloud")
 
     def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence[InstigatorTick]:
+        raise NotImplementedError("Not callable from user cloud")
+
+    def get_tick_summaries(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
+    ) -> Sequence[InstigatorTickSummary]:
         raise NotImplementedError("Not callable from user cloud")
 
     def get_ticks(  # ty: ignore[invalid-method-override], fix me!

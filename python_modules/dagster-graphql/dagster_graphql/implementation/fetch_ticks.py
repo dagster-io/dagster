@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from datetime import timedelta
 from typing import TYPE_CHECKING, Optional
 
-from dagster._core.scheduler.instigation import InstigatorType, TickStatus
+from dagster._core.scheduler.instigation import InstigatorTick, InstigatorType, TickStatus
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ def get_instigation_ticks(
         else:
             raise Exception(f"Unexpected instigator type {instigator_type}")
     else:
-        ticks = graphene_info.context.instance.get_ticks(
+        summaries = graphene_info.context.instance.get_tick_summaries(
             instigator_origin_id,
             selector_id,
             before=before,
@@ -71,5 +71,9 @@ def get_instigation_ticks(
             limit=limit,
             statuses=statuses,
         )
+        # add tick ids to the prepare queue so that if a resolver fetches a tick_body, all tick_bodies are
+        # loaded from the DB in a single batch
+        InstigatorTick.prepare(graphene_info.context, [s.tick_id for s in summaries])
+        return [GrapheneInstigationTick(summary) for summary in summaries]
 
     return [GrapheneInstigationTick(tick) for tick in ticks]

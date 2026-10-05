@@ -1,6 +1,7 @@
 import datetime
 import os
 import sys
+from unittest import mock
 
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
@@ -10,6 +11,7 @@ from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
+    InstigatorTick,
     SensorInstigatorData,
     TickData,
     TickStatus,
@@ -1478,6 +1480,95 @@ def test_repository_batching(graphql_context: WorkspaceRequestContext):
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
     assert counts.get("SchedulingMethods.get_batch_ticks") == 1
     assert counts.get("SchedulingMethods.all_instigator_state") == 1
+
+
+NO_TICK_BODY_TICKS_QUERY = """
+query NoTickBodyTicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!]) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    ... on Sensor {
+      sensorState {
+        id
+        ticks(statuses: $statuses) {
+          id
+          tickId
+          status
+          timestamp
+        }
+      }
+    }
+  }
+}
+"""
+
+TICK_BODY_TICKS_QUERY = """
+query TickBodyTicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!]) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    ... on Sensor {
+      sensorState {
+        id
+        ticks(statuses: $statuses) {
+          id
+          status
+          runIds
+          cursor
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def test_no_tick_body_tick_selection_loads_no_tick_bodies(graphql_context: WorkspaceRequestContext):
+    remote_repository = graphql_context.get_code_location(main_repo_location_name()).get_repository(
+        main_repo_name()
+    )
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
+    sensor = remote_repository.get_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    for status in [TickStatus.SUCCESS, TickStatus.SKIPPED]:
+        graphql_context.instance.create_tick(
+            TickData(
+                instigator_origin_id=sensor.get_remote_origin().get_id(),
+                instigator_name=sensor_name,
+                instigator_type=InstigatorType.SENSOR,
+                status=status,
+                timestamp=datetime.datetime.now().timestamp(),
+                selector_id=sensor.selector_id,
+                run_ids=[],
+            )
+        )
+
+    variables = {
+        "sensorSelector": sensor_selector,
+        "statuses": ["SUCCESS", "SKIPPED", "FAILURE"],
+    }
+
+    # any tick body fetch goes through the loader's batch load; a selection of
+    # column-backed fields must succeed without ever reaching it
+    with mock.patch.object(
+        InstigatorTick,
+        "_blocking_batch_load",
+        side_effect=Exception("unexpected tick body load"),
+    ):
+        result = execute_dagster_graphql(
+            graphql_context, NO_TICK_BODY_TICKS_QUERY, variables=variables
+        )
+        ticks = result.data["sensorOrError"]["sensorState"]["ticks"]
+        assert len(ticks) == 2
+        assert {tick["status"] for tick in ticks} == {"SUCCESS", "SKIPPED"}
+        assert all(tick["tickId"] for tick in ticks)
+
+        # the same mock does trip for a tick-body-backed selection
+        with pytest.raises(Exception, match="unexpected tick body load"):
+            execute_dagster_graphql(graphql_context, TICK_BODY_TICKS_QUERY, variables=variables)
+
+    # without the mock, the tick-body-backed selection resolves from the batched load
+    result = execute_dagster_graphql(graphql_context, TICK_BODY_TICKS_QUERY, variables=variables)
+    ticks = result.data["sensorOrError"]["sensorState"]["ticks"]
+    assert len(ticks) == 2
+    assert all(tick["runIds"] == [] for tick in ticks)
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):

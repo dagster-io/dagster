@@ -55,6 +55,7 @@ if TYPE_CHECKING:
         InstigatorState,
         InstigatorStatus,
         InstigatorTick,
+        InstigatorTickSummary,
         TickData,
         TickStatus,
     )
@@ -871,6 +872,19 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
 
     def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence["InstigatorTick"]:
         return self._storage.schedule_storage.get_ticks_by_ids(tick_ids)
+
+    def get_tick_summaries(  # ty: ignore[invalid-method-override]
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
+    ) -> Sequence["InstigatorTickSummary"]:
+        return self._storage.schedule_storage.get_tick_summaries(
+            origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
+        )
 
     def get_ticks(  # ty: ignore[invalid-method-override]
         self,

@@ -22,6 +22,7 @@ from dagster._core.definitions.selector import InstigatorSelector, RepositorySel
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.remote_origin import RemoteInstigatorOrigin
+from dagster._record import record
 from dagster._serdes import create_snapshot_id
 from dagster._time import get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import xor
@@ -308,6 +309,17 @@ class TickStatus(Enum):
     SKIPPED = "SKIPPED"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+
+
+@record
+class InstigatorTickSummary:
+    """Column-backed subset of a tick, fetchable without deserializing the tick body."""
+
+    tick_id: int
+    instigator_origin_id: str
+    instigator_type: InstigatorType
+    status: TickStatus
+    timestamp: float
 
 
 @whitelist_for_serdes(
