@@ -732,6 +732,28 @@ class TestScheduleStorage:
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
 
+    def test_get_ticks_by_ids(self, storage):
+        if not self.can_get_single_tick():
+            pytest.skip("get_ticks_by_ids not supported by this storage implementation")
+        a = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        _b = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        c = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
+        )
+
+        assert storage.get_ticks_by_ids([]) == []
+
+        ticks = storage.get_ticks_by_ids([a.tick_id, c.tick_id])
+        assert {tick.tick_id for tick in ticks} == {a.tick_id, c.tick_id}
+
+        missing_id = max(a.tick_id, _b.tick_id, c.tick_id) + 1000
+        ticks = storage.get_ticks_by_ids([a.tick_id, missing_id])
+        assert {tick.tick_id for tick in ticks} == {a.tick_id}
+
     def test_auto_materialize_asset_evaluations(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")

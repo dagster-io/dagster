@@ -351,6 +351,20 @@ class SqlScheduleStorage(ScheduleStorage):
         tick_id, tick_data = rows[0]
         return InstigatorTick(tick_id, deserialize_value(tick_data, TickData))
 
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence[InstigatorTick]:
+        check.sequence_param(tick_ids, "tick_ids", of_type=int)
+        if not tick_ids:
+            return []
+
+        query = (
+            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.id.in_(tick_ids))
+        )
+
+        rows = self.execute(query)
+        return [InstigatorTick(row[0], deserialize_value(row[1], TickData)) for row in rows]
+
     def get_ticks(
         self,
         origin_id: str,

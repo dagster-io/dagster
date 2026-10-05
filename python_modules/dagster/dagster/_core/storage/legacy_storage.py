@@ -869,6 +869,9 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def get_tick(self, tick_id: int) -> "InstigatorTick":
         return self._storage.schedule_storage.get_tick(tick_id)
 
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence["InstigatorTick"]:
+        return self._storage.schedule_storage.get_ticks_by_ids(tick_ids)
+
     def get_ticks(  # ty: ignore[invalid-method-override]
         self,
         origin_id: str,

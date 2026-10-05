@@ -20,6 +20,7 @@ from dagster._core.definitions.run_request import (
 )
 from dagster._core.definitions.selector import InstigatorSelector, RepositorySelector
 from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.remote_origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._time import get_current_timestamp, utc_datetime_from_naive
@@ -312,13 +313,28 @@ class TickStatus(Enum):
 @whitelist_for_serdes(
     old_storage_names={"JobTick"}, storage_field_names={"tick_data": "job_tick_data"}
 )
-class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_data", "TickData")])):
+class InstigatorTick(
+    NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_data", "TickData")]),
+    LoadableBy[int],
+):
     def __new__(cls, tick_id: int, tick_data: "TickData"):
         return super().__new__(
             cls,
             check.int_param(tick_id, "tick_id"),
             check.inst_param(tick_data, "tick_data", TickData),
         )
+
+    @classmethod
+    def _blocking_batch_load(
+        cls, keys: Iterable[int], context: LoadingContext
+    ) -> Iterable[Optional["InstigatorTick"]]:
+        result_map: dict[int, InstigatorTick | None] = {tick_id: None for tick_id in keys}
+
+        schedule_storage = check.not_none(context.instance.schedule_storage)
+        for tick in schedule_storage.get_ticks_by_ids(list(result_map.keys())):
+            result_map[tick.tick_id] = tick
+
+        return [result_map[k] for k in keys]
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)

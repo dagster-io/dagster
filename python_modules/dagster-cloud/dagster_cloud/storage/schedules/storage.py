@@ -139,6 +139,9 @@ class GraphQLScheduleStorage(ScheduleStorage["DagsterCloudAgentInstance"], Confi
     def get_tick(self, tick_id: int) -> InstigatorTick:
         raise NotImplementedError("Not callable from user cloud")
 
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence[InstigatorTick]:
+        raise NotImplementedError("Not callable from user cloud")
+
     def get_ticks(  # ty: ignore[invalid-method-override], fix me!
         self,
         origin_id: str,

@@ -103,6 +103,10 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence[InstigatorTick]:
+        """Get the ticks for the given tick ids, omitting any that are not found."""
+
+    @abc.abstractmethod
     def get_ticks(
         self,
         origin_id: str,
