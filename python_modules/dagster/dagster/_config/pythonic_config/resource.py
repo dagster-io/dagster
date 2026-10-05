@@ -774,10 +774,18 @@ class ResourceDependency(Generic[V]):
         self._name = name
 
     def __get__(self, obj: "ConfigurableResourceFactory", owner: Any) -> V:
-        return getattr(obj, self._name)
+        if obj is None:
+            return self  # type: ignore  # class-level access returns descriptor
+        # Access obj.__dict__ directly to avoid re-invoking this descriptor
+        # (since this is a data descriptor, getattr would recurse infinitely)
+        try:
+            return obj.__dict__[self._name]  # type: ignore[return-value]
+        except KeyError:
+            raise AttributeError(self._name) from None
 
     def __set__(self, obj: object | None, value: ResourceOrPartialOrValue[V]) -> None:
-        setattr(obj, self._name, value)
+        # Write directly to obj.__dict__ to avoid re-invoking this descriptor
+        obj.__dict__[self._name] = value  # type: ignore[union-attr]
 
 
 class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
