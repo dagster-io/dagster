@@ -273,6 +273,51 @@ def test_pull_env_command_workspace_preserves_existing_env(dg_plus_cli_config):
         assert "BAZ=qux" in bar_env
 
 
+def test_pull_env_command_values_survive_dotenv_round_trip(dg_plus_cli_config):
+    from dotenv import dotenv_values
+
+    pulled = {
+        "PASSWORD": "p@ss #word",
+        "PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\nMIIEvQ\n-----END PRIVATE KEY-----",
+        "QUOTED": '"quoted"',
+        "LEADING_SPACE": "  padded",
+        "APOSTROPHE": "it's",
+        "BACKSLASH": "C:\\data\\dir",
+        "PLAIN": "bar",
+    }
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        # A pre-existing multi-line value is read back and rewritten by `pull env` too.
+        Path(".env").write_text('EXISTING="line one\nline two"\n', encoding="utf-8")
+
+        mock_gql_response(
+            query=gql.SECRETS_QUERY,
+            json_data={
+                "data": {
+                    "secretsOrError": {
+                        "secrets": [
+                            {
+                                "secretName": name,
+                                "secretValue": value,
+                                "locationNames": [],
+                                "localDeploymentScope": True,
+                            }
+                            for name, value in pulled.items()
+                        ]
+                    }
+                }
+            },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
+        )
+        result = runner.invoke("plus", "pull", "env")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+        assert dotenv_values(".env") == {"EXISTING": "line one\nline two", **pulled}
+        assert "PLAIN=bar" in Path(".env").read_text(encoding="utf-8").splitlines()
+
+
 ########################################################
 # ADD ENV COMMAND, WORKSPACE LEVEL
 ########################################################

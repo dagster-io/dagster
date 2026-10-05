@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -52,6 +53,24 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     return env_vars
 
 
+# Characters that python-dotenv does not read back verbatim from an unquoted value: whitespace
+# (leading/trailing whitespace is stripped and a newline ends the value), `#` (starts a comment
+# after whitespace) and quotes (parsed as quoting).
+_NEEDS_QUOTING = re.compile(r"[\s#'\"]")
+
+
+def _format_env_value(value: str) -> str:
+    """Format a value so that python-dotenv reads it back unchanged.
+
+    Values that need it are single-quoted, which python-dotenv reads across multiple lines, with
+    backslashes and single quotes escaped inside the quotes (as `dotenv.set_key` does).
+    """
+    if not _NEEDS_QUOTING.search(value):
+        return value
+    escaped = value.replace("\\", "\\\\").replace("'", "\\'")
+    return f"'{escaped}'"
+
+
 class ProjectEnvVars:
     """Represents the environment for a project, stored in the .env file of a
     project root.
@@ -92,5 +111,11 @@ class ProjectEnvVars:
     def write(self) -> None:
         env_path = self.ctx.root_path / ".env"
         env_path.write_text(
-            "\n".join([f"{key}={value}" for key, value in self.values.items() if value is not None])
+            "\n".join(
+                [
+                    f"{key}={_format_env_value(value)}"
+                    for key, value in self.values.items()
+                    if value is not None
+                ]
+            )
         )
