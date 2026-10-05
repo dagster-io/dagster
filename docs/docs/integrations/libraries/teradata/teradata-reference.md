@@ -699,7 +699,7 @@ Both operators include comprehensive error handling:
 
 ## Using the Teradata I/O manager
 
-`dagster-teradata` provides I/O managers that store each asset as a table in a Teradata database and load it back for downstream assets, built on the same `DbIOManager` foundation as the Snowflake, BigQuery and DuckDB I/O managers. For a step-by-step introduction, see [Using Teradata with Dagster I/O managers](/integrations/libraries/teradata/using-teradata-with-dagster-io-managers).
+`dagster-teradata` provides I/O managers that store each asset as a table in a Teradata database and load it back for downstream assets. For a step-by-step introduction, see [Using Teradata with Dagster I/O managers](/integrations/libraries/teradata/using-teradata-with-dagster-io-managers).
 
 | DataFrame type | I/O manager                | Type handler                 | Install                                   |
 | -------------- | -------------------------- | ---------------------------- | ----------------------------------------- |
