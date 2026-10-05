@@ -156,6 +156,7 @@ describe('render and parse across generated legacy tokens', () => {
     'a*b',
     '*',
     'a b',
+    'a  b',
     ' a',
     'a ',
     'a=b',
