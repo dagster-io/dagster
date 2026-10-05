@@ -11,7 +11,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
-import {RunFilterToken} from '../runs/RunsFilterUtils';
+import {RunFilterToken, splitTagFilterValue} from '../runs/RunsFilterUtils';
 
 interface DataState {
   runs: PartitionMatrixStepRunFragment[];
@@ -63,10 +63,7 @@ export function usePartitionStepQuery({
   const _serializedRunTags = useMemo(
     () =>
       JSON.stringify([
-        ...runsFilter.map((token) => {
-          const [key, value] = token.value.split('=');
-          return {key, value};
-        }),
+        ...runsFilter.map((token) => splitTagFilterValue(token.value)),
         {
           key: DagsterTag.RepositoryLabelTag,
           value: `${repositorySelector.repositoryName}@${repositorySelector.repositoryLocationName}`,

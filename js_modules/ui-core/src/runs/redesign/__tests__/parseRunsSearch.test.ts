@@ -64,8 +64,7 @@ describe('parseRunsSearch', () => {
     {text: 'tag:', message: 'tag needs key=value, for example tag:team=data'},
     {text: 'tag:team', message: 'tag needs key=value, for example tag:team=data'},
     {text: 'tag:team=', message: 'tag needs key=value, for example tag:team=data'},
-    {text: 'tag:team="a=b"', message: "Tag keys and values can't contain ="},
-    {text: 'user:"a=b"', message: "user values can't contain ="},
+    {text: 'tag:"a=b"=c', message: "Tag keys can't contain `=`"},
     {text: 'job:a=b', message: 'Only tag takes key=value, for example tag:team=data'},
     {text: 'job:a and', message: 'Add a search term after and'},
     {text: 'id:a or', message: 'Add a search term after or'},
@@ -92,6 +91,17 @@ describe('parseRunsSearch', () => {
       tokens: null,
       errors: expect.arrayContaining([expect.objectContaining({message})]),
     });
+  });
+
+  it.each([
+    {text: 'tag:team="a=b"', expected: [{token: 'tag', value: 'team=a=b'}]},
+    {text: 'user:"a=b"', expected: [{token: 'tag', value: 'user=a=b'}]},
+    {
+      text: 'partition:"region=west"',
+      expected: [{token: 'tag', value: 'dagster/partition=region=west'}],
+    },
+  ])('accepts a value containing = in $text', ({text, expected}) => {
+    expect(parseRunsSearch(text)).toEqual({tokens: expected, errors: []});
   });
 
   it.each(['id:abc-123', 'user:a@b.com', 'tag:team=a-b'])(

@@ -4,7 +4,7 @@ import memoize from 'lodash/memoize';
 import {useCallback, useMemo} from 'react';
 
 import {DagsterTag} from './RunTag';
-import {RunFilterToken, RunFilterTokenType} from './RunsFilterUtils';
+import {RunFilterToken, RunFilterTokenType, splitTagFilterValue} from './RunsFilterUtils';
 import {gql, useApolloClient, useLazyQuery} from '../apollo-client';
 import {
   RunTagKeysQuery,
@@ -504,9 +504,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           return !tagsToExclude.includes(value.split('=')[0] as DagsterTag);
         })
         .map((token) => {
-          const [key, value] = token.value.split('=');
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          return tagSuggestionValueObject(key!, value!).value;
+          const {key, value} = splitTagFilterValue(token.value);
+          return tagSuggestionValueObject(key, value).value;
         });
     }, [tokens]),
 
@@ -639,12 +638,15 @@ function tagToFilterValue(key: string, value: string) {
 }
 
 // Memoize this object because the static set filter component checks for object equality (set.has)
-export const tagValueToFilterObject = memoize((value: string) => ({
-  key: value,
-  type: value.split('=')[0] as DagsterTag,
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  value: value.split('=')[1]!,
-}));
+export const tagValueToFilterObject = memoize((tagValue: string) => {
+  const {key, value} = splitTagFilterValue(tagValue);
+
+  return {
+    key: tagValue,
+    type: key as DagsterTag,
+    value,
+  };
+});
 
 export const tagSuggestionValueObject = memoize(
   (key: string, value: string) => ({

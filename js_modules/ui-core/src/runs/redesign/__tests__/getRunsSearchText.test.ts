@@ -83,7 +83,8 @@ describe('getRunsSearchText', () => {
     {query: ['tag:.dagster/repository=repo@loc'], text: 'code_location:"repo@loc"'},
     {query: ['tag:dagster/auto_materialize=true'], text: 'tag:dagster/auto_materialize=true'},
     {query: ['tag:.custom/key=x'], text: 'tag:".custom/key"=x'},
-    {query: ['tag:a=b=c'], text: 'tag:a=b'},
+    {query: ['tag:a=b=c'], text: 'tag:a="b=c"'},
+    {query: ['tag:dagster/partition=region=west'], text: 'partition:"region=west"'},
     {query: ['tag:novalue'], text: 'tag:novalue=""'},
     {query: ['tag:dagster/partition='], text: 'tag:dagster/partition=""'},
     {query: ['job:and'], text: 'job:"and"'},
@@ -122,12 +123,21 @@ describe('getRunsSearchText', () => {
   it.each([
     {text: 'tag:team=data and job:my_job and id:"abc-123" and sensor:s'},
     {text: 'tag:dagster/sensor_name=s and created_before:"1700000000.5"'},
+    {text: 'partition:"region=west" and tag:team="a=b"'},
     {text: 'user:"a@b.com" and code_location:"repo@loc" and partition:"2024-01-01"'},
   ])('treats the rendered form of $text as canonical', ({text}) => {
     const tokens = parseTokens(text);
     expect(tokensAsStringArray(parseTokens(getRunsSearchText(tokens)))).toEqual(
       tokensAsStringArray(tokens),
     );
+  });
+
+  it('keeps everything after the first = as the tag value', () => {
+    const tokens = parseTokens('tag:dagster/partition="region=west" and tag:team="a=b"');
+    expect(runsFilterForSearchTokens(tokens).tags).toEqual([
+      {key: 'dagster/partition', value: 'region=west'},
+      {key: 'team', value: 'a=b'},
+    ]);
   });
 
   it('renders tag values containing a quote even though the search cannot parse them', () => {

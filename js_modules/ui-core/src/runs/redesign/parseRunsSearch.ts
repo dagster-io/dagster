@@ -242,11 +242,6 @@ const getScalarValueError = (attribute: RunsSearchAttribute, value: string) => {
     return `${attribute} needs a Unix timestamp in seconds`;
   }
 
-  // The legacy token format splits tag values at `=`, so they can't hold one.
-  if (isTagBackedAttribute(attribute) && value.includes('=')) {
-    return `${attribute} values can't contain =`;
-  }
-
   return null;
 };
 
@@ -259,8 +254,8 @@ const createTagTerm = (
     return createErrorNode(TAG_FORMAT_MESSAGE, ctx);
   }
 
-  if (key.includes('=') || value.includes('=')) {
-    return createErrorNode("Tag keys and values can't contain =", ctx);
+  if (key.includes('=')) {
+    return createErrorNode("Tag keys can't contain `=`", ctx);
   }
 
   return {
