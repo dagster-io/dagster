@@ -1,14 +1,16 @@
 import operator
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Generic, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeAlias
+
+if TYPE_CHECKING:
+    from dagster._core.asset_graph_view.entity_subset import AssetSubset
 
 from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
-from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.definitions.partitions.snap.snap import PartitionsSnap
@@ -19,6 +21,7 @@ from dagster._core.definitions.partitions.subset import (
     TimeWindowPartitionsSubset,
 )
 from dagster._core.definitions.partitions.subset.key_ranges import KeyRangesPartitionsSubset
+from dagster._core.errors import DagsterInvalidInvocationError
 
 EntitySubsetValue: TypeAlias = bool | PartitionsSubset
 
@@ -43,6 +46,7 @@ class EntitySubsetSerializer(DataclassSerializer):
     storage_field_names={"key": "asset_key"},
     old_storage_names={"AssetSubset"},
 )
+
 @dataclass(frozen=True)
 class SerializableEntitySubset(Generic[T_EntityKey]):
     """Represents a serializable subset of a given EntityKey."""
@@ -123,17 +127,28 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
 
     @property
     def size(self) -> int:
+
         if not self.is_partitioned:
             return int(self.bool_value)
-        else:
+        
+        try:
             return len(self.subset_value)
-
+        except DagsterInvalidInvocationError:
+            # If a dynamic partition key was deleted out from under this historical 
+            # subset evaluation, we gracefully fall back to a size of 0.
+            return 0
+        
     @property
     def is_empty(self) -> bool:
-        if self.is_partitioned:
-            return self.subset_value.is_empty
-        else:
+
+        if not self.is_partitioned:
             return not self.bool_value
+
+        try:
+            return self.subset_value.is_empty
+        except DagsterInvalidInvocationError:
+            # If partition keys no longer exist, treat the historical subset as empty
+            return True
 
     def is_compatible_with_partitions_def(
         self, partitions_def: PartitionsDefinition | None
@@ -188,11 +203,16 @@ class SerializableEntitySubset(Generic[T_EntityKey]):
     def compute_intersection(self, other: Self) -> Self:
         return self._oper(other, operator.and_)
 
-    def __contains__(self, item: AssetKeyPartitionKey) -> bool:
+    def __contains__(self, item: "AssetSubset") -> bool:
         if not self.is_partitioned:
-            return item.asset_key == self.key and item.partition_key is None and self.bool_value
-        else:
-            return item.asset_key == self.key and item.partition_key in self.subset_value
-
+            return self.bool_value and item.bool_value
+        
+        try:
+            return item.partition_key in self.subset_value
+        except DagsterInvalidInvocationError:
+            # If a dynamic partition key was deleted out from under this historical 
+            # subset evaluation, gracefully treat it as not contained.
+            return False
+        
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}<{self.key}>({self.value})"
