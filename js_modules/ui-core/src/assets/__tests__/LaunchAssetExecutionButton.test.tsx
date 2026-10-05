@@ -236,6 +236,31 @@ describe('LaunchAssetExecutionButton', () => {
       await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
     });
 
+    it('should launch only executable assets from a mixed selection', async () => {
+      const launchMock = buildExpectedLaunchSingleRunMutation({
+        mode: 'default',
+        executionMetadata: {
+          tags: [...UI_EXECUTION_TAGS],
+        },
+        runConfigData: '{}',
+        selector: {
+          repositoryLocationName: 'test.py',
+          repositoryName: 'repo',
+          pipelineName: 'my_asset_job',
+          assetSelection: [{path: ['unpartitioned_asset']}],
+          assetCheckSelection: [],
+        },
+      });
+      renderButton({
+        scope: {all: [UNPARTITIONED_ASSET, UNPARTITIONED_NON_EXECUTABLE_ASSET]},
+        preferredJobName: 'my_asset_job',
+        extraMocks: [buildLaunchAssetLoaderMock([UNPARTITIONED_ASSET.assetKey])],
+        launchMock,
+      });
+      await clickMaterializeButton();
+      await waitFor(() => expect(launchMock.result).toHaveBeenCalled());
+    });
+
     describe('assets with checks', () => {
       it('should not include checks if the job in context is marked without_checks', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
@@ -730,10 +755,12 @@ describe('LaunchAssetExecutionButton', () => {
 function renderButton({
   scope,
   launchMock,
+  extraMocks = [],
   preferredJobName,
 }: {
   scope: AssetsInScope;
   launchMock?: MockedResponse<Record<string, any>>;
+  extraMocks?: MockedResponse<Record<string, any>>[];
   preferredJobName?: string;
 }) {
   const assetKeys = (
@@ -758,6 +785,7 @@ function renderButton({
     buildConfigPartitionSelectionLatestPartitionMock('2020-01-02', 'my_asset_job'),
     buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', 'my_asset_job'),
     buildConfigPartitionSelectionLatestPartitionMock('2023-02-22', '__ASSET_JOB'),
+    ...extraMocks,
     buildLaunchAssetLoaderMock([MULTI_ASSET_OUT_1.assetKey], {
       assetNodeAdditionalRequiredKeys: [MULTI_ASSET_OUT_2.assetKey],
     }),
