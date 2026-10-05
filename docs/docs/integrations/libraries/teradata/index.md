@@ -13,7 +13,7 @@ canonicalUrl: '/integrations/libraries/teradata'
 slug: '/integrations/libraries/teradata'
 ---
 
-import CommunityIntegration from '@site/docs/partials/_CommunityIntegration.md';
+import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
 
 <CommunityIntegration />
 

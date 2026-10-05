@@ -754,7 +754,7 @@ When a partitioned asset is materialized, the I/O manager deletes only the rows 
 
 <Tabs>
 
-<TabItem value="Static partitioned assets">
+<TabItem value="Static partitioned assets" label="Static partitioned assets">
 
 ```python
 import pandas as pd
@@ -790,7 +790,7 @@ DELETE FROM "analytics"."iris_dataset_partitioned" WHERE (species IN ('Iris-seto
 
 </TabItem>
 
-<TabItem value="Time-partitioned assets">
+<TabItem value="Time-partitioned assets" label="Time-partitioned assets">
 
 ```python
 import pandas as pd
@@ -817,7 +817,7 @@ If the column is a `DATE` rather than a `TIMESTAMP`, use an expression, for exam
 
 </TabItem>
 
-<TabItem value="Multi-partitioned assets">
+<TabItem value="Multi-partitioned assets" label="Multi-partitioned assets">
 
 ```python
 import pandas as pd
@@ -888,7 +888,7 @@ Each I/O manager creates the table on the first materialization, deriving Terada
 | `chunk_size`           |   ✅   |   ✅   |         | Rows per `executemany` batch (default `5000`).                                                                                                                                                             |
 | `min_varchar_length`   |   ✅   |   ✅   |         | Minimum width of inferred `VARCHAR` columns (default `256`).                                                                                                                                               |
 | `string_length`        |        |        |   ✅    | `VARCHAR` width for Spark `StringType` columns, whose schema carries no length (default `1024`).                                                                                                           |
-| `batch_size`           |        |        |   ✅    | Rows the JDBC driver batches per insert round trip.                                                                                                                                                        |
+| `batch_size`           |        |        |   ✅    | Rows the JDBC driver batches per insert round trip (default `1000`).                                                                                                                                       |
 | `read_partitioning`    |        |        |   ✅    | `spark.read.jdbc` options for parallel reads. Only `partitionColumn`, `lowerBound`, `upperBound`, `numPartitions`, `fetchsize` and `queryTimeout` are accepted.                                            |
 | `write_num_partitions` |        |        |   ✅    | Repartition the DataFrame to this many partitions before the JDBC write.                                                                                                                                   |
 

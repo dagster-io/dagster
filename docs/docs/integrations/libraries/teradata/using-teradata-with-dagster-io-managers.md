@@ -92,7 +92,7 @@ The Teradata I/O manager can create and update tables for your Dagster-defined a
 
 <Tabs>
 
-<TabItem value="Create tables in Teradata from Dagster assets">
+<TabItem value="Create tables in Teradata from Dagster assets" label="Create tables in Teradata from Dagster assets">
 
 ### Store a Dagster asset as a table in Teradata
 
@@ -123,7 +123,7 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 </TabItem>
 
-<TabItem value="Make an existing table available in Dagster">
+<TabItem value="Make an existing table available in Dagster" label="Make an existing table available in Dagster">
 
 You may already have tables in Teradata that you want to make available to other Dagster assets. You can define [external assets](/guides/build/assets/external-assets) for these tables. By defining an external asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
