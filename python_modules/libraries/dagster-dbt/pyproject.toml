@@ -20,7 +20,12 @@ dependencies = [
     "orjson",
     "requests",
     "rich",
-    "sqlglot[rs]<28.1.0",  # FW-731
+    # FW-731 pinned <28.1.0 after that release's optimizer change crashed
+    # column lineage for CTE/join queries. Fixed by serializing the AST
+    # before calling lineage() (see dbt_cli_event.py) -- no longer needs
+    # an upper bound. sqlglot 30.0.0+ also adds lineage CTE memoization,
+    # a meaningful speedup for wide models with many columns.
+    "sqlglot[rs]",
     "typer>=0.9.0",
     "packaging",
 ]

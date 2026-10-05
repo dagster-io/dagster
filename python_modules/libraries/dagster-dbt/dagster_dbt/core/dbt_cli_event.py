@@ -143,6 +143,17 @@ def _build_column_lineage_metadata(
         ),
     )
 
+    # sqlglot >=28.1 changed the optimizer so that an already-optimized AST's
+    # CTE/join aliases can be plain strings rather than Expression objects.
+    # Passing the AST directly to lineage() below then crashes with
+    # `AttributeError: 'str' object has no attribute 'copy'` for CTE/join
+    # queries, because lineage() assumes it can still re-derive that
+    # structure. Serializing back to SQL text here makes lineage() reparse
+    # it into the Expression-based form it expects, on every supported
+    # sqlglot version -- verified to produce identical lineage output to the
+    # un-serialized AST on sqlglot 24.0.0, 28.0.0, and 28.1.0.
+    optimized_node_sql = optimized_node_ast.sql(dialect=sql_dialect)
+
     # 2. Retrieve the column names from the current node.
     schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
     sqlglot_column_names = set(optimized_node_ast.named_selects)
@@ -187,7 +198,7 @@ def _build_column_lineage_metadata(
         column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
-            sql=optimized_node_ast,
+            sql=optimized_node_sql,
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
         ).walk():
