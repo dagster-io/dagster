@@ -38,11 +38,20 @@ const RUN_PROVIDERS_EMPTY = [
   {token: 'created_date_after', values: () => []},
 ];
 
+type QueryPersistedRunFiltersOptions = {
+  enabledFilters?: RunFilterTokenType[];
+  behavior?: 'push' | 'replace';
+};
+
 /** Persist run filters in the URL and clear pagination when they change. */
-export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
+export function useQueryPersistedRunFilters({
+  enabledFilters,
+  behavior,
+}: QueryPersistedRunFiltersOptions = {}) {
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
+        behavior,
         encode: (tokens) => ({
           q: tokensAsStringArray(tokens),
           cursor: undefined,
@@ -56,7 +65,7 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
           ) as RunFilterToken[];
         },
       }),
-      [enabledFilters],
+      [enabledFilters, behavior],
     ),
   );
 }

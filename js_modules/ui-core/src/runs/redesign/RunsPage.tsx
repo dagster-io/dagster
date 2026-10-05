@@ -2,6 +2,7 @@ import {Box, CursorHistoryControls, Heading, PageHeader} from '@dagster-io/ui-co
 import {useEffect, useMemo, useRef} from 'react';
 
 import {RunsFeedList} from './RunsFeedList';
+import {RunsSearchInput} from './RunsSearchInput';
 import styles from './css/RunsPage.module.css';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {useRunsFeed} from './useRunsFeed';
@@ -10,7 +11,6 @@ import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
-import {RunsFeedView, RunsFilter} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunTableEmptyState} from '../RunTableEmptyState';
 import {RunsQueryRefetchContext} from '../RunUtils';
@@ -26,7 +26,7 @@ import {runsFilterForSearchTokens, useQueryPersistedRunFilters} from '../RunsFil
 export const RunsPage = () => {
   useTrackPageView();
 
-  const [filterTokens] = useQueryPersistedRunFilters();
+  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters({behavior: 'push'});
   const filter = runsFilterForSearchTokens(filterTokens);
   const [view] = useQueryPersistedRunsFeedView();
   const selectedTab = getSelectedRunsFeedTab(filterTokens, view);
@@ -35,22 +35,12 @@ export const RunsPage = () => {
   const queryView = getRunsFeedQueryView(selectedTab, view);
   const appliedQueryKey = JSON.stringify({filter, view: queryView});
 
-  // A new query remounts with an empty cursor stack; Back/Forward within one query keeps it.
-  return <RunsPageContent key={appliedQueryKey} filter={filter} view={queryView} />;
-};
-
-type RunsPageContentProps = {
-  filter: RunsFilter;
-  view: RunsFeedView;
-};
-
-const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const shouldScrollToTopRef = useRef(false);
 
   const {entries, error, queryResult, paginationProps, refreshState} = useRunsFeed({
     filter,
-    view,
+    view: queryView,
     skip: false,
   });
 
@@ -67,6 +57,12 @@ const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
       }
     }
   }, [cursor, isLoading]);
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = 0;
+    }
+  }, [appliedQueryKey]);
 
   const refetchContext = useMemo(() => ({refetch: refreshState.refetch}), [refreshState.refetch]);
 
@@ -91,10 +87,13 @@ const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
         right={<QueryRefreshCountdown refreshState={refreshState} />}
       />
       <Box
-        flex={{alignItems: 'center', justifyContent: 'flex-end'}}
+        flex={{alignItems: 'center', gap: 12}}
         padding={{vertical: 12, horizontal: 24}}
         border="bottom"
       >
+        <Box flex={{grow: 1}}>
+          <RunsSearchInput tokens={filterTokens} onChange={setFilterTokens} />
+        </Box>
         <CursorHistoryControls
           {...paginationProps}
           popCursor={popCursor}
@@ -104,7 +103,14 @@ const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
       </Box>
       <div ref={bodyRef} className={styles.body}>
         <RunsQueryRefetchContext.Provider value={refetchContext}>
-          <RunsFeed entries={entries} error={error} isLoading={isLoading} isFiltered={isFiltered} />
+          <RunsFeed
+            // A new query key remounts the list, which closes any open tick dialog.
+            key={appliedQueryKey}
+            entries={entries}
+            error={error}
+            isLoading={isLoading}
+            isFiltered={isFiltered}
+          />
         </RunsQueryRefetchContext.Provider>
       </div>
     </div>

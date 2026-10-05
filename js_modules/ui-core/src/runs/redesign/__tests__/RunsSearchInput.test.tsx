@@ -1,48 +1,12 @@
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {useEffect, useState} from 'react';
 
 import {RunFilterToken} from '../../RunsFilterUtils';
 import {RunsSearchInput} from '../RunsSearchInput';
 
-type MockSelectionInputProps = {
-  placeholder: string;
-  value: string;
-  linter: (text: string) => {message: string}[];
-  onChange: (value: string) => void;
-};
-
-// CodeMirror doesn't run in jsdom. This keeps the input's contract: the draft is local,
-// Enter commits it, a new `value` replaces the draft, a draft that differs from `value` is
-// marked uncommitted, and errors reflect `linter(value)`.
-const MockSelectionInput = ({placeholder, value, linter, onChange}: MockSelectionInputProps) => {
-  const [draft, setDraft] = useState(value);
-  const [firstError] = linter(value);
-
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
-
-  return (
-    <>
-      <input
-        aria-label={placeholder}
-        data-uncommitted={draft !== value}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            onChange(draft);
-          }
-        }}
-      />
-      <div role="status">{firstError?.message}</div>
-    </>
-  );
-};
-
 jest.mock('../../../selection/SelectionInput', () => ({
-  SelectionAutoCompleteInput: (props: MockSelectionInputProps) => <MockSelectionInput {...props} />,
+  SelectionAutoCompleteInput: jest.requireActual('../__fixtures__/MockSelectionInput.fixtures')
+    .MockSelectionInput,
 }));
 
 const LEGACY_TOKENS: RunFilterToken[] = [
@@ -88,7 +52,7 @@ describe('RunsSearchInput', () => {
 
     expect(onChange).not.toHaveBeenCalled();
     expect(input).toHaveValue('id:a or job:b');
-    expect(await screen.findByRole('status')).toHaveTextContent('or only combines IDs or statuses');
+    expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
   });
 
   it('does not apply a search that matches the current filter', async () => {
@@ -119,20 +83,20 @@ describe('RunsSearchInput', () => {
   it('discards an invalid search when the tokens change, even after returning to them', async () => {
     const {rerender} = render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={jest.fn()} />);
     await replaceSearch('id:a or job:b');
-    expect(await screen.findByRole('status')).toHaveTextContent('or only combines IDs or statuses');
+    expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
 
     rerender(<RunsSearchInput tokens={[{token: 'id', value: 'abc'}]} onChange={jest.fn()} />);
 
     expect(await screen.findByRole('textbox', {name: 'Search and filter runs'})).toHaveValue(
       'id:abc',
     );
-    expect(await screen.findByRole('status')).toBeEmptyDOMElement();
+    expect(await screen.findByRole('alert')).toBeEmptyDOMElement();
 
     rerender(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={jest.fn()} />);
 
     expect(await screen.findByRole('textbox', {name: 'Search and filter runs'})).toHaveValue(
       'job:nightly_etl and user:"a@b.com"',
     );
-    expect(await screen.findByRole('status')).toBeEmptyDOMElement();
+    expect(await screen.findByRole('alert')).toBeEmptyDOMElement();
   });
 });
