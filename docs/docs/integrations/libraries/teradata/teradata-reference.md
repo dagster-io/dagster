@@ -8,6 +8,7 @@ description: The Teradata package allows you to perform queries and database and
 - [Data transfer](#data-transfer)
 - [VantageCloud Lake Compute Cluster management](#vantagecloud-lake-compute-cluster-management)
 - [Teradata operators documentation](#teradata-operators-documentation)
+- [Using the Teradata I/O manager](#using-the-teradata-io-manager)
 
 ## `TeradataResource` operations
 
@@ -695,3 +696,421 @@ Both operators include comprehensive error handling:
 - Use meaningful job names for monitoring and debugging
 - Test with small datasets before scaling up
 - Monitor TPT job logs for performance optimization
+
+## Using the Teradata I/O manager
+
+`dagster-teradata` provides I/O managers that store each asset as a table in a Teradata database and load it back for downstream assets, built on the same `DbIOManager` foundation as the Snowflake, BigQuery and DuckDB I/O managers. For a step-by-step introduction, see [Using Teradata with Dagster I/O managers](/integrations/libraries/teradata/using-teradata-with-dagster-io-managers).
+
+| DataFrame type | I/O manager                | Type handler                 | Install                                   |
+| -------------- | -------------------------- | ---------------------------- | ----------------------------------------- |
+| pandas         | `TeradataPandasIOManager`  | `TeradataPandasTypeHandler`  | `pip install "dagster-teradata[pandas]"`  |
+| polars         | `TeradataPolarsIOManager`  | `TeradataPolarsTypeHandler`  | `pip install "dagster-teradata[polars]"`  |
+| PySpark        | `TeradataPySparkIOManager` | `TeradataPySparkTypeHandler` | `pip install "dagster-teradata[pyspark]"` |
+
+The I/O managers require Python 3.10 or higher, and the target Teradata database must already exist: the I/O manager does not create databases. The `TeradataResource` passed as `teradata` must use ANSI transaction mode (the default).
+
+### Table and database names
+
+The table name is the last component of the asset key. The database is the first of these that is set:
+
+1. `schema` in the asset's definition metadata, for example `@asset(metadata={"schema": "staging"})`.
+2. `schema` on the I/O manager, for example `TeradataPandasIOManager(teradata=teradata, schema="analytics")`.
+3. The second-to-last component of the asset key, for example `@asset(key_prefix=["analytics"])`.
+4. `database` on the `TeradataResource`.
+
+If none is set, the run fails with a configuration error instead of falling back to a default database.
+
+### Selecting specific columns in a downstream asset
+
+Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the Teradata I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
+
+```python
+import pandas as pd
+from dagster import AssetIn, asset
+
+
+@asset(
+    ins={
+        "iris_sepal": AssetIn(
+            key="iris_dataset",
+            metadata={"columns": ["sepal_length_cm", "sepal_width_cm"]},
+        )
+    }
+)
+def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
+    iris_sepal["sepal_area_cm2"] = (
+        iris_sepal["sepal_length_cm"] * iris_sepal["sepal_width_cm"]
+    )
+    return iris_sepal
+```
+
+In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2: Create tables in Teradata](/integrations/libraries/teradata/using-teradata-with-dagster-io-managers#step-2-create-tables-in-teradata) of the tutorial. The I/O manager pushes the selection into the generated `SELECT`, so only those columns are read from Teradata.
+
+### Storing partitioned assets
+
+The Teradata I/O manager supports storing and loading partitioned data. To correctly store and load data from the Teradata table, the I/O manager needs to know which column contains the data that partitions the table. You declare it with the `partition_expr` metadata key. `partition_expr` is used in the `WHERE` clause when loading and replacing data, so it can be a column name or any SQL expression; build it only from trusted values.
+
+When a partitioned asset is materialized, the I/O manager deletes only the rows of the selected partition before inserting the new ones, so other partitions are left untouched.
+
+<Tabs>
+
+<TabItem value="Static partitioned assets">
+
+```python
+import pandas as pd
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
+
+
+@asset(
+    partitions_def=StaticPartitionsDefinition(
+        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
+    ),
+    metadata={"partition_expr": "species"},
+)
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    species = context.partition_key
+    full_df = pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+    return full_df[full_df["species"] == species]
+```
+
+Before writing the `Iris-setosa` partition, the I/O manager runs:
+
+```sql
+DELETE FROM "analytics"."iris_dataset_partitioned" WHERE (species IN ('Iris-setosa'))
+```
+
+</TabItem>
+
+<TabItem value="Time-partitioned assets">
+
+```python
+import pandas as pd
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
+
+
+@asset(
+    partitions_def=DailyPartitionsDefinition(start_date="2024-01-01"),
+    metadata={"partition_expr": "order_ts"},
+)
+def daily_orders(context: AssetExecutionContext) -> pd.DataFrame:
+    return fetch_orders_for(context.partition_key)
+```
+
+Time-window partitions generate a half-open range, so adjacent windows never overlap:
+
+```sql
+DELETE FROM "analytics"."daily_orders" WHERE
+(order_ts >= CAST('2024-03-01 00:00:00' AS TIMESTAMP(6)) AND
+ order_ts <  CAST('2024-03-02 00:00:00' AS TIMESTAMP(6)))
+```
+
+If the column is a `DATE` rather than a `TIMESTAMP`, use an expression, for example `{"partition_expr": "CAST(order_date AS TIMESTAMP(6))"}`.
+
+</TabItem>
+
+<TabItem value="Multi-partitioned assets">
+
+```python
+import pandas as pd
+from dagster import (
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    asset,
+)
+
+
+@asset(
+    partitions_def=MultiPartitionsDefinition(
+        {
+            "date": DailyPartitionsDefinition(start_date="2024-01-01"),
+            "region": StaticPartitionsDefinition(["emea", "apac"]),
+        }
+    ),
+    metadata={"partition_expr": {"date": "order_ts", "region": "region_code"}},
+)
+def regional_orders(context: AssetExecutionContext) -> pd.DataFrame: ...
+```
+
+For multi-partitioned assets, `partition_expr` is a mapping with one entry per partition dimension. The dimensions are combined with `AND`. If a dimension is missing from the mapping, the run fails with an error naming the asset.
+
+</TabItem>
+</Tabs>
+
+### Storing tables in multiple databases
+
+You may want to have different assets stored in different Teradata databases. The Teradata I/O manager allows you to specify the database in several ways.
+
+If you want all of your assets to be stored in the same database, you can specify the database as configuration to the I/O manager, as in `TeradataPandasIOManager(teradata=teradata, schema="analytics")`.
+
+If you want to store assets in different databases, you can specify the database as part of the asset's key:
+
+```python
+import pandas as pd
+from dagster import asset
+
+
+@asset(key_prefix=["iris"])
+def iris_dataset() -> pd.DataFrame: ...
+
+
+@asset(key_prefix=["daffodil"])
+def daffodil_dataset() -> pd.DataFrame: ...
+```
+
+or by using the `schema` definition metadata:
+
+```python
+@asset(metadata={"schema": "iris"})
+def iris_dataset() -> pd.DataFrame: ...
+```
+
+In these examples, the `iris_dataset` asset will be stored in the `iris` database, and the `daffodil_dataset` asset will be stored in the `daffodil` database. Ops have no asset key, so name their table through output metadata instead, for example `Out(metadata={"schema": "analytics", "table": "staged_customers"})`.
+
+### Configuring the DataFrame handlers
+
+Each I/O manager creates the table on the first materialization, deriving Teradata column types from the DataFrame, and appends to it afterwards. Existing tables are never altered.
+
+| Option                 | pandas | polars | PySpark | Description                                                                                                                                                                                                |
+| ---------------------- | :----: | :----: | :-----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema`               |   ✅   |   ✅   |   ✅    | Default Teradata database for assets handled by the I/O manager.                                                                                                                                           |
+| `column_types`         |   ✅   |   ✅   |   ✅    | Explicit Teradata column types keyed by column name, for example `{"amount": "DECIMAL(18,4)"}`. Overrides inference when the table is created. Give the type only, without constraints such as `NOT NULL`. |
+| `chunk_size`           |   ✅   |   ✅   |         | Rows per `executemany` batch (default `5000`).                                                                                                                                                             |
+| `min_varchar_length`   |   ✅   |   ✅   |         | Minimum width of inferred `VARCHAR` columns (default `256`).                                                                                                                                               |
+| `string_length`        |        |        |   ✅    | `VARCHAR` width for Spark `StringType` columns, whose schema carries no length (default `1024`).                                                                                                           |
+| `batch_size`           |        |        |   ✅    | Rows the JDBC driver batches per insert round trip.                                                                                                                                                        |
+| `read_partitioning`    |        |        |   ✅    | `spark.read.jdbc` options for parallel reads. Only `partitionColumn`, `lowerBound`, `upperBound`, `numPartitions`, `fetchsize` and `queryTimeout` are accepted.                                            |
+| `write_num_partitions` |        |        |   ✅    | Repartition the DataFrame to this many partitions before the JDBC write.                                                                                                                                   |
+
+The pandas and polars handlers size string columns from the data: the width is twice the longest observed value, measured in UTF-16 code units, with `min_varchar_length` as a floor. Above 32,000 characters the column becomes a `CLOB`. All inferred string columns are created as `CHARACTER SET UNICODE`. Use `column_types` to pin a width when the first materialization doesn't contain the longest values.
+
+```python
+from dagster_teradata import TeradataPandasIOManager
+
+TeradataPandasIOManager(
+    teradata=teradata,
+    column_types={"description": "VARCHAR(10000)", "amount": "DECIMAL(18,4)"},
+)
+```
+
+Each write attaches `row_count` and a `dagster/column_schema` table schema to the materialization, so the resolved Teradata types are visible in the Dagster UI.
+
+### Storing and loading polars DataFrames in Teradata
+
+`TeradataPolarsIOManager` stores and loads `polars.DataFrame` objects. It uses the same driver as the pandas I/O manager and maps polars dtypes onto the same Teradata column types.
+
+<PackageInstallInstructions packageName="dagster-teradata[polars]" />
+
+```python
+import polars as pl
+from dagster import Definitions, EnvVar, asset
+from dagster_teradata import TeradataPolarsIOManager, TeradataResource
+
+
+@asset
+def iris_dataset() -> pl.DataFrame:
+    return pl.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        has_header=False,
+        new_columns=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": TeradataPolarsIOManager(
+            teradata=TeradataResource(
+                host=EnvVar("TERADATA_HOST"),
+                user=EnvVar("TERADATA_USER"),
+                password=EnvVar("TERADATA_PASSWORD"),
+                database=EnvVar("TERADATA_DATABASE"),
+            ),
+        )
+    },
+)
+```
+
+Notes:
+
+- `Duration` and nested dtypes (`List`, `Array`, `Struct`) are rejected with an actionable error. Convert them to supported types first.
+- `Categorical` columns are sized from the values present in the column, not from polars' process-global category registry. Use `column_types` to reserve width for categories the first materialization doesn't contain.
+
+### Storing and loading PySpark DataFrames in Teradata
+
+`TeradataPySparkIOManager` stores and loads `pyspark.sql.DataFrame` objects. Data moves over JDBC (`df.write.jdbc` / `spark.read.jdbc`), so reads and writes are parallelized across Spark executors.
+
+<PackageInstallInstructions packageName="dagster-teradata[pyspark]" />
+
+Requirements:
+
+- **PySpark 3.4 or 3.5** with a classic (non-Spark Connect) `SparkSession`. A `SparkSession` must be active when inputs are loaded.
+- **The Teradata JDBC driver** (`terajdbc4.jar`) on the Spark classpath, for example through the `spark.jars` Spark configuration. You can download it from [Teradata Downloads](https://downloads.teradata.com/download/connectivity/jdbc-driver).
+- **A UTC JVM time zone** for assets with `DATE` or `TIMESTAMP` columns. Spark's JDBC data source converts date and time values using the JVM's default time zone, not `spark.sql.session.timeZone`. The I/O manager raises an error rather than silently shifting values. Set `_JAVA_OPTIONS=-Duser.timezone=UTC` wherever the Dagster run starts, and on a cluster also set `spark.executor.extraJavaOptions=-Duser.timezone=UTC`.
+
+```python
+from dagster import Definitions, EnvVar, asset
+from dagster_teradata import TeradataPySparkIOManager, TeradataResource
+from pyspark.sql import DataFrame, SparkSession
+
+
+@asset
+def iris_dataset() -> DataFrame:
+    spark = SparkSession.builder.getOrCreate()
+    return spark.read.csv(
+        "iris.csv",
+        schema=(
+            "sepal_length_cm DOUBLE, sepal_width_cm DOUBLE, "
+            "petal_length_cm DOUBLE, petal_width_cm DOUBLE, species STRING"
+        ),
+    )
+
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": TeradataPySparkIOManager(
+            teradata=TeradataResource(
+                host=EnvVar("TERADATA_HOST"),
+                user=EnvVar("TERADATA_USER"),
+                password=EnvVar("TERADATA_PASSWORD"),
+                database=EnvVar("TERADATA_DATABASE"),
+            ),
+            read_partitioning={
+                "partitionColumn": "id",
+                "lowerBound": 0,
+                "upperBound": 1000000,
+                "numPartitions": 8,
+            },
+            write_num_partitions=8,
+        )
+    },
+)
+```
+
+Behavior to be aware of:
+
+- **String columns.** Spark `StringType` columns are created as `VARCHAR(string_length) CHARACTER SET UNICODE`. Values longer than the column are detected before any rows are deleted, so the run fails and the previous rows stay intact. Pin wider columns with `column_types`.
+- **Schema drift.** A DataFrame whose column names or types differ from the existing table is rejected before any rows are deleted. Migrate the table with `ALTER TABLE`, or drop it so the next materialization recreates it.
+- **Void columns.** All-null `void` columns are rejected up front, since Spark has no JDBC type for them. Cast them to a concrete type first.
+- **Cleanup is committed before the write.** The JDBC write runs on Spark's own connections, so the `DELETE` of the rows being replaced is committed before the write starts. A failed write therefore leaves those rows deleted; re-materialize the asset to repair it.
+- **Concurrent writes.** Two overlapping materializations of the same PySpark-backed asset can both append and duplicate rows. Serialize them, for example with a [concurrency pool](/guides/operate/managing-concurrency/concurrency-pools).
+- **Query band.** The `TeradataResource` query band is not applied to the JDBC connections.
+
+### Storing multiple DataFrame types in Teradata
+
+If you work with several DataFrame types and want a single I/O manager to handle storing and loading them in Teradata, subclass `TeradataIOManager` and return several type handlers from `type_handlers()`. Dagster picks the handler from each asset's type annotation.
+
+```python
+from collections.abc import Sequence
+
+import pandas as pd
+import polars as pl
+from dagster import Definitions, EnvVar, asset
+from dagster._core.storage.db_io_manager import DbTypeHandler
+from dagster_teradata import (
+    TeradataIOManager,
+    TeradataPandasTypeHandler,
+    TeradataPolarsTypeHandler,
+    TeradataPySparkTypeHandler,
+    TeradataResource,
+)
+from pyspark.sql import DataFrame as SparkDataFrame
+
+
+class TeradataMultiDataFrameIOManager(TeradataIOManager):
+    def type_handlers(self) -> Sequence[DbTypeHandler]:
+        return [
+            TeradataPandasTypeHandler(),
+            TeradataPolarsTypeHandler(),
+            TeradataPySparkTypeHandler(teradata=self.teradata),
+        ]
+
+    @staticmethod
+    def default_load_type() -> type | None:
+        return pd.DataFrame
+
+
+@asset
+def iris_dataset() -> pd.DataFrame: ...
+
+
+@asset
+def iris_summary(iris_dataset: pl.DataFrame) -> pl.DataFrame: ...
+
+
+@asset
+def iris_features(iris_dataset: SparkDataFrame) -> SparkDataFrame: ...
+
+
+defs = Definitions(
+    assets=[iris_dataset, iris_summary, iris_features],
+    resources={
+        "io_manager": TeradataMultiDataFrameIOManager(
+            teradata=TeradataResource(
+                host=EnvVar("TERADATA_HOST"),
+                user=EnvVar("TERADATA_USER"),
+                password=EnvVar("TERADATA_PASSWORD"),
+                database=EnvVar("TERADATA_DATABASE"),
+            ),
+        )
+    },
+)
+```
+
+Include only the handlers for the extras you have installed.
+
+### Using the Teradata I/O manager with other I/O managers
+
+You may have assets that you don't want to store in Teradata. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the `asset` decorator:
+
+```python
+import pandas as pd
+from dagster import Definitions, EnvVar, asset
+from dagster_aws.s3 import S3PickleIOManager, S3Resource
+from dagster_teradata import TeradataPandasIOManager, TeradataResource
+
+
+@asset(io_manager_key="teradata_io_manager")
+def iris_dataset() -> pd.DataFrame: ...
+
+
+@asset(io_manager_key="blob_io_manager")
+def iris_plots(iris_dataset: pd.DataFrame): ...
+
+
+defs = Definitions(
+    assets=[iris_dataset, iris_plots],
+    resources={
+        "teradata_io_manager": TeradataPandasIOManager(
+            teradata=TeradataResource(
+                host=EnvVar("TERADATA_HOST"),
+                user=EnvVar("TERADATA_USER"),
+                password=EnvVar("TERADATA_PASSWORD"),
+                database=EnvVar("TERADATA_DATABASE"),
+            ),
+        ),
+        "blob_io_manager": S3PickleIOManager(
+            s3_resource=S3Resource(), s3_bucket="my-bucket"
+        ),
+    },
+)
+```
+
+In this example, `iris_dataset` is stored in Teradata and `iris_plots` is stored in Amazon S3. When `iris_plots` loads `iris_dataset`, the input is read from Teradata by the Teradata I/O manager, because each input is loaded by the I/O manager of the upstream asset.

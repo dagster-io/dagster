@@ -13,7 +13,7 @@ canonicalUrl: '/integrations/libraries/teradata'
 slug: '/integrations/libraries/teradata'
 ---
 
-import CommunityIntegration from '@site/docs/partials/\_CommunityIntegration.md';
+import CommunityIntegration from '@site/docs/partials/_CommunityIntegration.md';
 
 <CommunityIntegration />
 
@@ -33,7 +33,7 @@ To begin integrating Dagster with Teradata Vantage for building and managing ETL
 
   :::
 
-- Python **3.9** or higher. Python **3.13** is recommended.
+- Python **3.10** or higher. Python **3.13** is recommended.
 - `pip` installed
 
 ## Step 1: Install `dagster-teradata`
@@ -53,6 +53,10 @@ With your virtual environment active, the next step is to install dagster and th
    b) `dagster-teradata` also relies on `dagster-azure` for ingesting data from an Azure Blob Storage container into Teradata Vantage. To install this dependency, run:
 
    <PackageInstallInstructions packageName="dagster-teradata[azure]" />
+
+   c) To store and load DataFrames with the Teradata I/O managers, install the extra for the DataFrame library you use. The `pandas`, `polars` and `pyspark` extras can be combined, for example `dagster-teradata[pandas,polars]`:
+
+   <PackageInstallInstructions packageName="dagster-teradata[pandas]" />
 
 3. Verify the installation:
 
@@ -221,6 +225,56 @@ After setting up the project, you can now run your Dagster pipeline:
 - In the popup window, click View to see the details of the pipeline run.
 
 4. **Monitor the run:** The Dagster UI allows you to visualize the pipeline's progress, view logs, and inspect the status of each step. You can switch between different views to see the execution logs and metadata for each asset.
+
+## Store assets with the Teradata I/O managers
+
+Instead of writing SQL in each asset, you can let a Teradata I/O manager store the DataFrame an asset returns as a Teradata table and load it back for downstream assets. `dagster-teradata` provides I/O managers for pandas, polars and PySpark DataFrames:
+
+| DataFrame type | I/O manager                | Install                     |
+| -------------- | -------------------------- | --------------------------- |
+| pandas         | `TeradataPandasIOManager`  | `dagster-teradata[pandas]`  |
+| polars         | `TeradataPolarsIOManager`  | `dagster-teradata[polars]`  |
+| PySpark        | `TeradataPySparkIOManager` | `dagster-teradata[pyspark]` |
+
+```python
+import pandas as pd
+from dagster import Definitions, EnvVar, asset
+from dagster_teradata import TeradataPandasIOManager, TeradataResource
+
+
+@asset
+def iris_dataset() -> pd.DataFrame:
+    return pd.read_csv(
+        "https://docs.dagster.io/assets/iris.csv",
+        names=[
+            "sepal_length_cm",
+            "sepal_width_cm",
+            "petal_length_cm",
+            "petal_width_cm",
+            "species",
+        ],
+    )
+
+
+defs = Definitions(
+    assets=[iris_dataset],
+    resources={
+        "io_manager": TeradataPandasIOManager(
+            teradata=TeradataResource(
+                host=EnvVar("TERADATA_HOST"),
+                user=EnvVar("TERADATA_USER"),
+                password=EnvVar("TERADATA_PASSWORD"),
+                database=EnvVar("TERADATA_DATABASE"),
+            ),
+        )
+    },
+)
+```
+
+To learn more, see:
+
+- [Using Teradata with Dagster I/O managers](/integrations/libraries/teradata/using-teradata-with-dagster-io-managers), a step-by-step tutorial.
+- [Using the Teradata I/O manager](/integrations/libraries/teradata/teradata-reference#using-the-teradata-io-manager) in the Teradata reference, for partitions, column selection, handler configuration, polars, PySpark and mixing DataFrame types.
 
 ## Further reading
 
