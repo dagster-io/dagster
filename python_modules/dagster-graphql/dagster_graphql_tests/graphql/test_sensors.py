@@ -28,6 +28,7 @@ from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster_graphql.implementation import fetch_ticks
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
 from dagster_graphql.test.utils import (
@@ -1569,6 +1570,76 @@ def test_no_tick_body_tick_selection_loads_no_tick_bodies(graphql_context: Works
     ticks = result.data["sensorOrError"]["sensorState"]["ticks"]
     assert len(ticks) == 2
     assert all(tick["runIds"] == [] for tick in ticks)
+
+
+# statuses need to be supplied to this query to force the path that doesn't use the batch loader
+LIMITED_TICKS_QUERY = """
+query LimitedTicksQuery($sensorSelector: SensorSelector!, $limit: Int, $statuses: [InstigationTickStatus!]) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    ... on Sensor {
+      sensorState {
+        id
+        ticks(limit: $limit, statuses: $statuses) {
+          id
+          status
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def test_ticks_limit_cap(graphql_context: WorkspaceRequestContext):
+    remote_repository = graphql_context.get_code_location(main_repo_location_name()).get_repository(
+        main_repo_name()
+    )
+    sensor_name = "always_no_config_sensor_with_tags_and_metadata"
+    sensor = remote_repository.get_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    for _ in range(5):
+        graphql_context.instance.create_tick(
+            TickData(
+                instigator_origin_id=sensor.get_remote_origin().get_id(),
+                instigator_name=sensor_name,
+                instigator_type=InstigatorType.SENSOR,
+                status=TickStatus.SUCCESS,
+                timestamp=datetime.datetime.now().timestamp(),
+                selector_id=sensor.selector_id,
+                run_ids=[],
+            )
+        )
+
+    # shrink the cap so the bound is observable with 5 ticks
+    with mock.patch.object(fetch_ticks, "MAX_TICKS_QUERY_LIMIT", 3):
+        result = execute_dagster_graphql(
+            graphql_context,
+            LIMITED_TICKS_QUERY,
+            variables={"sensorSelector": sensor_selector, "statuses": ["SUCCESS"]},
+        )
+        assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 3
+
+        with pytest.raises(Exception, match="Max is 3"):
+            execute_dagster_graphql(
+                graphql_context,
+                LIMITED_TICKS_QUERY,
+                variables={"sensorSelector": sensor_selector, "limit": 4},
+            )
+
+    with pytest.raises(Exception, match="too large"):
+        execute_dagster_graphql(
+            graphql_context,
+            LIMITED_TICKS_QUERY,
+            variables={"sensorSelector": sensor_selector, "limit": 2000},
+        )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        LIMITED_TICKS_QUERY,
+        variables={"sensorSelector": sensor_selector, "limit": 1000, "statuses": ["SUCCESS"]},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 5
 
 
 def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
