@@ -443,7 +443,14 @@ class SqlScheduleStorage(ScheduleStorage):
         base_query = (
             db_select(columns).select_from(JobTickTable).order_by(JobTickTable.c.timestamp.desc())
         )
-        if self.has_instigators_table():
+        if not self.has_instigators_table():
+            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
+        elif self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID):
+            # Every tick has a selector_id, so filter on it alone. OR-ing in the legacy
+            # NULL-selector branch stops the database from reading the (selector_id, timestamp)
+            # index in order, so it would fetch and sort every tick of the instigator.
+            query = base_query.where(JobTickTable.c.selector_id == selector_id)
+        else:
             query = base_query.where(
                 db.or_(
                     JobTickTable.c.selector_id == selector_id,
@@ -453,8 +460,6 @@ class SqlScheduleStorage(ScheduleStorage):
                     ),
                 )
             )
-        else:
-            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
 
         return self._add_filter_limit(
             query, before=before, after=after, limit=limit, statuses=statuses
