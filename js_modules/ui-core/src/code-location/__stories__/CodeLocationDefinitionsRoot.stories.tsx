@@ -57,6 +57,8 @@ export const Default = () => {
               data: {},
               refetch: async () => {},
               toggleVisible: () => {},
+              codeLocationFilter: null,
+              setCodeLocationFilter: () => {},
               loadingNonAssets: false,
               loadingAssets: false,
               assetEntries: {},

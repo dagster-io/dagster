@@ -1,5 +1,5 @@
 import {Box, CursorHistoryControls, Heading, PageHeader} from '@dagster-io/ui-components';
-import {useEffect, useMemo, useRef} from 'react';
+import {useContext, useEffect, useMemo, useRef} from 'react';
 
 import {RunsFeedList} from './RunsFeedList';
 import {RunsSearchInput} from './RunsSearchInput';
@@ -12,6 +12,7 @@ import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {WorkspaceContext} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {RunTableEmptyState} from '../RunTableEmptyState';
 import {RunsQueryRefetchContext} from '../RunUtils';
 import {RunsFeedError} from '../RunsFeedError';
@@ -21,13 +22,21 @@ import {
   getSelectedRunsFeedTab,
   useQueryPersistedRunsFeedView,
 } from '../RunsFeedUtils';
-import {runsFilterForSearchTokens, useQueryPersistedRunFilters} from '../RunsFilterUtils';
+import {
+  runsFilterForCodeLocation,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+} from '../RunsFilterUtils';
 
 export const RunsPage = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters({behavior: 'push'});
-  const filter = runsFilterForSearchTokens(filterTokens);
+  const {codeLocationFilter} = useContext(WorkspaceContext);
+  const filter = runsFilterForCodeLocation(
+    runsFilterForSearchTokens(filterTokens),
+    codeLocationFilter,
+  );
   const [view] = useQueryPersistedRunsFeedView();
   const selectedTab = getSelectedRunsFeedTab(filterTokens, view);
   useDocumentTitle(getRunsFeedDocumentTitle(selectedTab));

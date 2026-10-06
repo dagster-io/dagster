@@ -2,13 +2,14 @@ import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import {CreateCatalogViewButton} from '@shared/assets/CreateCatalogViewButton';
 import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
 import * as React from 'react';
-import {useEffect, useMemo, useState} from 'react';
+import {useContext, useEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_FRAGMENT, ASSET_WORKSPACE_NODE_FRAGMENT} from './AssetTableFragment';
 import {AssetsEmptyState} from './AssetsEmptyState';
+import {filterAssetsByCodeLocation} from './filterAssetsByCodeLocation';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAllAssets} from './useAllAssets';
 import {AssetViewType, useAssetView} from './useAssetView';
@@ -23,6 +24,7 @@ import {AssetGroupSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 export {useAllAssets} from './useAllAssets';
 
@@ -51,12 +53,14 @@ export const AssetsCatalogTable = ({
   const {assets, loading: assetsLoading, query, error} = useAllAssets({groupSelector});
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
+  const {codeLocationFilter} = useContext(WorkspaceContext);
   const penultimateAssets = useMemo(() => {
+    const inLocation = filterAssetsByCodeLocation(assets ?? [], codeLocationFilter);
     if (!favorites) {
-      return assets ?? [];
+      return inLocation;
     }
-    return (assets ?? []).filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
-  }, [favorites, assets]);
+    return inLocation.filter((asset) => favorites.has(tokenForAssetKey(asset.key)));
+  }, [favorites, assets, codeLocationFilter]);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =

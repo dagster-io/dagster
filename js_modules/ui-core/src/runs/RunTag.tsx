@@ -35,6 +35,7 @@ export enum DagsterTag {
   SnapshotID = 'dagster/snapshot_id', // This only exists on the client, not the server.
   ReportingUser = 'dagster/reporting_user',
   FromUI = 'dagster/from_ui',
+  CodeLocation = 'dagster/code_location',
   User = 'user',
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
