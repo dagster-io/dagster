@@ -16,7 +16,7 @@ from buildkite_shared.utils import (
 )
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
 from dagster_buildkite.steps.test_project import test_project_depends_fn, test_project_gate_cmds
-from dagster_buildkite.utils import wait_for_mysql_container
+from dagster_buildkite.utils import pull_image_with_retries, wait_for_mysql_container
 
 _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111", "dbt112"]
 _DAGSTER_DBT_CORE_MAIN_RESOURCE_TEST = "dagster_dbt_tests/core/test_resource.py"
@@ -24,6 +24,10 @@ _DAGSTER_DBT_CORE_MAIN_ASSET_CHECKS_TEST = "dagster_dbt_tests/core/test_asset_ch
 _DAGSTER_DBT_CORE_MAIN_CLI_TESTS = "dagster_dbt_tests/cli"
 
 _GRAPHQL_GRPC_RESOURCES = ResourceRequests(cpu="2000m", memory="4Gi")
+
+# Image the ClickHouse session fixture starts. Exported to the test process so the
+# pre-pull and the container the fixture starts can never name different tags.
+_CLICKHOUSE_TEST_IMAGE = "clickhouse/clickhouse-server:24.8"
 
 # clickhouse-server in dind via testcontainers. Default 2Gi dind limit OOMs the
 # server under load. cpu bumped 1000m->2000m: at 1000m the clickhouse-server boot
@@ -186,6 +190,13 @@ def clickhouse_testcontainers_extra_cmds(_version: AvailablePythonVersion, _) ->
     """
     return [
         "export DOCKER_API_VERSION=1.41",
+        # Ryuk reaps stray containers when the test process dies. The dind sidecar is
+        # torn down with the job pod, so it has nothing to reap here and only adds a
+        # cold image pull — the one that times out in docker-py and fails the session
+        # fixture before ClickHouse is ever started.
+        "export TESTCONTAINERS_RYUK_DISABLED=true",
+        f"export CLICKHOUSE_TEST_IMAGE={_CLICKHOUSE_TEST_IMAGE}",
+        pull_image_with_retries(_CLICKHOUSE_TEST_IMAGE),
     ]
 
 
