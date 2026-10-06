@@ -2689,6 +2689,7 @@ def test_wandb_artifacts_io_manager_load_partitioned_input(
             ),
         ),
     )
+    api_mock.return_value.artifact.return_value = run_mock.use_artifact.return_value
 
     manager = wandb_artifacts_io_manager(
         build_init_resource_context(
