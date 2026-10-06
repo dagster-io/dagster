@@ -166,6 +166,17 @@ class SettingsMethods:
         return self.get_settings("freshness").get("enabled", True)
 
     @property
+    def event_log_retention_days(self) -> int | None:
+        """Configured retention horizon for non-asset event log rows. None if disabled."""
+        from dagster._core.instance.config import get_event_log_retention_days
+
+        return get_event_log_retention_days(self.get_settings("retention").get("event_logs"))
+
+    @property
+    def event_log_retention_enabled(self) -> bool:
+        return self.event_log_retention_days is not None
+
+    @property
     def auto_materialize_minimum_interval_seconds(self) -> int:
         return self.get_settings("auto_materialize").get("minimum_interval_seconds")
 

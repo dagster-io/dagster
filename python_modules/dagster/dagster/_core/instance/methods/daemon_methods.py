@@ -54,6 +54,14 @@ class DaemonMethods:
     @abstractmethod
     def freshness_enabled(self) -> bool: ...
 
+    @property
+    @abstractmethod
+    def event_log_retention_enabled(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def event_log_retention_days(self) -> int | None: ...
+
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         """Called on a regular interval by the daemon."""
         self.run_storage.add_daemon_heartbeat(daemon_heartbeat)
@@ -76,6 +84,7 @@ class DaemonMethods:
             SchedulerDaemon,
             SensorDaemon,
         )
+        from dagster._daemon.event_log_retention import EventLogRetentionDaemon
         from dagster._daemon.freshness import FreshnessDaemon
         from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
@@ -97,6 +106,8 @@ class DaemonMethods:
             daemons.append(AssetDaemon.daemon_type())
         if self.freshness_enabled:
             daemons.append(FreshnessDaemon.daemon_type())
+        if self.event_log_retention_enabled:
+            daemons.append(EventLogRetentionDaemon.daemon_type())
         return daemons
 
     def get_daemon_statuses(
