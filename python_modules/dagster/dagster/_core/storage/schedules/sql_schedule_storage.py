@@ -56,6 +56,8 @@ T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
 class SqlScheduleStorage(ScheduleStorage):
     """Base class for SQL backed schedule storage."""
 
+    _tick_selector_ids_migrated: bool = False
+
     @abstractmethod
     def connect(self) -> ContextManager[Connection]:
         """Context manager yielding a sqlalchemy.engine.Connection."""
@@ -272,6 +274,13 @@ class SqlScheduleStorage(ScheduleStorage):
     def supports_batch_queries(self) -> bool:
         return self.has_instigators_table() and self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID)
 
+    def _has_migrated_tick_selector_ids(self) -> bool:
+        # Data migrations never un-build, so only a positive result is cached; until then every
+        # call re-checks, so a later reindex() still switches tick queries to the selector index.
+        if not self._tick_selector_ids_migrated:
+            self._tick_selector_ids_migrated = self.supports_batch_queries
+        return self._tick_selector_ids_migrated
+
     def has_instigators_table(self) -> bool:
         with self.connect() as conn:
             return self._has_instigators_table(conn)
@@ -443,14 +452,12 @@ class SqlScheduleStorage(ScheduleStorage):
         base_query = (
             db_select(columns).select_from(JobTickTable).order_by(JobTickTable.c.timestamp.desc())
         )
-        if not self.has_instigators_table():
-            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
-        elif self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID):
+        if self._has_migrated_tick_selector_ids():
             # Every tick has a selector_id, so filter on it alone. OR-ing in the legacy
             # NULL-selector branch stops the database from reading the (selector_id, timestamp)
             # index in order, so it would fetch and sort every tick of the instigator.
             query = base_query.where(JobTickTable.c.selector_id == selector_id)
-        else:
+        elif self.has_instigators_table():
             query = base_query.where(
                 db.or_(
                     JobTickTable.c.selector_id == selector_id,
@@ -460,6 +467,8 @@ class SqlScheduleStorage(ScheduleStorage):
                     ),
                 )
             )
+        else:
+            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
 
         return self._add_filter_limit(
             query, before=before, after=after, limit=limit, statuses=statuses

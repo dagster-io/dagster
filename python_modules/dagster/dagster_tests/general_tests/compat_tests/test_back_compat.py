@@ -878,6 +878,7 @@ def test_jobs_selector_id_migration():
 
             legacy_tick_ids = tick_ids_by_selector()
             assert sum(len(ids) for ids in legacy_tick_ids.values()) == legacy_tick_count
+            assert not instance.schedule_storage._has_migrated_tick_selector_ids()  # ty: ignore[unresolved-attribute]
 
             # run the optional migrations
             instance.reindex()
@@ -890,6 +891,7 @@ def test_jobs_selector_id_migration():
             assert migrated_tick_count == legacy_tick_count
 
             # once every tick has a selector_id, lookups by selector alone return the same ticks
+            assert instance.schedule_storage._has_migrated_tick_selector_ids()  # ty: ignore[unresolved-attribute]
             assert tick_ids_by_selector() == legacy_tick_ids
 
 
