@@ -879,7 +879,7 @@ In these examples, the `iris_dataset` asset will be stored in the `iris` databas
 
 ### Configuring the DataFrame handlers
 
-Each I/O manager creates the table on the first materialization, deriving Teradata column types from the DataFrame, and appends to it afterwards. Existing tables are never altered.
+Each I/O manager creates the table on the first materialization, deriving Teradata column types from the DataFrame. On later materializations, it first deletes the rows being replaced (the whole table, or only the selected partition for partitioned assets) and then inserts the new rows into the existing table. The table definition itself is never altered.
 
 | Option                 | pandas | polars | PySpark | Description                                                                                                                                                                                                |
 | ---------------------- | :----: | :----: | :-----: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -964,6 +964,12 @@ Requirements:
 - **The Teradata JDBC driver** (`terajdbc4.jar`) on the Spark classpath, for example through the `spark.jars` Spark configuration. You can download it from [Teradata Downloads](https://downloads.teradata.com/download/connectivity/jdbc-driver).
 - **A UTC JVM time zone** for assets with `DATE` or `TIMESTAMP` columns. Spark's JDBC data source converts date and time values using the JVM's default time zone, not `spark.sql.session.timeZone`. The I/O manager raises an error rather than silently shifting values. Set `_JAVA_OPTIONS=-Duser.timezone=UTC` wherever the Dagster run starts, and on a cluster also set `spark.executor.extraJavaOptions=-Duser.timezone=UTC`.
 
+The following example reads the Iris dataset from a local file, because Spark can't read directly from an HTTP URL. Before running it, download [`iris.csv`](https://docs.dagster.io/assets/iris.csv) into the directory you start Dagster from, for example:
+
+```shell
+curl -O https://docs.dagster.io/assets/iris.csv
+```
+
 ```python
 from dagster import Definitions, EnvVar, asset
 from dagster_teradata import TeradataPySparkIOManager, TeradataResource
@@ -992,17 +998,27 @@ defs = Definitions(
                 password=EnvVar("TERADATA_PASSWORD"),
                 database=EnvVar("TERADATA_DATABASE"),
             ),
-            read_partitioning={
-                "partitionColumn": "id",
-                "lowerBound": 0,
-                "upperBound": 1000000,
-                "numPartitions": 8,
-            },
             write_num_partitions=8,
         )
     },
 )
 ```
+
+To read tables in parallel, set `read_partitioning`. `partitionColumn` must be a numeric, `DATE` or `TIMESTAMP` column, and `partitionColumn`, `lowerBound`, `upperBound` and `numPartitions` must be set together:
+
+```python
+TeradataPySparkIOManager(
+    teradata=teradata,
+    read_partitioning={
+        "partitionColumn": "order_id",
+        "lowerBound": 0,
+        "upperBound": 1000000,
+        "numPartitions": 8,
+    },
+)
+```
+
+`read_partitioning` applies to every input the I/O manager loads, so the partition column must exist in every table it reads. If your tables don't share such a column, use a separate I/O manager (with its own `io_manager_key`) for the assets that should be read in parallel. If a downstream input selects specific columns, include the partition column in that selection, or the load fails with an error.
 
 Behavior to be aware of:
 
