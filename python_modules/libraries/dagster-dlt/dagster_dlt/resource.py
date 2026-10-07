@@ -80,7 +80,11 @@ class DagsterDltResource(ConfigurableResource):
                             other=[*column.keys()],  # e.g. "primary_key" or "foreign_key"
                         ),
                     )
-                    for column in schema.get_table_columns(table_name).values()
+                    for column in (
+                        # copy so the pop() calls below do not mutate the live dlt schema
+                        dict(c)
+                        for c in schema.get_table_columns(table_name).values()
+                    )
                 ]
             )
         except KeyError:
