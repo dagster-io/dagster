@@ -1325,6 +1325,7 @@ interface IPipelineSnapshot {
   name: String!
   description: String
   owners: [DefinitionOwner!]!
+  groupName: String!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1390,6 +1391,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
   owners: [DefinitionOwner!]!
+  groupName: String!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -1738,6 +1740,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
   owners: [DefinitionOwner!]!
+  groupName: String!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
@@ -2553,6 +2556,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   modes: [Mode!]!
   owners: [DefinitionOwner!]!
+  groupName: String!
   pipelineSnapshotId: String!
   dagsterTypes: [DagsterType!]!
   dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!

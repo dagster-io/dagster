@@ -35,7 +35,10 @@ from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
     SensorType,
 )
-from dagster._core.definitions.utils import get_default_automation_condition_sensor_target
+from dagster._core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
+    get_default_automation_condition_sensor_target,
+)
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.loader import LoadableBy
@@ -540,6 +543,12 @@ class RemoteJob(RepresentedJob, LoadableBy[JobSubsetSelector, "BaseWorkspaceRequ
         if self._job_ref_snap is not None:
             return self._job_ref_snap.owners
         return getattr(self._job_index.job_snapshot, "owners", None)
+
+    @property
+    def group_name(self) -> str:
+        if self._job_ref_snap is not None:
+            return getattr(self._job_ref_snap, "group_name", None) or DEFAULT_GROUP_NAME
+        return self._job_index.group_name
 
     @property
     def node_names_in_topological_order(self):

@@ -216,7 +216,7 @@ class NestedResource(NamedTuple):
 @whitelist_for_serdes(
     storage_name="ExternalJobRef",
     old_fields={"is_legacy_pipeline": False},
-    skip_when_none_fields={"automation_condition"},
+    skip_when_none_fields={"automation_condition", "group_name"},
 )
 @record
 class JobRefSnap:
@@ -226,6 +226,7 @@ class JobRefSnap:
     parent_snapshot_id: str | None
     preview_tags: Mapping[str, str] | None = None
     owners: Sequence[str] | None = None
+    group_name: str | None = None
     automation_condition: AutomationCondition | None = None
 
     @classmethod
@@ -241,6 +242,7 @@ class JobRefSnap:
             active_presets=active_presets_from_job_def(job_def),
             preview_tags=get_preview_tags(job_def),
             owners=job_def.owners,
+            group_name=job_def.specified_group_name,
             automation_condition=automation_condition,
         )
 

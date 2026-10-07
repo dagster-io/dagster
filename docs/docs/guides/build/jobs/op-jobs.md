@@ -49,6 +49,7 @@ When defining an op job, you can provide any of the following:
 - [Hooks](/guides/build/ops/op-hooks)
 - [Tags](/guides/build/assets/metadata-and-tags/tags) and other metadata
 - An [executor](/guides/operate/run-executors)
+- A [job group](/guides/build/jobs/job-groups)
 
 ### From a graph
 
