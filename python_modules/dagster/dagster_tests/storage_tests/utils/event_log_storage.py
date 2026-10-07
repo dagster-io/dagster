@@ -5996,6 +5996,67 @@ class TestEventLogStorage:
 
         assert storage.get_concurrency_info("foo").slot_count == 0
 
+    def test_latest_asset_checks_large_batch(self, storage: EventLogStorage):
+        check_keys = [dg.AssetCheckKey(dg.AssetKey(f"asset_{i}"), "check") for i in range(1100)]
+        # Populate keys on both sides of batch boundaries, leaving the others missing.
+        populated = [check_keys[i] for i in (0, 99, 100, 999, 1099)]
+        for key in populated:
+            storage.store_event(
+                dg.EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id="large_batch",
+                    timestamp=time.time(),
+                    dagster_event=dg.DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=key.asset_key, check_name=key.name
+                        ),
+                    ),
+                )
+            )
+        for partition_filter in (None, PartitionKeyFilter(key=None)):
+            result = storage.get_latest_asset_check_execution_by_key(
+                [*check_keys, check_keys[0]], partition_filter=partition_filter
+            )
+            assert set(result) == set(populated)
+            assert all(record.run_id == "large_batch" for record in result.values())
+
+    def test_latest_asset_checks_only_requested_pairs(self, storage: EventLogStorage):
+        asset_keys = [dg.AssetKey("asset_a"), dg.AssetKey("asset_b")]
+        check_names = ["check_a", "check_b"]
+        requested_keys = [
+            dg.AssetCheckKey(asset_keys[0], check_names[0]),
+            dg.AssetCheckKey(asset_keys[1], check_names[1]),
+        ]
+        for run_id in ["older", "newer"]:
+            for asset_key in asset_keys:
+                for check_name in check_names:
+                    storage.store_event(
+                        dg.EventLogEntry(
+                            error_info=None,
+                            user_message="",
+                            level="debug",
+                            run_id=run_id,
+                            timestamp=time.time(),
+                            dagster_event=dg.DagsterEvent(
+                                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                                "nonce",
+                                event_specific_data=AssetCheckEvaluationPlanned(
+                                    asset_key=asset_key, check_name=check_name
+                                ),
+                            ),
+                        )
+                    )
+        missing_key = dg.AssetCheckKey(asset_keys[0], "missing")
+        result = storage.get_latest_asset_check_execution_by_key(
+            [*requested_keys, requested_keys[0], missing_key]
+        )
+        assert set(result) == set(requested_keys)
+        assert all(record.run_id == "newer" for record in result.values())
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,
