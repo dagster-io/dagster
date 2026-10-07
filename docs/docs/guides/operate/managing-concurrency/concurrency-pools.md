@@ -41,6 +41,28 @@ To specify a limit for the pool "database" using the `dagster` CLI, use:
 dagster instance concurrency set database 1
 ```
 
+## Weight assets or ops within a pool with `pool_slots`
+
+By default, every asset or op in a pool occupies exactly one slot while it executes. If the steps in a pool have very different resource footprints — for example, a memory-intensive export sharing a pool with lightweight database writes — a pool limit sized for the heaviest step leaves the pool underutilized whenever lighter steps run.
+
+You can use the `pool_slots` keyword argument to specify how many of the pool's slots an asset or op occupies while it executes, similar to `pool_slots` in Airflow. For example, with a `database` pool limit of 4, a `pool_slots=3` asset executes alongside at most one default-weight asset, but three default-weight assets can execute together when it is not running:
+
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/operate/managing_concurrency/pool_slots_concurrency.py"
+  title="src/<project_name>/defs/assets.py"
+  language="python"
+/>
+
+`pool_slots` defaults to `1`, must be a positive integer, and must not exceed the pool's limit — a step requesting more slots than the pool's limit will fail with an error rather than wait forever.
+
+Steps waiting on a pool are granted slots in priority order, and a heavier step at the head of the queue is not overtaken by lighter steps queued behind it, even if they would fit in the currently available slots. This prevents a steady trickle of lightweight steps from starving a heavier step, at the cost of leaving some slots idle while the heavier step waits for its full slot count. Steps with a higher [priority](/deployment/execution/customizing-run-queue-priority) (set with the `dagster/priority` tag) are still granted slots first, regardless of weight.
+
+:::note
+
+`pool_slots` only applies to the default `op` pool granularity; with the pool granularity set to `run`, all runs are weighted equally.
+
+:::
+
 ## Limit the number of runs that can be in progress for a set of ops
 
 You can also use concurrency pools to limit the number of in progress runs containing those assets or ops. You can follow the steps in the [Limit the number of assets or ops actively in execution across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs) section to assign your assets and ops to pools and to configure the desired limit.

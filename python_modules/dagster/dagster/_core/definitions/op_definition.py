@@ -95,6 +95,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
         pool (Optional[str]): A string that identifies the pool that governs this op's execution.
+        pool_slots (Optional[int]): The number of slots this op occupies in its pool while
+            executing. Must be a positive integer. Defaults to 1.
 
 
     Examples:
@@ -117,6 +119,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     _version: str | None
     _retry_policy: RetryPolicy | None
     _pool: str | None
+    _pool_slots: int | None
 
     def __init__(
         self,
@@ -132,6 +135,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         retry_policy: RetryPolicy | None = None,
         code_version: str | None = None,
         pool: str | None = None,
+        pool_slots: int | None = None,
     ):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
@@ -179,6 +183,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
         self._pool = pool
         pool = _validate_pool(pool, tags)
+        self._pool_slots = _validate_pool_slots(pool_slots, pool, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -209,6 +214,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         retry_policy: RetryPolicy | None,
         code_version: str | None,
         pool: str | None,
+        pool_slots: int | None = None,
     ) -> "OpDefinition":
         return OpDefinition(
             compute_fn=compute_fn,
@@ -223,6 +229,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             retry_policy=retry_policy,
             code_version=code_version,
             pool=pool,
+            pool_slots=pool_slots,
         )
 
     @property
@@ -312,6 +319,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def pool(self) -> str | None:
         """Optional[str]: The concurrency pool for this op."""
         return self._pool
+
+    @property
+    def pool_slots(self) -> int | None:
+        """Optional[int]: The number of slots this op occupies in its concurrency pool."""
+        return self._pool_slots
 
     @property
     def pools(self) -> Set[str]:
@@ -405,6 +417,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             retry_policy=self.retry_policy,
             version=None,  # code_version replaces version
             pool=self.pool,
+            pool_slots=self.pool_slots,
         )
 
     def copy_for_configured(
@@ -615,6 +628,26 @@ def _is_result_object_type(ttype):
 
 VALID_POOL_NAME_REGEX_STR = r"^\S+$"  # any non-whitespace characters
 VALID_POOL_NAME_REGEX = re.compile(VALID_POOL_NAME_REGEX_STR)
+
+
+def _validate_pool_slots(pool_slots, pool, tags):
+    check.opt_int_param(pool_slots, "pool_slots")
+    if pool_slots is None:
+        return None
+
+    if pool_slots < 1:
+        raise DagsterInvalidDefinitionError(
+            f"pool_slots must be a positive integer, got {pool_slots}."
+        )
+
+    tags = check.opt_mapping_param(tags, "tags")
+    if not pool and not tags.get(GLOBAL_CONCURRENCY_TAG):
+        raise DagsterInvalidDefinitionError(
+            f"pool_slots={pool_slots} was set without a pool, so it would have no effect. Set "
+            "the `pool` argument to specify which concurrency pool the slots apply to."
+        )
+
+    return pool_slots
 
 
 def _validate_pool(pool, tags):
