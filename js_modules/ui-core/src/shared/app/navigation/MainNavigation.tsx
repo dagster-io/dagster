@@ -2,6 +2,7 @@ import {Box, DagsterIcon, DagsterLogo} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import {Link} from 'react-router-dom';
 
+import {DeploymentLabelTag} from '../../../app/navigation/DeploymentLabelTag';
 import {NavigationGroupDisplay} from '../../../app/navigation/NavigationGroupDisplay';
 import styles from '../../../app/navigation/css/MainNavigation.module.css';
 import {NavigationGroup} from '../../../app/navigation/types';
@@ -25,6 +26,7 @@ export const MainNavigation = ({collapsed, topGroups, bottomGroups}: Props) => {
           </Box>
         </Link>
       </div>
+      <DeploymentLabelTag collapsed={collapsed} />
       <NavigationGroupDisplay list={topGroups} className={styles.topGroups} collapsed={collapsed} />
       <NavigationGroupDisplay
         list={bottomGroups}
