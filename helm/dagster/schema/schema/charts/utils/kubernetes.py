@@ -111,6 +111,21 @@ class Tolerations(RootModel[list[dict[str, Any]]]):
     model_config = {"json_schema_extra": _tolerations_schema_extra}
 
 
+def _topology_spread_constraints_schema_extra(
+    schema: dict[str, Any], _model: type["TopologySpreadConstraints"]
+) -> None:
+    schema.setdefault(
+        "$ref",
+        create_definition_ref("io.k8s.api.core.v1.PodSpec/properties/topologySpreadConstraints"),
+    )
+    if "items" in schema:
+        schema["items"]["additionalProperties"] = True
+
+
+class TopologySpreadConstraints(RootModel[list[dict[str, Any]]]):
+    model_config = {"json_schema_extra": _topology_spread_constraints_schema_extra}
+
+
 class PodSecurityContext(RootModel[dict[str, Any]]):
     model_config = {
         "json_schema_extra": {
