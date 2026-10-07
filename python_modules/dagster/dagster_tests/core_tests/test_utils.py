@@ -4,7 +4,7 @@ from contextvars import ContextVar
 
 import pytest
 from dagster._core.test_utils import environ
-from dagster._core.utils import InheritContextThreadPoolExecutor, parse_env_var
+from dagster._core.utils import InheritContextThreadPoolExecutor, is_valid_email, parse_env_var
 from dagster._utils.merger import merge_dicts
 
 
@@ -87,3 +87,39 @@ def test_merge():
     assert merge_dicts({}, {}, {}) == {}
     assert merge_dicts({1: 2}, {2: 3}, {3: 4}) == {1: 2, 2: 3, 3: 4}
     assert merge_dicts({1: 2}, {1: 3}, {1: 4}) == {1: 4}
+
+
+@pytest.mark.parametrize(
+    "email",
+    [
+        "user@example.com",
+        "user@example.io",
+        "first.last@sub.example.co.uk",
+        "user+tag@example.org",
+        # TLDs longer than 7 characters are valid and must be accepted
+        "user@example.software",
+        "user@example.solutions",
+        "jane.doe@acme.international",
+        "user@example.technology",
+    ],
+)
+def test_is_valid_email_accepts_valid_addresses(email):
+    assert is_valid_email(email)
+
+
+@pytest.mark.parametrize(
+    "email",
+    [
+        "not an email",
+        "notvalid",
+        "notanemail@com",
+        "user@example",
+        "user@.com",
+        "@example.com",
+        "user@example.c",
+        # a pipe is not a valid TLD character
+        "user@example.a|b",
+    ],
+)
+def test_is_valid_email_rejects_invalid_addresses(email):
+    assert not is_valid_email(email)
