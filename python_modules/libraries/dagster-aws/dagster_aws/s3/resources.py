@@ -48,6 +48,13 @@ class ResourceWithS3Configuration(ConfigurableResource):
     aws_session_token: str | None = Field(
         default=None, description="AWS session token to use when creating the boto3 session."
     )
+    botocore_config: dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Extra keyword arguments for botocore.config.Config, e.g. connect_timeout,"
+            " read_timeout, or max_pool_connections. A 'retries' entry is merged with max_attempts."
+        ),
+    )
 
 
 class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext):
@@ -79,6 +86,15 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
                 resources={'s3': S3Resource(region_name='us-west-1')}
             )
 
+        Use ``botocore_config`` to set timeouts or other ``botocore.config.Config`` options:
+
+        .. code-block:: python
+
+            S3Resource(
+                region_name='us-west-1',
+                botocore_config={'connect_timeout': 10, 'read_timeout': 60},
+            )
+
     """
 
     @classmethod
@@ -97,6 +113,7 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
+            botocore_config=self.botocore_config,
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
@@ -173,6 +190,10 @@ def s3_resource(context) -> Any:
               # Optional[str]: The secret key to use when creating the client.
               aws_session_token: None
               # Optional[str]:  The session token to use when creating the client.
+              botocore_config:
+                connect_timeout: 10
+                read_timeout: 60
+              # Optional[dict]: Extra keyword arguments for botocore.config.Config.
     """
     return S3Resource.from_resource_context(context).get_client()
 
@@ -196,6 +217,7 @@ class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectT
                 aws_access_key_id=self.aws_access_key_id,
                 aws_secret_access_key=self.aws_secret_access_key,
                 aws_session_token=self.aws_session_token,
+                botocore_config=self.botocore_config,
             ),
             s3_bucket=self.s3_bucket,
             s3_base_key=self.s3_prefix,
