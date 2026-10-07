@@ -583,6 +583,57 @@ class OutputContext:
 
         return time_window_for_partition_key_range(partitions_def, self.asset_partition_key_range)
 
+    @public
+    @property
+    def partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for the output asset.
+
+        Raises an error if the output asset has no partitioning.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_key_range. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+        return self.asset_partition_key_range
+
+    @public
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        """The partition keys for the output asset.
+
+        Raises an error if the output asset has no partitioning.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_keys. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+        return self.asset_partition_keys
+
+    @public
+    @property
+    def partition_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
+        """
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.partition_time_window. "
+                "This use on upstream_output is deprecated and will fail in the future. "
+                "Try to obtain what you need directly from InputContext. "
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+        return self.asset_partitions_time_window
+
     def get_run_scoped_output_identifier(self) -> Sequence[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
         step output.
