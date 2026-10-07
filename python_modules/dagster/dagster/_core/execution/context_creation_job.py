@@ -238,6 +238,7 @@ def execution_context_event_generator(
             instance=instance,
             emit_persistent_events=True,
             event_loop=event_loop,
+            job_def=job_def,
         )
         yield from resources_manager.generate_setup_events()
         scoped_resources_builder = check.inst(
