@@ -705,6 +705,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             run_id, cursor, of_type, limit, ascending
         )
 
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+    ) -> Mapping["AssetKey", AbstractSet[str | None]]:
+        return self._storage.event_log_storage.get_asset_partitions_for_run(run_id, of_type)
+
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
         return self._storage.event_log_storage.initialize_concurrency_limit_to_default(
             concurrency_key

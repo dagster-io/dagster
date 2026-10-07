@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, AbstractSet, Optional, cast  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -527,10 +527,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         Args:
             run_id (str): The run id
         """
-        materializations_planned = self.instance.get_records_for_run(
+        return self.instance.get_asset_keys_for_run(
             run_id=run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
-        ).records
-        return set(cast("AssetKey", record.asset_key) for record in materializations_planned)
+        )
 
     def get_planned_materializations_for_run(self, run_id: str) -> AbstractSet[AssetKey]:
         """Returns the set of asset keys that are planned to be materialized by the run.
@@ -573,11 +572,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         Args:
             run_id (str): The run id
         """
-        materializations = self.instance.get_records_for_run(
+        return self.instance.get_asset_keys_for_run(
             run_id=run_id,
             of_type=DagsterEventType.ASSET_MATERIALIZATION,
-        ).records
-        return set(cast("AssetKey", record.asset_key) for record in materializations)
+        )
 
     ####################
     # BACKFILLS

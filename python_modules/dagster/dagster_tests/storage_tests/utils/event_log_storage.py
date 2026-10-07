@@ -1283,6 +1283,76 @@ class TestEventLogStorage:
         assert record.event_log_entry.dagster_event.asset_key == asset_key
         assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
 
+    def test_get_asset_keys_for_run(self, storage, instance):
+        materialized_key = dg.AssetKey(["path", "to", "materialized"])
+        observed_key = dg.AssetKey(["path", "to", "observed"])
+
+        test_run_id = make_new_run_id()
+
+        @dg.op
+        def materialize_and_observe(_):
+            # the same asset materialized repeatedly should collapse to a single key
+            for partition in ["1", "2", "3"]:
+                yield dg.AssetMaterialization(
+                    asset_key=materialized_key,
+                    partition=partition,
+                    metadata={"text": "hello"},
+                )
+            yield dg.AssetObservation(asset_key=observed_key, metadata={"count": 1})
+            yield dg.Output(1)
+
+        def _ops():
+            materialize_and_observe()
+
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
+
+        assert storage.get_asset_keys_for_run(
+            test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+        ) == {materialized_key}
+        assert storage.get_asset_keys_for_run(
+            test_run_id, of_type=DagsterEventType.ASSET_OBSERVATION
+        ) == {observed_key}
+        assert storage.get_asset_keys_for_run(
+            test_run_id,
+            of_type={
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_OBSERVATION,
+            },
+        ) == {materialized_key, observed_key}
+
+        # unfiltered picks up every asset event in the run
+        assert storage.get_asset_keys_for_run(test_run_id) == {materialized_key, observed_key}
+
+        assert (
+            storage.get_asset_keys_for_run(
+                test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            )
+            == set()
+        )
+        assert storage.get_asset_keys_for_run(make_new_run_id()) == set()
+
+        # the partitions a key was recorded with, with None for unpartitioned events
+        assert dict(
+            storage.get_asset_partitions_for_run(
+                test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+            )
+        ) == {materialized_key: {"1", "2", "3"}}
+        assert dict(
+            storage.get_asset_partitions_for_run(
+                test_run_id, of_type=DagsterEventType.ASSET_OBSERVATION
+            )
+        ) == {observed_key: {None}}
+        assert dict(
+            storage.get_asset_partitions_for_run(
+                test_run_id,
+                of_type={
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    DagsterEventType.ASSET_OBSERVATION,
+                },
+            )
+        ) == {materialized_key: {"1", "2", "3"}, observed_key: {None}}
+        assert dict(storage.get_asset_partitions_for_run(make_new_run_id())) == {}
+
     def _get_planned_asset_keys_from_event_log(self, instance, run_id):
         return set(event.asset_key for event in self._get_planned_events(instance, run_id))
 

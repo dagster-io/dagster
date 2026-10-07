@@ -1,5 +1,6 @@
 import os
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional
 
@@ -258,6 +259,44 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
             limit (Optional[int]): Max number of records to return.
         """
+
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Mapping[AssetKey, Set[str | None]]:
+        """Get the distinct asset partitions targeted by a run's asset events.
+
+        Maps each asset key to the partitions it was recorded with, using None for events on
+        unpartitioned assets. Prefer this over scanning `get_records_for_run` when only the
+        keys and partitions are needed: storages can answer it without deserializing event
+        records, so the cost is bounded by the number of distinct asset partitions rather
+        than by the number of events.
+
+        Args:
+            run_id (str): The id of the run for which to fetch asset partitions.
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the events.
+        """
+        partitions_by_asset_key: dict[AssetKey, set[str | None]] = defaultdict(set)
+        cursor = None
+        while True:
+            connection = self.get_records_for_run(run_id, cursor=cursor, of_type=of_type)
+            for event_record in connection.records:
+                if event_record.asset_key:
+                    partitions_by_asset_key[event_record.asset_key].add(event_record.partition_key)
+            # storages that cap the page size signal the rest with has_more; a cursor that
+            # does not advance would otherwise loop forever
+            if not connection.has_more or connection.cursor == cursor:
+                return partitions_by_asset_key
+            cursor = connection.cursor
+
+    def get_asset_keys_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Set[AssetKey]:
+        """Get the distinct asset keys targeted by a run's asset events."""
+        return self.get_asset_partitions_for_run(run_id, of_type).keys()
 
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         """Get a summary of events that have ocurred in a run."""

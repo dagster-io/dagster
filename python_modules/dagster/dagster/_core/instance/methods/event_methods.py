@@ -4,7 +4,7 @@ import logging
 import logging.config
 import sys
 import warnings
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
@@ -13,6 +13,7 @@ from dagster._time import get_current_timestamp
 from dagster._utils.warnings import beta_warning
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.events import AssetKey
     from dagster._core.event_api import EventHandlerFn
     from dagster._core.events import (
         DagsterEvent,
@@ -107,6 +108,22 @@ class EventMethods:
         return self._event_storage_impl.get_records_for_run(
             run_id, cursor, of_type, limit, ascending
         )
+
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+    ) -> Mapping["AssetKey", Set[str | None]]:
+        """Get the distinct asset partitions targeted by a run's asset events."""
+        return self._event_storage_impl.get_asset_partitions_for_run(run_id, of_type)
+
+    def get_asset_keys_for_run(
+        self,
+        run_id: str,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+    ) -> Set["AssetKey"]:
+        """Get the distinct asset keys targeted by a run's asset events."""
+        return self._event_storage_impl.get_asset_keys_for_run(run_id, of_type)
 
     def watch_event_logs(self, run_id: str, cursor: str | None, cb: "EventHandlerFn") -> None:
         """Watch event logs."""

@@ -511,6 +511,43 @@ class SqlEventLogStorage(EventLogStorage):
             has_more=bool(limit and len(results) == limit),
         )
 
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Mapping[AssetKey, AbstractSet[str | None]]:
+        check.str_param(run_id, "run_id")
+        check.invariant(not of_type or isinstance(of_type, (DagsterEventType, frozenset, set)))
+
+        dagster_event_types = (
+            {of_type}
+            if isinstance(of_type, DagsterEventType)
+            else check.opt_set_param(of_type, "of_type", of_type=DagsterEventType)
+        )
+
+        query = (
+            db_select([SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.partition])
+            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .where(SqlEventLogStorageTable.c.asset_key.isnot(None))
+            .distinct()
+        )
+        if dagster_event_types:
+            query = query.where(
+                SqlEventLogStorageTable.c.dagster_event_type.in_(
+                    [dagster_event_type.value for dagster_event_type in dagster_event_types]
+                )
+            )
+
+        with self.run_connection(run_id) as conn, db_result(conn, query) as result:
+            rows = result.fetchall()
+
+        partitions_by_asset_key: dict[AssetKey, set[str | None]] = defaultdict(set)
+        for asset_key_str, partition in rows:
+            asset_key = AssetKey.from_db_string(asset_key_str)
+            if asset_key:
+                partitions_by_asset_key[asset_key].add(partition)
+        return partitions_by_asset_key
+
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         check.str_param(run_id, "run_id")
 

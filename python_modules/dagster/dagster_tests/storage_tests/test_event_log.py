@@ -18,6 +18,7 @@ from dagster._core.events import (
     DagsterEventType,
     EngineEventData,
     SerializableErrorInfo,
+    StepMaterializationData,
     StepRetryData,
 )
 from dagster._core.execution.stats import (
@@ -33,6 +34,8 @@ from dagster._core.storage.event_log import (
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
 )
+from dagster._core.storage.event_log.base import EventLogStorage
+from dagster._core.storage.event_log.in_memory import InMemoryEventLogStorage
 from dagster._core.storage.event_log.schema import ConcurrencyLimitsTable, ConcurrencySlotsTable
 from dagster._core.storage.legacy_storage import LegacyEventLogStorage
 from dagster._core.storage.sql import create_engine
@@ -518,3 +521,62 @@ def test_step_worker_failure_attempts():
     assert len(run_step_stats) == 1
     step_stat = run_step_stats[0]
     assert step_stat.attempts == 1
+
+
+def test_get_asset_keys_for_run_pages_past_a_capped_page_size():
+    """The default implementation pages on has_more instead of truncating at one page.
+
+    Dagster Plus caps the page size server-side, so a single fetch can silently drop the
+    assets that fall past the cap.
+    """
+
+    class _CappedPageEventLogStorage(InMemoryEventLogStorage):
+        PAGE_SIZE = 2
+
+        def get_records_for_run(
+            self, run_id, cursor=None, of_type=None, limit=None, ascending=True
+        ):
+            return super().get_records_for_run(
+                run_id,
+                cursor,
+                of_type,
+                min(limit, self.PAGE_SIZE) if limit else self.PAGE_SIZE,
+                ascending,
+            )
+
+    storage = _CappedPageEventLogStorage()
+    run_id = make_new_run_id()
+    asset_keys = {dg.AssetKey(f"asset_{i}") for i in range(5)}
+    partitions = {"1", "2", "3"}
+
+    for asset_key in sorted(asset_keys):
+        for partition in sorted(partitions):
+            storage.store_event(
+                dg.EventLogEntry(
+                    error_info=None,
+                    level=10,
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "the_job",
+                        event_specific_data=StepMaterializationData(
+                            dg.AssetMaterialization(asset_key=asset_key, partition=partition)
+                        ),
+                    ),
+                )
+            )
+
+    # the SQL implementation answers in one query, so exercise the default implementation
+    assert dict(
+        EventLogStorage.get_asset_partitions_for_run(
+            storage, run_id, DagsterEventType.ASSET_MATERIALIZATION
+        )
+    ) == {asset_key: partitions for asset_key in asset_keys}
+    assert (
+        EventLogStorage.get_asset_keys_for_run(
+            storage, run_id, DagsterEventType.ASSET_MATERIALIZATION
+        )
+        == asset_keys
+    )
