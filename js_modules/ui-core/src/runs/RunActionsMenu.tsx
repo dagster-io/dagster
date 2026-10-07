@@ -40,7 +40,7 @@ import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {ReexecutionStrategy} from '../graphql/types';
+import {ReexecutionStrategy, RunStatus} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
 import {CopyButton} from '../ui/CopyButton';
@@ -320,7 +320,12 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [visibleDialog, setVisibleDialog] = React.useState<
-    'none' | 'terminate' | 'delete' | 'reexecute-from-failure' | 'reexecute'
+    | 'none'
+    | 'terminate'
+    | 'delete'
+    | 'reexecute-from-failure'
+    | 'reexecute-from-cancellation'
+    | 'reexecute'
   >('none');
 
   const canTerminateAny = React.useMemo(() => {
@@ -347,10 +352,17 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   const deletionMap = Object.fromEntries(selected.map((r) => [r.id, r.canTerminate]));
 
   const reexecuteFromFailureRuns = selected.filter(
-    (r) => failedStatuses.has(r.status) && r.hasReExecutePermission,
+    (r) => r.status === RunStatus.FAILURE && r.hasReExecutePermission,
   );
   const reexecuteFromFailureMap = Object.fromEntries(
     reexecuteFromFailureRuns.map((r) => [r.id, r.id]),
+  );
+
+  const reexecuteFromCancellationRuns = selected.filter(
+    (r) => r.status === RunStatus.CANCELED && r.hasReExecutePermission,
+  );
+  const reexecuteFromCancellationMap = Object.fromEntries(
+    reexecuteFromCancellationRuns.map((r) => [r.id, r.id]),
   );
   const selectedRunBackfillIds = uniq(
     selected
@@ -426,6 +438,16 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
                     setVisibleDialog('reexecute-from-failure');
                   }}
                 />
+                <MenuItem
+                  icon="refresh"
+                  text={`Re-execute ${reexecuteFromCancellationRuns.length} ${
+                    reexecuteFromCancellationRuns.length === 1 ? 'run' : 'runs'
+                  } from cancellation`}
+                  disabled={reexecuteFromCancellationRuns.length === 0}
+                  onClick={() => {
+                    setVisibleDialog('reexecute-from-cancellation');
+                  }}
+                />
               </>
             ) : null}
           </Menu>
@@ -458,6 +480,14 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecuteFromFailureMap}
+        selectedRunBackfillIds={selectedRunBackfillIds}
+        reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
+      />
+      <ReexecutionDialog
+        isOpen={visibleDialog === 'reexecute-from-cancellation'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedRuns={reexecuteFromCancellationMap}
         selectedRunBackfillIds={selectedRunBackfillIds}
         reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
       />
