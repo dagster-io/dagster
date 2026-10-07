@@ -2,6 +2,7 @@ import {Colors, Icon, MenuItem} from '@dagster-io/ui-components';
 import {AssetWipeDialog} from '@shared/assets/AssetWipeDialog';
 import {useContext, useState} from 'react';
 
+import {assetHasWipePermission} from './assetWipePermissions';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PermissionsContext} from '../app/Permissions';
 import {AssetKeyInput} from '../graphql/types';
@@ -21,14 +22,9 @@ export const useWipeDialog = (
     featureContext: {canSeeWipeMaterializationAction},
   } = useContext(CloudOSSContext);
 
-  // Allow if any permission level grants access:
-  // 1. Deployment-wide (unscoped) permission
-  // 2. Code location permission
-  // 3. Per-asset permission from definition (owner-based)
-  const hasWipePermission =
-    unscopedPermissions.canWipeAssets?.enabled ||
-    (opts?.locationName && locationPermissions[opts.locationName]?.canWipeAssets?.enabled) ||
-    !!opts?.definitionHasWipePermission;
+  const hasWipePermission = opts
+    ? assetHasWipePermission(opts, unscopedPermissions, locationPermissions)
+    : false;
 
   return {
     element: (
