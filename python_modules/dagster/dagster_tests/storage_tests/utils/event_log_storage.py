@@ -5996,6 +5996,39 @@ class TestEventLogStorage:
 
         assert storage.get_concurrency_info("foo").slot_count == 0
 
+    def test_latest_asset_checks_only_requested_pairs(self, storage: EventLogStorage):
+        asset_keys = [dg.AssetKey("asset_a"), dg.AssetKey("asset_b")]
+        check_names = ["check_a", "check_b"]
+        requested_keys = [
+            dg.AssetCheckKey(asset_keys[0], check_names[0]),
+            dg.AssetCheckKey(asset_keys[1], check_names[1]),
+        ]
+        for run_id in ["older", "newer"]:
+            for asset_key in asset_keys:
+                for check_name in check_names:
+                    storage.store_event(
+                        dg.EventLogEntry(
+                            error_info=None,
+                            user_message="",
+                            level="debug",
+                            run_id=run_id,
+                            timestamp=time.time(),
+                            dagster_event=dg.DagsterEvent(
+                                DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                                "nonce",
+                                event_specific_data=AssetCheckEvaluationPlanned(
+                                    asset_key=asset_key, check_name=check_name
+                                ),
+                            ),
+                        )
+                    )
+        missing_key = dg.AssetCheckKey(asset_keys[0], "missing")
+        result = storage.get_latest_asset_check_execution_by_key(
+            [*requested_keys, requested_keys[0], missing_key]
+        )
+        assert set(result) == set(requested_keys)
+        assert all(record.run_id == "newer" for record in result.values())
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,

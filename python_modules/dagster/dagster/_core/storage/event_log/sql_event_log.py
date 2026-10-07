@@ -95,6 +95,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_case,
     db_fetch_mappings,
     db_result,
+    db_scalar_subquery,
     db_select,
     db_subquery,
 )
@@ -3270,26 +3271,23 @@ class SqlEventLogStorage(EventLogStorage):
         if not check_keys:
             return {}
 
-        latest_ids_subquery = db_subquery(
-            db_select(
-                [
-                    db.func.max(AssetCheckExecutionsTable.c.id).label("id"),
-                ]
-            )
-            .where(
-                db.and_(
-                    AssetCheckExecutionsTable.c.asset_key.in_(
-                        [key.asset_key.to_string() for key in check_keys]
-                    ),
-                    AssetCheckExecutionsTable.c.check_name.in_([key.name for key in check_keys]),
-                    self._get_asset_check_partition_filter_clause(partition_filter),
+        # A bounded lookup per key avoids scanning every historical execution to find max(id).
+        # Scalar subqueries work on SQLite as well as Postgres and MySQL.
+        latest_ids = [
+            db_scalar_subquery(
+                db_select([AssetCheckExecutionsTable.c.id])
+                .where(
+                    db.and_(
+                        AssetCheckExecutionsTable.c.asset_key == key.asset_key.to_string(),
+                        AssetCheckExecutionsTable.c.check_name == key.name,
+                        self._get_asset_check_partition_filter_clause(partition_filter),
+                    )
                 )
+                .order_by(AssetCheckExecutionsTable.c.id.desc())
+                .limit(1)
             )
-            .group_by(
-                AssetCheckExecutionsTable.c.asset_key,
-                AssetCheckExecutionsTable.c.check_name,
-            )
-        )
+            for key in check_keys
+        ]
 
         query = db_select(
             [
@@ -3302,14 +3300,7 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetCheckExecutionsTable.c.create_timestamp,
                 AssetCheckExecutionsTable.c.partition,
             ]
-        ).select_from(
-            AssetCheckExecutionsTable.join(
-                latest_ids_subquery,
-                db.and_(
-                    AssetCheckExecutionsTable.c.id == latest_ids_subquery.c.id,
-                ),
-            )
-        )
+        ).where(db.or_(*[AssetCheckExecutionsTable.c.id == latest_id for latest_id in latest_ids]))
 
         with self.index_connection() as conn:
             rows = db_fetch_mappings(conn, query)

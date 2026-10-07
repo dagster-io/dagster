@@ -518,3 +518,50 @@ def test_step_worker_failure_attempts():
     assert len(run_step_stats) == 1
     step_stat = run_step_stats[0]
     assert step_stat.attempts == 1
+
+
+def test_asset_check_latest_index_migration(tmp_path):
+    import importlib
+
+    from alembic.migration import MigrationContext
+    from alembic.operations import Operations
+    from dagster._core.storage.event_log.schema import AssetCheckExecutionsTable
+
+    migration = importlib.import_module(
+        "dagster._core.storage.alembic.versions.049_add_asset_check_latest_index"
+    )
+    storage = SqliteEventLogStorage(str(tmp_path))
+    try:
+        with storage.index_connection() as conn:
+            assert migration.INDEX_NAME in {
+                index["name"] for index in db.inspect(conn).get_indexes(migration.TABLE_NAME)
+            }
+            # Exercise both upgrades from an existing database and repeated migrations.
+            with Operations.context(MigrationContext.configure(conn)):
+                migration.downgrade()
+                migration.downgrade()
+                assert migration.INDEX_NAME not in {
+                    index["name"] for index in db.inspect(conn).get_indexes(migration.TABLE_NAME)
+                }
+                migration.upgrade()
+                migration.upgrade()
+            assert migration.INDEX_NAME in {
+                index["name"] for index in db.inspect(conn).get_indexes(migration.TABLE_NAME)
+            }
+            query = (
+                db_select([AssetCheckExecutionsTable.c.id])
+                .where(
+                    db.and_(
+                        AssetCheckExecutionsTable.c.asset_key == '["asset"]',
+                        AssetCheckExecutionsTable.c.check_name == "check",
+                    )
+                )
+                .order_by(AssetCheckExecutionsTable.c.id.desc())
+                .limit(1)
+            )
+            sql = str(query.compile(conn, compile_kwargs={"literal_binds": True}))
+            plan = conn.execute(db.text(f"EXPLAIN QUERY PLAN {sql}")).fetchall()
+            assert any(migration.INDEX_NAME in row[3] for row in plan)
+            assert not any("TEMP B-TREE" in row[3] for row in plan)
+    finally:
+        storage.dispose()
