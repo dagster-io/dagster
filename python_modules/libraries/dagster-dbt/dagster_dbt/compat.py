@@ -85,6 +85,7 @@ else:
             SemanticModel = "semantic_model"
             Unit = "unit_test"
             Fixture = "fixture"
+            Function = "function"
 
         class NodeStatus(StrEnum):
             Success = "success"
@@ -103,5 +104,13 @@ else:
             Warn = NodeStatus.Warn
             Skipped = NodeStatus.Skipped
 
+
+# dbt resource type for user-defined functions (UDFs), available in dbt-core 1.11+.
+FUNCTION_NODE_TYPE = "function"
+
+# dbt resource types that create an object in the warehouse when they are executed, and therefore
+# materialize a Dagster asset. Functions are not refable (they cannot be `ref`d, and are stored
+# outside of `manifest["nodes"]`), but `dbt build` does create them in the warehouse.
+MATERIALIZABLE_NODE_TYPES: list[str] = [*REFABLE_NODE_TYPES, FUNCTION_NODE_TYPE]
 
 logging.getLogger().handlers = existing_root_logger_handlers
