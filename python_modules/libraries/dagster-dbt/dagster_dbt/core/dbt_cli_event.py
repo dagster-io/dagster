@@ -634,11 +634,19 @@ class DbtFusionCliEventMessage(DbtCliEventMessage):
             return True
 
         run_result = self._raw_data.get("run_result", {})
+        adapter_response = run_result.get("adapter_response")
         return (
             materialized_type == "dynamic_table"
             and self._get_node_status() == NodeStatus.Warn
             and run_result.get("status") == NodeStatus.Warn
-            and run_result.get("adapter_response", {}).get("code") == "skip"
+            # Fusion omits adapter_response from the NodeFinished event for this no-op.
+            # If it is present, only the explicit skip response is successful.
+            and (
+                adapter_response is None
+                or (
+                    isinstance(adapter_response, Mapping) and adapter_response.get("code") == "skip"
+                )
+            )
         )
 
     def _get_check_passed(self) -> bool:

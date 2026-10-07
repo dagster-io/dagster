@@ -1,4 +1,6 @@
+from copy import deepcopy
 from datetime import datetime
+from typing import Any
 
 from dagster import AssetMaterialization, FloatMetadataValue
 from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage, DbtFusionCliEventMessage
@@ -227,9 +229,9 @@ def test_log_test_result_without_node_info():
 
 
 def test_fusion_dynamic_table_noop_emits_materialization():
-    unique_id = "model.test.dynamic_table"
-    raw_event = {
-        "info": {"name": "NodeFinished", "invocation_id": "test", "msg": "Finished node"},
+    unique_id = "model.repro.result"
+    raw_event: dict[str, Any] = {
+        "info": {"name": "NodeFinished", "invocation_id": "repro", "msg": "Finished node"},
         "data": {
             "node_info": {
                 "unique_id": unique_id,
@@ -241,7 +243,7 @@ def test_fusion_dynamic_table_noop_emits_materialization():
             },
             "run_result": {
                 "status": "warn",
-                "adapter_response": {"code": "skip", "rows_affected": -1},
+                "execution_time": 1.0,
             },
         },
     }
@@ -249,14 +251,14 @@ def test_fusion_dynamic_table_noop_emits_materialization():
         "nodes": {
             unique_id: {
                 "unique_id": unique_id,
-                "name": "dynamic_table",
+                "name": "result",
                 "resource_type": "model",
                 "materialized": "dynamic_table",
                 "database": "db",
                 "schema": "schema",
-                "alias": "dynamic_table",
-                "path": "models/dynamic_table.sql",
-                "config": {"schema": "schema"},
+                "alias": "result",
+                "path": "models/result.sql",
+                "config": {"materialized": "dynamic_table", "schema": "schema"},
                 "description": "",
             }
         }
@@ -271,10 +273,21 @@ def test_fusion_dynamic_table_noop_emits_materialization():
     assert len(events) == 1
     assert isinstance(events[0], AssetMaterialization)
 
-    raw_event["data"]["run_result"]["adapter_response"]["code"] = "other"
+    explicit_skip_raw_event = deepcopy(raw_event)
+    explicit_skip_raw_event["data"]["run_result"]["adapter_response"] = {"code": "skip"}
+    explicit_skip_events = list(
+        DbtFusionCliEventMessage(
+            raw_event=explicit_skip_raw_event, event_history_metadata={}
+        ).to_default_asset_events(manifest, DagsterDbtTranslator())
+    )
+    assert len(explicit_skip_events) == 1
+    assert isinstance(explicit_skip_events[0], AssetMaterialization)
+
+    non_noop_raw_event = deepcopy(raw_event)
+    non_noop_raw_event["data"]["run_result"]["adapter_response"] = {"code": "other"}
     non_noop_events = list(
         DbtFusionCliEventMessage(
-            raw_event=raw_event, event_history_metadata={}
+            raw_event=non_noop_raw_event, event_history_metadata={}
         ).to_default_asset_events(manifest, DagsterDbtTranslator())
     )
     assert non_noop_events == []
