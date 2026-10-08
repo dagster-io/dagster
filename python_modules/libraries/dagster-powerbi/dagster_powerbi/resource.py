@@ -3,7 +3,6 @@ import json
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Any
 from urllib.parse import urlencode
 
@@ -58,6 +57,8 @@ class PowerBIToken(ConfigurableResource):
 
 
 MICROSOFT_LOGIN_URL = "https://login.microsoftonline.com/{tenant_id}/oauth2/token"
+# Covers the gap before the next poll.
+_TOKEN_REFRESH_OFFSET_SECONDS = 300
 
 
 class PowerBIServicePrincipal(ConfigurableResource):
@@ -71,6 +72,7 @@ class PowerBIServicePrincipal(ConfigurableResource):
         ..., description="The Entra tenant ID where service principal was created."
     )
     _api_token: str | None = PrivateAttr(default=None)
+    _api_token_expires_at: float = PrivateAttr(default=0.0)
 
     def get_api_token(self) -> str:
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -89,11 +91,14 @@ class PowerBIServicePrincipal(ConfigurableResource):
         response.raise_for_status()
         out = response.json()
         self._api_token = out["access_token"]
-        return out["access_token"]
+        self._api_token_expires_at = time.monotonic() + float(out["expires_in"])
+        return self._api_token
 
     @property
     def api_token(self) -> str:
-        if not self._api_token:
+        if self._api_token is None or time.monotonic() >= (
+            self._api_token_expires_at - _TOKEN_REFRESH_OFFSET_SECONDS
+        ):
             return self.get_api_token()
         return self._api_token
 
@@ -113,10 +118,6 @@ class PowerBIWorkspace(ConfigurableResource):
         description="The maximum time in seconds to wait for a refresh to complete.",
     )
 
-    @cached_property
-    def _api_token(self) -> str:
-        return self.credentials.api_token
-
     def _fetch(
         self,
         endpoint: str,
@@ -135,7 +136,7 @@ class PowerBIWorkspace(ConfigurableResource):
         """
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self._api_token}",
+            "Authorization": f"Bearer {self.credentials.api_token}",
         }
         base_url = f"{BASE_API_URL}/groups/{self.workspace_id}" if group_scoped else BASE_API_URL
         url = f"{base_url}/{endpoint}"
@@ -166,12 +167,12 @@ class PowerBIWorkspace(ConfigurableResource):
     @public
     def trigger_and_poll_refresh(self, dataset_id: str) -> None:
         """Triggers a refresh of a PowerBI dataset and polls until it completes or fails."""
-        self.trigger_refresh(dataset_id)
-        self.poll_refresh(dataset_id)
+        refresh_id = self.trigger_refresh(dataset_id)
+        self.poll_refresh(dataset_id, refresh_id)
 
     @public
-    def trigger_refresh(self, dataset_id: str) -> None:
-        """Triggers a refresh of a PowerBI dataset."""
+    def trigger_refresh(self, dataset_id: str) -> str:
+        """Triggers a refresh of a PowerBI dataset and returns the refresh id."""
         response = self._fetch(
             method="POST",
             endpoint=f"datasets/{dataset_id}/refreshes",
@@ -181,26 +182,35 @@ class PowerBIWorkspace(ConfigurableResource):
         if response.status_code != 202:
             raise Failure(f"Refresh failed to start: {response.content}")
 
+        # Docs list Location / x-ms-request-id, but a standard refresh actually returns RequestId
+        # (same uuid as history requestId).
+        refresh_id = response.headers.get("RequestId")
+        if not refresh_id:
+            raise Failure("Refresh started but the response did not include a RequestId header.")
+        return refresh_id
+
     @public
-    def poll_refresh(self, dataset_id: str) -> None:
-        """Polls the refresh status of a PowerBI dataset until it completes or fails."""
+    def poll_refresh(self, dataset_id: str, refresh_id: str) -> None:
+        """Polls a specific PowerBI dataset refresh until it completes or fails."""
         status = None
+        refresh_detail: dict[str, Any] = {}
 
         start = time.monotonic()
         while status not in ["Completed", "Failed"]:
             if time.monotonic() - start > self.refresh_timeout:
                 raise Failure(f"Refresh timed out after {self.refresh_timeout} seconds.")
 
-            last_refresh = self._fetch_json(
-                f"datasets/{dataset_id}/refreshes",
+            refresh_detail = self._fetch_json(
+                f"datasets/{dataset_id}/refreshes/{refresh_id}",
                 group_scoped=True,
-            )["value"][0]
-            status = last_refresh["status"]
+            )
+            status = refresh_detail.get("status")
 
-            time.sleep(self.refresh_poll_interval)
+            if status not in ["Completed", "Failed"]:
+                time.sleep(self.refresh_poll_interval)
 
         if status == "Failed":
-            error = last_refresh.get("serviceExceptionJson")
+            error = refresh_detail.get("serviceExceptionJson")
             raise Failure(f"Refresh failed: {error}")
 
     @cached_method
