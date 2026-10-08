@@ -257,9 +257,12 @@ class DagsterWebserver(
             )
 
         def _static_dir(mount_path: str, full_path: str, name: str) -> Mount:
+            # follow_symlink=True so build environments that symlink individual
+            # files into the bundled `webapp/build/` tree (e.g. Bazel sandboxes)
+            # still serve them. See #33851.
             return Mount(
                 mount_path,
-                StaticFiles(directory=full_path),
+                StaticFiles(directory=full_path, follow_symlink=True),
                 name=name,
             )
 
