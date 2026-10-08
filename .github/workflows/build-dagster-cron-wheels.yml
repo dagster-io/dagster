@@ -1,0 +1,63 @@
+name: Build dagster-cron wheels
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/build-dagster-cron-wheels.yml"
+      - "python_modules/libraries/dagster-cron/**"
+  workflow_dispatch:
+
+jobs:
+  build-wheel:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-14
+          - windows-latest
+
+    defaults:
+      run:
+        working-directory: python_modules/libraries/dagster-cron
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install build tooling
+        run: python -m pip install maturin
+
+      - name: Cargo tests
+        run: cargo test --locked
+
+      - name: Build wheel
+        run: maturin build --release --locked --out dist
+
+      - name: Smoke install wheel
+        run: |
+          python -m pip install dist/*.whl
+          python - <<'PY'
+          import datetime as dt
+          import dagster_cron as cron
+
+          iterator = cron.cron_string_iterator(
+              dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc).timestamp(),
+              "0 0 * * *",
+              "UTC",
+          )
+          assert next(iterator) == dt.datetime(2024, 1, 1, tzinfo=dt.timezone.utc)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dagster-cron-${{ matrix.os }}
+          path: python_modules/libraries/dagster-cron/dist/*

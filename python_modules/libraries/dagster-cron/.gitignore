@@ -1,0 +1,7 @@
+/target/
+/.venv/
+/.pytest_cache/
+/parity-report*.xml
+**/__pycache__/
+python/dagster_cron_native/_native*.so
+*.pyc
