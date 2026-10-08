@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetJobKey, AssetKey, EntityKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -98,6 +98,14 @@ class AutomationConditionEvaluator:
     @property
     def evaluated_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
         asset_keys = {ek for ek in self.entity_keys if isinstance(ek, AssetKey)}
+        # job conditions are evaluated against the job's assets, so their records (and those of
+        # their parents) are needed as well
+        asset_keys |= {
+            asset_key
+            for ek in self.entity_keys
+            if isinstance(ek, AssetJobKey)
+            for asset_key in self.asset_graph.asset_keys_for_job(ek.job_name)
+        }
         return {
             parent for ek in asset_keys for parent in self.asset_graph.get(ek).parent_keys
         } | asset_keys
