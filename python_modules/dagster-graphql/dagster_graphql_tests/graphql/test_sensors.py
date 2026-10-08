@@ -1620,19 +1620,20 @@ def test_ticks_limit_cap(graphql_context: WorkspaceRequestContext):
         )
         assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 3
 
-        with pytest.raises(Exception, match="Max is 3"):
-            execute_dagster_graphql(
-                graphql_context,
-                LIMITED_TICKS_QUERY,
-                variables={"sensorSelector": sensor_selector, "limit": 4},
-            )
-
-    with pytest.raises(Exception, match="too large"):
-        execute_dagster_graphql(
+        # a limit above the cap is clamped down to it rather than rejected
+        result = execute_dagster_graphql(
             graphql_context,
             LIMITED_TICKS_QUERY,
-            variables={"sensorSelector": sensor_selector, "limit": 2000},
+            variables={"sensorSelector": sensor_selector, "limit": 4},
         )
+        assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 3
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        LIMITED_TICKS_QUERY,
+        variables={"sensorSelector": sensor_selector, "limit": 2000},
+    )
+    assert not result.errors
 
     result = execute_dagster_graphql(
         graphql_context,
