@@ -15,7 +15,11 @@ from buildkite_shared.utils import (
     oss_path,
 )
 from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, OSS_ROOT
-from dagster_buildkite.steps.test_project import test_project_depends_fn, test_project_gate_cmds
+from dagster_buildkite.steps.test_project import (
+    test_project_depends_fn,
+    test_project_gate_cmds,
+    test_project_prepull_cmds,
+)
 from dagster_buildkite.utils import pull_image_with_retries, wait_for_mysql_container
 
 _DAGSTER_DBT_DEPS_FACTORS = ["dbt17", "dbt18", "dbt19", "dbt110", "dbt111", "dbt112"]
@@ -172,7 +176,11 @@ def celery_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
 def celery_docker_extra_cmds(
     version: AvailablePythonVersion, factor: ToxFactor | None
 ) -> list[str]:
-    return [*test_project_gate_cmds(), *celery_extra_cmds(version, factor)]
+    return [
+        *test_project_gate_cmds(),
+        *celery_extra_cmds(version, factor),
+        *test_project_prepull_cmds(),
+    ]
 
 
 def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
@@ -180,6 +188,7 @@ def docker_extra_cmds(version: AvailablePythonVersion, _) -> list[str]:
         *test_project_gate_cmds(),
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
+        *test_project_prepull_cmds(),
     ]
 
 
