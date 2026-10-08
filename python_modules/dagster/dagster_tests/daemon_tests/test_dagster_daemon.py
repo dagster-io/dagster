@@ -195,3 +195,9 @@ def test_db_pool_options(monkeypatch: pytest.MonkeyPatch, args, expected) -> Non
 
     assert result.exit_code == 0
     assert calls == ([expected] if expected else [])
+
+
+def test_db_pool_max_overflow_zero_is_rejected() -> None:
+    result = CliRunner().invoke(run_command, ["--db-pool-max-overflow", "0"])
+    assert result.exit_code == 2
+    assert "must be at least 1" in result.output

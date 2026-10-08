@@ -111,7 +111,8 @@ class StorageMethods:
 
     def enable_connection_pool(self, pool_recycle: int, max_overflow: int) -> None:
         """Reuse open database connections instead of opening one per storage call, for long
-        lived processes such as the daemon. Unlike the webserver, no statement timeout is applied.
+        lived processes such as the daemon. Unlike the webserver, no statement timeout is applied;
+        a timeout configured for the database user is overridden.
         """
         self.optimize_for_webserver(
             statement_timeout=0, pool_recycle=pool_recycle, max_overflow=max_overflow

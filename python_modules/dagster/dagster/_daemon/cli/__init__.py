@@ -26,6 +26,15 @@ from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handle
 DEFAULT_DB_POOL_RECYCLE = 3600  # 1 hr
 
 
+def _validate_db_pool_max_overflow(
+    _ctx: click.Context, _param: click.Parameter, value: int | None
+) -> int | None:
+    # a single shared connection would serialize all daemon threads
+    if value == 0:
+        raise click.BadParameter("must be at least 1, or -1 for no limit")
+    return value
+
+
 def _get_heartbeat_tolerance():
     tolerance = os.getenv(
         "DAGSTER_DAEMON_HEARTBEAT_TOLERANCE",
@@ -75,13 +84,16 @@ def _get_heartbeat_tolerance():
 )
 @click.option(
     "--db-pool-max-overflow",
-    type=click.INT,
+    type=click.IntRange(min=-1),
     required=False,
+    callback=_validate_db_pool_max_overflow,
     help=(
         "Keep a database connection open and reuse it across storage calls instead of opening"
         " a new connection for each one. Under concurrent load, up to this many extra connections"
-        " are opened and closed again after use. Set to -1 for no limit. Disabled by default. Not"
-        " respected in all configurations."
+        " are opened and closed again after use; further calls wait for a free connection. Use at"
+        " least the number of daemon threads, or -1 for no limit. Overrides any statement timeout"
+        " configured for the database user. Disabled by default. Not respected in all"
+        " configurations."
     ),
     envvar="DAGSTER_DAEMON_DB_POOL_MAX_OVERFLOW",
 )
