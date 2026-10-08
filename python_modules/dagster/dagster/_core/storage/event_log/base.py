@@ -527,6 +527,20 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[AssetRecord]:
         pass
 
+    def get_latest_materialization_storage_ids(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, int | None]:
+        """Storage id of each asset's latest materialization.
+
+        Unknown asset keys are absent from the mapping; a key that exists but has never
+        materialized maps to None. Storages that can read the id without loading the
+        materialization event should override this.
+        """
+        return {
+            record.asset_entry.asset_key: record.asset_entry.last_materialization_storage_id
+            for record in self.get_asset_records(list(asset_keys))
+        }
+
     @abstractmethod
     def get_freshness_state_records(
         self, keys: Sequence[AssetKey]
