@@ -267,7 +267,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           onClose={closeDialogs}
           onComplete={onComplete}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{[run.id]: run.canTerminate && run.hasTerminatePermission}}
         />
       ) : null}
       <Dialog

@@ -209,7 +209,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             }
           }}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{[run.id]: run.canTerminate && run.hasTerminatePermission}}
         />
       ) : null}
       {run.hasTerminatePermission ? (
