@@ -36,6 +36,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.event_api import (
+    AssetEventType,
     EventRecordsResult,
     PartitionKeyFilter,
     RunShardedEventsCursor,
@@ -64,6 +65,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.event_log.base import (
     AssetCheckSummaryRecord,
     AssetEntry,
+    AssetEventSummaryRecord,
     AssetRecord,
     AssetRecordsFilter,
     EventLogConnection,
@@ -547,6 +549,73 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_key:
                 partitions_by_asset_key[asset_key].add(partition)
         return partitions_by_asset_key
+
+    def get_asset_event_summary_records(
+        self,
+        event_type: AssetEventType,
+        asset_key: AssetKey | None = None,
+        run_id: str | None = None,
+        storage_ids: Sequence[int] | None = None,
+        after_storage_id: int | None = None,
+        before_storage_id: int | None = None,
+        limit: int | None = None,
+        ascending: bool = False,
+    ) -> Sequence[AssetEventSummaryRecord]:
+        query = db_select(
+            [
+                SqlEventLogStorageTable.c.id,
+                SqlEventLogStorageTable.c.run_id,
+                SqlEventLogStorageTable.c.asset_key,
+                SqlEventLogStorageTable.c.partition,
+                SqlEventLogStorageTable.c.timestamp,
+            ]
+        ).where(SqlEventLogStorageTable.c.dagster_event_type == event_type.value)
+
+        if asset_key is not None:
+            query = query.where(SqlEventLogStorageTable.c.asset_key == asset_key.to_string())
+            asset_details = next(iter(self._get_assets_details([asset_key])))
+            if asset_details and asset_details.last_wipe_timestamp:
+                query = query.where(
+                    SqlEventLogStorageTable.c.timestamp
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
+                )
+        else:
+            query = query.where(SqlEventLogStorageTable.c.asset_key.isnot(None))
+
+        if run_id is not None:
+            query = query.where(SqlEventLogStorageTable.c.run_id == run_id)
+
+        if storage_ids is not None:
+            query = query.where(SqlEventLogStorageTable.c.id.in_(storage_ids))
+
+        if after_storage_id is not None:
+            query = query.where(SqlEventLogStorageTable.c.id > after_storage_id)
+
+        if before_storage_id is not None:
+            query = query.where(SqlEventLogStorageTable.c.id < before_storage_id)
+
+        if limit:
+            query = query.limit(limit)
+
+        query = query.order_by(
+            SqlEventLogStorageTable.c.id.asc() if ascending else SqlEventLogStorageTable.c.id.desc()
+        )
+
+        with self.index_connection() as conn, db_result(conn, query) as result:
+            rows = result.fetchall()
+
+        return [
+            AssetEventSummaryRecord(
+                storage_id=storage_id,
+                run_id=row_run_id,
+                asset_key=check.not_none(AssetKey.from_db_string(asset_key_str)),
+                partition=partition,
+                timestamp=utc_datetime_from_naive(timestamp).timestamp(),
+            )
+            for storage_id, row_run_id, asset_key_str, partition, timestamp in rows
+        ]
 
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         check.str_param(run_id, "run_id")

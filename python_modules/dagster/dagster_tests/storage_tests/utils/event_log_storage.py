@@ -1353,6 +1353,104 @@ class TestEventLogStorage:
         ) == {materialized_key: {"1", "2", "3"}, observed_key: {None}}
         assert dict(storage.get_asset_partitions_for_run(make_new_run_id())) == {}
 
+    def test_get_asset_event_summary_records(self, storage, instance):
+        materialized_key = dg.AssetKey(["path", "to", "summarized"])
+        observed_key = dg.AssetKey(["path", "to", "summarized_observed"])
+
+        test_run_id = make_new_run_id()
+
+        @dg.op
+        def materialize_and_observe(_):
+            for partition in ["1", "2", "3"]:
+                yield dg.AssetMaterialization(asset_key=materialized_key, partition=partition)
+            yield dg.AssetObservation(asset_key=observed_key, metadata={"count": 1})
+            yield dg.Output(1)
+
+        def _ops():
+            materialize_and_observe()
+
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
+
+        records = storage.fetch_materializations(materialized_key, limit=10, ascending=True).records
+        assert len(records) == 3
+
+        def _summaries(**kwargs):
+            return storage.get_asset_event_summary_records(
+                DagsterEventType.ASSET_MATERIALIZATION, **kwargs
+            )
+
+        # the projection carries the same rows the record API returns
+        summaries = _summaries(asset_key=materialized_key, ascending=True)
+        assert [summary.storage_id for summary in summaries] == [
+            record.storage_id for record in records
+        ]
+        assert [summary.run_id for summary in summaries] == [test_run_id] * 3
+        assert [summary.asset_key for summary in summaries] == [materialized_key] * 3
+        assert [summary.partition for summary in summaries] == ["1", "2", "3"]
+        assert [summary.timestamp for summary in summaries] == pytest.approx(
+            [record.timestamp for record in records], abs=0.001
+        )
+
+        # descending is the default
+        assert [summary.partition for summary in _summaries(asset_key=materialized_key)] == [
+            "3",
+            "2",
+            "1",
+        ]
+
+        assert [
+            summary.storage_id for summary in _summaries(run_id=test_run_id, ascending=True)
+        ] == [record.storage_id for record in records]
+        assert _summaries(run_id=make_new_run_id()) == []
+
+        assert [
+            summary.partition
+            for summary in _summaries(
+                storage_ids=[records[0].storage_id, records[2].storage_id], ascending=True
+            )
+        ] == ["1", "3"]
+        assert [
+            summary.partition
+            for summary in _summaries(
+                asset_key=materialized_key, after_storage_id=records[0].storage_id, ascending=True
+            )
+        ] == ["2", "3"]
+        # before_storage_id is exclusive, like after_storage_id
+        assert [
+            summary.partition
+            for summary in _summaries(
+                asset_key=materialized_key, before_storage_id=records[2].storage_id, ascending=True
+            )
+        ] == ["1", "2"]
+        assert [
+            summary.partition
+            for summary in _summaries(
+                asset_key=materialized_key,
+                after_storage_id=records[0].storage_id,
+                before_storage_id=records[2].storage_id,
+                ascending=True,
+            )
+        ] == ["2"]
+        assert [
+            summary.partition
+            for summary in _summaries(asset_key=materialized_key, limit=2, ascending=True)
+        ] == ["1", "2"]
+
+        # observations are projected from their own table and are unpartitioned here
+        observations = storage.get_asset_event_summary_records(
+            DagsterEventType.ASSET_OBSERVATION, asset_key=observed_key
+        )
+        assert len(observations) == 1
+        assert observations[0].asset_key == observed_key
+        assert observations[0].run_id == test_run_id
+        assert observations[0].partition is None
+        assert (
+            storage.get_asset_event_summary_records(
+                DagsterEventType.ASSET_OBSERVATION, asset_key=materialized_key
+            )
+            == []
+        )
+
     def _get_planned_asset_keys_from_event_log(self, instance, run_id):
         return set(event.asset_key for event in self._get_planned_events(instance, run_id))
 

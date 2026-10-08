@@ -19,6 +19,7 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.event_log.base import (
     AssetCheckSummaryRecord,
+    AssetEventSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -39,7 +40,11 @@ from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInf
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
+    from dagster._core.event_api import (
+        AssetEventType,
+        AssetRecordsFilter,
+        RunStatusChangeRecordsFilter,
+    )
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import (
@@ -711,6 +716,28 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
     ) -> Mapping["AssetKey", AbstractSet[str | None]]:
         return self._storage.event_log_storage.get_asset_partitions_for_run(run_id, of_type)
+
+    def get_asset_event_summary_records(
+        self,
+        event_type: "AssetEventType",
+        asset_key: Optional["AssetKey"] = None,
+        run_id: str | None = None,
+        storage_ids: Sequence[int] | None = None,
+        after_storage_id: int | None = None,
+        before_storage_id: int | None = None,
+        limit: int | None = None,
+        ascending: bool = False,
+    ) -> Sequence["AssetEventSummaryRecord"]:
+        return self._storage.event_log_storage.get_asset_event_summary_records(
+            event_type,
+            asset_key,
+            run_id,
+            storage_ids,
+            after_storage_id,
+            before_storage_id,
+            limit,
+            ascending,
+        )
 
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
         return self._storage.event_log_storage.initialize_concurrency_limit_to_default(
