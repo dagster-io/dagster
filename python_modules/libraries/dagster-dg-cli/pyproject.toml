@@ -15,7 +15,10 @@ dependencies = [
     "dagster-rest-resources==1!0+dev",
     "dagster==1!0+dev",
     "requests",
-    "typer",
+    # Kept in sync with dagster-dg-core's cap: typer 0.26 vendored its own click fork and
+    # breaks our click-based `dg --help` rendering (typer.rich_utils is consumed directly
+    # here too). See https://github.com/dagster-io/dagster/issues/33893.
+    "typer<0.26",
 ]
 
 [project.urls]
