@@ -218,6 +218,22 @@ def test_statement_timeouts(hostname):
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
 
+def test_enable_connection_pool(hostname):
+    with instance_for_test(overrides=safe_load_yaml(full_pg_config(hostname))) as instance:
+        instance.enable_connection_pool(pool_recycle=-1, max_overflow=20)
+
+        # connections are reused instead of opened per call
+        with instance._event_storage._connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+            first_pid = conn.execute(db.text("select pg_backend_pid()")).scalar()
+        with instance._event_storage._connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+            second_pid = conn.execute(db.text("select pg_backend_pid()")).scalar()
+        assert first_pid == second_pid
+
+        # unlike the webserver, no statement timeout is applied
+        with instance._run_storage.connect() as conn:  # noqa: SLF001  # ty: ignore[unresolved-attribute]
+            assert conn.execute(db.text("show statement_timeout")).scalar() == "0"
+
+
 def test_skip_autocreate(hostname, conn_string):
     with instance_for_test(overrides=safe_load_yaml(unified_pg_config(hostname))) as instance:
         instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # ty: ignore[unresolved-attribute]

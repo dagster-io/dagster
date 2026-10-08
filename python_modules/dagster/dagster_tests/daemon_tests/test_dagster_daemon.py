@@ -159,3 +159,39 @@ def test_backfill_threadpool():
             assert isinstance(backfill_daemon, BackfillDaemon)
             assert backfill_daemon._threadpool_executor  # noqa: SLF001
             assert backfill_daemon._submit_threadpool_executor  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        ([], None),
+        (
+            ["--db-pool-max-overflow", "5"],
+            {"pool_recycle": 3600, "max_overflow": 5},
+        ),
+        (
+            ["--db-pool-max-overflow", "-1", "--db-pool-recycle", "60"],
+            {"pool_recycle": 60, "max_overflow": -1},
+        ),
+    ],
+)
+def test_db_pool_options(monkeypatch: pytest.MonkeyPatch, args, expected) -> None:
+    calls = []
+    with dg.instance_for_test() as instance:
+
+        @contextmanager
+        def _get_instance(**_kwargs):
+            yield instance
+
+        monkeypatch.setattr("dagster._daemon.cli.get_instance_for_cli", _get_instance)
+        monkeypatch.setattr("dagster._daemon.cli._daemon_run_command", lambda *_args: None)
+        monkeypatch.setattr(
+            dg.DagsterInstance,
+            "enable_connection_pool",
+            lambda _self, **kwargs: calls.append(kwargs),
+        )
+
+        result = CliRunner().invoke(run_command, args, catch_exceptions=False)
+
+    assert result.exit_code == 0
+    assert calls == ([expected] if expected else [])
