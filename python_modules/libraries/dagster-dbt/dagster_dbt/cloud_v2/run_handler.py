@@ -172,7 +172,9 @@ class DbtCloudJobRunResults:
 
             resource_type: str = dbt_resource_props["resource_type"]
             result_status: str = result["status"]
-            materialization: str = dbt_resource_props["config"]["materialized"]
+            materialization: str = dbt_resource_props.get("config", {}).get(
+                "materialized", resource_type
+            )
 
             is_ephemeral = materialization == "ephemeral"
 
