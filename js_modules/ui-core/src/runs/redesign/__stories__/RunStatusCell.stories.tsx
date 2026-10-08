@@ -63,6 +63,9 @@ export const Starting = () => (
 export const Started = () => (
   <CellTemplate entry={runEntry({id: RUN_ID, runStatus: RunStatus.STARTED})} />
 );
+export const Managed = () => (
+  <CellTemplate entry={runEntry({id: RUN_ID, runStatus: RunStatus.MANAGED})} />
+);
 export const Canceling = () => (
   <CellTemplate entry={runEntry({id: RUN_ID, runStatus: RunStatus.CANCELING})} />
 );
