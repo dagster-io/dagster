@@ -929,6 +929,14 @@ redis:
   brokerUrl: ""
   backendUrl: ""
 
+  # Set resources for the internal Redis master pod.
+  master:
+    resources: {}
+
+  # Set resources for the internal Redis slave pods.
+  slave:
+    resources: {}
+
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
 ####################################################################################################
