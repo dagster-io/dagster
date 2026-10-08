@@ -2478,6 +2478,7 @@ type ExecutionPlan {
   artifactsPersisted: Boolean!
   assetSelection: [String!]!
   assetKeys: [AssetKey!]!
+  assetCheckKeys: [AssetCheckhandle!]!
 }
 
 type ExecutionStep {

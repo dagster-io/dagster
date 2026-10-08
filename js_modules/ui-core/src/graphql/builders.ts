@@ -1701,6 +1701,7 @@ type ExecutionParams = {
 type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetCheckKeys: Array<AssetCheckhandle>;
   assetKeys: Array<AssetKey>;
   assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
@@ -9551,6 +9552,8 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetCheckKeys:
+      overrides && overrides.hasOwnProperty('assetCheckKeys') ? overrides.assetCheckKeys! : [],
     assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
