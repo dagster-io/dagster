@@ -402,13 +402,16 @@ class DbtCliResource(ConfigurableResource):
         setattr(new_flags, "target", profile.target_name)
         config.args = new_flags
 
-        # If the dbt adapter is DuckDB, set the access mode to READ_ONLY, since DuckDB only allows
-        # simultaneous connections for read-only access.
+        # For file-backed DuckDB databases, use READ_ONLY to allow simultaneous connections.
+        # In-memory databases cannot be opened read-only, and their special path must be preserved.
 
         if config.credentials and config.credentials.__class__.__name__ == "DuckDBCredentials":
             from dbt.adapters.duckdb.credentials import DuckDBCredentials
 
-            if isinstance(config.credentials, DuckDBCredentials):
+            if (
+                isinstance(config.credentials, DuckDBCredentials)
+                and config.credentials.path != ":memory:"
+            ):
                 if not config.credentials.config_options:
                     config.credentials.config_options = {}
                 config.credentials.config_options["access_mode"] = "READ_ONLY"
