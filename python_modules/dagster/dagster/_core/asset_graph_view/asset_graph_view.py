@@ -713,10 +713,9 @@ class AssetGraphView(LoadingContext):
         return self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, key)
 
     async def _compute_execution_failed_unpartitioned(self, key: AssetKey) -> bool:
-        from dagster._core.event_api import AssetRecordsFilter
+        from dagster._core.events import DagsterEventType
         from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
         from dagster._core.storage.event_log.base import AssetRecord
-        from dagster._utils.storage import get_materialization_chunk_size
 
         planned_materialization_info = (
             self.instance.event_log_storage.get_latest_planned_materialization_info(key)
@@ -745,20 +744,16 @@ class AssetGraphView(LoadingContext):
 
         # look for any materializations for the latest planned run for cases where
         # the run failed but the materialization was successful
-        has_more = True
-        cursor = None
-        while has_more:
-            result = self.instance.fetch_materializations(
-                AssetRecordsFilter(asset_key=key, after_storage_id=planned_storage_id),
-                limit=get_materialization_chunk_size(),
-                cursor=cursor,
-            )
-            has_more, cursor = result.has_more, result.cursor
-            if any(record.run_id == planned_run_id for record in result.records):
-                return False
+        rows = self.instance.get_asset_event_summary_records(
+            DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=key,
+            run_id=planned_run_id,
+            after_storage_id=planned_storage_id,
+            limit=1,
+        )
 
         # could not find any materializations for the latest planned run
-        return True
+        return not rows
 
     async def _compute_execution_failed_asset_subset(self, key: AssetKey) -> EntitySubset[AssetKey]:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -969,7 +964,8 @@ class AssetGraphView(LoadingContext):
         For unpartitioned assets, uses the cached asset record. For partitioned assets,
         fetches storage IDs per partition and groups by timestamp.
         """
-        from dagster._core.event_api import AssetRecordsFilter
+        from dagster._core.events import DagsterEventType
+        from dagster._utils.storage import get_materialization_chunk_size
 
         key = check.inst(subset.key, AssetKey)
 
@@ -991,14 +987,23 @@ class AssetGraphView(LoadingContext):
         if not valid_storage_ids:
             return {}
 
-        result = self._queryer.instance.fetch_materializations(
-            AssetRecordsFilter(
-                asset_key=key,
-                storage_ids=list(valid_storage_ids.values()),
-            ),
-            limit=len(valid_storage_ids),
-        )
-        storage_id_to_ts = {r.storage_id: r.timestamp for r in result.records}
+        # chunked so the IN clause stays bounded for assets with many partitions
+        storage_ids = list(valid_storage_ids.values())
+        chunk_size = get_materialization_chunk_size()
+        storage_id_to_ts = {}
+        for i in range(0, len(storage_ids), chunk_size):
+            chunk = storage_ids[i : i + chunk_size]
+            storage_id_to_ts.update(
+                {
+                    row.storage_id: row.timestamp
+                    for row in self._queryer.instance.get_asset_event_summary_records(
+                        DagsterEventType.ASSET_MATERIALIZATION,
+                        asset_key=key,
+                        storage_ids=chunk,
+                        limit=len(chunk),
+                    )
+                }
+            )
 
         # Group partitions by timestamp
         by_timestamp: dict[float, set[AssetKeyPartitionKey]] = {}

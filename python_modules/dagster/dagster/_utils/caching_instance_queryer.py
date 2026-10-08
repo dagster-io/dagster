@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.execution.asset_backfill import AssetBackfillData
     from dagster._core.storage.event_log import EventLogRecord
-    from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.event_log.base import AssetEventSummaryRecord, AssetRecord
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 RECORD_BATCH_SIZE = 1000
@@ -906,29 +906,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         asset_key: AssetKey,
         after_cursor: int,
         before_cursor: int | None = None,
-    ) -> Sequence["EventLogRecord"]:
-        from dagster._utils.storage import get_materialization_chunk_size
-
-        has_more = True
-        cursor = None
-
-        new_materializations = []
-
-        while has_more:
-            result = self.instance.fetch_materializations(
-                AssetRecordsFilter(
-                    asset_key=asset_key,
-                    after_storage_id=after_cursor,
-                    before_storage_id=(before_cursor + 1) if before_cursor is not None else None,
-                ),
-                cursor=cursor,
-                limit=get_materialization_chunk_size(),
-            )
-            cursor = result.cursor
-            has_more = result.has_more
-            new_materializations.extend(result.records)
-
-        return new_materializations
+    ) -> Sequence["AssetEventSummaryRecord"]:
+        return self.instance.get_asset_event_summary_records(
+            DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=asset_key,
+            after_storage_id=after_cursor,
+            # before_storage_id is exclusive, before_cursor is inclusive
+            before_storage_id=(before_cursor + 1) if before_cursor is not None else None,
+            ascending=True,
+        )
 
     def get_asset_partitions_updated_after_cursor(
         self,
