@@ -2253,7 +2253,9 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
             .order_by(order_by)
-            .limit(limit)
+            # one past the page, so an exactly-full page does not report a next page that
+            # turns out to be empty
+            .limit(limit + 1)
         )
         if cursor:
             last_storage_id = StorageIdCursor.from_cursor(cursor).storage_id
@@ -2265,6 +2267,9 @@ class SqlEventLogStorage(EventLogStorage):
         with self.index_connection() as conn, db_result(conn, query) as result:
             rows = result.fetchall()
 
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+
         if rows:
             next_cursor = StorageIdCursor(storage_id=cast("int", rows[-1][0])).to_string()
         elif cursor:
@@ -2275,7 +2280,7 @@ class SqlEventLogStorage(EventLogStorage):
         return PaginatedResults(
             results=[cast("str", row[1]) for row in rows],
             cursor=next_cursor,
-            has_more=len(rows) == limit,
+            has_more=has_more,
         )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
