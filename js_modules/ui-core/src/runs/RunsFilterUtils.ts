@@ -6,6 +6,7 @@ import {
 import qs from 'qs';
 import {useMemo} from 'react';
 
+import {DagsterTag} from './RunTag';
 import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
 import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -90,6 +91,23 @@ export function runsPathWithFilters(
     {q: tokensAsStringArray(filterTokens), view: view?.toLowerCase()},
     {arrayFormat: 'brackets'},
   )}`;
+}
+
+/**
+ * Narrows a runs filter to the code location the UI is scoped to, using the code location tag
+ * that is stamped on every run launched from a code location.
+ */
+export function runsFilterForCodeLocation(
+  filter: RunsFilter,
+  codeLocationFilter: string | null,
+): RunsFilter {
+  if (!codeLocationFilter) {
+    return filter;
+  }
+  return {
+    ...filter,
+    tags: [...(filter.tags ?? []), {key: DagsterTag.CodeLocation, value: codeLocationFilter}],
+  };
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {

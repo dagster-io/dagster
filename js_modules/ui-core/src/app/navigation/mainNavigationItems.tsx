@@ -11,6 +11,7 @@ import {useVisibleFeatureFlagRows} from '@shared/app/useVisibleFeatureFlagRows';
 import {useContext, useState} from 'react';
 
 import {ShortcutHandler} from '../ShortcutHandler';
+import {CodeLocationFilterItem} from './CodeLocationFilterItem';
 import styles from './css/MainNavigation.module.css';
 import {useSearchDialog} from '../../search/SearchDialog';
 import {JobStateForNav} from '../AppTopNav/useJobStateForNav';
@@ -289,6 +290,11 @@ export const getBottomGroups = (_config: NavigationGroupConfig): NavigationGroup
     {
       key: 'search',
       items: [
+        {
+          key: 'code-location-filter',
+          label: 'Code location',
+          element: <CodeLocationFilterItem />,
+        },
         {
           key: 'search',
           label: 'Search',

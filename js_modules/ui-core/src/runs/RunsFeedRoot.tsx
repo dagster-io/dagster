@@ -1,5 +1,5 @@
 import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
-import {useCallback} from 'react';
+import {useCallback, useContext} from 'react';
 
 import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -16,6 +16,7 @@ import {useRunsFilterInput} from './RunsFilterInput';
 import {
   RunFilterToken,
   RunFilterTokenType,
+  runsFilterForCodeLocation,
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
 } from './RunsFilterUtils';
@@ -30,6 +31,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {RunsFeedView} from '../graphql/types';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 const filters: RunFilterTokenType[] = [
   'tag',
@@ -46,7 +48,11 @@ export const RunsFeedRoot = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
-  const filter = runsFilterForSearchTokens(filterTokens);
+  const {codeLocationFilter} = useContext(WorkspaceContext);
+  const filter = runsFilterForCodeLocation(
+    runsFilterForSearchTokens(filterTokens),
+    codeLocationFilter,
+  );
 
   const [view, setView] = useQueryPersistedRunsFeedView();
 

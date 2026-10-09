@@ -1,7 +1,7 @@
 import {Page} from '@dagster-io/ui-components';
 import {AssetsGraphHeader} from '@shared/assets/AssetsGraphHeader';
 import {useFavoriteAssets} from '@shared/assets/useFavoriteAssets';
-import {useCallback, useMemo} from 'react';
+import {useCallback, useContext, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -18,6 +18,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 interface AssetGroupRootParams {
   0: string;
 }
@@ -64,16 +65,21 @@ export const AssetsGlobalGraphRoot = () => {
 
   const {favorites, loading: favoritesLoading} = useFavoriteAssets();
 
+  const {codeLocationFilter} = useContext(WorkspaceContext);
+
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
       hideEdgesToNodesOutsideQuery,
-      hideNodesMatching: favorites
-        ? (node) => !favorites.has(tokenForAssetKey(node.assetKey))
-        : undefined,
+      hideNodesMatching:
+        favorites || codeLocationFilter
+          ? (node) =>
+              (!!favorites && !favorites.has(tokenForAssetKey(node.assetKey))) ||
+              (!!codeLocationFilter && node.repository.location.name !== codeLocationFilter)
+          : undefined,
       loading: favoritesLoading,
     };
     return options;
-  }, [hideEdgesToNodesOutsideQuery, favorites, favoritesLoading]);
+  }, [hideEdgesToNodesOutsideQuery, favorites, favoritesLoading, codeLocationFilter]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>

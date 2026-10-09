@@ -21,6 +21,7 @@ import {
   SetVisibleOrHiddenFn,
   mergeWorkspaceData,
   repoLocationToRepos,
+  useCodeLocationFilter,
   useVisibleRepos,
 } from './util';
 import {useApolloClient} from '../../apollo-client';
@@ -30,6 +31,7 @@ import {codeLocationStatusAtom} from '../../nav/useCodeLocationsStatus';
 import {useGetData} from '../../search/useIndexedDBCachedQuery';
 
 export const HIDDEN_REPO_KEYS = 'dagster.hidden-repo-keys';
+export const CODE_LOCATION_FILTER_KEY = 'dagster.code-location-filter';
 
 export type WorkspaceRepositorySensor = WorkspaceSensorFragment;
 export type WorkspaceRepositorySchedule = WorkspaceScheduleFragment;
@@ -47,6 +49,9 @@ export interface WorkspaceState {
   toggleVisible: SetVisibleOrHiddenFn;
   setVisible: SetVisibleOrHiddenFn;
   setHidden: SetVisibleOrHiddenFn;
+  // The single code location the UI is scoped to, or null for all code locations.
+  codeLocationFilter: string | null;
+  setCodeLocationFilter: (locationName: string | null) => void;
   refetch: () => Promise<void>;
 }
 
@@ -63,6 +68,8 @@ export const WorkspaceContext = React.createContext<WorkspaceState>({
   locationStatuses: {},
   setVisible: () => {},
   setHidden: () => {},
+  codeLocationFilter: null,
+  setCodeLocationFilter: () => {},
 });
 
 export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
@@ -200,7 +207,28 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
 
   const allRepos = useAllRepos(locationEntries);
 
-  const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
+  const locationNames = useMemo(() => new Set(Object.keys(locationStatuses)), [locationStatuses]);
+  const {codeLocationFilter, setCodeLocationFilter} = useCodeLocationFilter(
+    locationNames,
+    loadingNonAssets,
+  );
+
+  const {
+    visibleRepos: visibleReposIgnoringFilter,
+    toggleVisible,
+    setVisible,
+    setHidden,
+  } = useVisibleRepos(allRepos);
+
+  const visibleRepos = useMemo(
+    () =>
+      codeLocationFilter
+        ? visibleReposIgnoringFilter.filter(
+            (option) => option.repositoryLocation.name === codeLocationFilter,
+          )
+        : visibleReposIgnoringFilter,
+    [visibleReposIgnoringFilter, codeLocationFilter],
+  );
 
   return (
     <WorkspaceContext.Provider
@@ -215,6 +243,8 @@ const WorkspaceProviderImpl = ({children}: {children: React.ReactNode}) => {
         toggleVisible,
         setVisible,
         setHidden,
+        codeLocationFilter,
+        setCodeLocationFilter,
         data: fullLocationEntryData,
         refetch: useCallback(async () => {
           await managerRef.current?.refetchAll();

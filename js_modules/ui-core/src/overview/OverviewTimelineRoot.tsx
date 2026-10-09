@@ -1,6 +1,6 @@
 import {ErrorBoundary, Heading, PageHeader} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useDeferredValue, useMemo} from 'react';
+import {useContext, useDeferredValue, useMemo} from 'react';
 
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
 import styles from './css/OverviewTimelineRoot.module.css';
@@ -22,6 +22,7 @@ import {RunTimeline} from '../runs/RunTimeline';
 import {TimelineRangeControls} from '../runs/TimelineRangeControls';
 import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {useRunsForTimeline} from '../runs/useRunsForTimeline';
+import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
@@ -116,7 +117,16 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
-  const {jobs: jobsUnmapped, loading, refreshState} = useDeferredValue(runsForTimelineRet);
+  const {jobs: allJobsUnmapped, loading, refreshState} = useDeferredValue(runsForTimelineRet);
+
+  const {codeLocationFilter} = useContext(WorkspaceContext);
+  const jobsUnmapped = useMemo(
+    () =>
+      codeLocationFilter
+        ? allJobsUnmapped.filter((job) => job.repoAddress.location === codeLocationFilter)
+        : allJobsUnmapped,
+    [allJobsUnmapped, codeLocationFilter],
+  );
 
   const automationRows = useMemo(() => {
     const sensors = Object.fromEntries(

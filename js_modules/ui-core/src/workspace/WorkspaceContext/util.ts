@@ -1,6 +1,6 @@
 import React, {useContext} from 'react';
 
-import {HIDDEN_REPO_KEYS, WorkspaceContext} from './WorkspaceContext';
+import {CODE_LOCATION_FILTER_KEY, HIDDEN_REPO_KEYS, WorkspaceContext} from './WorkspaceContext';
 import {
   PartialWorkspaceLocationNodeFragment,
   WorkspaceLocationAssetsEntryFragment,
@@ -103,6 +103,41 @@ export const useVisibleRepos = (
   }, [allRepos, hiddenKeysJSON]);
 
   return {visibleRepos, toggleVisible, setVisible, setHidden};
+};
+
+/**
+ * useCodeLocationFilter returns the single code location the whole UI is scoped to, or `null` for
+ * all code locations. The selection lives in localStorage so it survives page switches and reloads.
+ * A stored location that is not part of the loaded workspace resolves to `null`, while the
+ * workspace is still loading the stored value is kept so pages do not briefly fetch unscoped data.
+ */
+export const validateCodeLocationFilter = (parsed: unknown) =>
+  typeof parsed === 'string' && parsed ? parsed : null;
+
+export const useCodeLocationFilter = (
+  locationNames: Set<string>,
+  loading: boolean,
+): {
+  codeLocationFilter: string | null;
+  setCodeLocationFilter: (locationName: string | null) => void;
+} => {
+  const {basePath} = React.useContext(AppContext);
+
+  const [storedFilter, setStoredFilter, clearStoredFilter] = useStateWithStorage<string | null>(
+    basePath + ':' + CODE_LOCATION_FILTER_KEY,
+    validateCodeLocationFilter,
+  );
+
+  const setCodeLocationFilter = React.useCallback(
+    (locationName: string | null) =>
+      locationName ? setStoredFilter(locationName) : clearStoredFilter(),
+    [setStoredFilter, clearStoredFilter],
+  );
+
+  const codeLocationFilter =
+    storedFilter && (loading || locationNames.has(storedFilter)) ? storedFilter : null;
+
+  return {codeLocationFilter, setCodeLocationFilter};
 };
 
 // Public
