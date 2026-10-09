@@ -52,11 +52,6 @@ if TYPE_CHECKING:
 
 RECORD_BATCH_SIZE = 1000
 
-# Number of distinct single-key existence checks to serve against one dynamic partitions definition
-# before loading its full key set instead. Past this point the individual lookups cost more than
-# the one bulk fetch they are avoiding.
-DYNAMIC_PARTITION_LOOKUP_LIMIT = 50
-
 
 class CachingInstanceQueryer(DynamicPartitionsStore):
     """Provides utility functions for querying for asset-materialization related data from the
@@ -84,7 +79,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._asset_partitions_cache: dict[int | None, dict[AssetKey, set[str]]] = defaultdict(dict)
 
         self._dynamic_partitions_cache: dict[str, Sequence[str]] = {}
-        self._dynamic_partition_lookups: dict[str, set[str]] = defaultdict(set)
+        self._dynamic_partition_existence_cache: dict[str, dict[str, bool]] = defaultdict(dict)
         # cursor-filtered partition storage id mappings, so single-partition lookups for
         # recently-updated partitions can be served without loading the asset's full history
         self._storage_ids_after_cursor_by_asset: dict[
@@ -693,32 +688,47 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        # A dynamic partitions definition can hold hundreds of thousands of keys, so answer a
-        # membership check with a single indexed lookup rather than by loading the whole set.
-        # Callers that check many keys are better served by the set, so fall back to loading it
-        # once the individual lookups stop paying for themselves.
-        if partitions_def_name not in self._dynamic_partitions_cache:
-            looked_up_keys = self._dynamic_partition_lookups[partitions_def_name]
-            if (
-                partition_key in looked_up_keys
-                or len(looked_up_keys) < DYNAMIC_PARTITION_LOOKUP_LIMIT
-            ):
-                looked_up_keys.add(partition_key)
-                return self._has_dynamic_partition(
-                    partitions_def_name=partitions_def_name, partition_key=partition_key
-                )
+        # A single key goes to the single-key query, which every storage answers with an indexed
+        # lookup. Routing it through the batched form would make storages that have no bounded
+        # batch query load the whole definition to check one key.
+        if partitions_def_name in self._dynamic_partitions_cache:
+            return partition_key in self._dynamic_partition_key_set(
+                partitions_def_name=partitions_def_name
+            )
 
-        return partition_key in self._dynamic_partition_key_set(
-            partitions_def_name=partitions_def_name
-        )
+        existence = self._dynamic_partition_existence_cache[partitions_def_name]
+        if partition_key not in existence:
+            existence[partition_key] = self.instance.has_dynamic_partition(
+                partitions_def_name, partition_key
+            )
+        return existence[partition_key]
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        # A dynamic partitions definition can hold hundreds of thousands of keys, so when the
+        # storage can bound it, answer membership with a query over just the keys asked about. If
+        # the set is already loaded, or the storage would load it on every batch anyway, load it
+        # once and serve from the cached copy.
+        if (
+            partitions_def_name in self._dynamic_partitions_cache
+            or not self.instance.event_log_storage.has_bounded_dynamic_partition_membership_query
+        ):
+            return self._dynamic_partition_key_set(partitions_def_name=partitions_def_name) & set(
+                partition_keys
+            )
+
+        existence = self._dynamic_partition_existence_cache[partitions_def_name]
+        unknown = [pk for pk in partition_keys if pk not in existence]
+        if unknown:
+            existing = self.instance.get_existing_dynamic_partitions(partitions_def_name, unknown)
+            for pk in unknown:
+                existence[pk] = pk in existing
+        return {pk for pk in partition_keys if existence[pk]}
 
     @cached_method
     def _dynamic_partition_key_set(self, *, partitions_def_name: str) -> AbstractSet[str]:
         return set(self.get_dynamic_partitions(partitions_def_name))
-
-    @cached_method
-    def _has_dynamic_partition(self, *, partitions_def_name: str, partition_key: str) -> bool:
-        return self.instance.has_dynamic_partition(partitions_def_name, partition_key)
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
         return self.instance.get_dynamic_partitions_definition_id(partitions_def_name)
@@ -966,11 +976,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if partitions_def is None:
             return {ap for ap in unvalidated_asset_partitions if ap.partition_key is None}
         else:
+            valid_partition_keys = partitions_def.filter_valid_partition_keys(
+                {
+                    ap.partition_key
+                    for ap in unvalidated_asset_partitions
+                    if ap.partition_key is not None
+                }
+            )
             return {
                 ap
                 for ap in unvalidated_asset_partitions
-                if ap.partition_key is not None
-                and partitions_def.has_partition_key(partition_key=ap.partition_key)
+                if ap.partition_key in valid_partition_keys
             }
 
     def _get_unvalidated_asset_partitions_updated_after_cursor(

@@ -660,6 +660,17 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             partitions_def_name, partition_key
         )
 
+    @property
+    def has_bounded_dynamic_partition_membership_query(self) -> bool:
+        return self._storage.event_log_storage.has_bounded_dynamic_partition_membership_query
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        return self._storage.event_log_storage.get_existing_dynamic_partitions(
+            partitions_def_name, partition_keys
+        )
+
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:

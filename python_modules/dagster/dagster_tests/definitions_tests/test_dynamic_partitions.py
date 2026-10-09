@@ -5,6 +5,7 @@ import dagster as dg
 import pytest
 from dagster import AssetExecutionContext
 from dagster._check import CheckError
+from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.test_utils import get_paginated_partition_keys
 
 
@@ -59,6 +60,130 @@ def test_dynamic_partitions_def_methods():
         instance.delete_dynamic_partition("foo", "a")
         assert partitions.get_partition_keys(dynamic_partitions_store=instance) == ["b"]
         assert instance.has_dynamic_partition("foo", "a") is False
+
+
+def test_get_existing_dynamic_partitions():
+    from dagster._core.instance.types import DynamicPartitionsStoreAfterRequests
+    from dagster._core.storage.event_log.sql_event_log import (
+        DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE,
+    )
+
+    partitions = dg.DynamicPartitionsDefinition(name="foo")
+    # more keys than fit in one `partition IN (...)` query, so the chunking is exercised
+    all_keys = [f"key_{i}" for i in range(DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE + 200)]
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("foo", all_keys)
+
+        assert instance.get_existing_dynamic_partitions("foo", []) == set()
+        assert instance.get_existing_dynamic_partitions("foo", ["key_0", "nope"]) == {"key_0"}
+        assert instance.get_existing_dynamic_partitions("foo", [*all_keys, "nope"]) == set(all_keys)
+        assert instance.get_existing_dynamic_partitions("other_def", ["key_0"]) == set()
+
+        with partition_loading_context(dynamic_partitions_store=instance):
+            assert partitions.filter_valid_partition_keys({"key_0", "key_1", "nope"}) == {
+                "key_0",
+                "key_1",
+            }
+
+        # the after-requests view layers pending adds and deletes over the stored keys
+        store = DynamicPartitionsStoreAfterRequests.from_requests(
+            instance,
+            [
+                partitions.build_add_request(["pending"]),
+                partitions.build_delete_request(["key_0"]),
+            ],
+        )
+        assert store.get_existing_dynamic_partitions(
+            "foo", ["key_0", "key_1", "pending", "nope"]
+        ) == {"key_1", "pending"}
+        assert store.has_dynamic_partition("foo", "pending")
+        assert not store.has_dynamic_partition("foo", "key_0")
+
+
+def test_membership_checks_on_a_storage_without_a_bounded_query(monkeypatch):
+    """A storage that answers the batched form by loading the whole definition must not be asked
+    to do so once per key, and a single-key check must stay on the indexed single-key query.
+    """
+    from dagster._core.instance.types import CachingDynamicPartitionsLoader
+
+    all_keys = [f"key_{i}" for i in range(50)]
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("foo", all_keys)
+
+        full_fetches: list[str] = []
+        single_key_checks: list[str] = []
+        original_get = instance.get_dynamic_partitions
+        original_has = instance.has_dynamic_partition
+
+        def _spy_get(partitions_def_name):
+            full_fetches.append(partitions_def_name)
+            return original_get(partitions_def_name)
+
+        def _spy_has(partitions_def_name, partition_key):
+            single_key_checks.append(partition_key)
+            return original_has(partitions_def_name, partition_key)
+
+        monkeypatch.setattr(instance, "get_dynamic_partitions", _spy_get)
+        monkeypatch.setattr(instance, "has_dynamic_partition", _spy_has)
+        monkeypatch.setattr(
+            type(instance.event_log_storage),
+            "has_bounded_dynamic_partition_membership_query",
+            property(lambda _self: False),
+        )
+
+        loader = CachingDynamicPartitionsLoader(instance)
+
+        # single-key checks use the indexed query, never a full fetch
+        assert loader.has_dynamic_partition("foo", "key_0")
+        assert not loader.has_dynamic_partition("foo", "nope")
+        assert loader.has_dynamic_partition("foo", "key_1")
+        assert full_fetches == []
+        assert single_key_checks == ["key_0", "nope", "key_1"]
+
+        # a batched check falls back to one full fetch, reused for every later batch
+        assert loader.get_existing_dynamic_partitions("foo", ["key_2", "key_3", "nope"]) == {
+            "key_2",
+            "key_3",
+        }
+        assert loader.get_existing_dynamic_partitions("foo", ["key_4", "key_5"]) == {
+            "key_4",
+            "key_5",
+        }
+        assert full_fetches == ["foo"]
+        assert len(single_key_checks) == 3
+
+
+def test_filter_valid_multipartition_keys_stays_bounded(monkeypatch):
+    dynamic_dim = dg.DynamicPartitionsDefinition(name="foo")
+    partitions_def = dg.MultiPartitionsDefinition(
+        {"dyn": dynamic_dim, "static": dg.StaticPartitionsDefinition(["s1", "s2"])}
+    )
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("foo", [f"key_{i}" for i in range(50)])
+
+        full_fetches: list[str] = []
+        original_get = instance.get_dynamic_partitions
+
+        def _spy_get(partitions_def_name):
+            full_fetches.append(partitions_def_name)
+            return original_get(partitions_def_name)
+
+        monkeypatch.setattr(instance, "get_dynamic_partitions", _spy_get)
+
+        with partition_loading_context(dynamic_partitions_store=instance):
+            # nothing to validate must not touch storage at all
+            assert partitions_def.filter_valid_partition_keys(set()) == set()
+            assert full_fetches == []
+
+            # and a handful of candidates validates only the keys they reference
+            valid = partitions_def.filter_valid_partition_keys(
+                {"key_1|s1", "key_2|s2", "nope|s1", "key_3|not_a_static_key", "malformed"}
+            )
+            assert {str(key) for key in valid} == {"key_1|s1", "key_2|s2"}
+            assert full_fetches == []
 
 
 def test_dynamic_partitions_pagination_does_not_load_full_partition_set(monkeypatch):

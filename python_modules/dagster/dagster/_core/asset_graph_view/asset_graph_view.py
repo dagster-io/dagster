@@ -353,11 +353,9 @@ class AssetGraphView(LoadingContext):
         if partitions_def is None:
             return {partition_key for partition_key in partition_keys if partition_key is None}
         else:
-            return {
-                partition_key
-                for partition_key in partition_keys
-                if partition_key is not None and partitions_def.has_partition_key(partition_key)
-            }
+            return partitions_def.filter_valid_partition_keys(
+                {partition_key for partition_key in partition_keys if partition_key is not None}
+            )
 
     @use_partition_loading_context
     def get_asset_subset_from_asset_partitions(

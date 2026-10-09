@@ -80,6 +80,7 @@ from dagster._core.storage.event_log.migration import (
     migrate_asset_key_data,
 )
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
+from dagster._core.storage.event_log.sql_event_log import DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.storage.sqlalchemy_compat import db_select
@@ -5678,6 +5679,21 @@ class TestEventLogStorage:
         assert storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo")
         assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
+
+    def test_get_existing_dynamic_partitions(self, storage: EventLogStorage):
+        # more keys than fit in one `partition IN (...)` query, so the chunking is exercised
+        all_keys = [f"key_{i}" for i in range(DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE + 10)]
+
+        assert storage.get_existing_dynamic_partitions("foo", ["key_0"]) == set()
+
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=all_keys)
+        assert storage.get_existing_dynamic_partitions("foo", []) == set()
+        assert storage.get_existing_dynamic_partitions("foo", ["key_0", "qux"]) == {"key_0"}
+        assert storage.get_existing_dynamic_partitions("foo", [*all_keys, "qux"]) == set(all_keys)
+        assert storage.get_existing_dynamic_partitions("bar", ["key_0"]) == set()
+
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="key_0")
+        assert storage.get_existing_dynamic_partitions("foo", ["key_0", "key_1"]) == {"key_1"}
 
     def test_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:

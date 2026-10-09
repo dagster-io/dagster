@@ -124,6 +124,10 @@ if TYPE_CHECKING:
 MIN_ASSET_ROWS = 25
 DEFAULT_MAX_LIMIT_EVENT_RECORDS = 10000
 
+# Keys per `partition IN (...)` membership query, so the parameter list stays bounded no matter
+# how many keys a caller validates at once.
+DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE = 1000
+
 
 def get_max_event_records_limit() -> int:
     max_value = os.getenv("MAX_LIMIT_GET_EVENT_RECORDS")
@@ -2299,6 +2303,28 @@ class SqlEventLogStorage(EventLogStorage):
             results = result.fetchall()
 
         return len(results) > 0
+
+    @property
+    def has_bounded_dynamic_partition_membership_query(self) -> bool:
+        return True
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        self._check_partitions_table()
+        distinct_keys = list(set(partition_keys))
+        existing: set[str] = set()
+        for i in range(0, len(distinct_keys), DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE):
+            chunk = distinct_keys[i : i + DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE]
+            query = db_select([DynamicPartitionsTable.c.partition]).where(
+                db.and_(
+                    DynamicPartitionsTable.c.partitions_def_name == partitions_def_name,
+                    DynamicPartitionsTable.c.partition.in_(chunk),
+                )
+            )
+            with self.index_connection() as conn, db_result(conn, query) as result:
+                existing.update(cast("str", row[0]) for row in result.fetchall())
+        return existing
 
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
