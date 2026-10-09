@@ -1071,3 +1071,59 @@ def test_permissive_extra_field_via_dot():
     # confirm it's in dict and convert_to_config_dictionary
     expected = {"foo": 10, "bar": "hello", "baz": [1, 2, 3]}
     assert conf.model_dump() == expected
+
+
+def test_config_rejects_unknown_kwargs() -> None:
+    class MyConfig(dg.Config):
+        person_name: str
+
+    with pytest.raises(pydantic.ValidationError) as exc_info:
+        MyConfig(person_name="Alice", nonexistent_config_value=1)
+
+    assert exc_info.value.errors()[0]["type"] == "extra_forbidden"
+
+
+def test_config_alias_with_populate_by_name() -> None:
+    class MyConfig(dg.Config):
+        model_config = pydantic.ConfigDict(populate_by_name=True)
+        python_name: str = pydantic.Field(alias="configName")
+
+    assert MyConfig(configName="alias").python_name == "alias"
+    assert MyConfig(python_name="name").python_name == "name"
+
+
+def test_configurable_resource_alias_with_populate_by_name() -> None:
+    class MyResource(dg.ConfigurableResource):
+        model_config = pydantic.ConfigDict(populate_by_name=True)
+        python_name: str | None = pydantic.Field(default=None, alias="configName")
+
+    @dg.op
+    def read_resource(resource: MyResource) -> str | None:
+        return resource.python_name
+
+    @dg.job
+    def resource_job() -> None:
+        read_resource()
+
+    result = resource_job.execute_in_process(resources={"resource": MyResource(python_name="name")})
+
+    assert result.output_for_node("read_resource") == "name"
+
+
+def test_config_alias_without_populate_by_name() -> None:
+    class MyConfig(dg.Config):
+        python_name: str = pydantic.Field(alias="configName")
+
+    assert MyConfig(configName="alias").python_name == "alias"
+    with pytest.raises(pydantic.ValidationError):
+        MyConfig(python_name="name")
+
+
+def test_configurable_resource_rejects_unknown_kwargs() -> None:
+    class MyResource(dg.ConfigurableResource):
+        url: str
+
+    with pytest.raises(pydantic.ValidationError) as exc_info:
+        MyResource(url="https://example.com", not_a_field=1)
+
+    assert exc_info.value.errors()[0]["type"] == "extra_forbidden"
