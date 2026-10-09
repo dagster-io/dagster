@@ -7,7 +7,7 @@ import {
 } from 'antlr4ng';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
-import {parseInput} from './SelectionInputParser';
+import {getLeadingWhitespaceLength, parseInput} from './SelectionInputParser';
 import {Utf16CharStream} from './Utf16CharStream';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AttributeNameContext} from './generated/SelectionAutoCompleteParser';
@@ -34,8 +34,13 @@ export function createSelectionLinter({
       return [];
     }
 
+    // Lex from after the leading whitespace, keeping offsets relative to the whole text. The error
+    // listener reports columns, so the lexer's column starts there too.
+    const start = getLeadingWhitespaceLength(text);
     const inputStream = new Utf16CharStream(text);
+    inputStream.seek(start);
     const lexer = new LexerKlass(inputStream);
+    lexer.column = start;
 
     const tokens = new CommonTokenStream(lexer);
     tokens.fill(); // Ensure all tokens are loaded before parsing

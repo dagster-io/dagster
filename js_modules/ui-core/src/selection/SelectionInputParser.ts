@@ -24,6 +24,13 @@ interface ParseTreeResult {
   startOffset: number;
 }
 
+// The grammar's `WS` characters, not JavaScript's wider `\s`.
+const LEADING_WHITESPACE = /^[ \t\r\n]*/;
+
+/** Length of the input's leading whitespace, which the autocomplete grammar can't start with. */
+export const getLeadingWhitespaceLength = (input: string) =>
+  LEADING_WHITESPACE.exec(input)?.[0].length ?? 0;
+
 /**
  * Parses the input and constructs an array of parse trees along with any syntax errors.
  * @param input - The input string to parse.
@@ -33,7 +40,7 @@ export const parseInput = memoize((input: string): ParseResult => {
   const parseTrees: ParseTreeResult[] = [];
   const errors: SyntaxError[] = [];
 
-  let currentPosition = 0;
+  let currentPosition = getLeadingWhitespaceLength(input);
   const inputLength = input.length;
 
   while (currentPosition < inputLength) {

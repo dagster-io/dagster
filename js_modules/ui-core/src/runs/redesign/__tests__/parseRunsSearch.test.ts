@@ -13,6 +13,7 @@ describe('parseRunsSearch', () => {
   it.each([
     {text: '', tokens: []},
     {text: '   ', tokens: []},
+    {text: ' \tjob:my_job', tokens: ['job:my_job']},
     {text: 'id:abc123', tokens: ['id:abc123']},
     {
       text: 'id:"8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f"',
@@ -129,6 +130,14 @@ describe('parseRunsSearch', () => {
     expect(getFirstError('job:a and foo:bar and id:x')).toEqual({
       message: 'Unsupported attribute: "foo"',
       from: 10,
+      to: 17,
+    });
+  });
+
+  it('points errors past leading whitespace', () => {
+    expect(getFirstError('  job:a and job:b')).toEqual({
+      message: 'Only one job per search',
+      from: 12,
       to: 17,
     });
   });

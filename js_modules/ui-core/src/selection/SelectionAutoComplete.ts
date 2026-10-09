@@ -14,12 +14,16 @@ export function createSelectionAutoComplete({
 }: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
-
-    let start = 0;
+    const treeAtCursor = parseTrees.find(
+      ({startOffset, line: treeLine}) =>
+        actualCursorIndex >= startOffset && actualCursorIndex - startOffset <= treeLine.length,
+    );
+    const isInLeadingWhitespace = actualCursorIndex < (parseTrees[0]?.startOffset ?? 0);
+    const start = treeAtCursor?.startOffset ?? 0;
 
     let visitorWithAutoComplete;
-    if (!parseTrees.length) {
-      // Special case empty string to add unmatched value results
+    if (!parseTrees.length || isInLeadingWhitespace) {
+      // An empty input, or the cursor in its leading whitespace, gets unmatched value results
       visitorWithAutoComplete = new SelectionAutoCompleteVisitor({
         line,
         cursorIndex: actualCursorIndex,
@@ -33,29 +37,20 @@ export function createSelectionAutoComplete({
         supportsNot,
       });
       visitorWithAutoComplete.addUnmatchedValueResults('');
-    } else {
-      for (const {tree, line} of parseTrees) {
-        const cursorIndex = actualCursorIndex - start;
-
-        if (cursorIndex <= line.length) {
-          const visitor = new SelectionAutoCompleteVisitor({
-            line,
-            cursorIndex,
-            getAttributeResultsMatchingQuery,
-            getAttributeValueResultsMatchingQuery,
-            getAllResults,
-            getFunctionResultsMatchingQuery,
-            getSubstringResultMatchingQuery,
-            createOperatorSuggestion,
-            supportsTraversal,
-            supportsNot,
-          });
-          tree.accept(visitor);
-          visitorWithAutoComplete = visitor;
-          break;
-        }
-        start += line.length;
-      }
+    } else if (treeAtCursor) {
+      visitorWithAutoComplete = new SelectionAutoCompleteVisitor({
+        line: treeAtCursor.line,
+        cursorIndex: actualCursorIndex - start,
+        getAttributeResultsMatchingQuery,
+        getAttributeValueResultsMatchingQuery,
+        getAllResults,
+        getFunctionResultsMatchingQuery,
+        getSubstringResultMatchingQuery,
+        createOperatorSuggestion,
+        supportsTraversal,
+        supportsNot,
+      });
+      treeAtCursor.tree.accept(visitorWithAutoComplete);
     }
     if (visitorWithAutoComplete) {
       return {

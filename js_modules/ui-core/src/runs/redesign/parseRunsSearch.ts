@@ -11,6 +11,7 @@ import {
 import {RunStatus} from '../../graphql/types';
 import {AntlrInputErrorListener} from '../../selection/AntlrInputErrorListener';
 import {SyntaxError} from '../../selection/CustomErrorListener';
+import {getLeadingWhitespaceLength} from '../../selection/SelectionInputParser';
 import {getValueNodeValue} from '../../selection/SelectionInputUtil';
 import {Utf16CharStream} from '../../selection/Utf16CharStream';
 import {SelectionAutoCompleteLexer} from '../../selection/generated/SelectionAutoCompleteLexer';
@@ -524,7 +525,10 @@ export const parseRunsSearch = (text: string): RunsSearchParseResult => {
 
   let tree: StartContext;
   try {
-    const lexer = new SelectionAutoCompleteLexer(new Utf16CharStream(text));
+    // The grammar can't start with whitespace. Token offsets stay relative to the whole text.
+    const inputStream = new Utf16CharStream(text);
+    inputStream.seek(getLeadingWhitespaceLength(text));
+    const lexer = new SelectionAutoCompleteLexer(inputStream);
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 

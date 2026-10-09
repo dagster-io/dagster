@@ -221,12 +221,10 @@ export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor, errors: Syn
 
   const cursorIndex = cm.getCursor().ch;
   const {parseTrees} = parseInput(value);
-  let start = 0;
 
-  for (const {tree, line} of parseTrees) {
-    const visitor = new SyntaxHighlightingVisitor(cm, start, cursorIndex - start);
+  for (const {tree, startOffset} of parseTrees) {
+    const visitor = new SyntaxHighlightingVisitor(cm, startOffset, cursorIndex - startOffset);
     visitor.visit(tree);
-    start += line.length;
   }
   cm.markText(cm.posFromIndex(0), cm.posFromIndex(value.length), {className: 'selection'});
 

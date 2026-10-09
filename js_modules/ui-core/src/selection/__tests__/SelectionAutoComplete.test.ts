@@ -1417,4 +1417,36 @@ describe('createAssetSelectionHint', () => {
       to: 0, // cursor location
     });
   });
+
+  const hintWithOwners = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {key: ['asset1'], owner: ['ben@x.com']},
+      primaryAttributeKey: 'key',
+      attributeToIcon: {key: 'magnify_glass', owner: 'magnify_glass'},
+    }),
+  );
+
+  it.each([
+    {input: '  own|', text: 'owner:', from: 2, to: 5},
+    {input: ' owner:b|', text: '"ben@x.com"', from: 7, to: 8},
+    {input: '\t\r\nown|', text: 'owner:', from: 3, to: 6},
+  ])('suggests past leading whitespace in $input', ({input, text, from, to}) => {
+    expect(testAutocomplete(input, hintWithOwners)).toEqual({
+      list: expect.arrayContaining([expect.objectContaining({text})]),
+      from,
+      to,
+    });
+  });
+
+  it.each(['| own', ' | own'])(
+    'suggests as for an empty input when the cursor is in leading whitespace: %s',
+    (input) => {
+      const cursorIndex = input.indexOf('|');
+      expect(testAutocomplete(input, hintWithOwners)).toEqual({
+        list: testAutocomplete('|', hintWithOwners).list,
+        from: cursorIndex,
+        to: cursorIndex,
+      });
+    },
+  );
 });

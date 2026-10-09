@@ -34,6 +34,22 @@ describe('upgradeSyntax', () => {
       query: 'key:a  , bar , baz',
       expected: 'key:a or key:"*bar*" or key:"*baz*"',
     },
+    {
+      query: ' foo',
+      expected: 'key:"*foo*"',
+    },
+    {
+      query: '  key:a',
+      expected: 'key:a',
+    },
+    {
+      query: '  "foo"',
+      expected: 'key:"*foo*"',
+    },
+    {
+      query: '   ',
+      expected: '',
+    },
   ])('keeps the text intact when upgrading $query', ({query, expected}) => {
     expect(upgradeSyntax(query, 'key')).toBe(expected);
   });
