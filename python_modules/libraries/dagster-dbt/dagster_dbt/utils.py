@@ -136,6 +136,12 @@ def _select_unique_ids_from_manifest(
             # allow recursive access e.g. foo.bar.baz
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
+        @property
+        def depends_on_nodes(self):
+            # dbt exposes this as a property derived from `depends_on.nodes`; it is not a key in
+            # manifest.json, and dbt reads it for `cautious` and `buildable` indirect selection.
+            return list((self.get("depends_on") or {}).get("nodes") or [])
+
     unit_tests = {}
     if DBT_PYTHON_VERSION is not None and DBT_PYTHON_VERSION >= version.parse("1.8.0"):
         from dbt.contracts.graph.nodes import UnitTestDefinition
