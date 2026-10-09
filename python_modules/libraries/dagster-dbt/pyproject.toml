@@ -11,16 +11,18 @@ license = "Apache-2.0"
 requires-python = ">=3.10,<3.14"
 dependencies = [
     "dagster==1!0+dev",
-    # Follow the version support constraints for dbt Core:
-    # https://docs.getdbt.com/docs/dbt-versions/core
-    "dbt-core>=1.7,<1.12",
     "gitpython",
     "Jinja2",
     "networkx",
     "orjson",
     "requests",
     "rich",
-    "sqlglot[rs]<28.1.0",  # FW-731
+    # FW-731 pinned <28.1.0 after that release's optimizer change crashed
+    # column lineage for CTE/join queries. Fixed by serializing the AST
+    # before calling lineage() (see dbt_cli_event.py) -- no longer needs
+    # an upper bound. sqlglot 30.0.0+ also adds lineage CTE memoization,
+    # a meaningful speedup for wide models with many columns.
+    "sqlglot[rs]",
     "typer>=0.9.0",
     "packaging",
 ]
@@ -35,12 +37,21 @@ dagster-dbt = "dagster_dbt.cli.app:app"
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster_dbt = "dagster_dbt"
 
+[project.optional-dependencies]
+# Kept out of the required dependencies because installing dbt Core puts a `dbt`
+# console script in the virtualenv, which takes precedence on PATH over a dbt
+# Fusion binary installed system-wide. Needed as a library, not as a runtime: it
+# evaluates dbt selection strings against a manifest when there is no local
+# project to shell out to — most notably the dbt Cloud integration.
+# Follow the version support constraints for dbt Core:
+# https://docs.getdbt.com/docs/dbt-versions/core
+dbt-core = ["dbt-core>=1.7,<1.13"]
+
 [dependency-groups]
-# Base test deps installed for every test env. The pre-migration tox.ini
-# had a `!dbtfusion: -e .[test]` / `dbtfusion: -e .[test-bare]` split so
-# fusion envs skipped the duckdb deps; that subset behavior is dropped
-# here — fusion envs now install the duckdb deps too (harmless extra).
-test = [
+# Test deps that pull in no dbt adapter, and so no dbt-core. The dbtfusion
+# envs use this group on its own so the fusion path is exercised the way the
+# issue reporters hit it: dbt Fusion on PATH, no dbt-core in the environment.
+test-bare = [
     "dagster[test]",
     "dagster-pipes",
     "dagster-shared",
@@ -52,6 +63,11 @@ test = [
     "dagster-duckdb-pandas",
     "pytest-rerunfailures",
     "pytest-order",
+    "msgpack",  # otherwise only present transitively via dbt-core
+]
+# Base test deps for every non-fusion env.
+test = [
+    {include-group = "test-bare"},
     "dbt-duckdb<1.9.2",  # concurrency issues
     "duckdb<1.4.0",  # compat issues
 ]
@@ -94,6 +110,9 @@ test-dbt110 = [
 test-dbt111 = [
     "dbt-core==1.11.*",
 ]
+test-dbt112 = [
+    "dbt-core==1.12.*",
+]
 
 [tool.uv]
 exclude-newer = "48h"
@@ -104,6 +123,7 @@ conflicts = [
         {group = "test-dbt19"},
         {group = "test-dbt110"},
         {group = "test-dbt111"},
+        {group = "test-dbt112"},
     ],
 ]
 # Explicitly enumerate the Python environments uv should resolve for.

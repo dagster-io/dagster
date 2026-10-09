@@ -1,10 +1,12 @@
 import os
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional
+from collections import defaultdict
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
+from typing import TYPE_CHECKING, AbstractSet, Annotated, NamedTuple, Optional  # noqa: UP035
 
 from dagster_shared.record import ImportFrom, record
 
+import dagster._check as check
 from dagster._annotations import public
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
@@ -13,6 +15,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness import FreshnessStateRecord
 from dagster._core.definitions.partitions.definition import PartitionsDefinition
 from dagster._core.event_api import (
+    AssetEventType,
     AssetRecordsFilter,
     EventHandlerFn,
     EventLogCursor,
@@ -45,6 +48,7 @@ from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._core.types.pagination import PaginatedResults
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
+from dagster._utils.storage import get_materialization_chunk_size
 from dagster._utils.tags import get_boolean_tag_value
 from dagster._utils.warnings import deprecation_warning
 
@@ -182,6 +186,17 @@ class AssetCheckSummaryRecord(
 
 
 @record
+class AssetEventSummaryRecord:
+    """An asset event projected onto its indexed columns, without the serialized payload."""
+
+    storage_id: int
+    run_id: str | None
+    asset_key: AssetKey
+    partition: str | None
+    timestamp: float
+
+
+@record
 class PlannedMaterializationInfo:
     """Internal representation of an planned materialization event, containing storage_id / run_id.
 
@@ -258,6 +273,143 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             of_type (Optional[DagsterEventType]): the dagster event type to filter the logs.
             limit (Optional[int]): Max number of records to return.
         """
+
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Mapping[AssetKey, Set[str | None]]:
+        """Get the distinct asset partitions targeted by a run's asset events.
+
+        Maps each asset key to the partitions it was recorded with, using None for events on
+        unpartitioned assets. Prefer this over scanning `get_records_for_run` when only the
+        keys and partitions are needed: storages can answer it without deserializing event
+        records, so the cost is bounded by the number of distinct asset partitions rather
+        than by the number of events.
+
+        Args:
+            run_id (str): The id of the run for which to fetch asset partitions.
+            of_type (Optional[DagsterEventType]): the dagster event type to filter the events.
+        """
+        partitions_by_asset_key: dict[AssetKey, set[str | None]] = defaultdict(set)
+        for event_record in self._page_records_for_run(run_id, of_type):
+            if event_record.asset_key:
+                partitions_by_asset_key[event_record.asset_key].add(event_record.partition_key)
+        return partitions_by_asset_key
+
+    def get_asset_keys_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Set[AssetKey]:
+        """Get the distinct asset keys targeted by a run's asset events."""
+        return self.get_asset_partitions_for_run(run_id, of_type).keys()
+
+    def get_asset_event_summary_records(
+        self,
+        event_type: AssetEventType,
+        asset_key: AssetKey | None = None,
+        run_id: str | None = None,
+        storage_ids: Sequence[int] | None = None,
+        after_storage_id: int | None = None,
+        before_storage_id: int | None = None,
+        limit: int | None = None,
+        ascending: bool = False,
+    ) -> Sequence[AssetEventSummaryRecord]:
+        """Get asset events projected onto their indexed columns, without their payloads.
+
+        Like `get_asset_partitions_for_run`, but keeps each event as its own row and carries
+        the storage id, run id and timestamp along with the key and partition. Prefer this
+        over the record APIs when the payload is not needed: storages can answer it without
+        deserializing anything.
+
+        Args:
+            event_type (AssetEventType): the asset event type to fetch.
+            asset_key (Optional[AssetKey]): only return events for this asset.
+            run_id (Optional[str]): only return events emitted by this run.
+            storage_ids (Optional[Sequence[int]]): only return events with these storage ids.
+            after_storage_id (Optional[int]): only return events with a greater storage id.
+            before_storage_id (Optional[int]): only return events with a lesser storage id.
+            limit (Optional[int]): Max number of rows to return.
+            ascending (bool): whether to order by ascending storage id.
+        """
+        if run_id is not None:
+            records = self._page_records_for_run(run_id, event_type)
+        else:
+            records = self._page_event_records(
+                EventRecordsFilter(
+                    event_type=event_type,
+                    asset_key=asset_key,
+                    storage_ids=storage_ids,
+                    after_cursor=after_storage_id,
+                    before_cursor=before_storage_id,
+                ),
+                limit=limit,
+                ascending=ascending,
+            )
+
+        storage_id_set = set(storage_ids) if storage_ids is not None else None
+        summary_records = [
+            AssetEventSummaryRecord(
+                storage_id=record.storage_id,
+                run_id=record.run_id,
+                asset_key=check.not_none(record.asset_key),
+                partition=record.partition_key,
+                timestamp=record.timestamp,
+            )
+            for record in records
+            if record.asset_key
+            and (asset_key is None or record.asset_key == asset_key)
+            and (storage_id_set is None or record.storage_id in storage_id_set)
+            and (after_storage_id is None or record.storage_id > after_storage_id)
+            and (before_storage_id is None or record.storage_id < before_storage_id)
+        ]
+        summary_records.sort(key=lambda summary: summary.storage_id, reverse=not ascending)
+        return summary_records[:limit] if limit else summary_records
+
+    def _page_event_records(
+        self,
+        event_records_filter: EventRecordsFilter,
+        limit: int | None,
+        ascending: bool,
+    ) -> Iterator[EventLogRecord]:
+        """Yield records a page at a time, advancing the cursor between pages.
+
+        One unbounded `get_event_records` call is not enough: a storage that caps the page
+        size server-side (Dagster+ caps at `MAX_QUERY_LIMIT`) would silently return a prefix.
+        """
+        page_size = get_materialization_chunk_size()
+        yielded = 0
+        while limit is None or yielded < limit:
+            page_limit = page_size if limit is None else min(page_size, limit - yielded)
+            records = self.get_event_records(
+                event_records_filter, limit=page_limit, ascending=ascending
+            )
+            yield from records
+            yielded += len(records)
+            if len(records) < page_limit:
+                return
+            last_storage_id = records[-1].storage_id
+            if ascending:
+                event_records_filter = event_records_filter._replace(after_cursor=last_storage_id)
+            else:
+                event_records_filter = event_records_filter._replace(before_cursor=last_storage_id)
+
+    def _page_records_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Iterator[EventLogRecord]:
+        """Yield a run's records a page at a time, so callers that fold them never hold them all."""
+        cursor = None
+        while True:
+            connection = self.get_records_for_run(run_id, cursor=cursor, of_type=of_type)
+            yield from connection.records
+            # storages that cap the page size signal the rest with has_more; a cursor that
+            # does not advance would otherwise loop forever
+            if not connection.has_more or connection.cursor == cursor:
+                return
+            cursor = connection.cursor
 
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         """Get a summary of events that have ocurred in a run."""
@@ -375,6 +527,20 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[AssetRecord]:
         pass
 
+    def get_latest_materialization_storage_ids(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, int | None]:
+        """Storage id of each asset's latest materialization.
+
+        Unknown asset keys are absent from the mapping; a key that exists but has never
+        materialized maps to None. Storages that can read the id without loading the
+        materialization event should override this.
+        """
+        return {
+            record.asset_entry.asset_key: record.asset_entry.last_materialization_storage_id
+            for record in self.get_asset_records(list(asset_keys))
+        }
+
     @abstractmethod
     def get_freshness_state_records(
         self, keys: Sequence[AssetKey]
@@ -488,7 +654,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
+        """Returns the latest storage id per partition for the asset. If ``after_cursor`` is set,
+        partitions whose latest event id is not greater than it are omitted.
+        """
         pass
 
     @abstractmethod
@@ -524,6 +694,25 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         """Check if a dynamic partition exists."""
         raise NotImplementedError()
+
+    @property
+    def has_bounded_dynamic_partition_membership_query(self) -> bool:
+        """Whether ``get_existing_dynamic_partitions`` is answered by a query bounded by its input.
+
+        False means the default implementation below loads the whole definition, so callers that
+        can cache should load it once rather than calling per batch.
+        """
+        return False
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        """Return the subset of ``partition_keys`` that exist in the partitions definition.
+
+        Storages that can answer this with a bounded query should override, and set
+        ``has_bounded_dynamic_partition_membership_query``; the default loads the full key set.
+        """
+        return set(self.get_dynamic_partitions(partitions_def_name)) & set(partition_keys)
 
     @abstractmethod
     def add_dynamic_partitions(

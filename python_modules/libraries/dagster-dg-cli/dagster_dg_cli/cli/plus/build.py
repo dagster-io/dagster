@@ -33,8 +33,8 @@ def get_dockerfile_path(
 
 def _agent_platform_from_agents(agents: list) -> DgPlusAgentPlatform:
     # Resolve deterministically by priority (K8S first), not by agent order: a mixed v1+v2 org
-    # mid-migration runs both a K8s and an ECS agent, and K8S is the signal that drives the
-    # Serverless v2 PEX->Docker redirect, so it must win regardless of the order agents appear in.
+    # mid-migration runs both a K8s and an ECS agent, so the answer must not depend on the order
+    # they appear in.
     running_types: list[str] = []
     for agent in agents:
         if agent["status"] != "RUNNING":
@@ -95,37 +95,6 @@ def _gql_client_from_env_or_config(
         return None
     return DagsterPlusGraphQLClient(
         url=url, api_token=api_token, organization=organization, deployment=deployment
-    )
-
-
-_SERVERLESS_V2_LAUNCHER = "ServerlessK8sUserCodeLauncher"
-
-
-def _has_running_serverless_v2_agent(agents: list) -> bool:
-    needle = _SERVERLESS_V2_LAUNCHER.lower()
-    for agent in agents:
-        if agent["status"] != "RUNNING":
-            continue
-        for metadata in agent["metadata"]:
-            if metadata["key"] == "type" and needle in metadata["value"].lower():
-                return True
-    return False
-
-
-def get_serverless_agent_platform(cli_config: DagsterPlusCliConfig | None) -> DgPlusAgentPlatform:
-    """Resolve whether a Serverless deployment runs on v2 (Kubernetes), for the PEX->Docker
-    redirect. Returns ``K8S`` only when a running ``ServerlessK8sUserCodeLauncher`` is present —
-    NOT for a generic K8s agent (e.g. Hybrid-on-K8s), which would otherwise false-positive the
-    redirect. Auth is sourced from the dg config or the ``DAGSTER_CLOUD_*`` env vars CI uses.
-    """
-    client = _gql_client_from_env_or_config(cli_config)
-    if client is None:
-        return DgPlusAgentPlatform.UNKNOWN
-    result = client.execute_arbitrary(DEPLOYMENT_INFO_QUERY)
-    return (
-        DgPlusAgentPlatform.K8S
-        if _has_running_serverless_v2_agent(result.get("agents", []))
-        else DgPlusAgentPlatform.UNKNOWN
     )
 
 

@@ -24,6 +24,11 @@ Homepage = "https://github.com/dagster-io/dagster/tree/master/python_modules/lib
 [project.scripts]
 dagster-azure = "dagster_azure.cli.cli:main"
 
+[project.optional-dependencies]
+container_apps = [
+    "azure-mgmt-appcontainers<5.0.0,>=3.0.0",
+]
+
 [project.entry-points."dagster_dg_cli.registry_modules"]
 dagster_azure = "dagster_azure.components"
 
@@ -35,6 +40,7 @@ test = [
     "dagster-shared",
     "dagster-spark",
     "dagster-pyspark",
+    "azure-mgmt-appcontainers<5.0.0,>=3.0.0",
 ]
 
 [tool.uv]

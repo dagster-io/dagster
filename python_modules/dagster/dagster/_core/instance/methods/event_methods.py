@@ -4,7 +4,7 @@ import logging
 import logging.config
 import sys
 import warnings
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
@@ -13,7 +13,8 @@ from dagster._time import get_current_timestamp
 from dagster._utils.warnings import beta_warning
 
 if TYPE_CHECKING:
-    from dagster._core.event_api import EventHandlerFn
+    from dagster._core.definitions.events import AssetKey
+    from dagster._core.event_api import AssetEventType, EventHandlerFn
     from dagster._core.events import (
         DagsterEvent,
         DagsterEventBatchMetadata,
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from dagster._core.instance.types import _EventListenerLogHandler
     from dagster._core.storage.dagster_run import DagsterRun
     from dagster._core.storage.event_log.base import (
+        AssetEventSummaryRecord,
         EventLogConnection,
         EventLogRecord,
         EventRecordsFilter,
@@ -106,6 +108,45 @@ class EventMethods:
         """Get event records for run."""
         return self._event_storage_impl.get_records_for_run(
             run_id, cursor, of_type, limit, ascending
+        )
+
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+    ) -> Mapping["AssetKey", Set[str | None]]:
+        """Get the distinct asset partitions targeted by a run's asset events."""
+        return self._event_storage_impl.get_asset_partitions_for_run(run_id, of_type)
+
+    def get_asset_keys_for_run(
+        self,
+        run_id: str,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+    ) -> Set["AssetKey"]:
+        """Get the distinct asset keys targeted by a run's asset events."""
+        return self._event_storage_impl.get_asset_keys_for_run(run_id, of_type)
+
+    def get_asset_event_summary_records(
+        self,
+        event_type: "AssetEventType",
+        asset_key: Optional["AssetKey"] = None,
+        run_id: str | None = None,
+        storage_ids: Sequence[int] | None = None,
+        after_storage_id: int | None = None,
+        before_storage_id: int | None = None,
+        limit: int | None = None,
+        ascending: bool = False,
+    ) -> Sequence["AssetEventSummaryRecord"]:
+        """Get asset events projected onto their indexed columns, without their payloads."""
+        return self._event_storage_impl.get_asset_event_summary_records(
+            event_type=event_type,
+            asset_key=asset_key,
+            run_id=run_id,
+            storage_ids=storage_ids,
+            after_storage_id=after_storage_id,
+            before_storage_id=before_storage_id,
+            limit=limit,
+            ascending=ascending,
         )
 
     def watch_event_logs(self, run_id: str, cursor: str | None, cb: "EventHandlerFn") -> None:

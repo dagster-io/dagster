@@ -3,24 +3,16 @@ import os
 from unittest import mock
 
 import pytest
-
-# We ignore type errors in several places because we are importing in such a way as to be
-# compatible with both versions 1.x and 2.x of airflow. This means importing from places that are
-# not the blessed API of the latest version, which raises pyright "not exported" errors.
-from airflow import __version__ as airflow_version
-
-if airflow_version >= "2.0.0":
-    from airflow.providers.apache.spark.operators.spark_submit import (  # type: ignore
-        SparkSubmitOperator,
-    )
-else:
-    from airflow.contrib.operators.spark_submit_operator import (  # type: ignore (airflow 1 compat)
-        SparkSubmitOperator,
-    )
-
 from airflow.models.dag import DAG
-from airflow.operators.bash_operator import BashOperator  # type: ignore (airflow 1 compat)
-from airflow.operators.dummy_operator import DummyOperator  # type: ignore (airflow 1 compat)
+from airflow.operators.bash_operator import BashOperator  # type: ignore
+from airflow.operators.dummy_operator import DummyOperator  # type: ignore
+
+# We ignore type errors in several places because these operators are imported from
+# deprecated module paths that are not the blessed API of the latest airflow 2.x,
+# which raises pyright "not exported" errors.
+from airflow.providers.apache.spark.operators.spark_submit import (  # type: ignore
+    SparkSubmitOperator,
+)
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR
@@ -39,18 +31,11 @@ default_args = {
 # underscores), so Dagster will strip invalid characters and replace with '_'
 @pytest.mark.requires_no_db
 def test_normalize_name():
-    if airflow_version >= "2.0.0":
-        dag = DAG(
-            dag_id="dag-with.dot-dash",
-            default_args=default_args,
-            schedule=None,
-        )
-    else:
-        dag = DAG(
-            dag_id="dag-with.dot-dash",
-            default_args=default_args,
-            schedule_interval=None,
-        )
+    dag = DAG(
+        dag_id="dag-with.dot-dash",
+        default_args=default_args,
+        schedule=None,
+    )
     _dummy_operator = DummyOperator(
         task_id="task-with.dot-dash",
         dag=dag,
@@ -72,18 +57,11 @@ def test_normalize_name():
 @pytest.mark.requires_no_db
 def test_long_name():
     dag_name = "dag-with.dot-dash-lo00ong" * 10
-    if airflow_version >= "2.0.0":
-        dag = DAG(
-            dag_id=dag_name,
-            default_args=default_args,
-            schedule=None,
-        )
-    else:
-        dag = DAG(
-            dag_id=dag_name,
-            default_args=default_args,
-            schedule_interval=None,
-        )
+    dag = DAG(
+        dag_id=dag_name,
+        default_args=default_args,
+        schedule=None,
+    )
     long_name = "task-with.dot-dash2-loong" * 10  # 250 characters, Airflow's max allowed length
     _dummy_operator = DummyOperator(
         task_id=long_name,
@@ -111,18 +89,11 @@ def test_long_name():
 
 @pytest.mark.requires_no_db
 def test_one_task_dag():
-    if airflow_version >= "2.0.0":
-        dag = DAG(
-            dag_id="dag",
-            default_args=default_args,
-            schedule=None,
-        )
-    else:
-        dag = DAG(
-            dag_id="dag",
-            default_args=default_args,
-            schedule_interval=None,
-        )
+    dag = DAG(
+        dag_id="dag",
+        default_args=default_args,
+        schedule=None,
+    )
     _dummy_operator = DummyOperator(
         task_id="dummy_operator",
         dag=dag,
@@ -142,18 +113,11 @@ def normalize_file_content(s):
 
 @pytest.mark.requires_no_db
 def test_template_task_dag(tmpdir):
-    if airflow_version >= "2.0.0":
-        dag = DAG(
-            dag_id="dag",
-            default_args=default_args,
-            schedule=None,
-        )
-    else:
-        dag = DAG(
-            dag_id="dag",
-            default_args=default_args,
-            schedule_interval=None,
-        )
+    dag = DAG(
+        dag_id="dag",
+        default_args=default_args,
+        schedule=None,
+    )
 
     print_hello_out = tmpdir / "print_hello.out"
     t1 = BashOperator(
@@ -242,18 +206,11 @@ def test_spark_dag(mock_subproc_popen):
     # Hack to get around having a Connection
     os.environ["AIRFLOW_CONN_SPARK"] = "something"
 
-    if airflow_version >= "2.0.0":
-        dag = DAG(
-            dag_id="spark_dag",
-            default_args=default_args,
-            schedule=None,
-        )
-    else:
-        dag = DAG(
-            dag_id="spark_dag",
-            default_args=default_args,
-            schedule_interval=None,
-        )
+    dag = DAG(
+        dag_id="spark_dag",
+        default_args=default_args,
+        schedule=None,
+    )
     SparkSubmitOperator(
         task_id="run_spark",
         application="some_path.py",
@@ -266,11 +223,6 @@ def test_spark_dag(mock_subproc_popen):
     )
     job_def.execute_in_process()
 
-    if airflow_version >= "2.0.0":
-        assert mock_subproc_popen.call_args_list[0][0] == (
-            ["spark-submit", "--master", "", "--name", "arrow-spark", "some_path.py"],
-        )
-    else:
-        assert mock_subproc_popen.call_args_list[0][0] == (
-            ["spark-submit", "--master", "", "--name", "airflow-spark", "some_path.py"],
-        )
+    assert mock_subproc_popen.call_args_list[0][0] == (
+        ["spark-submit", "--master", "", "--name", "arrow-spark", "some_path.py"],
+    )

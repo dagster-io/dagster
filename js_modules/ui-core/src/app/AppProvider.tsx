@@ -4,7 +4,6 @@ import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider, Toaster} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
-import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {v4 as uuidv4} from 'uuid';
 
@@ -18,6 +17,7 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {AnalyticsContext, dummyAnalytics} from './analytics';
+import {LayoutModeProvider} from './layout/LayoutModeProvider';
 import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {
   ApolloClient,
@@ -190,14 +190,14 @@ export const AppProvider = (props: AppProviderProps) => {
   );
 
   return (
-    <AppContext.Provider value={appContextValue}>
-      <WebSocketProvider websocketClient={websocketClient}>
-        <ApolloProvider client={apolloClient}>
-          <PermissionsProvider>
-            <BrowserRouter basename={basePath || ''}>
-              <GlobalStyleProvider />
-              <Toaster richColors />
-              <CompatRouter>
+    <LayoutModeProvider>
+      <AppContext.Provider value={appContextValue}>
+        <WebSocketProvider websocketClient={websocketClient}>
+          <ApolloProvider client={apolloClient}>
+            <PermissionsProvider>
+              <BrowserRouter basename={basePath || ''}>
+                <GlobalStyleProvider />
+                <Toaster richColors />
                 <TimeProvider>
                   <CodeLinkProtocolProvider>
                     <WorkspaceProvider>
@@ -218,11 +218,11 @@ export const AppProvider = (props: AppProviderProps) => {
                     </WorkspaceProvider>
                   </CodeLinkProtocolProvider>
                 </TimeProvider>
-              </CompatRouter>
-            </BrowserRouter>
-          </PermissionsProvider>
-        </ApolloProvider>
-      </WebSocketProvider>
-    </AppContext.Provider>
+              </BrowserRouter>
+            </PermissionsProvider>
+          </ApolloProvider>
+        </WebSocketProvider>
+      </AppContext.Provider>
+    </LayoutModeProvider>
   );
 };

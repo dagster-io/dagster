@@ -1,0 +1,8 @@
+.row {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 24px;
+  background: var(--color-background-default);
+  box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+}

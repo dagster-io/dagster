@@ -1,12 +1,14 @@
-import {Box, ErrorBoundary} from '@dagster-io/ui-components';
+import {ErrorBoundary, Heading, PageHeader} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useDeferredValue, useMemo} from 'react';
 
 import {GroupTimelineRunsBySelect} from './GroupTimelineRunsBySelect';
+import styles from './css/OverviewTimelineRoot.module.css';
 import {groupRunsByAutomation} from './groupRunsByAutomation';
 import {useGroupTimelineRunsBy} from './useGroupTimelineRunsBy';
 import {RefreshState, useRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {useAutomations} from '../automation/useAutomations';
 import {filterAutomationSelectionByQuery} from '../automation-selection/AntlrAutomationSelection';
@@ -89,6 +91,7 @@ export function useTimelineRange({
 export const OverviewTimelineRoot = ({Header}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
+  const isMobile = useIsMobile();
   const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
     useTimelineRange({});
 
@@ -157,10 +160,20 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
 
   return (
     <>
-      <Header refreshState={refreshState} />
-      <Box padding={{horizontal: 24, vertical: 12}} flex={{alignItems: 'center', gap: 16}}>
+      {isMobile ? (
+        <PageHeader
+          title={
+            <Heading size={16} weight={600}>
+              Timeline
+            </Heading>
+          }
+        />
+      ) : (
+        <Header refreshState={refreshState} />
+      )}
+      <div className={styles.filterRow}>
         <GroupTimelineRunsBySelect value={groupRunsBy} onSelect={setGroupRunsBy} />
-        <div style={{flex: 1, display: 'flex', alignItems: 'center'}}>
+        <div className={styles.selectionInput}>
           {groupRunsBy === 'automation' ? (
             <AutomationSelectionInput
               items={automationRows}
@@ -171,14 +184,16 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
             <JobSelectionInput items={jobRows} value={jobSelection} onChange={setJobSelection} />
           )}
         </div>
-        <TimelineRangeControls
-          hourWindow={hourWindow}
-          onSelectHourWindow={setHourWindow}
-          onPageEarlier={onPageEarlier}
-          onPageNow={onPageNow}
-          onPageLater={onPageLater}
-        />
-      </Box>
+        <div className={styles.rangeControls}>
+          <TimelineRangeControls
+            hourWindow={hourWindow}
+            onSelectHourWindow={setHourWindow}
+            onPageEarlier={onPageEarlier}
+            onPageNow={onPageNow}
+            onPageLater={onPageLater}
+          />
+        </div>
+      </div>
       <ErrorBoundary region="timeline">
         <RunTimeline loading={loading} rangeMs={rangeMs} rows={rows} />
       </ErrorBoundary>

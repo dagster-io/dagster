@@ -10,9 +10,9 @@ from dagster import (
     IntSource,
     _check as check,
 )
-from dagster._core.launcher.base import LaunchRunContext
+from dagster._core.launcher.base import LaunchRunContext, ResumeRunContext
 from dagster._core.utils import parse_env_var
-from dagster._grpc.types import ExecuteRunArgs
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils import find_free_port
@@ -410,20 +410,30 @@ class DockerUserCodeLauncher(
 
 class CloudDockerRunLauncher(DockerRunLauncher):
     def launch_run(self, context: LaunchRunContext) -> None:
-        serialized_pex_metadata = context.dagster_run.tags.get(PEX_METADATA_TAG)
+        self._launch_run_container(context, ExecuteRunArgs)
 
+    def resume_run(self, context: ResumeRunContext) -> None:
+        self._launch_run_container(context, ResumeRunArgs)
+
+    def _launch_run_container(
+        self,
+        context: LaunchRunContext | ResumeRunContext,
+        args_cls: type[ExecuteRunArgs] | type[ResumeRunArgs],
+    ) -> None:
+        run = context.dagster_run
+        job_origin = check.not_none(run.job_code_origin)
+
+        docker_image = self._get_docker_image(job_origin)
+
+        run_args = args_cls(
+            job_origin=job_origin,
+            run_id=run.run_id,
+            instance_ref=self._instance.get_ref(),
+        )
+
+        serialized_pex_metadata = run.tags.get(PEX_METADATA_TAG)
         if serialized_pex_metadata:
-            run = context.dagster_run
-            job_origin = check.not_none(run.job_code_origin)
-
-            docker_image = self._get_docker_image(job_origin)
-
-            run_args = ExecuteRunArgs(
-                job_origin=job_origin,
-                run_id=run.run_id,
-                instance_ref=self._instance.get_ref(),
-            )
-
+            # Validated here so a malformed tag fails the launch rather than the run worker.
             deserialize_value(serialized_pex_metadata, PexMetadata)
             command = [
                 "dagster-cloud",
@@ -432,6 +442,7 @@ class CloudDockerRunLauncher(DockerRunLauncher):
                 serialize_value(run_args),
                 serialized_pex_metadata,
             ]
-            self._launch_container_with_command(run, docker_image, command)
         else:
-            return super().launch_run(context)
+            command = list(run_args.get_command_args())
+
+        self._launch_container_with_command(run, docker_image, command)

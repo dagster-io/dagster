@@ -80,8 +80,9 @@ def test_default_asset_events_from_run_results_non_error_statuses(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ):
-    """`no-op` and `reused` are terminal, non-error dbt statuses meaning the node was not rebuilt.
-    The models they are reported for should still materialize rather than be dropped as failures.
+    """`no-op` and `reused` are terminal, non-error dbt statuses meaning the node was not rebuilt,
+    and `warn` is what dbt Fusion serializes `SucceededWithWarning` to. The models they are
+    reported for should still materialize rather than be dropped as failures.
     """
     run_results_json = copy.deepcopy(dict(get_sample_run_results_json()))
     for result in run_results_json["results"]:
@@ -163,3 +164,36 @@ def test_timing_less_results_use_the_run_generated_at_timestamp(
     assert len(asset_materializations) == 8
     for materialization in asset_materializations:
         assert materialization.metadata[COMPLETED_AT_TIMESTAMP_METADATA_KEY].value == expected
+
+
+def test_default_asset_events_from_run_results_seed_missing_materialized_config(
+    workspace: DbtCloudWorkspace, fetch_workspace_data_api_mocks: responses.RequestsMock
+):
+    # dbt Fusion omits `config.materialized` for seeds. Reading it unconditionally used to
+    # raise out of the generator and abort translation for every remaining node in the run.
+    manifest = copy.deepcopy(dict(workspace.get_or_fetch_workspace_data().manifest))
+    seed_unique_ids = [
+        unique_id
+        for unique_id, props in manifest["nodes"].items()
+        if props["resource_type"] == "seed"
+    ]
+    assert seed_unique_ids
+    for unique_id in seed_unique_ids:
+        manifest["nodes"][unique_id]["config"].pop("materialized")
+
+    run_results = DbtCloudJobRunResults.from_run_results_json(
+        run_results_json=get_sample_run_results_json()
+    )
+
+    events = list(
+        run_results.to_default_asset_events(client=workspace.get_client(), manifest=manifest)
+    )
+
+    asset_materializations = [event for event in events if isinstance(event, AssetMaterialization)]
+    asset_check_evaluations = [event for event in events if isinstance(event, AssetCheckEvaluation)]
+
+    # The seeds are still materialized, and so is every node after them in the run results.
+    assert len(asset_materializations) == 8
+    assert len(asset_check_evaluations) == 20
+    materialized_keys = {mat.asset_key.path[-1] for mat in asset_materializations}
+    assert {"raw_customers", "raw_orders", "raw_payments"} <= materialized_keys

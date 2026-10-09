@@ -1,0 +1,36 @@
+.cell {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.initiator {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  /* Adds to the tag gap so the label sits 8px from whatever follows it. */
+  margin-right: 4px;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.label {
+  min-width: 0;
+}
+
+.tag {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.idLink {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}

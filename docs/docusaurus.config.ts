@@ -4,14 +4,16 @@ import type {Config} from '@docusaurus/types';
 import AnnouncementBar from '@theme/AnnouncementBar';
 import {themes as prismThemes} from 'prism-react-renderer';
 
+const BASE_URL = '/docs/';
+
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
 const config: Config = {
   title: 'Dagster Docs',
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
-  url: 'https://docs.dagster.io',
+  url: 'https://dagster.io',
   favicon: 'img/favicon.ico',
-  baseUrl: '/',
+  baseUrl: BASE_URL,
   onBrokenLinks: 'throw',
   onBrokenAnchors: 'throw',
   organizationName: 'dagster',
@@ -43,7 +45,7 @@ const config: Config = {
           keywords: {boost: 75},
           content: {boost: 2},
         },
-        excludeRoutes: ['/tags', '/tags/**/*', '/about/**/*', '/migration/upgrading'],
+        excludeRoutes: ['tags', 'tags/**/*', 'about/**/*', 'migration/upgrading'].map((route) => `${BASE_URL}${route}`),
       },
     ],
   ],
@@ -71,6 +73,11 @@ const config: Config = {
       defaultMode: 'light',
       disableSwitch: false,
       respectPrefersColorScheme: true,
+    },
+    mermaid: {
+      // Mermaid 12 switched its defaults to the ELK layout engine and the "neo"
+      // look; keep the previous rendering so existing diagrams don't re-layout.
+      options: {layout: 'dagre', look: 'classic'},
     },
     prism: {
       theme: prismThemes.github,
@@ -164,7 +171,7 @@ const config: Config = {
             }
           : {
               label: 'Latest version',
-              href: 'https://docs.dagster.io',
+              href: 'https://dagster.io/docs',
               position: 'right',
               className: 'feedback-nav-link',
             },
@@ -210,10 +217,10 @@ const config: Config = {
           </div>
 
           <div class='footer__items--right'>
-            <a href='https://twitter.com/dagster' title="X" target="_blank" rel="noreferrer noopener"><img src="/icons/twitter.svg"/></a>
-            <a href='https://www.dagster.io/slack/' title="Community Slack" target="_blank" rel="noreferrer noopener"><img src="/icons/slack.svg"/></a>
-            <a href='https://github.com/dagster-io/dagster' title="GitHub" target="_blank" rel="noreferrer noopener"><img src="/icons/github.svg"/></a>
-            <a href='https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q/videos' title="Youtube" target="_blank" rel="noreferrer noopener"><img src="/icons/youtube.svg"/></a>
+            <a href='https://twitter.com/dagster' title="X" target="_blank" rel="noreferrer noopener"><img src="/docs/icons/twitter.svg"/></a>
+            <a href='https://www.dagster.io/slack/' title="Community Slack" target="_blank" rel="noreferrer noopener"><img src="/docs/icons/slack.svg"/></a>
+            <a href='https://github.com/dagster-io/dagster' title="GitHub" target="_blank" rel="noreferrer noopener"><img src="/docs/icons/github.svg"/></a>
+            <a href='https://www.youtube.com/channel/UCfLnv9X8jyHTe6gJ4hVBo9Q/videos' title="Youtube" target="_blank" rel="noreferrer noopener"><img src="/docs/icons/youtube.svg"/></a>
           </div>
           `,
         },
@@ -242,6 +249,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
           editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs',
+          remarkPlugins: [[require('./src/plugins/remark-jsx-img-base-url'), {baseUrl: BASE_URL}]],
         },
         blog: false,
         theme: {
@@ -258,7 +266,7 @@ const config: Config = {
           //lastmod: 'date',
           changefreq: 'weekly',
           priority: 0.5,
-          ignorePatterns: ['/tags/**'],
+          ignorePatterns: [`${BASE_URL}tags/**`],
           filename: 'sitemap.xml',
           createSitemapItems: async (params) => {
             const {defaultCreateSitemapItems, ...rest} = params;

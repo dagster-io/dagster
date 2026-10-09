@@ -6,6 +6,7 @@ from unittest import mock
 from unittest.mock import Mock
 
 import pytest
+from dagster._core.snowflake_partner import SNOWFLAKE_PARTNER_ENV_VAR
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import merge_dicts
 from dagster_cloud.workspace.kubernetes.launcher import (
@@ -581,6 +582,27 @@ def test_construct_code_location_deployment_with_raw_k8s_config():
         pod_metadata = obj["spec"]["template"]["metadata"]
         assert pod_metadata["namespace"] == "my_override_namespace"
         assert pod_metadata["labels"]["my_other_label"] == "baz"
+
+
+@pytest.mark.parametrize(
+    "only_allow_user_defined_env_vars",
+    [["FOO"], []],
+)
+def test_snowflake_partner_env_var_survives_allowlist(
+    kubeconfig_file, only_allow_user_defined_env_vars: list[str]
+):
+    user_code_launcher = K8sUserCodeLauncher(
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="dagster-instance",
+        service_account_name="MY_SERVICE_ACCOUNT_NAME",
+        namespace="default",
+        kubeconfig_file=kubeconfig_file,
+        only_allow_user_defined_env_vars=only_allow_user_defined_env_vars,
+    )
+
+    allowed = user_code_launcher._only_allow_user_defined_env_vars  # noqa: SLF001
+    assert allowed is not None
+    assert SNOWFLAKE_PARTNER_ENV_VAR in allowed
 
 
 def test_launch_k8s_server(kubeconfig_file):

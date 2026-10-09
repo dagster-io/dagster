@@ -63,6 +63,12 @@ else:
         REFABLE_NODE_TYPES = ["model", "seed", "snapshot"]
 
         class StrEnum(str, Enum):
+            # dbt's own StrEnum stringifies to the value; the default Enum.__str__ would give
+            # "NodeStatus.Pass", which silently diverges anywhere a status is formatted or
+            # used as the value of another enum member.
+            def __str__(self) -> str:
+                return self.value
+
             def _generate_next_value_(name, *_):
                 return name
 
@@ -99,11 +105,11 @@ else:
             Reused = "reused"
 
         class TestStatus(StrEnum):
-            Pass = NodeStatus.Pass
-            Error = NodeStatus.Error
-            Fail = NodeStatus.Fail
-            Warn = NodeStatus.Warn
-            Skipped = NodeStatus.Skipped
+            Pass = "pass"
+            Error = "error"
+            Fail = "fail"
+            Warn = "warn"
+            Skipped = "skipped"
 
 
 # The statuses a refable node (model, seed, snapshot) can end on without having failed.

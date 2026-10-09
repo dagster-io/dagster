@@ -6,7 +6,6 @@ import os
 import re
 import time
 
-import docker
 import pytest
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.test_utils import environ, poll_for_finished_run, poll_for_step_start
@@ -26,7 +25,7 @@ from dagster_test.test_project import (
     get_test_project_workspace_and_remote_job,
 )
 
-from dagster_docker_tests import IS_BUILDKITE
+from dagster_docker_tests import IS_BUILDKITE, docker_client
 
 
 @pytest.mark.integration
@@ -81,7 +80,7 @@ def test_launch_docker_no_network(docker_postgres_instance, aws_env):
 
             assert run.status == DagsterRunStatus.STARTING
             assert run.tags[DOCKER_IMAGE_TAG] == docker_image
-            client = docker.client.from_env()
+            client = docker_client()
 
             container = None
 

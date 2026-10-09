@@ -32,6 +32,8 @@ import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDial
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
 import {currentPageAtom} from '../app/analytics';
+import {useIsMobile} from '../app/layout/IsMobileContext';
+import {useDeclareMobileRouteStatus} from '../app/layout/mobileRouteStatus';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
@@ -83,6 +85,11 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
 
   const defaultTab = 'overview';
   const selectedTab = params.view || defaultTab;
+  const isMobile = useIsMobile();
+
+  // Only the overview tab has a mobile presentation so far; the rest still fall back to
+  // the desktop site, so the status has to come from the page rather than the route.
+  useDeclareMobileRouteStatus(selectedTab === 'overview' ? 'supported' : 'unsupported');
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
   // tab, or just the current node for other tabs. NOTE: Changing the query does not re-fetch data,
@@ -299,9 +306,16 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
         tabs={
           <div>
             <IndeterminateLoadingBar $loading={isLoading} />
-            <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+            <Box
+              flex={{
+                direction: 'row',
+                justifyContent: 'space-between',
+                alignItems: isMobile ? 'center' : 'flex-end',
+                gap: isMobile ? 8 : 0,
+              }}
+            >
               <AssetTabs selectedTab={selectedTab} tabs={tabList} />
-              <Box padding={{bottom: 8}}>
+              <Box padding={{bottom: isMobile ? 0 : 8}}>
                 <AssetLiveDataRefreshButton />
               </Box>
             </Box>

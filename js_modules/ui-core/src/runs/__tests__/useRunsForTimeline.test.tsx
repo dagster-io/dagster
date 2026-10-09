@@ -91,7 +91,7 @@ const mockOngoingRuns = ({
     query: ONGOING_RUN_TIMELINE_QUERY,
     variables: {
       inProgressFilter: {
-        statuses: ['STARTED', 'STARTING', 'CANCELING'],
+        statuses: ['STARTED', 'STARTING', 'SUSPENDED', 'CANCELING'],
         ...runsFilter,
       },
       cursor,

@@ -97,12 +97,12 @@ jobs:
           github.event_name == 'pull_request'
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-token: ${{ secrets.VERCEL_DOCS_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_DOCS_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
           vercel-version: latest
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          scope: ${{ secrets.VERCEL_DOCS_ORG_ID }}
           alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.archive.dagster-docs.io
 
       # Pushes to `master` result in a preview deployment with the `main.` domain alias
@@ -117,12 +117,12 @@ jobs:
           github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-token: ${{ secrets.VERCEL_DOCS_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_DOCS_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
           vercel-version: latest
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          scope: ${{ secrets.VERCEL_DOCS_ORG_ID }}
           alias-domains: main.archive.dagster-docs.io
 
       # Pushes to `release-` prefixed branches result in production deployments on the `docs.dagster.io` domain
@@ -131,10 +131,10 @@ jobs:
         if: |
           github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-')
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-token: ${{ secrets.VERCEL_DOCS_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_DOCS_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
           vercel-version: latest
           vercel-args: "--prod"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
+          scope: ${{ secrets.VERCEL_DOCS_ORG_ID }}

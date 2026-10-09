@@ -34,6 +34,7 @@ const calculateDisplayStatus = (partition: SchedulePartitionStatusResultFragment
     case RunStatus.QUEUED:
     case RunStatus.NOT_STARTED:
     case RunStatus.STARTED:
+    case RunStatus.SUSPENDED:
     case RunStatus.STARTING:
       return 'Pending';
     default:

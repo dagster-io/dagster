@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import dayjs from 'dayjs';
 import {MemoryRouter} from 'react-router';
 
 import {
@@ -11,8 +12,10 @@ import {
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
+  buildTimePartitionRangeStatus,
+  buildTimePartitionStatuses,
 } from '../../graphql/builders';
-import {PartitionDefinitionType} from '../../graphql/types';
+import {PartitionDefinitionType, PartitionRangeStatus} from '../../graphql/types';
 import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
   AddDynamicPartitionMutation,
@@ -132,6 +135,92 @@ describe('launchAssetChoosePartitionsDialog', () => {
       expect(assetASecondQueryMockResult).toHaveBeenCalled();
     });
   });
+
+  it('hides partitions outside the default date window and offers to reveal them', async () => {
+    const asset = buildDailyAsset('asset_daily', [...OLD_PARTITION_KEYS, ...RECENT_PARTITION_KEYS]);
+    const healthMock = buildQueryMock<PartitionHealthQuery, PartitionHealthQueryVariables>({
+      query: PARTITION_HEALTH_QUERY,
+      variables: {assetKey: {path: ['asset_daily']}},
+      data: {assetNodeOrError: asset},
+    });
+
+    render(
+      <MemoryRouter>
+        <MockedProvider mocks={[healthMock, ...workspaceMocks]}>
+          <WorkspaceProvider>
+            <LaunchAssetChoosePartitionsDialog
+              open={true}
+              setOpen={(_open: boolean) => {}}
+              repoAddress={buildRepoAddress('test', 'test')}
+              target={{jobName: '__ASSET_JOB', assetKeys: [asset.assetKey], type: 'job'}}
+              assets={[asset]}
+              upstreamAssetKeys={[]}
+            />
+          </WorkspaceProvider>
+        </MockedProvider>
+      </MemoryRouter>,
+    );
+
+    const notice = await screen.findByTestId('hidden-partitions-notice');
+    expect(notice).toHaveTextContent(`${OLD_PARTITION_KEYS.length} older partitions`);
+
+    // "All" covers only what's visible.
+    await userEvent.click(await screen.findByTestId('all-partition-button'));
+    expect(await screen.findByText(`${RECENT_PARTITION_KEYS.length} partitions`)).toBeVisible();
+
+    await userEvent.click(await screen.findByTestId('show-all-partitions-link'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('hidden-partitions-notice')).toBeNull();
+    });
+
+    await userEvent.click(await screen.findByTestId('all-partition-button'));
+    const total = OLD_PARTITION_KEYS.length + RECENT_PARTITION_KEYS.length;
+    expect(await screen.findByText(`${total} partitions`)).toBeVisible();
+  });
+  it('selects only missing partitions inside the default date window', async () => {
+    // Every recent partition is materialized; only the hidden, older ones are missing.
+    const asset = buildDailyAsset(
+      'asset_daily',
+      [...OLD_PARTITION_KEYS, ...RECENT_PARTITION_KEYS],
+      [
+        buildTimePartitionRangeStatus({
+          startKey: RECENT_PARTITION_KEYS[0],
+          endKey: RECENT_PARTITION_KEYS[RECENT_PARTITION_KEYS.length - 1],
+          status: PartitionRangeStatus.MATERIALIZED,
+        }),
+      ],
+    );
+    const healthMock = buildQueryMock<PartitionHealthQuery, PartitionHealthQueryVariables>({
+      query: PARTITION_HEALTH_QUERY,
+      variables: {assetKey: {path: ['asset_daily']}},
+      data: {assetNodeOrError: asset},
+    });
+
+    render(
+      <MemoryRouter>
+        <MockedProvider mocks={[healthMock, ...workspaceMocks]}>
+          <WorkspaceProvider>
+            <LaunchAssetChoosePartitionsDialog
+              open={true}
+              setOpen={(_open: boolean) => {}}
+              repoAddress={buildRepoAddress('test', 'test')}
+              target={{jobName: '__ASSET_JOB', assetKeys: [asset.assetKey], type: 'job'}}
+              assets={[asset]}
+              upstreamAssetKeys={[]}
+            />
+          </WorkspaceProvider>
+        </MockedProvider>
+      </MemoryRouter>,
+    );
+
+    await screen.findByTestId('hidden-partitions-notice');
+
+    await userEvent.click(await screen.findByTestId('all-partition-button'));
+    expect(await screen.findByText(`${RECENT_PARTITION_KEYS.length} partitions`)).toBeVisible();
+
+    await userEvent.click(await screen.findByRole('button', {name: 'Missing'}));
+    expect(await screen.findByText('0 partitions')).toBeVisible();
+  });
 });
 
 function buildAsset(name: string, dynamicPartitionKeys: string[]) {
@@ -168,5 +257,38 @@ function buildAsset(name: string, dynamicPartitionKeys: string[]) {
       primaryDimensionName: 'b',
       ranges: [],
     }),
+  });
+}
+
+const dailyKeys = (start: dayjs.Dayjs, count: number) =>
+  Array.from({length: count}, (_, i) => start.add(i, 'day').format('YYYY-MM-DD'));
+
+// Comfortably outside and inside the default window, so the split doesn't shift
+// with the machine's timezone.
+const OLD_PARTITION_KEYS = dailyKeys(dayjs().subtract(2, 'year'), 30);
+const RECENT_PARTITION_KEYS = dailyKeys(dayjs().subtract(9, 'day'), 10);
+
+function buildDailyAsset(
+  name: string,
+  partitionKeys: string[],
+  ranges: ReturnType<typeof buildTimePartitionRangeStatus>[] = [],
+) {
+  return buildAssetNode({
+    assetKey: buildAssetKey({path: [name]}),
+    id: `daily.py.__repository__.["${name}"]`,
+    partitionKeysByDimension: [
+      buildDimensionPartitionKeys({
+        name: 'default',
+        type: PartitionDefinitionType.TIME_WINDOW,
+        partitionKeys,
+      }),
+    ],
+    partitionDefinition: buildPartitionDefinition({
+      name: 'daily',
+      dimensionTypes: [
+        buildDimensionDefinitionType({name: 'default', type: PartitionDefinitionType.TIME_WINDOW}),
+      ],
+    }),
+    assetPartitionStatuses: buildTimePartitionStatuses({ranges}),
   });
 }

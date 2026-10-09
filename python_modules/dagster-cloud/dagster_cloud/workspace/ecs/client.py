@@ -5,6 +5,8 @@ import logging
 import os
 import time
 import uuid
+from collections.abc import Collection, Mapping, Sequence
+from typing import Any
 
 import boto3
 import botocore.exceptions
@@ -22,6 +24,23 @@ DEFAULT_ECS_TIMEOUT = 600
 DEFAULT_ECS_GRACE_PERIOD = 30
 
 STOPPED_TASK_GRACE_PERIOD = 30
+
+# Cross-account service discovery: how long to wait for a single AWS Cloud Map operation
+# (RegisterInstance / DeregisterInstance) to finish, and how often to poll it.
+DEFAULT_SERVICE_DISCOVERY_OPERATION_TIMEOUT_SECONDS = 120
+SERVICE_DISCOVERY_OPERATION_POLL_INTERVAL_SECONDS = 2
+# Cross-account only: how often a cache miss may reload the namespace's Cloud Map service listing.
+SERVICE_DISCOVERY_ARN_CACHE_MIN_REFRESH_INTERVAL_SECONDS = 30
+# How many times delete_service deregisters instances and retries deleting the Cloud Map service
+# when Cloud Map rejects the delete because an instance was registered in between.
+SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS = 3
+
+# Values defined by the AWS Cloud Map and ECS APIs.
+CLOUD_MAP_OPERATION_STATUS_SUCCESS = "SUCCESS"
+CLOUD_MAP_OPERATION_STATUS_FAIL = "FAIL"
+CLOUD_MAP_INSTANCE_IPV4_ATTRIBUTE = "AWS_INSTANCE_IPV4"
+ECS_ENI_ATTACHMENT_TYPE = "ElasticNetworkInterface"
+ECS_PRIVATE_IPV4_ATTACHMENT_DETAIL = "privateIPv4Address"
 
 
 ECS_EXEC_LINUX_PARAMETERS = {
@@ -52,6 +71,23 @@ class EcsServiceError(Exception):
         super().__init__(message)
 
 
+class ServiceDiscoveryError(Exception):
+    """The agent could not register or deregister a code server in AWS Cloud Map."""
+
+
+class ServiceDiscoveryOperationError(ServiceDiscoveryError):
+    """One or more Cloud Map operations failed or did not finish in time."""
+
+    def __init__(self, action_description: str, failures: Mapping[str, str]):
+        self.failures = dict(failures)
+        details = "\n".join(
+            f"  {instance_id}: {reason}" for instance_id, reason in failures.items()
+        )
+        super().__init__(
+            f"Failed to {action_description} for {len(failures)} instance(s):\n{details}"
+        )
+
+
 class Client:
     def __init__(
         self,
@@ -67,6 +103,7 @@ class Client:
         show_debug_cluster_info: bool = True,
         assign_public_ip: bool | None = None,
         service_discovery_role_arn: str | None = None,
+        service_discovery_operation_timeout_seconds: int = DEFAULT_SERVICE_DISCOVERY_OPERATION_TIMEOUT_SECONDS,
     ):
         self.ecs = ecs_client if ecs_client else boto3.client("ecs", config=config)
         self.logs = boto3.client("logs", config=config)
@@ -96,6 +133,25 @@ class Client:
         self.launch_type = check.str_param(launch_type, "launch_type")
         self._namespace: str | None = None
         self._assign_public_ip_override = assign_public_ip
+        self._service_discovery_operation_timeout = check.int_param(
+            service_discovery_operation_timeout_seconds,
+            "service_discovery_operation_timeout_seconds",
+        )
+        # Cloud Map service name -> ARN, for the agent's namespace. See get_service_discovery_arn.
+        self._service_discovery_arns_by_name: dict[str, str] = {}
+        self._service_discovery_arns_refreshed_at: float | None = None
+
+        self._uses_cross_account_service_discovery = False
+        if service_discovery_role_arn:
+            namespace_account_id = self._service_discovery_namespace_account_id()
+            agent_account_id = self._agent_account_id()
+            self._uses_cross_account_service_discovery = namespace_account_id != agent_account_id
+            if self._uses_cross_account_service_discovery:
+                logging.getLogger("dagster_cloud.EcsClient").info(
+                    f"Cloud Map namespace {self.service_discovery_namespace_id} is owned by account"
+                    f" {namespace_account_id} and this agent runs in account {agent_account_id};"
+                    " the agent will register code server tasks in Cloud Map itself."
+                )
 
     def _create_service_discovery_session(self) -> None:
         """Assume cross-account role and create a servicediscovery client with temporary credentials."""
@@ -125,6 +181,32 @@ class Client:
         if self._service_discovery_role_arn:
             self._refresh_service_discovery_session()
         return self._service_discovery
+
+    @property
+    def uses_cross_account_service_discovery(self) -> bool:
+        """True when the Cloud Map namespace belongs to a different AWS account than the agent.
+
+        ECS cannot register services into such a namespace, so the agent registers code server
+        tasks in it directly. In this mode  the agent registers and deregisters code server
+        tasks in Cloud Map itself: once at startup (_register_service_discovery_instances) and
+        periodically after that (reconcile_service_discovery_instances, driven by a thread in
+        EcsUserCodeLauncher).
+
+        Decided in the constructor by comparing the account in the namespace's ARN with the
+        agent's own identity. A namespace in the agent's account always keeps ECS-native
+        registration, whether or not service_discovery_role_arn is set.
+        """
+        return self._uses_cross_account_service_discovery
+
+    def _service_discovery_namespace_account_id(self) -> str:
+        namespace_arn = self.service_discovery.get_namespace(
+            Id=self.service_discovery_namespace_id
+        )["Namespace"]["Arn"]
+        return namespace_arn.split(":")[4]
+
+    def _agent_account_id(self) -> str:
+        # GetCallerIdentity needs no IAM permission, unlike ecs:DescribeClusters.
+        return self._sts.get_caller_identity()["Account"]
 
     @property
     def ec2(self):
@@ -398,33 +480,38 @@ class Client:
             service.hostname,
         )
         if service_discovery_id:
-            # Unregister dangling ecs tasks from service discovery
-            instances_paginator = self.service_discovery.get_paginator("list_instances")
-            instances = instances_paginator.paginate(
-                ServiceId=service_discovery_id,
-            ).build_full_result()["Instances"]
-            deregister_operation_ids = []
-            for instance in instances:
-                resp = self.service_discovery.deregister_instance(
-                    ServiceId=service_discovery_id, InstanceId=instance["Id"]
-                )
-                deregister_operation_ids.append(resp["OperationId"])
+            self._delete_service_discovery_service(service_discovery_id, logger=logger)
+            # The refresh only adds names (see get_service_discovery_arn), so drop this one here.
+            self._service_discovery_arns_by_name.pop(service.name, None)
 
-            # wait for instances to complete deregistering
-            for operation_id in deregister_operation_ids:
-                status = ""
-                while status != "SUCCESS":
-                    status = self.service_discovery.get_operation(OperationId=operation_id)[
-                        "Operation"
-                    ]["Status"]
-                    if status == "FAIL":
-                        raise Exception("deregister operation failed")
-                    time.sleep(2)
+    def _delete_service_discovery_service(self, service_discovery_id: str, logger) -> None:
+        """Deregisters every instance of a Cloud Map service, then deletes the service.
 
-            # delete service discovery
-            self.service_discovery.delete_service(
-                Id=service_discovery_id,
+        Cloud Map refuses to delete a service that still has instances (ResourceInUse). In
+        cross-account mode the reconcile thread, of this agent or of another replica, can register
+        a task between our list_instances and delete_service calls, so on ResourceInUse we
+        deregister again and retry, up to SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS times.
+        """
+        for attempt in range(1, SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS + 1):
+            self._deregister_service_discovery_instances(
+                service_id=service_discovery_id,
+                instance_ids=self._list_service_discovery_instance_ids(service_discovery_id),
+                logger=logger,
             )
+            try:
+                self.service_discovery.delete_service(Id=service_discovery_id)
+                return
+            except botocore.exceptions.ClientError as error:
+                if (
+                    error.response["Error"]["Code"] != "ResourceInUse"
+                    or attempt == SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS
+                ):
+                    raise
+                logger.warning(
+                    f"Cloud Map service {service_discovery_id} still has instances registered"
+                    f" (attempt {attempt} of {SERVICE_DISCOVERY_DELETE_MAX_ATTEMPTS});"
+                    " deregistering them and retrying the delete"
+                )
 
     def list_services(self, tags=None, logger=None):
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
@@ -577,8 +664,14 @@ class Client:
         )
         params["networkConfiguration"] = self.network_configuration
 
-        if service_registry_arn:
+        # ECS-native registration is only possible for a same-account namespace; see
+        # uses_cross_account_service_discovery.
+        if service_registry_arn and not self.uses_cross_account_service_discovery:
             params["serviceRegistries"] = [{"registryArn": service_registry_arn}]
+        elif service_registry_arn:
+            # Seed the name -> ARN cache so a reconcile pass that lists this service before the
+            # next cache reload does not miss it and warn. See get_service_discovery_arn.
+            self._service_discovery_arns_by_name[service_name] = service_registry_arn
 
         if tags and self.taggable:
             params["tags"] = [
@@ -588,7 +681,15 @@ class Client:
 
         arn = self.ecs.create_service(**params).get("service").get("serviceArn")
 
-        return Service(client=self, arn=arn)
+        return Service(
+            client=self,
+            arn=arn,
+            # A cross-account handle carries its Cloud Map ARN because ECS did not attach one.
+            # Same-account handles read it from the ECS service.
+            service_registry_arn=(
+                service_registry_arn if self.uses_cross_account_service_discovery else None
+            ),
+        )
 
     async def wait_for_new_service(self, service, container_name, logger=None) -> str:
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
@@ -601,7 +702,14 @@ class Client:
             )
             if response.get("services"):
                 running_tasks = await self.check_service_has_running_tasks(
-                    service_name, container_name, logger=logger
+                    service_name,
+                    container_name,
+                    service_registry_arn=(
+                        service.service_discovery_arn
+                        if self.uses_cross_account_service_discovery
+                        else None
+                    ),
+                    logger=logger,
                 )
                 return running_tasks[0]
 
@@ -652,7 +760,7 @@ class Client:
             self._raise_failed_task(task, container_name, logger)
 
     async def check_service_has_running_tasks(
-        self, service_name, container_name, logger=None
+        self, service_name, container_name, service_registry_arn=None, logger=None
     ) -> list[str]:
         # return the ARN of the task if it starts
         logger = logger or logging.getLogger("dagster_cloud.EcsClient")
@@ -724,6 +832,13 @@ class Client:
                             self._raise_failed_task(task, container_name, logger)
 
                 if all_tasks_running:
+                    if service_registry_arn and self.uses_cross_account_service_discovery:
+                        await asyncio.to_thread(
+                            self._register_service_discovery_instances,
+                            tasks=tasks,
+                            service_registry_arn=service_registry_arn,
+                            logger=logger,
+                        )
                     return tasks_to_track
 
             await asyncio.sleep(20)
@@ -747,6 +862,264 @@ class Client:
             f"Timed out waiting for a running task for service: {service_name}."
             f" {service_events_str}"
         )
+
+    # ---- Cross-account service discovery -------------------------------------------------------
+
+    @staticmethod
+    def _instance_id_for_task_arn(task_arn: str) -> str:
+        return task_arn.split("/")[-1]
+
+    @staticmethod
+    def _service_discovery_id_from_arn(service_registry_arn: str) -> str:
+        return service_registry_arn.split("/")[-1]
+
+    @staticmethod
+    def _get_task_private_ip(task: Mapping[str, Any]) -> str:
+        """The private IPv4 address of an awsvpc task, read from its network interface attachment."""
+        task_arn = task.get("taskArn")
+        eni_attachments = [
+            attachment
+            for attachment in task.get("attachments") or []
+            if attachment.get("type") == ECS_ENI_ATTACHMENT_TYPE
+        ]
+        if len(eni_attachments) != 1:
+            raise ServiceDiscoveryError(
+                f"Expected task {task_arn} to have exactly one network interface attachment, found"
+                f" {len(eni_attachments)}. Cannot register it with service discovery."
+            )
+        private_ip = next(
+            (
+                detail.get("value")
+                for detail in eni_attachments[0].get("details") or []
+                if detail.get("name") == ECS_PRIVATE_IPV4_ATTACHMENT_DETAIL
+            ),
+            None,
+        )
+        if not private_ip:
+            raise ServiceDiscoveryError(
+                f"Task {task_arn} has no private IPv4 address. Cannot register it with service"
+                " discovery."
+            )
+        return private_ip
+
+    def _wait_for_service_discovery_operations(
+        self, operation_ids_by_instance_id: Mapping[str, str], action_description: str
+    ) -> None:
+        """Polls Cloud Map until every given operation has finished.
+
+        Raises ServiceDiscoveryOperationError naming each instance whose operation failed or did
+        not finish within service_discovery_operation_timeout_seconds seconds.
+        """
+        pending = dict(operation_ids_by_instance_id)
+        failures: dict[str, str] = {}
+        deadline = time.time() + self._service_discovery_operation_timeout
+
+        while pending:
+            for instance_id, operation_id in list(pending.items()):
+                operation = self.service_discovery.get_operation(OperationId=operation_id)[
+                    "Operation"
+                ]
+                status = operation["Status"]
+                if status == CLOUD_MAP_OPERATION_STATUS_SUCCESS:
+                    del pending[instance_id]
+                elif status == CLOUD_MAP_OPERATION_STATUS_FAIL:
+                    failures[instance_id] = (
+                        operation.get("ErrorMessage") or f"operation {operation_id} failed"
+                    )
+                    del pending[instance_id]
+
+            if not pending:
+                break
+            if time.time() >= deadline:
+                for instance_id, operation_id in pending.items():
+                    failures[instance_id] = (
+                        f"operation {operation_id} did not finish within"
+                        f" {self._service_discovery_operation_timeout} seconds"
+                    )
+                break
+            time.sleep(SERVICE_DISCOVERY_OPERATION_POLL_INTERVAL_SECONDS)
+
+        if failures:
+            raise ServiceDiscoveryOperationError(action_description, failures)
+
+    def _list_service_discovery_instance_ids(self, service_id: str) -> set[str]:
+        instances = (
+            self.service_discovery.get_paginator("list_instances")
+            .paginate(ServiceId=service_id)
+            .build_full_result()["Instances"]
+        )
+        return {instance["Id"] for instance in instances}
+
+    def _register_service_discovery_instances(
+        self,
+        *,
+        tasks: Sequence[Mapping[str, Any]],
+        service_registry_arn: str,
+        logger=None,
+    ) -> None:
+        """Registers each task's private IP as an instance of the Cloud Map service."""
+        logger = logger or logging.getLogger("dagster_cloud.EcsClient")
+        service_id = self._service_discovery_id_from_arn(service_registry_arn)
+
+        # Resolve every address first, so a task without one fails the batch before any
+        # RegisterInstance has been issued rather than leaving some issued but never awaited.
+        private_ips_by_instance_id = {
+            self._instance_id_for_task_arn(task["taskArn"]): self._get_task_private_ip(task)
+            for task in tasks
+        }
+
+        operation_ids_by_instance_id: dict[str, str] = {}
+        for instance_id, private_ip in private_ips_by_instance_id.items():
+            logger.info(
+                f"Registering task {instance_id} ({private_ip}) with Cloud Map service {service_id}"
+            )
+            response = self.service_discovery.register_instance(
+                ServiceId=service_id,
+                InstanceId=instance_id,
+                Attributes={CLOUD_MAP_INSTANCE_IPV4_ATTRIBUTE: private_ip},
+            )
+            operation_ids_by_instance_id[instance_id] = response["OperationId"]
+
+        self._wait_for_service_discovery_operations(
+            operation_ids_by_instance_id, f"register instances with Cloud Map service {service_id}"
+        )
+        logger.info(
+            f"Registered {len(operation_ids_by_instance_id)} instance(s) with Cloud Map service"
+            f" {service_id}"
+        )
+
+    def _deregister_service_discovery_instances(
+        self, *, service_id: str, instance_ids: Collection[str], logger=None
+    ) -> None:
+        """Deregisters instances from a Cloud Map service, issuing every call before awaiting them."""
+        logger = logger or logging.getLogger("dagster_cloud.EcsClient")
+        if not instance_ids:
+            return
+
+        operation_ids_by_instance_id: dict[str, str] = {}
+        for instance_id in instance_ids:
+            logger.info(f"Deregistering instance {instance_id} from Cloud Map service {service_id}")
+            try:
+                response = self.service_discovery.deregister_instance(
+                    ServiceId=service_id, InstanceId=instance_id
+                )
+            except botocore.exceptions.ClientError as error:
+                # Already gone, e.g. delete_service removed it between our list and this call.
+                if error.response["Error"]["Code"] == "InstanceNotFound":
+                    continue
+                raise
+            operation_ids_by_instance_id[instance_id] = response["OperationId"]
+
+        self._wait_for_service_discovery_operations(
+            operation_ids_by_instance_id,
+            f"deregister instances from Cloud Map service {service_id}",
+        )
+
+    def reconcile_service_discovery_instances(self, service: Service, logger=None) -> None:
+        """Makes a Cloud Map service's instances match its ECS service's running tasks.
+
+        Registers tasks that are running but not registered (for example a replacement task that
+        ECS started after a health check failure) and deregisters instances whose task is gone.
+        ECS does this itself for same-account services, so this is a no-op for them.
+
+        Registration and deregistration are attempted independently and failures are logged
+        rather than raised, because the next pass retries them.
+        """
+        logger = logger or logging.getLogger("dagster_cloud.EcsClient")
+
+        if not self.uses_cross_account_service_discovery:
+            return
+
+        service_registry_arn = service.service_discovery_arn
+        if not service_registry_arn:
+            logger.warning(
+                f"No Cloud Map service named {service.name} found in namespace"
+                f" {self.service_discovery_namespace_id}; skipping service discovery"
+                " reconciliation for it."
+            )
+            return
+        service_id = self._service_discovery_id_from_arn(service_registry_arn)
+
+        live_tasks: list[Mapping[str, Any]] = []
+        # DescribeTasks is eventually consistent: a task ListTasks just reported RUNNING can come
+        # back under "failures" (for example MISSING). Treat those as still alive rather than
+        # deregistering a healthy code server.
+        unresolved_instance_ids: set[str] = set()
+        for page in self.ecs.get_paginator("list_tasks").paginate(
+            cluster=self.cluster_name,
+            serviceName=service.name,
+            desiredStatus="RUNNING",
+            PaginationConfig={"PageSize": 100},
+        ):
+            if not page["taskArns"]:
+                continue
+            response = self.ecs.describe_tasks(cluster=self.cluster_name, tasks=page["taskArns"])
+            live_tasks.extend(response.get("tasks", []))
+            unresolved_instance_ids.update(
+                self._instance_id_for_task_arn(failure["arn"])
+                for failure in response.get("failures", [])
+            )
+
+        live_instance_ids = {
+            self._instance_id_for_task_arn(task["taskArn"]) for task in live_tasks
+        } | unresolved_instance_ids
+        registered_instance_ids = self._list_service_discovery_instance_ids(service_id)
+
+        # desiredStatus=RUNNING above also returns tasks still PROVISIONING or PENDING. Those stay in
+        # live_instance_ids so nothing gets deregistered, but only tasks that are actually RUNNING
+        # are registered: a pending one may have no address yet and is not listening anyway.
+        tasks_to_register = [
+            task
+            for task in live_tasks
+            if task.get("lastStatus") == "RUNNING"
+            and self._instance_id_for_task_arn(task["taskArn"]) not in registered_instance_ids
+        ]
+        stale_instance_ids = registered_instance_ids - live_instance_ids
+
+        if not tasks_to_register and not stale_instance_ids:
+            logger.debug(
+                f"Cloud Map service {service_id} already matches the {len(live_instance_ids)}"
+                f" running task(s) of {service.name}"
+            )
+            return
+
+        if tasks_to_register:
+            try:
+                self._register_service_discovery_instances(
+                    tasks=tasks_to_register,
+                    service_registry_arn=service_registry_arn,
+                    logger=logger,
+                )
+            except botocore.exceptions.ClientError as error:
+                if error.response["Error"]["Code"] == "ServiceNotFound":
+                    # delete_service removed the Cloud Map service after we looked it up: the code
+                    # server is being torn down, so there is nothing to register into.
+                    logger.debug(
+                        f"Cloud Map service {service_id} for {service.name} was deleted during"
+                        " reconciliation; skipping registration"
+                    )
+                else:
+                    logger.exception(
+                        f"Failed to register {len(tasks_to_register)} task(s) of {service.name}"
+                        f" with Cloud Map service {service_id}; will retry on the next pass"
+                    )
+            except Exception:
+                logger.exception(
+                    f"Failed to register {len(tasks_to_register)} task(s) of {service.name} with"
+                    f" Cloud Map service {service_id}; will retry on the next pass"
+                )
+
+        if stale_instance_ids:
+            try:
+                self._deregister_service_discovery_instances(
+                    service_id=service_id, instance_ids=stale_instance_ids, logger=logger
+                )
+            except Exception:
+                logger.exception(
+                    f"Failed to deregister {len(stale_instance_ids)} stale instance(s) of"
+                    f" {service.name} from Cloud Map service {service_id}; will retry on the next"
+                    " pass"
+                )
 
     def _check_for_stopped_tasks(self, service_name):
         stopped = self.ecs.list_tasks(
@@ -804,6 +1177,45 @@ class Client:
             for service in page["Services"]:
                 if service["Name"] == service_name:
                     return service["Id"]
+
+    def get_service_discovery_arn(self, service_name: str) -> str | None:
+        """ARN of the Cloud Map service with this name in the agent's namespace, or None."""
+        arn = self._service_discovery_arns_by_name.get(service_name)
+        if arn is None and self._service_discovery_arn_cache_may_refresh():
+            self._refresh_service_discovery_arn_cache()
+            arn = self._service_discovery_arns_by_name.get(service_name)
+        return arn
+
+    def _service_discovery_arn_cache_may_refresh(self) -> bool:
+        refreshed_at = self._service_discovery_arns_refreshed_at
+        return (
+            refreshed_at is None
+            or time.time() - refreshed_at
+            >= SERVICE_DISCOVERY_ARN_CACHE_MIN_REFRESH_INTERVAL_SECONDS
+        )
+
+    def _refresh_service_discovery_arn_cache(self) -> None:
+        arns_by_name: dict[str, str] = {}
+        paginator = self.service_discovery.get_paginator("list_services")
+        for page in paginator.paginate(
+            Filters=[
+                {
+                    "Name": "NAMESPACE_ID",
+                    "Values": [
+                        self.service_discovery_namespace_id,
+                    ],
+                    "Condition": "EQ",
+                },
+            ],
+        ):
+            for service in page["Services"]:
+                if service.get("Arn"):
+                    arns_by_name[service["Name"]] = service["Arn"]
+        # Merge rather than replace: _create_service may have seeded a name while the listing
+        # above was in flight, and that name would be missing from this (older) snapshot. Names
+        # are removed by delete_service, not here.
+        self._service_discovery_arns_by_name.update(arns_by_name)
+        self._service_discovery_arns_refreshed_at = time.time()
 
     def _infer_assign_public_ip(self):
         # https://docs.aws.amazon.com/AmazonECS/latest/userguide/fargate-task-networking.html

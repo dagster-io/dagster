@@ -30,7 +30,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type AssetCheckPartitionDetailQueryVariables = Exact<{
   assetKey: Types.AssetKeyInput;

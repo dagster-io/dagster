@@ -26,6 +26,7 @@ from dagster_pipes import PipesExtras
 from dagster_shared.record import record
 from prefect.client.schemas.objects import State
 
+from dagster_prefect.message_readers import PREFECT_RUN_ID_EXTRA, PREFECT_RUN_KIND_EXTRA
 from dagster_prefect.resource import PrefectResource, is_final_state, is_successful_state
 
 PrefectRunKind = Literal["flow-run", "task-run"]
@@ -102,6 +103,15 @@ class BasePipesPrefectClient(PipesClient, TreatAsResourceParam):
             extras=extras,
         ) as session:
             prefect_run = self._launch(context=context, session=session, **kwargs)
+            # Tells a reader of the run's logs which run to read.
+            session.report_launched(
+                {
+                    "extras": {
+                        PREFECT_RUN_KIND_EXTRA: prefect_run.kind,
+                        PREFECT_RUN_ID_EXTRA: str(prefect_run.id),
+                    }
+                }
+            )
             # Logged at launch rather than on completion so a long-running Prefect run can be
             # opened from the Dagster run's logs while it is still going.
             context.log.info(
