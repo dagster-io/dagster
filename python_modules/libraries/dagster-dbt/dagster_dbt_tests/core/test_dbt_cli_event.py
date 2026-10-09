@@ -79,8 +79,14 @@ def test_non_error_node_statuses_materialize(node_status: str) -> None:
     assert materialization.metadata["status"].value == node_status
 
 
-@pytest.mark.parametrize("node_status", ["error", "fail", "skipped", "runtime error"])
+@pytest.mark.parametrize(
+    "node_status", ["error", "fail", "skipped", "runtime error", "partial success"]
+)
 def test_error_node_statuses_do_not_materialize(node_status: str) -> None:
+    """`partial success` belongs here, not above: dbt lists it in `MARK_DEPENDENT_ERRORS_STATUSES`,
+    so dbt itself marks the node's dependents as errored. Materializing it would show the asset
+    healthy on a partial load and let downstream automation run on it.
+    """
     events = list(
         build_log_model_result(node_status).to_default_asset_events(
             MANIFEST, DagsterDbtTranslator()

@@ -415,8 +415,10 @@ class DbtCliEventMessage(ABC):
     ) -> dict[str, Any]:
         return {
             **self._get_default_metadata(manifest),
-            **self._get_lineage_metadata(translator, manifest, target_path, project),
+            # Surfaces that dbt did not rebuild the node (`no-op`, `reused`) or built it with
+            # warnings (`warn`), which is otherwise invisible on a materialization.
             "status": self._get_node_status(),
+            **self._get_lineage_metadata(translator, manifest, target_path, project),
         }
 
     def _to_model_events(

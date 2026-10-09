@@ -86,29 +86,23 @@ class DbtCloudJobRunHandler:
             return None
 
 
-def get_completed_at_timestamp(
-    result: Mapping[str, Any], fallback_timestamp: float | None = None
-) -> float:
+def get_run_generated_at_timestamp(run_results: Mapping[str, Any]) -> float:
+    """When the run's artifacts were generated, used for nodes dbt reported with no timing."""
+    generated_at = run_results.get("metadata", {}).get("generated_at")
+    return parser.parse(generated_at).timestamp() if generated_at else get_current_timestamp()
+
+
+def get_completed_at_timestamp(result: Mapping[str, Any], fallback_timestamp: float) -> float:
     timing = result["timing"]
     if len(timing) == 0:
-        # Nodes that dbt did not actually build -- e.g. `no-op` and `reused` -- can have no
-        # timing entries. Fall back to a timestamp belonging to the run itself rather than to
-        # the current time: the polling sensor sorts an asset's events by this value, so a
-        # wall-clock fallback would make an older run look newer than a run that really did
-        # rebuild the node.
-        return fallback_timestamp if fallback_timestamp is not None else get_current_timestamp()
+        # A node dbt did not actually build -- `no-op`, `reused` -- carries no timing. Report a
+        # timestamp belonging to the run rather than the current time, which would claim the node
+        # completed whenever the events happened to be parsed.
+        return fallback_timestamp
     # result["timing"] is a list of events in run_results.json
     # For successful models and passing tests,
     # the last item of that list includes the timing details of the execution.
     return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
-
-
-def get_run_generated_at_timestamp(run_results: Mapping[str, Any]) -> float:
-    """When the run's artifacts were generated, used as the completion timestamp for nodes
-    that dbt reported without any timing entries.
-    """
-    generated_at = run_results.get("metadata", {}).get("generated_at")
-    return parser.parse(generated_at).timestamp() if generated_at else get_current_timestamp()
 
 
 @record
@@ -201,6 +195,8 @@ class DbtCloudJobRunResults:
                 spec = dagster_dbt_translator.get_asset_spec(manifest, unique_id, None)
                 metadata = {
                     **default_metadata,
+                    # Surfaces that dbt did not rebuild the node (`no-op`, `reused`) or built it
+                    # with warnings (`warn`), which is otherwise invisible on a materialization.
                     "status": result_status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
                         get_completed_at_timestamp(

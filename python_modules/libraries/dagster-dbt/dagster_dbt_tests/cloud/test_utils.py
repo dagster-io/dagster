@@ -40,6 +40,9 @@ def test_non_error_statuses_materialize(status: str) -> None:
     assert materializations[0].metadata["Status"].value == status
 
 
-@pytest.mark.parametrize("status", ["error", "fail", "skipped", "runtime error"])
+@pytest.mark.parametrize("status", ["error", "fail", "skipped", "runtime error", "partial success"])
 def test_error_statuses_do_not_materialize(status: str) -> None:
+    """`partial success` belongs here: dbt marks a partial-success node's dependents as errored,
+    so treating it as a clean materialization would hide a partial load.
+    """
     assert materializations_for(status) == []
