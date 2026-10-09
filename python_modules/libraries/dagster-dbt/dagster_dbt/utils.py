@@ -114,6 +114,26 @@ def _select_unique_ids_from_cli(
     return unique_ids - {None}
 
 
+def _build_selection_child_map(manifest_json: Mapping[str, Any]) -> Mapping[str, AbstractSet[str]]:
+    """Build a child map like dbt's native one, for selection on manifests without it.
+
+    Every resource appears as a node, and the edges are the direct inversion of
+    depends_on, matching the structure dbt writes into manifests that include a
+    child map.
+    """
+    child_map: dict[str, set[str]] = {
+        unique_id: set()
+        for collection in _GRAPH_MEMBER_COLLECTIONS
+        for unique_id in manifest_json.get(collection) or {}
+    }
+    for collection in _GRAPH_MEMBER_COLLECTIONS:
+        for unique_id, resource in (manifest_json.get(collection) or {}).items():
+            for parent_unique_id in resource.get("depends_on", {}).get("nodes", []):
+                if parent_unique_id in child_map:
+                    child_map[parent_unique_id].add(unique_id)
+    return child_map
+
+
 def _select_unique_ids_from_manifest(
     select: str,
     exclude: str,
@@ -228,7 +248,13 @@ def _select_unique_ids_from_manifest(
         **functions,
     )
 
-    child_map = manifest_json["child_map"]
+    # Manifests produced by early versions of dbt Fusion do not contain a child
+    # map. Fall back to building one with the same structure as dbt's native
+    # child map: every resource appears as a node, and the edges are the direct
+    # inversion of depends_on for all resource types supported by the manifest.
+    child_map = manifest_json.get("child_map")
+    if not child_map:
+        child_map = _build_selection_child_map(manifest_json)
 
     digraph = DiGraph(incoming_graph_data=child_map)
     # dbt-fusion omits nodes with neither parents nor children from `child_map`, and a node
