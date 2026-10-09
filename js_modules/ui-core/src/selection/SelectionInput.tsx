@@ -125,13 +125,16 @@ export const SelectionAutoCompleteInput = ({
     (selection: string) => {
       let nextValue = selection;
       if (wildcardAttributeName) {
-        nextValue = upgradeSyntax(selection, wildcardAttributeName);
+        const upgraded = upgradeSyntax(selection, wildcardAttributeName);
+        // Keep what was typed rather than an upgrade the page can't parse
+        const isRejected = upgraded !== selection && linter(upgraded).length > 0;
+        nextValue = isRejected ? selection : upgraded;
       }
       onChange?.(nextValue);
       trackSelection(nextValue);
       return nextValue;
     },
-    [onChange, trackSelection, wildcardAttributeName],
+    [onChange, trackSelection, wildcardAttributeName, linter],
   );
 
   const editorRef = useRef<HTMLDivElement>(null);

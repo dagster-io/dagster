@@ -1,5 +1,6 @@
 import {
   AbstractParseTreeVisitor,
+  BaseErrorListener,
   CommonTokenStream,
   Lexer,
   Parser,
@@ -42,6 +43,12 @@ export function createSelectionLinter({
     const lexer = new LexerKlass(inputStream);
     lexer.column = start;
 
+    const lexerErrorListener = new CustomErrorListener();
+    const lexerErrorStarts = new LexerErrorStartListener(lexer);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(lexerErrorListener);
+    lexer.addErrorListener(lexerErrorStarts);
+
     const tokens = new CommonTokenStream(lexer);
     tokens.fill(); // Ensure all tokens are loaded before parsing
 
@@ -49,16 +56,19 @@ export function createSelectionLinter({
 
     const errorListener = new CustomErrorListener();
 
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(errorListener);
-
     parser.removeErrorListeners(); // Remove default console error listener
     parser.addErrorListener(errorListener);
 
     parser.start();
 
+    const lexerErrors = mergeSurrogatePairErrors(
+      text,
+      lexerErrorListener.getErrors(),
+      lexerErrorStarts.starts,
+    );
+
     // Map syntax errors to CodeMirror's lint format
-    const lintErrors = errorListener.getErrors().map((error) => ({
+    const lintErrors = [...lexerErrors, ...errorListener.getErrors()].map((error) => ({
       ...error,
       message: error.message.replace('<EOF>, ', ''),
     }));
@@ -78,6 +88,47 @@ export function createSelectionLinter({
   };
   return weakMapMemoize(linter, {maxEntries: 20});
 }
+
+// Records where each lexer error starts in the whole text; the error's `from` is a column.
+class LexerErrorStartListener extends BaseErrorListener {
+  starts: number[] = [];
+
+  constructor(private lexer: Lexer) {
+    super();
+  }
+
+  override syntaxError() {
+    this.starts.push(this.lexer.tokenStartCharIndex);
+  }
+}
+
+const isSurrogatePairAt = (text: string, index: number) => {
+  const high = text.charCodeAt(index);
+  const low = text.charCodeAt(index + 1);
+  return high >= 0xd800 && high <= 0xdbff && low >= 0xdc00 && low <= 0xdfff;
+};
+
+/**
+ * The lexer reads UTF-16 code units, so it rejects a character above U+FFFF (an emoji) as two
+ * errors. Merge each such pair into one error that names the whole character.
+ */
+const mergeSurrogatePairErrors = (text: string, errors: SyntaxError[], starts: number[]) =>
+  errors.flatMap((error, index) => {
+    const start = starts[index];
+    const previousStart = starts[index - 1];
+    const nextStart = starts[index + 1];
+    if (start === undefined) {
+      return [error];
+    }
+    if (previousStart === start - 1 && isSurrogatePairAt(text, previousStart)) {
+      return [];
+    }
+    if (nextStart === start + 1 && isSurrogatePairAt(text, start)) {
+      const character = text.slice(start, start + 2);
+      return [{...error, message: `token recognition error at: '${character}'`}];
+    }
+    return [error];
+  });
 
 class InvalidAttributeVisitor
   extends AbstractParseTreeVisitor<void>

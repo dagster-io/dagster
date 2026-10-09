@@ -424,7 +424,9 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     options: {excludeNot?: boolean; excludePlus?: boolean} = {},
   ) {
     const value = _value.trim();
-    const substringResult = value
+    // The substring row can't express a quote or backslash inside its quoted pattern.
+    const canMatchSubstring = value !== '' && !/["\\]/.test(value);
+    const substringResult = canMatchSubstring
       ? this.getSubstringResultMatchingQuery({query: value, textCallback})
       : null;
     if (substringResult) {

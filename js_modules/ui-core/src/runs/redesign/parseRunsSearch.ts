@@ -5,6 +5,7 @@ import {
   RUNS_SEARCH_ATTRIBUTES,
   RunsSearchAttribute,
   TAG_KEY_BY_ATTRIBUTE,
+  formatRunsSearchValue,
   getAttributeForTagKey,
   isTagBackedAttribute,
 } from './runsSearchAttributes';
@@ -45,6 +46,7 @@ import {
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedFunctionExpressionContext,
   UnmatchedValueContext,
+  UnquotedRejectedValueContext,
   UnquotedStringValueContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
@@ -123,6 +125,7 @@ const UNSUPPORTED_EXPRESSION_MESSAGES = [
 
 const RUN_STATUSES: string[] = Object.values(RunStatus);
 const TIMESTAMP_PATTERN = /^\d+(\.\d+)?$/;
+const HIDDEN_CHARACTER_PATTERN = /[\p{C}\p{Z}]/u;
 
 type RunsSearchParseResult =
   | {
@@ -172,6 +175,10 @@ type ValueReadResult =
     }
   | {
       error: string;
+    }
+  | {
+      /** A value the Runs search requires quoted. */
+      unquoted: string;
     };
 
 const isRunsSearchAttribute = (attribute: string): attribute is RunsSearchAttribute =>
@@ -198,8 +205,33 @@ const createErrorNode = (message: string, ctx: ParserRuleContext): ErrorNode => 
   },
 });
 
+const formatCodePoint = (character: string) =>
+  `U+${(character.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`;
+
+const readUnquotedRejectedValue = (text: string): ValueReadResult => {
+  const hiddenCharacter = HIDDEN_CHARACTER_PATTERN.exec(text)?.[0];
+  if (hiddenCharacter) {
+    return {error: `Remove the hidden character (${formatCodePoint(hiddenCharacter)})`};
+  }
+
+  if (text.includes('\\')) {
+    return {error: "Backslashes aren't supported"};
+  }
+
+  // Quoting would make the `*` literal, so suggesting quotes would change the search.
+  if (text.includes('*')) {
+    return {error: WILDCARD_MESSAGE};
+  }
+
+  return {unquoted: text};
+};
+
 const readValue = (ctx: AttributeValueContext | null): ValueReadResult => {
   const valueCtx = ctx?.value() ?? null;
+
+  if (valueCtx instanceof UnquotedRejectedValueContext) {
+    return readUnquotedRejectedValue(valueCtx.getText());
+  }
 
   if (valueCtx instanceof NullStringValueContext) {
     return {error: "<null> isn't supported in runs search"};
@@ -241,27 +273,32 @@ const getScalarValueError = (attribute: RunsSearchAttribute, value: string) => {
   return null;
 };
 
+const getTagKeyError = (key: string) => {
+  if (key === '') {
+    return TAG_FORMAT_MESSAGE;
+  }
+
+  if (key.includes('=')) {
+    return "Tag keys can't contain `=`";
+  }
+
+  return null;
+};
+
+const getReadText = (result: {value: string} | {unquoted: string}) =>
+  'value' in result ? result.value : result.unquoted;
+
 const createTagTerm = (
   ctx: AttributeExpressionContext,
   key: string,
   value: string,
-): RunsSearchNode => {
-  if (key === '') {
-    return createErrorNode(TAG_FORMAT_MESSAGE, ctx);
-  }
-
-  if (key.includes('=')) {
-    return createErrorNode("Tag keys can't contain `=`", ctx);
-  }
-
-  return {
-    type: 'term',
-    attribute: getAttributeForTagKey(key) ?? 'tag',
-    conflictKey: `tag:${key}`,
-    token: {token: 'tag', value: `${key}=${value}`},
-    ...getContextRange(ctx),
-  };
-};
+): RunsSearchNode => ({
+  type: 'term',
+  attribute: getAttributeForTagKey(key) ?? 'tag',
+  conflictKey: `tag:${key}`,
+  token: {token: 'tag', value: `${key}=${value}`},
+  ...getContextRange(ctx),
+});
 
 const createScalarTerm = (
   ctx: AttributeExpressionContext,
@@ -388,17 +425,42 @@ class RunsSearchVisitor
       return createErrorNode(second.error, ctx);
     }
 
-    if (attribute === 'tag') {
-      return second
-        ? createTagTerm(ctx, first.value, second.value)
-        : createErrorNode(TAG_FORMAT_MESSAGE, ctx);
+    if (attribute === 'tag' && !second) {
+      return createErrorNode(TAG_FORMAT_MESSAGE, ctx);
     }
 
-    if (second) {
+    if (attribute !== 'tag' && second) {
       return createErrorNode('Only tag takes key=value, for example tag:team=data', ctx);
     }
 
-    return createScalarTerm(ctx, attribute, first.value);
+    // Report errors that quoting wouldn't fix before suggesting quotes.
+    if (attribute === 'tag') {
+      const keyError = getTagKeyError(getReadText(first));
+      if (keyError) {
+        return createErrorNode(keyError, ctx);
+      }
+    } else if ('unquoted' in first) {
+      const scalarError = getScalarValueError(attribute, first.unquoted);
+      if (scalarError) {
+        return createErrorNode(scalarError, ctx);
+      }
+    }
+
+    if ('unquoted' in first || (second && 'unquoted' in second)) {
+      const firstText = formatRunsSearchValue(getReadText(first));
+      const fix = second
+        ? `${attribute}:${firstText}=${formatRunsSearchValue(getReadText(second))}`
+        : `${attribute}:${firstText}`;
+      return createErrorNode(`Add quotes: \`${fix}\``, ctx);
+    }
+
+    if (attribute !== 'tag') {
+      return createScalarTerm(ctx, attribute, first.value);
+    }
+
+    return second
+      ? createTagTerm(ctx, first.value, second.value)
+      : createErrorNode(TAG_FORMAT_MESSAGE, ctx);
   }
 }
 

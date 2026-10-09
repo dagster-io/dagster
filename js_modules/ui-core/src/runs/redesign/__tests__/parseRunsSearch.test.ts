@@ -105,21 +105,39 @@ describe('parseRunsSearch', () => {
     expect(parseRunsSearch(text)).toEqual({tokens: expected, errors: []});
   });
 
-  it.each(['id:abc-123', 'user:a@b.com', 'tag:team=a-b'])(
-    'rejects the unquoted special characters in %s',
-    (text) => {
-      expect(parseRunsSearch(text)).toEqual({
-        tokens: null,
-        errors: [
-          {
-            message: 'Check the search syntax, for example job:my_job and status:failure',
-            from: 0,
-            to: text.length,
-          },
-        ],
-      });
-    },
-  );
+  it.each([
+    {text: 'id:abc-123', message: 'Add quotes: `id:"abc-123"`'},
+    {text: 'user:a@b.com', message: 'Add quotes: `user:"a@b.com"`'},
+    {text: 'created_after:1.5', message: 'Add quotes: `created_after:"1.5"`'},
+    {text: 'tag:team=a-b', message: 'Add quotes: `tag:team="a-b"`'},
+    {text: 'tag:a-b=team', message: 'Add quotes: `tag:"a-b"=team`'},
+    {text: 'tag:a-b=c-d', message: 'Add quotes: `tag:"a-b"="c-d"`'},
+    {text: 'job:a\u200bb', message: 'Remove the hidden character (U+200B)'},
+    {text: 'id:a\u00a0b', message: 'Remove the hidden character (U+00A0)'},
+    {text: 'tag:a\\b=c', message: "Backslashes aren't supported"},
+    {text: 'job:a-b*', message: "Wildcards (*) aren't supported in runs search"},
+    {text: 'status:fail-ed', message: 'Unknown status: fail-ed'},
+    {text: 'created_after:12-3', message: 'created_after needs a Unix timestamp in seconds'},
+    {text: 'tag:"a=b"=c-d', message: "Tag keys can't contain `=`"},
+  ])('rejects the unquoted special characters in $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message, from: 0, to: text.length}],
+    });
+  });
+
+  it.each([
+    {text: 'tag:a-b=c\\d', message: "Backslashes aren't supported"},
+    {text: 'tag:c\\d=a-b', message: "Backslashes aren't supported"},
+    {text: 'tag:a-b="c', message: 'Close the quote around this value'},
+    {text: 'tag:a-b', message: 'tag needs key=value, for example tag:team=data'},
+    {text: 'job:a-b=x', message: 'Only tag takes key=value, for example tag:team=data'},
+  ])('reports the error quoting would not fix in $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message, from: 0, to: text.length}],
+    });
+  });
 
   it('points errors at the offending term', () => {
     expect(getFirstError('job:a and job:b')).toEqual({

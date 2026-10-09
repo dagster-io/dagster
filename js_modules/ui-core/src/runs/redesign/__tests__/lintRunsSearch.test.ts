@@ -31,8 +31,10 @@ describe('lintRunsSearch', () => {
     ]);
   });
 
-  it('reports a syntax error for an unquoted value with special characters', () => {
-    expect(lintRunsSearch('id:abc-123')).not.toEqual([]);
+  it('suggests quotes for an unquoted value with special characters', () => {
+    expect(lintRunsSearch('id:abc-123')).toEqual([
+      {message: 'Add quotes: `id:"abc-123"`', from: 0, to: 10},
+    ]);
   });
 
   it('reports runs search rules once the syntax is valid', () => {
@@ -60,17 +62,6 @@ describe('lintRunsSearch', () => {
         to: Infinity,
       },
       {message: 'Unsupported attribute: "key"', from: 0, to: 3},
-    ]);
-  });
-
-  it('places later terms after characters the lexer drops', () => {
-    expect(lintRunsSearch('job:a \\\\ x:b')).toEqual([
-      {
-        message: "mismatched input 'x' expecting <EOF>",
-        offendingSymbol: 'x',
-        from: 9,
-        to: Infinity,
-      },
     ]);
   });
 });

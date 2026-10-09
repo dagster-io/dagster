@@ -1438,6 +1438,43 @@ describe('createAssetSelectionHint', () => {
     });
   });
 
+  const hintWithRejectedValues = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {key: ['dbt-model'], owner: ['ben@dagsterlabs.com'], tag: ['a-b=c-d']},
+      primaryAttributeKey: 'key',
+      attributeToIcon: {key: 'magnify_glass', owner: 'magnify_glass', tag: 'magnify_glass'},
+    }),
+  );
+
+  it.each([
+    {input: 'owner:ben@dag|', text: '"ben@dagsterlabs.com"', from: 6, to: 13},
+    {input: 'tag:a-|b=c-d', text: '"a-b=c-d"', from: 4, to: 11},
+  ])('completes the whole value in $input', ({input, text, from, to}) => {
+    expect(testAutocomplete(input, hintWithRejectedValues)).toEqual({
+      list: [expect.objectContaining({text})],
+      from,
+      to,
+    });
+  });
+
+  it('suggests a substring match for a value with a character the grammar rejects', () => {
+    expect(testAutocomplete('dbt-mo|', hintWithRejectedValues)).toEqual({
+      list: [
+        expect.objectContaining({text: 'key:"*dbt-mo*"'}),
+        expect.objectContaining({text: 'key:"dbt-model"'}),
+      ],
+      from: 0,
+      to: 6,
+    });
+  });
+
+  it.each([
+    {input: 'a\\b|', to: 3},
+    {input: '"a-b"|', to: 5},
+  ])('does not suggest a substring match for $input', ({input, to}) => {
+    expect(testAutocomplete(input, hintWithRejectedValues)).toEqual({list: [], from: 0, to});
+  });
+
   it.each(['| own', ' | own'])(
     'suggests as for an empty input when the cursor is in leading whitespace: %s',
     (input) => {

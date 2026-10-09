@@ -1,8 +1,12 @@
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import {Editor} from 'codemirror';
+import {ComponentProps} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
+import {AssetSelectionLexer} from '../../asset-selection/generated/AssetSelectionLexer';
+import {AssetSelectionParser} from '../../asset-selection/generated/AssetSelectionParser';
 import {SelectionAutoCompleteInput} from '../SelectionInput';
+import {createSelectionLinter} from '../createSelectionLinter';
 
 // jsdom has no layout APIs, and CodeMirror measures text with ranges and focuses the window.
 Range.prototype.getBoundingClientRect = () =>
@@ -21,7 +25,18 @@ const useAutoComplete = () => ({
 
 const linter = () => [];
 
-const renderInput = (value: string, onChange = jest.fn()) => {
+const assetLinter = createSelectionLinter({
+  Lexer: AssetSelectionLexer,
+  Parser: AssetSelectionParser,
+  supportedAttributes: ['key'],
+});
+
+type InputOptions = Partial<
+  Pick<ComponentProps<typeof SelectionAutoCompleteInput>, 'linter' | 'wildcardAttributeName'>
+>;
+
+const renderInput = (value: string, options: InputOptions = {}) => {
+  const onChange = jest.fn();
   const buildInput = (nextValue: string) => (
     <MemoryRouter>
       <SelectionAutoCompleteInput
@@ -29,7 +44,8 @@ const renderInput = (value: string, onChange = jest.fn()) => {
         placeholder="Search and filter things"
         value={nextValue}
         onChange={onChange}
-        linter={linter}
+        linter={options.linter ?? linter}
+        wildcardAttributeName={options.wildcardAttributeName}
         useAutoComplete={useAutoComplete}
       />
     </MemoryRouter>
@@ -96,6 +112,30 @@ describe('SelectionAutoCompleteInput', () => {
     const {editor} = renderInput(value);
     expect(editor.lineCount()).toBe(1);
     expect(editor.getValue()).toBe('a b');
+  });
+
+  it('commits the upgraded text when it passes the linter', () => {
+    const {editor, onChange} = renderInput('', {
+      linter: assetLinter,
+      wildcardAttributeName: 'key',
+    });
+    act(() => {
+      editor.replaceRange('foo bar', {line: 0, ch: 0}, undefined, '+input');
+    });
+    pressEnter();
+    expect(onChange).toHaveBeenCalledWith('key:"*foo*"  or key:"*bar*"');
+  });
+
+  it('commits the typed text when the upgraded text fails the linter', () => {
+    const {editor, onChange} = renderInput('', {
+      linter: assetLinter,
+      wildcardAttributeName: 'key',
+    });
+    act(() => {
+      editor.replaceRange('(a-b', {line: 0, ch: 0}, undefined, '+input');
+    });
+    pressEnter();
+    expect(onChange).toHaveBeenCalledWith('(a-b');
   });
 
   it('names the editor after its placeholder', () => {

@@ -17,10 +17,7 @@ interface ParseResult {
 interface ParseTreeResult {
   tree: ParseTree;
   line: string;
-  /**
-   * Start of the tree in the input. `line` can be shorter than the text it covers, because the
-   * lexer drops characters it rejects.
-   */
+  /** Start of the tree in the input, past any leading whitespace the grammar skipped. */
   startOffset: number;
 }
 

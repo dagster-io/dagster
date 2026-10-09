@@ -18,6 +18,7 @@ import {
   PostAttributeValueWhitespaceContext,
   QuotedStringValueContext,
   StartContext,
+  UnquotedRejectedValueContext,
   UnquotedStringValueContext,
   UpTraversalContext,
 } from './generated/SelectionAutoCompleteParser';
@@ -125,6 +126,11 @@ export class SyntaxHighlightingVisitor
   }
 
   visitUnquotedStringValue(ctx: UnquotedStringValueContext) {
+    this.addClass(ctx, 'value');
+    this.visitChildren(ctx);
+  }
+
+  visitUnquotedRejectedValue(ctx: UnquotedRejectedValueContext) {
     this.addClass(ctx, 'value');
     this.visitChildren(ctx);
   }
