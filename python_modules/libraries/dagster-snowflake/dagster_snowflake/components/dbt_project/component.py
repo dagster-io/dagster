@@ -72,7 +72,7 @@ from dagster_dbt.cloud_v2.run_handler import (
     get_completed_at_timestamp,
     get_run_generated_at_timestamp,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import REFABLE_NODE_TYPES, SUCCESSFUL_NODE_STATUSES, NodeType, TestStatus
 from dagster_dbt.components.dbt_component_utils import (
     DagsterDbtComponentTranslatorSettings,
     _set_resolution_context,
@@ -940,7 +940,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
             if (
                 resource_type in REFABLE_NODE_TYPES
-                and status == NodeStatus.Success
+                and status in SUCCESSFUL_NODE_STATUSES
                 and not is_ephemeral
             ):
                 asset_key = translator.get_asset_spec(manifest, unique_id, None).key
@@ -951,6 +951,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     continue
                 metadata = {
                     **default_metadata,
+                    "status": status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: dg.MetadataValue.timestamp(
                         get_completed_at_timestamp(result, generated_at_timestamp)
                     ),
@@ -1057,7 +1058,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
             props = nodes.get(unique_id)
             if not props or props.get("resource_type") not in REFABLE_NODE_TYPES:
                 continue
-            if result.get("status") != NodeStatus.Success:
+            if result.get("status") not in SUCCESSFUL_NODE_STATUSES:
                 continue
             if props.get("config", {}).get("materialized") == "ephemeral":
                 continue
