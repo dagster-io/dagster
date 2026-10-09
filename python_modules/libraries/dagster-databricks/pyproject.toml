@@ -14,7 +14,7 @@ dependencies = [
     "dagster-pipes==1!0+dev",
     "dagster-pyspark==1!0+dev",
     "aiohttp",
-    "databricks-sdk>=0.41,<0.61.0",
+    "databricks-sdk>=0.41,<0.147",
 ]
 
 [project.urls]
