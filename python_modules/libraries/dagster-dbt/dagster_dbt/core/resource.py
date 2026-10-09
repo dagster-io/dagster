@@ -313,8 +313,11 @@ class DbtCliResource(ConfigurableResource):
         resolved_dbt_executable = shutil.which(dbt_executable)
         if not resolved_dbt_executable:
             raise ValueError(
-                f"The dbt executable '{dbt_executable}' does not exist. Please specify a valid"
-                " path to a dbt executable."
+                f"The dbt executable '{dbt_executable}' was not found on PATH. dagster-dbt does"
+                " not install dbt itself: install dbt Fusion, or install dbt-core with"
+                " `pip install 'dagster-dbt[dbt-core]'` along with an adapter package such as"
+                " `dbt-snowflake`. If dbt is installed elsewhere, set `dbt_executable` to its"
+                " path."
             )
 
         return dbt_executable
