@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dagster-snowflake"
-version = "1!0+dev"
+version = "0.29.26"
 description = "Package for Snowflake Dagster framework components."
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 requires-python = ">=3.10,<3.15"
 dependencies = [
-    "dagster==1!0+dev",
+    "dagster==1.13.26",
     "snowflake-snowpark-python>=1.24.0",
     "snowflake-core>=1.8.0",
     "snowflake-connector-python>=3.4.0",
@@ -39,7 +39,7 @@ pandas = [
 # it is still needed to evaluate selection strings against the manifest, since there
 # is no local project to run `dbt list` against.
 dbt = [
-    "dagster-dbt[dbt-core]==1!0+dev",
+    "dagster-dbt[dbt-core]==0.29.26",
 ]
 
 [dependency-groups]
