@@ -114,11 +114,10 @@ Anything this prints is missing from your asset graph. As a workaround, give the
 
 ### Open issues
 
-| Issue                                                        | Description                                                                                   |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| [#34148](https://github.com/dagster-io/dagster/issues/34148) | The dbt Cloud integration raises `KeyError: 'materialized'` when a Fusion run includes seeds. |
-| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                                           |
-| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Column metadata, column lineage, and row counts are unavailable on Fusion.                    |
+| Issue                                                        | Description                                                                |
+| ------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                        |
+| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Column metadata, column lineage, and row counts are unavailable on Fusion. |
 
 ### Fusion's own compatibility surface
 
