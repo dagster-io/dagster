@@ -99,7 +99,7 @@ def get_optional_inner_type(ttype):
         is_closed_python_optional_type(ttype), "type must pass is_closed_python_optional_type check"
     )
 
-    return get_args(ttype)[0]
+    return next(arg for arg in get_args(ttype) if arg is not type(None))
 
 
 def get_list_inner_type(ttype):
