@@ -265,3 +265,59 @@ def test_multiple_close():
     # `close` is idempotent, multiple calls should not raise an error
     context.close()
     context.close()
+
+
+@pytest.mark.parametrize("failure_phase", ["open", "payload", "write"])
+def test_context_cleans_up_resources_when_initialization_fails(failure_phase):
+    context_loader = MagicMock()
+    writer = MagicMock()
+    channel = writer.open.return_value.__enter__.return_value
+    error = OSError("initialization failed")
+    if failure_phase == "open":
+        writer.open.return_value.__enter__.side_effect = error
+    elif failure_phase == "payload":
+        writer.get_opened_payload.side_effect = error
+    else:
+        channel.write_message.side_effect = error
+
+    with pytest.raises(OSError, match="initialization failed"):
+        PipesContext(MagicMock(), context_loader, writer)
+
+    context_loader.load_context.return_value.__exit__.assert_called_once()
+    if failure_phase != "open":
+        writer.open.return_value.__exit__.assert_called_once()
+
+
+def test_context_closes_resources_when_closed_message_fails():
+    context_loader = MagicMock()
+    writer = MagicMock()
+    context = PipesContext(MagicMock(), context_loader, writer)
+    channel = writer.open.return_value.__enter__.return_value
+    channel.write_message.side_effect = OSError("closed message failed")
+    with pytest.raises(OSError, match="closed message failed"):
+        context.close()
+    context_loader.load_context.return_value.__exit__.assert_called_once()
+    writer.open.return_value.__exit__.assert_called_once()
+    assert context.is_closed
+    context.close()
+
+
+def test_context_initialization_error_is_not_suppressed_by_loader():
+    closed = []
+
+    @contextmanager
+    def suppressing_context():
+        try:
+            yield TEST_PIPES_CONTEXT_DEFAULTS
+        except OSError:
+            pass
+        finally:
+            closed.append(True)
+
+    loader = MagicMock()
+    loader.load_context.return_value = suppressing_context()
+    writer = MagicMock()
+    writer.get_opened_payload.side_effect = OSError("startup failed")
+    with pytest.raises(OSError, match="startup failed"):
+        PipesContext(MagicMock(), loader, writer)
+    assert closed == [True]
