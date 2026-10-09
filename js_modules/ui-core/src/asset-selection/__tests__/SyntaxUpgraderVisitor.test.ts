@@ -16,4 +16,25 @@ describe('upgradeSyntax', () => {
       'key:"*value1*"  or key:"*value2*"  or key:value3',
     );
   });
+
+  it.each([
+    {
+      query: 'key:"😀", bar',
+      expected: 'key:"😀" or key:"*bar*"',
+    },
+    {
+      query: '"😀😀" foo',
+      expected: 'key:"*😀😀*"  or key:"*foo*"',
+    },
+    {
+      query: 'foo , bar',
+      expected: 'key:"*foo*" or key:"*bar*"',
+    },
+    {
+      query: 'key:a  , bar , baz',
+      expected: 'key:a or key:"*bar*" or key:"*baz*"',
+    },
+  ])('keeps the text intact when upgrading $query', ({query, expected}) => {
+    expect(upgradeSyntax(query, 'key')).toBe(expected);
+  });
 });

@@ -1,13 +1,8 @@
-import {
-  BailErrorStrategy,
-  CharStream,
-  CommonTokenStream,
-  ParseTree,
-  ParserRuleContext,
-} from 'antlr4ng';
+import {BailErrorStrategy, CommonTokenStream, ParseTree, ParserRuleContext} from 'antlr4ng';
 import memoize from 'lodash/memoize';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
+import {Utf16CharStream} from './Utf16CharStream';
 import {SelectionAutoCompleteLexer} from './generated/SelectionAutoCompleteLexer';
 import {SelectionAutoCompleteParser} from './generated/SelectionAutoCompleteParser';
 
@@ -22,6 +17,11 @@ interface ParseResult {
 interface ParseTreeResult {
   tree: ParseTree;
   line: string;
+  /**
+   * Start of the tree in the input. `line` can be shorter than the text it covers, because the
+   * lexer drops characters it rejects.
+   */
+  startOffset: number;
 }
 
 /**
@@ -41,8 +41,9 @@ export const parseInput = memoize((input: string): ParseResult => {
     const substring = input.substring(currentPosition);
 
     // Initialize ANTLR input stream, lexer, and parser
-    const inputStream = CharStream.fromString(substring);
+    const inputStream = new Utf16CharStream(substring);
     const lexer = new SelectionAutoCompleteLexer(inputStream);
+    lexer.removeErrorListeners();
     const tokenStream = new CommonTokenStream(lexer);
     tokenStream.fill(); // Ensure all tokens are loaded before parsing
 
@@ -60,7 +61,11 @@ export const parseInput = memoize((input: string): ParseResult => {
       // Parse using the 'expr' rule instead of 'start' to allow partial parsing
       tree = parser.expr();
 
-      parseTrees.push({tree, line: (tree as ParserRuleContext).getText()});
+      parseTrees.push({
+        tree,
+        line: (tree as ParserRuleContext).getText(),
+        startOffset: currentPosition,
+      });
 
       // Advance currentPosition to the end of the parsed input
       const lastToken = tokenStream.get(tokenStream.index - 1);
@@ -78,8 +83,9 @@ export const parseInput = memoize((input: string): ParseResult => {
         // Parse up to the error
         const validInput = input.substring(currentPosition, errorIndex);
         if (validInput.trim().length > 0) {
-          const validInputStream = CharStream.fromString(validInput);
+          const validInputStream = new Utf16CharStream(validInput);
           const validLexer = new SelectionAutoCompleteLexer(validInputStream);
+          validLexer.removeErrorListeners();
           const validTokenStream = new CommonTokenStream(validLexer);
           validTokenStream.fill(); // Ensure all tokens are loaded before parsing
 
@@ -90,7 +96,7 @@ export const parseInput = memoize((input: string): ParseResult => {
 
           try {
             const validTree = validParser.expr();
-            parseTrees.push({tree: validTree, line: validInput});
+            parseTrees.push({tree: validTree, line: validInput, startOffset: currentPosition});
           } catch {
             // Ignore errors here since we already have an error in currentErrors
           }

@@ -1,6 +1,5 @@
 import {
   AbstractParseTreeVisitor,
-  CharStream,
   CommonTokenStream,
   Lexer,
   Parser,
@@ -9,6 +8,7 @@ import {
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
 import {parseInput} from './SelectionInputParser';
+import {Utf16CharStream} from './Utf16CharStream';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AttributeNameContext} from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
@@ -34,7 +34,7 @@ export function createSelectionLinter({
       return [];
     }
 
-    const inputStream = CharStream.fromString(text);
+    const inputStream = new Utf16CharStream(text);
     const lexer = new LexerKlass(inputStream);
 
     const tokens = new CommonTokenStream(lexer);
@@ -64,7 +64,10 @@ export function createSelectionLinter({
       unsupportedAttributeMessages,
       lintErrors,
     );
-    parseTrees.forEach(({tree}) => tree.accept(attributeVisitor));
+    parseTrees.forEach(({tree, startOffset}) => {
+      attributeVisitor.treeOffset = startOffset;
+      tree.accept(attributeVisitor);
+    });
 
     return lintErrors.concat(attributeVisitor.getErrors());
   };
@@ -77,6 +80,8 @@ class InvalidAttributeVisitor
 {
   private errors: SyntaxError[] = [];
   private sortedLintErrors: SyntaxError[];
+  /** Start of the current parse tree in the full text; tree token offsets are local to it. */
+  treeOffset = 0;
 
   constructor(
     private supportedAttributes: readonly string[],
@@ -121,11 +126,10 @@ class InvalidAttributeVisitor
   visitAttributeName(ctx: AttributeNameContext) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const attributeName = ctx.IDENTIFIER()!.getText();
-    if (!this.supportedAttributes.includes(attributeName)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const from = ctx.start!.start;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const to = ctx.stop!.stop + 1;
+    const {start, stop} = ctx;
+    if (!this.supportedAttributes.includes(attributeName) && start && stop) {
+      const from = start.start + this.treeOffset;
+      const to = stop.stop + 1 + this.treeOffset;
 
       if (!this.hasOverlap(from, to)) {
         this.errors.push({

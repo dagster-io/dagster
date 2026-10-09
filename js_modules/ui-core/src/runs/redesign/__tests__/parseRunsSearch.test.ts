@@ -132,4 +132,12 @@ describe('parseRunsSearch', () => {
       to: 17,
     });
   });
+
+  it('counts an emoji as two characters when pointing at a later term', () => {
+    expect(getFirstError('job:"😀" and job:"x"')).toEqual({
+      message: 'Only one job per search',
+      from: 13,
+      to: 20,
+    });
+  });
 });

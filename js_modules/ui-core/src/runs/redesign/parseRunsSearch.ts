@@ -1,10 +1,4 @@
-import {
-  AbstractParseTreeVisitor,
-  CharStream,
-  CommonTokenStream,
-  ParseTree,
-  ParserRuleContext,
-} from 'antlr4ng';
+import {AbstractParseTreeVisitor, CommonTokenStream, ParseTree, ParserRuleContext} from 'antlr4ng';
 import uniqBy from 'lodash/uniqBy';
 
 import {
@@ -18,6 +12,7 @@ import {RunStatus} from '../../graphql/types';
 import {AntlrInputErrorListener} from '../../selection/AntlrInputErrorListener';
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {getValueNodeValue} from '../../selection/SelectionInputUtil';
+import {Utf16CharStream} from '../../selection/Utf16CharStream';
 import {SelectionAutoCompleteLexer} from '../../selection/generated/SelectionAutoCompleteLexer';
 import {
   AllExpressionContext,
@@ -529,7 +524,7 @@ export const parseRunsSearch = (text: string): RunsSearchParseResult => {
 
   let tree: StartContext;
   try {
-    const lexer = new SelectionAutoCompleteLexer(CharStream.fromString(text));
+    const lexer = new SelectionAutoCompleteLexer(new Utf16CharStream(text));
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 

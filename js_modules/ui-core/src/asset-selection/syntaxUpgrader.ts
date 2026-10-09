@@ -62,13 +62,11 @@ class SyntaxUpgradingVisitor
     // Remove any spaces around the comma and replace with ' or '
     const before = this.convertedQuery.slice(0, start).trimEnd();
     const after = this.convertedQuery.slice(end + 1).trimStart();
+    const previousLength = this.convertedQuery.length;
     this.convertedQuery = before + ' or ' + after;
 
-    // Update offset by the difference between ' or ' (4 chars) and ',' (1 char)
-    // plus any spaces we removed
-    const originalLength = end - start + 1;
-    const newLength = 4;
-    this.offset += newLength - originalLength;
+    // Count the trimmed spaces too, not just the comma becoming ' or '
+    this.offset += this.convertedQuery.length - previousLength;
   }
 }
 
