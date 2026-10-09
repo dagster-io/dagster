@@ -1,17 +1,36 @@
-import {MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
-import {buildInstigationState, buildInstigationTick} from '../../../graphql/builders';
-import {InstigationTickStatus, InstigationType} from '../../../graphql/types';
+import {
+  buildDeletePipelineRunSuccess,
+  buildInstigationState,
+  buildInstigationTick,
+  buildRun,
+  buildTerminateRunSuccess,
+  buildTerminateRunsResult,
+} from '../../../graphql/builders';
+import {
+  InstigationTickStatus,
+  InstigationType,
+  RunStatus,
+  TerminateRunPolicy,
+} from '../../../graphql/types';
 import {JOB_SELECTED_TICK_QUERY} from '../../../instigation/TickDetailsDialog';
 import {
   SelectedTickQuery,
   SelectedTickQueryVariables,
 } from '../../../instigation/types/TickDetailsDialog.types';
-import {buildQueryMock} from '../../../testing/mocking';
+import {buildMutationMock, buildQueryMock} from '../../../testing/mocking';
 import {DagsterTag} from '../../RunTag';
+import {DELETE_MUTATION, RunsQueryRefetchContext, TERMINATE_MUTATION} from '../../RunUtils';
+import {
+  DeleteMutation,
+  DeleteMutationVariables,
+  TerminateMutation,
+  TerminateMutationVariables,
+} from '../../types/RunUtils.types';
 import {RunsFeedList} from '../RunsFeedList';
 import {
   FIXTURE_NOW_MS,
@@ -20,10 +39,12 @@ import {
   tag,
 } from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
+import {RunSummaryFragment} from '../types/RunsFeedFragments.types';
 
 const SALES_RUN_ID = 'a1b2c3d4-1111-2222-3333-444455556666';
 const INVENTORY_RUN_ID = 'bbbbbbbb-1111-2222-3333-444455556666';
 const BACKFILL_ID = 'bkfl1234';
+const MENU_RUN_ID = 'cccccccc-1111-2222-3333-444455556666';
 
 const TICK_DIALOG_HEADING = 'Requested materializations';
 
@@ -46,6 +67,21 @@ const inventoryRun = runEntry({
 });
 
 const completedBackfill = backfillEntry({id: BACKFILL_ID});
+
+const buildMenuRun = (overrides: Partial<RunSummaryFragment> = {}) =>
+  runEntry({
+    id: MENU_RUN_ID,
+    hasReExecutePermission: true,
+    hasTerminatePermission: true,
+    hasDeletePermission: true,
+    ...overrides,
+  });
+
+const deleteMock = buildMutationMock<DeleteMutation, DeleteMutationVariables>({
+  query: DELETE_MUTATION,
+  variables: {runId: MENU_RUN_ID},
+  data: {deletePipelineRun: buildDeletePipelineRunSuccess({runId: MENU_RUN_ID})},
+});
 
 const buildTickMock = (sensorName: string, tickId: string) =>
   buildQueryMock<SelectedTickQuery, SelectedTickQueryVariables>({
@@ -82,16 +118,20 @@ type ListProps = {
   isLoading?: boolean;
 };
 
-const renderList = ({entries, isLoading = false}: ListProps) => {
+const renderList = ({entries, isLoading = false}: ListProps, mocks: MockedResponse[] = []) => {
+  const refetch = jest.fn();
   const wrap = ({entries: nextEntries, isLoading: nextIsLoading = false}: ListProps) => (
     <MemoryRouter>
       <MockedProvider
         mocks={[
           buildTickMock('sales_automation', 'tick-id'),
           buildTickMock('inventory_automation', 'tick-2'),
+          ...mocks,
         ]}
       >
-        <RunsFeedList entries={nextEntries} isLoading={nextIsLoading} />
+        <RunsQueryRefetchContext.Provider value={{refetch}}>
+          <RunsFeedList entries={nextEntries} isLoading={nextIsLoading} />
+        </RunsQueryRefetchContext.Provider>
       </MockedProvider>
     </MemoryRouter>
   );
@@ -99,6 +139,7 @@ const renderList = ({entries, isLoading = false}: ListProps) => {
   const {container, rerender} = render(wrap({entries, isLoading}));
   return {
     list: container.querySelector('[aria-busy]'),
+    refetch,
     rerenderList: (next: ListProps) => rerender(wrap(next)),
   };
 };
@@ -113,6 +154,13 @@ const findTickButton = async (position: number) => {
 };
 
 const findIdLinks = () => screen.findAllByRole('link', {name: /^(Run|Backfill) /});
+
+const findMenuButton = () => screen.findByRole('button', {name: 'Run actions'});
+
+const chooseMenuItem = async (user: ReturnType<typeof userEvent.setup>, text: string) => {
+  await user.click(await findMenuButton());
+  await user.click(await screen.findByRole('menuitem', {name: new RegExp(`${text}$`)}));
+};
 
 describe('RunsFeedList', () => {
   it('renders a row for each entry, in order', async () => {
@@ -179,5 +227,113 @@ describe('RunsFeedList', () => {
     rerenderList({entries: []});
     await user.click(await screen.findByRole('button', {name: 'Close'}));
     await waitFor(() => expect(list).toHaveFocus());
+  });
+
+  it('keeps the deletion result open when the deleted run leaves the list', async () => {
+    const user = userEvent.setup();
+    const {list, refetch, rerenderList} = renderList({entries: [buildMenuRun()]}, [deleteMock]);
+
+    await chooseMenuItem(user, 'Delete');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', {name: 'Yes, delete 1 run'}));
+    expect(await screen.findByText('Successfully deleted 1 run.')).toBeVisible();
+    expect(refetch).toHaveBeenCalled();
+
+    rerenderList({entries: []});
+    expect(await screen.findByText('Successfully deleted 1 run.')).toBeVisible();
+
+    await user.click(await screen.findByRole('button', {name: 'Done'}));
+    await waitFor(() => expect(list).toHaveFocus());
+  });
+
+  it('only offers to terminate instead of deleting when the user can terminate', async () => {
+    const user = userEvent.setup();
+    renderList({
+      entries: [
+        buildMenuRun({
+          runStatus: RunStatus.STARTED,
+          endTime: null,
+          canTerminate: true,
+          hasTerminatePermission: false,
+        }),
+      ],
+    });
+
+    await chooseMenuItem(user, 'Delete');
+
+    expect(await screen.findByText('1 run will be deleted.')).toBeVisible();
+    expect(screen.queryByRole('button', {name: /instead/})).not.toBeInTheDocument();
+  });
+
+  it('hands off from delete to terminate and keeps the dialog open when the run leaves the list', async () => {
+    const user = userEvent.setup();
+    const {list, refetch, rerenderList} = renderList(
+      {
+        entries: [buildMenuRun({runStatus: RunStatus.STARTED, endTime: null, canTerminate: true})],
+      },
+      [
+        buildMutationMock<TerminateMutation, TerminateMutationVariables>({
+          query: TERMINATE_MUTATION,
+          variables: {
+            runIds: [MENU_RUN_ID],
+            terminatePolicy: TerminateRunPolicy.SAFE_TERMINATE,
+          },
+          data: {
+            terminateRuns: buildTerminateRunsResult({
+              terminateRunResults: [
+                buildTerminateRunSuccess({run: buildRun({id: MENU_RUN_ID, canTerminate: true})}),
+              ],
+            }),
+          },
+        }),
+      ],
+    );
+
+    await chooseMenuItem(user, 'Delete');
+    await user.click(await screen.findByRole('button', {name: 'Terminate 1 run instead'}));
+    await user.click(await screen.findByRole('button', {name: 'Terminate 1 run'}));
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
+
+    rerenderList({entries: []});
+    await user.click(await screen.findByRole('button', {name: 'Done'}));
+    await waitFor(() => expect(list).toHaveFocus());
+  });
+
+  it('force terminates a run that cannot be terminated safely', async () => {
+    const user = userEvent.setup();
+    const {refetch} = renderList(
+      {entries: [buildMenuRun({runStatus: RunStatus.STARTED, endTime: null, canTerminate: false})]},
+      [
+        buildMutationMock<TerminateMutation, TerminateMutationVariables>({
+          query: TERMINATE_MUTATION,
+          variables: {
+            runIds: [MENU_RUN_ID],
+            terminatePolicy: TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY,
+          },
+          data: {
+            terminateRuns: buildTerminateRunsResult({
+              terminateRunResults: [
+                buildTerminateRunSuccess({run: buildRun({id: MENU_RUN_ID, canTerminate: false})}),
+              ],
+            }),
+          },
+        }),
+      ],
+    );
+
+    await chooseMenuItem(user, 'Terminate');
+    await user.click(await screen.findByRole('button', {name: 'Force termination for 1 run'}));
+
+    await waitFor(() => expect(refetch).toHaveBeenCalled());
+  });
+
+  it('returns focus to the run menu button when a dialog opened from it closes', async () => {
+    const user = userEvent.setup();
+    renderList({entries: [buildMenuRun()]});
+
+    await chooseMenuItem(user, 'Delete');
+    await user.click(await screen.findByRole('button', {name: 'Cancel'}));
+
+    await waitFor(async () => expect(await findMenuButton()).toHaveFocus());
   });
 });

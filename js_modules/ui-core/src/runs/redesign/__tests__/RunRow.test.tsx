@@ -71,7 +71,7 @@ const renderRow = async (entry: MappedRunsFeedEntry, onOpenTickDetails = jest.fn
   const {container} = render(
     <MemoryRouter initialEntries={[LIST_PATH]}>
       <MockedProvider mocks={[statsMock]}>
-        <RunRow entry={entry} onOpenTickDetails={onOpenTickDetails} />
+        <RunRow entry={entry} onOpenTickDetails={onOpenTickDetails} onOpenRunDialog={jest.fn()} />
       </MockedProvider>
       <CurrentPath />
     </MemoryRouter>,
@@ -165,6 +165,20 @@ describe('RunRow', () => {
     expect(getCurrentPath()).toBe(LIST_PATH);
   });
 
+  it('keeps a click inside the run menu from opening the run', async () => {
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
+    await renderRow(succeededRun);
+
+    await user.click(await screen.findByRole('button', {name: 'Run actions'}));
+    const [divider] = await screen.findAllByRole('separator');
+    if (divider === undefined) {
+      throw new Error('The run menu rendered no divider');
+    }
+    await user.click(divider);
+
+    expect(getCurrentPath()).toBe(LIST_PATH);
+  });
+
   it('opens a new tab for a modified click on the row', async () => {
     const row = await renderRow(succeededRun);
 
@@ -218,7 +232,7 @@ describe('RunRow', () => {
     expect(getCurrentPath()).toBe(LIST_PATH);
   });
 
-  it('puts the id link last in the tab order', async () => {
+  it('puts the id link and then the run menu last in the tab order', async () => {
     const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     await renderRow(scheduledRunWithTargets);
 
@@ -229,6 +243,7 @@ describe('RunRow', () => {
       await screen.findByRole('img', {name: 'Success'}),
       await screen.findByText('5 min ago'),
       await screen.findByRole('link', {name: RUN_ID_LINK_NAME}),
+      await screen.findByRole('button', {name: 'Run actions'}),
     ];
 
     for (const stop of stops) {

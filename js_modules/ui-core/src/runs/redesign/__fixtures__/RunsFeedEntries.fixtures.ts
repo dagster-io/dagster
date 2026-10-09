@@ -74,8 +74,13 @@ export const buildBackfillSummary = (
   ...overrides,
 });
 
-export const runEntry = (overrides: Partial<RunSummaryFragment> = {}) =>
-  mapRunsFeedEntry(buildRunSummary(overrides));
+export const runEntry = (overrides: Partial<RunSummaryFragment> = {}) => {
+  const entry = mapRunsFeedEntry(buildRunSummary(overrides));
+  if (entry.__typename !== 'Run') {
+    throw new Error('Expected a run entry');
+  }
+  return entry;
+};
 
 export const backfillEntry = (overrides: Partial<BackfillSummaryFragment> = {}) =>
   mapRunsFeedEntry(buildBackfillSummary(overrides));

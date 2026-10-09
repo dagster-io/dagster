@@ -71,6 +71,9 @@ const RowTemplate = ({entry, width = 960}: RowTemplateProps) => (
         onOpenTickDetails={() => {
           showToast({message: 'The tick dialog opens here.', intent: 'none'});
         }}
+        onOpenRunDialog={() => {
+          showToast({message: 'The run dialog opens here.', intent: 'none'});
+        }}
       />
     </div>
   </MockedProvider>
