@@ -80,6 +80,29 @@ async def test_will_be_requested_different_partitions() -> None:
     assert result.true_subset.size == 0
 
 
+@pytest.mark.asyncio
+async def test_will_be_requested_unpartitioned_parent() -> None:
+    condition = AutomationCondition.any_deps_match(AutomationCondition.will_be_requested())
+    state = AutomationConditionScenarioState(
+        two_assets_in_sequence, automation_condition=condition
+    ).with_asset_properties("B", partitions_def=two_partitions_def)
+
+    # no requested parents
+    state, result = await state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # an unpartitioned parent can execute in the same run as any partition of
+    # its partitioned child, so its requested status propagates to all child
+    # partitions
+    state = state.with_requested_asset_partitions([AssetKeyPartitionKey(dg.AssetKey("A"))])
+    state, result = await state.evaluate("B")
+    assert result.true_subset.size == 2
+    assert result.true_subset.expensively_compute_asset_partitions() == {
+        AssetKeyPartitionKey(dg.AssetKey("B"), "1"),
+        AssetKeyPartitionKey(dg.AssetKey("B"), "2"),
+    }
+
+
 def test_with_observable_source() -> None:
     @dg.observable_source_asset(
         automation_condition=dg.AutomationCondition.cron_tick_passed("@hourly")
