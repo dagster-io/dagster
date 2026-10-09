@@ -34,7 +34,11 @@ from dagster._core.definitions.partitions.definition import (
     MultiPartitionsDefinition,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.definitions.partitions.mapping import UpstreamPartitionsResult
+from dagster._core.definitions.partitions.mapping import (
+    PartitionMapping,
+    TimeWindowPartitionMapping,
+    UpstreamPartitionsResult,
+)
 from dagster._core.definitions.partitions.subset import (
     AllPartitionsSubset,
     TimeWindowPartitionsSubset,
@@ -427,6 +431,117 @@ class AssetGraphView(LoadingContext):
         )
 
         return parent_subset, required_but_nonexistent_subset
+
+    @use_partition_loading_context
+    def compute_child_subset_with_required_but_nonexistent_parents(
+        self, parent_key: AssetKey, child_subset: EntitySubset[T_EntityKey]
+    ) -> EntitySubset[T_EntityKey]:
+        """Returns the subset of child_subset containing all child partitions whose mapped parent
+        partitions include at least one partition key which does not exist in parent_key's
+        PartitionsDefinition.
+        """
+        child_partitions_def = self.asset_graph.get(child_subset.key).partitions_def
+        partition_mapping = self.asset_graph.get_partition_mapping(child_subset.key, parent_key)  # ty: ignore[invalid-argument-type]
+
+        # some partition mappings (e.g. multi-partition mappings) short-circuit
+        # AllPartitionsSubset-backed subsets in a way that loses the
+        # required_but_nonexistent_subset, so evaluate against a concrete subset;
+        # TimeWindowPartitionMapping converts AllPartitionsSubset natively, so those
+        # edges skip the expensive materialization
+        if (
+            child_partitions_def is not None
+            and type(partition_mapping) is not TimeWindowPartitionMapping
+            and isinstance(child_subset.get_internal_subset_value(), AllPartitionsSubset)
+        ):
+            child_subset = self.get_subset_from_partition_keys(
+                child_subset.key,
+                child_partitions_def,
+                child_subset.expensively_compute_partition_keys(),
+            )
+
+        _, required_but_nonexistent_subset = (
+            self.compute_parent_subset_and_required_but_nonexistent_subset(parent_key, child_subset)
+        )
+        # in the common case, no required parent partitions are nonexistent, and we can return
+        # after a single mapping evaluation over the entire child subset
+        if required_but_nonexistent_subset.is_empty:
+            return self.get_empty_subset(key=child_subset.key)
+
+        if child_partitions_def is None:
+            return child_subset
+
+        # nonexistent parent partition keys cannot be mapped back down to the child keys that
+        # require them, so localize responsibility by evaluating the mapping per child key
+        def _has_nonexistent_parents(partition_key: str) -> bool:
+            return not self.compute_parent_subset_and_required_but_nonexistent_subset(
+                parent_key,
+                self.get_subset_from_partition_keys(
+                    child_subset.key, child_partitions_def, {partition_key}
+                ),
+            )[1].is_empty
+
+        responsible_keys = self._localize_required_but_nonexistent_child_keys(
+            parent_key,
+            child_subset,
+            child_partitions_def,
+            partition_mapping,
+            _has_nonexistent_parents,
+        )
+        return self.get_subset_from_partition_keys(
+            child_subset.key, child_partitions_def, responsible_keys
+        )
+
+    def _localize_required_but_nonexistent_child_keys(
+        self,
+        parent_key: AssetKey,
+        child_subset: EntitySubset[T_EntityKey],
+        child_partitions_def: "PartitionsDefinition",
+        partition_mapping: PartitionMapping,
+        has_nonexistent_parents: Callable[[str], bool],
+    ) -> AbstractSet[str]:
+        parent_partitions_def = self.asset_graph.get(parent_key).partitions_def
+
+        # for a TimeWindowPartitionMapping between time-window partitions definitions which
+        # share a cron schedule (or whose mapping carries no offsets), mapped windows are
+        # monotonic in time and the parent's existent range is contiguous, so child keys
+        # mapping past the end of the parent's existent range form a suffix of the
+        # chronologically-ordered candidate keys, which can be located with a logarithmic
+        # number of mapping evaluations. mismatched cron schedules combined with nonzero
+        # offsets can realign per-key windows to zero width, producing periodic (non-suffix)
+        # responsibility patterns which defeat the endpoint checks below, so those
+        # configurations fall through to the exhaustive scan
+        if (
+            type(partition_mapping) is TimeWindowPartitionMapping
+            and isinstance(child_partitions_def, TimeWindowPartitionsDefinition)
+            and isinstance(parent_partitions_def, TimeWindowPartitionsDefinition)
+            and (
+                child_partitions_def.cron_schedule == parent_partitions_def.cron_schedule
+                or (partition_mapping.start_offset == 0 and partition_mapping.end_offset == 0)
+            )
+        ):
+            keys = list(child_subset.get_internal_subset_value().get_partition_keys())
+            if (
+                len(keys) > 1
+                # a responsible first key would indicate nonexistence before the start of the
+                # parent's range, which breaks the suffix structure
+                and not has_nonexistent_parents(keys[0])
+                and has_nonexistent_parents(keys[-1])
+            ):
+                lo, hi = 0, len(keys) - 1
+                while hi - lo > 1:
+                    mid = (lo + hi) // 2
+                    if has_nonexistent_parents(keys[mid]):
+                        hi = mid
+                    else:
+                        lo = mid
+                return set(keys[hi:])
+
+        # fall back to an exhaustive scan, the legacy rule's exact cost profile
+        return {
+            partition_key
+            for partition_key in child_subset.expensively_compute_partition_keys()
+            if has_nonexistent_parents(partition_key)
+        }
 
     @use_partition_loading_context
     def compute_parent_subset(
