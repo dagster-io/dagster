@@ -1,5 +1,6 @@
 import re
 import typing
+from typing import Generic, TypeVar
 
 import dagster as dg
 import pytest
@@ -657,3 +658,131 @@ def test_tuple_inner_types_not_mutable():
     assert isinstance(inner_types[0], ListType)
     assert inner_types[0].inner_type == inner_types[1]
     assert len(inner_types) == 2
+
+
+T = TypeVar("T")
+
+
+class GenericContainer(Generic[T]):
+    """Stands in for library generics such as `pandera.typing.polars.DataFrame`."""
+
+
+class Schema:
+    pass
+
+
+def test_generic_annotation_resolves_to_unchecked_type():
+    dagster_type = resolve_dagster_type(GenericContainer[Schema])
+
+    assert dagster_type.typing_type is GenericContainer
+    assert dagster_type.display_name == "GenericContainer[Schema]"
+    assert dagster_type.description and "not validated" in dagster_type.description
+
+    type_check = dagster_type.type_check(None, "not a GenericContainer")  # ty: ignore[invalid-argument-type]
+    assert type_check.success
+    assert type_check.description and "not validated" in type_check.description
+
+
+def test_generic_annotated_assets_materialize():
+    @dg.asset
+    def upstream() -> GenericContainer[Schema]:
+        # Like a pandera DataFrame, the value is not an instance of the annotated class.
+        return "not a GenericContainer"  # ty: ignore[invalid-return-type]
+
+    @dg.asset
+    def downstream(upstream: GenericContainer[Schema]) -> None:
+        pass
+
+    result = dg.materialize([upstream, downstream])
+    assert result.success
+
+    output_event = next(
+        event
+        for event in result.events_for_node("upstream")
+        if event.event_type == DagsterEventType.STEP_OUTPUT
+    )
+    output_check = output_event.step_output_data.type_check_data
+    assert output_check and output_check.success
+    assert output_check.description and "not validated" in output_check.description
+
+    input_check = _type_check_data_for_input(result, op_name="downstream", input_name="upstream")
+    assert input_check and input_check.success
+    assert input_check.description and "not validated" in input_check.description
+
+
+def test_generic_annotation_cached_per_parameterization():
+    assert resolve_dagster_type(GenericContainer[Schema]) is resolve_dagster_type(
+        GenericContainer[Schema]
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[Schema]).key
+        != resolve_dagster_type(GenericContainer[int]).key
+    )
+
+
+def test_generic_annotation_resolves_when_nested():
+    assert (
+        resolve_dagster_type(GenericContainer[Schema] | None).display_name
+        == "GenericContainer[Schema]?"
+    )
+    assert (
+        resolve_dagster_type(list[GenericContainer[Schema]]).display_name
+        == "[GenericContainer[Schema]]"
+    )
+
+
+def test_generic_annotation_display_name_renders_nested_parameters():
+    assert (
+        resolve_dagster_type(GenericContainer[list[int]]).display_name
+        == "GenericContainer[list[int]]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[list[str]]).display_name
+        == "GenericContainer[list[str]]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[int | None]).display_name
+        == "GenericContainer[int | None]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[typing.Optional[Schema]]).display_name  # noqa: UP045
+        == "GenericContainer[Schema | None]"
+    )
+    assert (
+        resolve_dagster_type(GenericContainer[GenericContainer[Schema]]).display_name
+        == "GenericContainer[GenericContainer[Schema]]"
+    )
+
+
+def test_unsupported_typing_constructs_still_raise():
+    # On Python 3.10 `type[X]` is an instance of `type` and resolves as a plain class.
+    for annotation in (typing.Callable[[int], str], typing.Type[GenericContainer]):  # noqa: UP006
+        with pytest.raises(dg.DagsterInvalidDefinitionError, match="Invalid type"):
+            resolve_dagster_type(annotation)
+
+
+def test_generic_annotation_does_not_claim_origin_in_registry():
+    U = TypeVar("U")
+
+    class OtherContainer(Generic[U]):
+        pass
+
+    resolve_dagster_type(OtherContainer[Schema])
+
+    mapped = dg.DagsterType(type_check_fn=lambda _, value: value == "ok", name="Mapped")
+    dg.make_python_type_usable_as_dagster_type(OtherContainer, mapped)
+
+    assert resolve_dagster_type(OtherContainer[Schema]) is mapped
+
+
+def test_generic_annotation_ignores_auto_registered_origin():
+    U = TypeVar("U")
+
+    class BareFirstContainer(Generic[U]):
+        pass
+
+    resolve_dagster_type(BareFirstContainer)
+    dagster_type = resolve_dagster_type(BareFirstContainer[Schema])
+
+    assert dagster_type.display_name == "BareFirstContainer[Schema]"
+    assert dagster_type.type_check(None, "not a BareFirstContainer").success  # ty: ignore[invalid-argument-type]
