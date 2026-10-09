@@ -36,6 +36,10 @@ if TYPE_CHECKING:
     from dagster._core.storage.event_log.base import AssetRecord
 
 
+# Number of candidate keys to validate against a dynamic partitions definition with individual
+# existence checks before loading its full key set instead.
+DYNAMIC_PARTITION_VALIDATION_LOOKUP_LIMIT = 100
+
 CACHEABLE_PARTITION_TYPES = (
     TimeWindowPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -241,7 +245,19 @@ def get_validated_partition_keys(
     partitions_def: PartitionsDefinition,
     partition_keys: set[str],
 ):
-    if isinstance(partitions_def, (DynamicPartitionsDefinition, StaticPartitionsDefinition)):
+    if isinstance(partitions_def, DynamicPartitionsDefinition):
+        # A storage-backed dynamic partitions definition may hold hundreds of thousands of keys, so
+        # loading all of them to validate a handful is far more expensive than checking those keys
+        # individually. Past some number of keys the single bulk fetch wins again. A definition
+        # with a `partition_fn` instead of a name is excluded: there each check re-runs the
+        # user's function, so the bulk path is always cheaper.
+        if (
+            partitions_def.name is not None
+            and len(partition_keys) <= DYNAMIC_PARTITION_VALIDATION_LOOKUP_LIMIT
+        ):
+            return {pk for pk in partition_keys if partitions_def.has_partition_key(pk)}
+        validated_partitions = set(partitions_def.get_partition_keys()) & partition_keys
+    elif isinstance(partitions_def, StaticPartitionsDefinition):
         validated_partitions = set(partitions_def.get_partition_keys()) & partition_keys
     elif isinstance(partitions_def, MultiPartitionsDefinition):
         validated_partitions = partitions_def.filter_valid_partition_keys(partition_keys)

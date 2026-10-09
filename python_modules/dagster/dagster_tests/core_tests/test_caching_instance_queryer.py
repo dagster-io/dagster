@@ -2,7 +2,10 @@ import dagster as dg
 from dagster import DagsterEventType
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.loader import LoadingContextForTest
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.caching_instance_queryer import (
+    DYNAMIC_PARTITION_LOOKUP_LIMIT,
+    CachingInstanceQueryer,
+)
 
 
 def test_updated_after_cursor_uses_cursor_filtered_storage_query(monkeypatch):
@@ -70,3 +73,69 @@ def test_updated_after_cursor_uses_cursor_filtered_storage_query(monkeypatch):
             respect_materialization_data_versions=False,
         ) == {_partition("p1"), _partition("p2"), _partition("p3")}
         assert calls == [(None, None)]
+
+
+def test_has_dynamic_partition_does_not_load_full_partition_set(monkeypatch):
+    partitions_def = dg.DynamicPartitionsDefinition(name="fruits")
+
+    @dg.asset(partitions_def=partitions_def)
+    def a() -> None: ...
+
+    asset_graph = dg.Definitions(assets=[a]).resolve_asset_graph()
+
+    with dg.instance_for_test() as instance:
+        all_keys = [f"key_{i}" for i in range(DYNAMIC_PARTITION_LOOKUP_LIMIT * 4)]
+        instance.add_dynamic_partitions("fruits", all_keys)
+
+        full_fetches: list[str] = []
+        lookups: list[tuple[str, str]] = []
+        original_get = instance.get_dynamic_partitions
+        original_has = instance.has_dynamic_partition
+
+        def _spy_get(partitions_def_name):
+            full_fetches.append(partitions_def_name)
+            return original_get(partitions_def_name)
+
+        def _spy_has(partitions_def_name, partition_key):
+            lookups.append((partitions_def_name, partition_key))
+            return original_has(partitions_def_name, partition_key)
+
+        monkeypatch.setattr(instance, "get_dynamic_partitions", _spy_get)
+        monkeypatch.setattr(instance, "has_dynamic_partition", _spy_has)
+
+        queryer = CachingInstanceQueryer(instance, asset_graph, LoadingContextForTest(instance))
+
+        # a membership check is a single-key lookup, not a fetch of every key
+        assert queryer.has_dynamic_partition("fruits", "key_0")
+        assert not queryer.has_dynamic_partition("fruits", "nonexistent")
+        assert full_fetches == []
+        assert lookups == [("fruits", "key_0"), ("fruits", "nonexistent")]
+
+        # repeated checks of the same key are memoized
+        assert queryer.has_dynamic_partition("fruits", "key_0")
+        assert len(lookups) == 2
+
+        # a caller checking many keys loads the set once rather than issuing a lookup per key
+        for key in all_keys:
+            assert queryer.has_dynamic_partition("fruits", key)
+        assert full_fetches == ["fruits"]
+        assert len(lookups) <= DYNAMIC_PARTITION_LOOKUP_LIMIT
+
+        # and the loaded set answers everything afterwards
+        lookup_count = len(lookups)
+        assert queryer.has_dynamic_partition("fruits", all_keys[-1])
+        assert not queryer.has_dynamic_partition("fruits", "still_nonexistent")
+        assert full_fetches == ["fruits"]
+        assert len(lookups) == lookup_count
+
+        # a queryer that already holds the full set never issues a lookup
+        full_fetches.clear()
+        lookups.clear()
+        warm_queryer = CachingInstanceQueryer(
+            instance, asset_graph, LoadingContextForTest(instance)
+        )
+        assert len(warm_queryer.get_dynamic_partitions("fruits")) == len(all_keys)
+        assert warm_queryer.has_dynamic_partition("fruits", "key_1")
+        assert not warm_queryer.has_dynamic_partition("fruits", "nonexistent")
+        assert full_fetches == ["fruits"]
+        assert lookups == []

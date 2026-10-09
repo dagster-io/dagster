@@ -61,6 +61,72 @@ def test_dynamic_partitions_def_methods():
         assert instance.has_dynamic_partition("foo", "a") is False
 
 
+def test_dynamic_partitions_pagination_does_not_load_full_partition_set(monkeypatch):
+    partitions = dg.DynamicPartitionsDefinition(name="foo")
+    all_keys = [f"key_{i}" for i in range(20)]
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("foo", all_keys)
+
+        full_fetches: list[str] = []
+        original_get = instance.get_dynamic_partitions
+
+        def _spy_get(partitions_def_name):
+            full_fetches.append(partitions_def_name)
+            return original_get(partitions_def_name)
+
+        monkeypatch.setattr(instance, "get_dynamic_partitions", _spy_get)
+
+        # each page is fetched from storage rather than sliced out of the whole key set
+        assert (
+            get_paginated_partition_keys(
+                partitions, dynamic_partitions_store=instance, batch_size=5
+            )
+            == all_keys
+        )
+        assert get_paginated_partition_keys(
+            partitions, dynamic_partitions_store=instance, batch_size=5, ascending=False
+        ) == list(reversed(all_keys))
+        assert full_fetches == []
+
+
+def test_dynamic_partitions_pagination_cursor_and_has_more():
+    from dagster._core.definitions.partitions.context import (
+        PartitionLoadingContext,
+        TemporalContext,
+    )
+    from dagster._core.types.pagination import ValueIndexCursor
+
+    partitions = dg.DynamicPartitionsDefinition(name="foo")
+    all_keys = [f"key_{i}" for i in range(4)]
+
+    with dg.instance_for_test() as instance:
+        instance.add_dynamic_partitions("foo", all_keys)
+        context = PartitionLoadingContext(
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            dynamic_partitions_store=instance,
+        )
+
+        # a page that exactly consumes the remaining keys reports no more, rather than handing
+        # back a cursor that yields an empty page
+        page = partitions.get_paginated_partition_keys(context=context, limit=2, ascending=True)
+        assert page.results == all_keys[:2]
+        assert page.has_more
+
+        page = partitions.get_paginated_partition_keys(
+            context=context, limit=2, ascending=True, cursor=page.cursor
+        )
+        assert page.results == all_keys[2:]
+        assert not page.has_more
+
+        # a cursor this store cannot read restarts from the first page instead of raising
+        foreign_cursor = ValueIndexCursor(value="key_1").to_string()
+        page = partitions.get_paginated_partition_keys(
+            context=context, limit=2, ascending=True, cursor=foreign_cursor
+        )
+        assert page.results == all_keys[:2]
+
+
 def test_dynamic_partitioned_run():
     with dg.instance_for_test() as instance:
         partitions_def = dg.DynamicPartitionsDefinition(name="foo")
