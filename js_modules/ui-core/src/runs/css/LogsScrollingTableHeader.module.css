@@ -52,3 +52,10 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* Rows stack on narrow pages, so the column headers no longer line up with anything. */
+@container (width < 600px) {
+  .headersContainer {
+    display: none;
+  }
+}
