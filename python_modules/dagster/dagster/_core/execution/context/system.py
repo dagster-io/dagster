@@ -620,9 +620,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             else None
         )
 
-        asset_partitions_def = (
-            self.job_def.asset_layer.get(asset_key).partitions_def if asset_key else None
-        )
+        asset_node = self.job_def.asset_layer.get(asset_key) if asset_key else None
         return InputContext(
             job_name=self.job_def.name,
             name=name,
@@ -638,7 +636,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             asset_key=asset_key,
             partition_key=self.partition_key if self.has_partition_key else None,
             asset_partitions_subset=asset_partitions_subset,
-            asset_partitions_def=asset_partitions_def,
+            asset_partitions_def=asset_node.partitions_def if asset_node else None,
+            asset_spec=asset_node.to_asset_spec() if asset_node else None,
             instance=self.instance,
         )
 
