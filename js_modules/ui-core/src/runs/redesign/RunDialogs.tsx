@@ -5,6 +5,7 @@ import {useContext} from 'react';
 import {MappedRun} from './mapRunsFeedData';
 import {DeletionDialog} from '../DeletionDialog';
 import {QueuedRunCriteriaDialog} from '../QueuedRunCriteriaDialog';
+import {RunConfigDialog} from '../RunConfigDialog';
 import {RunsQueryRefetchContext} from '../RunUtils';
 import {TerminationDialog} from '../TerminationDialog';
 
@@ -12,6 +13,7 @@ export type RunDialog =
   | {kind: 'create-issue'; run: MappedRun}
   | {kind: 'queue-criteria'; run: MappedRun}
   | {kind: 'metrics'; run: MappedRun}
+  | {kind: 'config'; run: MappedRun; runConfigYaml: string; isJob: boolean}
   | {kind: 'terminate'; run: MappedRun}
   | {kind: 'delete'; run: MappedRun};
 
@@ -32,6 +34,16 @@ export const RunDialogs = ({dialog, onOpenDialog, onClose}: RunDialogsProps) => 
       return <QueuedRunCriteriaDialog run={run} isOpen onClose={onClose} />;
     case 'metrics':
       return RunMetricsDialog ? <RunMetricsDialog runId={run.id} isOpen onClose={onClose} /> : null;
+    case 'config':
+      return (
+        <RunConfigDialog
+          isOpen
+          onClose={onClose}
+          runConfigYaml={dialog.runConfigYaml}
+          mode={run.mode}
+          isJob={dialog.isJob}
+        />
+      );
     case 'terminate':
       return (
         <TerminationDialog

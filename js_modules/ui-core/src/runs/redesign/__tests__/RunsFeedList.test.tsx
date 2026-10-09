@@ -5,6 +5,7 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {
   buildDeletePipelineRunSuccess,
+  buildExecutionPlan,
   buildInstigationState,
   buildInstigationTick,
   buildRun,
@@ -31,6 +32,7 @@ import {
   TerminateMutation,
   TerminateMutationVariables,
 } from '../../types/RunUtils.types';
+import {RUN_ACTIONS_MENU_QUERY} from '../RunActionsMenuQuery';
 import {RunsFeedList} from '../RunsFeedList';
 import {
   FIXTURE_NOW_MS,
@@ -39,7 +41,24 @@ import {
   tag,
 } from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
+import {
+  RunActionsMenuQuery,
+  RunActionsMenuQueryVariables,
+} from '../types/RunActionsMenuQuery.types';
 import {RunSummaryFragment} from '../types/RunsFeedFragments.types';
+
+type RunConfigDialogProps = {
+  runConfigYaml: string;
+};
+
+// CodeMirror needs layout APIs that jsdom lacks.
+jest.mock('../../RunConfigDialog', () => ({
+  RunConfigDialog: ({runConfigYaml}: RunConfigDialogProps) => (
+    <div role="dialog" aria-label="Run configuration">
+      {runConfigYaml}
+    </div>
+  ),
+}));
 
 const SALES_RUN_ID = 'a1b2c3d4-1111-2222-3333-444455556666';
 const INVENTORY_RUN_ID = 'bbbbbbbb-1111-2222-3333-444455556666';
@@ -68,6 +87,8 @@ const inventoryRun = runEntry({
 
 const completedBackfill = backfillEntry({id: BACKFILL_ID});
 
+const RUN_CONFIG_YAML = 'ops:\n  load_sales:\n    config:\n      limit: 10\n';
+
 const buildMenuRun = (overrides: Partial<RunSummaryFragment> = {}) =>
   runEntry({
     id: MENU_RUN_ID,
@@ -75,6 +96,22 @@ const buildMenuRun = (overrides: Partial<RunSummaryFragment> = {}) =>
     hasTerminatePermission: true,
     hasDeletePermission: true,
     ...overrides,
+  });
+
+const buildMenuQueryMock = (runConfigYaml = '{}\n') =>
+  buildQueryMock<RunActionsMenuQuery, RunActionsMenuQueryVariables>({
+    query: RUN_ACTIONS_MENU_QUERY,
+    variables: {runId: MENU_RUN_ID},
+    data: {
+      runOrError: buildRun({
+        id: MENU_RUN_ID,
+        parentPipelineSnapshotId: null,
+        runConfigYaml,
+        assetSelection: null,
+        assetCheckSelection: null,
+        executionPlan: buildExecutionPlan({assetKeys: []}),
+      }),
+    },
   });
 
 const deleteMock = buildMutationMock<DeleteMutation, DeleteMutationVariables>({
@@ -231,7 +268,10 @@ describe('RunsFeedList', () => {
 
   it('keeps the deletion result open when the deleted run leaves the list', async () => {
     const user = userEvent.setup();
-    const {list, refetch, rerenderList} = renderList({entries: [buildMenuRun()]}, [deleteMock]);
+    const {list, refetch, rerenderList} = renderList({entries: [buildMenuRun()]}, [
+      buildMenuQueryMock(),
+      deleteMock,
+    ]);
 
     await chooseMenuItem(user, 'Delete');
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
@@ -248,16 +288,19 @@ describe('RunsFeedList', () => {
 
   it('only offers to terminate instead of deleting when the user can terminate', async () => {
     const user = userEvent.setup();
-    renderList({
-      entries: [
-        buildMenuRun({
-          runStatus: RunStatus.STARTED,
-          endTime: null,
-          canTerminate: true,
-          hasTerminatePermission: false,
-        }),
-      ],
-    });
+    renderList(
+      {
+        entries: [
+          buildMenuRun({
+            runStatus: RunStatus.STARTED,
+            endTime: null,
+            canTerminate: true,
+            hasTerminatePermission: false,
+          }),
+        ],
+      },
+      [buildMenuQueryMock()],
+    );
 
     await chooseMenuItem(user, 'Delete');
 
@@ -272,6 +315,7 @@ describe('RunsFeedList', () => {
         entries: [buildMenuRun({runStatus: RunStatus.STARTED, endTime: null, canTerminate: true})],
       },
       [
+        buildMenuQueryMock(),
         buildMutationMock<TerminateMutation, TerminateMutationVariables>({
           query: TERMINATE_MUTATION,
           variables: {
@@ -304,6 +348,7 @@ describe('RunsFeedList', () => {
     const {refetch} = renderList(
       {entries: [buildMenuRun({runStatus: RunStatus.STARTED, endTime: null, canTerminate: false})]},
       [
+        buildMenuQueryMock(),
         buildMutationMock<TerminateMutation, TerminateMutationVariables>({
           query: TERMINATE_MUTATION,
           variables: {
@@ -327,9 +372,21 @@ describe('RunsFeedList', () => {
     await waitFor(() => expect(refetch).toHaveBeenCalled());
   });
 
+  it('shows the run config after the menu closes', async () => {
+    const user = userEvent.setup();
+    renderList({entries: [buildMenuRun()]}, [buildMenuQueryMock(RUN_CONFIG_YAML)]);
+
+    await chooseMenuItem(user, 'View configuration');
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {name: 'Run configuration'})).toHaveTextContent(
+      'limit: 10',
+    );
+  });
+
   it('returns focus to the run menu button when a dialog opened from it closes', async () => {
     const user = userEvent.setup();
-    renderList({entries: [buildMenuRun()]});
+    renderList({entries: [buildMenuRun()]}, [buildMenuQueryMock()]);
 
     await chooseMenuItem(user, 'Delete');
     await user.click(await screen.findByRole('button', {name: 'Cancel'}));

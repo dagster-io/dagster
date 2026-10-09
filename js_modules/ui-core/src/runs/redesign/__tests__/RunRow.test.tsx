@@ -3,15 +3,25 @@ import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
-import {buildAssetKey, buildRun, buildRunStatsSnapshot} from '../../../graphql/builders';
+import {
+  buildAssetKey,
+  buildExecutionPlan,
+  buildRun,
+  buildRunStatsSnapshot,
+} from '../../../graphql/builders';
 import {buildQueryMock} from '../../../testing/mocking';
 import {testId} from '../../../testing/testId';
 import {RUN_STATS_QUERY} from '../../RunStats';
 import {DagsterTag} from '../../RunTag';
 import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
+import {RUN_ACTIONS_MENU_QUERY} from '../RunActionsMenuQuery';
 import {RunRow} from '../RunRow';
 import {FIXTURE_NOW_MS, runEntry, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
+import {
+  RunActionsMenuQuery,
+  RunActionsMenuQueryVariables,
+} from '../types/RunActionsMenuQuery.types';
 
 const RUN_ID = 'a1b2c3d4-1111-2222-3333-444455556666';
 
@@ -58,6 +68,21 @@ const statsMock = buildQueryMock<RunStatsQuery, RunStatsQueryVariables>({
   },
 });
 
+const menuMock = buildQueryMock<RunActionsMenuQuery, RunActionsMenuQueryVariables>({
+  query: RUN_ACTIONS_MENU_QUERY,
+  variables: {runId: RUN_ID},
+  data: {
+    runOrError: buildRun({
+      id: RUN_ID,
+      parentPipelineSnapshotId: null,
+      runConfigYaml: '{}\n',
+      assetSelection: null,
+      assetCheckSelection: null,
+      executionPlan: buildExecutionPlan({assetKeys: []}),
+    }),
+  },
+});
+
 const CurrentPath = () => {
   const {pathname} = useLocation();
   return <div data-testid={testId('path')}>{pathname}</div>;
@@ -70,7 +95,7 @@ const windowOpen = jest.fn();
 const renderRow = async (entry: MappedRunsFeedEntry, onOpenTickDetails = jest.fn()) => {
   const {container} = render(
     <MemoryRouter initialEntries={[LIST_PATH]}>
-      <MockedProvider mocks={[statsMock]}>
+      <MockedProvider mocks={[statsMock, menuMock]}>
         <RunRow entry={entry} onOpenTickDetails={onOpenTickDetails} onOpenRunDialog={jest.fn()} />
       </MockedProvider>
       <CurrentPath />

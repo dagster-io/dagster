@@ -8,6 +8,7 @@ import {RUN_STATS_QUERY} from '../../RunStats';
 import {DagsterTag} from '../../RunTag';
 import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
 import {RunRow} from '../RunRow';
+import {buildActionsMenuQueryMock} from '../__fixtures__/RunActionsMenuQuery.fixtures';
 import {backfillEntry, runEntry, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
 
@@ -64,7 +65,9 @@ type RowTemplateProps = {
 };
 
 const RowTemplate = ({entry, width = 960}: RowTemplateProps) => (
-  <MockedProvider mocks={[statsMock]}>
+  <MockedProvider
+    mocks={[statsMock, ...(entry.__typename === 'Run' ? [buildActionsMenuQueryMock(entry)] : [])]}
+  >
     <div style={{width, border: '1px solid var(--color-keyline-default)'}}>
       <RunRow
         entry={entry}

@@ -20,6 +20,7 @@ import {RUN_STATS_QUERY} from '../../RunStats';
 import {DagsterTag} from '../../RunTag';
 import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
 import {RunsFeedList} from '../RunsFeedList';
+import {buildActionsMenuQueryMock} from '../__fixtures__/RunActionsMenuQuery.fixtures';
 import {backfillEntry, runEntry, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
 
@@ -148,9 +149,10 @@ const tickMockFor = (sensorName: string, tickId: string) =>
   });
 
 const MOCKS = [
-  ...[automationRunWithTick, sensorRun, liveRun, queuedRun, manualRun].map(({id}) =>
-    statsMockFor(id),
-  ),
+  ...[automationRunWithTick, sensorRun, liveRun, queuedRun, manualRun].flatMap((run) => [
+    statsMockFor(run.id),
+    buildActionsMenuQueryMock(run),
+  ]),
   tickMockFor('sales_automation', 'tick-id'),
 ];
 
