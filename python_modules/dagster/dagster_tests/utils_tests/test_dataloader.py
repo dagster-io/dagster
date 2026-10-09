@@ -5,7 +5,7 @@ from functools import cached_property
 
 import pytest
 from dagster._core.loader import LoadableBy, LoadingContext
-from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.aiodataloader import BlockingDataLoader, DataLoader
 from dagster_shared.record import record
 
 
@@ -203,3 +203,9 @@ def test_sync_loadable_by() -> None:
     d2 = LoadableThing.blocking_get(context, "d")
     assert d1 == d2
     assert context.instance.query.call_count == 2
+
+
+def test_blocking_load_many_accepts_one_shot_iterators():
+    loader = BlockingDataLoader(lambda keys: [key * 2 for key in keys])
+    assert list(loader.blocking_load_many(iter([1, 2, 1]))) == [2, 4, 2]
+    assert list(loader.blocking_load_many(iter([2, 3]))) == [4, 6]
