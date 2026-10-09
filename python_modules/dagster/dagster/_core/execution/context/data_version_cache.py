@@ -125,7 +125,11 @@ class DataVersionCache:
                     # constraint should be removed when we have thoroughly examined the performance of
                     # the data version retrieval query and can guarantee decent performance.
                     if len(input_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
-                        data_version = self._get_partitions_data_version_from_keys(key, input_keys)
+                        data_version = self._get_partitions_data_version_from_keys(
+                            key,
+                            input_keys,
+                            check.not_none(event.event_log_entry.dagster_event).event_type,
+                        )
                     else:
                         data_version = extract_data_version_from_entry(event.event_log_entry)
                 else:
@@ -185,13 +189,10 @@ class DataVersionCache:
             )
 
     def _get_partitions_data_version_from_keys(
-        self, key: AssetKey, partition_keys: Sequence[str]
+        self, key: AssetKey, partition_keys: Sequence[str], event_type: "DagsterEventType"
     ) -> "DataVersion":
         from dagster._core.definitions.data_version import DataVersion
-        from dagster._core.events import DagsterEventType
 
-        # TODO: this needs to account for observations also
-        event_type = DagsterEventType.ASSET_MATERIALIZATION
         tags_by_partition = self._context.instance._event_storage.get_latest_tags_by_partition(  # noqa: SLF001
             key, event_type, [DATA_VERSION_TAG], asset_partitions=list(partition_keys)
         )
