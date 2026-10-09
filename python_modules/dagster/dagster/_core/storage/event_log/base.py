@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
-from typing import TYPE_CHECKING, Annotated, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, Annotated, NamedTuple, Optional  # noqa: UP035
 
 from dagster_shared.record import ImportFrom, record
 
@@ -694,6 +694,25 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         """Check if a dynamic partition exists."""
         raise NotImplementedError()
+
+    @property
+    def has_bounded_dynamic_partition_membership_query(self) -> bool:
+        """Whether ``get_existing_dynamic_partitions`` is answered by a query bounded by its input.
+
+        False means the default implementation below loads the whole definition, so callers that
+        can cache should load it once rather than calling per batch.
+        """
+        return False
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        """Return the subset of ``partition_keys`` that exist in the partitions definition.
+
+        Storages that can answer this with a bounded query should override, and set
+        ``has_bounded_dynamic_partition_membership_query``; the default loads the full key set.
+        """
+        return set(self.get_dynamic_partitions(partitions_def_name)) & set(partition_keys)
 
     @abstractmethod
     def add_dynamic_partitions(

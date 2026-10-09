@@ -1,6 +1,6 @@
 from collections.abc import Callable, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 from dagster_shared.serdes.errors import DeserializationError
 
@@ -226,6 +226,18 @@ class DynamicPartitionsDefinition(
                 return ctx.dynamic_partitions_store.has_dynamic_partition(
                     partitions_def_name=self._validated_name(), partition_key=partition_key
                 )
+
+    def filter_valid_partition_keys(self, partition_keys: set[str]) -> AbstractSet[str]:
+        if not partition_keys:
+            return set()
+        with partition_loading_context() as ctx:
+            if self.partition_fn:
+                return set(self.get_partition_keys()) & partition_keys
+            return self._ensure_dynamic_partitions_store(
+                ctx.dynamic_partitions_store
+            ).get_existing_dynamic_partitions(
+                partitions_def_name=self._validated_name(), partition_keys=list(partition_keys)
+            )
 
     def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)
