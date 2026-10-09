@@ -29,6 +29,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
+    AssetBackfillStatus,
     get_asset_backfill_run_chunk_size,
 )
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -333,6 +334,22 @@ def partially_failing_ranged_asset(context: AssetExecutionContext):
     raise Exception("failed on last partition")
 
 
+@dg.asset(partitions_def=static_partitions, output_required=False)
+def sometimes_skipped(context: AssetExecutionContext):
+    if context.partition_key != "y":
+        yield dg.Output(None)
+
+
+@dg.asset(partitions_def=static_partitions, deps=[sometimes_skipped])
+def downstream_of_sometimes_skipped():
+    return 1
+
+
+@dg.asset(deps=[downstream_of_sometimes_skipped])
+def unpartitioned_downstream_of_sometimes_skipped():
+    return 1
+
+
 partitions_a = dg.StaticPartitionsDefinition(["foo_a"])
 
 partitions_b = dg.StaticPartitionsDefinition(["foo_b"])
@@ -613,6 +630,9 @@ def the_repo():
         downstream_of_optional,
         all_optional_multi_asset,
         partially_failing_ranged_asset,
+        sometimes_skipped,
+        downstream_of_sometimes_skipped,
+        unpartitioned_downstream_of_sometimes_skipped,
     ]
 
 
@@ -4545,7 +4565,7 @@ def test_asset_backfill_completes_with_optional_output_not_yielded(
     workspace_context: WorkspaceProcessContext,
 ):
     """When a multi_asset with optional outputs only yields some outputs, the backfill should
-    complete as COMPLETED_FAILED rather than hanging forever.
+    complete with the unyielded output marked as skipped rather than hanging forever.
     """
     backfill_id = "optional_output_backfill"
     partition_keys = static_partitions.get_partition_keys()
@@ -4587,7 +4607,7 @@ def test_asset_backfill_completes_with_optional_output_not_yielded(
 
     backfill = instance.get_backfill(backfill_id)
     assert backfill
-    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert backfill.backfill_end_timestamp is not None
 
     # optional_output_1 should be materialized
@@ -4596,9 +4616,9 @@ def test_asset_backfill_completes_with_optional_output_not_yielded(
     materialized_keys = set(backfill_data.materialized_subset.asset_keys)
     assert dg.AssetKey("optional_output_1") in materialized_keys
 
-    # optional_output_2 should be in failed_and_downstream_subset
-    failed_keys = set(backfill_data.failed_and_downstream_subset.asset_keys)
-    assert dg.AssetKey("optional_output_2") in failed_keys
+    # optional_output_2 should be in skipped_subset
+    assert backfill_data.failed_and_downstream_subset.is_empty
+    assert set(backfill_data.skipped_subset.asset_keys) == {dg.AssetKey("optional_output_2")}
 
 
 def test_asset_backfill_completes_with_optional_output_and_downstream(
@@ -4606,7 +4626,7 @@ def test_asset_backfill_completes_with_optional_output_and_downstream(
     workspace_context: WorkspaceProcessContext,
 ):
     """When an optional output is not yielded, downstream assets should also be in
-    failed_and_downstream_subset.
+    skipped_subset.
     """
     backfill_id = "optional_output_downstream_backfill"
     partition_keys = static_partitions.get_partition_keys()
@@ -4646,7 +4666,7 @@ def test_asset_backfill_completes_with_optional_output_and_downstream(
             break
 
     assert backfill is not None
-    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
     assert backfill.backfill_end_timestamp is not None
 
     backfill_data = backfill.asset_backfill_data
@@ -4656,10 +4676,12 @@ def test_asset_backfill_completes_with_optional_output_and_downstream(
     materialized_keys = set(backfill_data.materialized_subset.asset_keys)
     assert dg.AssetKey("optional_output_1") in materialized_keys
 
-    # optional_output_2 and its downstream should be in failed_and_downstream_subset
-    failed_keys = set(backfill_data.failed_and_downstream_subset.asset_keys)
-    assert dg.AssetKey("optional_output_2") in failed_keys
-    assert dg.AssetKey("downstream_of_optional") in failed_keys
+    # optional_output_2 and its downstream should be in skipped_subset
+    assert backfill_data.failed_and_downstream_subset.is_empty
+    assert set(backfill_data.skipped_subset.asset_keys) == {
+        dg.AssetKey("optional_output_2"),
+        dg.AssetKey("downstream_of_optional"),
+    }
 
 
 def test_asset_backfill_succeeds_when_all_optional_outputs_yielded(
@@ -4759,3 +4781,68 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
         AssetKeyPartitionKey(partially_failing_ranged_asset.key, pk) for pk in partition_keys[:-1]
     }
     assert failed == {AssetKeyPartitionKey(partially_failing_ranged_asset.key, partition_keys[-1])}
+
+
+def test_asset_backfill_skipped_optional_output_is_not_failed(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+):
+    backfill_id = "skipped_optional_output_backfill"
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=[
+                sometimes_skipped.key,
+                downstream_of_sometimes_skipped.key,
+                unpartitioned_downstream_of_sometimes_skipped.key,
+            ],
+            partition_names=static_partitions.get_partition_keys(),
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+            run_config=None,
+        )
+    )
+
+    for _ in range(10):
+        list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+        wait_for_all_runs_to_finish(instance, timeout=30)
+        backfill = check.not_none(instance.get_backfill(backfill_id))
+        if backfill.status != BulkActionStatus.REQUESTED:
+            break
+
+    assert all(run.status == DagsterRunStatus.SUCCESS for run in instance.get_runs())
+    assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+    backfill_data = check.not_none(backfill.asset_backfill_data)
+    assert backfill_data.failed_and_downstream_subset.is_empty
+    assert set(backfill_data.materialized_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(key, pk)
+        for key in [sometimes_skipped.key, downstream_of_sometimes_skipped.key]
+        for pk in ["x", "z"]
+    }
+    assert set(backfill_data.skipped_subset.iterate_asset_partitions()) == {
+        AssetKeyPartitionKey(sometimes_skipped.key, "y"),
+        AssetKeyPartitionKey(downstream_of_sometimes_skipped.key, "y"),
+        AssetKeyPartitionKey(unpartitioned_downstream_of_sometimes_skipped.key, None),
+    }
+
+    statuses = backfill_data.get_backfill_status_per_asset_key(
+        workspace_context.create_request_context().asset_graph
+    )
+    for status in statuses[:2]:
+        assert status.partitions_counts_by_status == {  # ty: ignore[unresolved-attribute]
+            AssetBackfillStatus.MATERIALIZED: 2,
+            AssetBackfillStatus.FAILED: 0,
+            AssetBackfillStatus.IN_PROGRESS: 0,
+            AssetBackfillStatus.SKIPPED: 1,
+        }
+    assert statuses[2].backfill_status == AssetBackfillStatus.SKIPPED  # ty: ignore[unresolved-attribute]
