@@ -35,10 +35,11 @@ pandas = [
     "snowflake-connector-python[pandas]>=3.4.0",
 ]
 # [dbt] enables the SnowflakeDbtProjectComponent, which runs a dbt project natively
-# on Snowflake (dbt Projects on Snowflake). Only the manifest -> AssetSpec translation
-# logic from dagster-dbt is used; dbt-core is never executed locally.
+# on Snowflake (dbt Projects on Snowflake). dbt-core is never executed locally, but
+# it is still needed to evaluate selection strings against the manifest, since there
+# is no local project to run `dbt list` against.
 dbt = [
-    "dagster-dbt==1!0+dev",
+    "dagster-dbt[dbt-core]==1!0+dev",
 ]
 
 [dependency-groups]
@@ -47,7 +48,7 @@ test = [
     "dagster-pipes",
     "dagster-shared",
     "dagster-pandas",
-    "dagster-dbt",
+    "dagster-dbt[dbt-core]",
 ]
 
 [tool.uv]

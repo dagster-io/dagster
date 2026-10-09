@@ -17,7 +17,7 @@ from dagster._time import get_current_timestamp
 from dateutil import parser
 from requests.exceptions import RequestException
 
-from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
+from dagster_dbt.asset_utils import get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudRun
 from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
@@ -159,8 +159,6 @@ class DbtCloudJobRunResults:
                     f"Reloading your code location will fix the latter."
                 )
                 continue
-            select: str = ".".join(dbt_resource_props["fqn"])
-
             default_metadata = {
                 "unique_id": unique_id,
                 "invocation_id": invocation_id,
@@ -176,23 +174,12 @@ class DbtCloudJobRunResults:
 
             is_ephemeral = materialization == "ephemeral"
 
-            # Build the specs for the given unique ID
-            asset_specs, _ = build_dbt_specs(
-                manifest=manifest,
-                translator=dagster_dbt_translator,
-                select=select,
-                exclude="",
-                selector="",
-                io_manager_key=None,
-                project=None,
-            )
-
             if (
                 resource_type in REFABLE_NODE_TYPES
                 and result_status == NodeStatus.Success
                 and not is_ephemeral
             ):
-                spec = asset_specs[0]
+                spec = dagster_dbt_translator.get_asset_spec(manifest, unique_id, None)
                 metadata = {
                     **default_metadata,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(

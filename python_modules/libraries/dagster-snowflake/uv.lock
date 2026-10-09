@@ -801,7 +801,6 @@ version = "1!0+dev"
 source = { editable = "../dagster-dbt" }
 dependencies = [
     { name = "dagster" },
-    { name = "dbt-core" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -814,10 +813,15 @@ dependencies = [
     { name = "typer" },
 ]
 
+[package.optional-dependencies]
+dbt-core = [
+    { name = "dbt-core" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../../dagster" },
-    { name = "dbt-core", specifier = ">=1.7,<1.13" },
+    { name = "dbt-core", marker = "extra == 'dbt-core'", specifier = ">=1.7,<1.13" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx" },
@@ -828,6 +832,7 @@ requires-dist = [
     { name = "sqlglot", extras = ["rs"], specifier = "<28.1.0" },
     { name = "typer", specifier = ">=0.9.0" },
 ]
+provides-extras = ["dbt-core"]
 
 [package.metadata.requires-dev]
 test = [
@@ -842,6 +847,21 @@ test = [
     { name = "dagster-shared", editable = "../dagster-shared" },
     { name = "dbt-duckdb", specifier = "<1.9.2" },
     { name = "duckdb", specifier = "<1.4.0" },
+    { name = "msgpack" },
+    { name = "pytest-order" },
+    { name = "pytest-rerunfailures" },
+]
+test-bare = [
+    { name = "dagster", extras = ["test"], editable = "../../dagster" },
+    { name = "dagster-cloud-cli", editable = "../dagster-cloud-cli" },
+    { name = "dagster-dg-cli", editable = "../dagster-dg-cli" },
+    { name = "dagster-dg-core", editable = "../dagster-dg-core" },
+    { name = "dagster-duckdb", editable = "../dagster-duckdb" },
+    { name = "dagster-duckdb-pandas", editable = "../dagster-duckdb-pandas" },
+    { name = "dagster-pipes", editable = "../../dagster-pipes" },
+    { name = "dagster-rest-resources", editable = "../dagster-rest-resources" },
+    { name = "dagster-shared", editable = "../dagster-shared" },
+    { name = "msgpack" },
     { name = "pytest-order" },
     { name = "pytest-rerunfailures" },
 ]
@@ -957,7 +977,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dbt = [
-    { name = "dagster-dbt" },
+    { name = "dagster-dbt", extra = ["dbt-core"] },
 ]
 pandas = [
     { name = "pandas" },
@@ -971,7 +991,7 @@ snowflake-sqlalchemy = [
 [package.dev-dependencies]
 test = [
     { name = "dagster", extra = ["test"] },
-    { name = "dagster-dbt" },
+    { name = "dagster-dbt", extra = ["dbt-core"] },
     { name = "dagster-pandas" },
     { name = "dagster-pipes" },
     { name = "dagster-shared" },
@@ -980,7 +1000,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../../dagster" },
-    { name = "dagster-dbt", marker = "extra == 'dbt'", editable = "../dagster-dbt" },
+    { name = "dagster-dbt", extras = ["dbt-core"], marker = "extra == 'dbt'", editable = "../dagster-dbt" },
     { name = "pandas", marker = "extra == 'pandas'", specifier = "<3.0.0" },
     { name = "pyopenssl", specifier = ">=22.1.0" },
     { name = "snowflake-connector-python", specifier = ">=3.4.0" },
@@ -995,7 +1015,7 @@ provides-extras = ["snowflake-sqlalchemy", "pandas", "dbt"]
 [package.metadata.requires-dev]
 test = [
     { name = "dagster", extras = ["test"], editable = "../../dagster" },
-    { name = "dagster-dbt", editable = "../dagster-dbt" },
+    { name = "dagster-dbt", extras = ["dbt-core"], editable = "../dagster-dbt" },
     { name = "dagster-pandas", editable = "../dagster-pandas" },
     { name = "dagster-pipes", editable = "../../dagster-pipes" },
     { name = "dagster-shared", editable = "../dagster-shared" },
