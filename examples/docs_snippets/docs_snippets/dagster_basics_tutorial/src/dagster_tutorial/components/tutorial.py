@@ -22,26 +22,29 @@ class Tutorial(dg.Component, dg.Model, dg.Resolvable):
         _etl_assets = []
 
         for etl in self.etl_steps:
-
-            @dg.asset(
-                name=etl.table,
-            )
-            def _table(duckdb: DuckDBResource):
-                with duckdb.get_connection() as conn:
-                    conn.execute(
-                        f"""
-                        create or replace table {etl.table} as (
-                            select * from read_csv_auto('{etl.url_path}')
-                        )
-                        """
-                    )
-
-            _etl_assets.append(_table)
+            _etl_assets.append(_make_table_asset(etl.table, etl.url_path))
 
         return dg.Definitions(
             assets=_etl_assets,
             resources={"duckdb": DuckDBResource(database=self.duckdb_database)},
         )
+
+
+def _make_table_asset(table: str, url_path: str):
+    @dg.asset(
+        name=table,
+    )
+    def _table(duckdb: DuckDBResource):
+        with duckdb.get_connection() as conn:
+            conn.execute(
+                f"""
+                create or replace table {table} as (
+                    select * from read_csv_auto('{url_path}')
+                )
+                """
+            )
+
+    return _table
 
 
 # end_tutorial_component
