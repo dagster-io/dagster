@@ -872,6 +872,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
                 # undo dup2
 
                 os.dup2(prev_fd, stdio_fileno)
+                os.close(prev_fd)
 
                 sys.stderr.write(f"Stopped {self.name}\n")
 
