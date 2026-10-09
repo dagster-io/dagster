@@ -1,9 +1,9 @@
 """Factory functions for creating DagsterInstance instances."""
 
 import os
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterHomeNotSetError, DagsterInvariantViolationError
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 def create_ephemeral_instance(
     tempdir: str | None = None,
     preload: Sequence["DebugRunPayload"] | None = None,
-    settings: dict | None = None,
+    settings: Mapping[str, Any] | None = None,
 ) -> "DagsterInstance":
     """Create a `DagsterInstance` suitable for ephemeral execution, useful in test contexts. An
     ephemeral instance uses mostly in-memory components. Use `local_temp` to create a test
