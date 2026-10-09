@@ -15,6 +15,9 @@ try:
     from dbt.version import __version__ as dbt_version
 
     DBT_PYTHON_VERSION = version.parse(dbt_version)
+    # Fusion can expose dbt.version without providing dbt-core's Python APIs.
+    if DBT_PYTHON_VERSION.major >= 2:
+        DBT_PYTHON_VERSION = None
 except ImportError:
     DBT_PYTHON_VERSION = None
 
