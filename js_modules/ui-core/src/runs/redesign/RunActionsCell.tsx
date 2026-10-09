@@ -244,6 +244,13 @@ const RunActionsMenuItems = ({
             showCopySuccessToast('Run ID copied');
           }}
         />
+        {run.tags.length > 0 && (
+          <MenuItem
+            icon="tag"
+            text="View all tags"
+            onClick={() => onOpenDialog({kind: 'tags', run})}
+          />
+        )}
         <AISummaryForRunMenuItem run={{id: run.id, status: run.runStatus}} />
         {canCreateIssue && (
           <MenuItem
@@ -307,7 +314,7 @@ const RunActionsMenuItems = ({
           />
         </ReasonTooltip>
         {!doneStatuses.has(run.runStatus) && (
-          <ReasonTooltip reason={run.hasTerminatePermission ? null : DEFAULT_DISABLED_REASON}>
+          <ReasonTooltip reason={!run.hasTerminatePermission ? DEFAULT_DISABLED_REASON : null}>
             <MenuItem
               icon="cancel"
               text="Terminate"
@@ -316,7 +323,7 @@ const RunActionsMenuItems = ({
             />
           </ReasonTooltip>
         )}
-        <ReasonTooltip reason={run.hasDeletePermission ? null : DEFAULT_DISABLED_REASON}>
+        <ReasonTooltip reason={!run.hasDeletePermission ? DEFAULT_DISABLED_REASON : null}>
           <MenuItem
             icon="delete"
             text="Delete"

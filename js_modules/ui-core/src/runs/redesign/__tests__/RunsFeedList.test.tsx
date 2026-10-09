@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -382,6 +382,18 @@ describe('RunsFeedList', () => {
     expect(await screen.findByRole('dialog', {name: 'Run configuration'})).toHaveTextContent(
       'limit: 10',
     );
+  });
+
+  it('opens the run tags from the menu', async () => {
+    const user = userEvent.setup();
+    renderList({entries: [buildMenuRun({tags: [tag('team', 'data')]})]}, [buildMenuQueryMock()]);
+
+    await chooseMenuItem(user, 'View all tags');
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    const dialog = await screen.findByRole('dialog');
+    expect(await within(dialog).findByRole('row', {name: /^team data/})).toBeVisible();
+    expect(await within(dialog).findByText('data')).toBeVisible();
   });
 
   it('returns focus to the run menu button when a dialog opened from it closes', async () => {

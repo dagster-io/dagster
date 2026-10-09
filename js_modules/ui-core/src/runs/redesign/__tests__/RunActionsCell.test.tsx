@@ -359,11 +359,27 @@ describe('RunActionsCell', () => {
     expect(getItem('Re-execute')).toBeEnabled();
   });
 
+  it('hides View all tags for a run without tags', async () => {
+    const user = userEvent.setup();
+    renderActionsCell(buildMenuRun({tags: []}), [buildMenuQueryMock()]);
+
+    await openMenu(user);
+
+    expect(await findItem('Copy full run ID')).toBeVisible();
+    expect(queryItem('View all tags')).not.toBeInTheDocument();
+  });
+
   it('orders the items for a queued job run with config', async () => {
     const user = userEvent.setup();
-    renderActionsCell(buildMenuRun({runStatus: RunStatus.QUEUED, startTime: null, endTime: null}), [
-      buildMenuQueryMock({runConfigYaml: RUN_CONFIG_YAML}),
-    ]);
+    renderActionsCell(
+      buildMenuRun({
+        runStatus: RunStatus.QUEUED,
+        startTime: null,
+        endTime: null,
+        tags: [tag('team', 'data')],
+      }),
+      [buildMenuQueryMock({runConfigYaml: RUN_CONFIG_YAML})],
+    );
 
     await openMenu(user);
     await waitForMenuQuery();
@@ -371,6 +387,7 @@ describe('RunActionsCell', () => {
     const items = await screen.findAllByRole('menuitem');
     expect(items.map((item) => item.textContent)).toEqual([
       'Copy full run ID',
+      'View all tags',
       'Open in Launchpad',
       'View configuration',
       'View snapshot',
