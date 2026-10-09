@@ -25,13 +25,21 @@ const succeededRun = runEntry({id: RUN_ID});
 const scheduledRunWithTargets = runEntry({
   id: RUN_ID,
   jobName: 'daily_etl',
-  tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule'), tag(DagsterTag.TickId, 'tick-id')],
+  tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule')],
   assetSelectionPreview: [
     buildAssetKey({path: ['sales', 'daily']}),
     buildAssetKey({path: ['sales', 'hourly']}),
     buildAssetKey({path: ['sales', 'weekly']}),
   ],
   assetSelectionCount: 3,
+});
+
+const automationRunWithTick = runEntry({
+  id: RUN_ID,
+  tags: [
+    tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
+    tag(DagsterTag.TickId, 'tick-id'),
+  ],
 });
 
 const statsMock = buildQueryMock<RunStatsQuery, RunStatsQueryVariables>({
@@ -118,7 +126,7 @@ describe('RunRow', () => {
   it('opens tick details without opening the run', async () => {
     const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     const onOpenTickDetails = jest.fn();
-    await renderRow(scheduledRunWithTargets, onOpenTickDetails);
+    await renderRow(automationRunWithTick, onOpenTickDetails);
 
     await user.click(await screen.findByRole('button', {name: 'View tick'}));
 
@@ -216,9 +224,9 @@ describe('RunRow', () => {
 
     const stops = [
       await screen.findByRole('link', {name: /hourly_schedule/}),
-      await screen.findByRole('button', {name: 'View tick'}),
       await screen.findByRole('link', {name: 'daily_etl'}),
       await screen.findByRole('link', {name: '3 assets'}),
+      await screen.findByRole('img', {name: 'Success'}),
       await screen.findByText('5 min ago'),
       await screen.findByRole('link', {name: RUN_ID_LINK_NAME}),
     ];

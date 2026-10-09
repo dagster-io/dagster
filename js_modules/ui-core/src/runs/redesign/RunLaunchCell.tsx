@@ -1,5 +1,4 @@
 import {ButtonLink, Colors, Icon, IconName, MiddleTruncate, Tag} from '@dagster-io/ui-components';
-import {UserDisplay} from '@shared/runs/UserDisplay';
 import {Link} from 'react-router-dom';
 
 import {RunTargets} from './RunTargets';
@@ -146,9 +145,7 @@ const JobAndPartitionTags = ({entry}: JobAndPartitionTagsProps) => {
       )}
       {partitionLabel !== null && (
         <Tag icon="partition" className={styles.tag}>
-          <div className={styles.partitionText}>
-            <MiddleTruncate text={partitionLabel} />
-          </div>
+          <MiddleTruncate text={partitionLabel} />
         </Tag>
       )}
     </>
@@ -201,9 +198,9 @@ export const RunLaunchCell = ({entry, onOpenTickDetails}: RunLaunchCellProps) =>
         </Tag>
       )}
       {user && (
-        <span className={styles.tag}>
-          <UserDisplay email={user} />
-        </span>
+        <Tag className={styles.tag}>
+          <MiddleTruncate text={user} />
+        </Tag>
       )}
       <JobAndPartitionTags entry={entry} />
       <RunTargets entry={entry} />

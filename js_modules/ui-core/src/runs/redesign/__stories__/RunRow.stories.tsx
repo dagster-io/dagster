@@ -76,11 +76,14 @@ const RowTemplate = ({entry, width = 960}: RowTemplateProps) => (
   </MockedProvider>
 );
 
-export const ScheduleRunWithTick = () => (
+export const AutomationRunWithTick = () => (
   <RowTemplate
     entry={runEntry({
       jobName: JOB_NAME,
-      tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule'), tag(DagsterTag.TickId, 'tick-id')],
+      tags: [
+        tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
+        tag(DagsterTag.TickId, 'tick-id'),
+      ],
       ...finishedAfter(4 * MINUTE + 12),
     })}
   />
@@ -129,7 +132,8 @@ export const Narrow = () => (
     entry={runEntry({
       jobName: JOB_NAME,
       tags: [
-        tag(DagsterTag.ScheduleName, 'hourly_ingestion_schedule_for_the_warehouse_tables'),
+        tag(DagsterTag.SensorName, 'hourly_ingestion_automation_for_the_warehouse_tables'),
+        tag(DagsterTag.AutomationCondition, 'true'),
         tag(DagsterTag.TickId, 'tick-id'),
       ],
       assetSelectionPreview: [salesDaily],

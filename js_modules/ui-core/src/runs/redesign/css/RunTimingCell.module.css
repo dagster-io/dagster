@@ -8,8 +8,9 @@
   white-space: nowrap;
 }
 
+/* The transparent outline exists for forced-colors mode, which drops box shadows. */
 .timing:focus-visible {
   border-radius: 4px;
+  outline: 2px solid transparent;
   box-shadow: var(--color-focus-ring) 0 0 0 2px;
-  outline: none;
 }

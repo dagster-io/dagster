@@ -101,24 +101,25 @@ const getUser = (entry: MappedRunsFeedEntry, tags: Map<string, string>): string 
   return entry.__typename === 'PartitionBackfill' ? (entry.user ?? null) : null;
 };
 
+// Only declarative automation ticks explain why a run happened; other ticks repeat the row.
 const getTick = (
   tags: Map<string, string>,
   repoAddress: RepoAddress | null,
+  initiator: Initiator,
 ): TickIdentifier | null => {
-  if (repoAddress === null) {
+  if (repoAddress === null || initiator.kind !== 'declarative-automation') {
     return null;
   }
 
   const tickId = tags.get(DagsterTag.TickId);
-  const name = tags.get(DagsterTag.ScheduleName) ?? tags.get(DagsterTag.SensorName);
-  if (tickId === undefined || name === undefined) {
+  if (tickId === undefined || initiator.name === null) {
     return null;
   }
 
   return {
     tickId,
     instigationSelector: {
-      name,
+      name: initiator.name,
       repositoryName: repoAddress.name,
       repositoryLocationName: repoAddress.location,
     },
@@ -134,6 +135,6 @@ export const getLaunchDetails = (entry: MappedRunsFeedEntry): LaunchDetails => {
     initiator,
     user: isLaunchedByUser(entry, initiator) ? getUser(entry, tags) : null,
     parentBackfillId: tags.get(DagsterTag.Backfill) ?? null,
-    tick: getTick(tags, repoAddress),
+    tick: getTick(tags, repoAddress, initiator),
   };
 };

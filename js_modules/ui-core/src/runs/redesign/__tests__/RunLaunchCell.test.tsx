@@ -22,7 +22,6 @@ import {
   reExecutionRun,
   runEntry,
   scheduleRun,
-  scheduleRunWithTick,
   scheduleRunWithoutRepo,
   singlePartitionRun,
   tag,
@@ -64,7 +63,7 @@ describe('RunLaunchCell', () => {
 
   it('shows the user who launched a re-execution', async () => {
     renderCell(reExecutionRun);
-    expect(await screen.findByTitle('pat@example.com')).toBeVisible();
+    expect(await screen.findByText('pat@example.com')).toBeVisible();
   });
 
   it('links the backfill a run belongs to', async () => {
@@ -77,13 +76,13 @@ describe('RunLaunchCell', () => {
 
   it('shows the launching user for a manual run', async () => {
     renderCell(manualRunWithUser);
-    expect(await screen.findByTitle('pat@example.com')).toBeVisible();
+    expect(await screen.findByText('pat@example.com')).toBeVisible();
   });
 
   it('reports the tick and its button when View tick is used', async () => {
     const user = userEvent.setup();
     const onOpenTickDetails = jest.fn();
-    renderCell(scheduleRunWithTick, onOpenTickDetails);
+    renderCell(defaultAutomationSensorRun, onOpenTickDetails);
 
     const button = await screen.findByRole('button', {name: 'View tick'});
     await user.click(button);
@@ -93,7 +92,7 @@ describe('RunLaunchCell', () => {
       {
         tickId: 'tick-id',
         instigationSelector: {
-          name: 'hourly_schedule',
+          name: 'default_automation_condition_sensor',
           repositoryName: 'my_repo',
           repositoryLocationName: 'my_location',
         },
@@ -154,7 +153,7 @@ describe('RunLaunchCell', () => {
         assetSelectionPreview: [buildAssetKey({path: ['sales', 'daily']})],
         assetSelectionCount: 1,
         tags: [
-          tag(DagsterTag.ScheduleName, 'hourly_schedule'),
+          tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
           tag(DagsterTag.TickId, 'tick-id'),
           tag(DagsterTag.Backfill, 'bkfl1234'),
         ],
@@ -162,7 +161,7 @@ describe('RunLaunchCell', () => {
     );
 
     const stops = [
-      await screen.findByRole('link', {name: /hourly_schedule/}),
+      await screen.findByRole('link', {name: /default_automation_condition_sensor/}),
       await screen.findByRole('button', {name: 'View tick'}),
       await screen.findByRole('link', {name: 'bkfl1234'}),
       await screen.findByRole('link', {name: 'daily_etl'}),
