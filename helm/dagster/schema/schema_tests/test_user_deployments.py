@@ -709,6 +709,69 @@ def test_liveness_probe_exec(template: HelmTemplate):
     ]
 
 
+def test_readiness_probe_grpc(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = ReadinessProbeWithEnabled.construct(
+        enabled=True, grpc=dict(port=deployment.port)
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.readiness_probe.grpc.port == deployment.port
+    assert container.readiness_probe._exec is None  # noqa: SLF001
+
+
+def test_liveness_probe_tcp_socket(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.livenessProbe = kubernetes.LivenessProbe.construct(
+        tcpSocket=dict(port=deployment.port)
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.liveness_probe.tcp_socket.port == deployment.port
+    assert container.liveness_probe._exec is None  # noqa: SLF001
+
+
+def test_startup_probe_grpc(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.startupProbe = kubernetes.StartupProbe.construct(
+        enabled=True, grpc=dict(port=deployment.port)
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    # The default exec handler must not be appended alongside the supplied one:
+    # a probe may only specify a single handler.
+    assert container.startup_probe.grpc.port == deployment.port
+    assert container.startup_probe._exec is None  # noqa: SLF001
+
+
+
 @pytest.mark.parametrize("chart_version", ["0.11.0", "0.11.1"])
 def test_user_deployment_default_image_tag_is_chart_version(
     template: HelmTemplate, chart_version: str
