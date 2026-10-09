@@ -73,6 +73,15 @@
   width: 204px;
 }
 
+/* In the mobile drawer the panel is wider than the desktop rail; fill it. */
+:global(.dagster-mobile) .group {
+  width: auto;
+}
+
+:global(.dagster-mobile) .bottomGroups {
+  padding-right: 0;
+}
+
 .nav.collapsed .group {
   width: 32px;
 }

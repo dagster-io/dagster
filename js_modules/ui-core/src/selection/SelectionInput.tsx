@@ -36,25 +36,29 @@ import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/display/placeholder';
 
 type SelectionAutoCompleteInputProps = {
-  id: string; // Used for logging
+  /** Names the analytics event, `<id>-selection-query`. */
+  id: string;
   placeholder: string;
   linter: (content: string) => SyntaxError[];
   value: string;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
   onErrorStateChange?: (errors: SyntaxError[]) => void;
+  /** Omit to make the input read only. */
   onChange?: (value: string) => void;
-  // Omitting onChange will make the input read only
   onSubmit?: (value: string) => void;
   className?: string;
 
-  // Providing a key enables the "recent searches" section shown when the input is empty.
+  /** Enables the "recent searches" section shown when the input is empty. */
   recentSearchesKey?: string;
 
-  wildcardAttributeName: string;
+  /** Bare terms are rewritten to `attr:"*term*"` on commit. Omit to leave them as typed. */
+  wildcardAttributeName?: string;
 };
 
 const emptyArray: SyntaxError[] = [];
+
+const toSingleLine = (text: string) => text.replace(/\r\n|[^\S ]/g, ' ');
 
 const DIVIDER: ResultItem = {type: 'divider'};
 
@@ -121,13 +125,16 @@ export const SelectionAutoCompleteInput = ({
     (selection: string) => {
       let nextValue = selection;
       if (wildcardAttributeName) {
-        nextValue = upgradeSyntax(selection, wildcardAttributeName);
+        const upgraded = upgradeSyntax(selection, wildcardAttributeName);
+        // Keep what was typed rather than an upgrade the page can't parse
+        const isRejected = upgraded !== selection && linter(upgraded).length > 0;
+        nextValue = isRejected ? selection : upgraded;
       }
       onChange?.(nextValue);
       trackSelection(nextValue);
       return nextValue;
     },
-    [onChange, trackSelection, wildcardAttributeName],
+    [onChange, trackSelection, wildcardAttributeName, linter],
   );
 
   const editorRef = useRef<HTMLDivElement>(null);
@@ -207,13 +214,14 @@ export const SelectionAutoCompleteInput = ({
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
       cmInstance.current = CodeMirror(editorRef.current, {
-        value,
+        value: toSingleLine(value),
         mode: 'assetSelection',
         lineNumbers: false,
         lineWrapping: false, // Initially false; enable during focus
         scrollbarStyle: 'native',
         autoCloseBrackets: true,
         placeholder,
+        screenReaderLabel: placeholder,
         readOnly: disabled ? 'nocursor' : false,
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
@@ -226,24 +234,16 @@ export const SelectionAutoCompleteInput = ({
       cmInstance.current.setSize('100%', 20);
       setCurrentHeight(20);
 
-      // Enforce single line by preventing newlines
+      // Keep the query on one line without collapsing spaces, which may be inside a quoted value.
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text[0] && /\s+/.test(change.text[0])) {
-          change.text[0] = change.text[0].replace(/\s+/g, ' ');
+        const text = toSingleLine(change.text.join(' '));
+        if (change.text.length > 1 || text !== change.text[0]) {
+          change.update?.(change.from, change.to, [text]);
         }
       });
 
       cmInstance.current.on('change', (instance: Editor, changeObj: EditorChange) => {
-        const newValue = instance.getValue().replace(/\s+/g, ' ');
-        const cursor = instance.getCursor();
-        if (instance.getValue() !== newValue) {
-          const difference = newValue.length - instance.getValue().length;
-          // In this case they added a space, we removed it,
-          // so we need to move the cursor back one character
-          instance.setValue(newValue);
-          instance.setCursor({...cursor, ch: cursor.ch - difference});
-        }
-        setInnerValue(newValue);
+        setInnerValue(instance.getValue());
         if (changeObj.origin !== 'setValue') {
           // If we're programmatically setting the value, we don't want to display the dropdown
           // automatically.
@@ -308,14 +308,14 @@ export const SelectionAutoCompleteInput = ({
 
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
-    const noNewLineValue = value.replace(/\n/g, ' ');
+    const editorValue = toSingleLine(value);
     const currentValue = cmInstance.current?.getValue();
-    if (cmInstance.current && currentValue !== noNewLineValue) {
+    if (cmInstance.current && currentValue !== editorValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();
       setCursorPosition(cursor.ch);
       requestAnimationFrame(() => {
-        instance.setValue(noNewLineValue);
+        instance.setValue(editorValue);
         instance.setCursor(cursor);
         // Reset selected index on value change
         setSelectedIndex({current: -1});

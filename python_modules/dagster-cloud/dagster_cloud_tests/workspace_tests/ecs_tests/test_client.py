@@ -287,7 +287,7 @@ def test_wait_for_new_service_failure(client, stubber):
     client.grace_period = 15
 
     async def _check_service_has_running_tasks(
-        service_name, container_name, logger=None
+        service_name, container_name, service_registry_arn=None, logger=None
     ) -> list[str]:
         return ["my_task"]
 

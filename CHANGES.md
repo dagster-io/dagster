@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.13.25 (core) / 0.29.25 (libraries)
+
+### New
+
+- Improved the performance of declarative automation for partitioned assets with a long materialization history.
+- [ui] The UI now has a mobile layout for phones, with a new navigation menu and mobile versions of the Home, Jobs, Automation, Timeline, Asset Catalog, and Asset Overview pages. Pages without a mobile version show a banner with an option to always use the desktop site, which can also be set in user settings.
+- [ui] When launching a time-partitioned asset, the partition selector now shows the most recent 90 days by default, with an option to show all partitions.
+- [dagster-aws] The ECS run launcher now supports resuming run workers, so run monitoring's `max_resume_run_attempts` can be set above 0 on ECS deployments.
+- [dagster-prefect] The Prefect Pipes clients now read messages through Prefect's logs API by default, so a shared filesystem or bucket is no longer needed. Prefect deployments work without changes to the flow. Flows and tasks that open a Pipes session must pass `message_writer=PipesPrefectLogsMessageWriter()`.
+
+### Bugfixes
+
+- [dg] Fixed `AttributeError: module 'dbt' has no attribute 'contracts'` when passing a file named `dbt.py` to `dg plus integrations dbt manage-manifest` and `dagster-cloud ci manage-state`.
+- [dagster-dbt] Fixed an issue where dbt Fusion models with no `ref()` or `source()` calls were silently left out of asset selection, including in `DbtProjectComponent`.
+- [ui] Fixed an issue where pressing Newer on paginated lists such as Runs jumped to the first page after using the browser Back button or reloading the page.
+
+### Documentation
+
+- Added a dbt Fusion page to the dbt integration docs.
+
+## 1.13.24 (core) / 0.29.24 (libraries)
+
+### New
+
+- Loading a project whose root module is not importable now raises an error explaining that the project package is likely not installed, instead of a bare `ModuleNotFoundError`.
+- [dagster-cloud] The ECS agent now supports cross-account service discovery. When the Cloud Map namespace lives in a different AWS account from the agent, the agent registers code server tasks in Cloud Map directly and reconciles them on an interval, configurable with the new `service_discovery_reconcile_interval` option (default 300 seconds). Same-account deployments are unchanged.
+- [dagster-dbt] `fetch_column_metadata()` now emits column lineage for dbt snapshots on dbt 1.12 and later, and no longer logs a warning and traceback for them on earlier versions.
+
+### Bugfixes
+
+- Fixed a bug where a job that included a `@multi_asset` with `can_subset=True` and specs using different partitions definitions failed to resolve with `DagsterInvalidDefinitionError` when one of its unselected dependencies was converted to an external asset. (Thanks, [@Terroface](https://github.com/Terroface)!)
+- Fixed `--use-ssl` being silently ignored when connecting to a gRPC code server via `--grpc-port` or `--grpc-socket`, which caused an insecure channel to be used. Also fixed `dagster dev --use-legacy-code-server-behavior` silently dropping `--package-name` and `--autoload-defs-module-name` when launching the webserver and daemon.
+- Fixed a bug where a callable object with a custom `__signature__` had its type hints read from `__call__` instead, causing resource parameters to be misinterpreted as asset inputs or dropped from a sensor's required resources.
+- [ui] Fixed an issue where asset health and other live data could remain stale after a failed refresh until the page was reloaded.
+- [dagster-airflow] Fixed a bug where every Airflow task log line was written twice to the compute logs on Airflow 2.9 and later.
+- [dagster-dbt] Fixed an `AttributeError` raised when a `DbtProject`'s `project_dir` was a string rather than a `Path`, which could happen after the project was round-tripped through Dagster metadata.
+- [dagster-dbt] Fixed the type annotation of `build_schedule_from_dbt_selection` so that non-string `tags` values, which already worked at runtime, no longer fail type checking, matching `define_asset_job`.
+- [dagster-k8s] Fixed a bug where a Dagster Pipes Kubernetes run whose pod had a failing init container would hang until the wait timed out (a day by default) instead of failing with the init container's error.
+
+### Documentation
+
+- Added a guide on code-backed and UI-managed alert policies in Dagster+.
+- Added documentation for owner-scoped RBAC in Dagster+.
+- Added a page on asset groups and nested groups, and corrected the asset selection syntax reference to note that wildcard matching is not limited to the `key` filter.
+
+## 1.13.23 (core) / 0.29.23 (libraries)
+
+### New
+
+- In Dagster+, alert policies can now target deployment capacity metrics — queued runs and in-progress runs — evaluated over a rolling window with aggregations such as max.
+- In Dagster+ Serverless, fast deploys now build a Docker image instead of a Python executable when the target environment cannot run one: Serverless on Kubernetes, or a Harbor image registry. Set `DAGSTER_CLOUD_DISABLE_PEX_DOCKER_REDIRECT` to opt out.
+- Component definition files can now use the `.yml` extension in addition to `.yaml`, as can `dagster.yaml` and `workspace.yaml`. `.yaml` still takes precedence when both are present.
+- The `dagster-k8s`, `dagster-celery-k8s`, and `user-code-example` images are now published as multi-platform images supporting both amd64 and arm64.
+- [cli] `dagster project from-example` now produces a components-layout project that installs with `uv sync` outside the Dagster repo.
+- [ui] Updated the Prefect kind tag icon, which now adapts to dark mode.
+
+### Bugfixes
+
+- [ui] Fixed an issue where pages that refresh automatically stopped polling after a failed request.
+- [ui] Fixed an issue where the Catalog assets folder tree could jump back to the top while scrolling.
+- [dagster-dbt] The dbt Cloud client now tolerates a trailing slash in `access_url`, treats deleting an already-deleted job as success, and includes dbt Cloud's error response body when logging request failures.
+- [dagster-prefect] Failure messages now name the Prefect run state consistently across Python versions.
+
+## 1.13.22 (core) / 0.29.22 (libraries)
+
+### New
+
+- Run dequeuing is now significantly faster when concurrency pools are in use and many runs are queued, as pool state is read once per dequeue pass rather than repeatedly.
+- In Dagster+, the MCP server's `launch_job_run` and `launch_asset_run` tools no longer require a code location and repository name. They are looked up from the job being launched.
+- [ui] The tick timeline now supports filtering to a time window, paging through history, and a live-updating view.
+- [dagster-dbt] Added support for dbt-core 1.12. (Thanks, [@jrbasso](https://github.com/jrbasso)!)
+- [dagster-looker] Now requires `python-liquid>=2.2.1` (previously `<2`).
+- [dagster-prefect] A new Prefect integration is available in preview. Launch Prefect deployments and background tasks from a Dagster asset with Dagster Pipes, including partition mapping and cancellation forwarding.
+
+### Bugfixes
+
+- In Dagster+, querying asset metrics by asset key no longer fails with a server error.
+
 ## 1.13.21 (core) / 0.29.21 (libraries)
 
 ### New

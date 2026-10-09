@@ -80,6 +80,7 @@ from dagster._core.storage.event_log.migration import (
     migrate_asset_key_data,
 )
 from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
+from dagster._core.storage.event_log.sql_event_log import DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 from dagster._core.storage.sqlalchemy_compat import db_select
@@ -1282,6 +1283,174 @@ class TestEventLogStorage:
         assert record.event_log_entry.dagster_event
         assert record.event_log_entry.dagster_event.asset_key == asset_key
         assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
+
+    def test_get_asset_keys_for_run(self, storage, instance):
+        materialized_key = dg.AssetKey(["path", "to", "materialized"])
+        observed_key = dg.AssetKey(["path", "to", "observed"])
+
+        test_run_id = make_new_run_id()
+
+        @dg.op
+        def materialize_and_observe(_):
+            # the same asset materialized repeatedly should collapse to a single key
+            for partition in ["1", "2", "3"]:
+                yield dg.AssetMaterialization(
+                    asset_key=materialized_key,
+                    partition=partition,
+                    metadata={"text": "hello"},
+                )
+            yield dg.AssetObservation(asset_key=observed_key, metadata={"count": 1})
+            yield dg.Output(1)
+
+        def _ops():
+            materialize_and_observe()
+
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
+
+        assert storage.get_asset_keys_for_run(
+            test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+        ) == {materialized_key}
+        assert storage.get_asset_keys_for_run(
+            test_run_id, of_type=DagsterEventType.ASSET_OBSERVATION
+        ) == {observed_key}
+        assert storage.get_asset_keys_for_run(
+            test_run_id,
+            of_type={
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_OBSERVATION,
+            },
+        ) == {materialized_key, observed_key}
+
+        # unfiltered picks up every asset event in the run
+        assert storage.get_asset_keys_for_run(test_run_id) == {materialized_key, observed_key}
+
+        assert (
+            storage.get_asset_keys_for_run(
+                test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            )
+            == set()
+        )
+        assert storage.get_asset_keys_for_run(make_new_run_id()) == set()
+
+        # the partitions a key was recorded with, with None for unpartitioned events
+        assert dict(
+            storage.get_asset_partitions_for_run(
+                test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+            )
+        ) == {materialized_key: {"1", "2", "3"}}
+        assert dict(
+            storage.get_asset_partitions_for_run(
+                test_run_id, of_type=DagsterEventType.ASSET_OBSERVATION
+            )
+        ) == {observed_key: {None}}
+        assert dict(
+            storage.get_asset_partitions_for_run(
+                test_run_id,
+                of_type={
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    DagsterEventType.ASSET_OBSERVATION,
+                },
+            )
+        ) == {materialized_key: {"1", "2", "3"}, observed_key: {None}}
+        assert dict(storage.get_asset_partitions_for_run(make_new_run_id())) == {}
+
+    def test_get_asset_event_summary_records(self, storage, instance):
+        materialized_key = dg.AssetKey(["path", "to", "summarized"])
+        observed_key = dg.AssetKey(["path", "to", "summarized_observed"])
+
+        test_run_id = make_new_run_id()
+
+        @dg.op
+        def materialize_and_observe(_):
+            for partition in ["1", "2", "3"]:
+                yield dg.AssetMaterialization(asset_key=materialized_key, partition=partition)
+            yield dg.AssetObservation(asset_key=observed_key, metadata={"count": 1})
+            yield dg.Output(1)
+
+        def _ops():
+            materialize_and_observe()
+
+        _synthesize_events(_ops, instance=instance, run_id=test_run_id)
+
+        records = storage.fetch_materializations(materialized_key, limit=10, ascending=True).records
+        assert len(records) == 3
+
+        def _summaries(**kwargs):
+            return storage.get_asset_event_summary_records(
+                DagsterEventType.ASSET_MATERIALIZATION, **kwargs
+            )
+
+        # the projection carries the same rows the record API returns
+        summaries = _summaries(asset_key=materialized_key, ascending=True)
+        assert [summary.storage_id for summary in summaries] == [
+            record.storage_id for record in records
+        ]
+        assert [summary.run_id for summary in summaries] == [test_run_id] * 3
+        assert [summary.asset_key for summary in summaries] == [materialized_key] * 3
+        assert [summary.partition for summary in summaries] == ["1", "2", "3"]
+        assert [summary.timestamp for summary in summaries] == pytest.approx(
+            [record.timestamp for record in records], abs=0.001
+        )
+
+        # descending is the default
+        assert [summary.partition for summary in _summaries(asset_key=materialized_key)] == [
+            "3",
+            "2",
+            "1",
+        ]
+
+        assert [
+            summary.storage_id for summary in _summaries(run_id=test_run_id, ascending=True)
+        ] == [record.storage_id for record in records]
+        assert _summaries(run_id=make_new_run_id()) == []
+
+        assert [
+            summary.partition
+            for summary in _summaries(
+                storage_ids=[records[0].storage_id, records[2].storage_id], ascending=True
+            )
+        ] == ["1", "3"]
+        assert [
+            summary.partition
+            for summary in _summaries(
+                asset_key=materialized_key, after_storage_id=records[0].storage_id, ascending=True
+            )
+        ] == ["2", "3"]
+        # before_storage_id is exclusive, like after_storage_id
+        assert [
+            summary.partition
+            for summary in _summaries(
+                asset_key=materialized_key, before_storage_id=records[2].storage_id, ascending=True
+            )
+        ] == ["1", "2"]
+        assert [
+            summary.partition
+            for summary in _summaries(
+                asset_key=materialized_key,
+                after_storage_id=records[0].storage_id,
+                before_storage_id=records[2].storage_id,
+                ascending=True,
+            )
+        ] == ["2"]
+        assert [
+            summary.partition
+            for summary in _summaries(asset_key=materialized_key, limit=2, ascending=True)
+        ] == ["1", "2"]
+
+        # observations are projected from their own table and are unpartitioned here
+        observations = storage.get_asset_event_summary_records(
+            DagsterEventType.ASSET_OBSERVATION, asset_key=observed_key
+        )
+        assert len(observations) == 1
+        assert observations[0].asset_key == observed_key
+        assert observations[0].run_id == test_run_id
+        assert observations[0].partition is None
+        assert (
+            storage.get_asset_event_summary_records(
+                DagsterEventType.ASSET_OBSERVATION, asset_key=materialized_key
+            )
+            == []
+        )
 
     def _get_planned_asset_keys_from_event_log(self, instance, run_id):
         return set(event.asset_key for event in self._get_planned_events(instance, run_id))
@@ -3433,6 +3602,23 @@ class TestEventLogStorage:
             _assert_storage_matches({"p1": latest_storage_ids["p1"]}, partition="p1")
             _assert_storage_matches({"p2": latest_storage_ids["p2"]}, partition="p2")
 
+            # check that we can filter by cursor: only partitions updated after it come back
+            def _after_cursor(after_cursor: int, partition: str | None = None):
+                return storage.get_latest_storage_id_by_partition(
+                    a,
+                    DagsterEventType.ASSET_MATERIALIZATION,
+                    partitions={partition} if partition else None,
+                    after_cursor=after_cursor,
+                )
+
+            assert _after_cursor(latest_storage_ids["p1"] - 1) == latest_storage_ids
+            assert _after_cursor(latest_storage_ids["p1"]) == {"p2": latest_storage_ids["p2"]}
+            assert _after_cursor(latest_storage_ids["p2"]) == {}
+            assert _after_cursor(latest_storage_ids["p1"] - 1, partition="p1") == {
+                "p1": latest_storage_ids["p1"]
+            }
+            assert _after_cursor(latest_storage_ids["p1"], partition="p1") == {}
+
             # unrelated asset materialized
             _store_partition_event(b, "p1")
             _store_partition_event(b, "p2")
@@ -5493,6 +5679,21 @@ class TestEventLogStorage:
         assert storage.has_dynamic_partition(partitions_def_name="foo", partition_key="foo")
         assert not storage.has_dynamic_partition(partitions_def_name="foo", partition_key="qux")
         assert not storage.has_dynamic_partition(partitions_def_name="bar", partition_key="foo")
+
+    def test_get_existing_dynamic_partitions(self, storage: EventLogStorage):
+        # more keys than fit in one `partition IN (...)` query, so the chunking is exercised
+        all_keys = [f"key_{i}" for i in range(DYNAMIC_PARTITION_MEMBERSHIP_CHUNK_SIZE + 10)]
+
+        assert storage.get_existing_dynamic_partitions("foo", ["key_0"]) == set()
+
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=all_keys)
+        assert storage.get_existing_dynamic_partitions("foo", []) == set()
+        assert storage.get_existing_dynamic_partitions("foo", ["key_0", "qux"]) == {"key_0"}
+        assert storage.get_existing_dynamic_partitions("foo", [*all_keys, "qux"]) == set(all_keys)
+        assert storage.get_existing_dynamic_partitions("bar", ["key_0"]) == set()
+
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="key_0")
+        assert storage.get_existing_dynamic_partitions("foo", ["key_0", "key_1"]) == {"key_1"}
 
     def test_concurrency(self, storage: EventLogStorage):
         if not storage.supports_global_concurrency_limits:

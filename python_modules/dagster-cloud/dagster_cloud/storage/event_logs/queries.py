@@ -191,6 +191,17 @@ GET_RECORDS_FOR_RUN_QUERY = (
     """
 )
 
+GET_ASSET_PARTITIONS_FOR_RUN_QUERY = """
+    query getAssetPartitionsForRun($runId: String!, $ofTypes: [String!], $includePartitions: Boolean) {
+        eventLogs {
+            getAssetPartitionsForRun(runId: $runId, ofTypes: $ofTypes, includePartitions: $includePartitions) {
+                assetKey
+                partitions
+            }
+        }
+    }
+    """
+
 GET_STATS_FOR_RUN_QUERY = """
     query getStatsForRun($runId: String!) {
         eventLogs {
@@ -363,9 +374,9 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
     """
 
 GET_LATEST_STORAGE_ID_BY_PARTITION = """
-    query getLatestStorageIdByPartition($assetKey: String!, $eventType: String!, $partitions: [String!]) {
+    query getLatestStorageIdByPartition($assetKey: String!, $eventType: String!, $partitions: [String!], $afterCursor: BigInt) {
         eventLogs {
-            getLatestStorageIdByPartition(assetKey: $assetKey, eventType: $eventType, partitions: $partitions) {
+            getLatestStorageIdByPartition(assetKey: $assetKey, eventType: $eventType, partitions: $partitions, afterCursor: $afterCursor) {
                 ... on StorageIdByPartition {
                     partition
                     storageId

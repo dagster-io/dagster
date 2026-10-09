@@ -1,0 +1,10 @@
+.page {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.body {
+  min-height: 0;
+  overflow: auto;
+}

@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import sys
 import tempfile
 from collections.abc import Callable, Iterator, Mapping
@@ -701,6 +702,65 @@ def test_prepare_does_not_recurse_when_state_nested_in_project_dir() -> None:
         assert (snapshot / "dbt_project.yml").exists()
         # the snapshot must NOT contain a recursive copy of its own destination
         assert not (snapshot / "defs" / ".local_defs_state" / "key" / "project").exists()
+
+
+def test_prepare_excludes_git_directory_from_snapshot() -> None:
+    """A dbt project is commonly a git checkout. Its history is dead weight in the snapshot, and
+    git writes object and pack files read-only, which on Windows blocks the delete that clears
+    the snapshot on the next reload.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = Path(temp_dir) / "dbt_project"
+        (project_dir / "models").mkdir(parents=True)
+        (project_dir / "dbt_project.yml").write_text("name: jaffle_shop", encoding="utf-8")
+        (project_dir / "models" / "a.sql").write_text("select 1", encoding="utf-8")
+
+        git_objects = project_dir / ".git" / "objects" / "ab"
+        git_objects.mkdir(parents=True)
+        git_object = git_objects / "cdef"
+        git_object.write_bytes(b"object")
+        os.chmod(git_object, stat.S_IRUSR)
+
+        state_path = Path(temp_dir) / "state_dir" / "state"
+        state_path.parent.mkdir(parents=True)
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(project_dir)))
+        with patch.object(DbtProjectArgsManager, "get_project", return_value=MagicMock()):
+            manager.prepare(state_path)
+
+        snapshot = state_path.parent / "project"
+        assert (snapshot / "dbt_project.yml").exists()
+        assert (snapshot / "models" / "a.sql").exists()
+        assert not (snapshot / ".git").exists()
+
+
+def test_prepare_replaces_snapshot_containing_read_only_files() -> None:
+    """Regression test: preparing twice must succeed even when the existing snapshot holds
+    read-only files. Clearing the snapshot previously failed on Windows, which left the
+    directory in place and surfaced as a FileExistsError from the subsequent mkdir.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = Path(temp_dir) / "dbt_project"
+        project_dir.mkdir()
+        (project_dir / "dbt_project.yml").write_text("name: jaffle_shop", encoding="utf-8")
+
+        state_path = Path(temp_dir) / "state_dir" / "state"
+        state_path.parent.mkdir(parents=True)
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(project_dir)))
+        with patch.object(DbtProjectArgsManager, "get_project", return_value=MagicMock()):
+            manager.prepare(state_path)
+
+            # a stale read-only artifact of the kind a git checkout leaves behind
+            snapshot = state_path.parent / "project"
+            stale = snapshot / "stale.txt"
+            stale.write_bytes(b"stale")
+            os.chmod(stale, stat.S_IRUSR)
+
+            manager.prepare(state_path)
+
+        assert (snapshot / "dbt_project.yml").exists()
+        assert not stale.exists()
 
 
 def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:

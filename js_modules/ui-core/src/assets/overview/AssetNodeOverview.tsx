@@ -13,6 +13,8 @@ import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
 import {FreshnessPolicyStatus} from './FreshnessPolicyStatus';
 import {LineageSection} from './LineageSection';
+import styles from './css/AssetNodeOverview.module.css';
+import {useIsMobile} from '../../app/layout/IsMobileContext';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
 import {LiveDataForNode} from '../../asset-graph/Utils';
 import {
@@ -63,6 +65,7 @@ export const AssetNodeOverview = ({
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {
+  const isMobile = useIsMobile();
   const cachedOrLiveAssetNode = assetNode ?? cachedAssetNode;
   const repoAddress = cachedOrLiveAssetNode
     ? buildRepoAddress(
@@ -133,9 +136,15 @@ export const AssetNodeOverview = ({
     queryCountMeta?.intValue != null,
   ].filter(Boolean).length;
 
+  // Each stat gets its own column; at phone width more than two are unreadable.
+  const statusColumns = isMobile ? Math.min(sections, 2) : sections;
+
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
-      <Box style={{display: `grid`, gridTemplateColumns: `repeat(${sections}, minmax(0, 1fr))`}}>
+      <Box
+        className={styles.statusGrid}
+        style={{display: `grid`, gridTemplateColumns: `repeat(${statusColumns}, minmax(0, 1fr))`}}
+      >
         <Box flex={{direction: 'column', gap: 6}}>
           <Heading size={14} weight={600}>
             Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
@@ -212,7 +221,11 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection header="Status" icon="status">
             {renderStatusSection()}
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Description" icon="sticky_note">
+          <LargeCollapsibleSection
+            header="Description"
+            icon="sticky_note"
+            collapsedByDefault={isMobile}
+          >
             {cachedOrLiveAssetNode.description ? (
               <Description description={cachedOrLiveAssetNode.description} maxHeight={260} />
             ) : (
@@ -224,7 +237,11 @@ export const AssetNodeOverview = ({
             )}
           </LargeCollapsibleSection>
           {tableSchema && (
-            <LargeCollapsibleSection header="Columns" icon="view_column">
+            <LargeCollapsibleSection
+              header="Columns"
+              icon="view_column"
+              collapsedByDefault={isMobile}
+            >
               <TableSchemaAssetContext.Provider
                 value={{
                   assetKey: cachedOrLiveAssetNode.assetKey,
@@ -239,7 +256,7 @@ export const AssetNodeOverview = ({
               </TableSchemaAssetContext.Provider>
             </LargeCollapsibleSection>
           )}
-          <LargeCollapsibleSection header="Metadata" icon="view_list">
+          <LargeCollapsibleSection header="Metadata" icon="view_list" collapsedByDefault={isMobile}>
             <AssetEventMetadataEntriesTable
               assetKey={cachedOrLiveAssetNode.assetKey}
               showHeader
@@ -264,6 +281,7 @@ export const AssetNodeOverview = ({
           <LargeCollapsibleSection
             header="Lineage"
             icon="account_tree"
+            collapsedByDefault={isMobile}
             right={
               <Link
                 to={globalAssetGraphPathForAssetsAndDescendants([cachedOrLiveAssetNode.assetKey])}
@@ -283,7 +301,7 @@ export const AssetNodeOverview = ({
       }
       right={
         <>
-          <LargeCollapsibleSection header="Definition" icon="info">
+          <LargeCollapsibleSection header="Definition" icon="info" collapsedByDefault={isMobile}>
             <DefinitionSection
               repoAddress={repoAddress}
               location={location}
@@ -292,7 +310,11 @@ export const AssetNodeOverview = ({
               storageAddress={cachedAssetNode?.storageAddress ?? null}
             />
           </LargeCollapsibleSection>
-          <LargeCollapsibleSection header="Automation details" icon="automation_condition">
+          <LargeCollapsibleSection
+            header="Automation details"
+            icon="automation_condition"
+            collapsedByDefault={isMobile}
+          >
             <AutomationDetailsSection
               repoAddress={repoAddress}
               assetNode={assetNode}
@@ -300,7 +322,11 @@ export const AssetNodeOverview = ({
             />
           </LargeCollapsibleSection>
           {internalFreshnessPolicy ? (
-            <LargeCollapsibleSection header="Freshness policy" icon="freshness">
+            <LargeCollapsibleSection
+              header="Freshness policy"
+              icon="freshness"
+              collapsedByDefault={isMobile}
+            >
               <FreshnessPolicySection
                 assetKey={cachedOrLiveAssetNode.assetKey}
                 policy={internalFreshnessPolicy}
@@ -326,26 +352,10 @@ const AssetNodeOverviewContainer = ({
   left: React.ReactNode;
   right: React.ReactNode;
 }) => (
-  <Box
-    flex={{direction: 'row', gap: 8}}
-    style={{width: '100%', height: '100%', overflow: 'hidden'}}
-  >
-    <Box
-      flex={{direction: 'column'}}
-      padding={{horizontal: 24, vertical: 12}}
-      style={{flex: 1, minWidth: 0, overflowY: 'auto'}}
-    >
-      {left}
-    </Box>
-    <Box
-      border={{side: 'left'}}
-      flex={{direction: 'column'}}
-      padding={{left: 24, vertical: 12, right: 12}}
-      style={{width: '30%', minWidth: 250, overflowY: 'auto'}}
-    >
-      {right}
-    </Box>
-  </Box>
+  <div className={styles.container}>
+    <div className={styles.left}>{left}</div>
+    <div className={styles.right}>{right}</div>
+  </div>
 );
 
 export const AssetNodeOverviewNonSDA = ({
@@ -355,6 +365,7 @@ export const AssetNodeOverviewNonSDA = ({
   assetKey: AssetKey;
   lastMaterialization: {timestamp: string; runId: string} | null | undefined;
 }) => {
+  const isMobile = useIsMobile();
   return (
     <AssetNodeOverviewContainer
       left={
@@ -378,7 +389,7 @@ export const AssetNodeOverviewNonSDA = ({
         </LargeCollapsibleSection>
       }
       right={
-        <LargeCollapsibleSection header="Definition" icon="info">
+        <LargeCollapsibleSection header="Definition" icon="info" collapsedByDefault={isMobile}>
           <Box flex={{direction: 'column', gap: 12}}>
             <NonIdealState
               shrinkable
@@ -393,42 +404,49 @@ export const AssetNodeOverviewNonSDA = ({
   );
 };
 
-export const AssetNodeOverviewLoading = () => (
-  <AssetNodeOverviewContainer
-    left={
-      <>
-        <LargeCollapsibleSection header="Status" icon="status">
-          <Box flex={{direction: 'column', gap: 6}}>
-            <Skeleton $height={20} $width={170} />
-            <Skeleton $height={24} $width={240} />
+export const AssetNodeOverviewLoading = () => {
+  const isMobile = useIsMobile();
+  return (
+    <AssetNodeOverviewContainer
+      left={
+        <>
+          <LargeCollapsibleSection header="Status" icon="status">
+            <Box flex={{direction: 'column', gap: 6}}>
+              <Skeleton $height={20} $width={170} />
+              <Skeleton $height={24} $width={240} />
+            </Box>
+          </LargeCollapsibleSection>
+          <LargeCollapsibleSection
+            header="Description"
+            icon="sticky_note"
+            collapsedByDefault={isMobile}
+          >
+            <Box flex={{direction: 'column', gap: 6}}>
+              <Skeleton $height={16} $width="90%" />
+              <Skeleton $height={16} />
+              <Skeleton $height={16} $width="60%" />
+            </Box>
+          </LargeCollapsibleSection>
+        </>
+      }
+      right={
+        <LargeCollapsibleSection header="Definition" icon="info" collapsedByDefault={isMobile}>
+          <Box flex={{direction: 'column', gap: 12}}>
+            <AttributeAndValue label={<Skeleton $width={60} />}>
+              <Skeleton $height={20} $width={220} />
+            </AttributeAndValue>
+            <AttributeAndValue label={<Skeleton $width={80} />}>
+              <Skeleton $height={24} $width={180} />
+            </AttributeAndValue>
+            <AttributeAndValue label={<Skeleton $width={120} />}>
+              <Skeleton $height={24} $width={240} />
+            </AttributeAndValue>
           </Box>
         </LargeCollapsibleSection>
-        <LargeCollapsibleSection header="Description" icon="sticky_note">
-          <Box flex={{direction: 'column', gap: 6}}>
-            <Skeleton $height={16} $width="90%" />
-            <Skeleton $height={16} />
-            <Skeleton $height={16} $width="60%" />
-          </Box>
-        </LargeCollapsibleSection>
-      </>
-    }
-    right={
-      <LargeCollapsibleSection header="Definition" icon="info">
-        <Box flex={{direction: 'column', gap: 12}}>
-          <AttributeAndValue label={<Skeleton $width={60} />}>
-            <Skeleton $height={20} $width={220} />
-          </AttributeAndValue>
-          <AttributeAndValue label={<Skeleton $width={80} />}>
-            <Skeleton $height={24} $width={180} />
-          </AttributeAndValue>
-          <AttributeAndValue label={<Skeleton $width={120} />}>
-            <Skeleton $height={24} $width={240} />
-          </AttributeAndValue>
-        </Box>
-      </LargeCollapsibleSection>
-    }
-  />
-);
+      }
+    />
+  );
+};
 
 function partitionIfMatching(
   liveDataEvent: {timestamp: string} | null | undefined,

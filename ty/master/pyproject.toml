@@ -38,10 +38,8 @@ dependencies = [
   # ---- python_modules/libraries/*
   "create-dagster",
   "dagster-airbyte",
-  "dagster-airflow",
-  "dagster-airlift[mwaa]",      # pulls airflow
   "dagster-aws[stubs]",
-  "dagster-azure",
+  "dagster-azure[container_apps]",
   "dagster-celery",
   "dagster-celery-docker",
   "dagster-celery-k8s",
@@ -86,6 +84,7 @@ dependencies = [
   "dagster-polytomic",
   "dagster-postgres",
   "dagster-powerbi",
+  "dagster-prefect",
   "dagster-prometheus",
   "dagster-pyspark",
   "dagster-rest-resources",
@@ -105,9 +104,7 @@ dependencies = [
   "dagster-wandb[dev]",
   "dagstermill",
 
-  # ---- airlift sub-projects (in-repo)
-  "kitchen-sink",                       # dagster-airlift/kitchen-sink/
-  "perf-harness",                       # dagster-airlift/perf-harness/
+  # ---- dbt sub-project (in-repo)
   "dagster-dbt-cloud-kitchen-sink",     # dagster-dbt/kitchen-sink/
 
   # ---- Community packages (PyPI, no editable source in-repo)
@@ -127,11 +124,9 @@ dependencies = [
   "pandas-gbq",            # dagster-gcp-pandas, dagster-gcp-pyspark test code
   "gcp-storage-emulator",  # dagster-gcp pipes test code
   "requests-mock",         # dagster-aws test code
+  "moto[s3]>=5.0",         # dagster-aws, dagster-cloud test code
 
   # ---- Examples (in-repo, top-level)
-  "airlift-federation-tutorial",
-  "airlift-migration-tutorial",
-  "airlift-mwaa-example",
   "assets_dynamic_partitions",
   "assets_pandas_pyspark",
   "assets_pandas_type_metadata",
@@ -141,13 +136,15 @@ dependencies = [
   "deploy-docker",
   "deploy-ecs",
   "development_to_production",
-  "docs_snippets[full]",
+  # `docs_snippets` is not checked here (see `[tool.ty.src].exclude`) and its
+  # `[full]` extra pins `apache-airflow<3.0.0` below py3.13, which would drag
+  # this env back to sqlalchemy 1.x. Nothing else depends on it, so it is not
+  # installed. If it is ever enrolled in checking it belongs in the `airflow` env.
   "feature_graph_backed_assets",
   "ingestion-patterns",
   "project_fully_featured[tests]",
   "project_multi_tenant",
   "snowflake-medallion",
-  "starlift-demo",
   "tutorial_notebook_assets",
   "use_case_repository[dev]",
   "with_great_expectations",
@@ -181,8 +178,15 @@ dependencies = [
 
   # ---- Constrained beyond runtime — typed-package floors/pins where the
   # supported version range has bugged or incomplete annotations.
-  "apache-airflow>2.7",
-  "types-sqlalchemy==1.4.53.34",
+  # sqlalchemy 2 is what dagster is overwhelmingly deployed on and is py.typed,
+  # so its own annotations are checked rather than the separate (1.4-only)
+  # `types-sqlalchemy` stubs. The airflow-bound packages, which cannot move off
+  # sqlalchemy 1.x until they target airflow >=3.2, live in the `airflow` env.
+  # Capped below 2.1: snowflake-sqlalchemy (pulled in by the dagster-snowflake
+  # libraries here) subclasses names 2.1 made private, so 2.1 would resolve an
+  # environment that cannot be imported. Matches the cap the rest of the repo
+  # holds. Lift once those libraries stop reaching for private names.
+  "sqlalchemy>=2,<2.1",
   "fastapi>=0.115.6",
   "types-setuptools==80.9.0.20250822",
   "clickhouse-driver==0.2.9",
@@ -223,8 +227,6 @@ dagster-webserver           = { path = "../../python_modules/dagster-webserver",
 # python_modules/libraries/*
 create-dagster              = { path = "../../python_modules/libraries/create-dagster",              editable = true }
 dagster-airbyte             = { path = "../../python_modules/libraries/dagster-airbyte",             editable = true }
-dagster-airflow             = { path = "../../python_modules/libraries/dagster-airflow",             editable = true }
-dagster-airlift             = { path = "../../python_modules/libraries/dagster-airlift",             editable = true }
 dagster-aws                 = { path = "../../python_modules/libraries/dagster-aws",                 editable = true }
 dagster-azure               = { path = "../../python_modules/libraries/dagster-azure",               editable = true }
 dagster-celery              = { path = "../../python_modules/libraries/dagster-celery",              editable = true }
@@ -272,6 +274,7 @@ dagster-papertrail          = { path = "../../python_modules/libraries/dagster-p
 dagster-polytomic           = { path = "../../python_modules/libraries/dagster-polytomic",           editable = true }
 dagster-postgres            = { path = "../../python_modules/libraries/dagster-postgres",            editable = true }
 dagster-powerbi             = { path = "../../python_modules/libraries/dagster-powerbi",             editable = true }
+dagster-prefect             = { path = "../../python_modules/libraries/dagster-prefect",             editable = true }
 dagster-prometheus          = { path = "../../python_modules/libraries/dagster-prometheus",          editable = true }
 dagster-pyspark             = { path = "../../python_modules/libraries/dagster-pyspark",             editable = true }
 dagster-rest-resources      = { path = "../../python_modules/libraries/dagster-rest-resources",      editable = true }
@@ -290,15 +293,10 @@ dagster-tableau             = { path = "../../python_modules/libraries/dagster-t
 dagster-twilio              = { path = "../../python_modules/libraries/dagster-twilio",              editable = true }
 dagster-wandb               = { path = "../../python_modules/libraries/dagster-wandb",               editable = true }
 
-# Airlift / dbt sub-projects
-kitchen-sink                   = { path = "../../python_modules/libraries/dagster-airlift/kitchen-sink", editable = true }
-perf-harness                   = { path = "../../python_modules/libraries/dagster-airlift/perf-harness", editable = true }
+# dbt sub-project
 dagster-dbt-cloud-kitchen-sink = { path = "../../python_modules/libraries/dagster-dbt/kitchen-sink",     editable = true }
 
 # Examples — top-level
-airlift-federation-tutorial = { path = "../../examples/airlift-federation-tutorial", editable = true }
-airlift-migration-tutorial  = { path = "../../examples/airlift-migration-tutorial",  editable = true }
-airlift-mwaa-example        = { path = "../../examples/airlift-mwaa-example",        editable = true }
 assets_dynamic_partitions   = { path = "../../examples/assets_dynamic_partitions",   editable = true }
 assets_pandas_pyspark       = { path = "../../examples/assets_pandas_pyspark",       editable = true }
 assets_pandas_type_metadata = { path = "../../examples/assets_pandas_type_metadata", editable = true }
@@ -308,13 +306,11 @@ databricks-delta            = { path = "../../examples/project_databricks_and_sn
 deploy-docker               = { path = "../../examples/deploy_docker",               editable = true }
 deploy-ecs                  = { path = "../../examples/deploy_ecs",                  editable = true }
 development_to_production   = { path = "../../examples/development_to_production",   editable = true }
-docs_snippets               = { path = "../../examples/docs_snippets",               editable = true }
 feature_graph_backed_assets = { path = "../../examples/feature_graph_backed_assets", editable = true }
 ingestion-patterns          = { path = "../../examples/ingestion-patterns",          editable = true }
 project_fully_featured      = { path = "../../examples/project_fully_featured",      editable = true }
 project_multi_tenant        = { path = "../../examples/project_multi_tenant",        editable = true }
 snowflake-medallion         = { path = "../../examples/project_databricks_and_snowflake/projects/snowflake-medallion", editable = true }
-starlift-demo               = { path = "../../examples/starlift-demo",               editable = true }
 tutorial_notebook_assets    = { path = "../../examples/tutorial_notebook_assets",    editable = true }
 use_case_repository         = { path = "../../examples/use_case_repository",         editable = true }
 with_great_expectations     = { path = "../../examples/with_great_expectations",     editable = true }
@@ -362,6 +358,10 @@ sling_decorator   = { path = "../../examples/experimental/sling_decorator",   ed
 [tool.ty.environment]
 # Minimum version of Python on which code must run.
 python-version = "3.10"
+
+# `quickstart_etl` is a src-layout example that is not installed into this env, so its tests
+# cannot resolve the package by name without this.
+extra-paths = ["examples/quickstart_etl/src"]
 
 [tool.ty.rules]
 # Kept in lock-step with the other ty envs — the
@@ -428,11 +428,15 @@ exclude = [
   # would flag those imports as unresolved here.
   "scripts/run-ty.py",
 
-  # `prefect` cannot be installed in this env: it requires sqlalchemy>=2,
-  # while the airflow 2.9.3 that dagster-airlift pins below python 3.13
-  # requires sqlalchemy<2. Excluded rather than left red until the package
-  # gets a ty env of its own.
-  "python_modules/libraries/dagster-prefect",
+  # Airflow-bound packages: owned by (and pinned to sqlalchemy 1.x in) the
+  # `airflow` ty env. Mirrors that env's include set so the two partition the
+  # tree rather than double-checking it.
+  "python_modules/libraries/dagster-airflow",
+  "python_modules/libraries/dagster-airlift",
+  "examples/airlift-federation-tutorial",
+  "examples/airlift-migration-tutorial",
+  "examples/airlift-mwaa-example",
+  "examples/starlift-demo",
 ]
 
 # Ignore all files that are git-ignored unless explicitly included.

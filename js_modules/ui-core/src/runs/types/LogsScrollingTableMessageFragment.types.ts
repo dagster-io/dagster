@@ -46,9 +46,11 @@ export type DagsterEventType =
   | 'RUN_DEQUEUED'
   | 'RUN_ENQUEUED'
   | 'RUN_FAILURE'
+  | 'RUN_RESUMED'
   | 'RUN_START'
   | 'RUN_STARTING'
   | 'RUN_SUCCESS'
+  | 'RUN_SUSPENDED'
   | 'STEP_EXPECTATION_RESULT'
   | 'STEP_FAILURE'
   | 'STEP_INPUT'
@@ -2933,6 +2935,15 @@ export type LogsScrollingTableMessageFragment_RunFailureEvent = {
   } | null;
 };
 
+export type LogsScrollingTableMessageFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsScrollingTableMessageFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -2953,6 +2964,15 @@ export type LogsScrollingTableMessageFragment_RunStartingEvent = {
 
 export type LogsScrollingTableMessageFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsScrollingTableMessageFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
   timestamp: string;
@@ -3486,9 +3506,11 @@ export type LogsScrollingTableMessageFragment =
   | LogsScrollingTableMessageFragment_RunDequeuedEvent
   | LogsScrollingTableMessageFragment_RunEnqueuedEvent
   | LogsScrollingTableMessageFragment_RunFailureEvent
+  | LogsScrollingTableMessageFragment_RunResumedEvent
   | LogsScrollingTableMessageFragment_RunStartEvent
   | LogsScrollingTableMessageFragment_RunStartingEvent
   | LogsScrollingTableMessageFragment_RunSuccessEvent
+  | LogsScrollingTableMessageFragment_RunSuspendedEvent
   | LogsScrollingTableMessageFragment_StepExpectationResultEvent
   | LogsScrollingTableMessageFragment_StepWorkerStartedEvent
   | LogsScrollingTableMessageFragment_StepWorkerStartingEvent;

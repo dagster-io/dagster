@@ -3,6 +3,7 @@ import os
 import sys
 from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any, Optional, TypeVar, cast
 
 import click
@@ -79,8 +80,10 @@ def _get_workspace_load_target_from_cli_opts(
             return EmptyWorkspaceTarget()
         elif has_pyproject_dagster_block("pyproject.toml"):
             return PyProjectFileTarget("pyproject.toml")
-        elif os.path.exists("workspace.yaml"):
+        elif Path("workspace.yaml").exists():
             return WorkspaceFileTarget(paths=["workspace.yaml"])
+        elif Path("workspace.yml").exists():
+            return WorkspaceFileTarget(paths=["workspace.yml"])
         else:
             raise click.UsageError(
                 "No arguments given and no [tool.dagster] block in pyproject.toml found."
@@ -218,6 +221,7 @@ def _get_workspace_load_target_from_cli_opts(
             socket=None,
             host=workspace_opts.grpc_host or "localhost",
             location_name=None,
+            use_ssl=workspace_opts.use_ssl,
         )
     elif workspace_opts.grpc_socket:
         _check_attrs_falsey(
@@ -229,6 +233,7 @@ def _get_workspace_load_target_from_cli_opts(
             socket=workspace_opts.grpc_socket,
             host=workspace_opts.grpc_host or "localhost",
             location_name=None,
+            use_ssl=workspace_opts.use_ssl,
         )
     else:
         _raise_cli_usage_error()

@@ -156,6 +156,9 @@ class DagsterEventType(str, Enum):
     RUN_FAILURE = "PIPELINE_FAILURE"
     RUN_CANCELING = "PIPELINE_CANCELING"
     RUN_CANCELED = "PIPELINE_CANCELED"
+    # The worker exited on purpose to wait on external work; a later worker picks the run back up.
+    RUN_SUSPENDED = "RUN_SUSPENDED"
+    RUN_RESUMED = "RUN_RESUMED"
 
     # Keep these legacy enum values around, to keep back-compatability for user code that might be
     # using these constants to filter event records
@@ -235,6 +238,8 @@ PIPELINE_EVENTS = {
     DagsterEventType.RUN_FAILURE,
     DagsterEventType.RUN_CANCELING,
     DagsterEventType.RUN_CANCELED,
+    DagsterEventType.RUN_SUSPENDED,
+    DagsterEventType.RUN_RESUMED,
 }
 
 HOOK_EVENTS = {
@@ -267,9 +272,14 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
     DagsterEventType.RUN_STARTING: DagsterRunStatus.STARTING,
     DagsterEventType.RUN_CANCELING: DagsterRunStatus.CANCELING,
     DagsterEventType.RUN_CANCELED: DagsterRunStatus.CANCELED,
+    DagsterEventType.RUN_SUSPENDED: DagsterRunStatus.SUSPENDED,
+    DagsterEventType.RUN_RESUMED: DagsterRunStatus.STARTED,
 }
 
-PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
+# RUN_START stays the event for STARTED: run status sensors must not fire again on a resume.
+PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {
+    v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items() if k != DagsterEventType.RUN_RESUMED
+}
 
 # These are the only events currently supported in `EventLogStorage.store_event_batch`
 BATCH_WRITABLE_EVENTS = {
@@ -1291,6 +1301,18 @@ class DagsterEvent(
             event_specific_data=JobCanceledData(
                 check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
+        )
+
+    @staticmethod
+    def job_suspended(job_context: IPlanContext, message: str) -> "DagsterEvent":
+        return DagsterEvent.from_job(DagsterEventType.RUN_SUSPENDED, job_context, message=message)
+
+    @staticmethod
+    def job_resumed(job_context: IPlanContext) -> "DagsterEvent":
+        return DagsterEvent.from_job(
+            DagsterEventType.RUN_RESUMED,
+            job_context,
+            message=f'Resumed execution of run for "{job_context.job_name}".',
         )
 
     @staticmethod

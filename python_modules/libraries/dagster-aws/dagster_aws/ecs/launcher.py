@@ -26,12 +26,13 @@ from dagster._core.instance import T_DagsterInstance
 from dagster._core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
+    ResumeRunContext,
     RunLauncher,
     WorkerStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import HIDDEN_TAG_PREFIX, RUN_WORKER_ID_TAG
-from dagster._grpc.types import ExecuteRunArgs
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.backoff import backoff
@@ -61,6 +62,10 @@ from dagster_aws.ecs.utils import (
 from dagster_aws.secretsmanager import get_secrets_from_arns
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
+
+# Launching and resuming a run differ only in which of these the ECS task is handed.
+RunContext = LaunchRunContext | ResumeRunContext
+RunArgs = ExecuteRunArgs | ResumeRunArgs
 
 RUNNING_STATUSES = [
     "PROVISIONING",
@@ -474,10 +479,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         return Tags(arn, cluster, cpu, memory)
 
-    def _get_command_args(self, run_args: ExecuteRunArgs, context: LaunchRunContext):
+    def _get_command_args(self, run_args: RunArgs, context: RunContext):
         return run_args.get_command_args()
 
-    def get_image_for_run(self, context: LaunchRunContext) -> str | None:
+    def get_image_for_run(self, context: RunContext) -> str | None:
         """Child classes can override this method to determine the image to use for a run. This is considered a public API."""
         run = context.dagster_run
         return (
@@ -491,6 +496,21 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
+        self._start_task_for_run(context, ExecuteRunArgs)
+
+    @property
+    def supports_resume_run(self) -> bool:
+        return True
+
+    def resume_run(self, context: ResumeRunContext) -> None:
+        """Launch a replacement ECS task for a run that is already in progress.
+
+        The new task's ARN and run worker id overwrite the ones on the run, so health checks
+        and termination target it instead of the worker it replaces.
+        """
+        self._start_task_for_run(context, ResumeRunArgs)
+
+    def _start_task_for_run(self, context: RunContext, args_cls: type[RunArgs]) -> None:
         run = context.dagster_run
         container_context = EcsContainerContext.create_for_run(run, self)
 
@@ -507,7 +527,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         stripped_repository_origin = repository_origin._replace(container_context={})
         stripped_job_origin = job_origin._replace(repository_origin=stripped_repository_origin)
 
-        args = ExecuteRunArgs(
+        args = args_cls(
             job_origin=stripped_job_origin,
             run_id=run.run_id,
             instance_ref=self._instance.get_ref(),

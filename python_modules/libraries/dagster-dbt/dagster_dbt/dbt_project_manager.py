@@ -9,23 +9,36 @@ from urllib.parse import quote, urlparse, urlunparse
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.model import Resolver
+from dagster_shared.utils.fs import rmtree
 
 from dagster_dbt.dbt_project import DbtProject
 
 if TYPE_CHECKING:
     from dagster_dbt.components.dbt_project.component import DbtProjectArgs
 
+# dbt never reads a project's git history, and copying it makes the snapshot far larger and, on
+# Windows, undeletable: git writes object and pack files read-only, which blocks the delete that
+# clears the snapshot on the next reload.
+_SNAPSHOT_EXCLUDED_NAMES = frozenset({".git"})
 
-def _ignore_nested_dest(dest: Path):
-    """Returns an ``ignore`` callable for ``shutil.copytree`` that prevents the copy from
-    descending into its own destination directory when ``dest`` is nested inside the source
-    tree. This guards against unbounded recursive copying that would otherwise fill the disk.
+
+def _snapshot_ignore(dest: Path):
+    """Returns an ``ignore`` callable for ``shutil.copytree`` that omits directories the snapshot
+    should not contain.
+
+    Skips the copy's own destination directory when ``dest`` is nested inside the source tree,
+    which would otherwise recurse unboundedly and fill the disk, along with anything in
+    ``_SNAPSHOT_EXCLUDED_NAMES``.
     """
     resolved_dest = dest.resolve()
 
     def _ignore(src_dir: str, names: list[str]) -> set[str]:
         src_path = Path(src_dir).resolve()
-        return {name for name in names if (src_path / name).resolve() == resolved_dest}
+        return {
+            name
+            for name in names
+            if name in _SNAPSHOT_EXCLUDED_NAMES or (src_path / name).resolve() == resolved_dest
+        }
 
     return _ignore
 
@@ -53,7 +66,7 @@ class DbtProjectManager(ABC):
         # ensure local dir is empty
         local_dir = self._local_project_dir(state_path)
         if local_dir.exists():
-            shutil.rmtree(local_dir)
+            rmtree(local_dir)
         local_dir.mkdir(parents=True, exist_ok=True)
 
         # ensure project exists in the dir and is compiled
@@ -109,7 +122,7 @@ class DbtProjectArgsManager(DbtProjectManager):
         # directory. Without ignoring it, copytree recurses into its own destination and copies
         # the project into itself unboundedly, filling up the disk.
         shutil.copytree(
-            self.args.project_dir, dest, dirs_exist_ok=True, ignore=_ignore_nested_dest(dest)
+            self.args.project_dir, dest, dirs_exist_ok=True, ignore=_snapshot_ignore(dest)
         )
 
     def get_project(self, state_path: Path | None) -> "DbtProject":

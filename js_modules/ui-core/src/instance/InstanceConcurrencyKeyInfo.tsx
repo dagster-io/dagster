@@ -32,7 +32,7 @@ import {
 } from './ConcurrencyQueries';
 import {POOL_DETAILS_QUERY} from './PoolDetailsQuery';
 import {useTrackPageView} from '../app/analytics';
-import {failedStatuses, inProgressStatuses, queuedStatuses} from '../runs/RunStatuses';
+import {activeStatuses, failedStatuses, queuedStatuses} from '../runs/RunStatuses';
 import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {
   DeleteConcurrencyLimitMutation,
@@ -247,7 +247,7 @@ export const InstanceConcurrencyKeyInfo = ({
                     In progress
                   </Heading>
                 </Box>
-                <PoolRunsTable pool={concurrencyKey} runStatuses={inProgressStatuses} />
+                <PoolRunsTable pool={concurrencyKey} runStatuses={activeStatuses} />
                 <Box
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}

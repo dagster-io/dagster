@@ -21,6 +21,7 @@ if TYPE_CHECKING:
         InstigatorState,
         InstigatorStatus,
         InstigatorTick,
+        InstigatorTickSummary,
         TickData,
         TickStatus,
     )
@@ -449,6 +450,27 @@ class SchedulingMethods:
             origin_id, selector_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
         return matches[0] if len(matches) else None
+
+    @traced
+    def get_tick_summaries(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
+    ) -> Sequence["InstigatorTickSummary"]:
+        if not self._schedule_storage_impl:
+            return []
+        return self._schedule_storage_impl.get_tick_summaries(
+            origin_id,
+            selector_id,
+            before=before,
+            after=after,
+            limit=limit,
+            statuses=statuses,
+        )
 
     @traced
     def get_ticks(

@@ -71,5 +71,34 @@ describe('RunActionsMenu', () => {
       // Blueprint doesn't actually set `disabled` on the button element.
       expect(reExecutionButton).toBeDisabled();
     });
+
+    it('does not offer to terminate instead of deleting without terminate permission', async () => {
+      const user = userEvent.setup();
+      render(
+        <MockedProvider
+          mocks={[
+            ...buildMockRootWorkspaceQuery(),
+            buildPipelineEnvironmentQuery({hasReExecutePermission: true}),
+          ]}
+        >
+          <MemoryRouter>
+            <WorkspaceProvider>
+              <RunActionsMenu
+                run={{
+                  ...buildRunActionsMenuFragment({hasReExecutePermission: true}),
+                  hasTerminatePermission: false,
+                }}
+              />
+            </WorkspaceProvider>
+          </MemoryRouter>
+        </MockedProvider>,
+      );
+
+      await user.click(await screen.findByRole('button'));
+      await user.click(await screen.findByRole('menuitem', {name: /delete/i}));
+
+      expect(await screen.findByText('1 run will be deleted.')).toBeVisible();
+      expect(screen.queryByRole('button', {name: /instead/})).not.toBeInTheDocument();
+    });
   });
 });

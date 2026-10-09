@@ -7,6 +7,7 @@ import sys
 import uuid
 from collections.abc import Callable, Mapping
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import NamedTuple
 
 import click
@@ -272,18 +273,20 @@ def get_telemetry_enabled_from_dagster_yaml() -> bool:
     if dagster_home_path is None:
         return True
 
-    dagster_yaml_path = os.path.join(dagster_home_path, "dagster.yaml")
-    if not os.path.exists(dagster_yaml_path):
+    dagster_home = Path(dagster_home_path)
+    dagster_yaml_path = dagster_home / "dagster.yaml"
+    if not dagster_yaml_path.exists():
+        dagster_yaml_path = dagster_home / "dagster.yml"
+    if not dagster_yaml_path.exists():
         return True
 
-    with open(dagster_yaml_path, encoding="utf8") as dagster_yaml_file:
-        dagster_yaml_data = safe_load_yaml(dagster_yaml_file)
-        if (
-            dagster_yaml_data
-            and "telemetry" in dagster_yaml_data
-            and "enabled" in dagster_yaml_data["telemetry"]
-        ):
-            return dagster_yaml_data["telemetry"]["enabled"]
+    dagster_yaml_data = safe_load_yaml(dagster_yaml_path.read_text(encoding="utf-8"))
+    if (
+        dagster_yaml_data
+        and "telemetry" in dagster_yaml_data
+        and "enabled" in dagster_yaml_data["telemetry"]
+    ):
+        return dagster_yaml_data["telemetry"]["enabled"]
     return True
 
 
