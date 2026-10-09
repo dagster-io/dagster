@@ -101,6 +101,8 @@ else:
             PartialSuccess = "partial success"
             Pass = "pass"
             RuntimeErr = "runtime error"
+            NoOp = "no-op"
+            Reused = "reused"
 
         class TestStatus(StrEnum):
             Pass = "pass"
@@ -111,3 +113,34 @@ else:
 
 
 logging.getLogger().handlers = existing_root_logger_handlers
+
+
+# The statuses a refable node (model, seed, snapshot) can end on without having failed.
+# Anything outside this set yields no materialization.
+#
+# Use this ONLY for refable nodes -- it is not valid for tests. `warn` is a success for a
+# refable node but a warn-severity failure for a test, and the two are indistinguishable on
+# the wire, so the test path must keep comparing against `TestStatus`.
+#
+# - `no-op` (dbt-core 1.10+) and `reused` (dbt-core 1.12+, and every `Reused*` variant in dbt
+#   Fusion) are terminal, non-error statuses meaning dbt deliberately did not rebuild the node.
+#   The relation still exists in the warehouse, so an event must be emitted or the asset
+#   silently stops updating.
+# `partial success` is deliberately absent: dbt lists it in `MARK_DEPENDENT_ERRORS_STATUSES`,
+# so dbt itself marks the node's dependents as errored and the step fails. Materializing it
+# would show the asset healthy on a partial load and let downstream automation run on it.
+# - `warn` is what dbt Fusion serializes `SucceededWithWarning` to: the node built but emitted
+#   a warning (e.g. duplicate columns). Fusion maps that status to a successful outcome, and
+#   dbt-core's `RunStatus` has no `warn` member at all, so accepting it cannot mask a dbt-core
+#   failure.
+#
+# Spelled as string literals because none of these is a `NodeStatus` member across the whole
+# dbt-core range this package supports.
+SUCCESSFUL_NODE_STATUSES: frozenset[str] = frozenset(
+    {
+        "success",
+        "no-op",
+        "reused",
+        "warn",
+    }
+)
