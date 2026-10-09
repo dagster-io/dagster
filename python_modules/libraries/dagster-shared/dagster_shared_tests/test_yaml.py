@@ -14,6 +14,7 @@ from dagster_shared.yaml_utils import (
     load_yaml_from_path,
     merge_yaml_strings,
     merge_yamls,
+    parse_yaml_with_source_position,
     safe_load_yaml,
 )
 
@@ -171,3 +172,11 @@ def test_load_datetime_string():
     assert load_run_config_yaml(date_config_yaml) == {
         "ops": {"my_op": {"config": {"start": "2022-06-10T00:00:00.000000+00:00"}}}
     }
+
+
+@pytest.mark.parametrize("yaml_source", ["name: x\n1: y\n", "name: x\nother: y\n"])
+def test_source_position_tree_hash_ignores_mapping_order(yaml_source):
+    tree = parse_yaml_with_source_position(yaml_source).source_position_tree
+    reordered = tree._replace(children=dict(reversed(list(tree.children.items()))))
+    assert tree == reordered
+    assert hash(tree) == hash(reordered)
