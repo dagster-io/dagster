@@ -170,7 +170,11 @@ class DbtCloudJobRunResults:
 
             resource_type: str = dbt_resource_props["resource_type"]
             result_status: str = result["status"]
-            materialization: str = dbt_resource_props["config"]["materialized"]
+            # dbt Fusion omits `config.materialized` for seeds; the resource type is what
+            # dbt Core records there anyway, and a seed is never ephemeral.
+            materialization: str = (
+                dbt_resource_props.get("config", {}).get("materialized") or resource_type
+            )
 
             is_ephemeral = materialization == "ephemeral"
 
