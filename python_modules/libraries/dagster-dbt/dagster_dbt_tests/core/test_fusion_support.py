@@ -48,3 +48,30 @@ def test_basic(project: DbtProject, fail: bool) -> None:
     else:
         assert n_materializations == n_assets
         assert n_check_evaluations == n_checks
+
+
+@pytest.mark.fusion
+def test_adapter_backed_postprocessing_is_skipped(
+    project: DbtProject, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Fusion has no dbt Core adapter, so `fetch_column_metadata` and `fetch_row_counts` warn and
+    pass events through instead of failing the step.
+    """
+
+    @dbt_assets(manifest=project.manifest_path, project=project)
+    def the_assets(context: dg.AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(["build"], context=context).stream().fetch_column_metadata().fetch_row_counts()
+        )
+
+    result = dg.materialize(
+        [the_assets],
+        resources={"dbt": DbtCliResource(project_dir=project.project_dir)},
+    )
+
+    assert result.success
+    assert all(
+        "dagster/row_count" not in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+    )
+    assert any("dbt Fusion engine does not provide" in record.message for record in caplog.records)

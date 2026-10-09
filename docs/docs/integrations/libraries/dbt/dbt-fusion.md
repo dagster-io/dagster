@@ -79,11 +79,38 @@ dbt = DbtCliResource(
 
 Dagster's Fusion support is in preview and has known gaps. Confirm that none of the following block your project before you migrate.
 
-### Column metadata and column lineage are not supported
+### Column metadata needs a dbt-side macro, and row counts are unavailable
 
-Column-level metadata and column lineage are not supported on Fusion, and neither is `fetch_row_counts()`. Both are fetched through dbt Core's adapter, and Dagster does not initialize an adapter when the dbt executable reports a 2.x version. Calling either one on Fusion raises an error that fails the step rather than skipping the metadata.
+`fetch_column_metadata()` and `fetch_row_counts()` read the warehouse through dbt Core's adapter, which Fusion does not provide — Dagster skips adapter initialization when the dbt executable reports a 2.x version. On Fusion both methods log a warning and pass dbt events through unchanged, so a pipeline that calls them runs on either engine without failing.
 
-If your project depends on column lineage in the Dagster+ asset graph, weigh that against the parse-time gain before migrating. Track [#34227](https://github.com/dagster-io/dagster/issues/34227) for support.
+Column schema and column lineage are still available on Fusion through the `dagster` dbt package's `log_column_level_metadata` macro, which introspects over the connection dbt already holds rather than one Dagster opens. Add the package to `packages.yml` or `dependencies.yml` and run `dbt deps`:
+
+```yaml
+packages:
+  - git: 'https://github.com/dagster-io/dagster.git'
+    subdirectory: 'python_modules/libraries/dagster-dbt/dbt_packages/dagster'
+    revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
+```
+
+Then enable the macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) on the resources that should emit it:
+
+```yaml
+models:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+
+seeds:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+
+snapshots:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+```
+
+With the hook in place, a plain `.stream()` attaches `dagster/column_schema` and `dagster/column_lineage`; no `fetch_column_metadata()` call is involved. Note that `dagster-dbt` logs a deprecation notice for this macro pointing at `fetch_column_metadata()` — on Fusion, that method cannot work, and the macro is the supported route.
+
+Row counts have no equivalent on Fusion. Track [#34227](https://github.com/dagster-io/dagster/issues/34227).
 
 ### Isolated models are dropped from non-default selections
 
@@ -114,10 +141,10 @@ Anything this prints is missing from your asset graph. As a workaround, give the
 
 ### Open issues
 
-| Issue                                                        | Description                                                                |
-| ------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                        |
-| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Column metadata, column lineage, and row counts are unavailable on Fusion. |
+| Issue                                                        | Description                                                                          |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                                  |
+| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Row counts are unavailable on Fusion, and column metadata requires a dbt-side macro. |
 
 ### Fusion's own compatibility surface
 
