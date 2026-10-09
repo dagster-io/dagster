@@ -1,7 +1,10 @@
 import pickle
+from unittest import mock
 
 import pytest
 from dagster import (
+    AllPartitionMapping,
+    AssetIn,
     AssetsDefinition,
     DagsterInstance,
     DynamicOut,
@@ -40,6 +43,7 @@ from dagster_gcp.gcs.io_manager import (
     gcs_pickle_io_manager,
 )
 from dagster_gcp.gcs.resources import gcs_resource
+from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from upath import UPath
 
@@ -314,3 +318,79 @@ def test_asset_pythonic_io_manager(gcs_bucket):
         f"{gcs_bucket}/assets/asset3",
         f"{gcs_bucket}/assets/storage/{result.run_id}/files/graph_asset.first_op/result",
     }
+
+
+def test_load_from_path_translates_not_found_to_file_not_found_error(gcs_bucket):
+    """When a GCS blob is missing, ``load_from_path`` should raise ``FileNotFoundError``
+    so ``UPathIOManager`` honors ``allow_missing_partitions=True``. Without this, the
+    raw ``google.api_core.exceptions.NotFound`` propagates and the metadata flag is
+    ignored — see https://github.com/dagster-io/dagster/issues/32488.
+    """
+    io_manager = PickledObjectGCSIOManager(gcs_bucket, FakeGCSClient())
+    missing_blob = mock.MagicMock()
+    missing_blob.download_as_bytes.side_effect = NotFound("nope")
+    with (
+        mock.patch.object(io_manager.bucket_obj, "blob", return_value=missing_blob),
+        pytest.raises(FileNotFoundError),
+    ):
+        io_manager.load_from_path(context=mock.MagicMock(), path=UPath("missing", "blob"))
+
+
+def test_asset_io_manager_allow_missing_partitions(gcs_bucket):
+    """End-to-end check: ``allow_missing_partitions=True`` lets a downstream asset load
+    a partitioned upstream that has only materialized a subset of its partitions.
+
+    Mirrors the failure reported in #32488 — a downstream consuming a multi-partitioned
+    upstream via a partition mapping should skip missing partitions when the metadata
+    flag is set, rather than failing with a NotFound from GCS.
+    """
+    upstream_partitions = StaticPartitionsDefinition(["foo", "bar"])
+
+    @asset(partitions_def=upstream_partitions)
+    def upstream_asset(context) -> str:
+        return context.partition_key
+
+    @asset(
+        ins={
+            "upstream_asset": AssetIn(
+                partition_mapping=AllPartitionMapping(),
+                metadata={"allow_missing_partitions": True},
+            )
+        }
+    )
+    def downstream_asset(upstream_asset: dict[str, str]) -> dict[str, str]:
+        return upstream_asset
+
+    fake_gcs_client = FakeConfigurableGCSClient()
+    resources = {
+        "io_manager": GCSPickleIOManager(
+            gcs_bucket=gcs_bucket,
+            gcs_prefix="assets",
+            gcs=ResourceDefinition.hardcoded_resource(fake_gcs_client),
+        ),
+    }
+
+    # Materialize only one of the two upstream partitions, then patch the underlying
+    # GCS bucket so reads of the unmaterialized blob path raise NotFound (mirroring
+    # real GCS behavior for missing blobs).
+    assert materialize([upstream_asset], partition_key="foo", resources=resources).success
+
+    bucket_obj = fake_gcs_client.get_client().bucket(gcs_bucket)
+    real_blob = bucket_obj.blob
+    missing_key = "assets/upstream_asset/bar"
+
+    def blob_with_missing(name: str, *args, **kwargs):
+        if name == missing_key:
+            stub = mock.MagicMock()
+            stub.download_as_bytes.side_effect = NotFound(f"blob {name} not found")
+            return stub
+        return real_blob(name, *args, **kwargs)
+
+    with mock.patch.object(bucket_obj, "blob", side_effect=blob_with_missing):
+        result = materialize(
+            [upstream_asset.to_source_asset(), downstream_asset], resources=resources
+        )
+
+    assert result.success
+    loaded = result.output_for_node("downstream_asset")
+    assert loaded == {"foo": "foo"}
