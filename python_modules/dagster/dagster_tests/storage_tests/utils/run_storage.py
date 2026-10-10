@@ -1834,6 +1834,48 @@ class TestRunStorage:
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS  # ty: ignore[unresolved-attribute]
 
+    def test_handle_run_event_suspend_and_resume(self, storage, instance):
+        run_id = make_new_run_id()
+        storage.add_run(create_dagster_run(job_name="pipeline_name", run_id=run_id))
+
+        def _report(event_type: DagsterEventType) -> None:
+            instance.handle_new_event(
+                self._get_run_event_entry(
+                    dg.DagsterEvent(
+                        message="a message",
+                        event_type_value=event_type.value,
+                        job_name="pipeline_name",
+                        step_key=None,
+                        node_handle=None,
+                        step_kind_value=None,
+                        logging_tags=None,
+                    ),
+                    run_id,
+                )
+            )
+
+        def _record():
+            return storage.get_run_records(dg.RunsFilter(run_ids=[run_id]))[0]
+
+        _report(DagsterEventType.RUN_START)
+        assert _record().dagster_run.status == DagsterRunStatus.STARTED
+        start_time = _record().start_time
+
+        _report(DagsterEventType.RUN_SUSPENDED)
+        record = _record()
+        assert record.dagster_run.status == DagsterRunStatus.SUSPENDED
+        assert not record.dagster_run.is_finished
+        assert record.end_time is None
+
+        # Resuming does not restart the clock: start_time is set by RUN_START only.
+        _report(DagsterEventType.RUN_RESUMED)
+        record = _record()
+        assert record.dagster_run.status == DagsterRunStatus.STARTED
+        assert record.start_time == start_time
+
+        _report(DagsterEventType.RUN_SUCCESS)
+        assert _record().dagster_run.status == DagsterRunStatus.SUCCESS
+
     def test_run_record_stats(self, storage, instance):
         assert storage
 

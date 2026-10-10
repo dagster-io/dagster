@@ -1,5 +1,61 @@
 # Changelog
 
+## 1.13.26 (core) / 0.29.26 (libraries)
+
+### Breaking Changes
+
+- [dagster-dbt] `dagster-dbt` no longer installs `dbt-core`. It is now available as the `dagster-dbt[dbt-core]` extra. Do not install `dbt-core` into an environment that also has dbt Fusion's `dbt` PyPI package: both claim the `dbt` import namespace and overwrite each other's files, and pip reports no error.
+
+### New
+
+- Sensor ticks that request a run larger than the instance's run size limit now fail with an explicit error naming the offending run requests, instead of storing those requests in tick history.
+- The `SF_PARTNER_ID` environment variable is now set by default, to allow for partner attribution on Snowflake connections made through third-party libraries.
+- Run monitoring now includes the run worker's debug info (for example, a Kubernetes `OOMKilled` termination reason) when it fails a started run because the run worker failed. (Thanks, [@hosaka2](https://github.com/hosaka2)!)
+- [dg] `dg list envs`, `dg plus create env`, and `dg plus pull env` now accept a `--deployment` option (or the `DAGSTER_CLOUD_DEPLOYMENT` environment variable) to target a deployment other than the configured default.
+- [dagster-cloud] The published `dagster-cloud-agent` image now includes the Azure Container Apps launcher.
+- [dagster-dbt] A dbt Fusion binary on `PATH` is now used as-is, instead of being shadowed by the `dbt` entry point that `dbt-core` installs into the virtualenv.
+- [dagster-dbt] `fetch_column_metadata()` and `fetch_row_counts()` no longer fail the step when running on the dbt Fusion engine, or when dbt adapter initialization fails. They now log a warning and emit events without the metadata.
+- [dagster-dbt] `dagster-dbt`'s `sqlglot` dependency no longer pins an upper bound. Column lineage generation now works on sqlglot 28.1 and later, including the performance improvements in 30.x for wide models.
+- [dagster-dbt] Asset materializations from dbt runs now carry the node's dbt status as metadata.
+
+### Bugfixes
+
+- GraphQL event-log, tick, and run-record queries no longer fail when the requested limit exceeds the server-side default. The limit is clamped to the default, and the remaining rows are available by paginating.
+- Fixed a bug where a run's asset list could be under-reported in the UI for runs with a large number of materializations, and where an asset could be reported as failed even though it was materialized by a different step than the one that planned it.
+- Fixed an issue where the UI could keep displaying a code location's previous container image after a rolling update, until browser storage was cleared. (Thanks, [@HynekBlaha](https://github.com/HynekBlaha)!)
+- [ui] Run filters now keep tag values that contain `=`, such as partition keys like `region=west`.
+- [ui] Selection inputs no longer collapse repeated spaces inside quoted values, and now have an accessible name.
+- [ui] On cursor-paginated lists such as Runs, "Newer" now returns to the previous page after you switch tabs and press browser Back, instead of jumping to the first page.
+- [dagster-dbt] Fixed a bug where dbt models that finished with a no-op, reused, or warn status emitted no materialization, so the asset silently stopped updating and downstream freshness checks and automation conditions never fired. `partial success` and `skipped` are still treated as failures, since dbt marks a partial-success node's dependents as errored, and dbt Fusion reports both a genuine no-op and an upstream-failure skip as `skipped`.
+- [dagster-dbt] Fixed an issue where dbt Fusion models with no `ref()` or `source()` calls were still left out of asset selection in environments without `dbt-core` installed, which the fix in 1.13.25 did not cover. Selections other than the default `select` are still affected.
+- [dagster-dbt] Fixed a bug where, when running on dbt Fusion without `dbt-core` installed, every passing dbt test was reported as a failed asset check.
+- [dagster-dbt] Fixed a bug where a dbt Cloud run containing seeds executed under dbt Fusion failed event translation with `KeyError: 'materialized'`, dropping materializations for every asset after the first seed in the run.
+- [dagster-dbt] Fixed a failure reloading a dagster-dbt project on Windows, where the local defs state snapshot could not be rebuilt if it contained read-only files such as a git checkout's object files.
+
+### Documentation
+
+- Corrected the Dagster+ credit usage documentation: credits are counted per step execution plus per asset materialization event, and the page now covers retries, failures, and how Insights attributes credits across assets materialized in one step.
+
+## 1.13.25 (core) / 0.29.25 (libraries)
+
+### New
+
+- Improved the performance of declarative automation for partitioned assets with a long materialization history.
+- [ui] The UI now has a mobile layout for phones, with a new navigation menu and mobile versions of the Home, Jobs, Automation, Timeline, Asset Catalog, and Asset Overview pages. Pages without a mobile version show a banner with an option to always use the desktop site, which can also be set in user settings.
+- [ui] When launching a time-partitioned asset, the partition selector now shows the most recent 90 days by default, with an option to show all partitions.
+- [dagster-aws] The ECS run launcher now supports resuming run workers, so run monitoring's `max_resume_run_attempts` can be set above 0 on ECS deployments.
+- [dagster-prefect] The Prefect Pipes clients now read messages through Prefect's logs API by default, so a shared filesystem or bucket is no longer needed. Prefect deployments work without changes to the flow. Flows and tasks that open a Pipes session must pass `message_writer=PipesPrefectLogsMessageWriter()`.
+
+### Bugfixes
+
+- [dg] Fixed `AttributeError: module 'dbt' has no attribute 'contracts'` when passing a file named `dbt.py` to `dg plus integrations dbt manage-manifest` and `dagster-cloud ci manage-state`.
+- [dagster-dbt] Fixed an issue where dbt Fusion models with no `ref()` or `source()` calls were silently left out of asset selection, including in `DbtProjectComponent`.
+- [ui] Fixed an issue where pressing Newer on paginated lists such as Runs jumped to the first page after using the browser Back button or reloading the page.
+
+### Documentation
+
+- Added a dbt Fusion page to the dbt integration docs.
+
 ## 1.13.24 (core) / 0.29.24 (libraries)
 
 ### New
@@ -18,7 +74,6 @@
 - [dagster-dbt] Fixed an `AttributeError` raised when a `DbtProject`'s `project_dir` was a string rather than a `Path`, which could happen after the project was round-tripped through Dagster metadata.
 - [dagster-dbt] Fixed the type annotation of `build_schedule_from_dbt_selection` so that non-string `tags` values, which already worked at runtime, no longer fail type checking, matching `define_asset_job`.
 - [dagster-k8s] Fixed a bug where a Dagster Pipes Kubernetes run whose pod had a failing init container would hang until the wait timed out (a day by default) instead of failing with the init container's error.
-- [dagster-dbt] Fixed dbt Fusion Snowflake dynamic-table no-ops being omitted from model completion events.
 
 ### Documentation
 

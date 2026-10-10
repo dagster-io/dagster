@@ -1,0 +1,18 @@
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* One menu item tall, starting where item icons do (12px item padding, -4px icon margin). */
+.skeletonItem {
+  padding: 6px 8px;
+}
+
+/* An empty group leaves two dividers in a row; only show one. */
+.divider + .divider {
+  display: none;
+}

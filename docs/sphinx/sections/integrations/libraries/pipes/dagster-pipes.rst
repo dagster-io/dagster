@@ -77,6 +77,8 @@ Message writers write messages to the location specified in the bootstrap payloa
 
 .. autoclass:: PipesAzureBlobStorageMessageWriter
 
+.. autoclass:: PipesPrefectLogsMessageWriter
+
 Message writer channels
 =======================
 
@@ -97,6 +99,8 @@ Message writer channels are objects that write messages back to the Dagster orch
 .. autoclass:: PipesGCSMessageWriterChannel
 
 .. autoclass:: PipesAzureBlobStorageMessageWriterChannel
+
+.. autoclass:: PipesPrefectLogsMessageWriterChannel
 
 Utilities
 =========

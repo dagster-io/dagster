@@ -70,6 +70,12 @@ class DagsterRunStatus(Enum):
     # Runs that have been launched and execution has started.
     STARTED = "STARTED"
 
+    # Runs that have started and are waiting on external work with no run worker, on purpose.
+    # TODO: nothing writes this status yet. Before anything does, decide how to handle version
+    # skew: an older agent or code server raises on an unknown enum member when it reads a
+    # suspended run, so suspension must be gated on the versions that will read it.
+    SUSPENDED = "SUSPENDED"
+
     # Runs that have successfully completed.
     SUCCESS = "SUCCESS"
 
@@ -83,22 +89,30 @@ class DagsterRunStatus(Enum):
     CANCELED = "CANCELED"
 
 
-# These statuses that indicate a run may be using compute resources
-IN_PROGRESS_RUN_STATUSES = [
+# Statuses in which a run has a worker (or is getting one) and occupies a concurrency slot.
+ACTIVE_RUN_STATUSES = [
     DagsterRunStatus.STARTING,
     DagsterRunStatus.STARTED,
     DagsterRunStatus.CANCELING,
 ]
 
-# This serves as an explicit list of run statuses that indicate that the run is not using compute
-# resources. This and the enum above should cover all run statuses.
-NON_IN_PROGRESS_RUN_STATUSES = [
+# Statuses in which a run holds no worker and no concurrency slot. This and ACTIVE_RUN_STATUSES
+# partition the run statuses, so adding a status forces a decision about how the run queue counts it.
+NON_ACTIVE_RUN_STATUSES = [
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.NOT_STARTED,
     DagsterRunStatus.SUCCESS,
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.MANAGED,
     DagsterRunStatus.CANCELED,
+    DagsterRunStatus.SUSPENDED,
+]
+
+# Statuses in which a run has started and not finished. A suspended run is in progress but
+# has no worker and holds no slot, so it is not active.
+IN_PROGRESS_RUN_STATUSES = [
+    *ACTIVE_RUN_STATUSES,
+    DagsterRunStatus.SUSPENDED,
 ]
 
 FINISHED_STATUSES = [
@@ -110,6 +124,7 @@ FINISHED_STATUSES = [
 NOT_FINISHED_STATUSES = [
     DagsterRunStatus.STARTING,
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.CANCELING,
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.NOT_STARTED,

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, ContextManager  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_key import EntityKey
@@ -27,6 +26,7 @@ from dagster._core.storage.sql import (
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._time import get_current_datetime
 from sqlalchemy import event
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
 
 from dagster_postgres.utils import (
@@ -177,7 +177,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
     def _add_or_update_instigators_table(self, conn: Connection, state: InstigatorState) -> None:
         selector_id = state.selector_id
         conn.execute(
-            db_dialects.postgresql.insert(InstigatorsTable)
+            postgresql.insert(InstigatorsTable)
             .values(
                 selector_id=selector_id,
                 repository_selector_id=state.repository_selector_id,
@@ -204,7 +204,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if not asset_evaluations:
             return
 
-        insert_stmt = db_dialects.postgresql.insert(AssetDaemonAssetEvaluationsTable).values(
+        insert_stmt = postgresql.insert(AssetDaemonAssetEvaluationsTable).values(
             [
                 {
                     "evaluation_id": evaluation_id,

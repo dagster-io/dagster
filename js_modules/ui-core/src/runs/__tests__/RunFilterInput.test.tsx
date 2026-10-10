@@ -124,6 +124,14 @@ describe('tagValueToFilterObject', () => {
       value: 'value1',
     });
   });
+
+  it('should keep everything after the first = as the value', () => {
+    expect(tagValueToFilterObject('dagster/partition=region=west')).toEqual({
+      key: 'dagster/partition=region=west',
+      type: 'dagster/partition',
+      value: 'region=west',
+    });
+  });
 });
 
 describe('tagSuggestionValueObject', () => {
@@ -276,6 +284,45 @@ describe('<RunFilterInput  />', () => {
     });
 
     expect(onChange).toHaveBeenCalledWith([
+      {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
+    ]);
+  });
+
+  it('should keep restored tag values containing = when another tag is selected', async () => {
+    const user = userEvent.setup();
+    const onChange = jest.fn();
+    const tokens: RunFilterToken[] = [
+      {token: 'tag', value: 'team=a=b'},
+      {token: 'tag', value: `${DagsterTag.Partition}=region=west`},
+    ];
+    const {findByText} = render(
+      <TestRunsFilterInput
+        tokens={tokens}
+        onChange={onChange}
+        mocks={[
+          runTagKeysMock,
+          buildRunTagValuesQueryMockedResponse(DagsterTag.PartitionSet, ['set1', 'set2']),
+          ...[
+            DagsterTag.User,
+            DagsterTag.SensorName,
+            DagsterTag.ScheduleName,
+            DagsterTag.Partition,
+            DagsterTag.Backfill,
+          ].map((tagKey) => buildRunTagValuesQueryMockedResponse(tagKey, [])),
+        ]}
+      />,
+    );
+
+    onChange.mockClear();
+
+    await user.click(await findByText('Filter'));
+    await user.click(await findByText('Tag'));
+    await user.click(await findByText(DagsterTag.PartitionSet));
+    await user.click(await findByText('set1'));
+
+    expect(onChange).toHaveBeenCalledWith([
+      {token: 'tag', value: `${DagsterTag.Partition}=region=west`},
+      {token: 'tag', value: 'team=a=b'},
       {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
     ]);
   });

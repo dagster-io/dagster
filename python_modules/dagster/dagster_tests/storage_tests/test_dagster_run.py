@@ -9,6 +9,11 @@ from dagster._core.definitions.partitions.definition import (
     HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
 )
+from dagster._core.events import (
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    PIPELINE_RUN_STATUS_TO_EVENT_TYPE,
+    DagsterEventType,
+)
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
@@ -20,8 +25,11 @@ from dagster._core.remote_origin import (
     RemoteRepositoryOrigin,
 )
 from dagster._core.storage.dagster_run import (
+    ACTIVE_RUN_STATUSES,
+    CANCELABLE_RUN_STATUSES,
     IN_PROGRESS_RUN_STATUSES,
-    NON_IN_PROGRESS_RUN_STATUSES,
+    NON_ACTIVE_RUN_STATUSES,
+    NOT_FINISHED_STATUSES,
     DagsterRunStatus,
 )
 from dagster._core.storage.tags import (
@@ -70,15 +78,36 @@ def test_queued_job_origin_check():
         dg.DagsterRun(job_name="foo").with_status(DagsterRunStatus.QUEUED)
 
 
-def test_in_progress_statuses():
+def test_active_statuses():
     """If this fails, then the dequeuer's statuses are out of sync with all PipelineRunStatuses."""
     for status in dg.DagsterRunStatus:
-        in_progress = status in IN_PROGRESS_RUN_STATUSES
-        non_in_progress = status in NON_IN_PROGRESS_RUN_STATUSES
-        assert in_progress != non_in_progress  # should be in exactly one of the two
+        active = status in ACTIVE_RUN_STATUSES
+        non_active = status in NON_ACTIVE_RUN_STATUSES
+        assert active != non_active  # should be in exactly one of the two
 
-    assert len(IN_PROGRESS_RUN_STATUSES) + len(NON_IN_PROGRESS_RUN_STATUSES) == len(
-        dg.DagsterRunStatus
+    assert len(ACTIVE_RUN_STATUSES) + len(NON_ACTIVE_RUN_STATUSES) == len(dg.DagsterRunStatus)
+
+
+def test_suspended_status():
+    """A suspended run is in progress but not active, and is not finished.
+
+    It is not cancelable yet: terminating it would not cancel the external work.
+    """
+    suspended = dg.DagsterRunStatus.SUSPENDED
+    assert suspended in NON_ACTIVE_RUN_STATUSES
+    assert suspended in IN_PROGRESS_RUN_STATUSES
+    assert set(ACTIVE_RUN_STATUSES) < set(IN_PROGRESS_RUN_STATUSES)
+    assert suspended in NOT_FINISHED_STATUSES
+    assert suspended not in CANCELABLE_RUN_STATUSES
+
+    assert EVENT_TYPE_TO_PIPELINE_RUN_STATUS[DagsterEventType.RUN_SUSPENDED] == suspended
+    assert (
+        EVENT_TYPE_TO_PIPELINE_RUN_STATUS[DagsterEventType.RUN_RESUMED]
+        == dg.DagsterRunStatus.STARTED
+    )
+    assert PIPELINE_RUN_STATUS_TO_EVENT_TYPE[suspended] == DagsterEventType.RUN_SUSPENDED
+    assert (
+        PIPELINE_RUN_STATUS_TO_EVENT_TYPE[dg.DagsterRunStatus.STARTED] == DagsterEventType.RUN_START
     )
 
 

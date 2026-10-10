@@ -13,6 +13,7 @@ import sqlalchemy.exc as db_exc
 from dagster_shared.serdes import deserialize_values
 from dagster_shared.seven import JSONDecodeError
 from sqlalchemy.engine import Connection
+from sqlalchemy.sql import FromClause
 
 import dagster._check as check
 from dagster._core.errors import (
@@ -376,7 +377,7 @@ class SqlRunStorage(RunStorage):
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
     def _apply_tags_table_filters(
-        self, table: db.Table, tags: Mapping[str, str | Sequence[str]]
+        self, table: FromClause, tags: Mapping[str, str | Sequence[str]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
         for i, (key, value) in enumerate(tags.items()):
@@ -893,8 +894,8 @@ class SqlRunStorage(RunStorage):
             conn.execute(DaemonHeartbeatsTable.delete())
 
     def _add_backfill_filters_to_table(
-        self, table: db.Table, filters: BulkActionsFilter | None
-    ) -> db.Table:
+        self, table: FromClause, filters: BulkActionsFilter | None
+    ) -> FromClause:
         if filters and filters.tags and self.has_built_index(BACKFILL_JOB_NAME_AND_TAGS):
             for i, (key, value) in enumerate(filters.tags.items()):
                 backfill_tags_alias = db.alias(BackfillTagsTable, f"backfill_tags_filter{i}")

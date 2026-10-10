@@ -13,6 +13,10 @@ from dagster import (
 )
 from dagster._config import EvaluationError, StringSource, validate_config
 
+from dagster_cloud.workspace.config_schema.aca import (
+    ACA_CONTAINER_CONTEXT_CONFIG as ACA_CONTAINER_CONTEXT_CONFIG,
+    SHARED_ACA_CONFIG as SHARED_ACA_CONFIG,
+)
 from dagster_cloud.workspace.config_schema.docker import SHARED_DOCKER_CONFIG
 from dagster_cloud.workspace.config_schema.ecs import (
     ECS_CONTAINER_CONTEXT_CONFIG as ECS_CONTAINER_CONTEXT_CONFIG,
@@ -275,6 +279,7 @@ CONFIG_SCHEMA_FIELDS = {
                 "k8s": Field(Shape(K8S_CONFIG_FIELDS), is_required=False),
                 "docker": Field(Shape(SHARED_DOCKER_CONFIG), is_required=False),
                 "ecs": Field(Shape(ECS_CONTAINER_CONTEXT_CONFIG), is_required=False),
+                "aca": Field(Shape(ACA_CONTAINER_CONTEXT_CONFIG), is_required=False),
             },
         ),
         description="Metadata for specific compute environments",

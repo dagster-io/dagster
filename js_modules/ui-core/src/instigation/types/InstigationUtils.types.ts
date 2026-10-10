@@ -23,7 +23,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type RunStatusFragment = {__typename: 'Run'; id: string; status: Types.RunStatus};
 

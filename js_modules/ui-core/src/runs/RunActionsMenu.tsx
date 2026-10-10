@@ -47,7 +47,7 @@ import {CopyButton} from '../ui/CopyButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
-import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
+import {OPEN_LAUNCHPAD_UNKNOWN, workspacePipelineLinkForRun} from '../workspace/workspacePath';
 import styles from './css/RunActionsMenu.module.css';
 import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
 
@@ -267,7 +267,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           onClose={closeDialogs}
           onComplete={onComplete}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{[run.id]: run.canTerminate && run.hasTerminatePermission}}
         />
       ) : null}
       <Dialog
@@ -472,9 +472,6 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
     </>
   );
 });
-
-const OPEN_LAUNCHPAD_UNKNOWN =
-  'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml, parentPipelineSnapshotId, and executionPlan on load in Runs page,
 // since they can be slow.

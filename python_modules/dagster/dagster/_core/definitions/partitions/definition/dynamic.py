@@ -1,6 +1,8 @@
 from collections.abc import Callable, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
+
+from dagster_shared.serdes.errors import DeserializationError
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, public
@@ -178,11 +180,30 @@ class DynamicPartitionsDefinition(
         ascending: bool,
         cursor: str | None = None,
     ) -> PaginatedResults[str]:
-        with partition_loading_context(new_ctx=context):
-            partition_keys = self.get_partition_keys()
-            return PaginatedResults.create_from_sequence(
-                partition_keys, limit=limit, ascending=ascending, cursor=cursor
-            )
+        with partition_loading_context(new_ctx=context) as ctx:
+            if self.partition_fn:
+                return PaginatedResults.create_from_sequence(
+                    self.get_partition_keys(), limit=limit, ascending=ascending, cursor=cursor
+                )
+            store = self._ensure_dynamic_partitions_store(ctx.dynamic_partitions_store)
+            try:
+                return store.get_paginated_dynamic_partitions(
+                    partitions_def_name=self._validated_name(),
+                    limit=limit,
+                    ascending=ascending,
+                    cursor=cursor,
+                )
+            except DeserializationError:
+                if cursor is None:
+                    raise
+                # The cursor was issued by a store that encodes them differently. Restart from the
+                # first page rather than failing the request.
+                return store.get_paginated_dynamic_partitions(
+                    partitions_def_name=self._validated_name(),
+                    limit=limit,
+                    ascending=ascending,
+                    cursor=None,
+                )
 
     def has_partition_key(
         self,
@@ -205,6 +226,18 @@ class DynamicPartitionsDefinition(
                 return ctx.dynamic_partitions_store.has_dynamic_partition(
                     partitions_def_name=self._validated_name(), partition_key=partition_key
                 )
+
+    def filter_valid_partition_keys(self, partition_keys: set[str]) -> AbstractSet[str]:
+        if not partition_keys:
+            return set()
+        with partition_loading_context() as ctx:
+            if self.partition_fn:
+                return set(self.get_partition_keys()) & partition_keys
+            return self._ensure_dynamic_partitions_store(
+                ctx.dynamic_partitions_store
+            ).get_existing_dynamic_partitions(
+                partitions_def_name=self._validated_name(), partition_keys=list(partition_keys)
+            )
 
     def build_add_request(self, partition_keys: Sequence[str]) -> AddDynamicPartitionsRequest:
         check.sequence_param(partition_keys, "partition_keys", of_type=str)

@@ -1,7 +1,7 @@
 import {useCallback, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
+import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, LaunchBehavior, handleLaunchResult} from './RunUtils';
 import {gql, useApolloClient, useMutation} from '../apollo-client';
 import {ReexecutionDialog, ReexecutionDialogProps} from './ReexecutionDialog';
 import {DagsterTag} from './RunTag';
@@ -45,7 +45,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
       run: {id: string; pipelineName: string; tags: {key: string; value: string}[]},
       param: ReexecutionStrategy | ExecutionParams,
       forceLaunchpad: boolean,
-      options?: {openInNewTab?: boolean},
+      options?: {openInNewTab?: boolean; behavior?: LaunchBehavior},
     ) => {
       const backfillTag = run.tags.find((t) => t.key === DagsterTag.Backfill);
 
@@ -106,7 +106,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         });
         handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
           preserveQuerystring: true,
-          behavior: 'open',
+          behavior: options?.behavior ?? 'open',
           openInNewTab: options?.openInNewTab ? openInNewTab : undefined,
         });
         onCompleted?.();

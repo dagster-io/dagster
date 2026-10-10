@@ -37,7 +37,8 @@ def _get_latest_published_k8s_version() -> packaging.version.Version:
 def test_latest_version_pin():
     latest_version = _get_latest_published_k8s_version()
     assert latest_version.major < packaging.version.parse(KUBERNETES_VERSION_UPPER_BOUND).major, (
-        f"A new version {latest_version} of kubernetes has been released to pypi that exceeds our pin. "
-        "Increase the pinned version in kubernetes_version.py and verify that it still passes tests "
-        "and that our PatchedApiClient class is still compatible with the real Kubernetes ApiClient object."
+        f"A new major version {latest_version} of kubernetes has been released to pypi. Verify that "
+        "the suite still passes against it and that PatchedApiClient and k8s_model_from_dict are "
+        "still compatible with its generated models, then raise KUBERNETES_VERSION_UPPER_BOUND in "
+        "kubernetes_version.py — and the pin in pyproject.toml if the new major is supported."
     )

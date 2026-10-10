@@ -1,47 +1,47 @@
 [
   {
-    "source": "/getting-started/hello-dagster",
-    "destination": "/",
+    "source": "/docs/getting-started/hello-dagster",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/getting-started",
-    "destination": "/",
+    "source": "/docs/getting-started",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/getting-started/what-why-dagster",
-    "destination": "/",
+    "source": "/docs/getting-started/what-why-dagster",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/guides/experimental-features",
-    "destination": "/",
+    "source": "/docs/guides/experimental-features",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/guides/best-practices",
-    "destination": "/",
+    "source": "/docs/guides/best-practices",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/getting-started/overview",
-    "destination": "/",
+    "source": "/docs/getting-started/overview",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/examples/memoized_development",
-    "destination": "/",
+    "source": "/docs/examples/memoized_development",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/guides/general",
-    "destination": "/",
+    "source": "/docs/guides/general",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/guides",
-    "destination": "/",
+    "source": "/docs/guides",
+    "destination": "/docs",
     "permanent": true
   }
 ]
