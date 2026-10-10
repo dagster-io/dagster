@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 from dagster import AssetMaterialization, FloatMetadataValue, Output
-from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage
+from dagster_dbt.core.dbt_cli_event import DbtCoreCliEventMessage, DbtFusionCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 
@@ -316,3 +316,50 @@ def test_log_test_result_without_node_info():
         )
     )
     assert events == []
+
+
+def test_fusion_dynamic_table_noop_emits_materialization():
+    unique_id = "model.repro.result"
+    raw_event = {
+        "info": {"name": "NodeFinished", "invocation_id": "repro", "msg": "Finished node"},
+        "data": {
+            "node_info": {
+                "unique_id": unique_id,
+                "resource_type": "model",
+                "materialized": "dynamic_table",
+                "node_status": "warn",
+                "node_started_at": "2026-09-23T00:00:00Z",
+                "node_finished_at": "2026-09-23T00:00:01Z",
+            },
+            "run_result": {
+                "status": "warn",
+                "execution_time": 1.0,
+            },
+        },
+    }
+    manifest = {
+        "nodes": {
+            unique_id: {
+                "unique_id": unique_id,
+                "name": "result",
+                "resource_type": "model",
+                "materialized": "dynamic_table",
+                "database": "db",
+                "schema": "schema",
+                "alias": "result",
+                "path": "models/result.sql",
+                "config": {"materialized": "dynamic_table", "schema": "schema"},
+                "description": "",
+            }
+        }
+    }
+
+    events = list(
+        DbtFusionCliEventMessage(
+            raw_event=raw_event, event_history_metadata={}
+        ).to_default_asset_events(manifest, DagsterDbtTranslator())
+    )
+
+    assert len(events) == 1
+    assert isinstance(events[0], AssetMaterialization)
+    assert events[0].metadata["status"].value == "warn"
