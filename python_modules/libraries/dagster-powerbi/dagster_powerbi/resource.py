@@ -166,12 +166,12 @@ class PowerBIWorkspace(ConfigurableResource):
     @public
     def trigger_and_poll_refresh(self, dataset_id: str) -> None:
         """Triggers a refresh of a PowerBI dataset and polls until it completes or fails."""
-        self.trigger_refresh(dataset_id)
-        self.poll_refresh(dataset_id)
+        request_id = self.trigger_refresh(dataset_id)
+        self.poll_refresh(dataset_id, request_id=request_id)
 
     @public
-    def trigger_refresh(self, dataset_id: str) -> None:
-        """Triggers a refresh of a PowerBI dataset."""
+    def trigger_refresh(self, dataset_id: str) -> str:
+        """Triggers a refresh of a PowerBI dataset and returns its request ID."""
         response = self._fetch(
             method="POST",
             endpoint=f"datasets/{dataset_id}/refreshes",
@@ -180,10 +180,18 @@ class PowerBIWorkspace(ConfigurableResource):
         )
         if response.status_code != 202:
             raise Failure(f"Refresh failed to start: {response.content}")
+        request_id = response.headers.get("x-ms-request-id")
+        if not request_id:
+            raise Failure("Refresh started without a request ID in the response headers.")
+        return request_id
 
     @public
-    def poll_refresh(self, dataset_id: str) -> None:
-        """Polls the refresh status of a PowerBI dataset until it completes or fails."""
+    def poll_refresh(self, dataset_id: str, request_id: str | None = None) -> None:
+        """Polls a dataset refresh until it completes or fails.
+
+        When a request ID is provided, polls that specific refresh rather than the most recent
+        refresh for the dataset.
+        """
         status = None
 
         start = time.monotonic()
@@ -191,10 +199,13 @@ class PowerBIWorkspace(ConfigurableResource):
             if time.monotonic() - start > self.refresh_timeout:
                 raise Failure(f"Refresh timed out after {self.refresh_timeout} seconds.")
 
-            last_refresh = self._fetch_json(
-                f"datasets/{dataset_id}/refreshes",
+            refresh_data = self._fetch_json(
+                f"datasets/{dataset_id}/refreshes/{request_id}"
+                if request_id
+                else f"datasets/{dataset_id}/refreshes",
                 group_scoped=True,
-            )["value"][0]
+            )
+            last_refresh = refresh_data if request_id else refresh_data["value"][0]
             status = last_refresh["status"]
 
             time.sleep(self.refresh_poll_interval)
