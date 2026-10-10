@@ -779,9 +779,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                     concurrency_group="dagster-dbt-fusion-snowflake",
                 )
             ],
-            unsupported_python_versions=[
-                AvailablePythonVersion.V3_14,  # dbt-core incompatible
-            ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake"),
