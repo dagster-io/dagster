@@ -4,7 +4,6 @@ import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider, Toaster} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
-import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {v4 as uuidv4} from 'uuid';
 
@@ -199,28 +198,26 @@ export const AppProvider = (props: AppProviderProps) => {
               <BrowserRouter basename={basePath || ''}>
                 <GlobalStyleProvider />
                 <Toaster richColors />
-                <CompatRouter>
-                  <TimeProvider>
-                    <CodeLinkProtocolProvider>
-                      <WorkspaceProvider>
-                        <AssetLiveDataProvider>
-                          <DeploymentStatusProvider include={statusPolling}>
-                            <CustomConfirmationProvider>
-                              <AnalyticsContext.Provider value={analytics}>
-                                <InstancePageContext.Provider value={instancePageValue}>
-                                  <LayoutProvider>{props.children}</LayoutProvider>
-                                </InstancePageContext.Provider>
-                              </AnalyticsContext.Provider>
-                            </CustomConfirmationProvider>
-                            <CustomTooltipProvider />
-                            <CustomAlertProvider />
-                            <AssetRunLogObserver />
-                          </DeploymentStatusProvider>
-                        </AssetLiveDataProvider>
-                      </WorkspaceProvider>
-                    </CodeLinkProtocolProvider>
-                  </TimeProvider>
-                </CompatRouter>
+                <TimeProvider>
+                  <CodeLinkProtocolProvider>
+                    <WorkspaceProvider>
+                      <AssetLiveDataProvider>
+                        <DeploymentStatusProvider include={statusPolling}>
+                          <CustomConfirmationProvider>
+                            <AnalyticsContext.Provider value={analytics}>
+                              <InstancePageContext.Provider value={instancePageValue}>
+                                <LayoutProvider>{props.children}</LayoutProvider>
+                              </InstancePageContext.Provider>
+                            </AnalyticsContext.Provider>
+                          </CustomConfirmationProvider>
+                          <CustomTooltipProvider />
+                          <CustomAlertProvider />
+                          <AssetRunLogObserver />
+                        </DeploymentStatusProvider>
+                      </AssetLiveDataProvider>
+                    </WorkspaceProvider>
+                  </CodeLinkProtocolProvider>
+                </TimeProvider>
               </BrowserRouter>
             </PermissionsProvider>
           </ApolloProvider>

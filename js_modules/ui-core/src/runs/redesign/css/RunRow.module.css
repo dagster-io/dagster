@@ -1,8 +1,9 @@
-/* Fixed timing and id tracks keep the status icon aligned down the list. 96px fits the longest
-   relative time; 80px fits an eight-character id. The 1px tracks hold dividers. */
+/* Right-hand tracks keep the status icon aligned down the list: 96px fits the longest relative
+   time, the eight-character mono id sizes itself, and 32px holds the menu even on backfill rows,
+   which have none. The 1px tracks hold dividers. */
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 1px 96px 1px 80px;
+  grid-template-columns: minmax(0, 1fr) auto 1px 96px 1px auto 1px 32px;
   column-gap: 16px;
   align-items: center;
   min-height: 48px;

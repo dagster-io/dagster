@@ -74,8 +74,13 @@ export const buildBackfillSummary = (
   ...overrides,
 });
 
-export const runEntry = (overrides: Partial<RunSummaryFragment> = {}) =>
-  mapRunsFeedEntry(buildRunSummary(overrides));
+export const runEntry = (overrides: Partial<RunSummaryFragment> = {}) => {
+  const entry = mapRunsFeedEntry(buildRunSummary(overrides));
+  if (entry.__typename !== 'Run') {
+    throw new Error('Expected a run entry');
+  }
+  return entry;
+};
 
 export const backfillEntry = (overrides: Partial<BackfillSummaryFragment> = {}) =>
   mapRunsFeedEntry(buildBackfillSummary(overrides));
@@ -103,20 +108,28 @@ export const scheduleRunWithTick = runEntry({
   tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule'), tag(DagsterTag.TickId, 'tick-id')],
 });
 
-export const scheduleRunWithTickNoRepo = runEntry({
-  id: 'schedule-tick-no-repo-run-id',
-  repositoryOrigin: null,
-  tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule'), tag(DagsterTag.TickId, 'tick-id')],
-});
-
 export const sensorRun = runEntry({
   id: 'sensor-run-id',
   tags: [tag(DagsterTag.SensorName, 'files_sensor')],
 });
 
+export const sensorRunWithTick = runEntry({
+  id: 'sensor-tick-run-id',
+  tags: [tag(DagsterTag.SensorName, 'files_sensor'), tag(DagsterTag.TickId, 'tick-id')],
+});
+
 // Recognized by its sensor name alone, without an automation condition tag.
 export const defaultAutomationSensorRun = runEntry({
   id: 'default-da-run-id',
+  tags: [
+    tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
+    tag(DagsterTag.TickId, 'tick-id'),
+  ],
+});
+
+export const defaultAutomationSensorRunNoRepo = runEntry({
+  id: 'default-da-no-repo-run-id',
+  repositoryOrigin: null,
   tags: [
     tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
     tag(DagsterTag.TickId, 'tick-id'),
@@ -131,9 +144,9 @@ export const namedAutomationSensorRun = runEntry({
   ],
 });
 
-export const legacyAutomationConditionTickRun = runEntry({
-  id: 'legacy-da-run-id',
-  tags: [tag(DagsterTag.AutomationCondition, 'true'), tag(DagsterTag.TickId, 'tick-id')],
+export const autoMaterializeTickRun = runEntry({
+  id: 'auto-materialize-tick-run-id',
+  tags: [tag(DagsterTag.Automaterialize, 'true'), tag(DagsterTag.TickId, 'tick-id')],
 });
 
 export const autoMaterializeRun = runEntry({

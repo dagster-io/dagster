@@ -1,5 +1,7 @@
 import {routes, type VercelConfig} from '@vercel/config/v1';
 
+const oldDocsHost = {has: [{type: 'host' as const, value: 'docs.dagster.io'}]};
+
 export const config: VercelConfig = {
   buildCommand: "echo 'Starting build...' && yarn build-api-docs && yarn build-kinds-tags && yarn build",
   cleanUrls: true,
@@ -13,9 +15,11 @@ export const config: VercelConfig = {
   // The site is served under dagster.io/docs, but Docusaurus emits files at the build root.
   rewrites: [routes.rewrite('/docs/:path*', '/:path*')],
   redirects: [
-    routes.redirect('/:path*', 'https://dagster.io/docs/:path*', {
-      has: [{type: 'host', value: 'docs.dagster.io'}],
-    }),
+    // `/:path*` doesn't catch `/`, and paths already under `/docs` must not get a second prefix.
+    routes.redirect('/', 'https://dagster.io/docs', oldDocsHost),
+    routes.redirect('/docs', 'https://dagster.io/docs', oldDocsHost),
+    routes.redirect('/docs/:path*', 'https://dagster.io/docs/:path*', oldDocsHost),
+    routes.redirect('/:path*', 'https://dagster.io/docs/:path*', oldDocsHost),
     routes.redirect('/', '/docs'),
 
     /**

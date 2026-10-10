@@ -37,7 +37,13 @@ A few code paths use the absence of `dbt-core` as the signal that they are runni
 
 Install Fusion following the [dbt installation documentation](https://docs.getdbt.com/docs/local/install-dbt).
 
-`dagster-dbt` declares `dbt-core` as a dependency, so installing `dagster-dbt` also installs dbt Core and puts its `dbt` entrypoint in your environment, where it can shadow the Fusion binary. We do not recommend uninstalling `dbt-core`. Any later resolution of project dependencies will pull it back in. This is tracked in [#33513](https://github.com/dagster-io/dagster/issues/33513).
+`dagster-dbt` does not install dbt Core — it is behind the `dagster-dbt[dbt-core]` extra. Any dbt adapter package, such as `dbt-duckdb` or `dbt-snowflake`, pulls dbt Core in, and its `dbt` entrypoint can then shadow the Fusion binary. Remove the adapter packages from the environment that runs your code location if you want `dbt` to resolve to Fusion.
+
+:::warning
+
+Do not install Fusion's `dbt` PyPI package into an environment that also has `dbt-core`. Both distributions own the `dbt` import namespace and overwrite each other's files, so neither engine ends up working and `pip` reports no error. If you install Fusion from PyPI, keep `dbt-core` and every adapter package out of that environment.
+
+:::
 
 Set up your Dagster project to use the dbt Fusion executable by doing one of the following:
 
@@ -73,17 +79,51 @@ dbt = DbtCliResource(
 
 Dagster's Fusion support is in preview and has known gaps. Confirm that none of the following block your project before you migrate.
 
-### Column metadata and column lineage are not supported
+### Column metadata needs a dbt-side macro, and row counts are unavailable
 
-Column-level metadata and column lineage are not supported on Fusion, and neither is `fetch_row_counts()`. Both are fetched through dbt Core's adapter, and Dagster does not initialize an adapter when the dbt executable reports a 2.x version. Calling either one on Fusion raises an error that fails the step rather than skipping the metadata.
+`fetch_column_metadata()` and `fetch_row_counts()` read the warehouse through dbt Core's adapter, which Fusion does not provide — Dagster skips adapter initialization when the dbt executable reports a 2.x version. On Fusion both methods log a warning and pass dbt events through unchanged, so a pipeline that calls them runs on either engine without failing.
 
-If your project depends on column lineage in the Dagster+ asset graph, weigh that against the parse-time gain before migrating. Track [#34227](https://github.com/dagster-io/dagster/issues/34227) for support.
+Column schema and column lineage are still available on Fusion through the `dagster` dbt package's `log_column_level_metadata` macro, which introspects over the connection dbt already holds rather than one Dagster opens. Add the package to `packages.yml` or `dependencies.yml` and run `dbt deps`:
 
-### Isolated models are silently dropped from selection
+```yaml
+packages:
+  - git: 'https://github.com/dagster-io/dagster.git'
+    subdirectory: 'python_modules/libraries/dagster-dbt/dbt_packages/dagster'
+    revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
+```
 
-A model with no `ref()` or `source()` calls can disappear from your asset graph with no error raised. Fusion adds a model to the manifest's `child_map` only when it has at least one parent. This means an isolated model is absent from the Dagster asset graph and any asset selections.
+Then enable the macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) on the resources that should emit it:
 
-Nothing surfaces this at runtime, so check your manifest for isolated nodes rather than waiting to notice missing assets. Every node in `nodes`, including seeds and snapshots, should appear in `child_map`, either as a key or inside one of its lists:
+```yaml
+models:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+
+seeds:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+
+snapshots:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+```
+
+With the hook in place, a plain `.stream()` attaches `dagster/column_schema` and `dagster/column_lineage`; no `fetch_column_metadata()` call is involved. Note that `dagster-dbt` logs a deprecation notice for this macro pointing at `fetch_column_metadata()` — on Fusion, that method cannot work, and the macro is the supported route.
+
+Row counts have no equivalent on Fusion. Track [#34227](https://github.com/dagster-io/dagster/issues/34227).
+
+### Isolated models are dropped from non-default selections
+
+Fusion adds a model to the manifest's `child_map` only when it has at least one parent, so a model with no `ref()` or `source()` calls is absent from the graph Fusion selects against. Dagster works around this in the two cases it can:
+
+| Your environment     | Default selection | Non-default `select`, `exclude`, or `selector` |
+| -------------------- | ----------------- | ---------------------------------------------- |
+| `dbt-core` installed | Works             | Works                                          |
+| Fusion only          | Works             | **Isolated models dropped**                    |
+
+With `dbt-core` installed, Dagster evaluates the selection itself and adds the missing nodes back to the graph. Without it, Dagster reads the default selection straight from the manifest, but any other selection is evaluated by `dbt list`, which never sees the isolated models.
+
+If you pass a non-default selection on a Fusion-only environment, check your manifest rather than waiting to notice missing assets. Every node in `nodes`, including seeds and snapshots, should appear in `child_map`, either as a key or inside one of its lists:
 
 ```python
 import json
@@ -101,13 +141,10 @@ Anything this prints is missing from your asset graph. As a workaround, give the
 
 ### Open issues
 
-| Issue                                                        | Description                                                                                             |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| [#33513](https://github.com/dagster-io/dagster/issues/33513) | The `dbt-core` dependency puts a `dbt` entrypoint in the environment that can shadow the Fusion binary. |
-| [#34148](https://github.com/dagster-io/dagster/issues/34148) | The dbt Cloud integration raises `KeyError: 'materialized'` when a Fusion run includes seeds.           |
-| [#33512](https://github.com/dagster-io/dagster/issues/33512) | A dbt test that passes under Fusion is occasionally reported as a failed asset check.                   |
-| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                                                     |
-| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Column metadata, column lineage, and row counts are unavailable on Fusion.                              |
+| Issue                                                        | Description                                                                          |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                                  |
+| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Row counts are unavailable on Fusion, and column metadata requires a dbt-side macro. |
 
 ### Fusion's own compatibility surface
 

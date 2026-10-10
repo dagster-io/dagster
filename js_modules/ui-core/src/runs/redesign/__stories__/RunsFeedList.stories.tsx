@@ -20,6 +20,7 @@ import {RUN_STATS_QUERY} from '../../RunStats';
 import {DagsterTag} from '../../RunTag';
 import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
 import {RunsFeedList} from '../RunsFeedList';
+import {buildActionsMenuQueryMock} from '../__fixtures__/RunActionsMenuQuery.fixtures';
 import {backfillEntry, runEntry, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
 
@@ -44,10 +45,14 @@ const finishedAfter = (seconds: number) => ({
   endTime: NOW - HOUR,
 });
 
-const scheduleRunWithTick = runEntry({
+const automationRunWithTick = runEntry({
   id: 'a1b2c3d4-1111-2222-3333-444455556666',
   jobName: JOB_NAME,
-  tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule'), tag(DagsterTag.TickId, 'tick-id')],
+  tags: [
+    tag(DagsterTag.SensorName, 'sales_automation'),
+    tag(DagsterTag.AutomationCondition, 'true'),
+    tag(DagsterTag.TickId, 'tick-id'),
+  ],
   assetSelectionPreview: [salesDaily, buildAssetKey({path: ['sales', 'hourly']})],
   assetSelectionCount: 2,
   ...finishedAfter(4 * MINUTE),
@@ -113,12 +118,12 @@ const statsMockFor = (runId: string) =>
     maxUsageCount: Number.POSITIVE_INFINITY,
   });
 
-const tickMockFor = (scheduleName: string, tickId: string) =>
+const tickMockFor = (sensorName: string, tickId: string) =>
   buildQueryMock<SelectedTickQuery, SelectedTickQueryVariables>({
     query: JOB_SELECTED_TICK_QUERY,
     variables: {
       instigationSelector: {
-        name: scheduleName,
+        name: sensorName,
         repositoryName: 'my_repo',
         repositoryLocationName: 'my_location',
       },
@@ -126,11 +131,11 @@ const tickMockFor = (scheduleName: string, tickId: string) =>
     },
     data: {
       instigationStateOrError: buildInstigationState({
-        id: `${scheduleName}-state-id`,
+        id: `${sensorName}-state-id`,
         tick: buildInstigationTick({
           id: tickId,
           tickId,
-          instigationType: InstigationType.SCHEDULE,
+          instigationType: InstigationType.SENSOR,
           status: InstigationTickStatus.SUCCESS,
           timestamp: NOW - HOUR,
           requestedAssetMaterializationCount: 2,
@@ -144,10 +149,11 @@ const tickMockFor = (scheduleName: string, tickId: string) =>
   });
 
 const MOCKS = [
-  ...[scheduleRunWithTick, sensorRun, liveRun, queuedRun, manualRun].map(({id}) =>
-    statsMockFor(id),
-  ),
-  tickMockFor('hourly_schedule', 'tick-id'),
+  ...[automationRunWithTick, sensorRun, liveRun, queuedRun, manualRun].flatMap((run) => [
+    statsMockFor(run.id),
+    buildActionsMenuQueryMock(run),
+  ]),
+  tickMockFor('sales_automation', 'tick-id'),
 ];
 
 const CurrentLocation = () => {
@@ -177,6 +183,6 @@ export const Loading = () => <ListTemplate entries={[]} isLoading />;
 
 export const RowNavigation = () => (
   <ListTemplate
-    entries={[liveRun, queuedRun, scheduleRunWithTick, sensorRun, manualRun, assetBackfill]}
+    entries={[liveRun, queuedRun, automationRunWithTick, sensorRun, manualRun, assetBackfill]}
   />
 );

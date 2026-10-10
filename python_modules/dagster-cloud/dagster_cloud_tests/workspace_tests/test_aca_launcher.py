@@ -472,10 +472,12 @@ class TestStartNewServerSpinup:
             with pytest.raises(TypeError, match="bug in cleanup"):
                 launcher._start_new_server_spinup(DEPLOYMENT, LOCATION, _entry())
 
-    def test_app_without_fqdn_is_an_error(self):
+    def test_app_without_fqdn_is_an_error_and_is_deleted(self):
         with _aca_instance() as (_, launcher, client):
-            with pytest.raises(CheckError, match="no ingress FQDN"):
+            with pytest.raises(CheckError, match="no ingress hostname"):
                 _spin_up(launcher, client, _entry(), returned_app=_container_app(fqdn=None))
+            (_, app_name, _), _ = client.container_apps.begin_create_or_update.call_args
+            client.container_apps.begin_delete.assert_called_once_with("rg", app_name)
 
 
 class TestServerHandles:
@@ -501,7 +503,10 @@ class TestServerHandles:
             _container_app(name="no-fqdn", tags={**mine, "dagster-grpc-server": "1"}, fqdn=None),
         ]
 
-    def test_list_server_handles_skips_apps_without_dagster_tags_or_fqdn(self):
+    def test_list_server_handles_includes_every_tagged_app_even_without_fqdn(self):
+        """An app that failed to provision has no hostname but must still be listed, or nothing
+        would ever delete it.
+        """
         with _aca_instance() as (instance, launcher, client):
             client.container_apps.list_by_resource_group.return_value = self._apps(instance)
             handles = launcher._list_server_handles()
@@ -511,7 +516,10 @@ class TestServerHandles:
                 "pex-mine",
                 "grpc-other-agent",
                 "grpc-other-location",
+                "no-fqdn",
             }
+            no_fqdn = next(h for h in handles if h.app_name == "no-fqdn")
+            assert no_fqdn.hostname == ""
             grpc_mine = next(h for h in handles if h.app_name == "grpc-mine")
             assert grpc_mine.hostname == FQDN
             assert grpc_mine.create_timestamp == CREATED_AT.timestamp()
@@ -524,7 +532,9 @@ class TestServerHandles:
             standalone = launcher._get_standalone_dagster_server_handles_for_location(
                 DEPLOYMENT, LOCATION
             )
-            assert [h.app_name for h in standalone] == ["grpc-mine"]
+            # The failed, hostname-less app is this agent's server for the location too, so the
+            # next successful spin-up replaces (deletes) it along with the healthy one.
+            assert [h.app_name for h in standalone] == ["grpc-mine", "no-fqdn"]
             multipex = launcher._get_multipex_server_handles_for_location(DEPLOYMENT, LOCATION)
             assert [h.app_name for h in multipex] == ["pex-mine"]
 

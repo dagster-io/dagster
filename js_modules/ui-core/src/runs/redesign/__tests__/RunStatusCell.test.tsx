@@ -5,7 +5,11 @@ import {ReactNode} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {ApolloClient, ApolloLink, ApolloProvider, InMemoryCache} from '../../../apollo-client';
+import {buildRun, buildRunStatsSnapshot} from '../../../graphql/builders';
 import {BulkActionStatus, RunStatus} from '../../../graphql/types';
+import {buildQueryMock} from '../../../testing/mocking';
+import {RUN_STATS_QUERY} from '../../RunStats';
+import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
 import {RunStatusCell} from '../RunStatusCell';
 import {
   FIXTURE_NOW_MS,
@@ -22,6 +26,22 @@ import {
   startingRun,
   succeededRun,
 } from '../__fixtures__/RunsFeedEntries.fixtures';
+
+const statsMock = buildQueryMock<RunStatsQuery, RunStatsQueryVariables>({
+  query: RUN_STATS_QUERY,
+  variables: {runId: succeededRun.id},
+  data: {
+    pipelineRunOrError: buildRun({
+      id: succeededRun.id,
+      stats: buildRunStatsSnapshot({
+        stepsSucceeded: 4,
+        stepsFailed: 0,
+        materializations: 3,
+        expectations: 0,
+      }),
+    }),
+  },
+});
 
 const wrap = (children: ReactNode) => (
   <MemoryRouter>
@@ -93,13 +113,20 @@ describe('RunStatusCell', () => {
       expect(await screen.findByRole('img', {name: 'Failed'})).toBeVisible();
     });
 
-    it('adds no tab stop for the status icon', async () => {
+    it('opens the step statistics when the status icon is tabbed to', async () => {
       const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
-      renderCells(<RunStatusCell entry={succeededRun} />);
-      await screen.findByRole('img', {name: 'Success'});
+      render(
+        <MemoryRouter>
+          <MockedProvider mocks={[statsMock]}>
+            <RunStatusCell entry={succeededRun} />
+          </MockedProvider>
+        </MemoryRouter>,
+      );
+      const icon = await screen.findByRole('img', {name: 'Success'});
 
       await user.tab();
-      expect(document.body).toHaveFocus();
+      expect(icon).toHaveFocus();
+      expect(await screen.findByText('4 steps succeeded')).toBeVisible();
     });
   });
 

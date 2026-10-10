@@ -13,6 +13,7 @@ describe('parseRunsSearch', () => {
   it.each([
     {text: '', tokens: []},
     {text: '   ', tokens: []},
+    {text: ' \tjob:my_job', tokens: ['job:my_job']},
     {text: 'id:abc123', tokens: ['id:abc123']},
     {
       text: 'id:"8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f"',
@@ -64,8 +65,7 @@ describe('parseRunsSearch', () => {
     {text: 'tag:', message: 'tag needs key=value, for example tag:team=data'},
     {text: 'tag:team', message: 'tag needs key=value, for example tag:team=data'},
     {text: 'tag:team=', message: 'tag needs key=value, for example tag:team=data'},
-    {text: 'tag:team="a=b"', message: "Tag keys and values can't contain ="},
-    {text: 'user:"a=b"', message: "user values can't contain ="},
+    {text: 'tag:"a=b"=c', message: "Tag keys can't contain `=`"},
     {text: 'job:a=b', message: 'Only tag takes key=value, for example tag:team=data'},
     {text: 'job:a and', message: 'Add a search term after and'},
     {text: 'id:a or', message: 'Add a search term after or'},
@@ -94,21 +94,50 @@ describe('parseRunsSearch', () => {
     });
   });
 
-  it.each(['id:abc-123', 'user:a@b.com', 'tag:team=a-b'])(
-    'rejects the unquoted special characters in %s',
-    (text) => {
-      expect(parseRunsSearch(text)).toEqual({
-        tokens: null,
-        errors: [
-          {
-            message: 'Check the search syntax, for example job:my_job and status:failure',
-            from: 0,
-            to: text.length,
-          },
-        ],
-      });
+  it.each([
+    {text: 'tag:team="a=b"', expected: [{token: 'tag', value: 'team=a=b'}]},
+    {text: 'user:"a=b"', expected: [{token: 'tag', value: 'user=a=b'}]},
+    {
+      text: 'partition:"region=west"',
+      expected: [{token: 'tag', value: 'dagster/partition=region=west'}],
     },
-  );
+  ])('accepts a value containing = in $text', ({text, expected}) => {
+    expect(parseRunsSearch(text)).toEqual({tokens: expected, errors: []});
+  });
+
+  it.each([
+    {text: 'id:abc-123', message: 'Add quotes: `id:"abc-123"`'},
+    {text: 'user:a@b.com', message: 'Add quotes: `user:"a@b.com"`'},
+    {text: 'created_after:1.5', message: 'Add quotes: `created_after:"1.5"`'},
+    {text: 'tag:team=a-b', message: 'Add quotes: `tag:team="a-b"`'},
+    {text: 'tag:a-b=team', message: 'Add quotes: `tag:"a-b"=team`'},
+    {text: 'tag:a-b=c-d', message: 'Add quotes: `tag:"a-b"="c-d"`'},
+    {text: 'job:a\u200bb', message: 'Remove the hidden character (U+200B)'},
+    {text: 'id:a\u00a0b', message: 'Remove the hidden character (U+00A0)'},
+    {text: 'tag:a\\b=c', message: "Backslashes aren't supported"},
+    {text: 'job:a-b*', message: "Wildcards (*) aren't supported in runs search"},
+    {text: 'status:fail-ed', message: 'Unknown status: fail-ed'},
+    {text: 'created_after:12-3', message: 'created_after needs a Unix timestamp in seconds'},
+    {text: 'tag:"a=b"=c-d', message: "Tag keys can't contain `=`"},
+  ])('rejects the unquoted special characters in $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message, from: 0, to: text.length}],
+    });
+  });
+
+  it.each([
+    {text: 'tag:a-b=c\\d', message: "Backslashes aren't supported"},
+    {text: 'tag:c\\d=a-b', message: "Backslashes aren't supported"},
+    {text: 'tag:a-b="c', message: 'Close the quote around this value'},
+    {text: 'tag:a-b', message: 'tag needs key=value, for example tag:team=data'},
+    {text: 'job:a-b=x', message: 'Only tag takes key=value, for example tag:team=data'},
+  ])('reports the error quoting would not fix in $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message, from: 0, to: text.length}],
+    });
+  });
 
   it('points errors at the offending term', () => {
     expect(getFirstError('job:a and job:b')).toEqual({
@@ -120,6 +149,22 @@ describe('parseRunsSearch', () => {
       message: 'Unsupported attribute: "foo"',
       from: 10,
       to: 17,
+    });
+  });
+
+  it('points errors past leading whitespace', () => {
+    expect(getFirstError('  job:a and job:b')).toEqual({
+      message: 'Only one job per search',
+      from: 12,
+      to: 17,
+    });
+  });
+
+  it('counts an emoji as two characters when pointing at a later term', () => {
+    expect(getFirstError('job:"😀" and job:"x"')).toEqual({
+      message: 'Only one job per search',
+      from: 13,
+      to: 20,
     });
   });
 });

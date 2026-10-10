@@ -55,7 +55,7 @@ export const ContentRoot = memo(() => {
           <Route path={['/runs', '/backfills']} exact key="2">
             <RunsRoot />
           </Route>
-          <Route path="/runs/:runId" exact>
+          <Route path="/runs/:runId" exact mobile="supported">
             <RunRoot />
           </Route>
           <Route path="/snapshots/:pipelinePath/:tab?">

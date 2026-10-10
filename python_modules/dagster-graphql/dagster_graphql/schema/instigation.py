@@ -17,6 +17,7 @@ from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
     InstigatorTick,
+    InstigatorTickSummary,
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
@@ -261,34 +262,78 @@ class GrapheneInstigationTick(graphene.ObjectType):
     class Meta:
         name = "InstigationTick"
 
-    def __init__(self, tick: InstigatorTick):
-        self._tick = check.inst_param(tick, "tick", InstigatorTick)
+    def __init__(self, tick: InstigatorTick | InstigatorTickSummary):
+        check.inst_param(tick, "tick", (InstigatorTick, InstigatorTickSummary))
+        self._tick_id = tick.tick_id
+        self._instigator_origin_id = tick.instigator_origin_id
+        # summary timestamps are from a microsecond-precision column, but
+        # tick bodies store theraw float. Normalize so both backings produce the same
+        # value (therefore same id) for a given tick
+        self._timestamp = round(tick.timestamp, 6)
+        self._full_tick = tick if isinstance(tick, InstigatorTick) else None
 
         super().__init__(
             status=tick.status.value,
-            timestamp=tick.timestamp,
-            runIds=tick.run_ids,
-            runKeys=tick.run_keys,
-            error=GraphenePythonError(tick.error) if tick.error else None,
+            timestamp=self._timestamp,
             instigationType=tick.instigator_type,
-            skipReason=tick.skip_reason,
-            originRunIds=tick.origin_run_ids,
-            cursor=tick.cursor,
-            logKey=tick.log_key,
-            endTimestamp=tick.end_timestamp,
-            autoMaterializeAssetEvaluationId=tick.automation_condition_evaluation_id,
         )
 
+    def _get_full_tick(self, graphene_info: ResolveInfo) -> InstigatorTick | None:
+        # return value may be None if the tick was deleted between the summary query and this load
+        if self._full_tick is None:
+            self._full_tick = InstigatorTick.blocking_get(graphene_info.context, self._tick_id)
+        return self._full_tick
+
     def resolve_id(self, _):
-        return f"{self._tick.instigator_origin_id}:{self._tick.timestamp}"
+        return f"{self._instigator_origin_id}:{self._timestamp}"
 
     def resolve_tickId(self, _: ResolveInfo) -> str:
-        return str(self._tick.tick_id)
+        return str(self._tick_id)
+
+    def resolve_runIds(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.run_ids if tick else []
+
+    def resolve_runKeys(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.run_keys if tick else []
+
+    def resolve_error(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return GraphenePythonError(tick.error) if tick and tick.error else None
+
+    def resolve_skipReason(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.skip_reason if tick else None
+
+    def resolve_cursor(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.cursor if tick else None
+
+    def resolve_originRunIds(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.origin_run_ids if tick else []
+
+    def resolve_logKey(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.log_key if tick else None
+
+    def resolve_endTimestamp(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.end_timestamp if tick else None
+
+    def resolve_autoMaterializeAssetEvaluationId(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.automation_condition_evaluation_id if tick else None
 
     async def resolve_runs(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
-        run_ids = self._tick.origin_run_ids or self._tick.run_ids or []
+        tick = self._get_full_tick(graphene_info)
+        if tick is None:
+            return []
+
+        run_ids = tick.origin_run_ids or tick.run_ids or []
 
         # filter out backfills
         run_ids = [run_id for run_id in run_ids if is_valid_run_id(run_id)]
@@ -305,38 +350,52 @@ class GrapheneInstigationTick(graphene.ObjectType):
         return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
 
     def resolve_logEvents(self, graphene_info: ResolveInfo):
-        return get_tick_log_events(graphene_info, self._tick)
+        tick = self._get_full_tick(graphene_info)
+        if tick is None:
+            return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
+        return get_tick_log_events(graphene_info, tick)
 
-    def resolve_dynamicPartitionsRequestResults(self, _):
+    def resolve_dynamicPartitionsRequestResults(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
         return [
             GrapheneDynamicPartitionsRequestResult(request_result)
-            for request_result in self._tick.dynamic_partitions_request_results
+            for request_result in (tick.dynamic_partitions_request_results if tick else [])
         ]
 
-    def resolve_requestedAssetKeys(self, _):
+    def resolve_requestedAssetKeys(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
         return [
-            GrapheneAssetKey(path=asset_key.path) for asset_key in self._tick.requested_asset_keys
+            GrapheneAssetKey(path=asset_key.path)
+            for asset_key in (tick.requested_asset_keys if tick else [])
         ]
 
-    def resolve_requestedMaterializationsForAssets(self, _):
+    def resolve_requestedMaterializationsForAssets(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
         return [
             GrapheneRequestedMaterializationsForAsset(
                 assetKey=GrapheneAssetKey(path=asset_key.path),
                 partitionKeys=list(partition_keys),
             )
-            for asset_key, partition_keys in self._tick.requested_assets_and_partitions.items()
+            for asset_key, partition_keys in (
+                tick.requested_assets_and_partitions.items() if tick else []
+            )
         ]
 
-    def resolve_requestedAssetMaterializationCount(self, _):
-        return self._tick.requested_asset_materialization_count
+    def resolve_requestedAssetMaterializationCount(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.requested_asset_materialization_count if tick else 0
 
-    def resolve_requestedJobRunCount(self, _):
-        return self._tick.requested_job_run_count
+    def resolve_requestedJobRunCount(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
+        return tick.requested_job_run_count if tick else 0
 
-    def resolve_requestedRunsForJobs(self, _):
+    def resolve_requestedRunsForJobs(self, graphene_info: ResolveInfo):
+        tick = self._get_full_tick(graphene_info)
         return [
             GrapheneRequestedRunsForJob(jobName=job_name, partitionKeys=sorted(partition_keys))
-            for job_name, partition_keys in sorted(self._tick.requested_jobs_and_partitions.items())
+            for job_name, partition_keys in sorted(
+                tick.requested_jobs_and_partitions.items() if tick else []
+            )
         ]
 
 

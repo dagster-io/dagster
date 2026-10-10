@@ -27,6 +27,17 @@ export type RunFilterToken = {
   value: string;
 };
 
+/** Splits at the first `=`: tag values may contain `=`. */
+export function splitTagFilterValue(tagValue: string): {key: string; value: string} {
+  const index = tagValue.indexOf('=');
+
+  if (index === -1) {
+    return {key: tagValue, value: ''};
+  }
+
+  return {key: tagValue.slice(0, index), value: tagValue.slice(index + 1)};
+}
+
 const RUN_PROVIDERS_EMPTY = [
   {token: 'id', values: () => []},
   {token: 'status', values: () => []},
@@ -38,11 +49,20 @@ const RUN_PROVIDERS_EMPTY = [
   {token: 'created_date_after', values: () => []},
 ];
 
+type QueryPersistedRunFiltersOptions = {
+  enabledFilters?: RunFilterTokenType[];
+  behavior?: 'push' | 'replace';
+};
+
 /** Persist run filters in the URL and clear pagination when they change. */
-export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
+export function useQueryPersistedRunFilters({
+  enabledFilters,
+  behavior,
+}: QueryPersistedRunFiltersOptions = {}) {
   return useQueryPersistedState<RunFilterToken[]>(
     useMemo(
       () => ({
+        behavior,
         encode: (tokens) => ({
           q: tokensAsStringArray(tokens),
           cursor: undefined,
@@ -56,7 +76,7 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
           ) as RunFilterToken[];
         },
       }),
-      [enabledFilters],
+      [enabledFilters, behavior],
     ),
   );
 }
@@ -95,7 +115,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
-      const [key = '', value = ''] = item.value.split('=');
+      const {key, value} = splitTagFilterValue(item.value);
       if (obj.tags) {
         obj.tags.push({key, value});
       } else {

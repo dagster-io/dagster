@@ -19,6 +19,7 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.base_storage import DagsterStorage
 from dagster._core.storage.event_log.base import (
     AssetCheckSummaryRecord,
+    AssetEventSummaryRecord,
     AssetRecord,
     EventLogConnection,
     EventLogRecord,
@@ -39,7 +40,11 @@ from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInf
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
+    from dagster._core.event_api import (
+        AssetEventType,
+        AssetRecordsFilter,
+        RunStatusChangeRecordsFilter,
+    )
     from dagster._core.events import DagsterEvent, DagsterEventType
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import (
@@ -55,6 +60,7 @@ if TYPE_CHECKING:
         InstigatorState,
         InstigatorStatus,
         InstigatorTick,
+        InstigatorTickSummary,
         TickData,
         TickStatus,
     )
@@ -654,6 +660,17 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             partitions_def_name, partition_key
         )
 
+    @property
+    def has_bounded_dynamic_partition_membership_query(self) -> bool:
+        return self._storage.event_log_storage.has_bounded_dynamic_partition_membership_query
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        return self._storage.event_log_storage.get_existing_dynamic_partitions(
+            partitions_def_name, partition_keys
+        )
+
     def add_dynamic_partitions(
         self, partitions_def_name: str, partition_keys: Sequence[str]
     ) -> None:
@@ -702,6 +719,35 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventLogConnection:
         return self._storage.event_log_storage.get_records_for_run(
             run_id, cursor, of_type, limit, ascending
+        )
+
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: Union["DagsterEventType", set["DagsterEventType"]] | None = None,
+    ) -> Mapping["AssetKey", AbstractSet[str | None]]:
+        return self._storage.event_log_storage.get_asset_partitions_for_run(run_id, of_type)
+
+    def get_asset_event_summary_records(
+        self,
+        event_type: "AssetEventType",
+        asset_key: Optional["AssetKey"] = None,
+        run_id: str | None = None,
+        storage_ids: Sequence[int] | None = None,
+        after_storage_id: int | None = None,
+        before_storage_id: int | None = None,
+        limit: int | None = None,
+        ascending: bool = False,
+    ) -> Sequence["AssetEventSummaryRecord"]:
+        return self._storage.event_log_storage.get_asset_event_summary_records(
+            event_type,
+            asset_key,
+            run_id,
+            storage_ids,
+            after_storage_id,
+            before_storage_id,
+            limit,
+            ascending,
         )
 
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
@@ -868,6 +914,22 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
 
     def get_tick(self, tick_id: int) -> "InstigatorTick":
         return self._storage.schedule_storage.get_tick(tick_id)
+
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence["InstigatorTick"]:
+        return self._storage.schedule_storage.get_ticks_by_ids(tick_ids)
+
+    def get_tick_summaries(  # ty: ignore[invalid-method-override]
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence["TickStatus"] | None = None,
+    ) -> Sequence["InstigatorTickSummary"]:
+        return self._storage.schedule_storage.get_tick_summaries(
+            origin_id, selector_id, before=before, after=after, limit=limit, statuses=statuses
+        )
 
     def get_ticks(  # ty: ignore[invalid-method-override]
         self,

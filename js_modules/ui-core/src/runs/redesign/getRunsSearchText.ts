@@ -4,7 +4,7 @@ import {
   formatRunsSearchValue,
   getAttributeForTagKey,
 } from './runsSearchAttributes';
-import {RunFilterToken, RunFilterTokenType} from '../RunsFilterUtils';
+import {RunFilterToken, RunFilterTokenType, splitTagFilterValue} from '../RunsFilterUtils';
 
 type RenderedTerm = {
   attribute: RunsSearchAttribute;
@@ -21,8 +21,7 @@ const getScalarTerms = (
   value !== undefined ? [{attribute, text: `${attribute}:${formatRunsSearchValue(value)}`}] : [];
 
 const getTagTerm = (tagValue: string): RenderedTerm => {
-  // Same split as `runsFilterForSearchTokens`, which drops anything after a second `=`.
-  const [key = '', value = ''] = tagValue.split('=');
+  const {key, value} = splitTagFilterValue(tagValue);
   // Tag-backed attributes reject an empty value, so an empty legacy value stays a generic tag.
   const attribute = value ? getAttributeForTagKey(key) : undefined;
   if (attribute) {

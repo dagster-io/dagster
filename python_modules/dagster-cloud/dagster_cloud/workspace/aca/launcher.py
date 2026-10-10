@@ -233,12 +233,15 @@ class AcaUserCodeLauncher(DagsterCloudUserCodeLauncher[AcaServerHandle], Configu
         app = self._create_container_app(app_name, container_app)
 
         # Azure assigns the hostname; for internal ingress it includes an "internal." segment.
-        hostname = check.not_none(
+        # Without one the app can never serve gRPC, so treat it like a failed create.
+        hostname = (
             app.configuration.ingress.fqdn
             if app.configuration and app.configuration.ingress
-            else None,
-            f"Container App {app_name!r} has no ingress FQDN",
+            else None
         )
+        if not hostname:
+            self._delete_partial_app(app_name)
+            check.failed(f"Container App {app_name!r} has no ingress hostname")
         create_timestamp = (
             app.system_data.created_at.timestamp()
             if app.system_data and app.system_data.created_at
@@ -363,15 +366,20 @@ class AcaUserCodeLauncher(DagsterCloudUserCodeLauncher[AcaServerHandle], Configu
         try:
             return poller.result(timeout=_DEFAULT_SERVER_STARTUP_TIMEOUT_SECS)
         except Exception:
-            # A failed create can leave a Container App behind with no handle to clean it up later.
-            self._logger.warning(
-                f"Creating Container App {app_name!r} failed; deleting the partial resource"
-            )
-            try:
-                client.container_apps.begin_delete(self._resource_group, app_name)
-            except AzureError:
-                self._logger.exception(f"Could not delete failed Container App {app_name!r}")
+            self._delete_partial_app(app_name)
             raise
+
+    def _delete_partial_app(self, app_name: str) -> None:
+        """Best-effort delete of an app that will never serve, so it is not left behind."""
+        self._logger.warning(
+            f"Container App {app_name!r} cannot serve; deleting the partial resource"
+        )
+        try:
+            self._get_aca_client().container_apps.begin_delete(self._resource_group, app_name)
+        except AzureError:
+            # The tagged app stays visible to _list_server_handles, so a later reconcile or the
+            # periodic sweep gets another chance at it.
+            self._logger.exception(f"Could not delete failed Container App {app_name!r}")
 
     @async_serialize_exceptions
     async def _wait_for_new_server_ready(
@@ -437,20 +445,23 @@ class AcaUserCodeLauncher(DagsterCloudUserCodeLauncher[AcaServerHandle], Configu
         )
 
     def _handle_for_app(self, app) -> AcaServerHandle | None:
+        """Handle for any app this launcher created, including ones that failed to start.
+
+        These handles are only used to find apps to delete, so a broken app must be included.
+        """
         tags = app.tags or {}
         if "dagster-location" not in tags:
             return None
-        fqdn = (
+        hostname = (
             app.configuration.ingress.fqdn
             if app.configuration and app.configuration.ingress
             else None
         )
-        if not fqdn:
-            return None
         created_at = app.system_data.created_at if app.system_data else None
         return AcaServerHandle(
             app_name=app.name,
-            hostname=fqdn,
+            # Empty when the app failed to start and Azure never assigned one.
+            hostname=hostname or "",
             tags=dict(tags),
             create_timestamp=created_at.timestamp() if created_at else None,
         )
