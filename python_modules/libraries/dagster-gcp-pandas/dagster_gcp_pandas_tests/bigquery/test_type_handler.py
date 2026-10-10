@@ -18,6 +18,7 @@ from dagster import (
     Out,
     TimeWindowPartitionMapping,
     asset,
+    build_input_context,
     build_output_context,
     fs_io_manager,
     instance_for_test,
@@ -25,6 +26,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._config import process_config
 from dagster._core.definitions.partitions.definition import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -93,13 +95,30 @@ def test_handle_output_empty_dataframe():
     connection.load_table_from_dataframe.assert_not_called()
 
 
-def test_handle_output_nonempty_dataframe():
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+@pytest.mark.parametrize(
+    "schema",
+    [bigquery_pandas_io_manager.config_schema, BigQueryPandasIOManager.to_config_schema()],
+)
+def test_preserve_column_case_config(preserve_column_case, schema):
+    config = {"project": "my-project"}
+    if preserve_column_case is not None:
+        config["preserve_column_case"] = preserve_column_case
+    result = process_config(schema.as_field().config_type, config)
+
+    assert result.success
+    assert result.value["preserve_column_case"] is bool(preserve_column_case)
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+def test_handle_output_nonempty_dataframe(preserve_column_case):
+    config = {} if preserve_column_case is None else {"preserve_column_case": preserve_column_case}
     handler = BigQueryPandasTypeHandler()
-    df = pd.DataFrame({"foo": ["a", "b"], "bar": [1, 2]})
+    df = pd.DataFrame({"lower": ["a", "b"], "UPPER": [1, 2], "MixedCase": [3, 4]})
     connection = MagicMock()
     mock_job = MagicMock()
     connection.load_table_from_dataframe.return_value = mock_job
-    output_context = build_output_context(resource_config={"location": "us"})
+    output_context = build_output_context(resource_config={"location": "us", **config})
 
     handler.handle_output(
         output_context,
@@ -113,7 +132,29 @@ def test_handle_output_nonempty_dataframe():
     )
 
     connection.load_table_from_dataframe.assert_called_once()
+    written_df = connection.load_table_from_dataframe.call_args.kwargs["dataframe"]
+    expected = df if preserve_column_case else df.rename(columns=str.upper)
+    pd.testing.assert_frame_equal(written_df, expected)
     mock_job.result.assert_called_once()
+
+
+@pytest.mark.parametrize("preserve_column_case", [None, False, True])
+def test_load_input_preserves_column_case(preserve_column_case):
+    config = {} if preserve_column_case is None else {"preserve_column_case": preserve_column_case}
+    handler = BigQueryPandasTypeHandler()
+    expected = pd.DataFrame({"lower": ["a", "b"], "UPPER": [1, 2], "MixedCase": [3, 4]})
+    connection = MagicMock()
+    connection.query.return_value.to_dataframe.return_value = expected.copy()
+
+    result = handler.load_input(
+        build_input_context(resource_config=config),
+        TableSlice(table="my_table", schema="my_schema", database="my_db"),
+        connection,
+    )
+
+    if not preserve_column_case:
+        expected = expected.rename(columns=str.lower)
+    pd.testing.assert_frame_equal(result, expected)
 
 
 @pytest.mark.skipif(
@@ -151,9 +192,29 @@ def test_io_manager_asset_metadata() -> None:
     not RUN_BUILDKITE_BIGQUERY_TESTS,
     reason="Requires Buildkite BigQuery credentials",
 )
-@pytest.mark.parametrize("io_manager", [(old_bigquery_io_manager), (pythonic_bigquery_io_manager)])
+@pytest.mark.parametrize(
+    "io_manager,preserve_column_case",
+    [
+        (io_manager, preserve_column_case)
+        for preserve_column_case in [False, True]
+        for io_manager in [
+            bigquery_pandas_io_manager.configured(
+                {**SHARED_BUILDKITE_BQ_CONFIG, "preserve_column_case": preserve_column_case}
+            ),
+            BigQueryPandasIOManager(
+                project=EnvVar("GCP_PROJECT_ID"),
+                preserve_column_case=preserve_column_case,
+            ),
+        ]
+    ],
+)
 @pytest.mark.integration
-def test_io_manager_with_bigquery_pandas(io_manager):
+def test_io_manager_with_bigquery_pandas(io_manager, preserve_column_case):
+    columns = ["lower", "UPPER", "MixedCase"]
+    expected_read_columns = columns if preserve_column_case else [name.lower() for name in columns]
+    expected_stored_columns = (
+        columns if preserve_column_case else [name.upper() for name in columns]
+    )
     with temporary_bigquery_table(schema_name=SCHEMA) as table_name:
         # Create a job with the temporary table name as an output, so that it will write to that table
         # and not interfere with other runs of this test
@@ -167,11 +228,11 @@ def test_io_manager_with_bigquery_pandas(io_manager):
             }
         )
         def emit_pandas_df() -> pd.DataFrame:
-            return pd.DataFrame({"foo": ["bar", "baz"], "quux": [1, 2]})
+            return pd.DataFrame({"lower": ["bar", "baz"], "UPPER": [1, 2], "MixedCase": [3, 4]})
 
         @op
         def read_pandas_df(df: pd.DataFrame) -> None:
-            assert set(df.columns) == {"foo", "quux"}
+            assert list(df.columns) == expected_read_columns
             assert len(df.index) == 2
 
         @job(
@@ -182,6 +243,10 @@ def test_io_manager_with_bigquery_pandas(io_manager):
 
         res = io_manager_test_job.execute_in_process()
         assert res.success
+
+        with bigquery.Client(project=SHARED_BUILDKITE_BQ_CONFIG["project"]) as client:
+            table = client.get_table(f"{client.project}.{SCHEMA}.{table_name}")
+            assert [field.name for field in table.schema] == expected_stored_columns
 
         # run again to ensure table is properly deleted
         res = io_manager_test_job.execute_in_process()

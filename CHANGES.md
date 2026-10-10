@@ -66,6 +66,8 @@
 
 ### Bugfixes
 
+- [dagster-gcp-pandas, dagster-gcp-pyspark] Added `preserve_column_case=True` to preserve column name casing when writing and loading DataFrames. The default (`False`) retains the existing uppercase-on-write and lowercase-on-read behavior. When enabled, existing uppercase table columns load with uppercase names. Addresses the BigQuery behavior reported in [#14129](https://github.com/dagster-io/dagster/issues/14129).
+
 - Fixed a bug where a job that included a `@multi_asset` with `can_subset=True` and specs using different partitions definitions failed to resolve with `DagsterInvalidDefinitionError` when one of its unselected dependencies was converted to an external asset. (Thanks, [@Terroface](https://github.com/Terroface)!)
 - Fixed `--use-ssl` being silently ignored when connecting to a gRPC code server via `--grpc-port` or `--grpc-socket`, which caused an insecure channel to be used. Also fixed `dagster dev --use-legacy-code-server-behavior` silently dropping `--package-name` and `--autoload-defs-module-name` when launching the webserver and daemon.
 - Fixed a bug where a callable object with a custom `__signature__` had its type hints read from `__call__` instead, causing resource parameters to be misinterpreted as asset inputs or dropped from a sensor's required resources.
