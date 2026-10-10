@@ -769,9 +769,6 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                 # dbt v2 installed from PyPI (`pip install dbt`), on duckdb.
                 ToxFactor("dbt2-duckdb"),
             ],
-            unsupported_python_versions=[
-                AvailablePythonVersion.V3_14,  # dbt-core incompatible
-            ],
         ),
         PackageSpec(
             oss_path("python_modules/libraries/dagster-snowflake"),
