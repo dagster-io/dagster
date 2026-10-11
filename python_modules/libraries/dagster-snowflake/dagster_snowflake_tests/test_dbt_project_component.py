@@ -471,7 +471,9 @@ def test_execute_emits_run_results_metadata_at_parity():
 
 
 @pytest.mark.parametrize("status", ["no-op", "reused", "warn"])
-def test_run_results_to_events_materializes_successful_non_success_statuses(status):
+def test_run_results_to_events_materializes_successful_non_success_statuses(
+    status: str,
+):
     component = _make_component()
     run_results = {
         "metadata": {"invocation_id": "inv-1"},
