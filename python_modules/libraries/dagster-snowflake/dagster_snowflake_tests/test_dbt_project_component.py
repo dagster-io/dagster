@@ -470,6 +470,25 @@ def test_execute_emits_run_results_metadata_at_parity():
     assert checks[0].metadata["status"].value == "pass"
 
 
+@pytest.mark.parametrize("status", ["no-op", "reused", "warn"])
+def test_run_results_to_events_materializes_successful_non_success_statuses(status):
+    component = _make_component()
+    run_results = {
+        "metadata": {"invocation_id": "inv-1"},
+        "results": [{**_META_RUN_RESULTS["results"][0], "status": status}],
+    }
+    fake_translator = _lineage_translator()
+
+    with mock.patch.object(comp_mod, "validate_translator", return_value=fake_translator):
+        events = list(
+            component._run_results_to_events(run_results, _META_MANIFEST)  # noqa: SLF001
+        )
+
+    materializations = [event for event in events if isinstance(event, AssetMaterialization)]
+    assert len(materializations) == 1
+    assert materializations[0].asset_key == AssetKey(["customers"])
+
+
 def test_execute_falls_back_when_run_results_missing():
     component = _make_component()
     setattr(component, "get_cli_args", lambda context: ["build"])
