@@ -321,3 +321,27 @@ def test_context_initialization_error_is_not_suppressed_by_loader():
     with pytest.raises(OSError, match="startup failed"):
         PipesContext(MagicMock(), loader, writer)
     assert closed == [True]
+
+
+def test_context_is_closed_when_writer_cleanup_raises() -> None:
+    context_loader = MagicMock()
+    writer = MagicMock()
+    context = PipesContext(MagicMock(), context_loader, writer)
+    channel = writer.open.return_value.__enter__.return_value
+    writer.open.return_value.__exit__.side_effect = OSError("writer cleanup failed")
+    context_loader.load_context.return_value.__exit__.return_value = False
+
+    with pytest.raises(OSError, match="writer cleanup failed"):
+        context.close()
+
+    writer.open.return_value.__exit__.assert_called_once()
+    context_loader.load_context.return_value.__exit__.assert_called_once()
+    assert context.is_closed
+    assert [call.args[0]["method"] for call in channel.write_message.call_args_list] == [
+        "opened",
+        "closed",
+    ]
+    context.close()
+    writer.open.return_value.__exit__.assert_called_once()
+    context_loader.load_context.return_value.__exit__.assert_called_once()
+    assert channel.write_message.call_count == 2
