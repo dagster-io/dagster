@@ -2,6 +2,10 @@
   justify-self: center;
 }
 
+:global(.dagster-mobile) .cell {
+  justify-self: start;
+}
+
 .timing {
   display: inline-block;
   font-variant-numeric: tabular-nums;

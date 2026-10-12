@@ -7,7 +7,7 @@
   column-gap: 16px;
   align-items: center;
   min-height: 48px;
-  padding: 12px 24px;
+  padding: 12px var(--page-gutter, 24px);
   box-sizing: border-box;
   background-color: var(--color-background-default);
   box-shadow: inset 0 -1px 0 0 var(--color-keyline-default);
@@ -37,4 +37,25 @@
 .divider {
   height: 20px;
   background-color: var(--color-keyline-default);
+}
+
+/* On a phone the launch details take the full width, with status, timing and id beneath and the
+   menu at the end of that line. */
+:global(.dagster-mobile) .row {
+  grid-template-columns: auto 1px auto 1px minmax(0, 1fr) 32px;
+  column-gap: 8px;
+  row-gap: 8px;
+}
+
+:global(.dagster-mobile) .row > :first-child {
+  grid-column: 1 / -1;
+}
+
+:global(.dagster-mobile) .divider {
+  height: 16px;
+}
+
+/* The menu sits apart at the row's edge, so it drops its divider. */
+:global(.dagster-mobile) .divider ~ .divider ~ .divider {
+  display: none;
 }

@@ -2,6 +2,7 @@ import {Button, Icon, Menu, MenuItem, Popover} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import {useContext, useMemo, useState} from 'react';
 
+import {useIsMobile} from '../../app/layout/IsMobileContext';
 import {TimeContext} from '../../app/time/TimeContext';
 import {TimeRangeState, calculateTimeRanges} from '../../ui/BaseFilters/useTimeRangeFilter';
 import {DateRangeDialog} from '../../ui/DateRangeDialog';
@@ -56,6 +57,8 @@ const getRangeLabel = (
 export const RunsDateRangeSelect = ({tokens, onChange}: RunsDateRangeSelectProps) => {
   const {resolvedTimezone} = useContext(TimeContext);
   const formatDateTime = useFormatDateTime();
+  // Two months stack at phone width and overflow the dialog.
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPickingDateRange, setIsPickingDateRange] = useState(false);
 
@@ -83,6 +86,7 @@ export const RunsDateRangeSelect = ({tokens, onChange}: RunsDateRangeSelectProps
     <>
       <DateRangeDialog
         isOpen={isPickingDateRange}
+        numberOfMonths={isMobile ? 1 : 2}
         onCancel={() => setIsPickingDateRange(false)}
         onApply={(customRange) => {
           setIsPickingDateRange(false);

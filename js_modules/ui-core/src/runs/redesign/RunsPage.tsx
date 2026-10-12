@@ -11,6 +11,7 @@ import {ApolloError} from '../../apollo-client';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
+import {useIsMobile} from '../../app/layout/IsMobileContext';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunTableEmptyState} from '../RunTableEmptyState';
@@ -33,6 +34,7 @@ const isCreatedDateToken = ({token}: RunFilterToken) =>
 
 export const RunsPage = () => {
   useTrackPageView();
+  const isMobile = useIsMobile();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters({behavior: 'push'});
   const filter = runsFilterForSearchTokens(filterTokens);
@@ -86,6 +88,17 @@ export const RunsPage = () => {
     paginationProps.advanceCursor();
   };
 
+  // On a phone, pagination moves into the header so the search input gets the full width.
+  const paginationControls = (
+    <CursorHistoryControls
+      {...paginationProps}
+      popCursor={popCursor}
+      advanceCursor={advanceCursor}
+      style={{marginTop: 0}}
+      iconOnly={isMobile}
+    />
+  );
+
   return (
     <div className={styles.page}>
       <PageHeader
@@ -94,13 +107,18 @@ export const RunsPage = () => {
             Runs
           </Heading>
         }
-        right={<QueryRefreshCountdown refreshState={refreshState} />}
+        right={
+          isMobile ? (
+            <Box flex={{alignItems: 'center', gap: 12}}>
+              <QueryRefreshCountdown refreshState={refreshState} />
+              {paginationControls}
+            </Box>
+          ) : (
+            <QueryRefreshCountdown refreshState={refreshState} />
+          )
+        }
       />
-      <Box
-        flex={{alignItems: 'center', gap: 12}}
-        padding={{vertical: 12, horizontal: 24}}
-        border="bottom"
-      >
+      <Box flex={{alignItems: 'center', gap: 12}} border="bottom" className={styles.toolbar}>
         <RunsDateRangeSelect
           tokens={dateTokens}
           onChange={(tokens) => setFilterTokens([...searchTokens, ...tokens])}
@@ -111,12 +129,7 @@ export const RunsPage = () => {
             onChange={(tokens) => setFilterTokens([...tokens, ...dateTokens])}
           />
         </Box>
-        <CursorHistoryControls
-          {...paginationProps}
-          popCursor={popCursor}
-          advanceCursor={advanceCursor}
-          style={{marginTop: 0}}
-        />
+        {isMobile ? null : paginationControls}
       </Box>
       <div ref={bodyRef} className={styles.body}>
         <RunsQueryRefetchContext.Provider value={refetchContext}>
@@ -142,6 +155,8 @@ type RunsFeedProps = {
 };
 
 const RunsFeed = ({entries, error, isLoading, isFiltered}: RunsFeedProps) => {
+  const isMobile = useIsMobile();
+
   if (error instanceof ApolloError) {
     return <RunsFeedError error={error} />;
   }
@@ -155,7 +170,11 @@ const RunsFeed = ({entries, error, isLoading, isFiltered}: RunsFeedProps) => {
   }
 
   if (entries.length === 0 && !isLoading) {
-    return <RunTableEmptyState anyFilter={isFiltered} />;
+    return (
+      <div className={styles.emptyState}>
+        <RunTableEmptyState anyFilter={isFiltered} shrinkable={isMobile} />
+      </div>
+    );
   }
 
   return <RunsFeedList entries={entries} isLoading={isLoading} />;
