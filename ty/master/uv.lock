@@ -2695,7 +2695,7 @@ requires-dist = [
     { name = "dagster", editable = "../../python_modules/dagster" },
     { name = "dagster-pipes", editable = "../../python_modules/dagster-pipes" },
     { name = "dagster-pyspark", editable = "../../python_modules/libraries/dagster-pyspark" },
-    { name = "databricks-sdk", specifier = ">=0.41,<0.61.0" },
+    { name = "databricks-sdk", specifier = ">=0.41,<0.147" },
 ]
 
 [package.metadata.requires-dev]
@@ -2789,7 +2789,7 @@ requires-dist = [
     { name = "packaging" },
     { name = "requests" },
     { name = "rich" },
-    { name = "sqlglot", extras = ["rs"], specifier = "<28.1.0" },
+    { name = "sqlglot", extras = ["rs"] },
     { name = "typer", specifier = ">=0.9.0" },
 ]
 
@@ -4763,15 +4763,17 @@ dev = [
 
 [[package]]
 name = "databricks-sdk"
-version = "0.60.0"
+version = "0.146.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "google-auth" },
+    { name = "protobuf" },
     { name = "requests" },
+    { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/42/2b153d0eddd7626e1646208fa6aa6f96c192b7cda1e5a2179c728aaa2a46/databricks_sdk-0.60.0.tar.gz", hash = "sha256:14358fb160d19477e8666bd5403ca1bbb7f307f217a77b77a845c75905ffc0a1", size = 720339, upload-time = "2025-07-24T10:15:57.896Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/5f/09499482f9f67400148fc2bb3f32b593d9b58fee0d8bcb02f0fe90a49214/databricks_sdk-0.146.0.tar.gz", hash = "sha256:7096fe03e801c24179efbb314870286225fbb5c73151b11aabf7bab53e0e8dd6", size = 1133527, upload-time = "2026-10-02T04:36:55.209Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e6/fb/4f29b68101dd04fe5278c9f8e4e8944580f4b2b40554748eaa0cfdd42c59/databricks_sdk-0.60.0-py3-none-any.whl", hash = "sha256:a6983569e4a3a9ad322a3682e187b6d9830a7c5be6224203cfa2b67ed8e9d8a6", size = 677049, upload-time = "2025-07-24T10:15:56.133Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/0c/0d95520b7eae2fd37b9bf9ee5ba318f9133af9f8881781a3d39c8e341f58/databricks_sdk-0.146.0-py3-none-any.whl", hash = "sha256:e744fff01571f0202ca66816638aaa3d9a2ecc08b7af3a5c8c6300e931684b42", size = 1078198, upload-time = "2026-10-02T04:36:53.206Z" },
 ]
 
 [[package]]
