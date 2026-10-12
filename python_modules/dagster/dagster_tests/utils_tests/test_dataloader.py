@@ -205,7 +205,7 @@ def test_sync_loadable_by() -> None:
     assert context.instance.query.call_count == 2
 
 
-def test_blocking_load_many_accepts_one_shot_iterators():
+def test_blocking_load_many_accepts_one_shot_iterators() -> None:
     loader = BlockingDataLoader(lambda keys: [key * 2 for key in keys])
     assert list(loader.blocking_load_many(iter([1, 2, 1]))) == [2, 4, 2]
     assert list(loader.blocking_load_many(iter([2, 3]))) == [4, 6]
