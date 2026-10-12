@@ -901,10 +901,9 @@ class UncheckedGenericDagsterType(DagsterType):
         rendered = str(annotation)
         note = "Type parameters not validated."
 
-        def _type_check(_context, _value) -> TypeCheck:
+        def _type_check(_context: "TypeCheckContext", _value: object) -> TypeCheck:
             return TypeCheck(success=True, description=note)
 
-        self.origin = origin
         # DagsterType.__init__ reads display_name, so this has to be set beforehand.
         args = ", ".join(_short_type_name(arg) for arg in get_args(annotation))
         self._display_name = f"{origin.__name__}[{args}]"
@@ -926,7 +925,7 @@ class UncheckedGenericDagsterType(DagsterType):
 
 
 def _is_unchecked_generic_origin(origin: object) -> bool:
-    # Standard library generics such as `Callable[..., X]` and `deque[X]` keep raising.
+    # Standard library generics such as `typing.Callable[..., X]` and `typing.Deque[X]` raise.
     module = getattr(origin, "__module__", None)
     return (
         isinstance(origin, type)
