@@ -14,3 +14,5 @@ This guide will walk you through deploying Dagster+ on Azure. We'll start from a
 - [Step 2: Deploy user code in Azure Container Registry (ACR)](/deployment/dagster-plus/hybrid/azure/acr-user-code)
 - [Step 3: Store compute logs in Azure Blob Storage or Azure Data Lake Storage](/deployment/dagster-plus/hybrid/azure/blob-compute-logs)
 - [Step 4: Use Azure Key Vault for secrets management](/deployment/dagster-plus/hybrid/azure/key-vault)
+
+If you would rather not operate a Kubernetes cluster, you can instead [deploy the agent on Azure Container Apps](/deployment/dagster-plus/hybrid/azure/container-apps-agent) (beta).
