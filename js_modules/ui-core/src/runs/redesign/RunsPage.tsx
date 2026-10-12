@@ -1,6 +1,7 @@
 import {Box, CursorHistoryControls, Heading, PageHeader} from '@dagster-io/ui-components';
 import {useEffect, useMemo, useRef} from 'react';
 
+import {RunsDateRangeSelect} from './RunsDateRangeSelect';
 import {RunsFeedList} from './RunsFeedList';
 import {RunsSearchInput} from './RunsSearchInput';
 import styles from './css/RunsPage.module.css';
@@ -21,13 +22,22 @@ import {
   getSelectedRunsFeedTab,
   useQueryPersistedRunsFeedView,
 } from '../RunsFeedUtils';
-import {runsFilterForSearchTokens, useQueryPersistedRunFilters} from '../RunsFilterUtils';
+import {
+  RunFilterToken,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+} from '../RunsFilterUtils';
+
+const isCreatedDateToken = ({token}: RunFilterToken) =>
+  token === 'created_date_after' || token === 'created_date_before';
 
 export const RunsPage = () => {
   useTrackPageView();
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters({behavior: 'push'});
   const filter = runsFilterForSearchTokens(filterTokens);
+  const dateTokens = filterTokens.filter(isCreatedDateToken);
+  const searchTokens = filterTokens.filter((token) => !isCreatedDateToken(token));
   const [view] = useQueryPersistedRunsFeedView();
   const selectedTab = getSelectedRunsFeedTab(filterTokens, view);
   useDocumentTitle(getRunsFeedDocumentTitle(selectedTab));
@@ -91,8 +101,15 @@ export const RunsPage = () => {
         padding={{vertical: 12, horizontal: 24}}
         border="bottom"
       >
+        <RunsDateRangeSelect
+          tokens={dateTokens}
+          onChange={(tokens) => setFilterTokens([...searchTokens, ...tokens])}
+        />
         <Box flex={{grow: 1}}>
-          <RunsSearchInput tokens={filterTokens} onChange={setFilterTokens} />
+          <RunsSearchInput
+            tokens={searchTokens}
+            onChange={(tokens) => setFilterTokens([...tokens, ...dateTokens])}
+          />
         </Box>
         <CursorHistoryControls
           {...paginationProps}

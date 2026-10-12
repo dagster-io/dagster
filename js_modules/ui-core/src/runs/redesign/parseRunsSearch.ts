@@ -54,21 +54,13 @@ import {
 import {SelectionAutoCompleteVisitor} from '../../selection/generated/SelectionAutoCompleteVisitor';
 import {RunFilterToken, RunFilterTokenType} from '../RunsFilterUtils';
 
-type TokenBackedAttribute =
-  | 'id'
-  | 'status'
-  | 'job'
-  | 'snapshot_id'
-  | 'created_after'
-  | 'created_before';
+type TokenBackedAttribute = 'id' | 'status' | 'job' | 'snapshot_id';
 
 const TOKEN_TYPE_BY_ATTRIBUTE = {
   id: 'id',
   status: 'status',
   job: 'job',
   snapshot_id: 'snapshotId',
-  created_after: 'created_date_after',
-  created_before: 'created_date_before',
 } as const satisfies Record<TokenBackedAttribute, RunFilterTokenType>;
 
 // The server ORs values within these lists, so they are the only attributes `or` can combine.
@@ -87,8 +79,6 @@ const SINGLE_VALUE_MESSAGES = {
   partition: 'Only one partition per search',
   tag: 'Only one value per tag key',
   snapshot_id: 'Only one snapshot ID per search',
-  created_after: 'Only one created_after per search',
-  created_before: 'Only one created_before per search',
 } as const satisfies Record<Exclude<RunsSearchAttribute, 'id' | 'status'>, string>;
 
 const OR_MESSAGE = 'or only combines IDs or statuses';
@@ -124,7 +114,6 @@ const UNSUPPORTED_EXPRESSION_MESSAGES = [
 ] as const satisfies readonly (readonly [ContextClass, string])[];
 
 const RUN_STATUSES: string[] = Object.values(RunStatus);
-const TIMESTAMP_PATTERN = /^\d+(\.\d+)?$/;
 const HIDDEN_CHARACTER_PATTERN = /[\p{C}\p{Z}]/u;
 
 type RunsSearchParseResult =
@@ -261,13 +250,6 @@ const getScalarValueError = (attribute: RunsSearchAttribute, value: string) => {
 
   if (attribute === 'status' && !RUN_STATUSES.includes(value.toUpperCase())) {
     return `Unknown status: ${value}`;
-  }
-
-  if (
-    (attribute === 'created_after' || attribute === 'created_before') &&
-    !TIMESTAMP_PATTERN.test(value)
-  ) {
-    return `${attribute} needs a Unix timestamp in seconds`;
   }
 
   return null;

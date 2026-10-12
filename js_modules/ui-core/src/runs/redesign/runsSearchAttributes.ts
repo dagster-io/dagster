@@ -12,8 +12,6 @@ export const RUNS_SEARCH_ATTRIBUTES = [
   'partition',
   'tag',
   'snapshot_id',
-  'created_after',
-  'created_before',
 ] as const;
 
 export type RunsSearchAttribute = (typeof RUNS_SEARCH_ATTRIBUTES)[number];

@@ -22,8 +22,6 @@ describe('parseRunsSearch', () => {
     {text: 'status:failure', tokens: ['status:FAILURE']},
     {text: 'job:my_job', tokens: ['job:my_job']},
     {text: 'snapshot_id:abc', tokens: ['snapshotId:abc']},
-    {text: 'created_after:1700000000', tokens: ['created_date_after:1700000000']},
-    {text: 'created_before:"1700000000.25"', tokens: ['created_date_before:1700000000.25']},
     {
       text: 'code_location:"repo@location"',
       tokens: ['tag:.dagster/repository=repo@location'],
@@ -78,7 +76,8 @@ describe('parseRunsSearch', () => {
     {text: 'job:*a*', message: "Wildcards (*) aren't supported in runs search"},
     {text: '*', message: "Wildcards (*) aren't supported in runs search"},
     {text: 'status:bogus', message: 'Unknown status: bogus'},
-    {text: 'created_after:soon', message: 'created_after needs a Unix timestamp in seconds'},
+    {text: 'created_after:1700000000', message: 'Unsupported attribute: "created_after"'},
+    {text: 'created_before:1700000000', message: 'Unsupported attribute: "created_before"'},
     {text: 'id:a and id:b', message: 'Use or to match any of several IDs'},
     {text: '(id:a or id:b) and (id:a or id:c)', message: 'Use or to match any of several IDs'},
     {text: 'job:a and job:b', message: 'Only one job per search'},
@@ -108,7 +107,6 @@ describe('parseRunsSearch', () => {
   it.each([
     {text: 'id:abc-123', message: 'Add quotes: `id:"abc-123"`'},
     {text: 'user:a@b.com', message: 'Add quotes: `user:"a@b.com"`'},
-    {text: 'created_after:1.5', message: 'Add quotes: `created_after:"1.5"`'},
     {text: 'tag:team=a-b', message: 'Add quotes: `tag:team="a-b"`'},
     {text: 'tag:a-b=team', message: 'Add quotes: `tag:"a-b"=team`'},
     {text: 'tag:a-b=c-d', message: 'Add quotes: `tag:"a-b"="c-d"`'},
@@ -117,7 +115,6 @@ describe('parseRunsSearch', () => {
     {text: 'tag:a\\b=c', message: "Backslashes aren't supported"},
     {text: 'job:a-b*', message: "Wildcards (*) aren't supported in runs search"},
     {text: 'status:fail-ed', message: 'Unknown status: fail-ed'},
-    {text: 'created_after:12-3', message: 'created_after needs a Unix timestamp in seconds'},
     {text: 'tag:"a=b"=c-d', message: "Tag keys can't contain `=`"},
   ])('rejects the unquoted special characters in $text', ({text, message}) => {
     expect(parseRunsSearch(text)).toEqual({

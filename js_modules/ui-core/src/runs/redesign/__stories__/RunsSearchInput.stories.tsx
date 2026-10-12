@@ -39,7 +39,6 @@ export const LegacyTokens = () => (
       {token: 'tag', value: 'dagster/sensor_name=new_files_sensor'},
       {token: 'tag', value: 'user=marco@dagsterlabs.com'},
       {token: 'tag', value: 'team=data'},
-      {token: 'created_date_after', value: '1700000000.5'},
     ]}
   />
 );

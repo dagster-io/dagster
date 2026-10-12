@@ -46,8 +46,6 @@ const LEGACY_QUERIES = [
   ['pipeline:old_job'],
   ['job:first', 'pipeline:second'],
   ['snapshotId:abc', 'snapshotId:def'],
-  ['created_date_after:1700000000.123'],
-  ['created_date_before:1700000000', 'created_date_before:1700000500.5'],
   ['tag:dagster/partition=2024-01-01'],
   ['tag:.dagster/repository=repo@location'],
   ['tag:dagster/auto_materialize=true'],
@@ -60,13 +58,7 @@ const LEGACY_QUERIES = [
   ['tag:.custom/key=x'],
   ['job:and'],
   ['some free text', 'foo:bar'],
-  [
-    'status:QUEUED',
-    'job:etl',
-    'tag:dagster/sensor_name=s',
-    'id:abc-123',
-    'created_date_after:1700000000',
-  ],
+  ['status:QUEUED', 'job:etl', 'tag:dagster/sensor_name=s', 'id:abc-123'],
 ];
 
 describe('getRunsSearchText', () => {
@@ -78,7 +70,7 @@ describe('getRunsSearchText', () => {
     {query: ['pipeline:old_job'], text: 'job:old_job'},
     {query: ['job:first', 'pipeline:second'], text: 'job:second'},
     {query: ['snapshotId:abc'], text: 'snapshot_id:abc'},
-    {query: ['created_date_after:1700000000.5'], text: 'created_after:"1700000000.5"'},
+    {query: ['created_date_after:1700000000.5', 'created_date_before:1700000500'], text: ''},
     {query: ['id:abc-123'], text: 'id:"abc-123"'},
     {query: ['tag:.dagster/repository=repo@loc'], text: 'code_location:"repo@loc"'},
     {query: ['tag:dagster/auto_materialize=true'], text: 'tag:dagster/auto_materialize=true'},
@@ -90,14 +82,8 @@ describe('getRunsSearchText', () => {
     {query: ['job:and'], text: 'job:"and"'},
     {query: ['some free text', 'foo:bar'], text: ''},
     {
-      query: [
-        'tag:team=data',
-        'created_date_after:1',
-        'job:etl',
-        'tag:dagster/sensor_name=s',
-        'id:a',
-      ],
-      text: 'id:a and job:etl and sensor:s and tag:team=data and created_after:1',
+      query: ['tag:team=data', 'job:etl', 'tag:dagster/sensor_name=s', 'id:a'],
+      text: 'id:a and job:etl and sensor:s and tag:team=data',
     },
   ])('renders $query as "$text"', ({query, text}) => {
     expect(getRunsSearchText(decodeQuery(query))).toBe(text);
@@ -122,7 +108,7 @@ describe('getRunsSearchText', () => {
 
   it.each([
     {text: 'tag:team=data and job:my_job and id:"abc-123" and sensor:s'},
-    {text: 'tag:dagster/sensor_name=s and created_before:"1700000000.5"'},
+    {text: 'tag:dagster/sensor_name=s and snapshot_id:"1700000000.5"'},
     {text: 'partition:"region=west" and tag:team="a=b"'},
     {text: 'user:"a@b.com" and code_location:"repo@loc" and partition:"2024-01-01"'},
   ])('treats the rendered form of $text as canonical', ({text}) => {
@@ -201,9 +187,6 @@ describe('render and parse across generated legacy tokens', () => {
       VALUES.map((value) => ({token, value}) as RunFilterToken),
     ),
     ...Object.values(RunStatus).map((value) => ({token: 'status', value}) as RunFilterToken),
-    ...['created_date_before', 'created_date_after'].flatMap((token) =>
-      ['0', '1700000000', '1700000000.5'].map((value) => ({token, value}) as RunFilterToken),
-    ),
     ...TAG_KEYS.flatMap((key) =>
       ['', ...VALUES].map((value) => ({token: 'tag', value: `${key}=${value}`}) as RunFilterToken),
     ),
@@ -211,11 +194,8 @@ describe('render and parse across generated legacy tokens', () => {
 
   // Values the server can't filter on, plus characters that need grammar escapes.
   const getUnusableTokens = (): RunFilterToken[] => [
-    ...['id', 'job', 'snapshotId', 'status', 'created_date_after'].map(
-      (token) => ({token, value: ''}) as RunFilterToken,
-    ),
+    ...['id', 'job', 'snapshotId', 'status'].map((token) => ({token, value: ''}) as RunFilterToken),
     {token: 'status', value: 'bogus'},
-    {token: 'created_date_before', value: 'soon'},
     {token: 'tag', value: '=a'},
     {token: 'tag', value: 'note=a"b'},
     {token: 'tag', value: 'note=a\\b'},

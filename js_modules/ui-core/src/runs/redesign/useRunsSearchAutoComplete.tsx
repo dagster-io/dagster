@@ -20,8 +20,6 @@ const ATTRIBUTE_ICONS = {
   partition: 'partition',
   tag: 'tag',
   snapshot_id: 'snapshot',
-  created_after: 'calendar',
-  created_before: 'calendar',
 } as const satisfies Record<RunsSearchAttribute, IconName>;
 
 // Suggests attribute names only; value suggestions need workspace and run data.

@@ -39,9 +39,9 @@ const getTagTerm = (tagValue: string): RenderedTerm => {
 /**
  * Renders legacy `q[]` tokens as runs search text.
  *
- * - Follows `runsFilterForSearchTokens` precedence: the last job, snapshot, and created date
- *   win; IDs, statuses, and tags accumulate.
- * - Drops tokens that converter ignores, since they never affected the query.
+ * - Follows `runsFilterForSearchTokens` precedence: the last job and snapshot win; IDs,
+ *   statuses, and tags accumulate.
+ * - Drops tokens that converter ignores, and created-date tokens, which have their own control.
  */
 export const getRunsSearchText = (tokens: RunFilterToken[]) => {
   const terms: RenderedTerm[] = [
@@ -55,8 +55,6 @@ export const getRunsSearchText = (tokens: RunFilterToken[]) => {
     })),
     ...getScalarTerms('job', getValues(tokens, ['job', 'pipeline']).at(-1)),
     ...getScalarTerms('snapshot_id', getValues(tokens, ['snapshotId']).at(-1)),
-    ...getScalarTerms('created_after', getValues(tokens, ['created_date_after']).at(-1)),
-    ...getScalarTerms('created_before', getValues(tokens, ['created_date_before']).at(-1)),
     ...getValues(tokens, ['tag']).map(getTagTerm),
   ];
 

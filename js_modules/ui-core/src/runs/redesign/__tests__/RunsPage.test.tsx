@@ -334,6 +334,56 @@ describe('RunsPage', () => {
     expect(await screen.findByText(title)).toBeVisible();
   });
 
+  it('labels the created-date control from a legacy date link and leaves dates out of the search', async () => {
+    renderPage('/runs?q[]=created_date_after:1700000000&q[]=job:daily_etl', [
+      mockFeed({data: FIRST_PAGE, filter: {createdAfter: 1700000000, pipelineName: 'daily_etl'}}),
+    ]);
+
+    expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
+    expect(
+      await screen.findByRole('button', {name: 'Created date: After Nov 14, 2023'}),
+    ).toBeVisible();
+    expect(await findSearchInput()).toHaveValue('job:daily_etl');
+  });
+
+  it('keeps the date range in the URL when a search is applied', async () => {
+    const {history} = renderPage('/runs?q[]=created_date_after:1700000000', [
+      mockFeed({data: EMPTY_PAGE, filter: {createdAfter: 1700000000}}),
+      mockFeed({
+        data: FIRST_PAGE,
+        filter: {createdAfter: 1700000000, statuses: [RunStatus.FAILURE]},
+      }),
+    ]);
+
+    await screen.findByText('No matching runs');
+    await applySearch('status:failure');
+
+    expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
+    const params = new URLSearchParams(history.location.search);
+    expect(params.getAll('q[0]')).toEqual(['status:FAILURE']);
+    expect(params.getAll('q[1]')).toEqual(['created_date_after:1700000000']);
+  });
+
+  it('keeps an invalid search draft and its error when a date range is picked', async () => {
+    const user = userEvent.setup();
+    const {history} = renderPage('/runs?q[]=created_date_after:1700000000', [
+      mockFeed({data: EMPTY_PAGE, filter: {createdAfter: 1700000000}}),
+      mockFeed({data: FIRST_PAGE}),
+    ]);
+
+    await screen.findByText('No matching runs');
+    const input = await applySearch('id:a or job:b');
+    expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
+
+    await user.click(await screen.findByRole('button', {name: 'Created date: After Nov 14, 2023'}));
+    await user.click(await screen.findByRole('menuitem', {name: 'All time'}));
+
+    expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
+    expect(history.location.search).toBe('');
+    expect(input).toHaveValue('id:a or job:b');
+    expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
+  });
+
   it('shows a request error and keeps the pagination controls', async () => {
     renderPage('/runs', [mockFeed({error: new Error('Network down')})]);
 
