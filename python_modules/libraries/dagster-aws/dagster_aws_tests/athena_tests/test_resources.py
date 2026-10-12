@@ -3,12 +3,14 @@ import pytest
 from moto import mock_aws
 
 from dagster_aws.athena.resources import (
+    AthenaClientResource,
     AthenaError,
     AthenaTimeout,
     FakeAthenaClient,
     ResourceWithAthenaConfig,
     fake_athena_resource,
 )
+from dagster_aws.version import __version__
 
 
 class TestAthenaClientResource(ResourceWithAthenaConfig):
@@ -97,3 +99,8 @@ def test_op_pythonic_resource(mock_athena_client) -> None:
         return athena.get_client().execute_query("SELECT 1", fetch_results=True)
 
     assert example_athena_op(athena=TestAthenaClientResource.configure_at_launch()) == [("1",)]
+
+
+def test_client_user_agent() -> None:
+    client = AthenaClientResource().get_client().client
+    assert client.meta.config.user_agent_extra == f"dagster-aws/{__version__}"
