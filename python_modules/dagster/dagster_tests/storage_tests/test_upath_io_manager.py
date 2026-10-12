@@ -1,6 +1,7 @@
 import inspect
 import json
 import pickle
+import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -757,3 +758,17 @@ def test_upath_can_transition_from_non_partitioned_to_partitioned(
     assert dg.materialize(
         [my_asset], resources={"io_manager": my_io_manager}, partition_key=start.strftime(daily.fmt)
     ).success
+
+
+def test_upath_io_manager_storage_options():
+    base_path = UPath("memory://dagster-storage-options/base", some_option="value")
+
+    # `UPath._kwargs` warns on universal-pathlib 0.2.x and no longer exists on >=0.3.0
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        storage_options = DummyIOManager(base_path=base_path).storage_options
+
+    assert storage_options == {"some_option": "value"}
+
+    storage_options["some_option"] = "changed"
+    assert DummyIOManager(base_path=base_path).storage_options == {"some_option": "value"}
