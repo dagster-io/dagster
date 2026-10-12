@@ -430,3 +430,48 @@ def test_only_roots_count_for_requests() -> None:
     instance.report_runless_asset_event(dg.AssetMaterialization("root_b"))
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
+
+
+# ---------------------------------------------------------------------------
+# prefetch
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("graph_from_defs", [_local_graph, _remote_graph])
+def test_job_root_asset_records_are_prefetched(graph_from_defs) -> None:
+    # A job condition reads the records of the job's root assets and their parents, so those are
+    # batch-loaded up front like they are for asset keys, not fetched one at a time.
+    @dg.asset
+    def upstream() -> None: ...
+
+    @dg.asset(deps=[upstream])
+    def root() -> None: ...
+
+    @dg.asset(deps=[root])
+    def downstream() -> None: ...
+
+    @dg.asset
+    def unrelated() -> None: ...
+
+    job = dg.define_asset_job(
+        "my_job",
+        selection=[root, downstream],
+        automation_condition=dg.AutomationCondition.any_job_root_assets_match(
+            dg.AutomationCondition.missing()
+        ),
+    )
+    defs = dg.Definitions(assets=[upstream, root, downstream, unrelated], jobs=[job])
+
+    with dg.instance_for_test() as instance:
+        evaluator = AutomationConditionEvaluator(
+            entity_keys={AssetJobKey("my_job"), AssetJobKey("unknown_job")},
+            instance=instance,
+            asset_graph=graph_from_defs(defs),
+            cursor=AssetDaemonCursor.empty(),
+            emit_backfills=False,
+            evaluation_id=0,
+        )
+        assert set(evaluator.asset_records_to_prefetch) == {
+            dg.AssetKey("upstream"),
+            dg.AssetKey("root"),
+        }
