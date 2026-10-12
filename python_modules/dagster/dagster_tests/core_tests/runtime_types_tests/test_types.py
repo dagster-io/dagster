@@ -754,9 +754,15 @@ def test_generic_annotation_display_name_renders_nested_parameters():
     )
 
 
-def test_unsupported_typing_constructs_still_raise():
-    # On Python 3.10 `type[X]` is an instance of `type` and resolves as a plain class.
-    for annotation in (typing.Callable[[int], str], typing.Type[GenericContainer]):  # noqa: UP006
+def test_stdlib_generics_still_raise():
+    # On Python 3.10 `type[X]` and `deque[X]` are instances of `type` and resolve as plain classes.
+    annotations = (
+        typing.Callable[[int], str],
+        typing.Type[GenericContainer],  # noqa: UP006
+        typing.Deque[int],  # noqa: UP006
+        typing.DefaultDict[str, int],  # noqa: UP006
+    )
+    for annotation in annotations:
         with pytest.raises(dg.DagsterInvalidDefinitionError, match="Invalid type"):
             resolve_dagster_type(annotation)
 

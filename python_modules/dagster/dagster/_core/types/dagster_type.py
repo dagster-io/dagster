@@ -1,3 +1,4 @@
+import sys
 import types
 import typing as t
 from abc import abstractmethod
@@ -927,11 +928,12 @@ class UncheckedGenericDagsterType(DagsterType):
 
 
 def _is_unchecked_generic_origin(origin: object) -> bool:
-    # Excludes the stdlib typing machinery so that `Callable[..., X]` and `type[X]` keep raising.
-    return isinstance(origin, type) and origin.__module__ not in (
-        "builtins",
-        "typing",
-        "collections.abc",
+    # Standard library generics such as `Callable[..., X]` and `deque[X]` keep raising.
+    module = getattr(origin, "__module__", None)
+    return (
+        isinstance(origin, type)
+        and isinstance(module, str)
+        and module.partition(".")[0] not in sys.stdlib_module_names
     )
 
 
