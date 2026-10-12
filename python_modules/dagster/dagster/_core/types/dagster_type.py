@@ -874,7 +874,7 @@ class TypeHintInferredDagsterType(DagsterType):
         return self.python_type.__name__
 
 
-_GENERIC_FALLBACK_CACHE: t.Dict[object, DagsterType] = {}
+_GENERIC_FALLBACK_CACHE: dict[object, DagsterType] = {}
 
 
 def _short_type_name(annotation_arg: object) -> str:
