@@ -912,9 +912,7 @@ class UncheckedGenericDagsterType(DagsterType):
         super().__init__(
             key=f"_UncheckedGeneric[{rendered}]",
             description=(
-                f"{note} To validate values of `{rendered}`, set `dagster_type` explicitly, or map"
-                f" the unparameterized `{origin.__name__}` to a DagsterType with"
-                " `make_python_type_usable_as_dagster_type`."
+                f"{note} To validate values of `{rendered}`, set `dagster_type` explicitly."
             ),
             metadata={"unchecked_type_parameters": MetadataValue.text(rendered)},
             type_check_fn=_type_check,
@@ -938,14 +936,6 @@ def _is_unchecked_generic_origin(origin: object) -> bool:
 
 
 def _resolve_unchecked_generic(annotation: object, origin: type) -> DagsterType:
-    # An explicit mapping for the origin wins. Auto-registered isinstance checks are skipped, since
-    # annotation-only generics never pass them. Read only, so the origin's slot stays free.
-    registered = _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(origin)
-    if registered is not None and not isinstance(
-        registered, TypeHintInferredDagsterType
-    ):
-        return registered
-
     if annotation not in _GENERIC_FALLBACK_CACHE:
         _GENERIC_FALLBACK_CACHE[annotation] = UncheckedGenericDagsterType(
             annotation, origin

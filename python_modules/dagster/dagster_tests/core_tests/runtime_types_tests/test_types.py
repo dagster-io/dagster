@@ -773,12 +773,14 @@ def test_generic_annotation_does_not_claim_origin_in_registry():
     class OtherContainer(Generic[U]):
         pass
 
-    resolve_dagster_type(OtherContainer[Schema])
+    unchecked = resolve_dagster_type(OtherContainer[Schema])
 
     mapped = dg.DagsterType(type_check_fn=lambda _, value: value == "ok", name="Mapped")
+    # Raises if resolving OtherContainer[Schema] registered the origin.
     dg.make_python_type_usable_as_dagster_type(OtherContainer, mapped)
 
-    assert resolve_dagster_type(OtherContainer[Schema]) is mapped
+    assert resolve_dagster_type(OtherContainer) is mapped
+    assert resolve_dagster_type(OtherContainer[Schema]) is unchecked
 
 
 def test_generic_annotation_ignores_auto_registered_origin():
