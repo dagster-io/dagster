@@ -528,3 +528,41 @@ def test_select_unique_ids_includes_isolated_fusion_models(
     )
 
     assert selected == expected_unique_ids
+
+
+def _hook_node(unique_id: str, name: str) -> dict[str, Any]:
+    # dbt-fusion writes `on-run-start`/`on-run-end` hooks as `operation` nodes with no `config` key
+    return {
+        "unique_id": unique_id,
+        "resource_type": "operation",
+        "name": name,
+        "package_name": "test",
+        "fqn": ["test", "hooks", name],
+        "tags": [],
+        "depends_on": {"nodes": [], "macros": []},
+    }
+
+
+def test_select_unique_ids_with_fusion_hook_nodes_without_config() -> None:
+    """dbt-fusion hook `operation` nodes have no `config`; selection must not fail on them and
+    must match what dbt-core's manifest (which writes `config` for them) selects.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/34295.
+    """
+    hook_id = "operation.test.test-on-run-start-0"
+    fusion_manifest = copy.deepcopy(_FUSION_MANIFEST)
+    fusion_manifest["nodes"][hook_id] = _hook_node(hook_id, "test-on-run-start-0")
+
+    core_manifest = copy.deepcopy(fusion_manifest)
+    core_manifest["nodes"][hook_id]["config"] = {"enabled": True}
+
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*", exclude="", selector="", manifest_json=fusion_manifest
+    )
+
+    assert hook_id in selected
+    assert selected == _select_unique_ids_from_manifest(
+        select="fqn:*", exclude="", selector="", manifest_json=core_manifest
+    )
+    # the caller's manifest must not be mutated by the defaulting
+    assert "config" not in fusion_manifest["nodes"][hook_id]
