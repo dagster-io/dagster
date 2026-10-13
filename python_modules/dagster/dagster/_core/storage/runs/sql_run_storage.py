@@ -45,6 +45,7 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.runs.base import (
     BackfillWorkerLaunch,
+    ChildWorkerTarget,
     K8sWorkerTarget,
     RunStorage,
     UnknownWorkerTarget,
@@ -84,6 +85,7 @@ from dagster._core.storage.tags import (
     AUTO_RETRY_INTENT_TAG,
     BACKFILL_ID_TAG,
     BACKFILL_STOP_PROTOCOL_TAG,
+    BACKFILL_STOP_PROTOCOL_VERSION,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -217,23 +219,29 @@ class SqlRunStorage(RunStorage):
                 }
                 protocol_registration = (
                     self.has_instance and self._instance.backfill_stop_protocol_enabled
-                ) or tags.get(BACKFILL_STOP_PROTOCOL_TAG) == "v1"
+                ) or tags.get(BACKFILL_STOP_PROTOCOL_TAG) == BACKFILL_STOP_PROTOCOL_VERSION
                 if backfill is None and protocol_registration and not historical_terminal:
                     raise DagsterBackfillAdmissionClosed(
                         f"Backfill {backfill_id} is not present in storage"
                     )
                 if self._uses_backfill_stop_protocol(backfill):
                     self._require_backfill_stop_protocol(conn)
-                    if tags.get(BACKFILL_STOP_PROTOCOL_TAG) not in {None, "v1"}:
+                    if tags.get(BACKFILL_STOP_PROTOCOL_TAG) not in {
+                        None,
+                        BACKFILL_STOP_PROTOCOL_VERSION,
+                    }:
                         raise DagsterInvariantViolationError(
                             "Run protocol version must match its owning backfill"
                         )
                     registered_run = deserialize_value(col_values["run_body"], DagsterRun)
                     registered_run = registered_run.with_tags(
-                        {**registered_run.tags, BACKFILL_STOP_PROTOCOL_TAG: "v1"}
+                        {
+                            **registered_run.tags,
+                            BACKFILL_STOP_PROTOCOL_TAG: BACKFILL_STOP_PROTOCOL_VERSION,
+                        }
                     )
                     col_values["run_body"] = serialize_value(registered_run)
-                    tags = {**tags, BACKFILL_STOP_PROTOCOL_TAG: "v1"}
+                    tags = {**tags, BACKFILL_STOP_PROTOCOL_TAG: BACKFILL_STOP_PROTOCOL_VERSION}
                     intent = tags.get(AUTO_RETRY_INTENT_TAG)
                     if intent is not None:
                         candidate = registered_run
@@ -1089,6 +1097,11 @@ class SqlRunStorage(RunStorage):
         inspector = db.inspect(conn)
         return (
             BackfillWorkerLaunchesTable.name in inspector.get_table_names()
+            and any(
+                constraint["name"] == "ck_backfill_worker_launch_kind"
+                and "'CHILD'" in constraint["sqltext"]
+                for constraint in inspector.get_check_constraints(BackfillWorkerLaunchesTable.name)
+            )
             and {"backfill_id", "auto_retry_intent"}.issubset(
                 {column["name"] for column in inspector.get_columns(RunsTable.name)}
             )
@@ -1478,6 +1491,7 @@ class SqlRunStorage(RunStorage):
         check.str_param(run_id, "run_id")
         check.str_param(worker_id, "worker_id")
         check.inst_param(kind, "kind", WorkerLaunchKind)
+        check.invariant(kind != WorkerLaunchKind.CHILD, "Children require controller admission")
         check.inst_param(target, "target", (UnknownWorkerTarget, K8sWorkerTarget))
         if not self._run_uses_backfill_stop_protocol(run_id):
             return True
@@ -1554,6 +1568,78 @@ class SqlRunStorage(RunStorage):
                 .values(state=WorkerLaunchState.ACKNOWLEDGED.value)
             )
 
+    def admit_backfill_worker_child(
+        self, run_id: str, worker_id: str, target: ChildWorkerTarget
+    ) -> bool:
+        check.str_param(run_id, "run_id")
+        check.str_param(worker_id, "worker_id")
+        check.inst_param(target, "target", ChildWorkerTarget)
+        check.invariant(target.parent_worker_id != worker_id, "A worker cannot admit itself")
+        if not self._run_uses_backfill_stop_protocol(run_id):
+            return False
+        self._require_backfill_stop_protocol()
+        with self._backfill_transaction() as conn:
+            runs = db_fetch_mappings(
+                conn,
+                db_select([RunsTable.c.backfill_id]).where(RunsTable.c.run_id == run_id),
+            )
+            if not runs or not runs[0]["backfill_id"]:
+                return False
+            backfill = self._lock_backfill(conn, runs[0]["backfill_id"])
+            existing = db_fetch_mappings(
+                conn,
+                db_select(
+                    [
+                        BackfillWorkerLaunchesTable.c.kind,
+                        BackfillWorkerLaunchesTable.c.target,
+                        BackfillWorkerLaunchesTable.c.state,
+                    ]
+                )
+                .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                .where(BackfillWorkerLaunchesTable.c.worker_id == worker_id),
+            )
+            if existing:
+                row = existing[0]
+                # The receipt continues one admission request, including after closure.
+                return (
+                    row["kind"] == WorkerLaunchKind.CHILD.value
+                    and row["state"] == WorkerLaunchState.PENDING.value
+                    and deserialize_value(row["target"], ChildWorkerTarget) == target
+                )
+            parents = db_fetch_mappings(
+                conn,
+                db_select([BackfillWorkerLaunchesTable.c.kind, BackfillWorkerLaunchesTable.c.state])
+                .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                .where(BackfillWorkerLaunchesTable.c.worker_id == target.parent_worker_id),
+            )
+            run_rows = db_fetch_mappings(
+                conn,
+                db_select([RunsTable.c.status])
+                .where(RunsTable.c.run_id == run_id)
+                .with_for_update(),
+            )
+            if (
+                backfill.status != BulkActionStatus.REQUESTED
+                or not run_rows
+                or run_rows[0]["status"] in {status.value for status in FINISHED_STATUSES}
+                or not parents
+                or parents[0]["kind"]
+                not in (WorkerLaunchKind.RUN.value, WorkerLaunchKind.STEP.value)
+                or parents[0]["state"] == WorkerLaunchState.RESOLVED.value
+            ):
+                return False
+            conn.execute(
+                BackfillWorkerLaunchesTable.insert().values(
+                    run_id=run_id,
+                    worker_id=worker_id,
+                    kind=WorkerLaunchKind.CHILD.value,
+                    target=serialize_value(target),
+                    backfill_id=backfill.backfill_id,
+                    state=WorkerLaunchState.PENDING.value,
+                )
+            )
+            return True
+
     def get_backfill_worker_launches(self, backfill_id: str) -> Sequence[BackfillWorkerLaunch]:
         check.str_param(backfill_id, "backfill_id")
         backfill = self.get_backfill(backfill_id)
@@ -1564,7 +1650,7 @@ class SqlRunStorage(RunStorage):
         if not backfill.uses_stop_protocol:
             return []
         self._require_backfill_stop_protocol()
-        rows = self.fetchall(
+        query = (
             db_select(
                 [
                     BackfillWorkerLaunchesTable.c.run_id,
@@ -1575,15 +1661,19 @@ class SqlRunStorage(RunStorage):
                 ]
             )
             .where(BackfillWorkerLaunchesTable.c.backfill_id == backfill_id)
-            .where(BackfillWorkerLaunchesTable.c.state != WorkerLaunchState.RESOLVED.value)
             .order_by(BackfillWorkerLaunchesTable.c.run_id, BackfillWorkerLaunchesTable.c.worker_id)
         )
+        query = query.where(BackfillWorkerLaunchesTable.c.state != WorkerLaunchState.RESOLVED.value)
+        rows = self.fetchall(query)
         return [
             BackfillWorkerLaunch(
                 run_id=row["run_id"],
                 worker_id=row["worker_id"],
                 kind=WorkerLaunchKind(row["kind"]),
-                target=deserialize_value(row["target"], (UnknownWorkerTarget, K8sWorkerTarget)),
+                target=check.inst(
+                    deserialize_value(row["target"]),
+                    (UnknownWorkerTarget, K8sWorkerTarget, ChildWorkerTarget),
+                ),
                 state=WorkerLaunchState(row["state"]),
             )
             for row in rows

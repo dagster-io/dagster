@@ -144,7 +144,7 @@ BackfillWorkerLaunchesTable = db.Table(
     RunStorageSqlMetadata,
     db.Column("run_id", db.String(255), primary_key=True),
     db.Column("worker_id", db.String(255), primary_key=True),
-    db.Column("kind", db.String(4), nullable=False),
+    db.Column("kind", db.String(16), nullable=False),
     db.Column("target", db.Text, nullable=False),
     db.Column("backfill_id", db.String(255), nullable=False),
     db.Column("state", db.String(16), nullable=False),
@@ -152,7 +152,7 @@ BackfillWorkerLaunchesTable = db.Table(
         "state IN ('PENDING', 'ACKNOWLEDGED', 'RESOLVED')",
         name="ck_backfill_worker_launch_state",
     ),
-    db.CheckConstraint("kind IN ('RUN', 'STEP')", name="ck_backfill_worker_launch_kind"),
+    db.CheckConstraint("kind IN ('RUN', 'STEP', 'CHILD')", name="ck_backfill_worker_launch_kind"),
 )
 
 db.Index("idx_backfill_worker_launches_backfill_id", BackfillWorkerLaunchesTable.c.backfill_id)

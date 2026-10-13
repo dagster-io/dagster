@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.storage.runs.base import (
         BackfillWorkerLaunch,
+        ChildWorkerTarget,
         WorkerLaunchKind,
         WorkerLaunchTarget,
     )
@@ -337,12 +338,18 @@ class SchedulingMethods:
     def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         """Add backfill - moved from DagsterInstance.add_backfill()."""
         from dagster._core.errors import DagsterInvariantViolationError
-        from dagster._core.storage.tags import BACKFILL_STOP_PROTOCOL_TAG
+        from dagster._core.storage.tags import (
+            BACKFILL_STOP_PROTOCOL_TAG,
+            BACKFILL_STOP_PROTOCOL_VERSION,
+        )
 
         uses_stop_protocol = partition_backfill.uses_stop_protocol
         if self.backfill_stop_protocol_enabled:
             partition_backfill = partition_backfill._replace(
-                tags={**partition_backfill.tags, BACKFILL_STOP_PROTOCOL_TAG: "v1"}
+                tags={
+                    **partition_backfill.tags,
+                    BACKFILL_STOP_PROTOCOL_TAG: BACKFILL_STOP_PROTOCOL_VERSION,
+                }
             )
             uses_stop_protocol = True
         if uses_stop_protocol and not self.supports_backfill_stop_protocol:
@@ -403,6 +410,11 @@ class SchedulingMethods:
 
     def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
         self._run_storage_impl.acknowledge_backfill_worker_launch(run_id, worker_id)
+
+    def admit_backfill_worker_child(
+        self, run_id: str, worker_id: str, target: "ChildWorkerTarget"
+    ) -> bool:
+        return self._run_storage_impl.admit_backfill_worker_child(run_id, worker_id, target)
 
     def get_backfill_worker_launches(self, backfill_id: str) -> Sequence["BackfillWorkerLaunch"]:
         return self._run_storage_impl.get_backfill_worker_launches(backfill_id)

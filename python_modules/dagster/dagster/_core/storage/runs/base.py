@@ -45,6 +45,7 @@ class WorkerLaunchState(Enum):
 class WorkerLaunchKind(Enum):
     RUN = "RUN"
     STEP = "STEP"
+    CHILD = "CHILD"
 
 
 @whitelist_for_serdes
@@ -60,7 +61,24 @@ class K8sWorkerTarget:
     namespace: str
 
 
-WorkerLaunchTarget = UnknownWorkerTarget | K8sWorkerTarget
+@whitelist_for_serdes
+@record
+class K8sPodWorkerTarget:
+    pod_name: str
+    namespace: str
+    admission_id: str
+    job_name: str
+    job_uid: str
+
+
+@whitelist_for_serdes
+@record
+class ChildWorkerTarget:
+    parent_worker_id: str
+    resource: UnknownWorkerTarget | K8sPodWorkerTarget
+
+
+WorkerLaunchTarget = UnknownWorkerTarget | K8sWorkerTarget | ChildWorkerTarget
 
 
 @record
@@ -454,6 +472,12 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
     def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
         """Record a successful launch RPC return; failures remain pending."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
+
+    def admit_backfill_worker_child(
+        self, run_id: str, worker_id: str, target: ChildWorkerTarget
+    ) -> bool:
+        """Admit or replay one controller request under its unresolved parent and owner gate."""
         raise NotImplementedError("Run storage does not support atomic backfill stopping")
 
     def get_backfill_worker_launches(self, backfill_id: str) -> Sequence[BackfillWorkerLaunch]:

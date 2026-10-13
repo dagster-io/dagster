@@ -28,6 +28,7 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._core.instance.config import ConcurrencyConfig
 from dagster._core.launcher.base import (
+    BackfillWorkerCreationStatus,
     BackfillWorkerExitStatus,
     CheckRunHealthResult,
     LaunchRunContext,
@@ -41,7 +42,13 @@ from dagster._core.remote_origin import (
 )
 from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.runs.base import K8sWorkerTarget
+from dagster._core.storage.runs.base import (
+    ChildWorkerTarget,
+    K8sWorkerTarget,
+    UnknownWorkerTarget,
+    WorkerLaunchKind,
+    WorkerLaunchState,
+)
 from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     BACKFILL_STOP_PROTOCOL_TAG,
@@ -97,7 +104,7 @@ def instance():
                 backfill_id=BACKFILL_ID,
                 status=BulkActionStatus.REQUESTED,
                 from_failure=False,
-                tags={BACKFILL_STOP_PROTOCOL_TAG: "v1"},
+                tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"},
                 backfill_timestamp=1.0,
             )
         )
@@ -114,6 +121,49 @@ def owned_run(instance, status=DagsterRunStatus.NOT_STARTED):
             "job",
         ),
     )
+
+
+def test_child_persistence_and_cleanup_recover_before_finalization(instance):
+    run = owned_run(instance)
+    instance.launch_run(run.run_id, mock.Mock())
+    target = ChildWorkerTarget(
+        parent_worker_id="run", resource=UnknownWorkerTarget(handler_name="retained-child")
+    )
+    assert instance.admit_backfill_worker_child(run.run_id, "child", target)
+    instance.request_backfill_stop(BACKFILL_ID)
+    instance.report_run_canceled(run)
+    instance.run_launcher.exit_status = BackfillWorkerExitStatus.EXITED
+    # Absence of an unacknowledged child cannot turn an in-flight creation into exit proof.
+    assert not cancel_backfill_runs_and_cancellation_complete(instance, BACKFILL_ID, LOGGER)
+    claims = instance.get_backfill_worker_launches(BACKFILL_ID)
+    assert len(claims) == 1 and claims[0].state == WorkerLaunchState.PENDING
+    with (
+        mock.patch.object(
+            instance.run_launcher,
+            "get_backfill_worker_creation_status",
+            return_value=BackfillWorkerCreationStatus.CREATED,
+        ),
+        mock.patch.object(
+            instance.run_launcher,
+            "cleanup_backfill_worker_launch",
+            side_effect=RuntimeError("Cleanup outcome unknown"),
+        ),
+    ):
+        assert not cancel_backfill_runs_and_cancellation_complete(instance, BACKFILL_ID, LOGGER)
+    claims = instance.get_backfill_worker_launches(BACKFILL_ID)
+    assert len(claims) == 1 and claims[0].state == WorkerLaunchState.ACKNOWLEDGED
+    assert claims[0].kind == WorkerLaunchKind.CHILD
+    assert cancel_backfill_runs_and_cancellation_complete(instance, BACKFILL_ID, LOGGER)
+    assert instance.get_backfill_worker_launches(BACKFILL_ID) == []
+    assert not instance.admit_backfill_worker_child(run.run_id, "child", target)
+
+
+def test_unsupported_run_protocol_fails_closed_even_without_owner(instance):
+    from dagster._core.execution.backfill import run_uses_stop_protocol
+
+    run = DagsterRun(job_name="job", tags={BACKFILL_STOP_PROTOCOL_TAG: "unsupported"})
+    with pytest.raises(DagsterInvariantViolationError, match="unsupported stop protocol"):
+        run_uses_stop_protocol(instance, run)
 
 
 @pytest.mark.parametrize("status", [DagsterRunStatus.NOT_STARTED, DagsterRunStatus.QUEUED])
@@ -348,7 +398,7 @@ def test_base_launcher_worker_evidence_is_unknown():
 
 
 def test_unknown_stop_protocol_version_cannot_downgrade_to_legacy(instance):
-    backfill = instance.get_backfill(BACKFILL_ID)._replace(tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"})
+    backfill = instance.get_backfill(BACKFILL_ID)._replace(tags={BACKFILL_STOP_PROTOCOL_TAG: "v3"})
     with pytest.raises(DagsterInvariantViolationError, match="unsupported stop protocol version"):
         _ = backfill.uses_stop_protocol
 
@@ -378,7 +428,7 @@ def test_creation_policy_requires_capable_backend_only_for_protocol_backfills(
         backfill_id="unsupported-backend",
         status=BulkActionStatus.REQUESTED,
         from_failure=False,
-        tags={BACKFILL_STOP_PROTOCOL_TAG: "v1"} if explicit_marker else {},
+        tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"} if explicit_marker else {},
         backfill_timestamp=1.0,
     )
     with (
@@ -405,7 +455,7 @@ def test_enabled_creation_cannot_replace_unknown_protocol_version(instance):
         backfill_id="unknown-version",
         status=BulkActionStatus.REQUESTED,
         from_failure=False,
-        tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"},
+        tags={BACKFILL_STOP_PROTOCOL_TAG: "v3"},
         backfill_timestamp=1.0,
     )
     with (
@@ -819,7 +869,7 @@ def test_manual_retry_after_backfill_close_detaches_protocol_and_preserves_ances
             instance.launch_run(parent.run_id, workspace)
             assert not execute_run(InMemoryJob(native_retry_job), parent, instance).success
             parent = instance.get_run_by_id(parent.run_id)
-            assert parent.tags[BACKFILL_STOP_PROTOCOL_TAG] == "v1"
+            assert parent.tags[BACKFILL_STOP_PROTOCOL_TAG] == "v2"
             instance.request_backfill_stop(BACKFILL_ID)
             launcher.exit_status = BackfillWorkerExitStatus.EXITED
             assert cancel_backfill_runs_and_cancellation_complete(instance, BACKFILL_ID, LOGGER)

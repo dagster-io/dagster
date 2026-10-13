@@ -47,7 +47,7 @@ def test_ambiguous_create_cannot_acknowledge_or_complete_backfill():
             backfill_id="backfill",
             status=BulkActionStatus.REQUESTED,
             from_failure=False,
-            tags={BACKFILL_STOP_PROTOCOL_TAG: "v1"},
+            tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"},
             backfill_timestamp=1.0,
         )
         instance.add_backfill(backfill)

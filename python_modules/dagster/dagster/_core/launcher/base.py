@@ -45,6 +45,11 @@ class WorkerStatus(Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class BackfillWorkerCreationStatus(Enum):
+    CREATED = "CREATED"
+    UNKNOWN = "UNKNOWN"
+
+
 class BackfillWorkerExitStatus(Enum):
     EXITED = "EXITED"
     RUNNING = "RUNNING"
@@ -135,6 +140,17 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         does not establish this proof. Unsupported targets keep cancellation incomplete.
         """
         return BackfillWorkerExitStatus.UNKNOWN
+
+    def get_backfill_worker_creation_status(
+        self, run: DagsterRun, launch: "BackfillWorkerLaunch"
+    ) -> BackfillWorkerCreationStatus:
+        """Observe persistence of a controller-created worker with a retained identity."""
+        return BackfillWorkerCreationStatus.UNKNOWN
+
+    def cleanup_backfill_worker_launch(
+        self, run: DagsterRun, launch: "BackfillWorkerLaunch"
+    ) -> None:
+        """Release retained adapter resources after definitive worker exit."""
 
     @property
     def supports_resume_run(self) -> bool:

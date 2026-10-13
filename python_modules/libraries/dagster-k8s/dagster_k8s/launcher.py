@@ -3,20 +3,50 @@ import sys
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from dagster import _check as check
+from dagster import (
+    Field,
+    StringSource,
+    _check as check,
+)
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
-from dagster._core.launcher.base import BackfillWorkerExitStatus, CheckRunHealthResult, WorkerStatus
+from dagster._core.launcher.base import (
+    BackfillWorkerCreationStatus,
+    BackfillWorkerExitStatus,
+    CheckRunHealthResult,
+    WorkerStatus,
+)
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.runs.base import BackfillWorkerLaunch, K8sWorkerTarget
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.storage.runs.base import (
+    BackfillWorkerLaunch,
+    ChildWorkerTarget,
+    K8sPodWorkerTarget,
+    K8sWorkerTarget,
+)
+from dagster._core.storage.tags import BACKFILL_STOP_PROTOCOL_VERSION, DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
-from kubernetes.client import V1DeleteOptions, V1ObjectMeta, V1Preconditions
+from kubernetes.client import (
+    AdmissionregistrationV1Api,
+    V1DeleteOptions,
+    V1ObjectMeta,
+    V1Preconditions,
+)
 from kubernetes.client.rest import ApiException
 
+from dagster_k8s.backfill_admission import (
+    ADMISSION_ID_ANNOTATION,
+    ADMISSION_ROUTE_LABEL,
+    ADMISSION_WEBHOOK_NAME,
+    DISPATCH_ID_ANNOTATION,
+    POD_FINALIZER,
+    PROTOCOL_LABEL,
+    require_backfill_worker_policy,
+    stamp_backfill_job,
+)
+from dagster_k8s.backfill_worker import PodSnapshot, WebhookConfiguration
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
@@ -73,8 +103,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         run_k8s_config=None,
         only_allow_user_defined_k8s_config_fields=None,
         only_allow_user_defined_env_vars=None,
+        backfill_worker_admission_webhook_name=ADMISSION_WEBHOOK_NAME,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self.backfill_worker_admission_webhook_name = check.str_param(
+            backfill_worker_admission_webhook_name, "backfill_worker_admission_webhook_name"
+        )
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
 
         self.load_incluster_config = load_incluster_config
@@ -199,7 +233,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
         """
-        return DagsterK8sJobConfig.config_type_run_launcher()
+        return {
+            **DagsterK8sJobConfig.config_type_run_launcher(),
+            "backfill_worker_admission_webhook_name": Field(
+                StringSource, default_value=ADMISSION_WEBHOOK_NAME, is_required=False
+            ),
+        }
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
@@ -304,9 +343,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         from dagster._core.execution.backfill import run_uses_stop_protocol
 
         if run_uses_stop_protocol(self._instance, run):
-            for metadata in (job.metadata, job.spec.template.metadata):
-                metadata.labels["dagster/run-id"] = run.run_id
-                metadata.labels["dagster/worker-job"] = job_name
+            stamp_backfill_job(job, run.run_id, "run", self.backfill_worker_admission_webhook_name)
 
         # Set docker/image tag here, as it can also be provided by `user_defined_k8s_config`.
         self._instance.add_run_tags(
@@ -341,13 +378,39 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._launch_k8s_job_with_args(job_name, args, run)
 
     def get_backfill_worker_target(self, run: DagsterRun) -> K8sWorkerTarget:
+        self.require_backfill_worker_admission()
+        context = self.get_container_context_for_run(run)
+        require_backfill_worker_policy(
+            context.run_k8s_config.pod_spec_config, context.run_k8s_config.container_config
+        )
         return K8sWorkerTarget(
             job_name=get_job_name_from_run_id(run.run_id),
-            namespace=check.not_none(self.get_container_context_for_run(run).namespace),
+            namespace=check.not_none(context.namespace),
+        )
+
+    def require_backfill_worker_admission(self) -> None:
+        api = AdmissionregistrationV1Api(api_client=self._api_client.batch_api.api_client)
+        configuration = api.read_mutating_webhook_configuration(
+            self.backfill_worker_admission_webhook_name
+        )
+        data = api.api_client.sanitize_for_serialization(configuration)
+        WebhookConfiguration.model_validate(data).require_binding(
+            self.backfill_worker_admission_webhook_name
         )
 
     def request_backfill_worker_stop(self, run: DagsterRun, launch: BackfillWorkerLaunch) -> None:
         target = launch.target
+        if isinstance(target, ChildWorkerTarget) and isinstance(
+            target.resource, K8sPodWorkerTarget
+        ):
+            pod = self._read_backfill_pod(launch)
+            if pod is not None:
+                self._api_client.core_api.delete_namespaced_pod(
+                    name=pod.metadata.name,
+                    namespace=pod.metadata.namespace,
+                    body=V1DeleteOptions(preconditions=V1Preconditions(uid=pod.metadata.uid)),
+                )
+            return
         if not isinstance(target, K8sWorkerTarget):
             return
         try:
@@ -410,6 +473,27 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self, run: DagsterRun, launch: BackfillWorkerLaunch
     ) -> BackfillWorkerExitStatus:
         target = launch.target
+        if isinstance(target, ChildWorkerTarget) and isinstance(
+            target.resource, K8sPodWorkerTarget
+        ):
+            try:
+                pod = self._read_backfill_pod(launch)
+                if pod is None:
+                    return (
+                        BackfillWorkerExitStatus.EXITED
+                        if launch.acknowledged
+                        else BackfillWorkerExitStatus.UNKNOWN
+                    )
+                # BindingREST checks deletionTimestamp in the same storage update as nodeName.
+                # A deleting, unassigned Pod therefore cannot start executing later.
+                # https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/registry/core/pod/storage/storage.go
+                if not pod.spec.node_name and pod.metadata.deletion_timestamp is not None:
+                    return BackfillWorkerExitStatus.EXITED
+                if pod.status.phase in ("Succeeded", "Failed") and pod.all_containers_terminated:
+                    return BackfillWorkerExitStatus.EXITED
+                return BackfillWorkerExitStatus.RUNNING
+            except Exception:
+                return BackfillWorkerExitStatus.UNKNOWN
         if not isinstance(target, K8sWorkerTarget):
             return BackfillWorkerExitStatus.UNKNOWN
         try:
@@ -473,6 +557,80 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return BackfillWorkerExitStatus.EXITED
         except Exception:
             return BackfillWorkerExitStatus.UNKNOWN
+
+    def _read_backfill_pod(self, launch: BackfillWorkerLaunch) -> PodSnapshot | None:
+        target = check.inst(launch.target, ChildWorkerTarget)
+        resource = check.inst(target.resource, K8sPodWorkerTarget)
+        api = self._api_client.core_api
+        try:
+            result = api.read_namespaced_pod(resource.pod_name, resource.namespace)
+        except ApiException as error:
+            if error.status == 404:
+                return None
+            raise
+        pod = PodSnapshot.model_validate(api.api_client.sanitize_for_serialization(result))
+        metadata = pod.metadata
+        check.invariant(
+            metadata.name == resource.pod_name
+            and metadata.namespace == resource.namespace
+            and metadata.labels.get("dagster/run-id") == launch.run_id
+            and metadata.labels.get("dagster/worker-job") == resource.job_name
+            and metadata.labels.get(ADMISSION_ROUTE_LABEL)
+            == self.backfill_worker_admission_webhook_name
+            and metadata.labels.get(PROTOCOL_LABEL) == BACKFILL_STOP_PROTOCOL_VERSION
+            and metadata.annotations.get(ADMISSION_ID_ANNOTATION) == resource.admission_id
+            and metadata.annotations.get(DISPATCH_ID_ANNOTATION) == target.parent_worker_id
+            and any(
+                owner.kind == "Job"
+                and owner.controller
+                and owner.name == resource.job_name
+                and owner.uid == resource.job_uid
+                for owner in metadata.owners
+            ),
+            "Kubernetes Pod identity does not match the durable admission target.",
+        )
+        return pod
+
+    def get_backfill_worker_creation_status(
+        self, run: DagsterRun, launch: BackfillWorkerLaunch
+    ) -> BackfillWorkerCreationStatus:
+        if not isinstance(launch.target, ChildWorkerTarget) or not isinstance(
+            launch.target.resource, K8sPodWorkerTarget
+        ):
+            return BackfillWorkerCreationStatus.UNKNOWN
+        try:
+            pod = self._read_backfill_pod(launch)
+            if pod is not None and POD_FINALIZER in pod.metadata.finalizers:
+                return BackfillWorkerCreationStatus.CREATED
+        except Exception:
+            pass
+        return BackfillWorkerCreationStatus.UNKNOWN
+
+    def cleanup_backfill_worker_launch(self, run: DagsterRun, launch: BackfillWorkerLaunch) -> None:
+        if not isinstance(launch.target, ChildWorkerTarget) or not isinstance(
+            launch.target.resource, K8sPodWorkerTarget
+        ):
+            return
+        pod = self._read_backfill_pod(launch)
+        if pod is None or POD_FINALIZER not in pod.metadata.finalizers:
+            return
+        self._api_client.core_api.patch_namespaced_pod(
+            name=pod.metadata.name,
+            namespace=pod.metadata.namespace,
+            body=[
+                {"op": "test", "path": "/metadata/uid", "value": pod.metadata.uid},
+                {
+                    "op": "test",
+                    "path": "/metadata/resourceVersion",
+                    "value": pod.metadata.resource_version,
+                },
+                {
+                    "op": "replace",
+                    "path": "/metadata/finalizers",
+                    "value": [item for item in pod.metadata.finalizers if item != POD_FINALIZER],
+                },
+            ],
+        )
 
     @property
     def supports_resume_run(self):

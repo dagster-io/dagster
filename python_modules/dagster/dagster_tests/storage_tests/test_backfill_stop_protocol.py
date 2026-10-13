@@ -12,6 +12,8 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster._core.storage.runs.base import (
+    ChildWorkerTarget,
+    K8sPodWorkerTarget,
     K8sWorkerTarget,
     UnknownWorkerTarget,
     WorkerLaunchKind,
@@ -69,7 +71,7 @@ def add_backfill(storage, status=BulkActionStatus.REQUESTED, protocol=True):
         backfill_id="backfill",
         status=status,
         from_failure=False,
-        tags={BACKFILL_STOP_PROTOCOL_TAG: "v1"} if protocol else {},
+        tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"} if protocol else {},
         backfill_timestamp=1.0,
     )
     storage.add_backfill(backfill)
@@ -127,7 +129,7 @@ def test_protocol_backfill_rejects_empty_owner_identity(storage_pair):
         backfill_id="",
         status=BulkActionStatus.REQUESTED,
         from_failure=False,
-        tags={BACKFILL_STOP_PROTOCOL_TAG: "v1"},
+        tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"},
         backfill_timestamp=1.0,
     )
     with pytest.raises(DagsterInvariantViolationError, match="nonempty owner ID"):
@@ -429,7 +431,7 @@ def test_protocol_marker_cannot_be_removed_or_added_by_progress_updates(storage_
     storage, _ = storage_pair
     backfill = add_backfill(storage)
     storage.update_backfill(backfill._replace(tags={}))
-    assert storage.get_backfill("backfill").tags[BACKFILL_STOP_PROTOCOL_TAG] == "v1"
+    assert storage.get_backfill("backfill").tags[BACKFILL_STOP_PROTOCOL_TAG] == "v2"
     storage.request_backfill_stop("backfill")
     with pytest.raises(DagsterBackfillAdmissionClosed):
         add_run(storage)
@@ -441,7 +443,7 @@ def test_protocol_marker_cannot_be_removed_or_added_by_progress_updates(storage_
         backfill_timestamp=1.0,
     )
     storage.add_backfill(unmarked)
-    storage.update_backfill(unmarked._replace(tags={BACKFILL_STOP_PROTOCOL_TAG: "v1"}))
+    storage.update_backfill(unmarked._replace(tags={BACKFILL_STOP_PROTOCOL_TAG: "v2"}))
     assert BACKFILL_STOP_PROTOCOL_TAG not in storage.get_backfill("unmarked").tags
 
 
@@ -598,7 +600,7 @@ def test_registration_rejects_missing_backfill_owner(storage_pair, owner):
             DagsterRun(
                 job_name="job",
                 run_id="orphan",
-                tags={BACKFILL_ID_TAG: owner, BACKFILL_STOP_PROTOCOL_TAG: "v1"},
+                tags={BACKFILL_ID_TAG: owner, BACKFILL_STOP_PROTOCOL_TAG: "v2"},
             )
         )
     assert storage.get_runs_count() == 0
@@ -686,21 +688,170 @@ def test_registered_owned_run_retains_immutable_protocol_version(storage_pair):
     storage, _ = storage_pair
     add_backfill(storage)
     registered = add_run(storage)
-    assert registered.tags[BACKFILL_STOP_PROTOCOL_TAG] == "v1"
-    assert storage.get_runs()[0].tags[BACKFILL_STOP_PROTOCOL_TAG] == "v1"
+    assert registered.tags[BACKFILL_STOP_PROTOCOL_TAG] == "v2"
+    assert storage.get_runs()[0].tags[BACKFILL_STOP_PROTOCOL_TAG] == "v2"
     assert storage.get_run_tags([BACKFILL_STOP_PROTOCOL_TAG]) == [
-        (BACKFILL_STOP_PROTOCOL_TAG, {"v1"})
+        (BACKFILL_STOP_PROTOCOL_TAG, {"v2"})
     ]
     with pytest.raises(DagsterInvariantViolationError, match="version is immutable"):
         storage.add_run_tags(registered.run_id, {BACKFILL_STOP_PROTOCOL_TAG: ""})
     with pytest.raises(DagsterInvariantViolationError, match="version is immutable"):
-        storage.add_run_tags(registered.run_id, {BACKFILL_STOP_PROTOCOL_TAG: "v2"})
+        storage.add_run_tags(registered.run_id, {BACKFILL_STOP_PROTOCOL_TAG: "v3"})
     # The durable run marker survives removal of the owner, independent of any
     # current instance enablement setting.
     from dagster._core.storage.runs.schema import BulkActionsTable
 
     with storage.connect() as conn:
         conn.execute(BulkActionsTable.delete().where(BulkActionsTable.c.key == "backfill"))
-    assert storage.get_runs()[0].tags[BACKFILL_STOP_PROTOCOL_TAG] == "v1"
+    assert storage.get_runs()[0].tags[BACKFILL_STOP_PROTOCOL_TAG] == "v2"
     with pytest.raises(DagsterBackfillAdmissionClosed, match="not present"):
         claim_run(storage)
+
+
+def child_target(parent="job", admission="admission"):
+    return ChildWorkerTarget(
+        parent_worker_id=parent,
+        resource=K8sPodWorkerTarget(
+            pod_name=f"pod-{admission}",
+            namespace="workers",
+            admission_id=admission,
+            job_name="step-job",
+            job_uid="job-uid",
+        ),
+    )
+
+
+def prepare_child_parent(storage):
+    add_backfill(storage)
+    add_run(storage, status=DagsterRunStatus.STARTED)
+    assert storage.claim_backfill_worker_launch(
+        "run",
+        "job",
+        WorkerLaunchKind.STEP,
+        K8sWorkerTarget(job_name="step-job", namespace="workers"),
+    )
+    storage.acknowledge_backfill_worker_launch("run", "job")
+
+
+def test_child_receipt_survives_closure_and_blocks_finalization_before_persistence(storage_pair):
+    storage, restarted = storage_pair
+    prepare_child_parent(storage)
+    target = child_target()
+    assert storage.admit_backfill_worker_child("run", "pod", target)
+    storage.request_backfill_stop("backfill")
+    storage.resolve_backfill_worker_launch("run", "job")
+    run_event(storage, "run", DagsterEventType.PIPELINE_CANCELED)
+    assert restarted.admit_backfill_worker_child("run", "pod", target)
+    assert not restarted.admit_backfill_worker_child(
+        "run", "late-pod", child_target(admission="late")
+    )
+    assert not finish_stop(storage)
+    storage.resolve_backfill_worker_launch("run", "pod")
+    assert not finish_stop(storage)
+    restarted.acknowledge_backfill_worker_launch("run", "pod")
+    assert not restarted.admit_backfill_worker_child("run", "pod", target)
+    restarted.resolve_backfill_worker_launch("run", "pod")
+    assert finish_stop(storage)
+    assert not restarted.admit_backfill_worker_child("run", "pod", target)
+
+
+def test_resolved_parent_rejects_new_child_while_backfill_remains_open(storage_pair):
+    storage, _ = storage_pair
+    prepare_child_parent(storage)
+    storage.resolve_backfill_worker_launch("run", "job")
+    assert not storage.admit_backfill_worker_child("run", "pod", child_target())
+    assert storage.get_backfill_worker_launches("backfill") == []
+
+
+def test_child_replay_cannot_change_parent_or_resource(storage_pair):
+    storage, _ = storage_pair
+    prepare_child_parent(storage)
+    target = child_target()
+    assert storage.admit_backfill_worker_child("run", "pod", target)
+    assert not storage.admit_backfill_worker_child("run", "pod", child_target(parent="other"))
+    assert not storage.admit_backfill_worker_child("run", "pod", child_target(admission="other"))
+    children = [
+        claim
+        for claim in storage.get_backfill_worker_launches("backfill")
+        if claim.kind == WorkerLaunchKind.CHILD
+    ]
+    assert len(children) == 1 and children[0].target == target
+
+
+def test_missing_parent_rejects_child_without_a_claim(storage_pair):
+    storage, _ = storage_pair
+    add_backfill(storage)
+    add_run(storage)
+    assert not storage.admit_backfill_worker_child("run", "pod", child_target())
+    assert storage.get_backfill_worker_launches("backfill") == []
+
+
+def test_child_schema_upgrade_retains_existing_logical_dispatches(storage_pair):
+    storage, _ = storage_pair
+    prepare_child_parent(storage)
+    if isinstance(storage, SqliteRunStorage):
+        storage._alembic_downgrade(rev="4e7a9c31b602")  # noqa: SLF001
+    else:
+        from dagster_postgres.run_storage import run_storage as pg_run_storage
+        from dagster_postgres.utils import pg_alembic_config
+
+        with storage.connect() as conn:
+            run_alembic_downgrade(
+                pg_alembic_config(pg_run_storage.__file__), conn, rev="4e7a9c31b602"
+            )
+    assert not storage.supports_backfill_stop_protocol
+    with pytest.raises(DagsterInvariantViolationError, match="storage migration"):
+        storage.admit_backfill_worker_child("run", "pod", child_target())
+    storage.upgrade()
+    assert storage.supports_backfill_stop_protocol
+    assert storage.get_backfill_worker_launches("backfill")[0].worker_id == "job"
+    assert storage.admit_backfill_worker_child("run", "pod", child_target())
+
+
+@pytest.mark.parametrize("winner", ["child", "resolve"])
+def test_parent_resolution_and_child_admission_serialize(storage_pair, monkeypatch, winner):
+    storage, other = storage_pair
+    prepare_child_parent(storage)
+    locked, release, competing = Event(), Event(), Event()
+    original = storage._lock_backfill  # noqa: SLF001
+
+    def hold_gate(conn, owner):
+        value = original(conn, owner)
+        locked.set()
+        assert release.wait(5)
+        return value
+
+    monkeypatch.setattr(storage, "_lock_backfill", hold_gate)
+
+    def admit(store):
+        return store.admit_backfill_worker_child("run", "pod", child_target())
+
+    def resolve(store):
+        store.resolve_backfill_worker_launch("run", "job")
+
+    first, second = (admit, resolve) if winner == "child" else (resolve, admit)
+
+    def contend():
+        competing.set()
+        return second(other)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        first_result = executor.submit(first, storage)
+        assert locked.wait(5)
+        second_result = executor.submit(contend)
+        try:
+            assert competing.wait(5)
+            with pytest.raises(TimeoutError):
+                second_result.result(timeout=0.05)
+        finally:
+            release.set()
+        first_value = first_result.result(timeout=5)
+        second_value = second_result.result(timeout=5)
+    admitted = first_value if winner == "child" else second_value
+    assert admitted is (winner == "child")
+    children = [
+        claim
+        for claim in storage.get_backfill_worker_launches("backfill")
+        if claim.kind == WorkerLaunchKind.CHILD
+    ]
+    assert len(children) == int(winner == "child")

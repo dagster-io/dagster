@@ -34,7 +34,12 @@ from dagster._core.storage.dagster_run import (
     DagsterRunStatus,
     RunsFilter,
 )
-from dagster._core.storage.tags import BACKFILL_ID_TAG, BACKFILL_STOP_PROTOCOL_TAG, USER_TAG
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    BACKFILL_STOP_PROTOCOL_TAG,
+    BACKFILL_STOP_PROTOCOL_VERSION,
+    USER_TAG,
+)
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -222,7 +227,7 @@ class PartitionBackfill(
         version = self.tags.get(BACKFILL_STOP_PROTOCOL_TAG)
         if version is None:
             return False
-        if version != "v1":
+        if version != BACKFILL_STOP_PROTOCOL_VERSION:
             raise DagsterInvariantViolationError(
                 f"Backfill {self.backfill_id} uses unsupported stop protocol version {version!r}."
             )
@@ -566,6 +571,11 @@ class PartitionBackfill(
 
 
 def run_uses_stop_protocol(instance: "DagsterInstance", run: DagsterRun) -> bool:
+    version = run.tags.get(BACKFILL_STOP_PROTOCOL_TAG)
+    if version is not None and version != BACKFILL_STOP_PROTOCOL_VERSION:
+        raise DagsterInvariantViolationError(
+            f"Run {run.run_id} uses unsupported stop protocol version {version!r}."
+        )
     backfill_id = run.tags.get(BACKFILL_ID_TAG)
     if backfill_id is None:
         return False
@@ -573,9 +583,7 @@ def run_uses_stop_protocol(instance: "DagsterInstance", run: DagsterRun) -> bool
     if backfill is not None:
         return backfill.uses_stop_protocol
     # The protocol denies orphan dispatch. Disabled instances preserve synthetic legacy tags.
-    return (
-        instance.backfill_stop_protocol_enabled or run.tags.get(BACKFILL_STOP_PROTOCOL_TAG) == "v1"
-    )
+    return instance.backfill_stop_protocol_enabled or version is not None
 
 
 def get_backfill_step_worker_id(step_key: str, attempt_number: int) -> str:
@@ -589,7 +597,7 @@ def reconcile_backfill_worker_launches(
     instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
 ) -> None:
     """Resolve acknowledged dispatches only after definitive execution-worker exit."""
-    from dagster._core.launcher.base import BackfillWorkerExitStatus
+    from dagster._core.launcher.base import BackfillWorkerCreationStatus, BackfillWorkerExitStatus
     from dagster._core.storage.runs.base import WorkerLaunchKind
 
     backfill = check.not_none(instance.get_backfill(backfill_id))
@@ -599,11 +607,20 @@ def reconcile_backfill_worker_launches(
         if run is None:
             continue
         try:
+            acknowledged = launch.acknowledged
+            if (
+                launch.kind == WorkerLaunchKind.CHILD
+                and not acknowledged
+                and instance.run_launcher.get_backfill_worker_creation_status(run, launch)
+                == BackfillWorkerCreationStatus.CREATED
+            ):
+                instance.acknowledge_backfill_worker_launch(run.run_id, launch.worker_id)
+                acknowledged = True
             status = instance.run_launcher.get_backfill_worker_exit_status(run, launch)
             if status != BackfillWorkerExitStatus.EXITED and (closed or run.is_finished):
                 instance.run_launcher.request_backfill_worker_stop(run, launch)
                 status = instance.run_launcher.get_backfill_worker_exit_status(run, launch)
-            if not launch.acknowledged:
+            if not acknowledged:
                 continue
             if status != BackfillWorkerExitStatus.EXITED:
                 continue
@@ -611,6 +628,7 @@ def reconcile_backfill_worker_launches(
                 if not closed:
                     continue
                 instance.report_run_canceled(run)
+            instance.run_launcher.cleanup_backfill_worker_launch(run, launch)
             instance.resolve_backfill_worker_launch(run.run_id, launch.worker_id)
         except Exception:
             logger.exception(

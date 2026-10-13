@@ -31,6 +31,7 @@ from dagster._core.storage.event_log.base import (
 )
 from dagster._core.storage.runs.base import (
     BackfillWorkerLaunch,
+    ChildWorkerTarget,
     RunStorage,
     WorkerLaunchKind,
     WorkerLaunchTarget,
@@ -378,6 +379,11 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
 
     def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
         self._storage.run_storage.acknowledge_backfill_worker_launch(run_id, worker_id)
+
+    def admit_backfill_worker_child(
+        self, run_id: str, worker_id: str, target: ChildWorkerTarget
+    ) -> bool:
+        return self._storage.run_storage.admit_backfill_worker_child(run_id, worker_id, target)
 
     def get_backfill_worker_launches(self, backfill_id: str) -> Sequence[BackfillWorkerLaunch]:
         return self._storage.run_storage.get_backfill_worker_launches(backfill_id)
