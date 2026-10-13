@@ -31,6 +31,7 @@ from dagster_dbt.core.dbt_cli_event import (
     DbtCoreCliEventMessage,
     DbtFusionCliEventMessage,
 )
+from dagster_dbt.core.dbt_env import _get_dbt_env_var
 from dagster_dbt.core.dbt_event_iterator import DbtDagsterEventType, DbtEventIterator
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_project import DbtProject
@@ -47,7 +48,7 @@ logger = get_dagster_logger()
 
 
 def _get_dbt_target_path() -> Path:
-    return Path(os.getenv("DBT_TARGET_PATH", "target"))
+    return Path(_get_dbt_env_var("DBT_TARGET_PATH", "target"))
 
 
 class RelationKey(NamedTuple):
