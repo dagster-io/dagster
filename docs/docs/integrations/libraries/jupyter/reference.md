@@ -14,7 +14,20 @@ To load a Jupyter notebook as a Dagster [asset](/guides/build/assets/defining-as
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_asset.py" />
 
-In this code block, we use `define_dagstermill_asset` to create a Dagster asset. We provide the name for the asset with the `name` parameter and the path to our `.ipynb` file with the `notebook_path` parameter. The resulting asset will execute our notebook and store the resulting `.ipynb` file in a persistent location.
+In this code block, we use `define_dagstermill_asset` to create a Dagster asset. We provide the name for the asset with the `name` parameter and the path to our `.ipynb` file with the `notebook_path` parameter. By default, the resulting asset will execute our notebook and store the resulting `.ipynb` file in a persistent location.
+
+If you want to persist a rendered HTML report instead of the executed notebook, set `output_notebook_format="html"`. You can also set `output_notebook_html_no_input=True` to omit code cell inputs from the rendered HTML:
+
+```python
+report_asset = define_dagstermill_asset(
+    name="daily_report",
+    notebook_path=file_relative_path(__file__, "notebooks/daily_report.ipynb"),
+    output_notebook_format="html",
+    output_notebook_html_no_input=True,
+)
+```
+
+When HTML output is enabled, Dagster stores the rendered `.html` artifact through the configured `output_notebook_io_manager`. In the built-in local IO manager, the materialization metadata points to the rendered HTML file instead of using the notebook preview flow in the Dagster UI.
 
 ## Notebooks as ops
 
