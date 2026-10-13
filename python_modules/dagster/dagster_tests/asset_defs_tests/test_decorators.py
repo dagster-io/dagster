@@ -248,6 +248,35 @@ def test_multi_asset_internal_asset_deps_metadata():
     }
 
 
+def test_graph_multi_asset_internal_asset_deps_metadata():
+    @dg.op(out={"my_out_name": dg.Out(), "my_other_out_name": dg.Out()})
+    def emit_outputs(my_in_name):
+        yield dg.Output(my_in_name + 1, "my_out_name")
+        yield dg.Output(my_in_name + 2, "my_other_out_name")
+
+    @dg.graph_multi_asset(
+        outs={
+            "my_out_name": dg.AssetOut(metadata={"foo": "bar"}),
+            "my_other_out_name": dg.AssetOut(metadata={"bar": "foo"}),
+        },
+        internal_asset_deps={
+            "my_out_name": {dg.AssetKey("my_other_out_name"), dg.AssetKey("my_in_name")},
+            "my_other_out_name": {dg.AssetKey("my_in_name")},
+        },
+    )
+    def my_asset(my_in_name):
+        my_out_name, my_other_out_name = emit_outputs(my_in_name)
+        return {"my_out_name": my_out_name, "my_other_out_name": my_other_out_name}
+
+    assert my_asset.keys == {dg.AssetKey("my_out_name"), dg.AssetKey("my_other_out_name")}
+    assert my_asset.metadata_by_key[dg.AssetKey("my_out_name")] == {"foo": "bar"}
+    assert my_asset.metadata_by_key[dg.AssetKey("my_other_out_name")] == {"bar": "foo"}
+    assert my_asset.asset_deps == {
+        dg.AssetKey("my_out_name"): {dg.AssetKey("my_other_out_name"), dg.AssetKey("my_in_name")},
+        dg.AssetKey("my_other_out_name"): {dg.AssetKey("my_in_name")},
+    }
+
+
 def test_multi_asset_internal_asset_deps_invalid():
     with pytest.raises(check.CheckError, match="Invalid out key"):
 
