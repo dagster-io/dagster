@@ -644,12 +644,17 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
         dbt sources: a dbt source's key is the union of its source name and its table name
         dbt models: a dbt model's key is the union of its model name and any schema configured on
             the model itself.
+        If an asset key prefix is configured in its metadata, it is prepended
+            to the default asset key. The prefix supports project or folder level
+            configuration in `dbt_project.yml`.
     """
     dbt_meta = dbt_resource_props.get("config", {}).get("meta", {}) or dbt_resource_props.get(
         "meta", {}
     )
     dagster_metadata = dbt_meta.get("dagster", {})
     asset_key_config = dagster_metadata.get("asset_key", [])
+    asset_key_prefix_config = dagster_metadata.get("asset_key_prefix", [])
+
     if asset_key_config:
         return AssetKey(asset_key_config)
 
@@ -663,6 +668,14 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
             components = [configured_schema, dbt_resource_props["name"]]
         else:
             components = [dbt_resource_props["name"]]
+
+    if asset_key_prefix_config:
+        prefix = (
+            [asset_key_prefix_config]
+            if isinstance(asset_key_prefix_config, str)
+            else list(asset_key_prefix_config)
+        )
+        components = [*prefix, *components]
 
     return AssetKey(components)
 
