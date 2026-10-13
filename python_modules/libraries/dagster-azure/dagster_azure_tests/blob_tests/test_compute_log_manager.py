@@ -445,3 +445,46 @@ def test_empty_prefix_blob_keys_have_no_leading_slash(
         assert manager.get_log_keys_for_log_key_prefix(
             ["my_run", "compute_logs"], ComputeIOType.STDERR
         ) == [["my_run", "compute_logs", "my_step"]]
+
+
+@mock.patch("dagster_azure.blob.compute_log_manager.generate_blob_sas")
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_empty_prefix_delete_logs(
+    mock_create_blob_client, mock_generate_blob_sas, storage_account, container, credential
+):
+    mock_generate_blob_sas.return_value = "fake-url"
+    mock_create_blob_client.return_value = FakeBlobServiceClient(storage_account)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix="",
+            local_dir=temp_dir,
+            secret_credential=credential,
+        )
+        keys = [
+            ["my_run", "compute_logs", "step_a"],
+            ["my_run", "compute_logs", "step_b"],
+            ["my_run_other", "compute_logs", "step_a"],
+        ]
+        for log_key in keys:
+            for io_type in (ComputeIOType.STDOUT, ComputeIOType.STDERR):
+                with tempfile.NamedTemporaryFile() as f:
+                    f.write(b"log line")
+                    f.flush()
+                    with open(f.name, "rb") as fobj:
+                        manager._upload_file_obj(fobj, log_key, io_type)  # noqa: SLF001
+
+        # delete by log_key removes only that key's blobs
+        manager.delete_logs(log_key=keys[0])
+        assert not manager.cloud_storage_has_logs(keys[0], ComputeIOType.STDOUT)
+        assert not manager.cloud_storage_has_logs(keys[0], ComputeIOType.STDERR)
+        assert manager.cloud_storage_has_logs(keys[1], ComputeIOType.STDOUT)
+
+        # delete by prefix removes the whole run but leaves a run whose id merely starts the same
+        manager.delete_logs(prefix=["my_run"])
+        assert not manager.cloud_storage_has_logs(keys[1], ComputeIOType.STDOUT)
+        assert not manager.cloud_storage_has_logs(keys[1], ComputeIOType.STDERR)
+        assert manager.cloud_storage_has_logs(keys[2], ComputeIOType.STDOUT)
+        assert manager.cloud_storage_has_logs(keys[2], ComputeIOType.STDERR)
