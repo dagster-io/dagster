@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -61,6 +61,7 @@ class AssetDep(
         *,
         partition_mapping: PartitionMapping | None = None,
         metadata: Mapping[str, Any] | None = None,
+        asset_spec_registry: dict | None = None,
     ):
         from dagster._core.definitions.assets.definition.asset_spec import AssetSpec
         from dagster._core.definitions.assets.definition.assets_definition import AssetsDefinition
@@ -86,6 +87,10 @@ class AssetDep(
         if partition_mapping:
             warn_if_partition_mapping_not_builtin(partition_mapping)
 
+        # If this dep is an AssetSpec, store it by AssetKey in the provided registry (if any)
+        if asset_spec_registry is not None:
+            if isinstance(asset, AssetSpec):
+                asset_spec_registry[asset_key] = asset
         return super().__new__(
             cls,
             asset_key=asset_key,
