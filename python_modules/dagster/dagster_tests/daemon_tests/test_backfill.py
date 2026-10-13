@@ -2184,15 +2184,15 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
 
     def _override_get_backfill(_):
         nonlocal override_get_backfill_num_calls
-        if override_get_backfill_num_calls == 1:
-            # Mark backfill as canceled during the middle of the cancellation iteration
+        if override_get_backfill_num_calls >= 1:
+            # An operator's cancellation remains visible for the rest of the iteration.
             override_get_backfill_num_calls += 1
             return backfill.with_status(BulkActionStatus.CANCELED)
         else:
             override_get_backfill_num_calls += 1
             return backfill
 
-    # After submitting the first chunk, update the backfill to be CANCELING
+    # Simulate an operator cancellation during an active cancellation tick.
     with mock.patch(
         "dagster._core.instance.DagsterInstance.get_backfill",
         side_effect=_override_get_backfill,
