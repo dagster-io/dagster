@@ -386,6 +386,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return K8sWorkerTarget(
             job_name=get_job_name_from_run_id(run.run_id),
             namespace=check.not_none(context.namespace),
+            admission_webhook_name=self.backfill_worker_admission_webhook_name,
         )
 
     def require_backfill_worker_admission(self) -> None:
@@ -467,6 +468,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             and metadata.namespace == target.namespace
             and (metadata.labels or {}).get("dagster/run-id") == run_id
             and (metadata.labels or {}).get("dagster/worker-job") == target.job_name
+            and (metadata.labels or {}).get(ADMISSION_ROUTE_LABEL) == target.admission_webhook_name
+            and (metadata.labels or {}).get(PROTOCOL_LABEL) == BACKFILL_STOP_PROTOCOL_VERSION
         )
 
     def get_backfill_worker_exit_status(

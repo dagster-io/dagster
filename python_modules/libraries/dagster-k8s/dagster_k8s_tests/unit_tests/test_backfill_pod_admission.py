@@ -83,7 +83,11 @@ def admission():
             "run",
             "step",
             WorkerLaunchKind.STEP,
-            K8sWorkerTarget(job_name="job", namespace="workers"),
+            K8sWorkerTarget(
+                job_name="job",
+                namespace="workers",
+                admission_webhook_name="dagster-backfill-worker-admission",
+            ),
         )
         metadata = review_payload()["request"]["object"]["metadata"]
         batch = mock.Mock()

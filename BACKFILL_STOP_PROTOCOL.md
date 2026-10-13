@@ -64,7 +64,9 @@ returns the run supplied by storage, so callers receive that canonical child.
 Independent manual reexecution omits the automatic intent.
 
 The worker target is persisted before dispatch. Supported Kubernetes targets name
-the namespace and Job. A typed `ChildWorkerTarget` also names its logical parent;
+the namespace, Job, and required admission-webhook binding. The required binding
+field rejects a v1 K8s adapter constructing the target against a v2 core before
+dispatch; it has no compatibility default. A typed `ChildWorkerTarget` also names its logical parent;
 its `K8sPodWorkerTarget` records the AdmissionReview UUID, fixed Pod name,
 namespace, and owning Job name/UID. An unknown target identifies its adapter and
 cannot supply exit proof. Adapter status, run status, and worker-exit evidence are distinct types.

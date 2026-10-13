@@ -666,7 +666,11 @@ class TestStepHandler(StepHandler):
         return True
 
     def get_backfill_worker_target(self, context):
-        return K8sWorkerTarget(job_name="step-job", namespace="step-namespace")
+        return K8sWorkerTarget(
+            job_name="step-job",
+            namespace="step-namespace",
+            admission_webhook_name="dagster-backfill-worker-admission",
+        )
 
     def launch_step(self, context):
         self.launches += 1
@@ -702,7 +706,11 @@ def test_step_dispatch_acknowledges_only_after_generator_success(instance):
     list(iterator)
     launch = instance.get_backfill_worker_launches(BACKFILL_ID)[0]
     assert launch.acknowledged
-    assert launch.target == K8sWorkerTarget(job_name="step-job", namespace="step-namespace")
+    assert launch.target == K8sWorkerTarget(
+        job_name="step-job",
+        namespace="step-namespace",
+        admission_webhook_name="dagster-backfill-worker-admission",
+    )
 
 
 def test_step_dispatch_closed_gate_prevents_rpc(instance):

@@ -58,7 +58,11 @@ def test_ambiguous_create_cannot_acknowledge_or_complete_backfill():
             run.run_id,
             "run",
             WorkerLaunchKind.RUN,
-            K8sWorkerTarget(job_name="worker", namespace="worker-namespace"),
+            K8sWorkerTarget(
+                job_name="worker",
+                namespace="worker-namespace",
+                admission_webhook_name="dagster-backfill-worker-admission",
+            ),
         )
         with mock.patch("kubernetes.client.BatchV1Api", return_value=dispatched_api):
             with pytest.raises(ReadTimeoutError):

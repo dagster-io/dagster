@@ -183,7 +183,11 @@ class BackfillPodAdmission:
                 parent is None
                 or parent.kind not in (WorkerLaunchKind.RUN, WorkerLaunchKind.STEP)
                 or parent.target
-                != K8sWorkerTarget(job_name=owner.name, namespace=request.namespace)
+                != K8sWorkerTarget(
+                    job_name=owner.name,
+                    namespace=request.namespace,
+                    admission_webhook_name=self.webhook_name,
+                )
             ):
                 return response
             job = self.batch_api.read_namespaced_job(owner.name, request.namespace)

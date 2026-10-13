@@ -61,7 +61,12 @@ def dispatch(target=None, kind=WorkerLaunchKind.STEP):
         run_id="run-id",
         worker_id="step:my_step:1",
         kind=kind,
-        target=target or K8sWorkerTarget(job_name="step-job", namespace="overridden-namespace"),
+        target=target
+        or K8sWorkerTarget(
+            job_name="step-job",
+            namespace="overridden-namespace",
+            admission_webhook_name="dagster-backfill-worker-admission",
+        ),
         state=WorkerLaunchState.ACKNOWLEDGED,
     )
 
@@ -71,7 +76,12 @@ def worker_metadata(name, uid):
         name=name,
         uid=uid,
         namespace="overridden-namespace",
-        labels={"dagster/run-id": "run-id", "dagster/worker-job": "step-job"},
+        labels={
+            "dagster/run-id": "run-id",
+            "dagster/worker-job": "step-job",
+            ADMISSION_ROUTE_LABEL: ADMISSION_WEBHOOK_NAME,
+            PROTOCOL_LABEL: BACKFILL_STOP_PROTOCOL_VERSION,
+        },
         owner_references=[
             V1OwnerReference(api_version="batch/v1", kind="Job", name="step-job", uid="job-uid")
         ],

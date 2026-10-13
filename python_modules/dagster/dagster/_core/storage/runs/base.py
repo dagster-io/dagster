@@ -59,6 +59,7 @@ class UnknownWorkerTarget:
 class K8sWorkerTarget:
     job_name: str
     namespace: str
+    admission_webhook_name: str
 
 
 @whitelist_for_serdes

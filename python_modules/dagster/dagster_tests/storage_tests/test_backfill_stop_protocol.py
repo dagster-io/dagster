@@ -186,13 +186,21 @@ def test_step_attempts_are_independent_and_can_resolve_while_run_is_started(stor
     storage, restarted = storage_pair
     add_backfill(storage)
     add_run(storage, status=DagsterRunStatus.STARTED)
-    target = K8sWorkerTarget(job_name="step-job", namespace="namespace")
+    target = K8sWorkerTarget(
+        job_name="step-job",
+        namespace="namespace",
+        admission_webhook_name="dagster-backfill-worker-admission",
+    )
     assert storage.claim_backfill_worker_launch("run", "step/one/0", WorkerLaunchKind.STEP, target)
     assert not restarted.claim_backfill_worker_launch(
         "run",
         "step/one/0",
         WorkerLaunchKind.STEP,
-        K8sWorkerTarget(job_name="changed-job", namespace="changed-namespace"),
+        K8sWorkerTarget(
+            job_name="changed-job",
+            namespace="changed-namespace",
+            admission_webhook_name="dagster-backfill-worker-admission",
+        ),
     )
     assert restarted.get_backfill_worker_launches("backfill")[0].target == target
     storage.acknowledge_backfill_worker_launch("run", "step/one/0")
@@ -343,7 +351,11 @@ def test_closure_waits_for_admission_transaction(storage_pair, monkeypatch, oper
             "run",
             "step/one/0",
             WorkerLaunchKind.STEP,
-            K8sWorkerTarget(job_name="step", namespace="ns"),
+            K8sWorkerTarget(
+                job_name="step",
+                namespace="ns",
+                admission_webhook_name="dagster-backfill-worker-admission",
+            ),
         )
 
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -728,7 +740,11 @@ def prepare_child_parent(storage):
         "run",
         "job",
         WorkerLaunchKind.STEP,
-        K8sWorkerTarget(job_name="step-job", namespace="workers"),
+        K8sWorkerTarget(
+            job_name="step-job",
+            namespace="workers",
+            admission_webhook_name="dagster-backfill-worker-admission",
+        ),
     )
     storage.acknowledge_backfill_worker_launch("run", "job")
 

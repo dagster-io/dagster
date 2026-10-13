@@ -328,6 +328,9 @@ class K8sStepHandler(StepHandler):
         return K8sWorkerTarget(
             job_name=self._get_k8s_step_job_name(context),
             namespace=check.not_none(container_context.namespace),
+            admission_webhook_name=check.inst(
+                context.instance.run_launcher, K8sRunLauncher
+            ).backfill_worker_admission_webhook_name,
         )
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
