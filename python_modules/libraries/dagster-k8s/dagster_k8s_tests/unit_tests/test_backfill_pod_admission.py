@@ -1,6 +1,9 @@
 import base64
 import copy
 import json
+from http.client import HTTPConnection
+from http.server import ThreadingHTTPServer
+from threading import Thread
 from unittest import mock
 from uuid import uuid4
 
@@ -27,6 +30,7 @@ from dagster_k8s.backfill_admission import (
     PodAdmissionReview,
     require_backfill_worker_policy,
 )
+from dagster_k8s.backfill_admission_server import AdmissionHandler
 from dagster_k8s.backfill_worker import WebhookConfiguration
 from kubernetes.client import V1Job, V1ObjectMeta
 from pydantic import ValidationError
@@ -138,6 +142,21 @@ def test_pending_callback_replay_preserves_one_receipt_after_closure(admission):
     assert not admission.admit(request)["allowed"]
 
 
+def test_controller_replacements_receive_independent_receipts(admission):
+    first = PodAdmissionReview.model_validate(review_payload())
+    second = PodAdmissionReview.model_validate(review_payload())
+    assert admission.admit(first)["allowed"]
+    assert admission.admit(second)["allowed"]
+    receipts = children(admission)
+    assert len(receipts) == 2
+    assert {claim.target.resource.admission_id for claim in receipts} == {
+        str(first.request.uid),
+        str(second.request.uid),
+    }
+    assert len({claim.target.resource.pod_name for claim in receipts}) == 2
+    assert {claim.target.parent_worker_id for claim in receipts} == {"step"}
+
+
 def test_new_admission_after_close_is_denied_without_a_receipt(admission):
     admission.instance.request_backfill_stop("backfill")
     assert not admission.admit(PodAdmissionReview.model_validate(review_payload()))["allowed"]
@@ -150,6 +169,45 @@ def test_dry_run_does_not_persist_or_consult_the_owner(admission):
     admission.batch_api.read_namespaced_job.side_effect = RuntimeError("Must not consult owner")
     assert admission.admit(PodAdmissionReview.model_validate(payload))["allowed"]
     assert children(admission) == []
+
+
+def test_http_admission_accepts_the_api_servers_timeout_query(admission):
+    class TestServer(ThreadingHTTPServer):
+        def __init__(self):
+            self.admission = admission
+            super().__init__(("127.0.0.1", 0), AdmissionHandler)
+
+    server = TestServer()
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    connection = HTTPConnection("127.0.0.1", server.server_port, timeout=5)
+    try:
+        payload = review_payload()
+        connection.request(
+            "POST",
+            "/admit?timeout=30s",
+            body=json.dumps(payload),
+            headers={"Content-Type": "application/json"},
+        )
+        response = connection.getresponse()
+        assert response.status == 200
+        result = json.loads(response.read())["response"]
+        assert result["uid"] == payload["request"]["uid"] and result["allowed"]
+        assert len(children(admission)) == 1
+        connection.request("GET", "/healthz?probe=true")
+        response = connection.getresponse()
+        assert response.status == 200
+        response.read()
+        connection.request("POST", "/other?path=/admit", body="{}")
+        response = connection.getresponse()
+        assert response.status == 404
+        response.read()
+        assert len(children(admission)) == 1
+    finally:
+        connection.close()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
 
 @pytest.mark.parametrize("field", ["namespace", "run", "job_uid", "dispatch", "route", "version"])

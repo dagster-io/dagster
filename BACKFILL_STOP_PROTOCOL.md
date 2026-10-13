@@ -158,12 +158,16 @@ normal absence of its uniquely admitted resource now proves exit. Cleanup preced
 resolution, so no scan of resolved cleanup tombstones is required. Finalization
 still requires every logical Job and physical Pod receipt to be resolved.
 
-These conclusions rely on the native Kubernetes v1.35 implementations of
+These conclusions were checked against native Kubernetes v1.35.0 and v1.36.0.
+The relevant implementations are
 [admission UUID creation](https://github.com/kubernetes/kubernetes/blob/v1.35.0/staging/src/k8s.io/apiserver/pkg/admission/plugin/webhook/request/admissionreview.go),
 [mutating admission before create](https://github.com/kubernetes/kubernetes/blob/v1.35.0/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go),
 [fixed-name storage and finalizer retention](https://github.com/kubernetes/kubernetes/blob/v1.35.0/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store.go),
 and [Pod binding](https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/registry/core/pod/storage/storage.go).
-The foreground limitation is documented in the
+The v1.36 admission request/dispatcher, HTTP create handler, and Pod binding files
+are unchanged from v1.35; the fixed-name/finalizer storage and terminal Job gates
+retain the same ordering. GKE vendor differences and live API-server reachability
+remain target-environment activation checks. The foreground limitation is documented in the
 [Kubernetes garbage-collection contract](https://kubernetes.io/docs/concepts/architecture/garbage-collection/#foreground-cascading-deletion).
 
 For other adapters, UNKNOWN remains unresolved. An empty gRPC run inventory alone

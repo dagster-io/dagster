@@ -7,6 +7,7 @@ import ssl
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import cast
+from urllib.parse import urlsplit
 
 import kubernetes
 from dagster import DagsterInstance
@@ -40,7 +41,7 @@ class AdmissionServer(ThreadingHTTPServer):
 
 class AdmissionHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path != "/healthz":
+        if urlsplit(self.path).path != "/healthz":
             self.send_error(404)
             return
         ready = cast(
@@ -51,7 +52,7 @@ class AdmissionHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.path != "/admit":
+        if urlsplit(self.path).path != "/admit":
             self.send_error(404)
             return
         uid = ""
