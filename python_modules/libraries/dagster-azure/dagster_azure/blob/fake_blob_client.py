@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from unittest import mock
 
-from dagster_azure.blob.utils import ResourceNotFoundError
+from dagster_azure.blob.utils import ResourceExistsError, ResourceNotFoundError
 
 
 class FakeBlobServiceClient:
@@ -127,6 +127,8 @@ class FakeBlobClient:
         if self.lease is not None:
             if lease != self.lease:
                 raise Exception("Invalid lease!")
+        if self.contents is not None and not overwrite:
+            raise ResourceExistsError("The specified blob already exists.")
         if self.contents is None or overwrite is True:
             if isinstance(contents, str):
                 self.contents = contents.encode("utf8")
