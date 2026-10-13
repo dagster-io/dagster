@@ -38,6 +38,10 @@ class DagsterExecutionInterruptedError(BaseException):
     """
 
 
+class DagsterBackfillAdmissionClosed(DagsterError):
+    """An owned run cannot be registered or launched after backfill admission closes."""
+
+
 class DagsterInvalidDefinitionError(DagsterError):
     """Indicates that the rules for a definition have been violated by the user."""
 
