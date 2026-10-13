@@ -15,9 +15,6 @@ dependencies = [
     # kwarg PatchedApiClient and k8s_model_from_dict pass, and made the delete APIs return
     # dicts rather than V1Status.
     "kubernetes<37",
-    # exclude a google-auth release that added an overly restrictive urllib3 pin
-    # that confuses dependency resolvers
-    "google-auth!=2.23.1",
 ]
 
 [project.urls]
@@ -57,6 +54,11 @@ conflicts = [
         {group = "test-kubernetes-36"},
     ],
 ]
+
+[tool.uv.constraint-dependencies]
+# exclude a google-auth release that added an overly restrictive urllib3 pin
+# that confuses dependency resolvers
+google-auth = ["!=2.23.1"]
 
 [tool.uv.sources]
 dagster = { path = "../../dagster", editable = true }
