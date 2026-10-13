@@ -21,8 +21,12 @@ dispatch admission, closure, and finalization must share an atomic ordering.
 
 The protocol is explicitly enabled through instance configuration. Newly created
 backfills retain a durable protocol-version tag; only marked backfills carry this
-contract. Existing unmarked backfills retain released behavior. This boundary
-prevents unrecorded legacy dispatches from being mistaken for never-started work.
+contract. Unmarked backfills retain legacy cancellation semantics and do not acquire the
+worker-ledger guarantee. Automatic retries still preserve backfill lineage and
+check status, and reserved owner/version tags become immutable independently of
+opt-in. This prevents retrospective reparenting from bypassing admission. The
+version boundary prevents unrecorded legacy dispatches from being mistaken for
+never-started work.
 
 For each protocol backfill B, define:
 
@@ -103,8 +107,9 @@ a new durable attempt identity; an adapter that cannot supply one must reject it
 4. Resolve only acknowledged dispatches with definitive exit evidence. A terminal
    run event, timeout, unavailable server, missing unacknowledged Job, or an empty
    parent-process inventory does not establish that evidence.
-5. Terminalize remaining run records after the corresponding execution workers
-   have stopped. Atomically attempt finalization; otherwise continue draining.
+5. Terminalize a remaining run record after its run-worker attempt has stopped.
+   Remote step claims remain a separate finalization barrier. Atomically attempt
+   finalization; otherwise continue draining.
 
 For a Kubernetes dispatch, a successful create acknowledgement bounds the set of
 issued create requests. The stop adapter must account for the named Job and its
