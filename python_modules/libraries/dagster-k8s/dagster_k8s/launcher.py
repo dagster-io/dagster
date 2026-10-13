@@ -7,12 +7,15 @@ from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
-from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster._core.launcher.base import BackfillWorkerExitStatus, CheckRunHealthResult, WorkerStatus
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.runs.base import BackfillWorkerLaunch, K8sWorkerTarget
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
+from kubernetes.client import V1DeleteOptions, V1ObjectMeta, V1Preconditions
+from kubernetes.client.rest import ApiException
 
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
@@ -296,6 +299,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 },
             ],
         )
+        # These labels identify durable dispatch targets. Custom metadata must not replace
+        # them, otherwise a detached pod could disappear from the exit-proof inventory.
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+
+        if run_uses_stop_protocol(self._instance, run):
+            for metadata in (job.metadata, job.spec.template.metadata):
+                metadata.labels["dagster/run-id"] = run.run_id
+                metadata.labels["dagster/worker-job"] = job_name
 
         # Set docker/image tag here, as it can also be provided by `user_defined_k8s_config`.
         self._instance.add_run_tags(
@@ -307,7 +318,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._report_run_worker_creating(run, job_name, namespace)
 
-        self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+
+        if run_uses_stop_protocol(self._instance, run):
+            self._api_client.create_namespaced_job_once(body=job, namespace=namespace)
+        else:
+            self._api_client.create_namespaced_job_with_retries(body=job, namespace=namespace)
         self._report_run_worker_created(run)
 
     def launch_run(self, context: LaunchRunContext) -> None:
@@ -323,6 +339,140 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         ).get_command_args()
 
         self._launch_k8s_job_with_args(job_name, args, run)
+
+    def get_backfill_worker_target(self, run: DagsterRun) -> K8sWorkerTarget:
+        return K8sWorkerTarget(
+            job_name=get_job_name_from_run_id(run.run_id),
+            namespace=check.not_none(self.get_container_context_for_run(run).namespace),
+        )
+
+    def request_backfill_worker_stop(self, run: DagsterRun, launch: BackfillWorkerLaunch) -> None:
+        target = launch.target
+        if not isinstance(target, K8sWorkerTarget):
+            return
+        try:
+            job = self._api_client.batch_api.read_namespaced_job(
+                name=target.job_name, namespace=target.namespace
+            )
+        except ApiException as error:
+            if error.status != 404:
+                raise
+        else:
+            check.invariant(
+                self._matches_backfill_worker_labels(job.metadata, target, launch.run_id)
+                and job.metadata.name == target.job_name
+                and job.metadata.uid,
+                "Kubernetes Job identity does not match the durable worker target.",
+            )
+            try:
+                self._api_client.batch_api.delete_namespaced_job(
+                    name=target.job_name,
+                    namespace=target.namespace,
+                    body=V1DeleteOptions(
+                        propagation_policy="Foreground",
+                        preconditions=V1Preconditions(uid=job.metadata.uid),
+                    ),
+                )
+            except ApiException as error:
+                if error.status != 404:
+                    raise
+        pods = self._api_client.core_api.list_namespaced_pod(
+            namespace=target.namespace, label_selector=f"dagster/worker-job={target.job_name}"
+        )
+        for pod in pods.items:
+            check.invariant(
+                self._matches_backfill_worker_labels(pod.metadata, target, launch.run_id)
+                and pod.metadata.uid,
+                "Kubernetes Pod identity does not match the durable worker target.",
+            )
+            try:
+                self._api_client.core_api.delete_namespaced_pod(
+                    name=pod.metadata.name,
+                    namespace=target.namespace,
+                    body=V1DeleteOptions(preconditions=V1Preconditions(uid=pod.metadata.uid)),
+                )
+            except ApiException as error:
+                if error.status != 404:
+                    raise
+
+    @staticmethod
+    def _matches_backfill_worker_labels(
+        metadata: V1ObjectMeta | None, target: K8sWorkerTarget, run_id: str
+    ) -> bool:
+        return bool(
+            metadata is not None
+            and metadata.namespace == target.namespace
+            and (metadata.labels or {}).get("dagster/run-id") == run_id
+            and (metadata.labels or {}).get("dagster/worker-job") == target.job_name
+        )
+
+    def get_backfill_worker_exit_status(
+        self, run: DagsterRun, launch: BackfillWorkerLaunch
+    ) -> BackfillWorkerExitStatus:
+        target = launch.target
+        if not isinstance(target, K8sWorkerTarget):
+            return BackfillWorkerExitStatus.UNKNOWN
+        try:
+            job = None
+            try:
+                job = self._api_client.batch_api.read_namespaced_job(
+                    name=target.job_name, namespace=target.namespace
+                )
+            except ApiException as error:
+                if error.status != 404:
+                    raise
+            if job is not None:
+                metadata = job.metadata
+                if (
+                    not self._matches_backfill_worker_labels(metadata, target, launch.run_id)
+                    or metadata.name != target.job_name
+                    or not metadata.uid
+                ):
+                    return BackfillWorkerExitStatus.UNKNOWN
+                # Kubernetes >=1.31 only publishes these terminal Job conditions after all
+                # Job pods terminate. FailureTarget and SuccessCriteriaMet occur earlier.
+                # https://kubernetes.io/docs/concepts/workloads/controllers/job/#terminal-job-conditions
+                terminal = job.status is not None and any(
+                    condition.type in ("Complete", "Failed") and condition.status == "True"
+                    for condition in (job.status.conditions or [])
+                )
+                if not terminal:
+                    return BackfillWorkerExitStatus.RUNNING
+            pods = self._api_client.core_api.list_namespaced_pod(
+                namespace=target.namespace, label_selector=f"dagster/worker-job={target.job_name}"
+            )
+            for pod in pods.items:
+                metadata = pod.metadata
+                if not self._matches_backfill_worker_labels(metadata, target, launch.run_id):
+                    return BackfillWorkerExitStatus.UNKNOWN
+                if job is not None and not any(
+                    reference.kind == "Job"
+                    and reference.name == target.job_name
+                    and reference.uid == job.metadata.uid
+                    for reference in (metadata.owner_references or [])
+                ):
+                    return BackfillWorkerExitStatus.UNKNOWN
+            if job is None:
+                return (
+                    BackfillWorkerExitStatus.RUNNING
+                    if pods.items
+                    else BackfillWorkerExitStatus.EXITED
+                )
+            for pod in pods.items:
+                if pod.status is None or pod.status.phase not in ("Succeeded", "Failed"):
+                    return BackfillWorkerExitStatus.RUNNING
+                statuses = [
+                    *(pod.status.container_statuses or []),
+                    *(pod.status.init_container_statuses or []),
+                    *(pod.status.ephemeral_container_statuses or []),
+                ]
+                if any(
+                    status.state is None or status.state.terminated is None for status in statuses
+                ):
+                    return BackfillWorkerExitStatus.RUNNING
+            return BackfillWorkerExitStatus.EXITED
+        except Exception:
+            return BackfillWorkerExitStatus.UNKNOWN
 
     @property
     def supports_resume_run(self):

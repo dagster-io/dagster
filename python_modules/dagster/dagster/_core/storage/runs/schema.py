@@ -15,6 +15,7 @@ RunsTable = db.Table(
         autoincrement=True,
     ),
     db.Column("run_id", db.String(255), unique=True),
+    db.Column("auto_retry_intent", db.String(255)),
     db.Column(
         "snapshot_id",
         db.String(255),
@@ -138,6 +139,24 @@ BackfillTagsTable = db.Table(
     db.Column("value", db.Text),
 )
 
+BackfillWorkerLaunchesTable = db.Table(
+    "backfill_worker_launches",
+    RunStorageSqlMetadata,
+    db.Column("run_id", db.String(255), primary_key=True),
+    db.Column("worker_id", db.String(255), primary_key=True),
+    db.Column("kind", db.String(4), nullable=False),
+    db.Column("target", db.Text, nullable=False),
+    db.Column("backfill_id", db.String(255), nullable=False),
+    db.Column("state", db.String(16), nullable=False),
+    db.CheckConstraint(
+        "state IN ('PENDING', 'ACKNOWLEDGED', 'RESOLVED')",
+        name="ck_backfill_worker_launch_state",
+    ),
+    db.CheckConstraint("kind IN ('RUN', 'STEP')", name="ck_backfill_worker_launch_kind"),
+)
+
+db.Index("idx_backfill_worker_launches_backfill_id", BackfillWorkerLaunchesTable.c.backfill_id)
+
 InstanceInfo = db.Table(
     "instance_info",
     RunStorageSqlMetadata,
@@ -164,6 +183,7 @@ KeyValueStoreTable = db.Table(
 )
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
+db.Index("idx_runs_auto_retry_intent", RunsTable.c.auto_retry_intent, unique=True)
 db.Index(
     "idx_run_tags_run_idx", RunTagsTable.c.run_id, RunTagsTable.c.id, mysql_length={"run_id": 255}
 )

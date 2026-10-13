@@ -25,6 +25,11 @@ if TYPE_CHECKING:
         TickData,
         TickStatus,
     )
+    from dagster._core.storage.runs.base import (
+        BackfillWorkerLaunch,
+        WorkerLaunchKind,
+        WorkerLaunchTarget,
+    )
     from dagster._core.storage.schedules import ScheduleStorage
 
 
@@ -331,11 +336,79 @@ class SchedulingMethods:
 
     def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         """Add backfill - moved from DagsterInstance.add_backfill()."""
+        from dagster._core.errors import DagsterInvariantViolationError
+        from dagster._core.storage.tags import BACKFILL_STOP_PROTOCOL_TAG
+
+        uses_stop_protocol = partition_backfill.uses_stop_protocol
+        if self.backfill_stop_protocol_enabled:
+            partition_backfill = partition_backfill._replace(
+                tags={**partition_backfill.tags, BACKFILL_STOP_PROTOCOL_TAG: "v1"}
+            )
+            uses_stop_protocol = True
+        if uses_stop_protocol and not self.supports_backfill_stop_protocol:
+            raise DagsterInvariantViolationError(
+                "Backfill stop protocol requires storage with atomic worker admission and draining."
+            )
         self._run_storage_impl.add_backfill(partition_backfill)
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         """Update backfill - moved from DagsterInstance.update_backfill()."""
+        from dagster._core.execution.backfill import (
+            BULK_ACTION_TERMINAL_STATUSES,
+            reconcile_backfill_worker_launches,
+        )
+
+        if (
+            self.supports_backfill_stop_protocol
+            and check.not_none(self.get_backfill(partition_backfill.backfill_id)).uses_stop_protocol
+            and partition_backfill.status in BULK_ACTION_TERMINAL_STATUSES
+        ):
+            reconcile_backfill_worker_launches(
+                self._instance, partition_backfill.backfill_id, logging.getLogger(__name__)
+            )
         self._run_storage_impl.update_backfill(partition_backfill)
+
+    @property
+    def backfill_stop_protocol_enabled(self) -> bool:
+        return bool(self._instance.get_settings("backfill_stop_protocol").get("enabled", False))
+
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return self._run_storage_impl.supports_backfill_stop_protocol
+
+    def request_backfill_stop(self, backfill_id: str) -> "PartitionBackfill":
+        from dagster._core.execution.backfill import BulkActionStatus
+
+        backfill = check.not_none(self.get_backfill(backfill_id))
+        if not backfill.uses_stop_protocol:
+            backfill = backfill.with_status(BulkActionStatus.CANCELING)
+            self.update_backfill(backfill)
+            return backfill
+        return self._run_storage_impl.request_backfill_stop(backfill_id)
+
+    def resume_backfill(self, backfill_id: str) -> "PartitionBackfill":
+        from dagster._core.execution.backfill import BulkActionStatus
+
+        backfill = check.not_none(self.get_backfill(backfill_id))
+        if not backfill.uses_stop_protocol:
+            backfill = backfill.with_status(BulkActionStatus.REQUESTED)
+            self.update_backfill(backfill)
+            return backfill
+        return self._run_storage_impl.resume_backfill(backfill_id)
+
+    def claim_backfill_worker_launch(
+        self, run_id: str, worker_id: str, kind: "WorkerLaunchKind", target: "WorkerLaunchTarget"
+    ) -> bool:
+        return self._run_storage_impl.claim_backfill_worker_launch(run_id, worker_id, kind, target)
+
+    def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        self._run_storage_impl.acknowledge_backfill_worker_launch(run_id, worker_id)
+
+    def get_backfill_worker_launches(self, backfill_id: str) -> Sequence["BackfillWorkerLaunch"]:
+        return self._run_storage_impl.get_backfill_worker_launches(backfill_id)
+
+    def resolve_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        self._run_storage_impl.resolve_backfill_worker_launch(run_id, worker_id)
 
     def wipe_all_schedules(self) -> None:
         """Wipe all schedules - moved from DagsterInstance.wipe_all_schedules()."""

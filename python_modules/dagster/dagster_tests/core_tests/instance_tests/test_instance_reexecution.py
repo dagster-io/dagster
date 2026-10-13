@@ -6,7 +6,12 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import ASSET_RESUME_RETRY_TAG, RESUME_RETRY_TAG, SYSTEM_TAG_PREFIX
+from dagster._core.storage.tags import (
+    ASSET_RESUME_RETRY_TAG,
+    AUTO_RETRY_INTENT_TAG,
+    RESUME_RETRY_TAG,
+    SYSTEM_TAG_PREFIX,
+)
 from dagster._core.test_utils import (
     environ,
     poll_for_finished_run,
@@ -358,6 +363,23 @@ def test_create_reexecuted_run_from_failure_tags(
     assert run.tags["foo"] == "not bar!"
     assert run.tags["fizz"] == "not buzz!!"
     assert f"{SYSTEM_TAG_PREFIX}run_metrics" not in run.tags
+
+
+def test_manual_reexecution_does_not_inherit_automatic_retry_intent(
+    instance: dg.DagsterInstance, workspace, code_location, remote_job, failed_run
+):
+    parent = failed_run.with_tags(
+        {**failed_run.tags, AUTO_RETRY_INTENT_TAG: "automatic-parent-intent"}
+    )
+    run = instance.create_reexecuted_run(
+        parent_run=parent,
+        request_context=workspace,
+        code_location=code_location,
+        remote_job=remote_job,
+        strategy=ReexecutionStrategy.FROM_FAILURE,
+        use_parent_run_tags=True,
+    )
+    assert AUTO_RETRY_INTENT_TAG not in run.tags
 
 
 def test_create_reexecuted_run_all_steps(

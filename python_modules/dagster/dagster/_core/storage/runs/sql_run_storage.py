@@ -3,7 +3,8 @@ import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, ContextManager, NamedTuple, cast  # noqa: UP035
@@ -17,6 +18,7 @@ from sqlalchemy.sql import FromClause
 
 import dagster._check as check
 from dagster._core.errors import (
+    DagsterBackfillAdmissionClosed,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
@@ -32,6 +34,7 @@ from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus
 from dagster._core.remote_origin import RemoteJobOrigin
 from dagster._core.snap import ExecutionPlanSnapshot, JobSnap, create_execution_plan_snapshot_id
 from dagster._core.storage.dagster_run import (
+    FINISHED_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     JobBucket,
@@ -40,7 +43,15 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster._core.storage.runs.base import RunStorage
+from dagster._core.storage.runs.base import (
+    BackfillWorkerLaunch,
+    K8sWorkerTarget,
+    RunStorage,
+    UnknownWorkerTarget,
+    WorkerLaunchKind,
+    WorkerLaunchState,
+    WorkerLaunchTarget,
+)
 from dagster._core.storage.runs.migration import (
     BACKFILL_JOB_NAME_AND_TAGS,
     OPTIONAL_DATA_MIGRATIONS,
@@ -51,6 +62,7 @@ from dagster._core.storage.runs.migration import (
 )
 from dagster._core.storage.runs.schema import (
     BackfillTagsTable,
+    BackfillWorkerLaunchesTable,
     BulkActionsTable,
     DaemonHeartbeatsTable,
     InstanceInfo,
@@ -69,7 +81,9 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._core.storage.tags import (
+    AUTO_RETRY_INTENT_TAG,
     BACKFILL_ID_TAG,
+    BACKFILL_STOP_PROTOCOL_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     REPOSITORY_LABEL_TAG,
@@ -112,6 +126,55 @@ class SqlRunStorage(RunStorage):
             else:
                 return result.fetchone()
 
+    @contextmanager
+    def _backfill_transaction(self) -> Iterator[Connection]:
+        with self.connect() as conn:
+            # PostgresRunStorage uses AUTOCOMMIT: SQLAlchemy's conn.begin() does not
+            # issue a server BEGIN in that mode. Explicit SQL keeps the row lock
+            # and all admission/ledger writes in one real database transaction.
+            # SQLite cannot SELECT FOR UPDATE; BEGIN IMMEDIATE serializes writers
+            # before the admission read instead of upgrading a read transaction.
+            conn.execute(db.text("BEGIN IMMEDIATE" if conn.dialect.name == "sqlite" else "BEGIN"))
+            try:
+                yield conn
+            except BaseException:
+                conn.execute(db.text("ROLLBACK"))
+                raise
+            else:
+                conn.execute(db.text("COMMIT"))
+
+    def _find_locked_backfill(self, conn: Connection, backfill_id: str) -> PartitionBackfill | None:
+        rows = db_fetch_mappings(
+            conn,
+            db_select([BulkActionsTable.c.body, BulkActionsTable.c.status])
+            .where(BulkActionsTable.c.key == backfill_id)
+            .with_for_update(),
+        )
+        if not rows:
+            return None
+        return deserialize_value(rows[0]["body"], PartitionBackfill).with_status(
+            BulkActionStatus(rows[0]["status"])
+        )
+
+    def _lock_backfill(self, conn: Connection, backfill_id: str) -> PartitionBackfill:
+        backfill = self._find_locked_backfill(conn, backfill_id)
+        if backfill is None:
+            raise DagsterInvariantViolationError(
+                f"Backfill {backfill_id} is not present in storage"
+            )
+        return backfill
+
+    @staticmethod
+    def _uses_backfill_stop_protocol(backfill: PartitionBackfill | None) -> bool:
+        return backfill is not None and backfill.uses_stop_protocol
+
+    def _write_backfill(self, conn: Connection, backfill: PartitionBackfill) -> None:
+        conn.execute(
+            BulkActionsTable.update()
+            .where(BulkActionsTable.c.key == backfill.backfill_id)
+            .values(status=backfill.status.value, body=serialize_value(backfill))
+        )
+
     def _get_run_insertion_values(
         self, dagster_run: DagsterRun, run_creation_time: datetime | None = None
     ) -> dict[str, Any]:
@@ -140,12 +203,69 @@ class SqlRunStorage(RunStorage):
             values["create_timestamp"] = run_creation_time
         return values
 
-    def _core_add_run(self, col_values: dict[str, Any], tags: Mapping[str, str]) -> None:
+    def _core_add_run(
+        self, col_values: dict[str, Any], tags: Mapping[str, str], historical: bool = False
+    ) -> DagsterRun | None:
         run_id = col_values["run_id"]
-        runs_insert = RunsTable.insert().values(**col_values)
-        with self.connect() as conn:
+        backfill_id = tags.get(BACKFILL_ID_TAG)
+        registered_run = None
+        with self._backfill_transaction() as conn:
+            if backfill_id is not None:
+                backfill = self._find_locked_backfill(conn, backfill_id)
+                historical_terminal = historical and col_values["status"] in {
+                    status.value for status in FINISHED_STATUSES
+                }
+                protocol_registration = (
+                    self.has_instance and self._instance.backfill_stop_protocol_enabled
+                ) or tags.get(BACKFILL_STOP_PROTOCOL_TAG) == "v1"
+                if backfill is None and protocol_registration and not historical_terminal:
+                    raise DagsterBackfillAdmissionClosed(
+                        f"Backfill {backfill_id} is not present in storage"
+                    )
+                if self._uses_backfill_stop_protocol(backfill):
+                    self._require_backfill_stop_protocol(conn)
+                    if tags.get(BACKFILL_STOP_PROTOCOL_TAG) not in {None, "v1"}:
+                        raise DagsterInvariantViolationError(
+                            "Run protocol version must match its owning backfill"
+                        )
+                    registered_run = deserialize_value(col_values["run_body"], DagsterRun)
+                    registered_run = registered_run.with_tags(
+                        {**registered_run.tags, BACKFILL_STOP_PROTOCOL_TAG: "v1"}
+                    )
+                    col_values["run_body"] = serialize_value(registered_run)
+                    tags = {**tags, BACKFILL_STOP_PROTOCOL_TAG: "v1"}
+                    intent = tags.get(AUTO_RETRY_INTENT_TAG)
+                    if intent is not None:
+                        candidate = registered_run
+                        if (
+                            not candidate.parent_run_id
+                            or intent != f"auto-retry:{candidate.parent_run_id}"
+                        ):
+                            raise DagsterInvariantViolationError(
+                                "Automatic retry intent must identify the failed parent run"
+                            )
+                        existing = db_fetch_mappings(
+                            conn,
+                            db_select(
+                                [RunsTable.c.run_body, RunsTable.c.status, RunsTable.c.backfill_id]
+                            ).where(RunsTable.c.auto_retry_intent == intent),
+                        )
+                        if existing:
+                            return self._row_to_run(existing[0])
+                        col_values["auto_retry_intent"] = intent
+                    if historical and not historical_terminal:
+                        raise DagsterBackfillAdmissionClosed(
+                            "Historical active workers cannot be imported into a protocol backfill"
+                        )
+                    if (
+                        check.not_none(backfill).status != BulkActionStatus.REQUESTED
+                        and not historical_terminal
+                    ):
+                        raise DagsterBackfillAdmissionClosed(
+                            f"Backfill {backfill_id} no longer admits runs ({check.not_none(backfill).status.value})"
+                        )
             try:
-                conn.execute(runs_insert)
+                conn.execute(RunsTable.insert().values(**col_values))
             except db_exc.IntegrityError as exc:
                 raise DagsterRunAlreadyExists from exc
 
@@ -154,22 +274,24 @@ class SqlRunStorage(RunStorage):
                     RunTagsTable.insert(),
                     [dict(run_id=run_id, key=k, value=v) for k, v in tags.items()],
                 )
+        return registered_run
 
     def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
-        self._core_add_run(
+        existing_run = self._core_add_run(
             self._get_run_insertion_values(dagster_run, get_current_datetime()),
             dagster_run.tags_for_storage(),
         )
-        return dagster_run
+        return existing_run or dagster_run
 
     def add_historical_run(
         self, dagster_run: DagsterRun, run_creation_time: datetime
     ) -> DagsterRun:
-        self._core_add_run(
+        existing_run = self._core_add_run(
             self._get_run_insertion_values(dagster_run, run_creation_time),
             dagster_run.tags_for_storage(),
+            historical=True,
         )
-        return dagster_run
+        return existing_run or dagster_run
 
     def handle_run_event(
         self, run_id: str, event: DagsterEvent, update_timestamp: datetime | None = None
@@ -187,46 +309,70 @@ class SqlRunStorage(RunStorage):
             # TODO log?
             return
 
-        new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
-
-        # Threaded into the run_body and the run_tags write below so readers that
-        # observe a finished status are guaranteed to also see this tag.
-        updated_run = run.with_status(new_job_status)
-        failure_reason_tag_value: str | None = None
-        if event.event_type == DagsterEventType.PIPELINE_FAILURE and isinstance(
-            event.event_specific_data, JobFailureData
-        ):
-            failure_reason = event.event_specific_data.failure_reason
-            if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
-                failure_reason_tag_value = failure_reason.value
-                updated_run = updated_run.with_tags(
-                    merge_dicts(run.tags, {RUN_FAILURE_REASON_TAG: failure_reason_tag_value})
-                )
-
         run_stats_cols_in_index = self.has_run_stats_index_cols()
+        owner = run.tags.get(BACKFILL_ID_TAG)
+        protocol_supported = self.supports_backfill_stop_protocol
+        with self._backfill_transaction() as conn:
+            backfill = (
+                self._find_locked_backfill(conn, owner) if owner and protocol_supported else None
+            )
+            columns = [RunsTable.c.run_body, RunsTable.c.status]
+            if protocol_supported:
+                columns.append(RunsTable.c.backfill_id)
+            rows = db_fetch_mappings(
+                conn, db_select(columns).where(RunsTable.c.run_id == run_id).with_for_update()
+            )
+            if not rows:
+                return
+            run = self._row_to_run(rows[0])
+            new_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
+            if (
+                self._uses_backfill_stop_protocol(backfill)
+                and check.not_none(backfill).status != BulkActionStatus.REQUESTED
+                and new_status not in FINISHED_STATUSES
+            ):
+                launches = db_fetch_mappings(
+                    conn,
+                    db_select([BackfillWorkerLaunchesTable.c.run_id])
+                    .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                    .where(BackfillWorkerLaunchesTable.c.state != WorkerLaunchState.RESOLVED.value),
+                )
+                if not launches:
+                    return
 
-        kwargs = {}
+            new_job_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
-        # Update timestamp represents the time that the event occurred, not the time at which
-        # we're processing the event in the run storage. But we fall back to the current time.
-        # This is specific to the open-source implementation.
-        update_timestamp = update_timestamp or get_current_datetime()
+            # Threaded into the run_body and the run_tags write below so readers that
+            # observe a finished status are guaranteed to also see this tag.
+            updated_run = run.with_status(new_job_status)
+            failure_reason_tag_value: str | None = None
+            if event.event_type == DagsterEventType.PIPELINE_FAILURE and isinstance(
+                event.event_specific_data, JobFailureData
+            ):
+                failure_reason = event.event_specific_data.failure_reason
+                if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
+                    failure_reason_tag_value = failure_reason.value
+                    updated_run = updated_run.with_tags(
+                        merge_dicts(run.tags, {RUN_FAILURE_REASON_TAG: failure_reason_tag_value})
+                    )
 
-        if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = update_timestamp.timestamp()
+            kwargs = {}
 
-        if run_stats_cols_in_index and event.event_type in {
-            DagsterEventType.PIPELINE_CANCELED,
-            DagsterEventType.PIPELINE_FAILURE,
-            DagsterEventType.PIPELINE_SUCCESS,
-        }:
-            kwargs["end_time"] = update_timestamp.timestamp()
+            # Update timestamp represents the time that the event occurred, not the time at which
+            # we're processing the event in the run storage. But we fall back to the current time.
+            # This is specific to the open-source implementation.
+            update_timestamp = update_timestamp or get_current_datetime()
 
-        with self.connect() as conn:
-            # Write the run_tags row before the runs update. PostgresRunStorage uses
-            # an AUTOCOMMIT engine, so each `conn.execute` commits independently;
-            # writing the tag first ensures that any reader that observes the new
-            # status sees the tag too.
+            if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
+                kwargs["start_time"] = update_timestamp.timestamp()
+
+            if run_stats_cols_in_index and event.event_type in {
+                DagsterEventType.PIPELINE_CANCELED,
+                DagsterEventType.PIPELINE_FAILURE,
+                DagsterEventType.PIPELINE_SUCCESS,
+            }:
+                kwargs["end_time"] = update_timestamp.timestamp()
+
             if failure_reason_tag_value is not None:
                 if RUN_FAILURE_REASON_TAG in run.tags:
                     conn.execute(
@@ -265,6 +411,13 @@ class SqlRunStorage(RunStorage):
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
         # writes (e.g.  handle_run_event and add_tags) can cause the status in the body to be out of
         # overriden with an old value.
+        if "backfill_id" in row:
+            tags = dict(run.tags)
+            if row["backfill_id"] is None:
+                tags.pop(BACKFILL_ID_TAG, None)
+            else:
+                tags[BACKFILL_ID_TAG] = row["backfill_id"]
+            run = run.with_tags(tags)
         return run.with_status(status)
 
     def _rows_to_runs(self, rows: Iterable[dict]) -> Sequence[DagsterRun]:
@@ -347,6 +500,18 @@ class SqlRunStorage(RunStorage):
                 )
                 query = query.where(RunsTable.c.run_id.notin_(runs_in_backfills))
 
+        if (
+            filters.tags
+            and BACKFILL_ID_TAG in filters.tags
+            and self.has_built_index(RUN_BACKFILL_ID)
+        ):
+            value = filters.tags[BACKFILL_ID_TAG]
+            query = query.where(
+                RunsTable.c.backfill_id == value
+                if isinstance(value, str)
+                else RunsTable.c.backfill_id.in_(value)
+            )
+
         return query
 
     def _runs_query(
@@ -368,6 +533,12 @@ class SqlRunStorage(RunStorage):
 
         if columns is None:
             columns = ["run_body", "status"]
+        if (
+            "run_body" in columns
+            and self.has_backfill_id_column()
+            and self.has_built_index(RUN_BACKFILL_ID)
+        ):
+            columns = [*columns, "backfill_id"]
 
         table = self._add_filters_to_table(RunsTable, filters)
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
@@ -381,6 +552,8 @@ class SqlRunStorage(RunStorage):
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
         for i, (key, value) in enumerate(tags.items()):
+            if key == BACKFILL_ID_TAG and self.has_built_index(RUN_BACKFILL_ID):
+                continue
             run_tags_alias = db.alias(RunTagsTable, f"run_tags_filter{i}")
 
             table = table.join(
@@ -428,9 +601,7 @@ class SqlRunStorage(RunStorage):
     def _get_run_by_id(self, run_id: str) -> DagsterRun | None:
         check.str_param(run_id, "run_id")
 
-        query = db_select([RunsTable.c.run_body, RunsTable.c.status]).where(
-            RunsTable.c.run_id == run_id
-        )
+        query = self._runs_query(filters=RunsFilter(run_ids=[run_id]))
         rows = self.fetchall(query)
         return self._row_to_run(rows[0]) if rows else None
 
@@ -516,13 +687,36 @@ class SqlRunStorage(RunStorage):
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
             )
-        current_tags = run.tags if run.tags else {}
+        owner = run.tags.get(BACKFILL_ID_TAG)
+        protocol_supported = self.supports_backfill_stop_protocol
+        with self._backfill_transaction() as conn:
+            if owner and protocol_supported:
+                self._find_locked_backfill(conn, owner)
+            columns = [RunsTable.c.run_body, RunsTable.c.status]
+            if protocol_supported:
+                columns.append(RunsTable.c.backfill_id)
+            rows = db_fetch_mappings(
+                conn, db_select(columns).where(RunsTable.c.run_id == run_id).with_for_update()
+            )
+            if not rows:
+                raise DagsterRunNotFoundError(
+                    f"Run {run_id} was not found in instance.", invalid_run_id=run_id
+                )
+            run = self._row_to_run(rows[0])
+            if BACKFILL_ID_TAG in new_tags and new_tags[BACKFILL_ID_TAG] != run.tags.get(
+                BACKFILL_ID_TAG
+            ):
+                raise DagsterInvariantViolationError("Backfill ownership is immutable")
+            if BACKFILL_STOP_PROTOCOL_TAG in new_tags and new_tags[
+                BACKFILL_STOP_PROTOCOL_TAG
+            ] != run.tags.get(BACKFILL_STOP_PROTOCOL_TAG):
+                raise DagsterInvariantViolationError("Backfill protocol version is immutable")
+            current_tags = run.tags if run.tags else {}
 
-        all_tags = merge_dicts(current_tags, new_tags)
-        partition = all_tags.get(PARTITION_NAME_TAG)
-        partition_set = all_tags.get(PARTITION_SET_TAG)
+            all_tags = merge_dicts(current_tags, new_tags)
+            partition = all_tags.get(PARTITION_NAME_TAG)
+            partition_set = all_tags.get(PARTITION_SET_TAG)
 
-        with self.connect() as conn:
             conn.execute(
                 RunsTable.update()
                 .where(RunsTable.c.run_id == run_id)
@@ -583,7 +777,10 @@ class SqlRunStorage(RunStorage):
             "root_to_run",
         )
         # get run group
-        run_group_query = db_select([RunsTable.c.run_body, RunsTable.c.status]).select_from(
+        columns = [RunsTable.c.run_body, RunsTable.c.status]
+        if self.has_backfill_id_column() and self.has_built_index(RUN_BACKFILL_ID):
+            columns.append(RunsTable.c.backfill_id)
+        run_group_query = db_select(columns).select_from(
             root_to_run.join(
                 RunsTable,
                 root_to_run.c.run_id == RunsTable.c.run_id,
@@ -602,9 +799,44 @@ class SqlRunStorage(RunStorage):
 
     def delete_run(self, run_id: str) -> None:
         check.str_param(run_id, "run_id")
-        query = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
-        with self.connect() as conn:
-            conn.execute(query)
+        run = self._get_run_by_id(run_id)
+        owner = run.tags.get(BACKFILL_ID_TAG) if run else None
+        with self._backfill_transaction() as conn:
+            backfill = self._find_locked_backfill(conn, owner) if owner else None
+            if self._uses_backfill_stop_protocol(backfill):
+                self._require_backfill_stop_protocol(conn)
+                if check.not_none(backfill).status not in {
+                    BulkActionStatus.CANCELED,
+                    BulkActionStatus.COMPLETED,
+                    BulkActionStatus.COMPLETED_SUCCESS,
+                    BulkActionStatus.COMPLETED_FAILED,
+                }:
+                    automatic_retry = db_fetch_mappings(
+                        conn,
+                        db_select([RunsTable.c.auto_retry_intent])
+                        .where(RunsTable.c.run_id == run_id)
+                        .where(RunsTable.c.auto_retry_intent.isnot(None))
+                        .with_for_update(),
+                    )
+                    if automatic_retry:
+                        raise DagsterInvariantViolationError(
+                            "Cannot delete an automatic retry while its backfill can resume"
+                        )
+                unresolved = db_fetch_mappings(
+                    conn,
+                    db_select([BackfillWorkerLaunchesTable.c.worker_id])
+                    .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                    .where(BackfillWorkerLaunchesTable.c.state != WorkerLaunchState.RESOLVED.value)
+                    .limit(1),
+                )
+                if unresolved:
+                    raise DagsterInvariantViolationError(
+                        "Cannot delete a run with unresolved backfill worker launches"
+                    )
+            self._delete_run(conn, run_id)
+
+    def _delete_run(self, conn: Connection, run_id: str) -> None:
+        conn.execute(db.delete(RunsTable).where(RunsTable.c.run_id == run_id))
 
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         check.str_param(job_snapshot_id, "job_snapshot_id")
@@ -848,6 +1080,29 @@ class SqlRunStorage(RunStorage):
         with self.connect() as conn:
             return BackfillTagsTable.name in db.inspect(conn).get_table_names()
 
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        with self.connect() as conn:
+            return self._supports_backfill_stop_protocol(conn)
+
+    def _supports_backfill_stop_protocol(self, conn: Connection) -> bool:
+        inspector = db.inspect(conn)
+        return (
+            BackfillWorkerLaunchesTable.name in inspector.get_table_names()
+            and {"backfill_id", "auto_retry_intent"}.issubset(
+                {column["name"] for column in inspector.get_columns(RunsTable.name)}
+            )
+            and bool(
+                db_fetch_mappings(
+                    conn,
+                    db_select([1])
+                    .where(SecondaryIndexMigrationTable.c.name == RUN_BACKFILL_ID)
+                    .where(SecondaryIndexMigrationTable.c.migration_completed.isnot(None))
+                    .limit(1),
+                )
+            )
+        )
+
     # Daemon heartbeats
 
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
@@ -880,8 +1135,11 @@ class SqlRunStorage(RunStorage):
 
     def wipe(self) -> None:
         """Clears the run storage."""
+        protocol_supported = self.supports_backfill_stop_protocol
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
+            if protocol_supported:
+                conn.execute(BackfillWorkerLaunchesTable.delete())
             conn.execute(RunsTable.delete())
             conn.execute(RunTagsTable.delete())
             conn.execute(SnapshotsTable.delete())
@@ -1072,6 +1330,8 @@ class SqlRunStorage(RunStorage):
 
     def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
+        if partition_backfill.uses_stop_protocol:
+            self._require_backfill_stop_protocol()
         values: dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
@@ -1086,9 +1346,10 @@ class SqlRunStorage(RunStorage):
         if self.has_bulk_action_job_name_column():
             values["job_name"] = partition_backfill.job_name
 
+        has_backfill_tags_table = self.has_backfill_tags_table()
         with self.connect() as conn:
             conn.execute(BulkActionsTable.insert().values(**values))
-            if self.has_backfill_tags_table():
+            if has_backfill_tags_table:
                 tags_to_insert = partition_backfill.tags
                 if len(tags_to_insert.items()) > 0:
                     conn.execute(
@@ -1106,19 +1367,298 @@ class SqlRunStorage(RunStorage):
     def update_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
         backfill_id = partition_backfill.backfill_id
-        if not self.get_backfill(backfill_id):
+        with self._backfill_transaction() as conn:
+            current = self._lock_backfill(conn, backfill_id)
+            tags = dict(partition_backfill.tags)
+            if BACKFILL_STOP_PROTOCOL_TAG in current.tags:
+                tags[BACKFILL_STOP_PROTOCOL_TAG] = current.tags[BACKFILL_STOP_PROTOCOL_TAG]
+            else:
+                tags.pop(BACKFILL_STOP_PROTOCOL_TAG, None)
+            partition_backfill = partition_backfill._replace(tags=tags)
+            if not self._uses_backfill_stop_protocol(current):
+                self._write_backfill(conn, partition_backfill)
+                return
+            self._require_backfill_stop_protocol(conn)
+            if (
+                current.status == BulkActionStatus.REQUESTED
+                and partition_backfill.status
+                in {
+                    BulkActionStatus.COMPLETED,
+                    BulkActionStatus.COMPLETED_SUCCESS,
+                    BulkActionStatus.COMPLETED_FAILED,
+                }
+                and not self._backfill_drained(conn, backfill_id)
+            ):
+                return
+            if (
+                current.status != BulkActionStatus.REQUESTED
+                and partition_backfill.status == BulkActionStatus.REQUESTED
+            ):
+                # A daemon progress write from before closure cannot reopen
+                # admission. Only resume_backfill may perform that transition.
+                return
+            if (
+                current.status
+                not in {
+                    BulkActionStatus.REQUESTED,
+                    BulkActionStatus.CANCELING,
+                    BulkActionStatus.FAILING,
+                }
+                and partition_backfill.status != current.status
+            ):
+                return
+            if current.status == BulkActionStatus.REQUESTED and partition_backfill.status in {
+                BulkActionStatus.CANCELED,
+                BulkActionStatus.FAILED,
+            }:
+                if not self._backfill_drained(conn, backfill_id):
+                    partition_backfill = partition_backfill.with_status(
+                        BulkActionStatus.CANCELING
+                        if partition_backfill.status == BulkActionStatus.CANCELED
+                        else BulkActionStatus.FAILING
+                    )
+            if current.status in {BulkActionStatus.CANCELING, BulkActionStatus.FAILING}:
+                terminal = (
+                    BulkActionStatus.CANCELED
+                    if current.status == BulkActionStatus.CANCELING
+                    else BulkActionStatus.FAILED
+                )
+                if partition_backfill.status == terminal:
+                    if not self._backfill_drained(conn, backfill_id):
+                        return
+                elif partition_backfill.status != current.status:
+                    return
+            self._write_backfill(conn, partition_backfill)
+
+    def _require_backfill_stop_protocol(self, conn: Connection | None = None) -> None:
+        supported = (
+            self._supports_backfill_stop_protocol(conn)
+            if conn is not None
+            else self.supports_backfill_stop_protocol
+        )
+        if not supported:
             raise DagsterInvariantViolationError(
-                f"Backfill {backfill_id} is not present in storage"
+                "Atomic backfill stopping requires the backfill stop protocol storage migration"
             )
-        with self.connect() as conn:
+
+    def _backfill_drained(self, conn: Connection, backfill_id: str) -> bool:
+        launches = db_fetch_mappings(
+            conn,
+            db_select([BackfillWorkerLaunchesTable.c.run_id])
+            .where(BackfillWorkerLaunchesTable.c.backfill_id == backfill_id)
+            .where(BackfillWorkerLaunchesTable.c.state != WorkerLaunchState.RESOLVED.value)
+            .limit(1),
+        )
+        unfinished = db_fetch_mappings(
+            conn,
+            db_select([RunsTable.c.run_id])
+            .where(RunsTable.c.backfill_id == backfill_id)
+            .where(RunsTable.c.status.notin_([status.value for status in FINISHED_STATUSES]))
+            .limit(1),
+        )
+        return not launches and not unfinished
+
+    def _run_uses_backfill_stop_protocol(self, run_id: str) -> bool:
+        run = self._get_run_by_id(run_id)
+        if run is None:
+            raise DagsterRunNotFoundError(
+                f"Run {run_id} was not found in instance.", invalid_run_id=run_id
+            )
+        owner = run.tags.get(BACKFILL_ID_TAG)
+        if owner is None:
+            return False
+        backfill = self.get_backfill(owner)
+        if backfill is None:
+            raise DagsterBackfillAdmissionClosed(f"Backfill {owner} is not present in storage")
+        return backfill.uses_stop_protocol
+
+    def claim_backfill_worker_launch(
+        self, run_id: str, worker_id: str, kind: WorkerLaunchKind, target: WorkerLaunchTarget
+    ) -> bool:
+        check.str_param(run_id, "run_id")
+        check.str_param(worker_id, "worker_id")
+        check.inst_param(kind, "kind", WorkerLaunchKind)
+        check.inst_param(target, "target", (UnknownWorkerTarget, K8sWorkerTarget))
+        if not self._run_uses_backfill_stop_protocol(run_id):
+            return True
+        self._require_backfill_stop_protocol()
+        with self._backfill_transaction() as conn:
+            rows = db_fetch_mappings(
+                conn, db_select([RunsTable.c.backfill_id]).where(RunsTable.c.run_id == run_id)
+            )
+            if not rows:
+                raise DagsterRunNotFoundError(
+                    f"Run {run_id} was not found in instance.", invalid_run_id=run_id
+                )
+            backfill_id = rows[0]["backfill_id"]
+            if not backfill_id:
+                return True
+            backfill = self._lock_backfill(conn, backfill_id)
+            run_rows = db_fetch_mappings(
+                conn,
+                db_select([RunsTable.c.status])
+                .where(RunsTable.c.run_id == run_id)
+                .with_for_update(),
+            )
+            if not run_rows or run_rows[0]["status"] in {
+                status.value for status in FINISHED_STATUSES
+            }:
+                return False
+            if kind == WorkerLaunchKind.RUN and run_rows[0]["status"] not in {
+                DagsterRunStatus.NOT_STARTED.value,
+                DagsterRunStatus.QUEUED.value,
+                DagsterRunStatus.STARTING.value,
+            }:
+                return False
+            if backfill.status != BulkActionStatus.REQUESTED:
+                return False
+            existing = db_fetch_mappings(
+                conn,
+                db_select([BackfillWorkerLaunchesTable.c.worker_id])
+                .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                .where(
+                    db.or_(
+                        BackfillWorkerLaunchesTable.c.kind == WorkerLaunchKind.RUN.value,
+                        BackfillWorkerLaunchesTable.c.worker_id == worker_id,
+                    )
+                    if kind == WorkerLaunchKind.RUN
+                    else BackfillWorkerLaunchesTable.c.worker_id == worker_id
+                ),
+            )
+            if existing:
+                return False
             conn.execute(
-                BulkActionsTable.update()
-                .where(BulkActionsTable.c.key == backfill_id)
-                .values(
-                    status=partition_backfill.status.value,
-                    body=serialize_value(partition_backfill),
+                BackfillWorkerLaunchesTable.insert().values(
+                    run_id=run_id,
+                    worker_id=worker_id,
+                    kind=kind.value,
+                    target=serialize_value(target),
+                    backfill_id=backfill_id,
+                    state=WorkerLaunchState.PENDING.value,
                 )
             )
+            return True
+
+    def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        check.str_param(run_id, "run_id")
+        check.str_param(worker_id, "worker_id")
+        if not self._run_uses_backfill_stop_protocol(run_id):
+            return
+        self._require_backfill_stop_protocol()
+        with self._backfill_transaction() as conn:
+            conn.execute(
+                BackfillWorkerLaunchesTable.update()
+                .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                .where(BackfillWorkerLaunchesTable.c.worker_id == worker_id)
+                .where(BackfillWorkerLaunchesTable.c.state == WorkerLaunchState.PENDING.value)
+                .values(state=WorkerLaunchState.ACKNOWLEDGED.value)
+            )
+
+    def get_backfill_worker_launches(self, backfill_id: str) -> Sequence[BackfillWorkerLaunch]:
+        check.str_param(backfill_id, "backfill_id")
+        backfill = self.get_backfill(backfill_id)
+        if backfill is None:
+            raise DagsterBackfillAdmissionClosed(
+                f"Backfill {backfill_id} is not present in storage"
+            )
+        if not backfill.uses_stop_protocol:
+            return []
+        self._require_backfill_stop_protocol()
+        rows = self.fetchall(
+            db_select(
+                [
+                    BackfillWorkerLaunchesTable.c.run_id,
+                    BackfillWorkerLaunchesTable.c.worker_id,
+                    BackfillWorkerLaunchesTable.c.kind,
+                    BackfillWorkerLaunchesTable.c.target,
+                    BackfillWorkerLaunchesTable.c.state,
+                ]
+            )
+            .where(BackfillWorkerLaunchesTable.c.backfill_id == backfill_id)
+            .where(BackfillWorkerLaunchesTable.c.state != WorkerLaunchState.RESOLVED.value)
+            .order_by(BackfillWorkerLaunchesTable.c.run_id, BackfillWorkerLaunchesTable.c.worker_id)
+        )
+        return [
+            BackfillWorkerLaunch(
+                run_id=row["run_id"],
+                worker_id=row["worker_id"],
+                kind=WorkerLaunchKind(row["kind"]),
+                target=deserialize_value(row["target"], (UnknownWorkerTarget, K8sWorkerTarget)),
+                state=WorkerLaunchState(row["state"]),
+            )
+            for row in rows
+        ]
+
+    def resolve_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        check.str_param(run_id, "run_id")
+        check.str_param(worker_id, "worker_id")
+        if not self._run_uses_backfill_stop_protocol(run_id):
+            return
+        self._require_backfill_stop_protocol()
+        with self._backfill_transaction() as conn:
+            rows = db_fetch_mappings(
+                conn,
+                db_select(
+                    [BackfillWorkerLaunchesTable.c.backfill_id, BackfillWorkerLaunchesTable.c.kind]
+                )
+                .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                .where(BackfillWorkerLaunchesTable.c.worker_id == worker_id),
+            )
+            if not rows:
+                return
+            self._lock_backfill(conn, rows[0]["backfill_id"])
+            run_rows = db_fetch_mappings(
+                conn,
+                db_select([RunsTable.c.status])
+                .where(RunsTable.c.run_id == run_id)
+                .with_for_update(),
+            )
+            if not run_rows:
+                return
+            if rows[0]["kind"] == WorkerLaunchKind.RUN.value and run_rows[0]["status"] not in {
+                status.value for status in FINISHED_STATUSES
+            }:
+                return
+            conn.execute(
+                BackfillWorkerLaunchesTable.update()
+                .where(BackfillWorkerLaunchesTable.c.run_id == run_id)
+                .where(BackfillWorkerLaunchesTable.c.worker_id == worker_id)
+                .where(BackfillWorkerLaunchesTable.c.state == WorkerLaunchState.ACKNOWLEDGED.value)
+                .values(state=WorkerLaunchState.RESOLVED.value)
+            )
+
+    def request_backfill_stop(self, backfill_id: str) -> PartitionBackfill:
+        check.str_param(backfill_id, "backfill_id")
+        with self._backfill_transaction() as conn:
+            backfill = self._lock_backfill(conn, backfill_id)
+            if not self._uses_backfill_stop_protocol(backfill):
+                backfill = backfill.with_status(BulkActionStatus.CANCELING)
+                self._write_backfill(conn, backfill)
+                return backfill
+            self._require_backfill_stop_protocol(conn)
+            if backfill.status == BulkActionStatus.REQUESTED:
+                backfill = backfill.with_status(BulkActionStatus.CANCELING)
+                self._write_backfill(conn, backfill)
+            return backfill
+
+    def resume_backfill(self, backfill_id: str) -> PartitionBackfill:
+        check.str_param(backfill_id, "backfill_id")
+        with self._backfill_transaction() as conn:
+            backfill = self._lock_backfill(conn, backfill_id)
+            if not self._uses_backfill_stop_protocol(backfill):
+                backfill = backfill.with_status(BulkActionStatus.REQUESTED)
+                self._write_backfill(conn, backfill)
+                return backfill
+            self._require_backfill_stop_protocol(conn)
+            if backfill.status != BulkActionStatus.FAILED or not self._backfill_drained(
+                conn, backfill_id
+            ):
+                raise DagsterInvariantViolationError(
+                    "Only a drained FAILED backfill may be resumed"
+                )
+            backfill = backfill.with_status(BulkActionStatus.REQUESTED)
+            self._write_backfill(conn, backfill)
+            return backfill
 
     def get_cursor_values(self, keys: set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)

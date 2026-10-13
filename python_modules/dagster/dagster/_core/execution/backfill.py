@@ -3,6 +3,7 @@ import os
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
+from hashlib import sha256
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from dagster import _check as check
@@ -13,7 +14,10 @@ from dagster._core.definitions.partitions.subset import PartitionsSubset
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.utils import check_valid_title
-from dagster._core.errors import DagsterDefinitionChangedDeserializationError
+from dagster._core.errors import (
+    DagsterDefinitionChangedDeserializationError,
+    DagsterInvariantViolationError,
+)
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     PartitionedAssetBackfillStatus,
@@ -26,10 +30,11 @@ from dagster._core.remote_representation.external_data import job_name_for_parti
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,
+    DagsterRun,
     DagsterRunStatus,
     RunsFilter,
 )
-from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
+from dagster._core.storage.tags import BACKFILL_ID_TAG, BACKFILL_STOP_PROTOCOL_TAG, USER_TAG
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -211,6 +216,21 @@ class PartitionBackfill(
     @property
     def selector_id(self):
         return self.partition_set_origin.get_selector_id() if self.partition_set_origin else None
+
+    @property
+    def uses_stop_protocol(self) -> bool:
+        version = self.tags.get(BACKFILL_STOP_PROTOCOL_TAG)
+        if version is None:
+            return False
+        if version != "v1":
+            raise DagsterInvariantViolationError(
+                f"Backfill {self.backfill_id} uses unsupported stop protocol version {version!r}."
+            )
+        if not self.backfill_id:
+            raise DagsterInvariantViolationError(
+                "A protocol backfill must have a nonempty owner ID."
+            )
+        return True
 
     @property
     def is_asset_backfill(self) -> bool:
@@ -545,7 +565,108 @@ class PartitionBackfill(
         )
 
 
+def run_uses_stop_protocol(instance: "DagsterInstance", run: DagsterRun) -> bool:
+    backfill_id = run.tags.get(BACKFILL_ID_TAG)
+    if backfill_id is None:
+        return False
+    backfill = instance.get_backfill(backfill_id)
+    if backfill is not None:
+        return backfill.uses_stop_protocol
+    # The protocol denies orphan dispatch. Disabled instances preserve synthetic legacy tags.
+    return (
+        instance.backfill_stop_protocol_enabled or run.tags.get(BACKFILL_STOP_PROTOCOL_TAG) == "v1"
+    )
+
+
+def get_backfill_step_worker_id(step_key: str, attempt_number: int) -> str:
+    # Dynamic mapping keys have no fixed length limit. Worker IDs must fit the storage key
+    # while distinguishing each complete step key and retry attempt.
+    digest = sha256(f"{step_key}:{attempt_number}".encode()).hexdigest()
+    return f"step:{digest}"
+
+
+def reconcile_backfill_worker_launches(
+    instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
+) -> None:
+    """Resolve acknowledged dispatches only after definitive execution-worker exit."""
+    from dagster._core.launcher.base import BackfillWorkerExitStatus
+    from dagster._core.storage.runs.base import WorkerLaunchKind
+
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+    closed = backfill.status != BulkActionStatus.REQUESTED
+    for launch in instance.get_backfill_worker_launches(backfill_id):
+        run = instance.get_run_by_id(launch.run_id)
+        if run is None:
+            continue
+        try:
+            status = instance.run_launcher.get_backfill_worker_exit_status(run, launch)
+            if status != BackfillWorkerExitStatus.EXITED and (closed or run.is_finished):
+                instance.run_launcher.request_backfill_worker_stop(run, launch)
+                status = instance.run_launcher.get_backfill_worker_exit_status(run, launch)
+            if not launch.acknowledged:
+                continue
+            if status != BackfillWorkerExitStatus.EXITED:
+                continue
+            if launch.kind == WorkerLaunchKind.RUN and not run.is_finished:
+                if not closed:
+                    continue
+                instance.report_run_canceled(run)
+            instance.resolve_backfill_worker_launch(run.run_id, launch.worker_id)
+        except Exception:
+            logger.exception(
+                "Could not prove worker exit for backfill run %s worker %s",
+                run.run_id,
+                launch.worker_id,
+            )
+
+
 def cancel_backfill_runs_and_cancellation_complete(
+    instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
+) -> bool:
+    """Drain a closed backfill; terminal events alone do not complete cancellation."""
+    from dagster._core.storage.runs.base import WorkerLaunchKind
+
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+    if not backfill.uses_stop_protocol:
+        return _cancel_legacy_backfill_runs(instance, backfill_id, logger)
+    check.invariant(
+        instance.supports_backfill_stop_protocol,
+        "Backfill cancellation requires storage with the atomic stop protocol.",
+    )
+    check.invariant(
+        backfill.status in (BulkActionStatus.CANCELING, BulkActionStatus.FAILING),
+        "Backfill admission must be closed before draining runs.",
+    )
+    claimed_run_ids = {
+        launch.run_id
+        for launch in instance.get_backfill_worker_launches(backfill_id)
+        if launch.kind == WorkerLaunchKind.RUN
+    }
+    runs = instance.get_runs(
+        filters=RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}, statuses=NOT_FINISHED_STATUSES),
+        limit=CANCELABLE_RUNS_BATCH_SIZE,
+        ascending=True,
+    )
+    for run in runs:
+        if run.run_id not in claimed_run_ids and run.status in (
+            DagsterRunStatus.NOT_STARTED,
+            DagsterRunStatus.QUEUED,
+            DagsterRunStatus.STARTING,
+        ):
+            # Closure and the launch claim share the storage fence. An unclaimed run cannot
+            # dispatch after closure, including a dequeuer paused after its STARTING event.
+            instance.report_run_canceling(run, message="Backfill admission is closed.")
+            instance.report_run_canceled(run)
+        elif run.status != DagsterRunStatus.CANCELING:
+            instance.report_run_canceling(run)
+
+    reconcile_backfill_worker_launches(instance, backfill_id, logger)
+    return not instance.get_backfill_worker_launches(backfill_id) and not instance.get_run_ids(
+        RunsFilter(tags={BACKFILL_ID_TAG: backfill_id}, statuses=NOT_FINISHED_STATUSES), limit=1
+    )
+
+
+def _cancel_legacy_backfill_runs(
     instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
 ) -> bool:
     """Cancels all cancelable runs associated with the backfill_id. Ensures that

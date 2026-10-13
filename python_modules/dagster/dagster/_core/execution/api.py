@@ -739,6 +739,16 @@ def job_execution_iterator(
     ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
+        from dagster._core.execution.backfill import run_uses_stop_protocol
+
+        if (
+            run_uses_stop_protocol(job_context.instance, job_context.dagster_run)
+            and not job_context.executor.supports_backfill_stop_protocol
+        ):
+            raise DagsterInvariantViolationError(
+                f"Executor {type(job_context.executor).__name__} does not support durable "
+                "backfill worker admission and exit proof."
+            )
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
                 failed_steps.append(event)

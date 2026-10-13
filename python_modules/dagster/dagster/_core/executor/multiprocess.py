@@ -112,6 +112,10 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
 
 class MultiprocessExecutor(Executor):
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return True
+
     def __init__(
         self,
         retries: RetryMode,
@@ -405,6 +409,10 @@ def execute_step_out_of_process(
     known_state: KnownExecutionState,
     repository_load_data: RepositoryLoadData | None,
 ) -> Iterator[DagsterEvent | None]:
+    from dagster._core.errors import DagsterBackfillAdmissionClosed
+    from dagster._core.execution.backfill import get_backfill_step_worker_id, run_uses_stop_protocol
+    from dagster._core.storage.runs.base import WorkerLaunchKind
+
     command = MultiprocessExecutorChildProcessCommand(
         run_config=step_context.run_config,
         dagster_run=step_context.dagster_run,
@@ -423,6 +431,17 @@ def execute_step_out_of_process(
         metadata={},
     )
 
+    worker_id = get_backfill_step_worker_id(
+        step.key, known_state.get_retry_state().get_attempt_count(step.key)
+    )
+    backfill_owned = run_uses_stop_protocol(step_context.instance, step_context.dagster_run)
+    if backfill_owned and not step_context.instance.claim_backfill_worker_launch(
+        step_context.dagster_run.run_id,
+        worker_id,
+        WorkerLaunchKind.STEP,
+        step_context.instance.run_launcher.get_backfill_worker_target(step_context.dagster_run),
+    ):
+        raise DagsterBackfillAdmissionClosed(f"Step worker {worker_id} cannot dispatch.")
     for ret in execute_child_process_command(multiproc_ctx, command):
         if ret is None or isinstance(ret, DagsterEvent):
             yield ret
@@ -430,6 +449,10 @@ def execute_step_out_of_process(
             if isinstance(ret, ChildProcessSystemErrorEvent):
                 errors[ret.pid] = ret.error_info
         elif isinstance(ret, BaseProcess):
+            if backfill_owned:
+                step_context.instance.acknowledge_backfill_worker_launch(
+                    step_context.dagster_run.run_id, worker_id
+                )
             processes[step.key] = ret
         else:
             check.failed(f"Unexpected return value from child process {type(ret)}")

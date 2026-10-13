@@ -164,16 +164,15 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
                 self.add_run(run)
             os.unlink(path_to_old_db)
 
-    def delete_run(self, run_id: str) -> None:
+    def _delete_run(self, conn: Connection, run_id: str) -> None:
         """Override the default sql delete run implementation until we can get full
         support on cascading deletes.
         """
         check.str_param(run_id, "run_id")
         remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
         remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
-        with self.connect() as conn:
-            conn.execute(remove_tags)
-            conn.execute(remove_run)
+        conn.execute(remove_tags)
+        conn.execute(remove_run)
 
     def alembic_version(self) -> AlembicVersion:
         alembic_config = get_alembic_config(__file__)

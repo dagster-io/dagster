@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from typing_extensions import TypedDict
@@ -22,6 +23,8 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.sql import AlembicVersion
 from dagster._daemon.types import DaemonHeartbeat
+from dagster._record import record
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils import PrintFn
 
 if TYPE_CHECKING:
@@ -31,6 +34,46 @@ if TYPE_CHECKING:
 class RunGroupInfo(TypedDict):
     count: int
     runs: Sequence[DagsterRun]
+
+
+class WorkerLaunchState(Enum):
+    PENDING = "PENDING"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    RESOLVED = "RESOLVED"
+
+
+class WorkerLaunchKind(Enum):
+    RUN = "RUN"
+    STEP = "STEP"
+
+
+@whitelist_for_serdes
+@record
+class UnknownWorkerTarget:
+    handler_name: str
+
+
+@whitelist_for_serdes
+@record
+class K8sWorkerTarget:
+    job_name: str
+    namespace: str
+
+
+WorkerLaunchTarget = UnknownWorkerTarget | K8sWorkerTarget
+
+
+@record
+class BackfillWorkerLaunch:
+    run_id: str
+    worker_id: str
+    kind: WorkerLaunchKind
+    target: WorkerLaunchTarget
+    state: WorkerLaunchState
+
+    @property
+    def acknowledged(self) -> bool:
+        return self.state == WorkerLaunchState.ACKNOWLEDGED
 
 
 @public
@@ -398,6 +441,36 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
     @abstractmethod
     def update_backfill(self, partition_backfill: PartitionBackfill):
         """Update a partition backfill in run storage."""
+
+    @property
+    def supports_backfill_stop_protocol(self) -> bool:
+        return False
+
+    def claim_backfill_worker_launch(
+        self, run_id: str, worker_id: str, kind: WorkerLaunchKind, target: WorkerLaunchTarget
+    ) -> bool:
+        """Persist the dispatch claim before an owned run or remote step launch RPC."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
+
+    def acknowledge_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        """Record a successful launch RPC return; failures remain pending."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
+
+    def get_backfill_worker_launches(self, backfill_id: str) -> Sequence[BackfillWorkerLaunch]:
+        """Return unresolved dispatch claims, including ambiguous RPC outcomes."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
+
+    def resolve_backfill_worker_launch(self, run_id: str, worker_id: str) -> None:
+        """Resolve an acknowledged dispatch after definitive worker-exit evidence."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
+
+    def request_backfill_stop(self, backfill_id: str) -> PartitionBackfill:
+        """Close admission before cancellation begins."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
+
+    def resume_backfill(self, backfill_id: str) -> PartitionBackfill:
+        """Explicitly reopen a failed backfill after its previous work drained."""
+        raise NotImplementedError("Run storage does not support atomic backfill stopping")
 
     def alembic_version(self) -> AlembicVersion | None:
         return None
