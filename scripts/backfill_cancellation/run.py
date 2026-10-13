@@ -79,6 +79,7 @@ SUITES = (
     ),
 )
 POSTGRES_IMAGE = "postgres@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3"
+NATIVE_CASES = ("normal", "held-before", "held-after", "native-init-sidecars")
 
 
 def main() -> int:
@@ -435,6 +436,7 @@ def main() -> int:
                 "cancel_k8s_fixture.py",
                 "k8s_cancel_probe.py",
                 "admission_probe_server.py",
+                "native_init_sidecar.py",
             ):
                 shutil.copy2(assets / name, context / name)
             shutil.copy2(constraints, context / "dependency-constraints.txt")
@@ -469,7 +471,7 @@ def main() -> int:
                 ["kind", "load", "docker-image", image, "--name", cluster],
                 distribution + "-load-image",
             )
-            for mode in ("normal", "held-before", "held-after"):
+            for mode in NATIVE_CASES:
                 label = distribution + "-" + mode
                 namespace = "dagster-cancel-" + suffix + "-" + label
                 webhook_name = "dagster-qa-" + suffix + "-" + label
@@ -692,7 +694,7 @@ def main() -> int:
             *(
                 distribution + "-" + mode + suffix
                 for distribution in ("source", "private-wheels")
-                for mode in ("normal", "held-before", "held-after")
+                for mode in NATIVE_CASES
                 for suffix in (
                     "-database.log",
                     "-prepare-controller.log",

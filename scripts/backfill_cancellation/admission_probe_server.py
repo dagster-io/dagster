@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field, FilePath
 class Settings(BaseModel):
     tls_cert: FilePath
     tls_key: FilePath
-    mode: Literal["normal", "held-before", "held-after"]
+    mode: Literal["normal", "held-before", "held-after", "native-init-sidecars"]
     port: int = Field(default=8443, ge=1, le=65535)
     webhook_name: str = Field(
         min_length=1, max_length=63, pattern=r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
@@ -118,7 +118,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tls-cert", type=Path, required=True)
     parser.add_argument("--tls-key", type=Path, required=True)
-    parser.add_argument("--mode", choices=("normal", "held-before", "held-after"), default="normal")
+    parser.add_argument(
+        "--mode",
+        choices=("normal", "held-before", "held-after", "native-init-sidecars"),
+        default="normal",
+    )
     parser.add_argument("--port", type=int, default=8443)
     parser.add_argument("--webhook-name", default=ADMISSION_WEBHOOK_NAME)
     settings = Settings.model_validate(vars(parser.parse_args()))

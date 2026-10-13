@@ -14,6 +14,6 @@ RUN --mount=type=cache,target=/root/.cache/uv uv --no-config pip install \
 
 FROM python:3.14.6-slim-bookworm@sha256:4c92ffcde4dd6f1ff72a24518f49fd4990b27134987dfa31a733badde66df9f8
 COPY --from=builder /opt/venv /opt/venv
-COPY cancel_k8s_fixture.py k8s_cancel_probe.py admission_probe_server.py /opt/probe/
+COPY cancel_k8s_fixture.py k8s_cancel_probe.py admission_probe_server.py native_init_sidecar.py /opt/probe/
 ENV PATH=/opt/venv/bin:$PATH PYTHONPATH=/opt/probe PYTHONUNBUFFERED=1
 WORKDIR /opt/probe

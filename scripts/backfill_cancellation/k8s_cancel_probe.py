@@ -40,7 +40,22 @@ def run_view(instance: dg.DagsterInstance) -> list[dict]:
     ]
 
 
-def instance_config(namespace: str, image: str, webhook_name: str) -> dict:
+def instance_config(namespace: str, image: str, webhook_name: str, case: str) -> dict:
+    pod_spec = {"termination_grace_period_seconds": 5}
+    if case == "native-init-sidecars":
+        pod_spec.update(
+            init_containers=[
+                {
+                    "name": "native-init-proof",
+                    "image": image,
+                    "image_pull_policy": "Never",
+                    "restart_policy": "Always",
+                    "command": ["python", "/opt/probe/native_init_sidecar.py"],
+                    "volume_mounts": [{"name": "native-init-proof", "mount_path": "/proof"}],
+                }
+            ],
+            volumes=[{"name": "native-init-proof", "empty_dir": {}}],
+        )
     return {
         "storage": {"postgres": {"postgres_url": {"env": "DAGSTER_POSTGRES_URL"}}},
         "run_coordinator": {
@@ -60,7 +75,7 @@ def instance_config(namespace: str, image: str, webhook_name: str) -> dict:
                 "image_pull_policy": "Never",
                 "env_secrets": ["dagster-probe-env"],
                 "backfill_worker_admission_webhook_name": webhook_name,
-                "run_k8s_config": {"pod_spec_config": {"termination_grace_period_seconds": 5}},
+                "run_k8s_config": {"pod_spec_config": pod_spec},
             },
         },
         "run_retries": {"enabled": True, "max_retries": 1, "retry_on_asset_or_op_failure": True},
@@ -93,7 +108,7 @@ def main() -> int:
             assert time.monotonic() < deadline, "Admission service did not become ready"
             time.sleep(0.2)
     (home / "dagster.yaml").write_text(
-        yaml.safe_dump(instance_config(namespace, image, webhook_name)), encoding="utf-8"
+        yaml.safe_dump(instance_config(namespace, image, webhook_name, case)), encoding="utf-8"
     )
     os.environ["DAGSTER_HOME"] = str(home)
     kubernetes.config.load_incluster_config()
@@ -224,8 +239,24 @@ def main() -> int:
                         for entry in instance.all_logs(run.run_id)
                     )
                     admission = admission_request("GET", "/qa/status")
-                    if (case == "normal" and blocked) or (
-                        case != "normal" and admission["held_uid"] is not None
+                    if case == "native-init-sidecars":
+                        worker_pods = [
+                            pod
+                            for pod in core.list_namespaced_pod(namespace).items
+                            if pod.metadata.name not in (os.environ["HOSTNAME"], "admission")
+                        ]
+                        sidecars_ready = len(worker_pods) == 2 and all(
+                            len(pod.status.init_container_statuses or []) == 1
+                            and pod.status.init_container_statuses[0].restart_count >= 1
+                            and pod.status.init_container_statuses[0].state.running is not None
+                            for pod in worker_pods
+                        )
+                    else:
+                        sidecars_ready = True
+                    if (
+                        case in ("normal", "native-init-sidecars") and blocked and sidecars_ready
+                    ) or (
+                        case in ("held-before", "held-after") and admission["held_uid"] is not None
                     ):
                         break
                     assert time.monotonic() < deadline, (
@@ -233,10 +264,16 @@ def main() -> int:
                     )
                     assert not run.is_finished, run_view(instance)
                     time.sleep(0.2)
-                started = inventory("parent_and_remote_step_running" if case == "normal" else case)
+                started = inventory(
+                    "parent_and_remote_step_running"
+                    if case in ("normal", "native-init-sidecars")
+                    else case
+                )
                 assert run.status is dg.DagsterRunStatus.STARTED
                 assert len(started["jobs"]) == 2, "Expected separate run and step Jobs"
-                assert len(started["worker_pods"]) == (2 if case == "normal" else 1)
+                assert len(started["worker_pods"]) == (
+                    2 if case in ("normal", "native-init-sidecars") else 1
+                )
                 assert all(pod["status"]["phase"] == "Running" for pod in started["worker_pods"])
                 assert all(
                     POD_FINALIZER in pod["metadata"].get("finalizers", [])
@@ -244,6 +281,14 @@ def main() -> int:
                 )
                 assert all(pod["admission_id"] for pod in started["worker_pods"])
                 assert len(started["launches"]) == (4 if case != "held-before" else 3)
+                if case == "native-init-sidecars":
+                    result["native_init_sidecar_restarts"] = [
+                        {
+                            "pod_name": pod["metadata"]["name"],
+                            "statuses": pod["status"]["initContainerStatuses"],
+                        }
+                        for pod in started["worker_pods"]
+                    ]
                 held_uid = admission["held_uid"]
                 if case == "held-after":
                     assert any(
@@ -272,16 +317,46 @@ def main() -> int:
                 assert gql.data["cancelPartitionBackfill"]["__typename"] == "CancelBackfillSuccess"
                 assert inventory("native_cancel_requested")["backfill_status"] == "CANCELING"
                 if case == "held-after":
-                    for _ in range(2):
+                    deadline = time.monotonic() + 20
+                    while True:
                         tick()
-                        held = inventory("cancellation_while_child_response_held")
+                        held = inventory("cancellation_waiting_for_only_invisible_child")
                         assert held["backfill_status"] == "CANCELING"
                         assert any(
                             launch["worker_id"] == f"pod:{held_uid}"
+                            and launch["kind"] == "CHILD"
                             and launch["state"] == "PENDING"
                             for launch in held["launches"]
                         )
+                        admission = admission_request("GET", "/qa/status")
+                        assert not admission["released"]
+                        assert not any(
+                            event["uid"] == held_uid and event["event"] == "hold_timeout"
+                            for event in admission["events"]
+                        )
+                        if (
+                            held["jobs"] == []
+                            and held["worker_pods"] == []
+                            and len(held["launches"]) == 1
+                        ):
+                            break
+                        assert time.monotonic() < deadline, (
+                            "Visible workers did not drain before held admission timeout"
+                        )
+                        time.sleep(0.2)
+                    for _ in range(2):
+                        tick()
+                        held = inventory("cancellation_with_only_invisible_child")
+                        assert held["backfill_status"] == "CANCELING"
+                        assert held["jobs"] == [] and held["worker_pods"] == []
+                        assert len(held["launches"]) == 1
+                        assert (
+                            held["launches"][0]["worker_id"] == f"pod:{held_uid}"
+                            and held["launches"][0]["kind"] == "CHILD"
+                            and held["launches"][0]["state"] == "PENDING"
+                        )
                         assert not admission_request("GET", "/qa/status")["released"]
+                    result["sole_pending_child_verified"] = True
                     result["admission_release"] = admission_request("POST", "/qa/release")
                 deadline = time.monotonic() + 90
                 while True:

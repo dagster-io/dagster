@@ -192,7 +192,9 @@ def main(root: Path, image: str, case: str, namespace: str, webhook_name: str, o
             "kind": "ConfigMap",
             "metadata": {"name": "dagster-instance", "namespace": namespace},
             "data": {
-                "dagster.yaml": yaml.safe_dump(instance_config(namespace, image, webhook_name))
+                "dagster.yaml": yaml.safe_dump(
+                    instance_config(namespace, image, webhook_name, case)
+                )
             },
         },
         {
@@ -352,7 +354,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("root", type=Path)
     parser.add_argument("image")
-    parser.add_argument("--case", choices=("normal", "held-before", "held-after"), default="normal")
+    parser.add_argument(
+        "--case",
+        choices=("normal", "held-before", "held-after", "native-init-sidecars"),
+        default="normal",
+    )
     parser.add_argument("--namespace", default="cancellation-proof")
     parser.add_argument("--webhook-name", default=ADMISSION_WEBHOOK_NAME)
     parser.add_argument("--owner", required=True)

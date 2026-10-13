@@ -20,7 +20,7 @@ when definitive worker-exit proof is unavailable. The distinct
 `--allow-unproven-default-launcher` option accepts that observation; strict
 `--expect-contained` alone still requires CANCELED.
 
-Each source and private-wheel image runs three native Jobs cases with the v2
+Each source and private-wheel image runs the native Jobs cases in `run.py` with the v2
 production Pod-admission mechanism. A scoped TLS service invokes
 `BackfillPodAdmission.admit`; its controlled transport wraps the production
 `AdmissionServer` without replacing storage or admission decisions. Every admitted
@@ -31,11 +31,17 @@ retained worker finalizer. Run and step Jobs remain independent of each other.
   and requires all Jobs, worker Pods, and four launch receipts to drain before CANCELED.
 - `held-after` holds the allowed step-Pod response after production admission commits
   its CHILD receipt. Native cancellation must remain CANCELING while that receipt is
-  PENDING and the Pod is invisible. Releasing the response permits the in-flight CREATE;
+  PENDING and the Pod is invisible. All Jobs and visible worker Pods must drain, leaving
+  exactly one PENDING CHILD receipt as the sole blocker. Two further native ticks must
+  remain CANCELING before release. Releasing the response permits the in-flight CREATE;
   physical exit and finalizer cleanup must precede aggregate completion.
 - `held-before` holds the step-Pod request before the admission decision. After native
   cancellation closes the owner, releasing the request must produce a denied decision
   and no late worker Pod. No permit or CHILD receipt is created for that request.
+- `native-init-sidecars` starts real native init containers with restartPolicy Always
+  on both the run and remote-step Pods. Each sidecar must restart at least once and be
+  running when native cancellation begins; aggregate completion requires their physical
+  termination along with every main container and launch receipt.
 
 The transport hold is bounded below Kubernetes' admission timeout. Interrupted or
 ambiguous admission leaves a PENDING receipt and requires evidence-backed operator
