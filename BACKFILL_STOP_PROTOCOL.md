@@ -164,12 +164,15 @@ These orderings were checked in both v1.35 and v1.36. An exited main container
 with a running or Waiting proxy is still unresolved. Contained restarts reuse
 the Pod receipt; replacement Pods require new admission under the backfill gate.
 
-The container-exit premise was checked against containerd v2.2.0 and runc v1.3.3.
+The native fixture used containerd v2.2.0 and runc v1.2.9 (commit
+`6524246c68d68d792051e5401dd9126bda1b979f`). The container-exit premise was checked
+against that runc version and v1.3.3; their destruction and signal implementations
+preserve the same containment ordering.
 Linux terminates the remaining processes when a private PID namespace's init exits.
 For shared or host PID namespaces, the
 [containerd shim kills remaining container processes before publishing init exit](https://github.com/containerd/containerd/blob/v2.2.0/cmd/containerd-shim-runc-v2/task/service.go#L722).
 The [CRI exit handler deletes the task before recording `FinishedAt`](https://github.com/containerd/containerd/blob/v2.2.0/internal/cri/server/events.go#L168),
-and [runc destruction kills remaining cgroup members and requires cgroup removal](https://github.com/opencontainers/runc/blob/v1.3.3/libcontainer/state_linux.go#L38).
+and [runc destruction kills remaining cgroup members and requires cgroup removal](https://github.com/opencontainers/runc/blob/v1.2.9/libcontainer/state_linux.go#L37).
 Thus positive termination witnesses cover native multiprocess descendants under
 intact runtime containment and authenticated status reporting. This does not prove
 exit for processes that user code launches outside the owned containers.
