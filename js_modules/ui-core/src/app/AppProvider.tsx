@@ -65,6 +65,8 @@ export interface AppProviderProps {
     telemetryEnabled?: boolean;
     statusPolling: Set<DeploymentStatusType>;
     idempotentMutations?: boolean;
+    uiLabel?: string;
+    uiIntent?: string;
   };
 
   // Used for localStorage/IndexedDB caching to be isolated between instances/deployments
@@ -86,6 +88,8 @@ export const AppProvider = (props: AppProviderProps) => {
     telemetryEnabled = false,
     statusPolling,
     idempotentMutations = true,
+    uiLabel,
+    uiIntent,
   } = config;
 
   // todo dish: Change `deleteExisting` to true soon. (Current: 1.4.5)
@@ -170,6 +174,8 @@ export const AppProvider = (props: AppProviderProps) => {
       telemetryEnabled,
       localCacheIdPrefix,
       shouldUseAssetManifestForWorkspace,
+      uiLabel,
+      uiIntent,
     }),
     [
       basePath,
@@ -177,6 +183,8 @@ export const AppProvider = (props: AppProviderProps) => {
       telemetryEnabled,
       localCacheIdPrefix,
       shouldUseAssetManifestForWorkspace,
+      uiLabel,
+      uiIntent,
     ],
   );
 
