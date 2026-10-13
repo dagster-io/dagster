@@ -3,6 +3,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "dagster.fullname" . }}-rolebinding
+  namespace: {{ .Release.Namespace }}
   labels: {{ include "dagster.labels" . | nindent 4 }}
 
 subjects:
