@@ -368,6 +368,36 @@ def test_exit_checks_every_declared_container_and_terminal_phase(launcher):
     )
 
 
+@pytest.mark.parametrize("terminal_phase", ["Succeeded", "Failed"])
+def test_restarting_sidecar_requires_its_own_terminal_witness(launcher, terminal_phase):
+    pod = persisted_pod(launcher)
+    pod["spec"]["initContainers"] = [{"name": "sql-proxy", "restartPolicy": "Always"}]
+    sidecar = {"name": "sql-proxy", "restartCount": 3, "state": {"running": {}}}
+    pod["status"]["initContainerStatuses"] = [sidecar]
+    pod["status"]["phase"] = terminal_phase
+    run = DagsterRun(job_name="job", run_id="run-id")
+    assert (
+        launcher.get_backfill_worker_exit_status(run, physical_dispatch())
+        == BackfillWorkerExitStatus.RUNNING
+    )
+    sidecar["state"] = {"waiting": {"reason": "CrashLoopBackOff"}}
+    assert (
+        launcher.get_backfill_worker_exit_status(run, physical_dispatch())
+        == BackfillWorkerExitStatus.RUNNING
+    )
+    sidecar["state"] = {"terminated": {"exitCode": 137}}
+    pod["status"]["phase"] = "Running"
+    assert (
+        launcher.get_backfill_worker_exit_status(run, physical_dispatch())
+        == BackfillWorkerExitStatus.RUNNING
+    )
+    pod["status"]["phase"] = terminal_phase
+    assert (
+        launcher.get_backfill_worker_exit_status(run, physical_dispatch())
+        == BackfillWorkerExitStatus.EXITED
+    )
+
+
 def test_deleting_unscheduled_pod_has_definitive_nonexecution_evidence(launcher):
     pod = persisted_pod(launcher)
     pod["status"] = {"phase": "Pending"}

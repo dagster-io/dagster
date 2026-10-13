@@ -140,16 +140,39 @@ receipt's name through another persistence attempt.
 A pending absent child cannot resolve. The finalizer keeps a persisted child
 observable until Dagster acknowledges it and observes definitive exit. The Pod
 adapter verifies all protected metadata and the owning Job UID. Supported workers
-use `restartPolicy: Never`, with no per-container restart policies/rules or native
-restarting init sidecars. Kubernetes Job replacement and Dagster retries still
-work: each replacement Pod receives its own admission receipt. No containers may
-be added outside this dispatch contract after admission.
+retain native restart policies, including restarting init sidecars. One physical
+receipt accounts for that Pod's entire lifetime, including contained restarts.
+Kubernetes Job replacement and Dagster retries create different Pods, each of
+which receives its own admission receipt. No containers may be added outside this
+dispatch contract after admission.
 
 Definitive Pod evidence is either terminal phase plus Terminated status for every
 declared main/init/ephemeral container, or a deleting Pod with no node assignment.
 The latter cannot bind later because Kubernetes BindingREST checks the deletion
 timestamp atomically with assigning nodeName. Mere phase, missing status, node
-loss, an expired timeout, or a requested deletion is insufficient evidence.
+loss, an expired timeout, or a requested deletion is insufficient evidence. Positive
+status evidence assumes the normal kubelet lifecycle.
+[Node-loss reclamation can synthesize a terminal phase while retaining old container statuses](https://github.com/kubernetes/kubernetes/blob/v1.36.0/pkg/controller/podgc/gc_controller.go#L346); the adapter
+does not distinguish every such history, so that history is outside this guarantee.
+
+Within the supported lifecycle, kubelet
+[serializes work per Pod UID and permanently enters termination](https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/kubelet/pod_workers.go#L158),
+and [delays terminal status publication until containers cannot run](https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/kubelet/status/status_manager.go#L1281).
+[`SyncPod` returns before runtime reconciliation for a terminal Pod](https://github.com/kubernetes/kubernetes/blob/v1.36.0/pkg/kubelet/kubelet.go#L2086);
+[main-container completion suppresses restarting init-container starts](https://github.com/kubernetes/kubernetes/blob/v1.36.0/pkg/kubelet/kuberuntime/kuberuntime_manager.go#L1377).
+These orderings were checked in both v1.35 and v1.36. An exited main container
+with a running or Waiting proxy is still unresolved. Contained restarts reuse
+the Pod receipt; replacement Pods require new admission under the backfill gate.
+
+The container-exit premise was checked against containerd v2.2.0 and runc v1.3.3.
+Linux terminates the remaining processes when a private PID namespace's init exits.
+For shared or host PID namespaces, the
+[containerd shim kills remaining container processes before publishing init exit](https://github.com/containerd/containerd/blob/v2.2.0/cmd/containerd-shim-runc-v2/task/service.go#L722).
+The [CRI exit handler deletes the task before recording `FinishedAt`](https://github.com/containerd/containerd/blob/v2.2.0/internal/cri/server/events.go#L168),
+and [runc destruction kills remaining cgroup members and requires cgroup removal](https://github.com/opencontainers/runc/blob/v1.3.3/libcontainer/state_linux.go#L38).
+Thus positive termination witnesses cover native multiprocess descendants under
+intact runtime containment and authenticated status reporting. This does not prove
+exit for processes that user code launches outside the owned containers.
 
 After exit proof, Dagster removes only its own finalizer with UID and resourceVersion
 JSONPatch preconditions, then resolves the acknowledged receipt in SQL. A crash
@@ -313,7 +336,7 @@ The concrete implementation uses these seams:
 | `StepDelegatingExecutor._launch_step` | Gate remote step attempts, including native step retries. |
 | `MultiprocessExecutor.execute` | Gate child-process start; acknowledge at the first process-object yield after `process.start()`. |
 | `reconcile_backfill_worker_launches` | Drain durable targets using typed launcher evidence. |
-| `K8sRunLauncher` and `K8sStepHandler` | Protected Job metadata, webhook/policy preflight, UID-fenced stop and physical Pod evidence/finalizer cleanup. |
+| `K8sRunLauncher` and `K8sStepHandler` | Protected Job metadata, webhook preflight, UID-fenced stop and physical Pod evidence/finalizer cleanup. |
 | `BackfillPodAdmission` | Validate Pod/Job identity and commit CHILD before allowing Pod persistence. |
 | `AdmissionServer` | Bounded TLS AdmissionReview transport; no worker arguments or credentials in diagnostics. |
 

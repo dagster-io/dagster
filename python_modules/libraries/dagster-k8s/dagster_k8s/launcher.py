@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from dagster import (
-    Field,
+    Field as DagsterField,
     StringSource,
     _check as check,
 )
@@ -43,7 +43,6 @@ from dagster_k8s.backfill_admission import (
     DISPATCH_ID_ANNOTATION,
     POD_FINALIZER,
     PROTOCOL_LABEL,
-    require_backfill_worker_policy,
     stamp_backfill_job,
 )
 from dagster_k8s.backfill_worker import PodSnapshot, WebhookConfiguration
@@ -235,7 +234,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """
         return {
             **DagsterK8sJobConfig.config_type_run_launcher(),
-            "backfill_worker_admission_webhook_name": Field(
+            "backfill_worker_admission_webhook_name": DagsterField(
                 StringSource, default_value=ADMISSION_WEBHOOK_NAME, is_required=False
             ),
         }
@@ -380,9 +379,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def get_backfill_worker_target(self, run: DagsterRun) -> K8sWorkerTarget:
         self.require_backfill_worker_admission()
         context = self.get_container_context_for_run(run)
-        require_backfill_worker_policy(
-            context.run_k8s_config.pod_spec_config, context.run_k8s_config.container_config
-        )
         return K8sWorkerTarget(
             job_name=get_job_name_from_run_id(run.run_id),
             namespace=check.not_none(context.namespace),

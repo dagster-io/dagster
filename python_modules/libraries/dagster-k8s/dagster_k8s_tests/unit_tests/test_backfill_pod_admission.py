@@ -28,11 +28,16 @@ from dagster_k8s.backfill_admission import (
     WEBHOOK_CONTRACT_ANNOTATION,
     BackfillPodAdmission,
     PodAdmissionReview,
-    require_backfill_worker_policy,
+    stamp_backfill_job,
 )
 from dagster_k8s.backfill_admission_server import AdmissionHandler
 from dagster_k8s.backfill_worker import WebhookConfiguration
-from kubernetes.client import V1Job, V1ObjectMeta
+from dagster_k8s.job import (
+    DagsterK8sJobConfig,
+    UserDefinedDagsterK8sConfig,
+    construct_dagster_k8s_job,
+)
+from kubernetes.client import ApiClient, V1Job, V1ObjectMeta
 from pydantic import ValidationError
 
 
@@ -230,17 +235,26 @@ def test_mismatched_job_identity_denies_creation(admission, field):
     assert children(admission) == []
 
 
-@pytest.mark.parametrize("policy", ["Always", "OnFailure"])
-def test_restarting_pod_policy_is_rejected_before_dispatch(policy):
-    with pytest.raises(ValidationError):
-        require_backfill_worker_policy({"restart_policy": policy}, {})
-
-
-def test_restarting_init_and_per_container_rules_are_rejected():
-    with pytest.raises(ValidationError):
-        require_backfill_worker_policy({"init_containers": [{"restart_policy": "Always"}]}, {})
-    with pytest.raises(ValidationError):
-        require_backfill_worker_policy({}, {"restart_policy_rules": [{"action": "Restart"}]})
+def test_native_job_with_restarting_init_sidecar_gets_a_physical_receipt(admission):
+    job = construct_dagster_k8s_job(
+        job_config=DagsterK8sJobConfig(job_image="image"),
+        args=["execute"],
+        job_name="job",
+        user_defined_k8s_config=UserDefinedDagsterK8sConfig(
+            pod_spec_config={
+                "init_containers": [
+                    {"name": "sql-proxy", "image": "proxy", "restart_policy": "Always"}
+                ]
+            }
+        ),
+    )
+    stamp_backfill_job(job, "run", "step", ADMISSION_WEBHOOK_NAME)
+    payload = review_payload()
+    payload["request"]["object"]["spec"] = ApiClient().sanitize_for_serialization(
+        job.spec.template.spec
+    )
+    assert admission.admit(PodAdmissionReview.model_validate(payload))["allowed"]
+    assert len(children(admission)) == 1
 
 
 def webhook_configuration():

@@ -2,11 +2,9 @@
 
 import base64
 import json
-from collections.abc import Mapping
 from typing import Literal
 from uuid import UUID
 
-import dagster._check as check
 from dagster import DagsterInstance
 from dagster._core.storage.runs.base import (
     ChildWorkerTarget,
@@ -49,24 +47,6 @@ class PodObject(BaseModel):
     kind: Literal["Pod"]
     apiVersion: Literal["v1"]
     metadata: PodMetadata
-    spec: "PodExecutionPolicy"
-
-
-class ContainerExecutionPolicy(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    restart_policy: None = Field(default=None, alias="restartPolicy")
-    restart_policy_rules: list = Field(
-        default_factory=list, alias="restartPolicyRules", max_length=0
-    )
-
-
-class PodExecutionPolicy(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-    restart_policy: Literal["Never"] = Field(alias="restartPolicy")
-    containers: list[ContainerExecutionPolicy] = Field(min_length=1)
-    init_containers: list[ContainerExecutionPolicy] = Field(
-        default_factory=list, alias="initContainers"
-    )
 
 
 class PodResource(BaseModel):
@@ -93,29 +73,8 @@ class PodAdmissionReview(BaseModel):
     request: PodAdmissionRequest
 
 
-def require_backfill_worker_policy(pod_spec: Mapping, container: Mapping) -> None:
-    PodExecutionPolicy.model_validate(
-        {
-            "restart_policy": "Never",
-            **pod_spec,
-            "containers": [container, *pod_spec.get("containers", [])],
-        }
-    )
-
-
 def stamp_backfill_job(job, run_id: str, worker_id: str, webhook_name: str) -> None:
     """Protect the metadata copied by the standard Job controller into each Pod."""
-    specification = job.spec.template.spec
-    check.invariant(
-        specification.restart_policy == "Never"
-        and all(
-            getattr(container, "restart_policy", None) is None
-            and not getattr(container, "restart_policy_rules", None)
-            for container in (*specification.containers, *(specification.init_containers or []))
-        ),
-        "Backfill workers require restartPolicy Never without restarting containers; "
-        "Kubernetes Jobs and Dagster retries may create separately admitted replacement Pods.",
-    )
     for metadata in (job.metadata, job.spec.template.metadata):
         metadata.labels = {
             **(metadata.labels or {}),

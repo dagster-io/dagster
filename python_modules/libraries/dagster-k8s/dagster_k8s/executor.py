@@ -33,7 +33,7 @@ from dagster._core.storage.runs.base import K8sWorkerTarget
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
 
-from dagster_k8s.backfill_admission import require_backfill_worker_policy, stamp_backfill_job
+from dagster_k8s.backfill_admission import stamp_backfill_job
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
@@ -321,10 +321,6 @@ class K8sStepHandler(StepHandler):
             context.instance.run_launcher, K8sRunLauncher
         ).require_backfill_worker_admission()
         container_context = self._get_container_context(context)
-        require_backfill_worker_policy(
-            container_context.run_k8s_config.pod_spec_config,
-            container_context.run_k8s_config.container_config,
-        )
         return K8sWorkerTarget(
             job_name=self._get_k8s_step_job_name(context),
             namespace=check.not_none(container_context.namespace),
