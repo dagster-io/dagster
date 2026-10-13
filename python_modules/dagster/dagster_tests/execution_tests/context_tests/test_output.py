@@ -30,6 +30,49 @@ def test_build_output_context_asset_spec():
     dg.materialize([asset_spec], resources={"io_manager": TestIOManager()})
 
 
+def test_build_output_context_asset_group_name():
+    asset_spec = dg.AssetSpec(key="key", group_name="group")
+    assert (
+        dg.build_output_context(asset_key="key", asset_spec=asset_spec).asset_group_name == "group"
+    )
+
+
+def test_build_output_context_asset_group_name_defaults():
+    asset_spec = dg.AssetSpec(key="key")
+    assert (
+        dg.build_output_context(asset_key="key", asset_spec=asset_spec).asset_group_name
+        == "default"
+    )
+
+
+def test_build_input_context_asset_group_name_from_upstream_output():
+    upstream_output = dg.build_output_context(
+        asset_key="key",
+        asset_spec=dg.AssetSpec(key="key", group_name="group"),
+    )
+    assert (
+        dg.build_input_context(asset_key="key", upstream_output=upstream_output).asset_group_name
+        == "group"
+    )
+
+
+def test_build_input_context_asset_group_name_defaults_from_upstream_output():
+    upstream_output = dg.build_output_context(asset_key="key", asset_spec=dg.AssetSpec(key="key"))
+    assert (
+        dg.build_input_context(asset_key="key", upstream_output=upstream_output).asset_group_name
+        == "default"
+    )
+
+
+def test_build_input_context_asset_group_name_delegates_to_upstream_output():
+    class UpstreamOutput(dg.OutputContext):
+        @property
+        def asset_group_name(self) -> str:
+            return "group"
+
+    assert dg.build_input_context(upstream_output=UpstreamOutput()).asset_group_name == "group"
+
+
 def test_build_output_context_with_output_metadata():
     expected_metadata = {"foo": "bar"}
     output_context = dg.build_output_context(output_metadata=expected_metadata)
