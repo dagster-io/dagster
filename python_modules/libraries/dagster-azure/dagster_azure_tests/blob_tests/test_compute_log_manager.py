@@ -411,3 +411,37 @@ compute_logs:
     assert instance.compute_log_manager._default_azure_credential == {  # noqa: SLF001  # ty: ignore[unresolved-attribute]
         "exclude_environment_credentials": True
     }
+
+
+@mock.patch("dagster_azure.blob.compute_log_manager.generate_blob_sas")
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_empty_prefix_blob_keys_have_no_leading_slash(
+    mock_create_blob_client, mock_generate_blob_sas, storage_account, container, credential
+):
+    mock_generate_blob_sas.return_value = "fake-url"
+    mock_create_blob_client.return_value = FakeBlobServiceClient(storage_account)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix="",
+            local_dir=temp_dir,
+            secret_credential=credential,
+        )
+        log_key = ["my_run", "compute_logs", "my_step"]
+        blob_key = manager._blob_key(log_key, ComputeIOType.STDERR)  # noqa: SLF001
+        assert blob_key == "storage/my_run/compute_logs/my_step.err"
+
+        # Azure reports blob names without a leading slash, so a key written and then
+        # looked up through the same manager must be found.
+        assert not manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR)
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(b"log line")
+            f.flush()
+            with open(f.name, "rb") as fobj:
+                manager._upload_file_obj(fobj, log_key, ComputeIOType.STDERR)  # noqa: SLF001
+        assert manager.cloud_storage_has_logs(log_key, ComputeIOType.STDERR)
+        assert manager.get_log_keys_for_log_key_prefix(
+            ["my_run", "compute_logs"], ComputeIOType.STDERR
+        ) == [["my_run", "compute_logs", "my_step"]]
