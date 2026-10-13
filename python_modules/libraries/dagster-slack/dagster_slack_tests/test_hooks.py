@@ -155,3 +155,65 @@ def test_success_hook_decorator(mock_chat_postMessage, mock_api_call):
     )
     assert not result.success
     assert mock_chat_postMessage.call_count == 1
+
+
+@patch("slack_sdk.WebClient.api_call")
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_failure_hook_with_builtin_slack_on_failure(mock_chat_postMessage, mock_api_call):
+    """Regression test for #34304: slack_on_failure must work with function-style slack_resource.
+
+    Before the fix, calling slack_on_failure with slack_resource raised:
+        AttributeError: 'WebClient' object has no attribute 'get_client'
+    because slack_resource returns a WebClient directly, not a SlackResource.
+    """
+    from dagster_slack.hooks import slack_on_failure
+    from dagster_slack.resources import slack_resource
+
+    @op(required_resource_keys={"slack"})
+    def fail_op(_):
+        raise SomeUserException()
+
+    @op(required_resource_keys={"slack"})
+    def pass_op(_):
+        pass
+
+    @job(resource_defs={"slack": slack_resource})
+    def job_def():
+        pass_op()
+        fail_op()
+
+    job_with_hook = job_def.with_hooks({slack_on_failure("#foo")})
+    result = job_with_hook.execute_in_process(
+        run_config={
+            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
+        },
+        raise_on_error=False,
+    )
+    assert not result.success
+    assert mock_chat_postMessage.call_count == 1
+
+
+@patch("slack_sdk.WebClient.api_call")
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_success_hook_with_builtin_slack_on_success(mock_chat_postMessage, mock_api_call):
+    """Regression test for #34304: slack_on_success must work with function-style slack_resource."""
+    from dagster_slack.hooks import slack_on_success
+    from dagster_slack.resources import slack_resource
+
+    @op(required_resource_keys={"slack"})
+    def pass_op(_):
+        pass
+
+    @job(resource_defs={"slack": slack_resource})
+    def job_def():
+        pass_op()
+
+    job_with_hook = job_def.with_hooks({slack_on_success("#foo")})
+    result = job_with_hook.execute_in_process(
+        run_config={
+            "resources": {"slack": {"config": {"token": "xoxp-1234123412341234-12341234-1234"}}}
+        },
+        raise_on_error=False,
+    )
+    assert result.success
+    assert mock_chat_postMessage.call_count == 1
