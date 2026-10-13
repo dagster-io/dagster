@@ -253,6 +253,21 @@ def main() -> int:
         result["kind_node_image"] = output(
             ["docker", "image", "inspect", node_image, "--format", "{{.Id}} {{json .RepoDigests}}"]
         )
+        node_networks = json.loads(
+            output(
+                [
+                    "docker",
+                    "inspect",
+                    cluster + "-control-plane",
+                    "--format",
+                    "{{json .NetworkSettings.Networks}}",
+                ]
+            )
+        )
+        if len(node_networks) != 1:
+            raise RuntimeError("Selected Kind node must have one unambiguous Docker network")
+        docker_network = next(iter(node_networks))
+        result["docker_network"] = docker_network
         pg_env = root / "postgres-docker.env"
         pg_env.write_text(
             "POSTGRES_DB=dagster_probe\nPOSTGRES_USER=dagster_probe\nPOSTGRES_PASSWORD="
@@ -270,7 +285,7 @@ def main() -> int:
                 "--name",
                 pg,
                 "--network",
-                "kind",
+                docker_network,
                 "--publish",
                 "127.0.0.1::5432",
                 "--env-file",
@@ -283,8 +298,22 @@ def main() -> int:
         )
         deadline = time.monotonic() + 60
         while True:
+            # The official image's temporary init server accepts Unix-socket
+            # connections before database creation, with TCP disabled. Probe TCP
+            # so readiness describes the final server after initialization.
             ready = subprocess.run(
-                ["docker", "exec", pg, "pg_isready", "-U", "dagster_probe", "-d", "dagster_probe"],
+                [
+                    "docker",
+                    "exec",
+                    pg,
+                    "pg_isready",
+                    "-h",
+                    "127.0.0.1",
+                    "-U",
+                    "dagster_probe",
+                    "-d",
+                    "dagster_probe",
+                ],
                 check=False,
                 capture_output=True,
                 env=env,
@@ -295,15 +324,9 @@ def main() -> int:
                 raise TimeoutError("Disposable PostgreSQL did not become ready")
             time.sleep(0.2)
         port = output(["docker", "port", pg, "5432/tcp"]).rsplit(":", 1)[1]
-        address = output(
-            [
-                "docker",
-                "inspect",
-                pg,
-                "--format",
-                '{{(index .NetworkSettings.Networks "kind").IPAddress}}',
-            ]
-        )
+        address = json.loads(
+            output(["docker", "inspect", pg, "--format", "{{json .NetworkSettings.Networks}}"])
+        )[docker_network]["IPAddress"]
         local_url = f"postgresql+psycopg2://dagster_probe:{password}@127.0.0.1:{port}/dagster_probe"
         env["DAGSTER_TEST_POSTGRES_URL"] = local_url
         p = root / "postgres.env"
