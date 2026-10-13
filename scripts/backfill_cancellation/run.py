@@ -166,7 +166,7 @@ def main() -> int:
             output(["git", "-C", str(checkout), "diff", "--binary", "HEAD"]) + "\n",
             encoding="utf-8",
         )
-        run(["uv", "--no-config", "venv", "--python", "3.14", str(root / "venv")], "create-venv")
+        run(["uv", "--no-config", "venv", "--python", "3.14.6", str(root / "venv")], "create-venv")
         python = str(root / "venv/bin/python")
         install = ["uv", "--no-config", "pip", "install", "--no-sources", "--python", python]
         if args.constraints:
