@@ -47,6 +47,7 @@ SUITES = (
             "python_modules/dagster/dagster_tests/daemon_tests/test_backfill_stop_protocol.py",
             "python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_backfill_worker_exit.py",
             "python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_backfill_worker_dispatch.py",
+            "python_modules/libraries/dagster-k8s/dagster_k8s_tests/unit_tests/test_backfill_pod_admission.py",
         ),
     ),
     (
@@ -86,6 +87,10 @@ def main() -> int:
     parser.add_argument("--constraints", type=Path)
     parser.add_argument("--private-wheels", type=Path)
     parser.add_argument("--skip-unit", action="store_true")
+    parser.add_argument(
+        "--existing-kind-cluster",
+        help="Reuse this local Kind cluster with task-owned namespaces only.",
+    )
     args = parser.parse_args()
     if os.getenv("CI") == "true":
         parser.error("Worker acceptance must run locally, outside CI.")
@@ -93,12 +98,13 @@ def main() -> int:
     assets = Path(__file__).resolve().parent
     root = Path(tempfile.mkdtemp(prefix="dagster-cancel-protocol-", dir="/tmp"))
     suffix = secrets.token_hex(4)
-    cluster = "dagster-cancel-proof-" + suffix
+    cluster = args.existing_kind_cluster or "dagster-cancel-proof-" + suffix
     pg = "dagster-cancel-pg-" + suffix
     password = secrets.token_hex(24)
     result = {
         "started_at": time.time(),
         "cluster": cluster,
+        "cluster_reused": args.existing_kind_cluster is not None,
         "postgres_container": pg,
         "checks": {},
         "errors": [],
@@ -155,7 +161,33 @@ def main() -> int:
             argv, check=True, capture_output=True, text=True, env=env, timeout=60
         ).stdout.strip()
 
-    kube = ["kubectl", "--kubeconfig", str(root / "kubeconfig")]
+    kube = ["kubectl", "--kubeconfig", str(root / "kubeconfig"), "--context", "kind-" + cluster]
+    owned_resources: list[dict] = []
+
+    def resource(kind: str, name: str) -> dict | None:
+        completed = subprocess.run(
+            kube + ["get", kind, name, "--ignore-not-found", "-o", "json"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=30,
+        )
+        return json.loads(completed.stdout) if completed.stdout.strip() else None
+
+    def cleanup_owned(reference: dict) -> None:
+        data = resource(reference["kind"], reference["name"])
+        if data is None:
+            return
+        if data["metadata"].get("labels", {}).get("dagster/qa-owner") != suffix:
+            raise RuntimeError("Refusing to delete a resource without the task ownership label")
+        if reference["kind"] != "namespace" and resource("namespace", reference["namespace"]):
+            raise RuntimeError("Retaining admission configuration while its namespace still exists")
+        run(
+            kube + ["delete", reference["kind"], reference["name"], "--wait=true", "--timeout=60s"],
+            reference["log_name"],
+        )
+
     pg_started = False
     cluster_started = False
     try:
@@ -189,25 +221,37 @@ def main() -> int:
             + "\n",
             encoding="utf-8",
         )
-        cluster_started = True
-        run(
-            [
-                "kind",
-                "create",
-                "cluster",
-                "--name",
-                cluster,
-                "--kubeconfig",
-                str(root / "kubeconfig"),
-                "--image",
-                "kindest/node:v1.35.0@sha256:4613778f3cfcd10e615029370f5786704559103cf27bef934597ba562b269661",
-                "--wait",
-                "60s",
-            ],
-            "create-kind",
-        )
+        if args.existing_kind_cluster:
+            (root / "kubeconfig").write_text(
+                output(["kind", "get", "kubeconfig", "--name", cluster]) + "\n", encoding="utf-8"
+            )
+            (root / "kubeconfig").chmod(0o600)
+        else:
+            cluster_started = True
+            run(
+                [
+                    "kind",
+                    "create",
+                    "cluster",
+                    "--name",
+                    cluster,
+                    "--kubeconfig",
+                    str(root / "kubeconfig"),
+                    "--image",
+                    "kindest/node:v1.35.0@sha256:4613778f3cfcd10e615029370f5786704559103cf27bef934597ba562b269661",
+                    "--wait",
+                    "60s",
+                ],
+                "create-kind",
+            )
         (root / "nodes.json").write_text(
             output(kube + ["get", "nodes", "-o", "json"]) + "\n", encoding="utf-8"
+        )
+        node_image = output(
+            ["docker", "inspect", cluster + "-control-plane", "--format", "{{.Image}}"]
+        )
+        result["kind_node_image"] = output(
+            ["docker", "image", "inspect", node_image, "--format", "{{.Id}} {{json .RepoDigests}}"]
         )
         pg_env = root / "postgres-docker.env"
         pg_env.write_text(
@@ -363,7 +407,12 @@ def main() -> int:
                     f"dagster-graphql=={core_version}\ndagster-pipes=={core_version}\n"
                     f"dagster-shared=={core_version}\ndagster-postgres=={k8s_version}\n"
                 )
-            for name in ("Dockerfile", "cancel_k8s_fixture.py", "k8s_cancel_probe.py"):
+            for name in (
+                "Dockerfile",
+                "cancel_k8s_fixture.py",
+                "k8s_cancel_probe.py",
+                "admission_probe_server.py",
+            ):
                 shutil.copy2(assets / name, context / name)
             shutil.copy2(constraints, context / "dependency-constraints.txt")
             (context / "runtime-requirements.txt").write_text(
@@ -397,100 +446,150 @@ def main() -> int:
                 ["kind", "load", "docker-image", image, "--name", cluster],
                 distribution + "-load-image",
             )
-            database = "dagster_probe_" + distribution.replace("-", "_") + "_" + suffix
-            run(
-                [
-                    "docker",
-                    "exec",
-                    pg,
-                    "psql",
-                    "-U",
-                    "dagster_probe",
-                    "-d",
-                    "dagster_probe",
-                    "-c",
-                    f'CREATE DATABASE "{database}"',
-                ],
-                distribution + "-database",
-            )
-            kind_case = case / "kind"
-            kind_case.mkdir()
-            shutil.copy2(root / "postgres.env", case / "postgres.env")
-            (kind_case / "postgres-address.txt").write_text(address + "\n", encoding="utf-8")
-            (kind_case / "database.json").write_text(
-                json.dumps({"database": database}), encoding="utf-8"
-            )
-            asset_env = {**env, "PYTHONPATH": str(assets)}
-            run(
-                [python, str(assets / "prepare_controller.py"), str(kind_case), image],
-                distribution + "-prepare-controller",
-                run_env=asset_env,
-            )
-            run(
-                kube + ["apply", "-f", str(kind_case / "controller.yaml")],
-                distribution + "-apply-controller",
-            )
-            run(
-                kube
-                + [
-                    "-n",
-                    "cancellation-proof",
-                    "wait",
-                    "--for=condition=Ready",
-                    "pod/controller",
-                    "--timeout=90s",
-                ],
-                distribution + "-wait-controller",
-                require=False,
-            )
-            run(
-                kube + ["-n", "cancellation-proof", "logs", "--follow", "controller"],
-                distribution + "-controller",
-            )
-            text = (root / (distribution + "-controller.log")).read_text(encoding="utf-8")
-            records = [
-                line.removeprefix("DAGSTER_CANCEL_EVIDENCE=")
-                for line in text.splitlines()
-                if line.startswith("DAGSTER_CANCEL_EVIDENCE=")
-            ]
-            data = (
-                json.loads(records[-1])
-                if records
-                else {"fully_stopped": False, "error": "Controller did not emit evidence"}
-            )
-            (case / "result.json").write_text(
-                json.dumps(data, sort_keys=True, indent=2) + "\n", encoding="utf-8"
-            )
-            result["checks"][distribution + "-kind"] = 0 if data.get("fully_stopped") else 1
-            node = cluster + "-control-plane"
-            cri = json.loads(
-                output(["docker", "exec", node, "crictl", "ps", "--all", "--output", "json"])
-            )
-            workers = [
-                {
-                    "id": c["id"],
-                    "state": c.get("state"),
-                    "pod_uid": c.get("labels", {}).get("io.kubernetes.pod.uid"),
-                    "pod_name": c.get("labels", {}).get("io.kubernetes.pod.name"),
-                }
-                for c in cri.get("containers", [])
-                if c.get("labels", {}).get("io.kubernetes.pod.namespace") == "cancellation-proof"
-                and c.get("labels", {}).get("io.kubernetes.pod.name") != "controller"
-            ]
-            (case / "runtime-worker-containers.json").write_text(
-                json.dumps(workers, indent=2) + "\n", encoding="utf-8"
-            )
-            if any(c["state"] == "CONTAINER_RUNNING" for c in workers):
-                result["checks"][distribution + "-kind"] = 1
-            run(
-                kube
-                + ["delete", "namespace", "cancellation-proof", "--wait=true", "--timeout=60s"],
-                distribution + "-namespace-cleanup",
-            )
+            for mode in ("normal", "held-before", "held-after"):
+                label = distribution + "-" + mode
+                namespace = "dagster-cancel-" + suffix + "-" + label
+                webhook_name = "dagster-qa-" + suffix + "-" + label
+                references = [
+                    {
+                        "kind": kind,
+                        "name": name,
+                        "namespace": namespace,
+                        "log_name": label + "-cleanup-" + kind,
+                    }
+                    for kind, name in (
+                        ("namespace", namespace),
+                        ("mutatingwebhookconfiguration", webhook_name),
+                        ("clusterrolebinding", webhook_name + "-reader"),
+                        ("clusterrole", webhook_name + "-reader"),
+                    )
+                ]
+                for reference in references:
+                    if resource(reference["kind"], reference["name"]) is not None:
+                        raise RuntimeError(
+                            "Generated QA resource already exists; refusing to change it"
+                        )
+                owned_resources.extend(references)
+                probe = case / mode
+                probe.mkdir()
+                database = "dagster_probe_" + label.replace("-", "_") + "_" + suffix
+                run(
+                    [
+                        "docker",
+                        "exec",
+                        pg,
+                        "psql",
+                        "-U",
+                        "dagster_probe",
+                        "-d",
+                        "dagster_probe",
+                        "-c",
+                        f'CREATE DATABASE "{database}"',
+                    ],
+                    label + "-database",
+                )
+                kind_case = probe / "kind"
+                kind_case.mkdir()
+                shutil.copy2(root / "postgres.env", probe / "postgres.env")
+                (kind_case / "postgres-address.txt").write_text(address + "\n", encoding="utf-8")
+                (kind_case / "database.json").write_text(
+                    json.dumps({"database": database}), encoding="utf-8"
+                )
+                asset_env = {**env, "PYTHONPATH": str(assets)}
+                run(
+                    [
+                        python,
+                        str(assets / "prepare_controller.py"),
+                        str(kind_case),
+                        image,
+                        "--case",
+                        mode,
+                        "--namespace",
+                        namespace,
+                        "--webhook-name",
+                        webhook_name,
+                        "--owner",
+                        suffix,
+                    ],
+                    label + "-prepare-controller",
+                    run_env=asset_env,
+                )
+                run(
+                    kube + ["apply", "-f", str(kind_case / "controller.yaml")],
+                    label + "-apply-controller",
+                )
+                run(
+                    kube
+                    + [
+                        "-n",
+                        namespace,
+                        "wait",
+                        "--for=condition=Ready",
+                        "pod/controller",
+                        "--timeout=90s",
+                    ],
+                    label + "-wait-controller",
+                    require=False,
+                )
+                run(
+                    kube + ["-n", namespace, "logs", "--follow", "controller"],
+                    label + "-controller",
+                )
+                run(
+                    kube + ["-n", namespace, "logs", "admission"],
+                    label + "-admission",
+                    require=False,
+                )
+                text = (root / (label + "-controller.log")).read_text(encoding="utf-8")
+                records = [
+                    line.removeprefix("DAGSTER_CANCEL_EVIDENCE=")
+                    for line in text.splitlines()
+                    if line.startswith("DAGSTER_CANCEL_EVIDENCE=")
+                ]
+                data = (
+                    json.loads(records[-1])
+                    if records
+                    else {"fully_stopped": False, "error": "Controller did not emit evidence"}
+                )
+                (probe / "result.json").write_text(
+                    json.dumps(data, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+                )
+                result["checks"][label + "-kind"] = 0 if data.get("fully_stopped") else 1
+                node = cluster + "-control-plane"
+                cri = json.loads(
+                    output(["docker", "exec", node, "crictl", "ps", "--all", "--output", "json"])
+                )
+                workers = [
+                    {
+                        "id": c["id"],
+                        "state": c.get("state"),
+                        "pod_uid": c.get("labels", {}).get("io.kubernetes.pod.uid"),
+                        "pod_name": c.get("labels", {}).get("io.kubernetes.pod.name"),
+                    }
+                    for c in cri.get("containers", [])
+                    if c.get("labels", {}).get("io.kubernetes.pod.namespace") == namespace
+                    and c.get("labels", {}).get("io.kubernetes.pod.name")
+                    not in ("controller", "admission")
+                ]
+                (probe / "runtime-worker-containers.json").write_text(
+                    json.dumps(workers, indent=2) + "\n", encoding="utf-8"
+                )
+                if any(c["state"] == "CONTAINER_RUNNING" for c in workers):
+                    result["checks"][label + "-kind"] = 1
+                (probe / "owned-resources.json").write_text(
+                    json.dumps(references, indent=2) + "\n", encoding="utf-8"
+                )
+                for reference in references:
+                    cleanup_owned(reference)
     except Exception as error:
         result["errors"].append(str(error))
         print(str(error), flush=True)
     finally:
+        for reference in owned_resources:
+            try:
+                cleanup_owned(reference)
+            except Exception as error:
+                result["errors"].append(str(error))
         if cluster_started:
             run(
                 [
@@ -505,12 +604,36 @@ def main() -> int:
                 "cleanup-kind",
                 require=False,
             )
+        remaining_resources = (
+            [
+                reference
+                for reference in owned_resources
+                if resource(reference["kind"], reference["name"]) is not None
+            ]
+            if args.existing_kind_cluster
+            else []
+        )
         if pg_started:
             run(["docker", "logs", pg], "postgres", require=False)
-            run(["docker", "rm", "--force", pg], "cleanup-postgres", require=False)
-        result["remaining_owned_clusters"] = [
-            name for name in output(["kind", "get", "clusters"]).splitlines() if name == cluster
-        ]
+            if remaining_resources:
+                result["errors"].append(
+                    "Retained PostgreSQL because reused-cluster fixture resources did not drain"
+                )
+            else:
+                run(["docker", "rm", "--force", pg], "cleanup-postgres", require=False)
+        result["remaining_owned_clusters"] = (
+            []
+            if args.existing_kind_cluster
+            else [
+                name for name in output(["kind", "get", "clusters"]).splitlines() if name == cluster
+            ]
+        )
+        result["reused_cluster_present_after"] = (
+            cluster in output(["kind", "get", "clusters"]).splitlines()
+            if args.existing_kind_cluster
+            else None
+        )
+        result["remaining_owned_resources"] = remaining_resources
         result["remaining_owned_containers"] = output(
             ["docker", "ps", "--all", "--filter", f"name=^{pg}$", "--format", "{{.ID}}"]
         )
@@ -544,6 +667,23 @@ def main() -> int:
             ),
             *(name + suffix for name, _ in SUITES for suffix in (".log", ".xml")),
             *(
+                distribution + "-" + mode + suffix
+                for distribution in ("source", "private-wheels")
+                for mode in ("normal", "held-before", "held-after")
+                for suffix in (
+                    "-database.log",
+                    "-prepare-controller.log",
+                    "-apply-controller.log",
+                    "-wait-controller.log",
+                    "-controller.log",
+                    "-admission.log",
+                    "-cleanup-namespace.log",
+                    "-cleanup-mutatingwebhookconfiguration.log",
+                    "-cleanup-clusterrolebinding.log",
+                    "-cleanup-clusterrole.log",
+                )
+            ),
+            *(
                 distribution + suffix
                 for distribution in ("source", "private-wheels")
                 for suffix in (
@@ -566,6 +706,7 @@ def main() -> int:
             "runtime-worker-containers.json",
             "native-events.jsonl",
             "processes.json",
+            "owned-resources.json",
         }
         for path in root.rglob("*"):
             relative = path.relative_to(root)
@@ -594,6 +735,7 @@ def main() -> int:
         or any(result["checks"].values())
         or result["remaining_owned_clusters"]
         or result["remaining_owned_containers"]
+        or result["remaining_owned_resources"]
         else 0
     )
 

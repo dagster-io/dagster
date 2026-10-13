@@ -164,6 +164,11 @@ def main(
     allow_unproven_default_launcher: bool,
     enable_stop_protocol: bool,
 ) -> int:
+    protocol_tags = {}
+    if enable_stop_protocol:
+        from dagster._core.storage.tags import BACKFILL_STOP_PROTOCOL_VERSION
+
+        protocol_tags = {"dagster/backfill_stop_protocol": BACKFILL_STOP_PROTOCOL_VERSION}
     root.mkdir(parents=True, exist_ok=False)
     os.environ["DAGSTER_CANCEL_PROBE_DIR"] = str(root)
     result = {
@@ -207,9 +212,7 @@ def main(
                             partition_names=["one"],
                             asset_selection=[dg.AssetKey("cancellation_probe")],
                             backfill_timestamp=time.time(),
-                            tags={"dagster/backfill_stop_protocol": "v1"}
-                            if enable_stop_protocol
-                            else {},
+                            tags=protocol_tags,
                             dynamic_partitions_store=instance,
                             all_partitions=False,
                             title=None,
