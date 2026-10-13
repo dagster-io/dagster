@@ -227,7 +227,9 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
         return "/".join([part for part in parts if part])
 
     def _resolve_path_for_namespace(self, namespace: Sequence[str]) -> Sequence[str]:
-        return [self._blob_prefix, "storage", *namespace]
+        # An empty prefix must not add a leading empty path segment, otherwise the key
+        # starts with "/" and never matches the blob name Azure reports.
+        return [*([self._blob_prefix] if self._blob_prefix else []), "storage", *namespace]
 
     def _blob_key(self, log_key: Sequence[str], io_type: ComputeIOType, partial=False) -> str:
         check.inst_param(io_type, "io_type", ComputeIOType)
@@ -244,10 +246,10 @@ class AzureBlobComputeLogManager(TruncatingCloudStorageComputeLogManager, Config
     ):
         self.local_manager.delete_logs(log_key=log_key, prefix=prefix)
         if log_key:
-            prefix_path = "/".join([self._blob_prefix, "storage", *log_key])
+            prefix_path = "/".join(self._resolve_path_for_namespace(log_key))
         elif prefix:
             # add the trailing '/' to make sure that ['a'] does not match ['apple']
-            prefix_path = "/".join([self._blob_prefix, "storage", *prefix, ""])
+            prefix_path = "/".join([*self._resolve_path_for_namespace(prefix), ""])
         else:
             prefix_path = None
 
