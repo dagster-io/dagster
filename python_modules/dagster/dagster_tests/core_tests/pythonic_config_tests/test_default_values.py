@@ -205,3 +205,35 @@ def test_default_values_nested_override():
     )
 
     assert executed["yes"]
+
+
+def test_default_values_collections_of_config():
+    class InnerConfig(dg.Config):
+        foo: str
+
+    class MyConfig(dg.Config):
+        inner_list: list[InnerConfig] = [InnerConfig(foo="bar")]
+        inner_dict: dict[str, InnerConfig] = {"test": InnerConfig(foo="baz")}
+
+    executed = {}
+
+    @dg.asset
+    def my_asset(config: MyConfig):
+        assert config.inner_list == [InnerConfig(foo="bar")]
+        assert config.inner_dict == {"test": InnerConfig(foo="baz")}
+        executed["default"] = True
+
+    @dg.asset
+    def my_asset_with_config(config: MyConfig):
+        assert config.inner_list == [InnerConfig(foo="qux")]
+        assert config.inner_dict == {"test": InnerConfig(foo="baz")}
+        executed["override"] = True
+
+    assert dg.materialize([my_asset]).success
+    assert dg.materialize(
+        [my_asset_with_config],
+        run_config=dg.RunConfig(
+            {"my_asset_with_config": MyConfig(inner_list=[InnerConfig(foo="qux")])}
+        ),
+    ).success
+    assert executed == {"default": True, "override": True}
