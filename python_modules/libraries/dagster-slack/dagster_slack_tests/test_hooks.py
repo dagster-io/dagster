@@ -217,3 +217,54 @@ def test_success_hook_with_builtin_slack_on_success(mock_chat_postMessage, mock_
     )
     assert result.success
     assert mock_chat_postMessage.call_count == 1
+
+
+@patch("slack_sdk.WebClient.api_call")
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_failure_hook_with_builtin_slack_on_failure_class_resource(mock_chat_postMessage, mock_api_call):
+    """Regression test for #34304: slack_on_failure must work with class-based SlackResource.
+
+    Covers the get_client() branch of _get_slack_client, which the function-style
+    slack_resource tests do not exercise.
+    """
+    from dagster_slack.hooks import slack_on_failure
+    from dagster_slack.resources import SlackResource
+
+    @op(required_resource_keys={"slack"})
+    def fail_op(_):
+        raise SomeUserException()
+
+    @op(required_resource_keys={"slack"})
+    def pass_op(_):
+        pass
+
+    @job(resource_defs={"slack": SlackResource(token="<redacted>")})
+    def job_def():
+        pass_op()
+        fail_op()
+
+    job_with_hook = job_def.with_hooks({slack_on_failure("#foo")})
+    result = job_with_hook.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert mock_chat_postMessage.call_count == 1
+
+
+@patch("slack_sdk.WebClient.api_call")
+@patch("slack_sdk.WebClient.chat_postMessage")
+def test_success_hook_with_builtin_slack_on_success_class_resource(mock_chat_postMessage, mock_api_call):
+    """Regression test for #34304: slack_on_success must work with class-based SlackResource."""
+    from dagster_slack.hooks import slack_on_success
+    from dagster_slack.resources import SlackResource
+
+    @op(required_resource_keys={"slack"})
+    def pass_op(_):
+        pass
+
+    @job(resource_defs={"slack": SlackResource(token="<redacted>")})
+    def job_def():
+        pass_op()
+
+    job_with_hook = job_def.with_hooks({slack_on_success("#foo")})
+    result = job_with_hook.execute_in_process(raise_on_error=False)
+    assert result.success
+    assert mock_chat_postMessage.call_count == 1

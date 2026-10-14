@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Union
 
 from dagster._annotations import deprecated_param
 from dagster._core.definitions import failure_hook, success_hook
@@ -30,24 +29,6 @@ def _get_slack_client(slack_resource):
     if hasattr(slack_resource, "get_client"):
         return slack_resource.get_client()
     return slack_resource
-
-
-from dagster._annotations import deprecated_param
-from dagster._core.definitions import failure_hook, success_hook
-from dagster._core.execution.context.hook import HookContext
-from dagster._utils.warnings import normalize_renamed_param
-
-
-def _default_status_message(context: HookContext, status: str) -> str:
-    return f"Op {context.op.name} on job {context.job_name} {status}!\nRun ID: {context.run_id}"
-
-
-def _default_failure_message(context: HookContext) -> str:
-    return _default_status_message(context, status="failed")
-
-
-def _default_success_message(context: HookContext) -> str:
-    return _default_status_message(context, status="succeeded")
 
 
 @deprecated_param(
