@@ -678,6 +678,8 @@ const LOOKBACK_FOR_ROWS_DAYS = 2;
 const BOARD_SECONDS_PER_ROW = 2.5;
 // Scrolling by hand pauses the auto-scroll for this long.
 const BOARD_MANUAL_PAUSE_MS = 8000;
+// The list rests this long at the top and at the bottom of each pass.
+const BOARD_END_REST_MS = 10000;
 
 type BoardRow = {
   job: string;
@@ -791,9 +793,9 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
   }, [runs, rowsByRun, nextByJob, now]);
 
   // The list is a real scroll container, so the wheel and touch work. When the
-  // jobs overflow the card it is scrolled continuously by a frame loop, and the
-  // rows are rendered twice so wrapping back to the top is seamless. Hovering
-  // or scrolling by hand pauses the loop for a while.
+  // jobs overflow the card a frame loop scrolls it down to the last job, rests,
+  // comes back up to the top, rests, and goes again. Hovering or scrolling by hand
+  // pauses it for a while.
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolling, setScrolling] = useState(false);
   const pausedUntil = useRef(0);
@@ -804,16 +806,12 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
     if (!el) {
       return;
     }
-    const measure = () => {
-      const track = el.firstElementChild as HTMLElement | null;
-      const listHeight = track ? track.scrollHeight / (scrolling ? 2 : 1) : 0;
-      setScrolling(listHeight > el.clientHeight + 1);
-    };
+    const measure = () => setScrolling(el.scrollHeight > el.clientHeight + 1);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [board.length, scrolling]);
+  }, [board.length]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -825,20 +823,28 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
     // Fractional position: scrollTop itself is rounded to whole pixels, so
     // adding a third of a pixel per frame directly would never move.
     let pos = el.scrollTop;
+    let direction = 1;
+    pausedUntil.current = Math.max(pausedUntil.current, performance.now() + BOARD_END_REST_MS);
     const tick = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
-      const listHeight = el.scrollHeight / 2;
+      const maxScroll = el.scrollHeight - el.clientHeight;
       // A hand scroll moved the list; carry on from where it was left.
       if (Math.abs(el.scrollTop - Math.round(pos)) > 1) {
         pos = el.scrollTop;
       }
       if (!hovering.current && now > pausedUntil.current) {
-        const speed = listHeight / board.length / BOARD_SECONDS_PER_ROW;
-        pos += speed * dt;
-      }
-      if (pos >= listHeight) {
-        pos -= listHeight;
+        const speed = el.scrollHeight / board.length / BOARD_SECONDS_PER_ROW;
+        pos += direction * speed * dt;
+        if (pos >= maxScroll) {
+          pos = maxScroll;
+          direction = -1;
+          pausedUntil.current = now + BOARD_END_REST_MS;
+        } else if (pos <= 0) {
+          pos = 0;
+          direction = 1;
+          pausedUntil.current = now + BOARD_END_REST_MS;
+        }
       }
       el.scrollTop = Math.round(pos);
       frame = requestAnimationFrame(tick);
@@ -909,10 +915,7 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
         onWheel={pauseForManual}
         onTouchStart={pauseForManual}
       >
-        <div className={styles.boardTrack}>
-          {board.map((row) => renderRow(row, row.job))}
-          {scrolling ? board.map((row) => renderRow(row, `${row.job}-again`)) : null}
-        </div>
+        <div className={styles.boardTrack}>{board.map((row) => renderRow(row, row.job))}</div>
       </div>
     </div>
   );
