@@ -676,6 +676,8 @@ const DAY = 24 * HOUR;
 const LOOKBACK_FOR_ROWS_DAYS = 2;
 // When the list is taller than the card it scrolls continuously, this long per job.
 const BOARD_SECONDS_PER_ROW = 2.5;
+// Scrolling by hand pauses the auto-scroll for this long.
+const BOARD_MANUAL_PAUSE_MS = 8000;
 
 type BoardRow = {
   job: string;
@@ -788,10 +790,15 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
       .sort((a, b) => (a.next ?? Infinity) - (b.next ?? Infinity));
   }, [runs, rowsByRun, nextByJob, now]);
 
-  // Scroll only when the jobs overflow the card. Measured, not guessed, so a
-  // short list on a tall screen sits still.
+  // The list is a real scroll container, so the wheel and touch work. When the
+  // jobs overflow the card it is scrolled continuously by a frame loop, and the
+  // rows are rendered twice so wrapping back to the top is seamless. Hovering
+  // or scrolling by hand pauses the loop for a while.
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolling, setScrolling] = useState(false);
+  const pausedUntil = useRef(0);
+  const hovering = useRef(false);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) {
@@ -807,6 +814,42 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
     observer.observe(el);
     return () => observer.disconnect();
   }, [board.length, scrolling]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !scrolling) {
+      return;
+    }
+    let frame = 0;
+    let last = performance.now();
+    // Fractional position: scrollTop itself is rounded to whole pixels, so
+    // adding a third of a pixel per frame directly would never move.
+    let pos = el.scrollTop;
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      const listHeight = el.scrollHeight / 2;
+      // A hand scroll moved the list; carry on from where it was left.
+      if (Math.abs(el.scrollTop - Math.round(pos)) > 1) {
+        pos = el.scrollTop;
+      }
+      if (!hovering.current && now > pausedUntil.current) {
+        const speed = listHeight / board.length / BOARD_SECONDS_PER_ROW;
+        pos += speed * dt;
+      }
+      if (pos >= listHeight) {
+        pos -= listHeight;
+      }
+      el.scrollTop = Math.round(pos);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [scrolling, board.length]);
+
+  const pauseForManual = () => {
+    pausedUntil.current = performance.now() + BOARD_MANUAL_PAUSE_MS;
+  };
 
   if (!board.length) {
     return <div className={styles.muted}>No runs this month yet.</div>;
@@ -858,11 +901,15 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
         <span className={styles.boardNum}>Took</span>
         <span className={styles.boardNext}>Next run</span>
       </div>
-      <div ref={scrollRef} className={styles.boardScroll}>
-        <div
-          className={clsx(styles.boardTrack, scrolling && styles.boardTrackScrolling)}
-          style={{animationDuration: `${board.length * BOARD_SECONDS_PER_ROW}s`}}
-        >
+      <div
+        ref={scrollRef}
+        className={styles.boardScroll}
+        onMouseEnter={() => (hovering.current = true)}
+        onMouseLeave={() => (hovering.current = false)}
+        onWheel={pauseForManual}
+        onTouchStart={pauseForManual}
+      >
+        <div className={styles.boardTrack}>
           {board.map((row) => renderRow(row, row.job))}
           {scrolling ? board.map((row) => renderRow(row, `${row.job}-again`)) : null}
         </div>
