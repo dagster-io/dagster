@@ -649,7 +649,7 @@ const TrendCard = ({runs}: {runs: Run[]}) => {
     return () => clearTimeout(timer);
   }, [mode, setMode]);
   return (
-    <div className={clsx(styles.card, mode === 'replay' && styles.cardFlex)}>
+    <div className={clsx(styles.card, styles.cardFlex)}>
       <div className={styles.cardHeader}>
         <div className={styles.cardTitle}>
           {current?.label}
@@ -674,6 +674,8 @@ const TrendCard = ({runs}: {runs: Run[]}) => {
 
 const DAY = 24 * HOUR;
 const LOOKBACK_FOR_ROWS_DAYS = 2;
+// When the list is taller than the card it scrolls continuously, this long per job.
+const BOARD_SECONDS_PER_ROW = 2.5;
 
 type BoardRow = {
   job: string;
@@ -786,9 +788,66 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
       .sort((a, b) => (a.next ?? Infinity) - (b.next ?? Infinity));
   }, [runs, rowsByRun, nextByJob, now]);
 
+  // Scroll only when the jobs overflow the card. Measured, not guessed, so a
+  // short list on a tall screen sits still.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) {
+      return;
+    }
+    const measure = () => {
+      const track = el.firstElementChild as HTMLElement | null;
+      const listHeight = track ? track.scrollHeight / (scrolling ? 2 : 1) : 0;
+      setScrolling(listHeight > el.clientHeight + 1);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [board.length, scrolling]);
+
   if (!board.length) {
     return <div className={styles.muted}>No runs this month yet.</div>;
   }
+
+  const renderRow = (row: BoardRow, key: string) => {
+    const running = bucketFor(row.status) === 'inProgress' || bucketFor(row.status) === 'queued';
+    return (
+      <div key={key} className={styles.boardRow}>
+        <span className={styles.boardJob} title={row.job}>
+          {row.job}
+        </span>
+        <span className={styles.boardStatus}>
+          <RunStatusTag status={row.status} />
+          <span className={styles.muted}>
+            <TimeFromNow unixTimestamp={row.start} />
+          </span>
+        </span>
+        <span className={styles.boardNum}>{row.rows ? row.rows.toLocaleString() : '—'}</span>
+        <span className={styles.boardNum}>{formatDuration(row.duration)}</span>
+        <span className={styles.boardNext}>
+          {running ? (
+            <span className={styles.boardLive}>running now</span>
+          ) : row.next ? (
+            <>
+              <span className={styles.boardCountdown}>in {formatCountdown(row.next - now)}</span>
+              <span className={styles.muted}>
+                {new Date(row.next * 1000).toLocaleTimeString(undefined, {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+                {row.nextIsGuess ? ' · expected' : ''}
+              </span>
+            </>
+          ) : (
+            <span className={styles.muted}>not scheduled</span>
+          )}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.board}>
@@ -799,45 +858,15 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
         <span className={styles.boardNum}>Took</span>
         <span className={styles.boardNext}>Next run</span>
       </div>
-      {board.map((row) => {
-        const running =
-          bucketFor(row.status) === 'inProgress' || bucketFor(row.status) === 'queued';
-        return (
-          <div key={row.job} className={styles.boardRow}>
-            <span className={styles.boardJob} title={row.job}>
-              {row.job}
-            </span>
-            <span className={styles.boardStatus}>
-              <RunStatusTag status={row.status} />
-              <span className={styles.muted}>
-                <TimeFromNow unixTimestamp={row.start} />
-              </span>
-            </span>
-            <span className={styles.boardNum}>{row.rows ? row.rows.toLocaleString() : '—'}</span>
-            <span className={styles.boardNum}>{formatDuration(row.duration)}</span>
-            <span className={styles.boardNext}>
-              {running ? (
-                <span className={styles.boardLive}>running now</span>
-              ) : row.next ? (
-                <>
-                  <span className={styles.boardCountdown}>
-                    in {formatCountdown(row.next - now)}
-                  </span>
-                  <span className={styles.muted}>
-                    {new Date(row.next * 1000).toLocaleTimeString(undefined, {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })}
-                    {row.nextIsGuess ? ' · expected' : ''}
-                  </span>
-                </>
-              ) : (
-                <span className={styles.muted}>not scheduled</span>
-              )}
-            </span>
-          </div>
-        );
-      })}
+      <div ref={scrollRef} className={styles.boardScroll}>
+        <div
+          className={clsx(styles.boardTrack, scrolling && styles.boardTrackScrolling)}
+          style={{animationDuration: `${board.length * BOARD_SECONDS_PER_ROW}s`}}
+        >
+          {board.map((row) => renderRow(row, row.job))}
+          {scrolling ? board.map((row) => renderRow(row, `${row.job}-again`)) : null}
+        </div>
+      </div>
     </div>
   );
 };

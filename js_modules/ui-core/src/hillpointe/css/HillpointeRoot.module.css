@@ -715,6 +715,43 @@
   display: flex;
   flex-direction: column;
   margin-top: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Zero intrinsic height: the list fills the card without growing it. */
+.boardScroll {
+  flex: 1 1 auto;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.boardTrack {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Rows are rendered twice and the track slides up one list-height, so the
+   loop is seamless. Hovering pauses it. */
+.boardTrackScrolling {
+  animation-name: boardScroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.boardScroll:hover .boardTrackScrolling {
+  animation-play-state: paused;
+}
+
+@keyframes boardScroll {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-50%);
+  }
 }
 
 .boardRow {
@@ -786,5 +823,10 @@
   .boardHead,
   .boardNum {
     display: none;
+  }
+
+  /* One-column layouts have no neighbour to match, so give the list a height. */
+  .boardScroll {
+    height: 360px;
   }
 }
