@@ -309,6 +309,24 @@ def test_scheduler_name(deployment_template: HelmTemplate):
     assert deployment.spec.template.spec.scheduler_name == "custom"
 
 
+def test_priority_class_name(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=kubernetes.Image.construct(repository="repository", tag="tag"),
+                    priorityClassName="high-priority",
+                )
+            ),
+        )
+    )
+
+    [deployment] = deployment_template.render(helm_values)
+
+    assert deployment.spec.template.spec.priority_class_name == "high-priority"
+
+
 def test_check_db_container_toggle(deployment_template: HelmTemplate):
     # Off test
     helm_values = DagsterHelmValues.construct(

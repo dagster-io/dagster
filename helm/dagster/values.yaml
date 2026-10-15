@@ -208,6 +208,9 @@ dagsterWebserver:
 
   # Override the default K8s scheduler
   # schedulerName: ~
+  # Set the PriorityClass for the pod. See:
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption
+  # priorityClassName: ~
 
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
@@ -459,6 +462,9 @@ dagster-user-deployments:
 
       # Override the default K8s scheduler
       # schedulerName: ~
+      # Set the PriorityClass for the pod. See:
+      # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption
+      # priorityClassName: ~
 
       # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
@@ -747,6 +753,9 @@ runLauncher:
       checkDbReadyInitContainer: true
       # Override the default K8s scheduler
       # schedulerName: ~
+      # Set the PriorityClass for the pod. See:
+      # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption
+      # priorityClassName: ~
 
       # If `livenessProbe` does not contain `exec` field, then we will default to using:
       # exec:
@@ -960,6 +969,9 @@ flower:
   checkDbReadyInitContainer: true
   # Override the default K8s scheduler
   # schedulerName: ~
+  # Set the PriorityClass for the pod. See:
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption
+  # priorityClassName: ~
 
   resources: {}
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
@@ -1340,6 +1352,9 @@ dagsterDaemon:
   checkDbReadyInitContainer: true
   # Override the default K8s scheduler
   # schedulerName: ~
+  # Set the PriorityClass for the pod. See:
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption
+  # priorityClassName: ~
 
   # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
   # enable startup probes.

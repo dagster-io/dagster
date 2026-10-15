@@ -173,5 +173,8 @@ spec:
       {{- if .Values.dagsterDaemon.schedulerName }}
       schedulerName: {{ .Values.dagsterDaemon.schedulerName }}
       {{- end }}
+      {{- if .Values.dagsterDaemon.priorityClassName }}
+      priorityClassName: {{ .Values.dagsterDaemon.priorityClassName | quote }}
+      {{- end }}
 ---
 {{ end }}
