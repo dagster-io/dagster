@@ -6,9 +6,10 @@ import sys
 import time
 
 import dagster as dg
+import psutil
 import pytest
 from dagster._api.list_repositories import sync_list_repositories_grpc
-from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
 from dagster._core.remote_origin import (
     GrpcServerCodeLocationOrigin,
     RegisteredCodeLocationOrigin,
@@ -21,6 +22,11 @@ from dagster._core.test_utils import create_run_for_test, environ, new_cwd, poll
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
+from dagster._grpc.proxy_server import (
+    MAX_SUBPROCESS_RESTART_BACKOFF,
+    SUBPROCESS_WATCHDOG_INTERVAL,
+    next_subprocess_restart_backoff,
+)
 from dagster._grpc.server import ExecuteExternalJobArgs, open_server_process, wait_for_grpc_server
 from dagster._grpc.types import (
     JobSubsetSnapshotArgs,
@@ -589,6 +595,123 @@ def test_server_heartbeat_timeout_code_server_cli() -> None:
         time.sleep(6)
         assert process.poll() == 0
 
+    finally:
+        process.terminate()
+        process.wait()
+
+
+def _code_server_subprocesses(code_server: subprocess.Popen) -> list[psutil.Process]:
+    return [
+        child
+        for child in psutil.Process(code_server.pid).children()
+        if "grpc" in " ".join(child.cmdline())
+    ]
+
+
+def _start_code_server(
+    python_file: str,
+) -> tuple[subprocess.Popen, DagsterGrpcClient, list[str]]:
+    port = find_free_port()
+    args = ["dagster", "code-server", "start", "--port", str(port), "--python-file", python_file]
+    return subprocess.Popen(args), DagsterGrpcClient(port=port, host="localhost"), args
+
+
+def test_subprocess_restart_backoff_schedule() -> None:
+    # A subprocess that keeps crashing right after it starts backs off, doubling up to the cap
+    backoff = 0.0
+    schedule = []
+    for _ in range(9):
+        backoff = next_subprocess_restart_backoff(backoff, uptime=1)
+        schedule.append(backoff)
+    assert schedule == [5, 10, 20, 40, 80, 160, 300, 300, 300]
+
+    # ...stays at the cap even though each wait is as long as the cap...
+    assert (
+        next_subprocess_restart_backoff(
+            MAX_SUBPROCESS_RESTART_BACKOFF, uptime=MAX_SUBPROCESS_RESTART_BACKOFF - 1
+        )
+        == MAX_SUBPROCESS_RESTART_BACKOFF
+    )
+
+    # ...and one that stayed up long enough is restarted right away
+    assert (
+        next_subprocess_restart_backoff(
+            MAX_SUBPROCESS_RESTART_BACKOFF, uptime=MAX_SUBPROCESS_RESTART_BACKOFF
+        )
+        == 0
+    )
+    assert next_subprocess_restart_backoff(0, uptime=1) == SUBPROCESS_WATCHDOG_INTERVAL
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Kills a subprocess by pid")
+def test_code_server_restarts_exited_subprocess() -> None:
+    process, client, args = _start_code_server(dg.file_relative_path(__file__, "grpc_repo.py"))
+    try:
+        wait_for_grpc_server(process, client, args)
+        original_server_id = client.get_server_id()
+        [subprocess_before] = _code_server_subprocesses(process)
+
+        subprocess_before.kill()
+        subprocess_before.wait(timeout=10)
+
+        start = time.time()
+        while True:
+            try:
+                if client.get_server_id() != original_server_id:
+                    break
+            except DagsterUserCodeUnreachableError:
+                pass
+            assert time.time() - start < 60, "code server did not restart its subprocess"
+            time.sleep(1)
+
+        assert process.poll() is None
+        assert client.ping("foobar")["echo"] == "foobar"
+        assert isinstance(sync_list_repositories_grpc(client), ListRepositoriesResponse)
+        assert len(_code_server_subprocesses(process)) == 1
+    finally:
+        process.terminate()
+        process.wait()
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
+def test_code_server_does_not_restart_subprocess_after_load_error() -> None:
+    process, client, _ = _start_code_server(dg.file_relative_path(__file__, "crashy_grpc_repo.py"))
+    try:
+        # Ping fails without a subprocess, so wait on the proxy's own health check.
+        start = time.time()
+        while client.health_check_query() != "SERVING":
+            assert time.time() - start < 60, "code server did not start"
+            time.sleep(1)
+
+        # Several watchdog intervals: a failed load must not be retried in a loop.
+        for _ in range(12):
+            assert _code_server_subprocesses(process) == []
+            time.sleep(1)
+
+        assert process.poll() is None
+        with pytest.raises(DagsterUserCodeProcessError):
+            sync_list_repositories_grpc(client)
+    finally:
+        process.terminate()
+        process.wait()
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Kills a subprocess by pid")
+def test_code_server_reload_after_subprocess_exit_starts_one_subprocess() -> None:
+    process, client, args = _start_code_server(dg.file_relative_path(__file__, "grpc_repo.py"))
+    try:
+        wait_for_grpc_server(process, client, args)
+        [subprocess_before] = _code_server_subprocesses(process)
+
+        # The watchdog and ReloadCode now race to replace the same subprocess.
+        subprocess_before.kill()
+        subprocess_before.wait(timeout=10)
+        client.reload_code(timeout=60)
+
+        # Long enough for the watchdog to have run, and for any replaced subprocess to exit.
+        time.sleep(15)
+        assert len(_code_server_subprocesses(process)) == 1
+        assert client.ping("foobar")["echo"] == "foobar"
     finally:
         process.terminate()
         process.wait()

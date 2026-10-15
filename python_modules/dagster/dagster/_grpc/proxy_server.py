@@ -36,6 +36,21 @@ if TYPE_CHECKING:
 
 CLEANUP_TICK = 1
 
+# How often the proxy checks that its code server subprocess is still running.
+SUBPROCESS_WATCHDOG_INTERVAL = 5
+# Upper bound on the wait between restarts of a subprocess that keeps exiting soon after it
+# starts. A subprocess that stays up at least this long resets the backoff.
+MAX_SUBPROCESS_RESTART_BACKOFF = 300
+
+
+def next_subprocess_restart_backoff(previous_backoff: float, uptime: float) -> float:
+    """Wait before restarting a subprocess that exited after running for uptime seconds."""
+    if uptime >= MAX_SUBPROCESS_RESTART_BACKOFF:
+        return 0.0
+    return min(
+        max(previous_backoff * 2, SUBPROCESS_WATCHDOG_INTERVAL), MAX_SUBPROCESS_RESTART_BACKOFF
+    )
+
 
 class DagsterProxyApiServicer(DagsterApiServicer):
     """Service that implements the dagster gRPC API by opening up a "dagster api grpc" subprocess, and proxying
@@ -123,6 +138,15 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         self._reload_location()
 
+        # The subprocess can exit on its own (missed heartbeats, OOM kill). Without this the
+        # proxy keeps serving health checks while every proxied call fails until a manual reload.
+        self.__subprocess_watchdog_thread = threading.Thread(
+            target=self._subprocess_watchdog_thread,
+            name="code-server-subprocess-watchdog",
+            daemon=True,
+        )
+        self.__subprocess_watchdog_thread.start()
+
         # Wait for the code server to have started before starting the heartbeat clock,
         # since the code loading and the server being ready is what will trigger the
         # heartbeats coming in from the client
@@ -164,14 +188,38 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             self._client_heartbeat_thread.start()
 
     def ReloadCode(self, request, context):
+        self._restart_subprocess(only_if_exited=False)
+        return dagster_api_pb2.ReloadCodeReply()
+
+    def _restart_subprocess(self, only_if_exited: bool) -> bool:
+        """Start a new code server subprocess and switch to it. Returns whether it did.
+
+        With only_if_exited, the check runs under the reload lock, so a ReloadCode that already
+        replaced the exited subprocess is not followed by a second restart.
+        """
         with self._reload_lock:  # can only call this method once at a time
+            old_subprocess_exited = (
+                self._grpc_server_registry.get_active_process_exit_code(self._origin) is not None
+            )
+            if only_if_exited and (
+                not old_subprocess_exited
+                # A shutdown that started after the exit was observed: stay down.
+                or self._shutdown_once_executions_finish_event.is_set()
+            ):
+                return False
+
             old_heartbeat_shutdown_event = self._client_heartbeat_shutdown_event
             old_heartbeat_thread = self._client_heartbeat_thread
             old_client = self._client
 
             self._reload_location()  # Creates and starts a new heartbeat thread
 
-        if old_client:
+            if self._shutdown_once_executions_finish_event.is_set():
+                # A shutdown may have stopped every process before this one was created.
+                self._grpc_server_registry.shutdown_all_processes()
+
+        # An exited subprocess cannot be asked to shut down; asking fails the whole reload.
+        if old_client and not old_subprocess_exited:
             old_client.shutdown_server()
 
         if old_heartbeat_shutdown_event:
@@ -180,7 +228,39 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         if old_heartbeat_thread:
             old_heartbeat_thread.join()
 
-        return dagster_api_pb2.ReloadCodeReply()
+        return True
+
+    def _subprocess_watchdog_thread(self) -> None:
+        restart_backoff = 0.0
+        last_restart_time: float | None = None
+        exit_seen_time: float | None = None
+        while not self._shutdown_once_executions_finish_event.wait(SUBPROCESS_WATCHDOG_INTERVAL):
+            # None while running, and also after a failed load: that error is reported by
+            # ListRepositories, and restarting would only fail the same way.
+            exit_code = self._grpc_server_registry.get_active_process_exit_code(self._origin)
+            if exit_code is None:
+                exit_seen_time = None
+                continue
+
+            if exit_seen_time is None:
+                # Measure uptime once, at the exit, so time spent waiting out the backoff
+                # does not count as the subprocess staying up.
+                exit_seen_time = time.monotonic()
+                if last_restart_time is not None:
+                    restart_backoff = next_subprocess_restart_backoff(
+                        restart_backoff, uptime=exit_seen_time - last_restart_time
+                    )
+                self._logger.warning(
+                    f"Code server subprocess exited unexpectedly with return code {exit_code}, "
+                    f"starting a new one in {restart_backoff:.0f}s"
+                )
+
+            if time.monotonic() - exit_seen_time < restart_backoff:
+                continue
+
+            if self._restart_subprocess(only_if_exited=True):
+                last_restart_time = time.monotonic()
+                exit_seen_time = None
 
     def RefreshComponentState(self, request, context):
         if self._load_error:
@@ -210,6 +290,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def cleanup(self):
         # In case ShutdownServer was not called
         self._shutdown_once_executions_finish_event.set()
+        self.__subprocess_watchdog_thread.join()
         self._grpc_server_registry.shutdown_all_processes()
 
         if self._client_heartbeat_shutdown_event:
