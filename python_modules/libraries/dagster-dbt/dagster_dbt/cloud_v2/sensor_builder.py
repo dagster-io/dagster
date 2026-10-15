@@ -118,14 +118,10 @@ def materializations_from_batch_iter(
             context.log.info(f"Found {len(mats)} materializations for {run.id}")
 
             all_asset_keys_materialized = {mat.asset_key for mat in mats}
-            yield (
-                BatchResult(
-                    idx=i + latest_offset,
-                    asset_events=mats,
-                    all_asset_keys_materialized=all_asset_keys_materialized,
-                )
-                if mats
-                else None
+            yield BatchResult(
+                idx=i + latest_offset,
+                asset_events=mats,
+                all_asset_keys_materialized=all_asset_keys_materialized,
             )
         total_processed_runs += len(runs)
         context.log.info(
