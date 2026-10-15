@@ -772,3 +772,20 @@ def test_upath_io_manager_storage_options():
 
     storage_options["some_option"] = "changed"
     assert DummyIOManager(base_path=base_path).storage_options == {"some_option": "value"}
+
+
+def test_upath_io_manager_storage_options_before_0_2(monkeypatch):
+    import upath
+
+    base_path = UPath("memory://dagster-storage-options/legacy")
+    legacy_kwargs = {"some_option": "value"}
+
+    # universal-pathlib < 0.2.0 has no `storage_options` and exposes the options as `_kwargs`
+    monkeypatch.setattr(upath, "__version__", "0.1.4")
+    monkeypatch.setattr(type(base_path), "_kwargs", legacy_kwargs, raising=False)
+
+    storage_options = DummyIOManager(base_path=base_path).storage_options
+    assert storage_options == {"some_option": "value"}
+
+    storage_options["some_option"] = "changed"
+    assert legacy_kwargs == {"some_option": "value"}
