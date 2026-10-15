@@ -855,6 +855,7 @@ type AssetPartitionsStatusCounts = {
   numPartitionsFailed: Scalars['Int']['output'];
   numPartitionsInProgress: Scalars['Int']['output'];
   numPartitionsMaterialized: Scalars['Int']['output'];
+  numPartitionsSkipped: Scalars['Int']['output'];
   numPartitionsTargeted: Scalars['Int']['output'];
 };
 
@@ -6263,6 +6264,7 @@ type UnpartitionedAssetStatus = {
   failed: Scalars['Boolean']['output'];
   inProgress: Scalars['Boolean']['output'];
   materialized: Scalars['Boolean']['output'];
+  skipped: Scalars['Boolean']['output'];
 };
 
 type UnsupportedOperationError = Error & {
@@ -8006,6 +8008,10 @@ export const buildAssetPartitionsStatusCounts = (
       overrides && overrides.hasOwnProperty('numPartitionsMaterialized')
         ? overrides.numPartitionsMaterialized!
         : 7556,
+    numPartitionsSkipped:
+      overrides && overrides.hasOwnProperty('numPartitionsSkipped')
+        ? overrides.numPartitionsSkipped!
+        : 4622,
     numPartitionsTargeted:
       overrides && overrides.hasOwnProperty('numPartitionsTargeted')
         ? overrides.numPartitionsTargeted!
@@ -17379,6 +17385,7 @@ export const buildUnpartitionedAssetStatus = (
     inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : false,
     materialized:
       overrides && overrides.hasOwnProperty('materialized') ? overrides.materialized! : false,
+    skipped: overrides && overrides.hasOwnProperty('skipped') ? overrides.skipped! : false,
   };
 };
 
