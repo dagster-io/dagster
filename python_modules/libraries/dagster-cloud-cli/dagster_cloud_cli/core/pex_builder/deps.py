@@ -508,9 +508,11 @@ def get_pyproject_toml_deps(code_directory: str) -> list[str]:
                 elif "path" in source_config:
                     ui.print(f"[uv.sources] resolved {line!r} to path {source_config['path']}")
                     source_path = source_config["path"]
-                    resolved_lines.append(
-                        source_path if os.path.isabs(source_path) else f"./{source_path}"
-                    )
+                    if not os.path.isabs(source_path) and os.path.isdir(
+                        os.path.join(code_directory, source_path)
+                    ):
+                        source_path = f"./{source_path}"
+                    resolved_lines.append(source_path)
                     continue
             resolved_lines.append(line)
         return resolved_lines

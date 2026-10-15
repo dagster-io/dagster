@@ -603,7 +603,7 @@ def test_get_deps_requirements_uv_sources_path(tmp_path, source_path):
     app_dir = tmp_path / "my-app"
     app_dir.mkdir()
     if source_path == "absolute":
-        source_path = str(tmp_path / "local-utils")
+        source_path = (tmp_path / "local-utils").as_posix()
     local_utils_dir = (app_dir / source_path).resolve()
     (app_dir / "my_app").mkdir()
     (app_dir / "my_app" / "__init__.py").write_text("")
@@ -662,6 +662,25 @@ build-backend = "hatchling.build"
     assert not any("local-utils" in dep for dep in deps_lines), (
         f"local-utils should NOT be in deps (it's a local package): {deps_lines}"
     )
+
+
+@pytest.mark.parametrize("filename", ["local_utils-1.0-py3-none-any.whl", "local_utils-1.0.tar.gz"])
+def test_collect_requirements_uv_sources_file(tmp_path, filename):
+    source_path = f"dist/{filename}"
+    (tmp_path / "dist").mkdir()
+    (tmp_path / source_path).touch()
+    (tmp_path / "pyproject.toml").write_text(f"""
+[project]
+dependencies = ["local-utils"]
+
+[tool.uv.sources]
+local-utils = {{ path = "{source_path}" }}
+""")
+
+    local_package_paths, deps_lines = deps.collect_requirements(str(tmp_path), "python")
+
+    assert local_package_paths == []
+    assert deps_lines == [source_path]
 
 
 def test_get_deps_requirements_uv_sources_path_with_version_specifier(tmp_path):
