@@ -193,7 +193,21 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
               icon={<Icon name="home" />}
               label="Hillpointe"
               href="/hillpointe"
-              isActive={(_, currentLocation) => currentLocation.pathname.startsWith('/hillpointe')}
+              isActive={(_, currentLocation) => currentLocation.pathname === '/hillpointe'}
+            />
+          ),
+        },
+        {
+          key: 'job-timings',
+          label: 'Job timings',
+          element: (
+            <NavItemWithLink
+              icon={<Icon name="timer" />}
+              label="Job timings"
+              href="/hillpointe/timings"
+              isActive={(_, currentLocation) =>
+                currentLocation.pathname.startsWith('/hillpointe/timings')
+              }
             />
           ),
         },

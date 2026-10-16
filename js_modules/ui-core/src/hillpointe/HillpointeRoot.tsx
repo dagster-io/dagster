@@ -94,10 +94,10 @@ const STEP_COLOR: Record<StepEventStatus, string> = {
 };
 
 /** Seconds a run (or step) has taken so far, or null if it never started. */
-const durationSec = (start: number | null, end: number | null) =>
+export const durationSec = (start: number | null, end: number | null) =>
   start ? (end ?? Date.now() / 1000) - start : null;
 
-const formatDuration = (sec: number | null) => {
+export const formatDuration = (sec: number | null) => {
   if (sec === null) {
     return '—';
   }
@@ -351,7 +351,7 @@ const HEALTH_TEXT: Record<Health, string> = {
   none: Colors.textLighter(),
 };
 
-const startOfDay = (daysAgo: number) => {
+export const startOfDay = (daysAgo: number) => {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() - daysAgo);

@@ -811,3 +811,115 @@
     height: 360px;
   }
 }
+
+/* Job timings page */
+.timingsGrid {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.timingsMain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.jobList {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+.jobItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: var(--color-text-default);
+  text-decoration: none;
+}
+
+.jobItem:hover {
+  background: var(--color-background-lighter);
+  text-decoration: none;
+}
+
+.jobItemActive,
+.jobItemActive:hover {
+  background: var(--color-background-blue);
+}
+
+.jobItemName {
+  font-family: var(--font-family-monospace);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobItemMeta {
+  font-size: 11px;
+  color: var(--color-text-lighter);
+}
+
+/* Dashed average line across the duration chart, labelled at the right. */
+.avgLine {
+  border-top-color: var(--color-accent-blue);
+}
+
+.avgLabel {
+  position: absolute;
+  right: 0;
+  top: -16px;
+  font-size: 11px;
+  color: var(--color-text-blue);
+}
+
+.timingsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.timingsTable th,
+.timingsTable td {
+  padding: 6px 8px;
+  text-align: left;
+  box-shadow: inset 0 -1px 0 var(--color-keyline-default);
+  color: var(--color-text-default);
+}
+
+.timingsTable th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-lighter);
+}
+
+.deltaFaster {
+  color: var(--color-text-green);
+}
+
+.deltaSlower {
+  color: var(--color-text-red);
+}
+
+.deltaSame {
+  color: var(--color-text-light);
+}
+
+.deltaBig {
+  font-size: 22px;
+}
+
+@media (max-width: 768px) {
+  .timingsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
