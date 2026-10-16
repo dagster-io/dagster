@@ -820,6 +820,15 @@
   align-items: start;
 }
 
+/* With the job list hidden the chart takes the whole width. */
+.timingsGridSolo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hidden {
+  display: none;
+}
+
 .timingsMain {
   display: flex;
   flex-direction: column;

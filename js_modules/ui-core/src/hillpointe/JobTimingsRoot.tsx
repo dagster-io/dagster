@@ -1,4 +1,12 @@
-import {Box, Colors, NonIdealState, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Colors,
+  Icon,
+  NonIdealState,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import clsx from 'clsx';
 import {useMemo, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
@@ -18,6 +26,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {RunStatusTag} from '../runs/RunStatusTag';
 
 // How far back the page looks for runs of each job.
@@ -25,6 +34,7 @@ const TIMINGS_DAYS = 90;
 // Runs compared for the trend tile: the newest few against the few before them.
 const TREND_WINDOW = 5;
 const PLOT_HEIGHT = 200;
+const JOBS_PANEL_KEY = 'hillpointe-timings-jobs-open';
 
 type TimedRun = Extract<
   HillpointeJobTimingsQuery['runsOrError'],
@@ -89,6 +99,10 @@ export const JobTimingsRoot = () => {
   }, [runs]);
 
   const selected = jobName ?? jobs[0]?.name ?? null;
+  // The job list can be tucked away to give the chart the full width.
+  const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
+    typeof value === 'boolean' ? value : true,
+  );
   const points = useMemo(() => (selected ? pointsFor(runs, selected) : []), [runs, selected]);
 
   if (queryResult.loading && !runs.length) {
@@ -106,10 +120,18 @@ export const JobTimingsRoot = () => {
           Job timings
           <span className={styles.cardSub}>How long each run took, last {TIMINGS_DAYS} days</span>
         </div>
-        <QueryRefreshCountdown refreshState={refreshState} />
+        <Box flex={{alignItems: 'center', gap: 12}}>
+          <Button
+            icon={<Icon name={jobsOpen ? 'panel_show_right' : 'panel_show_left'} />}
+            onClick={() => setJobsOpen((open) => !open)}
+          >
+            {jobsOpen ? 'Hide jobs' : 'Show jobs'}
+          </Button>
+          <QueryRefreshCountdown refreshState={refreshState} />
+        </Box>
       </Box>
-      <div className={styles.timingsGrid}>
-        <div className={styles.card}>
+      <div className={clsx(styles.timingsGrid, !jobsOpen && styles.timingsGridSolo)}>
+        <div className={clsx(styles.card, !jobsOpen && styles.hidden)}>
           <div className={styles.cardTitle}>Jobs</div>
           <div className={styles.jobList}>
             {jobs.map((job) => (
