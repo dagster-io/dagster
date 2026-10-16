@@ -6,7 +6,6 @@ import {
   ButtonLink,
   CursorHistoryControls,
   FontFamily,
-  Heading,
   Icon,
   Menu,
   MenuItem,
@@ -14,6 +13,7 @@ import {
   NonIdealState,
   Select,
   Spinner,
+  SpinnerWithText,
   Table,
   Text,
   ifPlural,
@@ -28,17 +28,25 @@ import {
   HISTORY_TICK_FRAGMENT,
   RUN_STATUS_FRAGMENT,
   RunStatusLink,
+  TIMELINE_TICK_FRAGMENT,
   labelForRequestedMaterializationsAndJobRuns,
 } from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
-import {HistoryTickFragment} from './types/InstigationUtils.types';
-import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
+import {LIVE_WINDOW_MS} from './TickTimelineControls';
+import {HistoryTickFragment, TimelineTickFragment} from './types/InstigationUtils.types';
+import {
+  TickHistoryQuery,
+  TickHistoryQueryVariables,
+  TickTimelineQuery,
+  TickTimelineQueryVariables,
+} from './types/TickHistory.types';
 import {countPartitionsAddedOrDeleted, isStuckStartedTick} from './util';
-import {gql, useQuery} from '../apollo-client';
+import {NetworkStatus, gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {
   DynamicPartitionsRequestType,
   InstigationSelector,
@@ -47,21 +55,26 @@ import {
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../runs/TimeElapsed';
+import {useCursorAccumulatedQuery} from '../runs/useCursorAccumulatedQuery';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {humanizeSensorCursor} from '../sensors/SensorDetails';
 import {TickLogDialog} from '../ticks/TickLogDialog';
 import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
 import {CopyIconButton} from '../ui/CopyButton';
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+import timelineStyles from './css/LiveTickTimeline.module.css';
 import styles from './css/TickHistory.module.css';
 
 Chart.register(zoomPlugin);
 
-type InstigationTick = HistoryTickFragment;
-
 const PAGE_SIZE = 25;
+
+// Shared by the table's pagination and by the variables below, which have to know whether a
+// cursor is in play.
+const TICK_CURSOR_QUERY_KEY = 'cursor';
 
 enum TickStatusDisplay {
   ALL = 'all',
@@ -80,34 +93,62 @@ const STATUS_DISPLAY_MAP = {
   [TickStatusDisplay.SUCCESS]: [InstigationTickStatus.SUCCESS],
 };
 
-export const TicksTable = ({
-  name,
-  repoAddress,
-  tabs,
-  tickResultType,
-  setTimerange,
-  setParentStatuses,
-}: {
+interface TicksTableProps {
   name: string;
   repoAddress: RepoAddress;
   tickResultType: TickResultType;
-  tabs?: React.ReactElement;
-  setTimerange?: (range?: [number, number]) => void;
-  setParentStatuses?: (statuses?: InstigationTickStatus[]) => void;
-}) => {
+  // Rendered above the table. Omit when the page puts these controls somewhere of its own.
+  actionBarComponents?: React.ReactNode;
+  // Limits the table to ticks within this window. Omit to list all ticks.
+  rangeMs?: [number, number];
+  // Changes whenever the user picks a different window, to restart pagination.
+  windowKey?: string;
+}
+
+/**
+ * Tick status filter, persisted to the querystring so the timeline and the table below it
+ * always agree on what is being shown.
+ */
+export const useTickStatusFilter = () => {
   const [tickStatus, setTickStatus] = useQueryPersistedState<TickStatusDisplay>({
     queryKey: 'status',
     defaults: {status: TickStatusDisplay.ALL},
   });
+  const statuses = React.useMemo(
+    () => STATUS_DISPLAY_MAP[tickStatus] || STATUS_DISPLAY_MAP[TickStatusDisplay.ALL],
+    [tickStatus],
+  );
+  return {tickStatus, setTickStatus, statuses};
+};
+
+export const TicksTable = ({
+  name,
+  repoAddress,
+  actionBarComponents,
+  tickResultType,
+  rangeMs,
+  windowKey,
+}: TicksTableProps) => {
+  const {tickStatus, statuses} = useTickStatusFilter();
 
   const [showDetailsForTick, setShowDetailsForTick] = useState<HistoryTickFragment | null>(null);
   const [showLogsForTick, setShowLogsForTick] = useState<HistoryTickFragment | null>(null);
 
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const statuses = React.useMemo(
-    () => STATUS_DISPLAY_MAP[tickStatus] || STATUS_DISPLAY_MAP[TickStatusDisplay.ALL],
-    [tickStatus],
-  );
+
+  // The pagination cursor is a tick timestamp that bounds the page from above, and an
+  // explicit `beforeTimestamp` takes its place rather than combining with it. So the window's
+  // end is sent only for the first page; after that the cursor bounds the page and
+  // `afterTimestamp` keeps it inside the window.
+  const [tableCursor] = useQueryPersistedState<string | undefined>({
+    queryKey: TICK_CURSOR_QUERY_KEY,
+  });
+
+  // A cursor from the previous window would land the user mid-history in the new one. The
+  // reset below runs in an effect, so this render still holds the old cursor; skipping it
+  // avoids a query that pairs the new window with a cursor from the old one.
+  const previousWindowKey = React.useRef(windowKey);
+  const windowChanged = previousWindowKey.current !== windowKey;
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     TickHistoryQuery,
@@ -128,40 +169,36 @@ export const TicksTable = ({
     variables: {
       instigationSelector,
       statuses,
+      afterTimestamp: rangeMs ? rangeMs[0] / 1000 : undefined,
+      beforeTimestamp: rangeMs && !tableCursor ? rangeMs[1] / 1000 : undefined,
     },
     query: TICK_HISTORY_QUERY,
+    queryKey: TICK_CURSOR_QUERY_KEY,
     pageSize: PAGE_SIZE,
+    skip: windowChanged,
   });
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
-  const state = queryResult?.data?.instigationStateOrError;
+  // Apollo clears `data` while a new set of variables is in flight, which would blank the
+  // table every time the window or the page changes and collapse the page height under the
+  // reader. Keeping the last result on screen leaves the rows in place until the new ones
+  // land, with the loading bar below carrying the state instead.
+  const data = queryResult.data ?? queryResult.previousData;
+  const state = data?.instigationStateOrError;
   const ticks = React.useMemo(
     () => (state?.__typename === 'InstigationState' ? state.ticks : []),
     [state],
   );
 
   React.useEffect(() => {
-    if (paginationProps.hasPrevCursor) {
-      if (ticks && ticks.length) {
-        const start = ticks[ticks.length - 1]?.timestamp;
-        const end = ticks[0]?.endTimestamp;
-        if (start && end) {
-          setTimerange?.([start, end]);
-        }
-      }
-    } else {
-      setTimerange?.(undefined);
+    if (windowChanged) {
+      previousWindowKey.current = windowKey;
+      paginationProps.reset();
     }
-  }, [paginationProps.hasPrevCursor, ticks, setTimerange]);
-
-  React.useEffect(() => {
-    if (paginationProps.hasPrevCursor) {
-      setParentStatuses?.(Array.from(statuses));
-    } else {
-      setParentStatuses?.(undefined);
-    }
-  }, [paginationProps.hasPrevCursor, setParentStatuses, statuses]);
+    // paginationProps.reset isn't memoized
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windowKey]);
 
   React.useEffect(() => {
     if (paginationProps.hasPrevCursor && !ticks.length && !queryResult.loading) {
@@ -171,8 +208,6 @@ export const TicksTable = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticks, queryResult.loading, paginationProps.hasPrevCursor]);
 
-  const {data} = queryResult;
-
   if (!data) {
     return (
       <Box padding={{vertical: 48}}>
@@ -181,11 +216,11 @@ export const TicksTable = ({
     );
   }
 
-  if (data.instigationStateOrError.__typename === 'PythonError') {
-    return <PythonErrorInfo error={data.instigationStateOrError} />;
+  if (state?.__typename === 'PythonError') {
+    return <PythonErrorInfo error={state} />;
   }
 
-  if (data.instigationStateOrError.__typename === 'InstigationStateNotFoundError') {
+  if (state?.__typename === 'InstigationStateNotFoundError') {
     return (
       <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
         <NonIdealState icon="no-results" title="No ticks to display" />
@@ -193,22 +228,25 @@ export const TicksTable = ({
     );
   }
 
-  const {instigationType} = data.instigationStateOrError;
+  const instigationType =
+    state?.__typename === 'InstigationState' ? state.instigationType : undefined;
 
-  if (!ticks.length && tickStatus === TickStatusDisplay.ALL) {
+  // An unfiltered, unwindowed view with no ticks means the sensor or schedule has never run.
+  // Within a window, an empty result is ordinary and still needs its filters rendered.
+  if (!ticks.length && tickStatus === TickStatusDisplay.ALL && !rangeMs) {
     return null;
   }
 
   return (
     <>
-      <Box padding={{vertical: 12, horizontal: 24}}>
-        <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-          {tabs}
-          <Box flex={{direction: 'row', gap: 16}}>
-            <StatusFilter status={tickStatus} onChange={setTickStatus} />
-          </Box>
-        </Box>
-      </Box>
+      {actionBarComponents ? (
+        <Box padding={{vertical: 12, horizontal: 24}}>{actionBarComponents}</Box>
+      ) : null}
+      {/* Only a change of window, page or filter, not the background refresh, which would
+      otherwise pulse the bar every fifteen seconds. */}
+      <IndeterminateLoadingBar
+        $loading={queryResult.networkStatus === NetworkStatus.setVariables}
+      />
       {ticks.length ? (
         <Table className={styles.tableWrapper}>
           <thead>
@@ -264,13 +302,12 @@ export const TicksTable = ({
   );
 };
 
-const StatusFilter = ({
-  status,
-  onChange,
-}: {
+interface TickStatusFilterProps {
   status: TickStatusDisplay;
   onChange: (value: TickStatusDisplay) => void;
-}) => {
+}
+
+export const TickStatusFilter = ({status, onChange}: TickStatusFilterProps) => {
   const items = [
     {key: TickStatusDisplay.ALL, label: 'All ticks'},
     {key: TickStatusDisplay.SUCCESS, label: 'Requested'},
@@ -310,99 +347,181 @@ const StatusFilter = ({
   );
 };
 
-export const TickHistoryTimeline = ({
-  name,
-  repoAddress,
-  tickResultType,
-  onHighlightRunIds,
-  beforeTimestamp,
-  afterTimestamp,
-  statuses,
-}: {
+// A window covers an arbitrary span, so ticks are fetched a page at a time until it is
+// covered. The cap keeps a pathological sensor from streaming forever.
+const TIMELINE_PAGE_SIZE = 500;
+const MAX_TIMELINE_PAGES = 20;
+
+type TimelineProps = {
   name: string;
   repoAddress: RepoAddress;
-  onHighlightRunIds?: (runIds: string[]) => void;
-  beforeTimestamp?: number;
-  afterTimestamp?: number;
-  statuses?: InstigationTickStatus[];
   tickResultType: TickResultType;
-}) => {
+  onHighlightRunIds?: (runIds: string[]) => void;
+  statuses?: InstigationTickStatus[];
+};
+
+/**
+ * Shows ticks over the given window, or the live view of the last few minutes when no window
+ * is given.
+ */
+export const TickHistoryTimeline = ({
+  rangeMs,
+  ...props
+}: TimelineProps & {rangeMs?: [number, number]}) =>
+  rangeMs ? <WindowedTicks rangeMs={rangeMs} {...props} /> : <LiveTicks {...props} />;
+
+const LiveTicks = ({statuses, ...props}: TimelineProps) => {
+  const instigationSelector = useInstigationSelector(props.repoAddress, props.name);
+  const [pollingPaused, pausePolling] = React.useState(false);
+
+  // Snapshotted at mount so the query variables stay referentially stable across renders;
+  // polling keeps the data fresh.
+  const afterTimestamp = React.useMemo(() => Date.now() / 1000 - LIVE_WINDOW_MS / 1000, []);
+
+  const queryResult = useQuery<TickTimelineQuery, TickTimelineQueryVariables>(TICK_TIMELINE_QUERY, {
+    variables: {instigationSelector, afterTimestamp, statuses, limit: PAGE_SIZE},
+    notifyOnNetworkStatusChange: true,
+  });
+  useQueryRefreshAtInterval(queryResult, 1000, !pollingPaused);
+
+  const state = queryResult.data?.instigationStateOrError;
+  const ticks = React.useMemo(() => {
+    if (!state) {
+      return null;
+    }
+    return state.__typename === 'InstigationState' ? state.ticks : [];
+  }, [state]);
+
+  return (
+    <TickTimelineView
+      {...props}
+      instigationSelector={instigationSelector}
+      ticks={ticks}
+      error={state?.__typename === 'PythonError' ? state : null}
+      onHoverChange={pausePolling}
+    />
+  );
+};
+
+const WindowedTicks = ({
+  rangeMs,
+  statuses,
+  ...props
+}: TimelineProps & {rangeMs: [number, number]}) => {
+  const instigationSelector = useInstigationSelector(props.repoAddress, props.name);
+  const {fetched, error} = useTimelineTicks({instigationSelector, rangeMs, statuses});
+
+  const exactRange = React.useMemo(
+    (): [number, number] => [rangeMs[0] / 1000, rangeMs[1] / 1000],
+    [rangeMs],
+  );
+
+  return (
+    <TickTimelineView
+      {...props}
+      instigationSelector={instigationSelector}
+      ticks={fetched}
+      error={error}
+      exactRange={exactRange}
+    />
+  );
+};
+
+function useInstigationSelector(repoAddress: RepoAddress, name: string) {
+  return React.useMemo(() => ({...repoAddressToSelector(repoAddress), name}), [repoAddress, name]);
+}
+
+function useTimelineTicks({
+  instigationSelector,
+  rangeMs,
+  statuses,
+}: {
+  instigationSelector: InstigationSelector;
+  rangeMs: [number, number];
+  statuses?: InstigationTickStatus[];
+}) {
+  const [afterTimestamp, beforeTimestamp] = [rangeMs[0] / 1000, rangeMs[1] / 1000];
+
+  const variables = React.useMemo(
+    () => ({
+      instigationSelector,
+      afterTimestamp,
+      limit: TIMELINE_PAGE_SIZE,
+      statuses,
+    }),
+    [instigationSelector, afterTimestamp, statuses],
+  );
+
+  const getResult = React.useCallback((data: TickTimelineQuery) => {
+    const state = data.instigationStateOrError;
+    if (state.__typename === 'PythonError') {
+      return {data: [], hasMore: false, cursor: undefined, error: state};
+    }
+    if (state.__typename !== 'InstigationState') {
+      return {data: [], hasMore: false, cursor: undefined, error: undefined};
+    }
+    const {ticks = []} = state;
+    return {
+      data: ticks,
+      hasMore: ticks.length === TIMELINE_PAGE_SIZE,
+      // Ticks arrive newest-first, so the oldest one bounds the next page.
+      cursor: ticks[ticks.length - 1]?.timestamp,
+      error: undefined,
+    };
+  }, []);
+
+  return useCursorAccumulatedQuery<
+    TickTimelineQuery,
+    TickTimelineQueryVariables,
+    TimelineTickFragment,
+    PythonErrorFragment
+  >({
+    query: TICK_TIMELINE_QUERY,
+    variables,
+    getResult,
+    initialCursor: beforeTimestamp,
+    maxPages: MAX_TIMELINE_PAGES,
+  });
+}
+
+interface TickTimelineViewProps {
+  instigationSelector: InstigationSelector;
+  tickResultType: TickResultType;
+  onHighlightRunIds?: (runIds: string[]) => void;
+  // Null while the first page is still loading.
+  ticks: TimelineTickFragment[] | null;
+  error?: PythonErrorFragment | null;
+  exactRange?: [number, number];
+  onHoverChange?: (isHovered: boolean) => void;
+}
+
+const TickTimelineView = ({
+  instigationSelector,
+  tickResultType,
+  onHighlightRunIds,
+  ticks,
+  error,
+  exactRange,
+  onHoverChange,
+}: TickTimelineViewProps) => {
   const [selectedTickId, setSelectedTickId] = useQueryPersistedState<string | undefined>({
     encode: (tickId) => ({tickId}),
     decode: (qs) => (typeof qs.tickId === 'string' ? qs.tickId : undefined),
   });
 
-  const [pollingPaused, pausePolling] = React.useState<boolean>(false);
-
-  const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-
-  // On the newest page (no pagination), floor the lookback window to roughly
-  // 5 minutes ago. Snapshotted at mount so the useQuery variables stay
-  // referentially stable across renders; polling keeps the data fresh.
-  const defaultAfterTimestamp = React.useMemo(
-    () => (beforeTimestamp ? undefined : Date.now() / 1000 - 5 * 60),
-    [beforeTimestamp],
-  );
-
-  const queryResult = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(TICK_HISTORY_QUERY, {
-    variables: {
-      instigationSelector,
-      beforeTimestamp,
-      afterTimestamp: afterTimestamp ?? defaultAfterTimestamp,
-      statuses,
-      limit: beforeTimestamp ? undefined : PAGE_SIZE,
-    },
-    notifyOnNetworkStatusChange: true,
-  });
-
-  useQueryRefreshAtInterval(
-    queryResult,
-    1000,
-    !(pollingPaused || (beforeTimestamp && afterTimestamp)),
-  );
-  const {data, error} = queryResult;
-
-  if (!data || error) {
-    return (
-      <>
-        <Box padding={{top: 16, horizontal: 24}} border="bottom">
-          <Heading size={14} weight={600}>
-            Recent ticks
-          </Heading>
-        </Box>
-        <Box padding={{vertical: 64}}>
-          <Spinner purpose="section" />
-        </Box>
-      </>
-    );
-  }
-
-  if (data.instigationStateOrError.__typename === 'PythonError') {
-    return <PythonErrorInfo error={data.instigationStateOrError} />;
-  }
-  if (data.instigationStateOrError.__typename === 'InstigationStateNotFoundError') {
-    return null;
-  }
-
-  // Set it equal to an empty array in case of a weird error
-  // https://elementl-workspace.slack.com/archives/C03CCE471E0/p1693237968395179?thread_ts=1693233109.602669&cid=C03CCE471E0
-  const {ticks = []} = data.instigationStateOrError;
-
-  const onTickClick = (tick?: InstigationTick) => {
+  const onTickClick = (tick?: TimelineTickFragment) => {
     setSelectedTickId(tick ? tick.tickId : undefined);
   };
 
-  const onTickHover = (tick?: InstigationTick) => {
-    if (!tick) {
-      pausePolling(false);
-    }
-    if (tick?.runIds) {
-      if (onHighlightRunIds) {
-        onHighlightRunIds(tick.runIds);
-      }
-      pausePolling(true);
+  const onTickHover = (tick?: TimelineTickFragment) => {
+    if (tick?.runIds && onHighlightRunIds) {
+      onHighlightRunIds(tick.runIds);
     }
   };
+
+  if (error) {
+    return <PythonErrorInfo error={error} />;
+  }
 
   return (
     <>
@@ -412,21 +531,21 @@ export const TickHistoryTimeline = ({
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Heading size={14} weight={600}>
-          Recent ticks
-        </Heading>
-      </Box>
       <Box border="top">
-        <LiveTickTimeline
-          ticks={ticks}
-          tickResultType={tickResultType}
-          onHoverTick={onTickHover}
-          onSelectTick={onTickClick}
-          exactRange={
-            beforeTimestamp && afterTimestamp ? [afterTimestamp, beforeTimestamp] : undefined
-          }
-        />
+        {ticks ? (
+          <LiveTickTimeline
+            ticks={ticks}
+            tickResultType={tickResultType}
+            onHoverTick={onTickHover}
+            onHoverChange={onHoverChange}
+            onSelectTick={onTickClick}
+            exactRange={exactRange}
+          />
+        ) : (
+          <div className={timelineStyles.timelinePlaceholder}>
+            <SpinnerWithText label="Loading ticks…" />
+          </div>
+        )}
       </Box>
     </>
   );
@@ -594,4 +713,36 @@ const TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
+`;
+
+const TICK_TIMELINE_QUERY = gql`
+  query TickTimelineQuery(
+    $instigationSelector: InstigationSelector!
+    $afterTimestamp: Float
+    $cursor: Float
+    $limit: Int
+    $statuses: [InstigationTickStatus!]
+  ) {
+    instigationStateOrError(instigationSelector: $instigationSelector) {
+      ... on InstigationState {
+        id
+        instigationType
+        # The cursor is the timestamp of the oldest tick fetched so far, so each page picks
+        # up where the last one ended while staying inside the requested window.
+        ticks(
+          afterTimestamp: $afterTimestamp
+          beforeTimestamp: $cursor
+          limit: $limit
+          statuses: $statuses
+        ) {
+          id
+          ...TimelineTick
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+  ${TIMELINE_TICK_FRAGMENT}
 `;

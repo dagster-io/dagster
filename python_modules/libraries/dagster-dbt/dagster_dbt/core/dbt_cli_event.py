@@ -33,7 +33,13 @@ from dagster_dbt.asset_utils import (
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import (
+    REFABLE_NODE_TYPES,
+    SUCCESSFUL_NODE_STATUSES,
+    NodeStatus,
+    NodeType,
+    TestStatus,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
@@ -121,11 +127,19 @@ def _build_column_lineage_metadata(
         )
 
     package_name = dbt_resource_props["package_name"]
-    node_sql_path = target_path.joinpath(
-        "compiled",
-        package_name,
-        dbt_resource_props["original_file_path"].replace("\\", "/"),
-    )
+    is_snapshot = node_resource_type == NodeType.Snapshot
+    node_relative_path = Path(dbt_resource_props["original_file_path"].replace("\\", "/"))
+    if is_snapshot:
+        # A single file can declare multiple snapshot blocks, so dbt writes each block's
+        # compiled SQL into a directory named after the file.
+        node_relative_path = node_relative_path / f"{dbt_resource_props['name']}.sql"
+
+    node_sql_path = target_path.joinpath("compiled", package_name, node_relative_path)
+    if is_snapshot and not node_sql_path.exists():
+        # dbt only began writing compiled SQL for snapshots in 1.12; earlier versions skip
+        # them entirely, leaving nothing on disk to derive lineage from.
+        return {}
+
     optimized_node_ast = cast(
         "exp.Query",
         optimize(
@@ -134,6 +148,17 @@ def _build_column_lineage_metadata(
             dialect=sql_dialect,
         ),
     )
+
+    # sqlglot >=28.1 changed the optimizer so that an already-optimized AST's
+    # CTE/join aliases can be plain strings rather than Expression objects.
+    # Passing the AST directly to lineage() below then crashes with
+    # `AttributeError: 'str' object has no attribute 'copy'` for CTE/join
+    # queries, because lineage() assumes it can still re-derive that
+    # structure. Serializing back to SQL text here makes lineage() reparse
+    # it into the Expression-based form it expects, on every supported
+    # sqlglot version -- verified to produce identical lineage output to the
+    # un-serialized AST on sqlglot 24.0.0, 28.0.0, and 28.1.0.
+    optimized_node_sql = optimized_node_ast.sql(dialect=sql_dialect)
 
     # 2. Retrieve the column names from the current node.
     schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
@@ -162,10 +187,13 @@ def _build_column_lineage_metadata(
 
     deps_by_column: dict[str, Sequence[TableColumnDep]] = {}
     if implicit_alias_column_names:
-        logger.warning(
-            "The following columns are implicitly aliased and will be marked with an "
-            f" empty list column dependencies: `{implicit_alias_column_names}`."
-        )
+        # Snapshots always land here: the materialization appends bookkeeping columns
+        # (dbt_scd_id, dbt_valid_from, ...) that the compiled SQL never selects.
+        if not is_snapshot:
+            logger.warning(
+                "The following columns are implicitly aliased and will be marked with an "
+                f" empty list column dependencies: `{implicit_alias_column_names}`."
+            )
 
         deps_by_column = {column: [] for column in implicit_alias_column_names}
 
@@ -176,7 +204,7 @@ def _build_column_lineage_metadata(
         column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
-            sql=optimized_node_ast,
+            sql=optimized_node_sql,
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
         ).walk():
@@ -272,7 +300,7 @@ class DbtCliEventMessage(ABC):
         return (
             resource_props["resource_type"] in REFABLE_NODE_TYPES
             and materialized_type != "ephemeral"
-            and self._get_node_status() == NodeStatus.Success
+            and self._get_node_status() in SUCCESSFUL_NODE_STATUSES
         )
 
     def _is_test_execution_event(self, manifest: Mapping[str, Any]) -> bool:
@@ -387,6 +415,9 @@ class DbtCliEventMessage(ABC):
     ) -> dict[str, Any]:
         return {
             **self._get_default_metadata(manifest),
+            # Surfaces that dbt did not rebuild the node (`no-op`, `reused`) or built it with
+            # warnings (`warn`), which is otherwise invisible on a materialization.
+            "status": self._get_node_status(),
             **self._get_lineage_metadata(translator, manifest, target_path, project),
         }
 

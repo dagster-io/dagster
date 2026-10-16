@@ -22,6 +22,7 @@ import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
 import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../graphql/types';
 import {AnchorButton} from '../ui/AnchorButton';
+import {shortenId} from '../util/shortenId';
 
 export function titleForRun(run: {id: string}) {
   return run.id.split('-').shift();
@@ -97,7 +98,7 @@ export async function handleLaunchResult(
           <div>
             Launched run{' '}
             <Text size={14} family="mono">
-              {result.run.id.slice(0, 8)}
+              {shortenId(result.run.id)}
             </Text>
           </div>
         ),

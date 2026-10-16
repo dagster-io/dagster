@@ -41,3 +41,6 @@ lint.ignore = [
     "RUF012", # False positives on class-level constants used as DSL-style defaults.
 ]
 extend-exclude = ["*.ipynb"] # Ignore Jupyter notebooks
+
+[tool.uv]
+exclude-newer = "48h"

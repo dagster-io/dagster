@@ -9,6 +9,7 @@ import {
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedFunctionExpressionContext,
   UnclosedParenthesizedExpressionContext,
+  UnquotedRejectedValueContext,
   UnquotedStringValueContext,
 } from './generated/SelectionAutoCompleteParser';
 
@@ -20,7 +21,11 @@ export const removeQuotesFromString = (value: string) => {
 };
 
 export function getValueNodeValue(ctx: ParserRuleContext | null) {
-  if (ctx instanceof DigitsValueContext || ctx instanceof UnquotedStringValueContext) {
+  if (
+    ctx instanceof DigitsValueContext ||
+    ctx instanceof UnquotedStringValueContext ||
+    ctx instanceof UnquotedRejectedValueContext
+  ) {
     return ctx.getText();
   }
   if (ctx instanceof IncompleteLeftQuotedStringValueContext) {

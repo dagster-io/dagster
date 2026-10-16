@@ -119,6 +119,7 @@ UNSTARTED_STATUSES = [
 
 STARTED_STATUSES = {
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.SUCCESS,
     DagsterRunStatus.FAILURE,
     DagsterRunStatus.CANCELED,

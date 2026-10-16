@@ -41,6 +41,8 @@ class GetLogsCapturedEventsLogsForRunEventConnection(BaseModel):
                 "GetLogsCapturedEventsLogsForRunEventConnectionEventsRunStartingEvent",
                 "GetLogsCapturedEventsLogsForRunEventConnectionEventsRunCancelingEvent",
                 "GetLogsCapturedEventsLogsForRunEventConnectionEventsRunCanceledEvent",
+                "GetLogsCapturedEventsLogsForRunEventConnectionEventsRunSuspendedEvent",
+                "GetLogsCapturedEventsLogsForRunEventConnectionEventsRunResumedEvent",
                 "GetLogsCapturedEventsLogsForRunEventConnectionEventsRunSuccessEvent",
                 "GetLogsCapturedEventsLogsForRunEventConnectionEventsStepWorkerStartedEvent",
                 "GetLogsCapturedEventsLogsForRunEventConnectionEventsStepWorkerStartingEvent",
@@ -170,6 +172,14 @@ class GetLogsCapturedEventsLogsForRunEventConnectionEventsRunCancelingEvent(Base
 
 class GetLogsCapturedEventsLogsForRunEventConnectionEventsRunCanceledEvent(BaseModel):
     typename__: Literal["RunCanceledEvent"] = Field(alias="__typename")
+
+
+class GetLogsCapturedEventsLogsForRunEventConnectionEventsRunSuspendedEvent(BaseModel):
+    typename__: Literal["RunSuspendedEvent"] = Field(alias="__typename")
+
+
+class GetLogsCapturedEventsLogsForRunEventConnectionEventsRunResumedEvent(BaseModel):
+    typename__: Literal["RunResumedEvent"] = Field(alias="__typename")
 
 
 class GetLogsCapturedEventsLogsForRunEventConnectionEventsRunSuccessEvent(BaseModel):

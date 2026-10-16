@@ -384,23 +384,16 @@ def get_assets_for_run(graphene_info: "ResolveInfo", run: DagsterRun) -> Sequenc
 
     run_id = run.run_id
 
-    # Fetch observations and materialization events from run
-    event_log_records = [
-        *graphene_info.context.instance.get_records_for_run(
+    # Fetch assets observed and materialized by the run
+    asset_keys = set(
+        graphene_info.context.instance.get_asset_keys_for_run(
             run_id,
-            of_type=DagsterEventType.ASSET_MATERIALIZATION,
-        ).records,
-        *graphene_info.context.instance.get_records_for_run(
-            run_id,
-            of_type=DagsterEventType.ASSET_OBSERVATION,
-        ).records,
-    ]
-
-    asset_keys = {
-        record.event_log_entry.dagster_event.asset_key
-        for record in event_log_records
-        if record.event_log_entry.dagster_event
-    }
+            of_type={
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_OBSERVATION,
+            },
+        )
+    )
 
     # Fetch planned asset keys from execution plan snapshot
     if run.execution_plan_snapshot_id:

@@ -20,6 +20,9 @@ test = [
     "dagster-postgres",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
 dagster-shared = { path = "../../../python_modules/libraries/dagster-shared", editable = true }

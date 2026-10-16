@@ -1,32 +1,11 @@
 import {AntlrAssetSelectionVisitor} from '@shared/asset-selection/AntlrAssetSelectionVisitor';
-import {
-  BaseErrorListener,
-  CharStream,
-  CommonTokenStream,
-  RecognitionException,
-  Token,
-} from 'antlr4ng';
+import {CharStream, CommonTokenStream} from 'antlr4ng';
 
 import {SupplementaryInformation} from './types';
 import {AssetGraphQueryItem} from '../asset-graph/types';
 import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
 import {AssetSelectionParser} from './generated/AssetSelectionParser';
-
-export class AntlrInputErrorListener extends BaseErrorListener {
-  override syntaxError(
-    _recognizer: unknown,
-    offendingSymbol: Token | null,
-    _line: number,
-    charPositionInLine: number,
-    msg: string,
-    _e: RecognitionException | null,
-  ): void {
-    if (offendingSymbol) {
-      throw new Error(`Syntax error caused by "${offendingSymbol.text}": ${msg}`);
-    }
-    throw new Error(`Syntax error at char ${charPositionInLine}: ${msg}`);
-  }
-}
+import {AntlrInputErrorListener} from '../selection/AntlrInputErrorListener';
 
 export type AssetSelectionQueryResult = {
   all: AssetGraphQueryItem[];

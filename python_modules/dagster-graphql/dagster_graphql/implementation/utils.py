@@ -28,7 +28,7 @@ from dagster._core.definitions.selector import (
     SensorSelector,
 )
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.errors import DagsterError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule, RemoteSensor
@@ -740,15 +740,17 @@ def apply_cursor_limit_reverse(
 
 
 def get_query_limit_with_default(provided_limit: int | None, default_limit: int) -> int:
+    """Resolve a page size against the server-side default, which also caps it.
+
+    Over-large limits clamp rather than raise: the cap is operator-tunable, so rejecting them
+    would break any caller hard-coding a larger limit. Callers paginate via the returned cursor.
+    """
     check.opt_int_param(provided_limit, "provided_limit")
 
     if provided_limit is None:
         return default_limit
 
-    if provided_limit > default_limit:
-        raise DagsterError(f"Limit of {provided_limit} is too large. Max is {default_limit}")
-
-    return provided_limit
+    return min(provided_limit, default_limit)
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]

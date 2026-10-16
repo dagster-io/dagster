@@ -1,5 +1,5 @@
 import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {SensorDetails} from './SensorDetails';
@@ -18,14 +18,31 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {AUTOMATION_ASSET_SELECTION_FRAGMENT} from '../automation/AutomationAssetSelectionFragment';
-import {InstigationTickStatus, SensorType} from '../graphql/types';
+import {SensorType} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
+import {
+  TickHistoryTimeline,
+  TickStatusFilter,
+  TicksTable,
+  useTickStatusFilter,
+} from '../instigation/TickHistory';
+import {TickTimelineControls, TickWindow, tickWindowMs} from '../instigation/TickTimelineControls';
+import {useTimelineRange} from '../overview/OverviewTimelineRoot';
 import {TickResultType} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+
+const TICK_WINDOW_KEY = 'dagster.tick-timeline-window';
+
+// Matches the lookahead the live timeline draws for itself, so the now indicator and any
+// in-progress tick stay inside the window between refreshes.
+const LOOKAHEAD_MINUTES = 1;
+
+const validateTickWindow = (json: any): TickWindow =>
+  json === '1' || json === '6' || json === '12' || json === '24' || json === 'live' ? json : 'live';
 
 export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -38,18 +55,35 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     sensorName,
   };
 
-  const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
-  const [timeRange, setTimerange] = useState<undefined | [number, number]>(undefined);
-  const variables = useMemo(() => {
-    if (timeRange || statuses) {
-      return {
-        afterTimestamp: timeRange?.[0],
-        beforeTimestamp: timeRange?.[1],
-        statuses,
-      };
-    }
-    return {};
-  }, [statuses, timeRange]);
+  // The status filter sits with the time controls because it narrows the timeline as well as
+  // the table, and stays in effect while the Runs tab is showing.
+  const {tickStatus, setTickStatus, statuses} = useTickStatusFilter();
+
+  // The tick timeline and the tick table share one window, so paging through time updates both.
+  // "Live" is the default and keeps the timeline on the last few minutes, refreshing every
+  // second; the hour windows are for looking back at what a sensor did earlier.
+  const [tickWindow, setTickWindow] = useStateWithStorage<TickWindow>(
+    TICK_WINDOW_KEY,
+    validateTickWindow,
+  );
+  // The window size is always supplied here, so the hook's own hour-window state is never
+  // consulted and `tickWindow` stays the only thing that decides what is shown.
+  const {rangeMs, offsetMsec, onPageEarlier, onPageLater, onPageNow} = useTimelineRange({
+    lookaheadHours: LOOKAHEAD_MINUTES / 60,
+    windowMsOverride: tickWindowMs(tickWindow),
+  });
+
+  const onSelectTickWindow = useCallback(
+    (nextWindow: TickWindow) => {
+      setTickWindow(nextWindow);
+      onPageNow();
+    },
+    [onPageNow, setTickWindow],
+  );
+
+  // Live only means live while the window still ends at the present; paging back turns it
+  // into an ordinary window of the last few minutes of some earlier time.
+  const windowRangeMs = tickWindow === 'live' && offsetMsec === 0 ? undefined : rangeMs;
 
   const [selectedTab, setSelectedTab] = useQueryPersistedState<'evaluations' | 'runs'>(
     useMemo(
@@ -155,26 +189,55 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         sensorDaemonStatus={sensorDaemonStatus}
         padding={{vertical: 16, horizontal: 24}}
       />
-      <TickHistoryTimeline
-        tickResultType={tickResultType}
-        repoAddress={repoAddress}
-        name={sensorOrError.name}
-        {...variables}
-      />
-      <Box margin={{top: 32}} border="top">
-        {selectedTab === 'evaluations' ? (
-          <TicksTable
-            tabs={tabs}
+      {selectedTab === 'evaluations' ? (
+        <>
+          {/* The window and status controls narrow the timeline and the tick list below it,
+          and have nothing to say about the runs feed, so they head this tab alone. */}
+          <Box
+            padding={{vertical: 12, horizontal: 24}}
+            flex={{
+              direction: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 16,
+            }}
+          >
+            {tabs}
+            <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+              <TickStatusFilter status={tickStatus} onChange={setTickStatus} />
+              <TickTimelineControls
+                tickWindow={tickWindow}
+                onSelectTickWindow={onSelectTickWindow}
+                onPageEarlier={onPageEarlier}
+                onPageNow={onPageNow}
+                onPageLater={onPageLater}
+              />
+            </Box>
+          </Box>
+          <TickHistoryTimeline
             tickResultType={tickResultType}
             repoAddress={repoAddress}
             name={sensorOrError.name}
-            setParentStatuses={setStatuses}
-            setTimerange={setTimerange}
+            rangeMs={windowRangeMs}
+            statuses={statuses}
           />
-        ) : (
+          <Box margin={{top: 32}} border="top">
+            <TicksTable
+              tickResultType={tickResultType}
+              repoAddress={repoAddress}
+              name={sensorOrError.name}
+              rangeMs={windowRangeMs}
+              windowKey={`${tickWindow}:${offsetMsec}`}
+            />
+          </Box>
+        </>
+      ) : (
+        // The runs feed has its own action bar, so the tabs ride along in it rather than
+        // sitting in a bar of their own.
+        <Box border="top">
           <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
-        )}
-      </Box>
+        </Box>
+      )}
     </Page>
   );
 };

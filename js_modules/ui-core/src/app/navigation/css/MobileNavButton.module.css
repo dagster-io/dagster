@@ -1,0 +1,10 @@
+.container {
+  position: absolute;
+  top: var(--mobile-nav-button-inset-top);
+  left: var(--mobile-nav-button-inset-left);
+  /* Above page content (sticky headers etc.), below the drawer and Blueprint overlays. */
+  z-index: 2;
+  /* Buttons have a transparent fill; this one floats over content, so back it. */
+  background-color: var(--color-background-default);
+  border-radius: 8px;
+}

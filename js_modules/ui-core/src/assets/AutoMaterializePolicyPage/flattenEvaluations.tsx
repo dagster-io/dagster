@@ -19,6 +19,30 @@ export type FlattenedConditionEvaluation<T> = {
   entityKey: EntityKey | null;
 };
 
+/**
+ * A synthetic row rendered beneath a history-dependent node, showing one of the remembered values
+ * that actually determines the node's truth (rather than an operand's current value). Rendered as
+ * `[status icon] [temporal tag] [condition]`.
+ */
+export type EvaluationMemoryRow = {
+  rowType: 'memory';
+  id: number;
+  parentId: number;
+  depth: number;
+  conditionLabel: string;
+  tag:
+    | {kind: 'currentTick'}
+    | {kind: 'lastTick'}
+    | {kind: 'set'; timestamp: number | null; evaluationId: string | null}
+    | {kind: 'reset'; timestamp: number | null; evaluationId: string | null};
+  result:
+    | {isPartitioned: false; value: boolean | null}
+    | {isPartitioned: true; numTrue: number | null};
+  entityKey: EntityKey | null;
+};
+
+type EvaluationMemoryRowSpec = Pick<EvaluationMemoryRow, 'conditionLabel' | 'tag' | 'result'>;
+
 export type Evaluation =
   | PartitionedAssetConditionEvaluationNodeFragment
   | UnpartitionedAssetConditionEvaluationNodeFragment
@@ -37,8 +61,184 @@ type Config = {
   expandedRecords: Set<string>;
 };
 
+const isNewEvaluationNode = (evaluation: Evaluation): evaluation is NewEvaluationNodeFragment =>
+  evaluation.__typename === 'AutomationConditionEvaluationNode';
+
+/**
+ * A `newly_true` node (also surfaced as `newly_missing`, and nested inside `eager`) is an *edge*:
+ * true only where its operand is true now but was not true on the previous tick. Its name segment
+ * is stable regardless of any user-provided label, and it always has exactly one operand.
+ */
+export const isNewlyTrueNode = (evaluation: Evaluation): boolean =>
+  isNewEvaluationNode(evaluation) &&
+  evaluation.expandedLabel[0] === 'NEWLY_TRUE' &&
+  evaluation.childUniqueIds.length === 1;
+
+export type NewlyTrueMemory =
+  | {
+      isPartitioned: false;
+      trueNow: boolean;
+      // null when the operand is not true now: the edge is false regardless of history, so the
+      // previous-tick value is irrelevant (and not recoverable from the record).
+      trueOnPreviousTick: boolean | null;
+    }
+  | {
+      isPartitioned: true;
+      trueNowCount: number;
+      newlyTrueCount: number;
+      // of the partitions true now, how many were already true on the previous tick. null when
+      // the node was evaluated against a narrowed candidate set, where the subtraction below
+      // would overcount.
+      previouslyTrueCount: number | null;
+    };
+
+/**
+ * Both inputs to a `newly_true` edge (operand true now AND NOT true on the previous tick) are
+ * recoverable from the evaluation record itself, so the previous-tick value never needs to be
+ * persisted or fetched:
+ *
+ * - The operand's current value is its own node in this record (the operator always evaluates its
+ *   operand against all partitions, so the operand's `numTrue` is not narrowed by candidates).
+ * - Unpartitioned: when the operand is true now, the previous-tick value is the complement of
+ *   this node's own value.
+ * - Partitioned: of the partitions true now, `numTrue(operand) - numTrue(node)` were already true
+ *   on the previous tick. Partitions true previously but no longer true never affect the edge.
+ *   This is exact only when the node itself was evaluated against all partitions
+ *   (`numCandidates === null`).
+ */
+export const deriveNewlyTrueMemory = (
+  evaluation: Evaluation,
+  recordsById: {[uniqueId: string]: Evaluation},
+): NewlyTrueMemory | null => {
+  if (!isNewEvaluationNode(evaluation) || !isNewlyTrueNode(evaluation)) {
+    return null;
+  }
+  if (statusForEvaluation(evaluation) === AssetConditionEvaluationStatus.SKIPPED) {
+    return null;
+  }
+  const operandId = evaluation.childUniqueIds[0];
+  const operand = operandId ? recordsById[operandId] : null;
+  if (!operand || !isNewEvaluationNode(operand)) {
+    return null;
+  }
+
+  const newlyTrueCount = evaluation.numTrue ?? 0;
+  const trueNowCount = operand.numTrue ?? 0;
+  if (evaluation.isPartitioned) {
+    return {
+      isPartitioned: true,
+      trueNowCount,
+      newlyTrueCount,
+      previouslyTrueCount:
+        evaluation.numCandidates === null ? Math.max(trueNowCount - newlyTrueCount, 0) : null,
+    };
+  }
+  const trueNow = trueNowCount > 0;
+  return {
+    isPartitioned: false,
+    trueNow,
+    trueOnPreviousTick: trueNow ? newlyTrueCount === 0 : null,
+  };
+};
+
+const labelForOperand = (operand: Evaluation | undefined, fallbackSegment: string | undefined) => {
+  if (operand && isNewEvaluationNode(operand)) {
+    return operand.userLabel || operand.expandedLabel.join(' ');
+  }
+  return fallbackSegment?.startsWith('(') && fallbackSegment.endsWith(')')
+    ? fallbackSegment.slice(1, -1)
+    : (fallbackSegment ?? '');
+};
+
+/**
+ * The memory rows for a history-dependent node, or null for ordinary nodes (which render their
+ * real child nodes instead):
+ *
+ * - `since` latch: the ticks its trigger ("set") and reset last fired, from sinceMetadata.
+ * - `newly_true` edge: its operand's value on the current vs. the previous tick, derived from the
+ *   record itself (deriveNewlyTrueMemory).
+ *
+ * Operands deliberately do not render as expandable sub-trees beneath these nodes: a sub-tree
+ * would show *current* values, not the values at the remembered tick, re-creating the misleading
+ * green-parent/gray-child juxtaposition one level down. To inspect why a latch fired, the set /
+ * reset tags navigate to that tick's evaluation.
+ */
+export const memoryRowSpecsForEvaluation = (
+  evaluation: Evaluation,
+  recordsById: {[uniqueId: string]: Evaluation},
+): EvaluationMemoryRowSpec[] | null => {
+  if (!isNewEvaluationNode(evaluation)) {
+    return null;
+  }
+
+  // Unlike edges, a skipped latch still renders memory rows: its set/reset timestamps are
+  // persisted history, accurate regardless of the current tick's candidate set.
+  const {sinceMetadata, expandedLabel} = evaluation;
+  if (
+    sinceMetadata &&
+    evaluation.childUniqueIds.length === 2 &&
+    expandedLabel.length === 3 &&
+    expandedLabel[1] === 'SINCE'
+  ) {
+    const [triggerId, resetId] = evaluation.childUniqueIds;
+    return [
+      {
+        conditionLabel: labelForOperand(
+          triggerId ? recordsById[triggerId] : undefined,
+          evaluation.expandedLabel[0],
+        ),
+        tag: {
+          kind: 'set',
+          timestamp: sinceMetadata.triggerTimestamp,
+          evaluationId: sinceMetadata.triggerEvaluationId,
+        },
+        result: {isPartitioned: false, value: sinceMetadata.triggerTimestamp !== null},
+      },
+      {
+        conditionLabel: labelForOperand(
+          resetId ? recordsById[resetId] : undefined,
+          evaluation.expandedLabel[2],
+        ),
+        tag: {
+          kind: 'reset',
+          timestamp: sinceMetadata.resetTimestamp,
+          evaluationId: sinceMetadata.resetEvaluationId,
+        },
+        result: {isPartitioned: false, value: sinceMetadata.resetTimestamp !== null},
+      },
+    ];
+  }
+
+  const memory = deriveNewlyTrueMemory(evaluation, recordsById);
+  if (memory) {
+    const operandId = evaluation.childUniqueIds[0];
+    const conditionLabel = labelForOperand(
+      operandId ? recordsById[operandId] : undefined,
+      evaluation.expandedLabel[1],
+    );
+    return [
+      {
+        conditionLabel,
+        tag: {kind: 'currentTick'},
+        result: memory.isPartitioned
+          ? {isPartitioned: true, numTrue: memory.trueNowCount}
+          : {isPartitioned: false, value: memory.trueNow},
+      },
+      {
+        conditionLabel,
+        tag: {kind: 'lastTick'},
+        result: memory.isPartitioned
+          ? {isPartitioned: true, numTrue: memory.previouslyTrueCount}
+          : {isPartitioned: false, value: memory.trueOnPreviousTick},
+      },
+    ];
+  }
+
+  return null;
+};
+
 export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecords}: Config) => {
-  const all: FlattenedEvaluation[] = [];
+  const all: (FlattenedEvaluation | EvaluationMemoryRow)[] = [];
   let counter = 0;
 
   const recordsById = Object.fromEntries(evaluationNodes.map((node) => [node.uniqueId, node]));
@@ -46,8 +246,13 @@ export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecor
   const append = (evaluation: Evaluation, parentId: number | null, depth: number) => {
     const id = counter + 1;
 
-    const type =
-      evaluation.childUniqueIds && evaluation.childUniqueIds.length > 0 ? 'group' : 'leaf';
+    // A history-dependent node renders its memory as the rows beneath it — the values that
+    // actually determine its truth — instead of its operands' current values, which can
+    // contradict the parent (e.g. a green `missing` under a gray `newly_missing`).
+    const memoryRowSpecs = memoryRowSpecsForEvaluation(evaluation, recordsById);
+    const childIdsToRender = memoryRowSpecs ? [] : (evaluation.childUniqueIds ?? []);
+
+    const type = (memoryRowSpecs?.length ?? childIdsToRender.length) > 0 ? 'group' : 'leaf';
 
     const childRecords = evaluation.childUniqueIds.map((childId) => {
       return recordsById[childId];
@@ -71,13 +276,28 @@ export const flattenEvaluations = ({evaluationNodes, rootUniqueId, expandedRecor
     } as FlattenedEvaluation);
     counter = id;
 
-    if (evaluation.childUniqueIds && expandedRecords.has(evaluation.uniqueId)) {
+    if (expandedRecords.has(evaluation.uniqueId)) {
       const parentCounter = counter;
-      evaluation.childUniqueIds.forEach((childId) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const child = recordsById[childId]!;
-        append(child, parentCounter, depth + 1);
-      });
+      if (memoryRowSpecs) {
+        memoryRowSpecs.forEach((spec) => {
+          counter += 1;
+          all.push({
+            rowType: 'memory',
+            id: counter,
+            parentId: parentCounter,
+            depth: depth + 1,
+            entityKey,
+            ...spec,
+          });
+        });
+      } else {
+        childIdsToRender.forEach((childId) => {
+          const child = recordsById[childId];
+          if (child) {
+            append(child, parentCounter, depth + 1);
+          }
+        });
+      }
     }
   };
 
@@ -225,6 +445,11 @@ export const expandableUniqueIds = ({
       return;
     }
     expandable.add(evaluation.uniqueId);
+    // A history-dependent node expands into memory rows, not its operand subtree, so its
+    // descendants never render and are not expandable.
+    if (memoryRowSpecsForEvaluation(evaluation, recordsById)) {
+      return;
+    }
     evaluation.childUniqueIds.forEach((childId) => {
       const child = recordsById[childId];
       if (child) {

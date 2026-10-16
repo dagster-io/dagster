@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogBody,
   DialogFooter,
+  Icon,
   NonIdealState,
   SpinnerWithText,
   Tag,
@@ -15,6 +16,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
 import {useOpenAppManagedComponentPullRequest} from '@shared/code-location/useOpenAppManagedComponentPullRequest';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
@@ -181,14 +183,22 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
   // or no provider connected — the existing state-write path is used. The gate is
   // the same one the server enforces live-state writes with, so the two agree.
   const gitBackedEnabled = useGitBackedComponentAuthoringEnabled();
+  const isBranchDeployment = useIsBranchDeployment();
   const openPullRequest = useOpenAppManagedComponentPullRequest();
   const gitProviderConnected = useGitProviderConnected();
-  const gitBacked = gitBackedEnabled && openPullRequest !== null && gitProviderConnected;
+  // A branch deployment is already the preview of an authoring pull request, so
+  // edits there write component state directly rather than opening another one.
+  const gitBacked =
+    gitBackedEnabled && !isBranchDeployment && openPullRequest !== null && gitProviderConnected;
   const [pullRequest, setPullRequest] = useState<{
     url: string;
     branch: string;
     number: number;
   } | null>(null);
+  // The PR mutation runs outside ``useMutation``, so ``saving`` stays false while
+  // it is in flight. Track it here to keep the footer disabled for the whole submit.
+  const [openingPullRequest, setOpeningPullRequest] = useState(false);
+  const submitting = saving || openingPullRequest;
 
   const handleSubmit = useCallback(async () => {
     if (!selected || !editorState.isValid) {
@@ -207,32 +217,39 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
     // production state writes, returning a validation error that is
     // expected/non-fatal here — the PR is the source of truth.
     if (gitBacked && openPullRequest) {
-      const prResult = await openPullRequest(variables);
-      if (prResult.status !== 'success') {
-        setError(prResult.message);
-        return;
-      }
-      setPullRequest({
-        url: prResult.pullRequestUrl,
-        branch: prResult.branchName,
-        number: prResult.pullRequestNumber,
-      });
-      const liveResult = await setAppManagedComponent({variables});
-      if (liveResult.data?.setAppManagedComponent?.__typename === 'SetAppManagedComponentSuccess') {
-        if (isEdit) {
-          props.onSaved({
-            kind: 'edit',
-            componentId: editorState.componentId,
-            componentType: selected.name,
-            prevAttributes: props.editTarget.attributes,
-          });
-        } else {
-          props.onCreated({
-            kind: 'add',
-            componentId: editorState.componentId,
-            componentType: selected.name,
-          });
+      setOpeningPullRequest(true);
+      try {
+        const prResult = await openPullRequest(variables);
+        if (prResult.status !== 'success') {
+          setError(prResult.message);
+          return;
         }
+        setPullRequest({
+          url: prResult.pullRequestUrl,
+          branch: prResult.branchName,
+          number: prResult.pullRequestNumber,
+        });
+        const liveResult = await setAppManagedComponent({variables});
+        if (
+          liveResult.data?.setAppManagedComponent?.__typename === 'SetAppManagedComponentSuccess'
+        ) {
+          if (isEdit) {
+            props.onSaved({
+              kind: 'edit',
+              componentId: editorState.componentId,
+              componentType: selected.name,
+              prevAttributes: props.editTarget.attributes,
+            });
+          } else {
+            props.onCreated({
+              kind: 'add',
+              componentId: editorState.componentId,
+              componentType: selected.name,
+            });
+          }
+        }
+      } finally {
+        setOpeningPullRequest(false);
       }
       return;
     }
@@ -310,9 +327,13 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
 
   const phase: 'pick' | 'form' = selected ? 'form' : 'pick';
   let submitLabel: string;
-  if (saving && isEdit) {
+  if (gitBacked && submitting) {
+    submitLabel = 'Opening pull request…';
+  } else if (gitBacked) {
+    submitLabel = 'Open pull request';
+  } else if (submitting && isEdit) {
     submitLabel = 'Saving…';
-  } else if (saving) {
+  } else if (submitting) {
     submitLabel = 'Adding…';
   } else if (isEdit) {
     submitLabel = 'Save';
@@ -425,6 +446,14 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
             onChange={setEditorState}
           />
         )}
+        {gitBacked ? (
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+            <Icon name="git_pr" color={Colors.textLight()} />
+            <Text size={14} color="textLight">
+              Submitting opens a pull request; changes reach production when it’s merged.
+            </Text>
+          </Box>
+        ) : null}
       </Box>
     );
   };
@@ -458,7 +487,7 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
           <div className={styles.backButton}>
             <ButtonLink
               onClick={() => setSelected(null)}
-              disabled={saving}
+              disabled={submitting}
               color={Colors.linkDefault()}
             >
               ← Back to component selection
@@ -474,11 +503,15 @@ const AppManagedComponentTypePickerDialogBody = (props: Props) => {
             {error}
           </span>
         ) : null}
-        <Button onClick={onClose} disabled={saving}>
+        <Button onClick={onClose} disabled={submitting}>
           Cancel
         </Button>
         {phase === 'form' ? (
-          <Button intent="primary" onClick={handleSubmit} disabled={saving || !editorState.isValid}>
+          <Button
+            intent="primary"
+            onClick={handleSubmit}
+            disabled={submitting || !editorState.isValid}
+          >
             {submitLabel}
           </Button>
         ) : null}

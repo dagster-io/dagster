@@ -19,22 +19,25 @@ import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {SET_CONCURRENCY_LIMIT_MUTATION} from './ConcurrencyQueries';
 import {ConcurrencyTab, ConcurrencyTabs} from './ConcurrencyTabs';
 import {InstanceConcurrencyKeyInfo, isValidLimit} from './InstanceConcurrencyKeyInfo';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {ConcurrencyTable} from './VirtualizedInstanceConcurrencyTable';
 import {gql, useMutation, useQuery} from '../apollo-client';
-import {SET_CONCURRENCY_LIMIT_MUTATION} from './ConcurrencyQueries';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {
   InstanceConcurrencyLimitsQuery,
   InstanceConcurrencyLimitsQueryVariables,
   RunQueueConfigFragment,
 } from './types/InstanceConcurrency.types';
+import {useRunQueueConfig} from './useRunQueueConfig';
 import {QueryRefreshState} from '../app/QueryRefresh';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {numberFormatter} from '../ui/formatters';
 import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
@@ -196,10 +199,7 @@ export const RunConcurrencyContent = ({
   const settingsContent = runQueueConfig ? (
     <MetadataTableWIP style={{marginLeft: -1}}>
       <tbody>
-        <tr>
-          <td>Max concurrent runs:</td>
-          <td>{runQueueConfig.maxConcurrentRuns}</td>
-        </tr>
+        <MaxConcurrentRunsRows runQueueConfig={runQueueConfig} />
         <tr>
           <td>Tag concurrency limits:</td>
           <td>
@@ -222,6 +222,48 @@ export const RunConcurrencyContent = ({
       {infoContent}
       {settingsContent}
     </Box>
+  );
+};
+
+export const MaxConcurrentRunsRows = ({
+  runQueueConfig,
+}: {
+  runQueueConfig: RunQueueConfigFragment;
+}) => {
+  const {isBranchDeployment} = React.useContext(CloudOSSContext);
+
+  // `maxConcurrentRunsAllBranchDeployments` is not part of RunQueueConfigFragment, so fetch it
+  // via the shared run queue config query. It is only rendered for branch deployments.
+  const branchAwareRunQueueConfig = useRunQueueConfig();
+
+  const {maxConcurrentRuns} = runQueueConfig;
+
+  if (isBranchDeployment) {
+    const maxConcurrentRunsAllBranchDeployments =
+      branchAwareRunQueueConfig?.maxConcurrentRunsAllBranchDeployments;
+    return (
+      <>
+        {maxConcurrentRunsAllBranchDeployments != null ? (
+          <tr>
+            <td>Max concurrent runs (all branch deployments):</td>
+            <td>{numberFormatter.format(maxConcurrentRunsAllBranchDeployments)}</td>
+          </tr>
+        ) : null}
+        {maxConcurrentRuns >= 0 ? (
+          <tr>
+            <td>Max concurrent runs (this branch deployment):</td>
+            <td>{numberFormatter.format(maxConcurrentRuns)}</td>
+          </tr>
+        ) : null}
+      </>
+    );
+  }
+
+  return (
+    <tr>
+      <td>Max concurrent runs:</td>
+      <td>{numberFormatter.format(maxConcurrentRuns)}</td>
+    </tr>
   );
 };
 

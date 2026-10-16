@@ -19,7 +19,7 @@ import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedRow, RunsFeedTableHeader} from './RunsFeedRow';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import {
   RunsFeedTableEntryFragment,
   RunsFeedTableEntryFragment_Run,

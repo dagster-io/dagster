@@ -15,6 +15,7 @@ from dagster._time import get_current_datetime
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow, stand_up_dagster
+from kitchen_sink.airflow_instance import EXPECTED_NUM_DAGS
 
 
 def makefile_dir() -> Path:
@@ -60,9 +61,11 @@ def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
+# Airflow serializes dags progressively, so a gate of 1 lets tests start against a
+# partially-populated dagbag and see spurious 404s. Wait for the whole set.
 @pytest.fixture(name="expected_num_dags", scope="module")
 def expected_num_dags_fixture() -> int:
-    return 1
+    return EXPECTED_NUM_DAGS
 
 
 @pytest.fixture(name="airflow_instance", scope="module")

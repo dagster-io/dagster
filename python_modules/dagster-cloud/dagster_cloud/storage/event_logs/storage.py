@@ -86,6 +86,7 @@ from dagster_cloud.storage.event_logs.queries import (
     FREE_CONCURRENCY_SLOTS_FOR_RUN_MUTATION,
     GET_ALL_ASSET_KEYS_QUERY,
     GET_ASSET_CHECK_STATE_QUERY,
+    GET_ASSET_PARTITIONS_FOR_RUN_QUERY,
     GET_ASSET_RECORDS_QUERY,
     GET_ASSET_STATUS_CACHE_VALUES,
     GET_CONCURRENCY_INFO_QUERY,
@@ -533,6 +534,52 @@ class GraphQLEventLogStorage(EventLogStorage, ConfigurableClass):
             has_more=connection_data["hasMore"],
         )
 
+    def _query_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None,
+        include_partitions: bool,
+    ):
+        check.invariant(not of_type or isinstance(of_type, (DagsterEventType, frozenset, set)))
+
+        of_types = {of_type} if isinstance(of_type, DagsterEventType) else of_type
+
+        res = self._execute_query(
+            GET_ASSET_PARTITIONS_FOR_RUN_QUERY,
+            variables={
+                "runId": check.str_param(run_id, "run_id"),
+                "ofTypes": (
+                    [dagster_event_type.value for dagster_event_type in of_types]
+                    if of_types
+                    else None
+                ),
+                "includePartitions": include_partitions,
+            },
+        )
+        return res["data"]["eventLogs"]["getAssetPartitionsForRun"]
+
+    def get_asset_partitions_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> Mapping[AssetKey, AbstractSet[str | None]]:
+        entries = self._query_asset_partitions_for_run(run_id, of_type, include_partitions=True)
+        return {
+            check.not_none(AssetKey.from_db_string(entry["assetKey"])): set(
+                entry["partitions"] or []
+            )
+            for entry in entries
+        }
+
+    def get_asset_keys_for_run(
+        self,
+        run_id: str,
+        of_type: DagsterEventType | set[DagsterEventType] | None = None,
+    ) -> AbstractSet[AssetKey]:
+        # a run can touch far more partitions than asset keys, so leave them off the wire
+        entries = self._query_asset_partitions_for_run(run_id, of_type, include_partitions=False)
+        return {check.not_none(AssetKey.from_db_string(entry["assetKey"])) for entry in entries}
+
     def get_stats_for_run(self, run_id: str) -> DagsterRunStatsSnapshot:
         res = self._execute_query(
             GET_STATS_FOR_RUN_QUERY, variables={"runId": check.str_param(run_id, "run_id")}
@@ -897,6 +944,7 @@ class GraphQLEventLogStorage(EventLogStorage, ConfigurableClass):
         asset_key: AssetKey,
         event_type: DagsterEventType,
         partitions: set[str] | None = None,
+        after_cursor: int | None = None,
     ) -> Mapping[str, int]:
         res = self._execute_query(
             GET_LATEST_STORAGE_ID_BY_PARTITION,
@@ -904,6 +952,7 @@ class GraphQLEventLogStorage(EventLogStorage, ConfigurableClass):
                 "assetKey": asset_key.to_string(),
                 "eventType": event_type.value,
                 "partitions": list(partitions) if partitions else None,
+                "afterCursor": after_cursor,
             },
         )
         latest_storage_id_result = res["data"]["eventLogs"]["getLatestStorageIdByPartition"]

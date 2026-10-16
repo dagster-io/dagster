@@ -39,6 +39,7 @@ from dagster._core.origin import (
     JobPythonOrigin,
     get_python_environment_entry_point,
 )
+from dagster._core.snowflake_partner import set_snowflake_partner_env_var
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import (
     RUN_METRIC_TAGS,
@@ -474,6 +475,7 @@ def _execute_step_command_body(
         )
 
         instance.inject_env_vars(location_name)
+        set_snowflake_partner_env_var()
 
         log_manager = create_context_free_log_manager(instance, dagster_run)
 

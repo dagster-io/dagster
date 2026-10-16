@@ -13,6 +13,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
+    InstigatorTickSummary,
     TickData,
     TickStatus,
 )
@@ -103,6 +104,10 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abc.abstractmethod
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence[InstigatorTick]:
+        """Get the ticks for the given tick ids, omitting any that are not found."""
+
+    @abc.abstractmethod
     def get_ticks(
         self,
         origin_id: str,
@@ -118,6 +123,18 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             origin_id (str): The id of the instigator target
             selector_id (str): The logical instigator identifier
         """
+
+    @abc.abstractmethod
+    def get_tick_summaries(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
+    ) -> Sequence[InstigatorTickSummary]:
+        """Get column-backed tick summaries, without loading tick bodies where supported."""
 
     @abc.abstractmethod
     def create_tick(self, tick_data: TickData) -> InstigatorTick:

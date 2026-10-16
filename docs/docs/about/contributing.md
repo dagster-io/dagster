@@ -26,11 +26,13 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
    cd dagster
    ```
 
-2. [Install uv](https://docs.astral.sh/uv/getting-started/installation). You can use `curl` to download the script and execute it with `sh`:
+2. [Install uv](https://docs.astral.sh/uv/getting-started/installation) and [just](https://just.systems/man/en/installation.html). You can use `curl` to download the uv install script and execute it with `sh`:
 
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
+
+   `just` is the task runner used for repository-level commands (`just dev_install`, `just ruff`, etc.). Install it with your package manager, e.g. `brew install just` or `cargo install just`.
 
 3. Create and activate a virtual environment using uv with a Python version that Dagster supports:
 
@@ -58,10 +60,10 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
    npm install --global yarn
    ```
 
-5. Run `make dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker.
+5. Run `just dev_install` at the root of the repository. This sets up a full Dagster developer environment with all modules and runs tests that do not require heavy external dependencies such as docker.
 
    ```bash
-   make dev_install
+   just dev_install
    ```
 
    This will take a few minutes.
@@ -69,7 +71,7 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 <details>
   <summary>Note for Macs with an Apple silicon chip</summary>
 
-    Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `make dev_install_m1_grpcio_wheel` instead of `make dev_install`.
+    Some users have reported installation problems due to missing wheels for arm64 Macs when installing the `grpcio` package. To install the `dagster` development environment using our pre-built wheel of the `grpcio` package for M1, M2, and M3 machines, run `just dev_install_m1_grpcio_wheel` instead of `just dev_install`.
 
  </details>
 
@@ -99,11 +101,11 @@ You can develop for Dagster using macOS, Linux, or Windows. If using Windows, yo
 
 Some notes on developing in Dagster:
 
-- **Ruff/Pyright**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [pyright](https://github.com/microsoft/pyright) for static type-checking. We test these in our CI/CD pipeline.
-  - Run `make ruff` from the repo root to format, sort imports, and autofix some lint errors. It will also print out errors that need to be manually fixed.
-  - Run `make pyright` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
+- **Ruff/ty**: We use [ruff](https://github.com/charliermarsh/ruff) for formatting, linting and import sorting, and [ty](https://github.com/astral-sh/ty) for static type-checking. We test these in our CI/CD pipeline.
+  - Run `just ruff` from the repo root to format, sort imports, and autofix some lint errors. It will also print out errors that need to be manually fixed.
+  - Run `just ty` from the repo root to analyze the whole repo for type-correctness. Note that the first time you run this, it will take several minutes because a new virtualenv will be constructed.
 - **Line Width**: We use a line width of 100.
-- **IDE**: We recommend setting up your IDE to format and check with ruff on save, but you can always run `make ruff` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
+- **IDE**: We recommend setting up your IDE to format and check with ruff on save, but you can always run `just ruff` in the root Dagster directory before submitting a pull request. If you're also using VS Code, you can see what we're using for our `settings.json` [here](https://gist.github.com/natekupp/7a17a9df8d2064e5389cc84aa118a896).
 - **Docker**: Some tests require [Docker Desktop](https://www.docker.com/products/docker-desktop) to be able to run them locally.
 
 ## Developing the Dagster webserver/UI

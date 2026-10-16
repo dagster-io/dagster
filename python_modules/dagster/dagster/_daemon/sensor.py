@@ -32,6 +32,7 @@ from dagster._core.definitions.sensor_definition import DefaultSensorStatus, Sen
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterInvalidInvocationError,
+    DagsterRunTooLargeError,
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.backfill import PartitionBackfill
@@ -49,6 +50,7 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
+from dagster._core.storage.run_size import exceeds_run_size_limit
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_backfill_id, make_new_run_id
@@ -81,6 +83,11 @@ MAX_TIME_TO_RESUME_TICK_SECONDS = 60 * 60 * 24
 MAX_FAILURE_RESUBMISSION_RETRIES = 1
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
+
+# Bounds on how much of a dropped oversized run request ends up in the tick error. Without these
+# the error would reintroduce the payload that dropping the request is meant to keep off the tick.
+MAX_LISTED_OVERSIZED_RUN_REQUESTS = 10
+MAX_OVERSIZED_RUN_REQUEST_FIELD_CHARACTERS = 200
 
 
 # sensor, elapsed, min_interval
@@ -1071,6 +1078,49 @@ def _resolve_run_requests(
     return resolved_run_ids_with_requests
 
 
+def _describe_run_request(run_request: RunRequest) -> str:
+    parts = [
+        f"{label} {value[:MAX_OVERSIZED_RUN_REQUEST_FIELD_CHARACTERS]}"
+        for label, value in (
+            ("job", run_request.job_name),
+            ("run key", run_request.run_key),
+            ("partition", run_request.partition_key),
+        )
+        if value
+    ]
+    return ", ".join(parts) if parts else "<unidentified run request>"
+
+
+def _split_oversized_run_requests(
+    run_requests: Sequence[RunRequest],
+    limit: int | None,
+    logger: logging.Logger,
+) -> tuple[Sequence[RunRequest], Sequence[str]]:
+    """Separates out run requests whose runs run storage would reject for being too large.
+
+    Oversized requests are returned as descriptions rather than requests, so that a run config or
+    tag payload that can never be launched does not get written into the tick and then read back
+    whenever the tick history is loaded.
+    """
+    if limit is None:
+        return run_requests, []
+
+    launchable = []
+    oversized = []
+    for run_request in run_requests:
+        if exceeds_run_size_limit(run_request, limit):
+            description = _describe_run_request(run_request)
+            logger.warning(
+                f"Dropping run request ({description}) that exceeds the maximum run size of"
+                f" {limit} bytes."
+            )
+            oversized.append(description)
+        else:
+            launchable.append(run_request)
+
+    return launchable, oversized
+
+
 def _handle_run_requests_and_automation_condition_evaluations(
     raw_run_requests: Sequence[RunRequest],
     automation_condition_evaluations: Sequence[AutomationConditionEvaluation[EntityKey]],
@@ -1102,12 +1152,17 @@ def _handle_run_requests_and_automation_condition_evaluations(
         else:
             return make_new_run_id()
 
-    reserved_run_ids = [reserved_run_id(run_request) for run_request in raw_run_requests]
+    run_size_limit = instance.get_run_size_limit_bytes()
+    run_requests, oversized_descriptions = _split_oversized_run_requests(
+        raw_run_requests, run_size_limit, context.logger
+    )
+
+    reserved_run_ids = [reserved_run_id(run_request) for run_request in run_requests]
 
     # update cursor while reserving the relevant work, as now if the tick fails we will still submit
     # the requested runs
     context.set_run_requests(
-        run_requests=raw_run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
+        run_requests=run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
     )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_RESERVED")
@@ -1123,6 +1178,21 @@ def _handle_run_requests_and_automation_condition_evaluations(
         submit_threadpool_executor,
         sensor_debug_crash_flags,
     )
+
+    if oversized_descriptions:
+        # Fail the tick only after the launchable requests have gone out, so that one oversized
+        # request does not hold back the rest of the tick.
+        count = len(oversized_descriptions)
+        listed = oversized_descriptions[:MAX_LISTED_OVERSIZED_RUN_REQUESTS]
+        summary = "; ".join(listed)
+        if count > len(listed):
+            summary += f"; and {count - len(listed)} more"
+        raise DagsterRunTooLargeError(
+            f"Sensor {remote_sensor.name} yielded {count} run"
+            f" {'request' if count == 1 else 'requests'} that exceed the maximum run size of"
+            f" {run_size_limit} bytes and were dropped: {summary}. Reduce the size of the run"
+            " config or tags on these run requests."
+        )
 
 
 def _submit_run_requests(

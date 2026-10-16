@@ -14,6 +14,10 @@
   overflow-y: auto;
 }
 
+.navPanel {
+  height: 100%;
+}
+
 .nav.hidden {
   display: none;
 }
@@ -32,6 +36,9 @@
 .child {
   height: 100%;
   overflow: hidden;
+  /* Lets shared components adapt to the page width with @container rules, regardless of
+     layout mode. */
+  container-type: inline-size;
 }
 
 .container:has(.nav.collapsed) .main {
@@ -41,4 +48,79 @@
 .nav.collapsed {
   flex: 0 0 var(--nav-width-collapsed);
   padding: 16px 2px;
+}
+
+/* Mobile layout: the page fills the screen, the nav is an off-canvas drawer, and the button
+   that opens it floats over the page's top-left corner. Mobile-ready pages keep the area
+   (insets + 32px button) clear there. The left inset lines up with page content. */
+
+.container.mobile .main {
+  position: relative;
+  width: 100%;
+}
+
+.nav.drawer {
+  position: fixed;
+  inset: 0;
+  /* Above page content, below Blueprint overlays (dialogs, popovers). */
+  z-index: 10;
+  flex: none;
+  height: auto;
+  padding: 0;
+  box-shadow: none;
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.nav.drawer.open {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-dialog-background);
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.nav.drawer.open .backdrop {
+  opacity: 1;
+}
+
+.nav.drawer .navPanel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(280px, 85vw);
+  display: flex;
+  flex-direction: column;
+  padding: 0 4px 16px 16px;
+  background-color: var(--color-background-default);
+  box-shadow: inset -1px 0 0 var(--color-keyline-default);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 200ms ease-out;
+}
+
+.nav.drawer.open .navPanel {
+  transform: translateX(0);
+}
+
+/* Sits exactly where the floating open button is, so toggling needs no pointer travel.
+   The panel's 16px left padding is offset to land on the button inset. */
+.closeRow {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: var(--mobile-nav-button-inset-top);
+  margin-left: calc(var(--mobile-nav-button-inset-left) - 16px);
+}
+
+.nav.drawer .navPanel > nav {
+  flex: 1;
+  min-height: 0;
+  height: auto;
 }

@@ -76,7 +76,8 @@ class TestListAssetChecks:
         result = DgApiAssetCheckApi(client).list_asset_checks("test/key")
 
         client.list_asset_checks.assert_called_once_with(
-            asset_key=AssetKeyInput(path=["test", "key"])
+            asset_key=AssetKeyInput(path=["test", "key"]),
+            limit=10,
         )
         assert len(result.items) == 2
         assert result.items[0].name == "check_a"

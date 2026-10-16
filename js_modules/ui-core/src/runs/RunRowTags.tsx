@@ -12,7 +12,7 @@ import * as React from 'react';
 import {DagsterTag, TagType} from './RunTag';
 import {RunTags, tagsAsYamlString} from './RunTags';
 import {getBackfillPath} from './RunsFeedUtils';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';

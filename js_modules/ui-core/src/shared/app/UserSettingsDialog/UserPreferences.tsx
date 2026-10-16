@@ -2,7 +2,9 @@ import {Box, Button, Checkbox, Heading, Icon, Tooltip} from '@dagster-io/ui-comp
 import React, {useContext} from 'react';
 
 import {SHORTCUTS_STORAGE_KEY} from '../../../app/ShortcutHandler';
+import {usePreferDesktopSite} from '../../../app/UserSettingsDialog/usePreferDesktopSite';
 import {useShowAssetsWithoutDefinitions} from '../../../app/UserSettingsDialog/useShowAssetsWithoutDefinitions';
+import {isMobileDevice} from '../../../app/layout/LayoutMode';
 import {HourCycleSelect} from '../../../app/time/HourCycleSelect';
 import {ThemeSelect} from '../../../app/time/ThemeSelect';
 import {TimeContext} from '../../../app/time/TimeContext';
@@ -26,16 +28,22 @@ export const UserPreferences = ({
     useShowAssetsWithoutDefinitions();
   const {theme, setTheme} = useThemeState();
 
+  // Layout mode is decided at boot, so changing this needs a reload. Only shown on phones.
+  const {preferDesktopSite, setPreferDesktopSite} = usePreferDesktopSite();
+  const initialPreferDesktopSite = React.useRef(preferDesktopSite);
+
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
 
   const lastChangeValue = React.useRef(false);
   React.useEffect(() => {
-    const didChange = initialShortcutsEnabled.current !== shortcutsEnabled;
+    const didChange =
+      initialShortcutsEnabled.current !== shortcutsEnabled ||
+      initialPreferDesktopSite.current !== preferDesktopSite;
     if (lastChangeValue.current !== didChange) {
       onChangeRequiresReload(didChange);
       lastChangeValue.current = didChange;
     }
-  }, [shortcutsEnabled, theme, onChangeRequiresReload]);
+  }, [shortcutsEnabled, preferDesktopSite, theme, onChangeRequiresReload]);
 
   const {
     timezone: [timezone, setTimezone],
@@ -100,6 +108,16 @@ export const UserPreferences = ({
         <div>Theme</div>
         <ThemeSelect theme={theme} onChange={setTheme} />
       </Box>
+      {isMobileDevice() ? (
+        <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+          <div>Always use the desktop site on this device</div>
+          <Checkbox
+            checked={preferDesktopSite}
+            format="switch"
+            onChange={(e) => setPreferDesktopSite(e.target.checked)}
+          />
+        </Box>
+      ) : null}
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Enable keyboard shortcuts</div>
         <Checkbox checked={shortcutsEnabled} format="switch" onChange={toggleKeyboardShortcuts} />

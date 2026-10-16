@@ -50,7 +50,7 @@ export const RunStats = ({runId}: {runId: string}) => {
   );
 };
 
-const RUN_STATS_QUERY = gql`
+export const RUN_STATS_QUERY = gql`
   query RunStatsQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on RunNotFoundError {

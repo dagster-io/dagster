@@ -14,6 +14,7 @@ class ReconcileAlertPolicies(BaseModel):
         "ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentPythonError",
         "ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentUnauthorizedError",
         "ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentInvalidAlertPolicyError",
+        "ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentCodeBackedAlertPolicyError",
     ] = Field(alias="reconcileAlertPoliciesFromDocument", discriminator="typename__")
 
 
@@ -50,6 +51,13 @@ class ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentInvalidAlertPolicy
     BaseModel
 ):
     typename__: Literal["InvalidAlertPolicyError"] = Field(alias="__typename")
+    message: str
+
+
+class ReconcileAlertPoliciesReconcileAlertPoliciesFromDocumentCodeBackedAlertPolicyError(
+    BaseModel
+):
+    typename__: Literal["CodeBackedAlertPolicyError"] = Field(alias="__typename")
     message: str
 
 

@@ -5,6 +5,7 @@ import {
   Colors,
   Icon,
   MiddleTruncate,
+  Tag,
   Text,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -12,131 +13,134 @@ import clsx from 'clsx';
 
 import styles from './css/EvaluationConditionalLabel.module.css';
 import {
+  EvaluationMemoryRow,
   assetCheckNameForEntityKey,
   assetKeyForEntityKey,
   jobNameForEntityKey,
 } from './flattenEvaluations';
 import {EvaluationHistoryStackItem} from './types';
-import {
-  EntityKeyFragment as EntityKey,
-  SinceMetadataFragment,
-} from './types/GetEvaluationsQuery.types';
 import {useFormatDateTime} from '../../ui/useFormatDateTime';
 
 interface Props {
   segments: string[];
 }
 
-export const EvaluationSinceLabel = ({
-  sinceMetadata,
-  triggerCondition,
-  resetCondition,
-  entityKey,
+/**
+ * The tag on a memory row, naming the tick whose remembered value the row's status describes:
+ * "current tick" / "last tick" for a newly_true edge, "set at <ts>" / "reset: never" (etc.) for a
+ * since latch. Latch tags with a recorded tick navigate to that tick's evaluation, where the full
+ * tree shows accurate historical values.
+ */
+export const TemporalTag = ({
+  row,
   pushHistory,
 }: {
-  triggerCondition?: string;
-  resetCondition?: string;
-  sinceMetadata: SinceMetadataFragment;
-  entityKey: EntityKey;
+  row: EvaluationMemoryRow;
   pushHistory?: (item: EvaluationHistoryStackItem) => void;
 }) => {
   const formatDateTime = useFormatDateTime();
+  const {tag, conditionLabel, entityKey} = row;
 
-  const triggerLabel = triggerCondition?.slice(1, -1) || ''; // remove parentheses
-  const resetLabel = resetCondition?.slice(1, -1) || ''; // remove parentheses
-  const triggerTime = sinceMetadata.triggerTimestamp
-    ? formatDateTime(new Date(1000 * sinceMetadata.triggerTimestamp), {
-        timeStyle: 'long',
-      })
-    : null;
-  const resetTime = sinceMetadata.resetTimestamp
-    ? formatDateTime(new Date(1000 * sinceMetadata.resetTimestamp), {
-        timeStyle: 'long',
-      })
-    : null;
-
-  const assetKey = assetKeyForEntityKey(entityKey) ?? undefined;
-  const checkName = assetCheckNameForEntityKey(entityKey);
-  const jobName = jobNameForEntityKey(entityKey);
-
-  return (
-    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
-      <Tooltip content={<TooltipContent text={triggerLabel} />} placement="top">
-        <Code className={styles.operand}>{triggerLabel}</Code>
-      </Tooltip>
-      <EvaluationSinceMetadata
-        assetKey={assetKey}
-        checkName={checkName}
-        jobName={jobName}
-        detailLabel={
-          triggerTime
-            ? `${triggerLabel} was last True at ${triggerTime}`
-            : `${triggerLabel} has not yet occurred.`
-        }
-        evaluationId={sinceMetadata.triggerEvaluationId}
-        timestamp={sinceMetadata.triggerTimestamp}
-        pushHistory={pushHistory}
-      />
-      <div className={styles.operator}>SINCE</div>
-      <Tooltip content={<TooltipContent text={resetLabel} />} placement="top">
-        <Code className={styles.operand}>{resetLabel}</Code>
-      </Tooltip>
-      <EvaluationSinceMetadata
-        assetKey={assetKey}
-        checkName={checkName}
-        jobName={jobName}
-        detailLabel={
-          resetTime
-            ? `${resetLabel} last occurred ${resetTime}`
-            : `${resetLabel} has not yet occured.`
-        }
-        evaluationId={sinceMetadata.resetEvaluationId}
-        timestamp={sinceMetadata.resetTimestamp}
-        pushHistory={pushHistory}
-      />
-    </Box>
-  );
-};
-
-export const EvaluationSinceMetadata = ({
-  assetKey,
-  checkName,
-  jobName,
-  detailLabel,
-  evaluationId,
-  timestamp,
-  pushHistory,
-}: {
-  assetKey?: {path: string[]};
-  checkName?: string;
-  jobName?: string;
-  detailLabel: string;
-  evaluationId: string | null;
-  timestamp: number | null;
-  pushHistory?: (item: EvaluationHistoryStackItem) => void;
-}) => {
-  if (!pushHistory || !evaluationId || !timestamp) {
+  if (tag.kind === 'currentTick') {
     return (
-      <Tooltip content={detailLabel}>
-        <Icon name="info" color={Colors.accentGray()} style={{verticalAlign: 'middle'}} />
+      <Tooltip content={`The value of ${conditionLabel} on this tick.`} placement="top">
+        <Tag icon="preview_tick">current tick</Tag>
       </Tooltip>
     );
   }
-  return (
-    <Tooltip content={detailLabel}>
-      <ButtonLink
-        onClick={() => {
-          pushHistory({
-            assetKeyPath: assetKey?.path,
-            assetCheckName: checkName,
-            jobName,
-            evaluationID: evaluationId,
-          });
-        }}
+  if (tag.kind === 'lastTick') {
+    if (row.result.isPartitioned) {
+      // The derived partitioned count is |true now ∩ true last tick|, not the full previous-tick
+      // value — partitions that were true last tick but are no longer true are unknowable from the
+      // record. "already true" labels what the count actually is.
+      return (
+        <Tooltip
+          content={`Of the partitions where ${conditionLabel} is true now, how many were already true on the previous tick. The parent condition is true only for the remainder, which are newly true.`}
+          placement="top"
+        >
+          <Tag icon="history">already true</Tag>
+        </Tooltip>
+      );
+    }
+    return (
+      <Tooltip
+        content={`The value of ${conditionLabel} on the previous tick. The parent condition is true only where ${conditionLabel} is true now but was not true on the previous tick.`}
+        placement="top"
       >
-        <Icon name="link" color={Colors.accentGray()} style={{verticalAlign: 'middle'}} />
-      </ButtonLink>
-    </Tooltip>
+        <Tag icon="history">last tick</Tag>
+      </Tooltip>
+    );
+  }
+
+  const verb = tag.kind;
+  if (tag.timestamp === null) {
+    return (
+      <Tooltip content={`${conditionLabel} has not been True in tracked history.`} placement="top">
+        <Tag icon="history_toggle_off">{`${verb}: never`}</Tag>
+      </Tooltip>
+    );
+  }
+
+  const time = formatDateTime(new Date(1000 * tag.timestamp), {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+  const detail = `${conditionLabel} was last True at ${time}${
+    tag.evaluationId ? ` (evaluation ${tag.evaluationId})` : ''
+  }`;
+  const tagElement = <Tag icon="history">{`${verb} at ${time}`}</Tag>;
+
+  if (!pushHistory || !tag.evaluationId) {
+    return (
+      <Tooltip content={detail} placement="top">
+        {tagElement}
+      </Tooltip>
+    );
+  }
+
+  const assetKey = entityKey ? (assetKeyForEntityKey(entityKey) ?? undefined) : undefined;
+  const checkName = entityKey ? assetCheckNameForEntityKey(entityKey) : undefined;
+  const jobName = entityKey ? jobNameForEntityKey(entityKey) : undefined;
+  const evaluationId = tag.evaluationId;
+  return (
+    <>
+      {tagElement}
+      <Tooltip
+        content={`${conditionLabel} was last True at ${time}. Click to view evaluation ${evaluationId}.`}
+        placement="top"
+      >
+        <ButtonLink
+          onClick={(e) => {
+            e?.stopPropagation();
+            pushHistory({
+              assetKeyPath: assetKey?.path,
+              assetCheckName: checkName,
+              jobName,
+              evaluationID: evaluationId,
+            });
+          }}
+        >
+          <Icon name="link" color={Colors.accentGray()} style={{verticalAlign: 'middle'}} />
+        </ButtonLink>
+      </Tooltip>
+    </>
+  );
+};
+
+export const EvaluationMemoryRowLabel = ({
+  row,
+  pushHistory,
+}: {
+  row: EvaluationMemoryRow;
+  pushHistory?: (item: EvaluationHistoryStackItem) => void;
+}) => {
+  return (
+    <Box flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}>
+      <TemporalTag row={row} pushHistory={pushHistory} />
+      <Tooltip content={<TooltipContent text={row.conditionLabel} />} placement="top">
+        <Code className={styles.operand}>{row.conditionLabel}</Code>
+      </Tooltip>
+    </Box>
   );
 };
 

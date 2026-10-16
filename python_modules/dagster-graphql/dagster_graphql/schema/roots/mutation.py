@@ -479,7 +479,9 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
 
 
 class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
-    """Deletes partitions from a dynamic partition set."""
+    """Deletes partitions from a dynamic partition set, optionally wiping materialization
+    events for the deleted partitions from the assets that use the partition set.
+    """
 
     Output = graphene.NonNull(GrapheneDeleteDynamicPartitionsResult)
 
@@ -487,6 +489,14 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         repositorySelector = graphene.NonNull(GrapheneRepositorySelector)
         partitionsDefName = graphene.NonNull(graphene.String)
         partitionKeys = non_null_list(graphene.String)
+        wipeMaterializations = graphene.Argument(
+            graphene.Boolean,
+            description=(
+                "Whether to also wipe materialization events for the deleted partition keys"
+                " from all assets in the repository that use the dynamic partitions"
+                " definition. Requires permission to wipe the affected assets."
+            ),
+        )
 
     class Meta:
         name = "DeleteDynamicPartitionsMutation"
@@ -499,9 +509,14 @@ class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
         repositorySelector: GrapheneRepositorySelector,
         partitionsDefName: str,
         partitionKeys: Sequence[str],
+        wipeMaterializations: bool | None = None,
     ):
         return delete_dynamic_partitions(
-            graphene_info, repositorySelector, partitionsDefName, partitionKeys
+            graphene_info,
+            repository_selector=repositorySelector,
+            partitions_def_name=partitionsDefName,
+            partition_keys=partitionKeys,
+            wipe_materializations=bool(wipeMaterializations),
         )
 
 

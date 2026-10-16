@@ -48,3 +48,46 @@ Click through to "ECR" and you should see a list of "Private repositories".
 Each repository corresponds to an image specification (e.g. `buildkite-test`)
 and should contain multiple images (one for each version, as well as
 past-published images).
+
+## Publishing multi-platform images to Docker Hub
+
+Use `build-and-push-dockerhub` to build and publish `dagster-k8s`,
+`dagster-celery-k8s`, or `user-code-example` for both `linux/amd64` and
+`linux/arm64`. It pushes both architectures under the same version tag, so
+Docker selects the matching image on each host.
+
+First, log in to Docker Hub and configure a Docker Buildx builder that supports
+both platforms. For example:
+
+```sh
+docker login
+docker buildx create --name dagster-multiarch --driver docker-container --use
+docker buildx inspect --bootstrap
+```
+
+Check that both `linux/amd64` and `linux/arm64` are listed in the builder's
+platforms. Linux builders need native ARM64 nodes or QEMU/binfmt support;
+Docker Desktop includes emulation. The base image, including any `BASE_IMAGE`
+registry mirror override, must also support both architectures.
+
+```sh
+dagster-image build-and-push-dockerhub \
+  --name dagster-celery-k8s \
+  --dagster-version "<dagster-version>"
+```
+
+Add `--set-latest` when the release should also update `latest`. To override
+the default platforms, repeat `--platform`, for example `--platform linux/arm64`
+for an ARM64-only build.
+
+For multi-platform Docker Hub releases, this command replaces the separate
+`build` and `push-dockerhub` steps. It does not load a local image or update
+`last_updated.yaml`. The existing local build and ECR publishing commands are
+unchanged; release automation must adopt the new command to publish both
+architectures to Docker Hub.
+
+Verify the published platforms with:
+
+```sh
+docker buildx imagetools inspect "dagster/dagster-celery-k8s:<dagster-version>"
+```

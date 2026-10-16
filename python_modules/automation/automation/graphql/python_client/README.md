@@ -12,7 +12,7 @@ the Dagster GraphQL server's backwards compatability testing.
     -e python_modules/automation \
 ```
 
-or `make dev_install` should do the trick! After that `dagster-graphql-client` should be accessible
+or `just dev_install` should do the trick! After that `dagster-graphql-client` should be accessible
 for the command line.
 
 ## Usage

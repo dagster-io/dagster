@@ -21,6 +21,8 @@ export const timingStringForStatus = (status?: RunStatus) => {
       return 'Waiting to start…';
     case RunStatus.STARTED:
       return 'Started…';
+    case RunStatus.SUSPENDED:
+      return 'Suspended…';
     case RunStatus.STARTING:
       return 'Starting…';
     case RunStatus.SUCCESS:

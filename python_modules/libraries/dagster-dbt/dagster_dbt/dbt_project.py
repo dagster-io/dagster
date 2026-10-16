@@ -107,7 +107,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
         if has_deps_files:
             run_with_concurrent_update_guard(
-                project.project_dir.joinpath("package-lock.yml"),
+                Path(project.project_dir).joinpath("package-lock.yml"),
                 self._prepare_packages,
                 project=project,
             )

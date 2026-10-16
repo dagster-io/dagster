@@ -16,3 +16,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/dagster-io/dagster"
+
+[tool.uv]
+exclude-newer = "48h"

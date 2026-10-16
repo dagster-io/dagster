@@ -1,0 +1,13 @@
+/* Horizontal padding follows the page gutter (16px in the mobile layout). */
+
+.tabsRow {
+  padding: 0 var(--page-gutter, 24px);
+}
+
+.filterRow {
+  padding: 12px var(--page-gutter, 20px);
+}
+
+.selectAllRow {
+  padding: 0 var(--page-gutter, 24px) 2px;
+}

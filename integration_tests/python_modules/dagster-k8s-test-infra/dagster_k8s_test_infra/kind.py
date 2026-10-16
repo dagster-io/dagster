@@ -2,6 +2,7 @@
 
 import os
 import random
+import shutil
 import subprocess
 import time
 import uuid
@@ -13,12 +14,7 @@ import kubernetes
 from dagster._utils import safe_tempfile_path
 
 from dagster_k8s_test_infra.cluster import ClusterConfig
-from dagster_k8s_test_infra.integration_utils import (
-    IS_BUILDKITE,
-    check_output,
-    which_,
-    within_docker,
-)
+from dagster_k8s_test_infra.integration_utils import IS_BUILDKITE, check_output, within_docker
 
 CLUSTER_INFO_DUMP_DIR = "kind-info-dump"
 
@@ -354,7 +350,7 @@ def kind_sync_dockerconfig():
     """
     print("--- Syncing docker config to nodes...")
 
-    docker_exe = which_("docker")
+    docker_exe = shutil.which("docker")
 
     nodes = kubernetes.client.CoreV1Api().list_node().items
     for node in nodes:

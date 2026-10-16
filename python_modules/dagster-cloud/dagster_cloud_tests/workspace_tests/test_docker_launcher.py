@@ -1,5 +1,6 @@
 # ruff: noqa: SLF001
 import io
+import json
 import tarfile
 import time
 from contextlib import contextmanager
@@ -9,18 +10,28 @@ import docker.errors
 import docker.models.containers
 import pytest
 import requests.exceptions
+from dagster._core.code_pointer import FileCodePointer
+from dagster._core.launcher.base import LaunchRunContext, ResumeRunContext
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
+from dagster_cloud.storage.tags import PEX_METADATA_TAG
 from dagster_cloud.workspace.docker import (
     AGENT_LABEL,
     GRPC_SERVER_LABEL,
     STOP_TIMEOUT_LABEL,
+    CloudDockerRunLauncher,
     DockerUserCodeLauncher,
 )
 from dagster_cloud.workspace.docker.utils import docker_client_from_env, unique_docker_resource_name
 from dagster_cloud.workspace.user_code_launcher import DEFAULT_SERVER_PROCESS_STARTUP_TIMEOUT
 from dagster_cloud.workspace.user_code_launcher.user_code_launcher import UserCodeLauncherEntry
 from dagster_cloud.workspace.user_code_launcher.utils import deterministic_label_for_location
-from dagster_cloud_cli.core.workspace import CodeLocationDeployData
+from dagster_cloud_cli.core.workspace import CodeLocationDeployData, PexMetadata
+from dagster_shared.serdes.errors import DeserializationError
+from dagster_shared.serdes.serdes import deserialize_value, serialize_value
 
 
 @pytest.fixture(autouse=True)
@@ -213,3 +224,116 @@ def test_container_kwargs_stop_timeout():
         )
 
         instance.user_code_launcher._remove_server_handle(result.server_handle)
+
+
+def _run_with_origin(tags=None):
+    # Built directly rather than through the instance: the cloud agent instance's run storage
+    # talks to the Dagster Cloud backend, which isn't running in these tests.
+    return DagsterRun(
+        job_name="test",
+        run_id=make_new_run_id(),
+        status=DagsterRunStatus.STARTED,
+        tags=tags or {},
+        job_code_origin=JobPythonOrigin(
+            job_name="test",
+            repository_origin=RepositoryPythonOrigin(
+                executable_path="/usr/bin/python",
+                code_pointer=FileCodePointer(python_file="foo.py", fn_name="foo"),
+                container_image="test:latest",
+            ),
+        ),
+    )
+
+
+@contextmanager
+def _captured_launch_commands():
+    with patch.object(CloudDockerRunLauncher, "_launch_container_with_command") as mock_launch:
+        yield mock_launch
+
+
+def _command_for(mock_launch):
+    assert mock_launch.call_count == 1
+    _run, _image, command = mock_launch.call_args[0]
+    return command
+
+
+def test_resume_run():
+    with docker_instance() as instance:
+        launcher = instance.run_launcher
+        assert launcher.supports_resume_run
+
+        run = _run_with_origin()
+
+        with _captured_launch_commands() as mock_launch:
+            launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
+        launch_command = _command_for(mock_launch)
+
+        with _captured_launch_commands() as mock_launch:
+            launcher.resume_run(
+                ResumeRunContext(dagster_run=run, workspace=None, resume_attempt_number=1)
+            )
+        resume_command = _command_for(mock_launch)
+
+        assert launch_command[:3] == ["/usr/bin/python", "-m", "dagster"]
+        assert launch_command[3:5] == ["api", "execute_run"]
+        assert deserialize_value(launch_command[5], ExecuteRunArgs).run_id == run.run_id
+
+        assert resume_command[:3] == ["/usr/bin/python", "-m", "dagster"]
+        assert resume_command[3:5] == ["api", "resume_run"]
+        assert deserialize_value(resume_command[5], ResumeRunArgs).run_id == run.run_id
+
+
+def test_launch_and_resume_pex_run():
+    serialized_pex_metadata = serialize_value(PexMetadata(pex_tag="deps-abc.pex:source-def.pex"))
+
+    with docker_instance() as instance:
+        launcher = instance.run_launcher
+        run = _run_with_origin(tags={PEX_METADATA_TAG: serialized_pex_metadata})
+
+        with _captured_launch_commands() as mock_launch:
+            launcher.launch_run(LaunchRunContext(dagster_run=run, workspace=None))
+        launch_command = _command_for(mock_launch)
+
+        with _captured_launch_commands() as mock_launch:
+            launcher.resume_run(
+                ResumeRunContext(dagster_run=run, workspace=None, resume_attempt_number=1)
+            )
+        resume_command = _command_for(mock_launch)
+
+        # Both go through the PEX entry point; only the serialized args differ, and the PEX
+        # CLI dispatches on their type.
+        assert launch_command[:3] == ["dagster-cloud", "pex", "execute-run"]
+        assert launch_command[4] == serialized_pex_metadata
+        assert deserialize_value(launch_command[3], ExecuteRunArgs).run_id == run.run_id
+
+        assert resume_command[:3] == ["dagster-cloud", "pex", "execute-run"]
+        assert resume_command[4] == serialized_pex_metadata
+        assert deserialize_value(resume_command[3], ResumeRunArgs).run_id == run.run_id
+
+
+def test_unparsable_pex_metadata_fails_the_launch():
+    # A malformed tag has to blow up here rather than in the run worker, where it would surface
+    # as an opaque container failure.
+    garbage_run = _run_with_origin(tags={PEX_METADATA_TAG: "not-even-json"})
+    wrong_type_run = _run_with_origin(
+        tags={PEX_METADATA_TAG: serialize_value(CodeLocationDeployData(module_name="fake"))}
+    )
+
+    with docker_instance() as instance:
+        launcher = instance.run_launcher
+
+        with _captured_launch_commands() as mock_launch:
+            with pytest.raises(json.JSONDecodeError):
+                launcher.launch_run(LaunchRunContext(dagster_run=garbage_run, workspace=None))
+
+            with pytest.raises(DeserializationError, match="not expected type"):
+                launcher.launch_run(LaunchRunContext(dagster_run=wrong_type_run, workspace=None))
+
+            with pytest.raises(json.JSONDecodeError):
+                launcher.resume_run(
+                    ResumeRunContext(
+                        dagster_run=garbage_run, workspace=None, resume_attempt_number=1
+                    )
+                )
+
+            assert mock_launch.call_count == 0

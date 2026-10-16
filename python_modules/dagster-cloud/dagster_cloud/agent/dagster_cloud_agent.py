@@ -257,7 +257,8 @@ class DagsterCloudAgent:
         if memory_request:
             limits["memory_request"] = memory_request
 
-        self._utilization_metrics["resource_limits"][
+        # keyed dynamically by deployment type, which the TypedDict can't express
+        cast("dict[str, Any]", self._utilization_metrics["resource_limits"])[
             user_code_launcher.user_code_deployment_type.value
         ] = limits
 

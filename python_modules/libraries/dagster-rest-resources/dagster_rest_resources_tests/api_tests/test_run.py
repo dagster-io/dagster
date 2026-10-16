@@ -1,12 +1,18 @@
 from unittest.mock import Mock
 
 import pytest
-from dagster_rest_resources.__generated__.enums import EvaluationErrorReason, RunStatus
+from dagster_rest_resources.__generated__.enums import (
+    EvaluationErrorReason,
+    ReexecutionStrategy,
+    RunStatus,
+)
 from dagster_rest_resources.__generated__.get_run import (
     GetRun,
     GetRunRunOrErrorPythonError,
     GetRunRunOrErrorRun,
     GetRunRunOrErrorRunNotFoundError,
+    GetRunRunOrErrorRunStatsRunStatsSnapshot,
+    GetRunRunOrErrorRunTags,
 )
 from dagster_rest_resources.__generated__.input_types import (
     AssetKeyInput,
@@ -39,8 +45,26 @@ from dagster_rest_resources.__generated__.list_runs import (
     ListRunsRunsOrErrorPythonError,
     ListRunsRunsOrErrorRuns,
     ListRunsRunsOrErrorRunsResults,
+    ListRunsRunsOrErrorRunsResultsTags,
+)
+from dagster_rest_resources.__generated__.rerun_backfill import (
+    RerunBackfill,
+    RerunBackfillReexecutePartitionBackfillLaunchBackfillSuccess,
+)
+from dagster_rest_resources.__generated__.rerun_run import (
+    RerunRun,
+    RerunRunLaunchRunReexecutionInvalidStepError,
+    RerunRunLaunchRunReexecutionLaunchRunSuccess,
+    RerunRunLaunchRunReexecutionLaunchRunSuccessRun,
+)
+from dagster_rest_resources.__generated__.terminate_run import (
+    TerminateRun,
+    TerminateRunTerminateRunTerminateRunFailure,
+    TerminateRunTerminateRunTerminateRunSuccess,
+    TerminateRunTerminateRunTerminateRunSuccessRun,
 )
 from dagster_rest_resources.api.run import (
+    IMPLICIT_ASSET_JOB_NAME,
     PARTITION_TAG,
     DgApiRun,
     DgApiRunApi,
@@ -48,6 +72,7 @@ from dagster_rest_resources.api.run import (
     DgApiRunList,
 )
 from dagster_rest_resources.gql_client import DagsterPlusGraphqlError, IGraphQLClient
+from dagster_rest_resources.schemas.run import DgApiRunStats, DgApiRunTag, DgApiRunTerminateResult
 
 
 def _make_run_result(
@@ -66,6 +91,15 @@ def _make_run_result(
         startTime=start_time,
         endTime=end_time,
         jobName=job_name,
+        runConfigYaml="ops: {}\n",
+        tags=[GetRunRunOrErrorRunTags(key="dagster/partition", value="2024-01-01")],
+        stats=GetRunRunOrErrorRunStatsRunStatsSnapshot(
+            __typename="RunStatsSnapshot",
+            stepsSucceeded=3,
+            stepsFailed=0,
+            materializations=2,
+            expectations=1,
+        ),
     )
 
 
@@ -83,12 +117,22 @@ class TestGetRun:
             started_at=None,
             ended_at=None,
             job_name="test-job-1",
+            tags=[DgApiRunTag(key="dagster/partition", value="2024-01-01")],
+            run_config_yaml="ops: {}\n",
+            stats=DgApiRunStats(
+                steps_succeeded=3,
+                steps_failed=0,
+                materializations=2,
+                expectations=1,
+            ),
         )
 
     def test_run_not_found_raises(self):
         client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(
-            runOrError=GetRunRunOrErrorRunNotFoundError(__typename="RunNotFoundError", message="")
+            runOrError=GetRunRunOrErrorRunNotFoundError(
+                __typename="RunNotFoundError", runId="run-xyz", message=""
+            )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Run not found"):
             DgApiRunApi(client).get_run("run-xyz")
@@ -96,7 +140,7 @@ class TestGetRun:
     def test_python_error_raises(self):
         client = Mock(spec=IGraphQLClient)
         client.get_run.return_value = GetRun(
-            runOrError=GetRunRunOrErrorPythonError(__typename="PythonError", message="")
+            runOrError=GetRunRunOrErrorPythonError(__typename="PythonError", message="", stack=[])
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching run"):
             DgApiRunApi(client).get_run("run-xyz")
@@ -117,6 +161,7 @@ def _make_list_run_result(
         startTime=start_time,
         endTime=end_time,
         jobName=job_name,
+        tags=[ListRunsRunsOrErrorRunsResultsTags(key="dagster/partition", value="2024-01-01")],
     )
 
 
@@ -176,27 +221,34 @@ class TestListRuns:
         client.list_runs.return_value = ListRuns(
             runsOrError=ListRunsRunsOrErrorInvalidPipelineRunsFilterError(
                 __typename="InvalidPipelineRunsFilterError",
+                message="pipelineName is not a valid filter",
             )
         )
-        with pytest.raises(DagsterPlusGraphqlError, match="Invalid runs filter"):
+        with pytest.raises(
+            DagsterPlusGraphqlError,
+            match="Invalid runs filter: pipelineName is not a valid filter",
+        ):
             DgApiRunApi(client).list_runs()
 
     def test_python_error_raises(self):
         client = Mock(spec=IGraphQLClient)
         client.list_runs.return_value = ListRuns(
-            runsOrError=ListRunsRunsOrErrorPythonError(__typename="PythonError", message="")
+            runsOrError=ListRunsRunsOrErrorPythonError(
+                __typename="PythonError", message="", stack=[]
+            )
         )
         with pytest.raises(DagsterPlusGraphqlError, match="Error fetching runs"):
             DgApiRunApi(client).list_runs()
 
 
-def _make_launch_success(run_id: str = "run-1") -> LaunchRun:
+def _make_launch_success(run_id: str = "run-1", job_name: str = "my_job") -> LaunchRun:
     return LaunchRun(
         launchRun=LaunchRunLaunchRunLaunchRunSuccess(
             __typename="LaunchRunSuccess",
             run=LaunchRunLaunchRunLaunchRunSuccessRun(
                 runId=run_id,
                 status=RunStatus.STARTED,
+                jobName=job_name,
             ),
         )
     )
@@ -235,17 +287,18 @@ class TestLaunchRun:
                 executionMetadata=None,
             )
         )
-        assert result == DgApiRunLaunchResult(run_id="run-1", status=RunStatus.STARTED)
+        assert result == DgApiRunLaunchResult(
+            run_id="run-1", status=RunStatus.STARTED, job_name="my_job"
+        )
 
     def test_launches_with_asset_keys(self):
         client = Mock(spec=IGraphQLClient)
         client.launch_run.return_value = _make_launch_success()
 
-        DgApiRunApi(client).create_run(
-            **_launch_args(
-                job_name=None,
-                asset_keys=["raw_customers", "marts/dim_customers"],
-            )
+        DgApiRunApi(client).create_asset_run(
+            location_name="loc",
+            repository_name="__repository__",
+            asset_keys=[["raw_customers"], ["marts", "dim_customers"]],
         )
 
         call_params: ExecutionParams = client.launch_run.call_args.kwargs["execution_params"]
@@ -253,7 +306,8 @@ class TestLaunchRun:
             AssetKeyInput(path=["raw_customers"]),
             AssetKeyInput(path=["marts", "dim_customers"]),
         ]
-        assert call_params.selector.job_name is None
+        # an ad hoc asset selection runs against the implicit asset job
+        assert call_params.selector.job_name == IMPLICIT_ASSET_JOB_NAME
 
     def test_launches_with_partition_adds_tag(self):
         client = Mock(spec=IGraphQLClient)
@@ -297,8 +351,10 @@ class TestLaunchRun:
 
     def test_raises_when_neither_job_nor_assets(self):
         client = Mock(spec=IGraphQLClient)
-        with pytest.raises(DagsterPlusGraphqlError, match="At least one of"):
-            DgApiRunApi(client).create_run(**_launch_args(job_name=None, asset_keys=None))
+        with pytest.raises(DagsterPlusGraphqlError, match="At least one asset key"):
+            DgApiRunApi(client).create_asset_run(
+                location_name="loc", repository_name="__repository__", asset_keys=[]
+            )
         client.launch_run.assert_not_called()
 
     def test_run_config_validation_invalid_raises_with_messages(self):
@@ -408,3 +464,128 @@ class TestLaunchRun:
         client.launch_run.return_value = LaunchRun(launchRun=error_obj)
         with pytest.raises(DagsterPlusGraphqlError, match=match):
             DgApiRunApi(client).create_run(**_launch_args())
+
+
+class TestActionTerminateRun:
+    def test_returns_terminated_run(self):
+        client = Mock(spec=IGraphQLClient)
+        client.terminate_run.return_value = TerminateRun(
+            terminateRun=TerminateRunTerminateRunTerminateRunSuccess(
+                __typename="TerminateRunSuccess",
+                run=TerminateRunTerminateRunTerminateRunSuccessRun(
+                    runId="run-1", status=RunStatus.CANCELED
+                ),
+            )
+        )
+
+        result = DgApiRunApi(client).action_terminate_run("run-1")
+
+        assert result == DgApiRunTerminateResult(run_id="run-1", status=RunStatus.CANCELED)
+        client.terminate_run.assert_called_once_with(run_id="run-1")
+
+    def test_failure_raises(self):
+        client = Mock(spec=IGraphQLClient)
+        client.terminate_run.return_value = TerminateRun(
+            terminateRun=TerminateRunTerminateRunTerminateRunFailure(
+                __typename="TerminateRunFailure", message="already finished"
+            )
+        )
+
+        with pytest.raises(DagsterPlusGraphqlError, match="Could not terminate run"):
+            DgApiRunApi(client).action_terminate_run("run-1")
+
+
+class TestActionReexecuteRun:
+    def test_returns_new_run(self):
+        client = Mock(spec=IGraphQLClient)
+        client.rerun_run.return_value = RerunRun(
+            launchRunReexecution=RerunRunLaunchRunReexecutionLaunchRunSuccess(
+                __typename="LaunchRunSuccess",
+                run=RerunRunLaunchRunReexecutionLaunchRunSuccessRun(
+                    runId="run-2",
+                    status=RunStatus.STARTED,
+                    jobName="my_job",
+                    rootRunId="run-1",
+                    parentRunId="run-1",
+                ),
+            )
+        )
+
+        result = DgApiRunApi(client).action_reexecute_run(
+            "run-1", use_parent_run_tags=True, extra_tags={"retry": "1"}
+        )
+
+        assert result.run_id == "run-2"
+        assert result.parent_run_id == "run-1"
+        params = client.rerun_run.call_args.kwargs["reexecution_params"]
+        assert params.parent_run_id == "run-1"
+        assert params.strategy == ReexecutionStrategy.FROM_FAILURE
+        assert params.use_parent_run_tags is True
+        assert [(t.key, t.value) for t in params.extra_tags] == [("retry", "1")]
+
+    def test_reports_the_failing_union_member(self):
+        client = Mock(spec=IGraphQLClient)
+        client.rerun_run.return_value = RerunRun(
+            launchRunReexecution=RerunRunLaunchRunReexecutionInvalidStepError(
+                __typename="InvalidStepError", invalidStepKey="my_op"
+            )
+        )
+
+        with pytest.raises(
+            DagsterPlusGraphqlError, match="Error re-executing run: InvalidStepError: my_op"
+        ):
+            DgApiRunApi(client).action_reexecute_run("run-1")
+
+
+class TestActionReexecuteBackfill:
+    def test_returns_backfill_and_launched_runs(self):
+        client = Mock(spec=IGraphQLClient)
+        client.rerun_backfill.return_value = RerunBackfill(
+            reexecutePartitionBackfill=RerunBackfillReexecutePartitionBackfillLaunchBackfillSuccess(
+                __typename="LaunchBackfillSuccess",
+                backfillId="backfill-1",
+                launchedRunIds=["run-1", None, "run-2"],
+            )
+        )
+
+        result = DgApiRunApi(client).action_reexecute_backfill("backfill-0")
+
+        assert result.backfill_id == "backfill-1"
+        # graphql types the list as nullable entries; the nulls are dropped
+        assert result.launched_run_ids == ["run-1", "run-2"]
+
+
+class TestCreateAssetRun:
+    def test_preserves_a_slash_inside_a_key_component(self):
+        client = Mock(spec=IGraphQLClient)
+        client.launch_run.return_value = _make_launch_success()
+
+        DgApiRunApi(client).create_asset_run(
+            location_name="loc",
+            repository_name="__repository__",
+            asset_keys=[["marts/dim_customers"]],
+        )
+
+        call_params: ExecutionParams = client.launch_run.call_args.kwargs["execution_params"]
+        # one component containing a slash stays one component, where a joined form would
+        # have split it into two
+        assert call_params.selector.asset_selection == [AssetKeyInput(path=["marts/dim_customers"])]
+
+    def test_forwards_tags_and_partition(self):
+        client = Mock(spec=IGraphQLClient)
+        client.launch_run.return_value = _make_launch_success()
+
+        DgApiRunApi(client).create_asset_run(
+            location_name="loc",
+            repository_name="__repository__",
+            asset_keys=[["a"]],
+            tags={"team": "data"},
+            partition="2026-05-15",
+        )
+
+        call_params: ExecutionParams = client.launch_run.call_args.kwargs["execution_params"]
+        assert call_params.execution_metadata is not None
+        assert call_params.execution_metadata.tags is not None
+        pairs = [(t.key, t.value) for t in call_params.execution_metadata.tags]
+        assert ("team", "data") in pairs
+        assert (PARTITION_TAG, "2026-05-15") in pairs

@@ -2,7 +2,7 @@ import itertools
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Generic, Optional, TypeVar  # noqa: UP035
 
@@ -46,6 +46,8 @@ from dagster._utils.cached_method import cached_method
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import RepositorySelector
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
+
+T = TypeVar("T")
 
 
 @whitelist_for_serdes
@@ -165,8 +167,6 @@ class RemoteAssetNode(BaseAssetNode, ABC):
 
     @property
     def legacy_freshness_policy(self) -> LegacyFreshnessPolicy | None:
-        # It is currently not possible to access the freshness policy for an observation definition
-        # if a materialization definition also exists. This needs to be fixed.
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.legacy_freshness_policy
 
     @property
@@ -401,6 +401,14 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     def backfill_policy(self) -> BackfillPolicy | None:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
 
+    @cached_property
+    def legacy_freshness_policy(self) -> LegacyFreshnessPolicy | None:
+        return self._first_non_none_snap_value(lambda snap: snap.legacy_freshness_policy)
+
+    @cached_property
+    def freshness_policy(self) -> FreshnessPolicy | None:
+        return self._first_non_none_snap_value(lambda snap: snap.freshness_policy)
+
     def resolve_to_repo_scoped_node(
         self, repository_selector: "RepositorySelector"
     ) -> Optional["RemoteRepositoryAssetNode"]:
@@ -425,26 +433,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         # either a materialization or observation node.
         # This property supports existing behavior but it should be phased out, because it relies on
         # materialization nodes shadowing observation nodes that would otherwise be exposed.
-        return next(
-            itertools.chain(
-                (
-                    info.asset_node
-                    for info in self.repo_scoped_asset_infos
-                    if info.asset_node.is_materializable
-                ),
-                (
-                    info.asset_node
-                    for info in self.repo_scoped_asset_infos
-                    if info.asset_node.is_observable
-                ),
-                (
-                    info.asset_node
-                    for info in self.repo_scoped_asset_infos
-                    if not info.asset_node.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET)
-                ),
-                (info.asset_node for info in self.repo_scoped_asset_infos),
-            )
-        )
+        return self._priority_ordered_asset_nodes[0]
 
     def get_targeting_schedule_selectors(
         self,
@@ -478,6 +467,47 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return selectors
 
     ##### HELPERS
+
+    @cached_property
+    def _priority_ordered_asset_nodes(self) -> Sequence[RemoteRepositoryAssetNode]:
+        # Materialization nodes first, then observation nodes, then non-stub nodes, then
+        # everything else. A node can appear in multiple tiers; only the first match matters.
+        return list(
+            itertools.chain(
+                (
+                    info.asset_node
+                    for info in self.repo_scoped_asset_infos
+                    if info.asset_node.is_materializable
+                ),
+                (
+                    info.asset_node
+                    for info in self.repo_scoped_asset_infos
+                    if info.asset_node.is_observable
+                ),
+                (
+                    info.asset_node
+                    for info in self.repo_scoped_asset_infos
+                    if not info.asset_node.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET)
+                ),
+                (info.asset_node for info in self.repo_scoped_asset_infos),
+            )
+        )
+
+    def _first_non_none_snap_value(
+        self, get_value: Callable[["AssetNodeSnap"], T | None]
+    ) -> T | None:
+        """First non-None value across repo-scoped nodes, in the same priority order as
+        resolve_to_singular_repo_scoped_node.
+
+        For fields typically declared in only one of the locations defining this asset, this
+        prevents an undeclared (None) value on the singular resolved node from shadowing a
+        value declared in another location.
+        """
+        for node in self._priority_ordered_asset_nodes:
+            value = get_value(node.asset_node_snap)
+            if value is not None:
+                return value
+        return None
 
     @cached_property
     def _materializable_node_snap(self) -> "AssetNodeSnap":

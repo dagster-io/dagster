@@ -33,3 +33,6 @@ root_module = "project_snowflake_dynamic_tables"
 filterwarnings = [
     "ignore::dagster_shared.utils.warnings.PreviewWarning",
 ]
+
+[tool.uv]
+exclude-newer = "48h"

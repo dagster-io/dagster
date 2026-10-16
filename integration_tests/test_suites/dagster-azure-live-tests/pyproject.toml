@@ -27,6 +27,9 @@ test = [
     "pytest",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster = { path = "../../../python_modules/dagster", editable = true }
 dagster-webserver = { path = "../../../python_modules/dagster-webserver", editable = true }

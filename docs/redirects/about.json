@@ -1,42 +1,42 @@
 [
   {
-    "source": "/getting-started/getting-help",
-    "destination": "/about/community",
+    "source": "/docs/getting-started/getting-help",
+    "destination": "/docs/about/community",
     "permanent": true
   },
   {
-    "source": "/getting-started/releases",
-    "destination": "/about/releases",
+    "source": "/docs/getting-started/releases",
+    "destination": "/docs/about/releases",
     "permanent": true
   },
   {
-    "source": "/getting-started/telemetry",
-    "destination": "/about/telemetry",
+    "source": "/docs/getting-started/telemetry",
+    "destination": "/docs/about/telemetry",
     "permanent": true
   },
   {
-    "source": "/getting-started/install",
-    "destination": "/getting-started/installation",
+    "source": "/docs/getting-started/install",
+    "destination": "/docs/getting-started/installation",
     "permanent": true
   },
   {
-    "source": "/getting-started/overview",
-    "destination": "/",
+    "source": "/docs/getting-started/overview",
+    "destination": "/docs",
     "permanent": true
   },
   {
-    "source": "/community",
-    "destination": "/about/community",
+    "source": "/docs/community",
+    "destination": "/docs/about/community",
     "permanent": true
   },
   {
-    "source": "/community/contributing/",
-    "destination": "/about/contributing",
+    "source": "/docs/community/contributing/",
+    "destination": "/docs/about/contributing",
     "permanent": true
   },
   {
-    "source": "/changelog",
-    "destination": "/about/changelog",
+    "source": "/docs/changelog",
+    "destination": "/docs/about/changelog",
     "permanent": true
   }
 ]

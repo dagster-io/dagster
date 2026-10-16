@@ -44,18 +44,25 @@ export const CursorHistoryControls = ({
   popCursor,
   advanceCursor,
   style,
-}: CursorPaginationProps) => {
+  iconOnly,
+}: CursorPaginationProps & {iconOnly?: boolean}) => {
   return (
     <CursorControlsContainer style={style}>
-      <Button icon={<Icon name="arrow_back" />} disabled={!hasPrevCursor} onClick={popCursor}>
-        <span className="hideable-button-text">Newer</span>
+      <Button
+        icon={<Icon name="arrow_back" />}
+        disabled={!hasPrevCursor}
+        onClick={popCursor}
+        aria-label={iconOnly ? 'Newer' : undefined}
+      >
+        {iconOnly ? null : <span className="hideable-button-text">Newer</span>}
       </Button>
       <Button
         rightIcon={<Icon name="arrow_forward" />}
         disabled={!hasNextCursor}
         onClick={advanceCursor}
+        aria-label={iconOnly ? 'Older' : undefined}
       >
-        <span className="hideable-button-text">Older</span>
+        {iconOnly ? null : <span className="hideable-button-text">Older</span>}
       </Button>
     </CursorControlsContainer>
   );

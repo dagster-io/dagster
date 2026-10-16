@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from typing_extensions import assert_never
 
+from dagster_rest_resources.__generated__.base_model import UNSET
 from dagster_rest_resources.__generated__.enums import IssueStatus
 from dagster_rest_resources.__generated__.fragments import IssueFields
 from dagster_rest_resources.__generated__.input_types import (
@@ -11,7 +12,8 @@ from dagster_rest_resources.__generated__.input_types import (
 )
 from dagster_rest_resources.gql_client import IGraphQLClient
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 from dagster_rest_resources.schemas.issue import (
@@ -22,6 +24,20 @@ from dagster_rest_resources.schemas.issue import (
 )
 
 
+def _linked_object(
+    *,
+    run_id: str | None,
+    asset_key: list[str] | None,
+) -> IssueLinkedObjectInput:
+    if run_id is not None and asset_key is not None:
+        return IssueLinkedObjectInput(runId=run_id, assetKey=AssetKeyInput(path=asset_key))
+    if run_id is not None:
+        return IssueLinkedObjectInput(runId=run_id)
+    if asset_key is not None:
+        return IssueLinkedObjectInput(assetKey=AssetKeyInput(path=asset_key))
+    return IssueLinkedObjectInput()
+
+
 @dataclass(frozen=True)
 class DgApiIssueApi:
     _client: IGraphQLClient
@@ -29,7 +45,7 @@ class DgApiIssueApi:
     def get_issue(self, issue_id: str) -> DgApiIssue:
         result = self._client.get_issue(issue_id=issue_id).issue
         if result is None:
-            raise DagsterPlusGraphqlError(f"Issue not found: {issue_id}")
+            raise DagsterPlusClientError(f"Issue not found: {issue_id}")
 
         match result.typename__:
             case "Issue":
@@ -37,7 +53,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error fetching issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -71,14 +87,25 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error listing issues: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
     def create_issue(
-        self, title: str, description: str, status: IssueStatus | None = None
+        self,
+        title: str,
+        description: str,
+        status: IssueStatus | None = None,
+        run_id: str | None = None,
+        asset_key: list[str] | None = None,
     ) -> DgApiIssue:
-        result = self._client.create_issue(title=title, description=description, status=status)
+        has_origin = run_id is not None or asset_key is not None
+        result = self._client.create_issue(
+            title=title,
+            description=description,
+            status=status,
+            origin=_linked_object(run_id=run_id, asset_key=asset_key) if has_origin else UNSET,
+        )
 
         result = result.create_issue
 
@@ -88,7 +115,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error creating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -114,7 +141,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error updating issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -124,10 +151,7 @@ class DgApiIssueApi:
         run_id: str | None = None,
         asset_key: list[str] | None = None,
     ) -> DgApiIssue:
-        linked_object = IssueLinkedObjectInput(
-            runId=run_id,
-            assetKey=AssetKeyInput(path=asset_key) if asset_key is not None else None,
-        )
+        linked_object = _linked_object(run_id=run_id, asset_key=asset_key)
         result = self._client.add_link_to_issue(
             issue_id=issue_id, linked_object=linked_object
         ).add_link_to_issue
@@ -138,7 +162,7 @@ class DgApiIssueApi:
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error adding link to issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -148,10 +172,7 @@ class DgApiIssueApi:
         run_id: str | None = None,
         asset_key: list[str] | None = None,
     ) -> DgApiIssue:
-        linked_object = IssueLinkedObjectInput(
-            runId=run_id,
-            assetKey=AssetKeyInput(path=asset_key) if asset_key is not None else None,
-        )
+        linked_object = _linked_object(run_id=run_id, asset_key=asset_key)
         result = self._client.remove_link_from_issue(
             issue_id=issue_id, linked_object=linked_object
         ).remove_link_from_issue
@@ -164,7 +185,7 @@ class DgApiIssueApi:
                     f"Error removing link from issue: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error removing link from issue: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error removing link from issue: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -175,16 +196,27 @@ class DgApiIssueApi:
                 case "Asset":
                     linked_objects.append(DgApiIssueLinkedAsset(asset_key="/".join(lo.key.path)))  # ty: ignore[unresolved-attribute]
                 case "Run":
-                    linked_objects.append(DgApiIssueLinkedRun(run_id=lo.id))  # ty: ignore[unresolved-attribute]
+                    linked_objects.append(
+                        DgApiIssueLinkedRun(
+                            run_id=lo.id,
+                            status=lo.status,
+                            job_name=lo.job_name,
+                            started_at=lo.start_time,
+                            ended_at=lo.end_time,
+                        )
+                    )
                 case _ as unreachable:
                     assert_never(unreachable)
 
+        creator = issue.created_by
         return DgApiIssue(
             id=issue.public_id,
             title=issue.title,
             description=issue.description,
             status=issue.status,
-            created_by_name=issue.created_by.display_name if issue.created_by else "",
+            created_by_name=creator.display_name if creator else "",
+            created_by_email=getattr(creator, "email", None),
+            created_by_description=getattr(creator, "description", None),
             linked_objects=linked_objects,
             context=issue.context,
         )

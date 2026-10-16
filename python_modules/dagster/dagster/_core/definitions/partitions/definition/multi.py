@@ -302,26 +302,41 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         return len(partition_key.split(MULTIPARTITION_KEY_DELIMITER)) == len(self.partitions_defs)
 
     def filter_valid_partition_keys(self, partition_keys: set[str]) -> set[MultiPartitionKey]:
-        partition_keys_by_dimension = {
-            dim.name: dim.partitions_def.get_partition_keys() for dim in self.partitions_defs
-        }
-        validated_partitions = set()
+        if not partition_keys:
+            return set()
+
+        multipartition_keys = []
         for partition_key in partition_keys:
             if not self.is_valid_key_format(partition_key):
                 continue
 
             partition_key_strs = partition_key.split(MULTIPARTITION_KEY_DELIMITER)
-            multipartition_key = MultiPartitionKey(
-                {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
+            multipartition_keys.append(
+                MultiPartitionKey(
+                    {dim.name: partition_key_strs[i] for i, dim in enumerate(self._partitions_defs)}
+                )
             )
 
-            if all(
-                key in partition_keys_by_dimension.get(dim, [])
-                for dim, key in multipartition_key.keys_by_dimension.items()
-            ):
-                validated_partitions.add(multipartition_key)
+        if not multipartition_keys:
+            return set()
 
-        return validated_partitions
+        # Validate each dimension against only the keys the candidates reference, so a dimension
+        # backed by storage is never loaded in full to check a handful of keys.
+        valid_keys_by_dimension = {
+            dim.name: dim.partitions_def.filter_valid_partition_keys(
+                {mp_key.keys_by_dimension[dim.name] for mp_key in multipartition_keys}
+            )
+            for dim in self.partitions_defs
+        }
+
+        return {
+            mp_key
+            for mp_key in multipartition_keys
+            if all(
+                key in valid_keys_by_dimension.get(dim, set())
+                for dim, key in mp_key.keys_by_dimension.items()
+            )
+        }
 
     def __eq__(self, other):
         return (
@@ -440,6 +455,16 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     ) -> Sequence[MultiPartitionKey]:
         check.str_param(dimension_name, "dimension_name")
         check.str_param(dimension_partition_key, "dimension_partition_key")
+        return self.get_multipartition_keys_with_dimension_values(
+            dimension_name, [dimension_partition_key]
+        )
+
+    def get_multipartition_keys_with_dimension_values(
+        self, dimension_name: str, dimension_partition_keys: Sequence[str]
+    ) -> Sequence[MultiPartitionKey]:
+        """Expands keys of the named dimension into full multi-partition keys."""
+        check.str_param(dimension_name, "dimension_name")
+        check.sequence_param(dimension_partition_keys, "dimension_partition_keys", of_type=str)
 
         matching_dimensions = [
             dimension for dimension in self.partitions_defs if dimension.name == dimension_name
@@ -454,12 +479,12 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             f" {[dim.name for dim in self.partitions_defs]}",
         )
 
-        partition_sequences = [
+        partition_sequences = [dimension_partition_keys] + [
             partition_dim.partitions_def.get_partition_keys() for partition_dim in other_dimensions
-        ] + [[dimension_partition_key]]
+        ]
 
         # Names of partitions dimensions in the same order as partition_sequences
-        partition_dim_names = [dim.name for dim in other_dimensions] + [dimension_name]
+        partition_dim_names = [dimension_name] + [dim.name for dim in other_dimensions]
 
         return [
             MultiPartitionKey(

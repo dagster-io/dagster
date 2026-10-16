@@ -13,6 +13,7 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import DBT_DEFAULT_EXCLUDE, DBT_DEFAULT_SELECT
 from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+from dagster_dbt.utils import _select_unique_ids_from_manifest
 from dagster_shared.check.functions import ParameterCheckError
 
 from dagster_dbt_tests.dbt_projects import test_jaffle_shop_path
@@ -432,3 +433,98 @@ def test_dbt_asset_selection_selector_invalid(
             selector="fake_selector_does_not_exist",
         )
         def selected_dbt_assets(): ...
+
+
+def _model_node(unique_id: str, name: str, depends_on: list[str] | None = None) -> dict[str, Any]:
+    return {
+        "unique_id": unique_id,
+        "resource_type": "model",
+        "name": name,
+        "package_name": "test",
+        "fqn": ["test", name],
+        "path": f"{name}.sql",
+        "original_file_path": f"models/{name}.sql",
+        "tags": [],
+        "config": {"enabled": True, "tags": [], "materialized": "table"},
+        "depends_on": {"nodes": depends_on or [], "macros": []},
+    }
+
+
+def _source_node(unique_id: str, source_name: str, name: str) -> dict[str, Any]:
+    return {
+        "unique_id": unique_id,
+        "resource_type": "source",
+        "source_name": source_name,
+        "name": name,
+        "package_name": "test",
+        "fqn": ["test", source_name, name],
+        "path": "sources.yml",
+        "original_file_path": "models/sources.yml",
+        "tags": [],
+        "config": {"enabled": True, "tags": []},
+    }
+
+
+# A dbt-fusion-shaped manifest: `isolated` has no parents and no children, so it appears in
+# `nodes` but nowhere in `child_map`. `uses_source` is connected, to keep a real edge in play.
+_FUSION_MANIFEST: dict[str, Any] = {
+    "nodes": {
+        "model.test.parent": _model_node("model.test.parent", "parent"),
+        "model.test.child": _model_node(
+            "model.test.child", "child", depends_on=["model.test.parent"]
+        ),
+        "model.test.uses_source": _model_node(
+            "model.test.uses_source", "uses_source", depends_on=["source.test.raw.customers"]
+        ),
+        "model.test.isolated": _model_node("model.test.isolated", "isolated"),
+    },
+    "sources": {
+        "source.test.raw.customers": _source_node("source.test.raw.customers", "raw", "customers"),
+    },
+    "metrics": {},
+    "exposures": {},
+    "child_map": {
+        "model.test.parent": ["model.test.child"],
+        "model.test.child": [],
+        "source.test.raw.customers": ["model.test.uses_source"],
+        "model.test.uses_source": [],
+    },
+    "parent_map": {
+        "model.test.parent": [],
+        "model.test.child": ["model.test.parent"],
+        "source.test.raw.customers": [],
+        "model.test.uses_source": ["source.test.raw.customers"],
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "select, expected_unique_ids",
+    [
+        pytest.param("isolated", {"model.test.isolated"}, id="isolated-model-by-name"),
+        pytest.param(
+            "fqn:*",
+            {
+                "model.test.parent",
+                "model.test.child",
+                "model.test.uses_source",
+                "model.test.isolated",
+            },
+            id="select-all",
+        ),
+    ],
+)
+def test_select_unique_ids_includes_isolated_fusion_models(
+    select: str, expected_unique_ids: set[str]
+) -> None:
+    """A model with no ``source()``/``ref()`` calls and nothing referencing it is omitted from
+    ``child_map`` by dbt-fusion, unlike dbt-core which keys ``child_map`` by every node. Selection
+    must still surface such isolated nodes rather than silently dropping them.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/33801.
+    """
+    selected = _select_unique_ids_from_manifest(
+        select=select, exclude="", selector="", manifest_json=_FUSION_MANIFEST
+    )
+
+    assert selected == expected_unique_ids

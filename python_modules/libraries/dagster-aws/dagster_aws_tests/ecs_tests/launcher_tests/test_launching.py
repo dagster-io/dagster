@@ -118,6 +118,42 @@ def test_default_launcher(
     ecs.stop_task(task=task_arn)
 
 
+def test_resume_run(ecs, instance, workspace, run):
+    assert instance.run_launcher.supports_resume_run
+
+    instance.launch_run(run.run_id, workspace)
+
+    launched_run = instance.get_run_by_id(run.run_id)
+    launch_task_arn = launched_run.tags["ecs/task_arn"]
+    launch_worker_id = launched_run.tags[RUN_WORKER_ID_TAG]
+    tasks_after_launch = ecs.list_tasks()["taskArns"]
+
+    instance.resume_run(run.run_id, workspace, 1)
+
+    tasks = ecs.list_tasks()["taskArns"]
+    assert len(tasks) == len(tasks_after_launch) + 1
+    resume_task_arn = next(iter(set(tasks).difference(tasks_after_launch)))
+    resume_task = ecs.describe_tasks(tasks=[resume_task_arn])["tasks"][0]
+
+    # The replacement task resumes the run rather than starting it over
+    overrides = resume_task["overrides"]["containerOverrides"]
+    assert len(overrides) == 1
+    assert "resume_run" in overrides[0]["command"]
+    assert "execute_run" not in overrides[0]["command"]
+    assert run.run_id in str(overrides[0]["command"])
+
+    # The identity tags now point at the replacement task, so health checks and termination
+    # follow it rather than the worker it replaced
+    resumed_run = instance.get_run_by_id(run.run_id)
+    assert resumed_run.tags["ecs/task_arn"] == resume_task_arn != launch_task_arn
+    assert resumed_run.tags[RUN_WORKER_ID_TAG] != launch_worker_id
+    assert instance.run_launcher.check_run_worker_health(resumed_run).status == WorkerStatus.RUNNING
+
+    # Once the replacement task stops, health is reported against it and not the original
+    ecs.stop_task(task=resume_task_arn)
+    assert instance.run_launcher.check_run_worker_health(resumed_run).status != WorkerStatus.RUNNING
+
+
 def test_launcher_fargate_spot(
     ecs,
     instance_fargate_spot,

@@ -5,6 +5,8 @@ Using a plain module avoids ``pytest_plugins`` double-registration when running 
 packages in one pytest session.
 """
 
+import os
+
 import pytest
 
 try:
@@ -31,8 +33,10 @@ def clickhouse_connection():
 
     from testcontainers.clickhouse import ClickHouseContainer
 
-    # Pin image for reproducible CI; native protocol on 9000
-    with ClickHouseContainer("clickhouse/clickhouse-server:24.8") as ch:
+    # Pin image for reproducible CI; native protocol on 9000. CI overrides the tag
+    # via env so the image it pre-pulls is the one started here.
+    image = os.environ.get("CLICKHOUSE_TEST_IMAGE", "clickhouse/clickhouse-server:24.8")
+    with ClickHouseContainer(image) as ch:
         yield {
             "host": ch.get_container_host_ip(),
             "port": int(ch.get_exposed_port(9000)),

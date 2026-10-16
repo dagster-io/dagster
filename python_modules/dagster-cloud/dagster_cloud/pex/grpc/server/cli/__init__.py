@@ -2,7 +2,9 @@ import logging
 import os
 import signal
 import subprocess
+from enum import Enum
 
+from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster_cloud_cli.core.workspace import PexMetadata
@@ -12,6 +14,11 @@ from dagster_cloud.pex.grpc.server.registry import PexS3Registry
 from dagster_cloud.pex.grpc.server.server import run_multipex_server
 
 app = Typer(hidden=True)
+
+
+class RunApiCommand(Enum):
+    EXECUTE_RUN = "execute_run"
+    RESUME_RUN = "resume_run"
 
 
 @app.command(short_help="Run multi-pex server to spin up subprocesses via PEX files")
@@ -52,13 +59,22 @@ def execute_run(
     pex_metadata = deserialize_value(pex_metadata_json, PexMetadata)
     executable = PexS3Registry(local_pex_files_dir).get_pex_executable(pex_metadata)
 
+    # The run launcher passes ResumeRunArgs when it is starting a new run worker for a run that
+    # is already in progress, which has to reach `resume_run` instead.
+    run_args = deserialize_value(input_json, (ExecuteRunArgs, ResumeRunArgs))
+    api_command = (
+        RunApiCommand.RESUME_RUN
+        if isinstance(run_args, ResumeRunArgs)
+        else RunApiCommand.EXECUTE_RUN
+    )
+
     run_process = subprocess.Popen(
         [
             executable.source_path,
             "-m",
             "dagster",
             "api",
-            "execute_run",
+            api_command.value,
             input_json,
         ],
         env={**os.environ.copy(), **executable.environ},

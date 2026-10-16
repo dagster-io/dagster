@@ -4,7 +4,7 @@
 # code-server command works via the default interpreter — no reliance on custom PYTHONPATH/PATH
 # (which the agent's code-server launch does not preserve).
 #
-# Built by _build_pex_docker_bundle (commands/ci/__init__.py) with --build-arg PYTHON_VERSION and a
+# Built by build_pex_docker_bundle (commands/ci/__init__.py) with --build-arg PYTHON_VERSION and a
 # build context containing deps-*.pex and source-*.pex.
 ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim

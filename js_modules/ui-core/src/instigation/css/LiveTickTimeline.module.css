@@ -9,6 +9,14 @@
   height: 24px;
 }
 
+/* The timeline is .ticksWrapper above .timeAxisWrapper; a placeholder of the same height
+   keeps the section from resizing when the first load finishes. */
+.timelinePlaceholder {
+  height: 124px;
+  display: grid;
+  place-content: center;
+}
+
 .tick {
   cursor: pointer;
   position: absolute;
@@ -22,6 +30,15 @@
 .tick div {
   place-content: center;
   display: grid;
+}
+
+.tickInner {
+  height: 80px;
+}
+
+/* A batch opens a popover on hover but has nothing to click through to. */
+.tickBatch {
+  cursor: default;
 }
 
 .tickSuccess {
@@ -71,12 +88,18 @@
   background: var(--color-keyline-default);
 }
 
+/* Labeled gridlines are darker, so it's clear which line a label belongs to. */
+.gridTickMajor .gridTickLine {
+  background: var(--color-border-default);
+}
+
 .gridTickTime {
   height: 16px;
   position: absolute;
   bottom: 0;
-  width: 100px;
-  margin-left: -24px;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
 }
 
 .nowIndicator {
@@ -96,4 +119,19 @@
   bottom: 0;
   font-size: 12px;
   padding: 3px 4px;
+}
+
+.batchList {
+  width: 320px;
+}
+
+.batchListScroll {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* The label sits right of the line, or left of it when the line is against the edge. */
+.nowIndicatorLabelLeft::after {
+  left: auto;
+  right: 0;
 }

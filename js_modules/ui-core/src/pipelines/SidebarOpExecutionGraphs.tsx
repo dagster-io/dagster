@@ -11,6 +11,7 @@ import {
 import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
 import {StepStatusDot} from '../gantt/GanttStatusPanel';
 import {linkToRunEvent} from '../runs/RunUtils';
+import {shortenId} from '../util/shortenId';
 import {RepoAddress} from '../workspace/types';
 
 const StateColors = {
@@ -113,7 +114,7 @@ export const SidebarOpExecutionGraphs = ({
                 <Tooltip
                   key={runId}
                   placement="bottom-end"
-                  content={`View Run ${runId.slice(0, 8)} →`}
+                  content={`View Run ${shortenId(runId)} →`}
                 >
                   <Link to={linkToRunEvent({id: runId}, {stepKey: solidName})}>
                     <StepStatusDot

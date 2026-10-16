@@ -1,6 +1,8 @@
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
+import {isMobileDevice, useIsMobileLayout, writeViewportMetaTag} from './layout/LayoutMode';
+import {useMobileRouteEnabled} from './layout/mobileRouteStatus';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 function useMatchMedia(query: string) {
@@ -43,7 +45,24 @@ export const LayoutContext = React.createContext<LayoutContextValue>({
 
 const STORAGE_KEY = 'large-screen-nav-open';
 
+// A phone showing the desktop layout (fallback route, or the user chose desktop) gets the
+// wide, zoomable viewport rather than the desktop layout crushed to device width.
+const useViewportForLayout = () => {
+  const isMobileRouteEnabled = useMobileRouteEnabled();
+  React.useLayoutEffect(() => {
+    if (isMobileDevice()) {
+      writeViewportMetaTag(isMobileRouteEnabled ? 'device' : 'desktop');
+    }
+  }, [isMobileRouteEnabled]);
+};
+
+/**
+ * Open/closed state for the navigation drawer. On small screens the drawer is transient
+ * and closes on navigation; on large screens the state persists.
+ */
 export const LayoutProvider = (props: {children: React.ReactNode}) => {
+  useViewportForLayout();
+
   const [navOpenIfLargeScreen, setNavOpenIfLargeScreen] = useStateWithStorage(
     STORAGE_KEY,
     (json: any) => {
@@ -56,7 +75,9 @@ export const LayoutProvider = (props: {children: React.ReactNode}) => {
 
   const [navOpenIfSmallScreen, setNavOpenIfSmallScreen] = React.useState(false);
   const location = useLocation();
-  const isSmallScreen = useMatchMedia('(max-width: 1440px)');
+  const isNarrowWindow = useMatchMedia('(max-width: 1440px)');
+  const isMobile = useIsMobileLayout();
+  const isSmallScreen = isNarrowWindow || isMobile;
 
   const open = React.useCallback(() => {
     setNavOpenIfSmallScreen(true);
@@ -78,12 +99,14 @@ export const LayoutProvider = (props: {children: React.ReactNode}) => {
 
   const isOpen = isSmallScreen ? navOpenIfSmallScreen : navOpenIfLargeScreen;
 
+  // Pages that hide the desktop nav (catalog mode, org settings) set `canOpen` false; the
+  // mobile drawer is the only navigation, so it ignores that.
   const [canOpen, setCanOpen] = React.useState(true);
 
   const value = React.useMemo(
     () => ({
       nav: {
-        isOpen: canOpen && isOpen,
+        isOpen: (isMobile || canOpen) && isOpen,
         isSmallScreen,
         open,
         close,
@@ -91,7 +114,7 @@ export const LayoutProvider = (props: {children: React.ReactNode}) => {
         setCanOpen,
       },
     }),
-    [isOpen, isSmallScreen, open, close, canOpen, setCanOpen],
+    [isOpen, isSmallScreen, isMobile, open, close, canOpen, setCanOpen],
   );
 
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;

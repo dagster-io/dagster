@@ -2,7 +2,6 @@ import os
 import tempfile
 
 import pytest
-from airflow import __version__ as airflow_version
 from dagster_airflow import (
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
@@ -11,7 +10,6 @@ from dagster_airflow import (
 from dagster_airflow_tests.airflow_utils import test_make_from_dagbag_inputs_airflow_2
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_from_dagbag_inputs_airflow_2,
@@ -62,8 +60,10 @@ def get_examples_airflow_repo_params():
         "example_kubernetes_executor",
         # requires params to be passed in to work
         "example_passing_params_via_test_command",
+        "example_params_ui_tutorial",
         # requires template files to exist
         "example_python_operator",
+        "tutorial_taskflow_templates",
         # requires email server to work
         "example_dag_decorator",
         # airflow.exceptions.DagNotFound: Dag id example_trigger_target_dag not found in DagModel
@@ -75,6 +75,14 @@ def get_examples_airflow_repo_params():
         "example_sensors",
         "example_dynamic_task_mapping",
         "example_dynamic_task_mapping_with_no_taskflow_operators",
+        # requires an object storage backend to work
+        # ValueError: No filesystem registered for scheme s3
+        "tutorial_objectstorage",
+        # dataset aliases and inlet events are resolved by the scheduler, so they
+        # blow up when the dag is executed in-process
+        "dataset_alias_example_alias_producer",
+        "dataset_alias_example_alias_producer_with_no_taskflow",
+        "read_dataset_event_from_classic",
         # wrong state
         "example_short_circuit_operator",
     ]
@@ -86,7 +94,6 @@ def get_examples_airflow_repo_params():
     return params
 
 
-@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "job_name, exclude_from_execution_tests",
     get_examples_airflow_repo_params(),

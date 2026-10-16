@@ -10,3 +10,6 @@ dependencies = [
 
 [tool.hatch.build]
 only-include = []
+
+[tool.uv]
+exclude-newer = "48h"

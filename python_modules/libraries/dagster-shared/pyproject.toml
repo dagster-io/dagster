@@ -29,4 +29,7 @@ test = [
     "pytest-rerunfailures",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]

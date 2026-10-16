@@ -259,7 +259,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
                 candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
-            true_subset = true_subset.compute_union(dep_result.true_subset)
+            true_subset = true_subset.compute_union(dep_result.true_subset)  # ty: ignore[invalid-argument-type]
 
         true_subset = context.candidate_subset.compute_intersection(true_subset)
 
@@ -297,6 +297,6 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
                 candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
-            true_subset = true_subset.compute_intersection(dep_result.true_subset)
+            true_subset = true_subset.compute_intersection(dep_result.true_subset)  # ty: ignore[invalid-argument-type]
 
         return AutomationResult(context, true_subset=true_subset, child_results=dep_results)  # ty: ignore[invalid-argument-type]

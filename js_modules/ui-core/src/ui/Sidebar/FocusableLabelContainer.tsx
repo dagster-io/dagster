@@ -23,7 +23,7 @@ export const FocusableLabelContainer = ({
     // Otherwise it means the click happened in the sidebar in which case we should move focus to the element
     // in the sidebar
     if (ref.current && isLastSelected && !isElementInsideSVGViewport(document.activeElement)) {
-      ref.current.focus();
+      ref.current.focus({preventScroll: true});
     }
   }, [isLastSelected]);
 

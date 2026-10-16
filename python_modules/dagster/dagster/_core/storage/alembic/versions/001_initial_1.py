@@ -76,7 +76,7 @@ def upgrade():
                 batch_op.add_column(column=sa.Column("run_id", sa.String(255)))
 
         op.execute(
-            SqlEventLogStorageTable.update(None)
+            SqlEventLogStorageTable.update()
             .where(SqlEventLogStorageTable.c.run_id.is_(None))
             .values({"run_id": context.config.attributes.get("run_id", None)})
         )

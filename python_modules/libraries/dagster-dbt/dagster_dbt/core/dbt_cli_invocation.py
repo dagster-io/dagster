@@ -110,6 +110,11 @@ class DbtCliInvocation:
         init=False, default_factory=dict
     )
 
+    @property
+    def is_fusion(self) -> bool:
+        """Whether the invoked dbt executable is the Fusion engine, which has no dbt Core adapter."""
+        return self.cli_version.major >= 2
+
     def _get_columns_from_dbt_resource_props(
         self, adapter: BaseAdapter, dbt_resource_props: dict[str, Any]
     ) -> RelationData:

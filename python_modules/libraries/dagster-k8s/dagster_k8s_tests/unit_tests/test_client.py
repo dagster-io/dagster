@@ -17,6 +17,7 @@ from dagster_k8s.client import (
 )
 from dagster_k8s.utils import apply_no_proxy_env_workaround, load_kubernetes_config
 from kubernetes.client.models import (
+    V1Container,
     V1ContainerState,
     V1ContainerStateRunning,
     V1ContainerStateTerminated,
@@ -28,6 +29,7 @@ from kubernetes.client.models import (
     V1ObjectMeta,
     V1Pod,
     V1PodList,
+    V1PodSpec,
     V1PodStatus,
 )
 
@@ -431,17 +433,37 @@ def test_retrieve_pod_logs():
     assert mock_client.retrieve_pod_logs("pod", "namespace") == "a_string"
 
 
+def _init_container_spec(name, restart_policy):
+    container = V1Container(name=name)
+    # set dynamically because kubernetes clients predating sidecar support have no such field
+    container.restart_policy = restart_policy
+    return container
+
+
 def _pod_list_for_container_status(
     *container_statuses,
     init_container_statuses=None,
+    restart_policy=None,
+    init_container_restart_policies=None,
 ):
+    spec = None
+    if restart_policy or init_container_restart_policies:
+        spec = V1PodSpec(
+            containers=[],
+            restart_policy=restart_policy,
+            init_containers=[
+                _init_container_spec(name, policy)
+                for name, policy in (init_container_restart_policies or {}).items()
+            ],
+        )
     return V1PodList(
         items=[
             V1Pod(
+                spec=spec,
                 status=V1PodStatus(
                     container_statuses=container_statuses,
                     init_container_statuses=init_container_statuses,
-                )
+                ),
             )
         ]
     )
@@ -1110,6 +1132,163 @@ def test_waiting_for_pod_container_creation():
     )
     # slept only once
     assert len(mock_client.sleeper.mock_calls) == 1
+
+
+def test_wait_for_pod_init_container_failure():
+    # A failed init container leaves the main container stuck in PodInitializing forever, so the
+    # failure has to be raised as soon as it is seen rather than waited on.
+    failed_initcontainer_status = _create_status(
+        name="initcontainer",
+        ready=False,
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=1, reason="Error", message="bad things")
+        ),
+    )
+    waiting_container_status = _create_status(
+        name="main",
+        ready=False,
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+    )
+
+    for restart_policy in [None, "Never"]:
+        for wait_for_state in [WaitForPodState.Ready, WaitForPodState.Terminated]:
+            mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=20))
+            failed_init_pod = _pod_list_for_container_status(
+                waiting_container_status,
+                init_container_statuses=[failed_initcontainer_status],
+                restart_policy=restart_policy,
+            )
+            mock_client.core_api.list_namespaced_pod.side_effect = [failed_init_pod] * 20
+            mock_client.core_api.read_namespaced_pod_log.side_effect = [
+                namedtuple("MockResponse", "data")(b"init logs")
+            ]
+
+            with pytest.raises(DagsterK8sError) as exc_info:
+                mock_client.wait_for_pod(
+                    pod_name="a_pod", namespace="namespace", wait_for_state=wait_for_state
+                )
+
+            assert "Pod a_pod failed to initialize" in str(exc_info.value)
+            assert 'Container "initcontainer" failed with message: "bad things"' in str(
+                exc_info.value
+            )
+            assert "init logs" in str(exc_info.value)
+            # failed on the first poll that observed the failure rather than waiting it out
+            assert len(mock_client.sleeper.mock_calls) == 0
+
+
+def test_wait_for_pod_init_container_failure_retried():
+    # With a restart policy of OnFailure the kubelet restarts the init container, so the wait
+    # continues instead of failing the run.
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=6))
+    waiting_container_status = _create_status(
+        name="main",
+        ready=False,
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+    )
+    failed_initcontainer_status = _create_status(
+        name="initcontainer",
+        ready=False,
+        state=V1ContainerState(
+            terminated=V1ContainerStateTerminated(exit_code=1, reason="Error", message="bad things")
+        ),
+    )
+
+    failed_init_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[failed_initcontainer_status],
+        restart_policy="OnFailure",
+    )
+    ready_init_pod = _pod_list_for_container_status(
+        waiting_container_status,
+        init_container_statuses=[_ready_running_status(name="initcontainer")],
+        restart_policy="OnFailure",
+    )
+    ready_pod = _pod_list_for_container_status(
+        _ready_running_status(name="main"),
+        init_container_statuses=[_ready_running_status(name="initcontainer")],
+        restart_policy="OnFailure",
+    )
+
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        failed_init_pod,
+        failed_init_pod,
+        ready_init_pod,
+        ready_pod,
+    ]
+
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
+
+    assert_logger_calls(
+        mock_client.logger,
+        [
+            f'Waiting for pod "{pod_name}"',
+            f'Init container "initcontainer" in {pod_name} failed and will be restarted, waiting'
+            " for the retry...",
+            'Init container "initcontainer" is ready, waiting for non-init containers...',
+            f'Pod "{pod_name}" is ready, done waiting',
+        ],
+    )
+    # never fetched logs for a container that recovered
+    assert len(mock_client.core_api.read_namespaced_pod_log.mock_calls) == 0
+
+
+def test_wait_for_pod_init_container_restart_policy_overrides():
+    # An init container's own restart policy wins over the pod's, in both directions. A native
+    # sidecar is an init container with restartPolicy Always, restarted even under a pod Never.
+    waiting_container_status = _create_status(
+        name="main",
+        ready=False,
+        state=V1ContainerState(
+            waiting=V1ContainerStateWaiting(reason=KubernetesWaitingReasons.PodInitializing)
+        ),
+    )
+
+    def failed_init_pod(restart_policy, init_container_restart_policies):
+        return _pod_list_for_container_status(
+            waiting_container_status,
+            init_container_statuses=[
+                _create_status(
+                    name="initcontainer",
+                    ready=False,
+                    state=V1ContainerState(
+                        terminated=V1ContainerStateTerminated(
+                            exit_code=1, reason="Error", message="bad things"
+                        )
+                    ),
+                )
+            ],
+            restart_policy=restart_policy,
+            init_container_restart_policies=init_container_restart_policies,
+        )
+
+    # sidecar: the pod says Never but the container says Always, so keep waiting for the restart
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=4))
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        failed_init_pod("Never", {"initcontainer": "Always"})
+    ] * 20
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(pod_name="a_pod", namespace="namespace")
+    assert "Timed out while waiting for pod" in str(exc_info.value)
+    assert "failed to initialize" not in str(exc_info.value)
+
+    # the inverse: the pod says OnFailure but the container says Never, so fail immediately
+    mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=4))
+    mock_client.core_api.list_namespaced_pod.side_effect = [
+        failed_init_pod("OnFailure", {"initcontainer": "Never"})
+    ] * 20
+    mock_client.core_api.read_namespaced_pod_log.side_effect = [
+        namedtuple("MockResponse", "data")(b"init logs")
+    ]
+    with pytest.raises(DagsterK8sError) as exc_info:
+        mock_client.wait_for_pod(pod_name="a_pod", namespace="namespace")
+    assert "Pod a_pod failed to initialize" in str(exc_info.value)
+    assert len(mock_client.sleeper.mock_calls) == 0
 
 
 def test_valid_failure_waiting_reasons():

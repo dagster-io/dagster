@@ -244,6 +244,14 @@ class RunMethods:
 
     # Run Management Methods - moved from RunsMixin
 
+    def get_run_size_limit_bytes(self) -> int | None:
+        """Maximum serialized size of a run that run storage will accept, if it caps run size.
+
+        Deployments that enforce a cap reject oversized runs at launch, so callers that build
+        runs can use this to avoid work that is guaranteed to fail.
+        """
+        return None
+
     @traced
     def add_run(self, dagster_run: DagsterRun) -> DagsterRun:
         return self._run_storage_impl.add_run(dagster_run)

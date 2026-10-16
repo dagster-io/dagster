@@ -1,6 +1,8 @@
 import json
 
+import pytest
 from dagster import EnvVar
+from dagster._core.snowflake_partner import SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
 from dagster._core.test_utils import environ
 from dagster_sling import SlingResource
 from dagster_sling.resources import SlingConnectionResource
@@ -77,6 +79,57 @@ def test_sling_resource_env_with_connection_resources():
             "password": "the_password",
             "database": "sling",
         }
+
+
+@pytest.mark.parametrize(
+    "connection_string, expected_url",
+    [
+        (
+            "snowflake://user:pass@account/db",
+            f"snowflake://user:pass@account/db?application={SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER}",
+        ),
+        (
+            "snowflake://user:pass@account/db?warehouse=wh",
+            f"snowflake://user:pass@account/db?warehouse=wh&application={SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER}",
+        ),
+        (
+            "snowflake://user:pass@account/db?warehouse=wh&Application=CustomerApp",
+            "snowflake://user:pass@account/db?warehouse=wh&Application=CustomerApp",
+        ),
+        (
+            "snowflake://user:pass@account/db?",
+            f"snowflake://user:pass@account/db?application={SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER}",
+        ),
+        (
+            "snowflake://user:pass@account/db?user=a@b.com",
+            f"snowflake://user:pass@account/db?user=a@b.com&application={SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER}",
+        ),
+        (
+            "snowflake://user:pass@account/db?user=a@b.com&application=CustomerApp",
+            "snowflake://user:pass@account/db?user=a@b.com&application=CustomerApp",
+        ),
+        # Not a valid URL, but it used to pass through to Sling untouched, so it must not raise.
+        (
+            "snowflake://user:pa[ss@account/db",
+            f"snowflake://user:pa[ss@account/db?application={SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER}",
+        ),
+    ],
+)
+def test_sling_resource_sets_snowflake_partner_application(connection_string, expected_url):
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(
+                name="SNOWFLAKE", type="snowflake", connection_string=connection_string
+            ),
+            SlingConnectionResource(
+                name="POSTGRES", type="postgres", connection_string="postgres://host/db"
+            ),
+        ]
+    )
+
+    env = sling_resource.prepare_environment()
+    assert json.loads(env["SNOWFLAKE"])["url"] == expected_url
+    assert json.loads(env["POSTGRES"])["url"] == "postgres://host/db"
 
 
 def test_sling_resource_prepares_environment_variables():

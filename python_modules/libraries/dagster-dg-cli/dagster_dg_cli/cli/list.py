@@ -15,6 +15,7 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand, DgClickGroup, capture_stdout
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config_utils import DEPLOYMENT_OPTION
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
@@ -485,7 +486,7 @@ class DagsterPlusScopesForVariable:
 
 
 def _get_dagster_plus_keys(
-    location_name: str, env_var_keys: set[str]
+    location_name: str, env_var_keys: set[str], deployment: str | None
 ) -> Mapping[str, DagsterPlusScopesForVariable] | None:
     """Retrieves the set Dagster Plus keys for the given location name, if Plus is configured, otherwise returns None."""
     from dagster_rest_resources.gql_client import DagsterPlusGraphQLClient
@@ -501,7 +502,7 @@ def _get_dagster_plus_keys(
         url=config.organization_url,
         api_token=config.user_token,
         organization=config.organization,
-        deployment=config.default_deployment,
+        deployment=deployment or config.default_deployment,
     )
 
     secrets_by_location = gql_client.execute_arbitrary(
@@ -529,10 +530,11 @@ def _get_dagster_plus_keys(
 
 
 @list_group.command(name="envs", aliases=["env"], cls=DgClickCommand)
+@DEPLOYMENT_OPTION
 @dg_path_options
 @dg_global_options
 @cli_telemetry_wrapper
-def list_env_command(target_path: Path, **global_options: object) -> None:
+def list_env_command(target_path: Path, deployment: str | None, **global_options: object) -> None:
     """List environment variables from the .env file of the current project."""
     from rich.console import Console
 
@@ -547,7 +549,7 @@ def list_env_command(target_path: Path, **global_options: object) -> None:
         return
 
     env_var_keys = env.values.keys() | used_env_vars.keys()
-    plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys)
+    plus_keys = _get_dagster_plus_keys(dg_context.project_name, env_var_keys, deployment)
 
     table = DagsterOuterTable([])
     table.add_column("Env Var")

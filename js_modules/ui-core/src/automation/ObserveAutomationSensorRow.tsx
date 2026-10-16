@@ -18,6 +18,7 @@ import {Link} from 'react-router-dom';
 import {LatestTickHoverButton} from './LatestTickHoverButton';
 import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {SensorType} from '../graphql/types';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunStatusOverlay} from '../runs/RunStatusPez';
@@ -28,6 +29,7 @@ import {
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import styles from '../ui/css/ListItemText.module.css';
 import {SENSOR_TYPE_META, SINGLE_SENSOR_QUERY} from '../workspace/VirtualizedSensorRow';
 import {RepoAddress} from '../workspace/types';
 import {
@@ -47,6 +49,7 @@ interface Props {
 export const ObserveAutomationSensorRow = forwardRef(
   (props: Props, ref: ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
+    const isMobile = useIsMobile();
 
     // Wait 100ms before querying in case we're scrolling the table really fast
     const shouldQuery = useDelayedState(100);
@@ -137,7 +140,8 @@ export const ObserveAutomationSensorRow = forwardRef(
             },
             {
               key: 'tick',
-              control: <LatestTickHoverButton tick={tick ?? null} />,
+              // On mobile the name column needs the room more than the tick indicator.
+              control: isMobile ? null : <LatestTickHoverButton tick={tick ?? null} />,
             },
             {
               key: 'switch',
@@ -169,9 +173,9 @@ export const ObserveAutomationSensorRow = forwardRef(
             <div>
               <Icon name="sensors" />
             </div>
-            <Box flex={{direction: 'column', gap: 4}}>
+            <Box flex={{direction: 'column', gap: 4}} className={styles.text}>
               <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                {name}
+                <span className={styles.line}>{name}</span>
                 {sensorDescription ? (
                   <Tooltip
                     content={<div style={{maxWidth: 320}}>{sensorDescription}</div>}

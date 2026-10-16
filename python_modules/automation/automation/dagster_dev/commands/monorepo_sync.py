@@ -1,10 +1,12 @@
 """CLI command group for monorepo sync operations."""
 
 import json
+import re
 import subprocess
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
+from typing import NoReturn
 
 import click
 from rich.console import Console
@@ -32,6 +34,28 @@ SYNC_NAMES = ["dagster-inbound", "dagster-outbound", "skills-inbound", "skills-o
 SYNC_CHOICES = [*SYNC_NAMES, "all"]
 CHECK_CHOICES = ["completeness", "correctness", "all"]
 FORMAT_CHOICES = ["text", "json"]
+
+# Exit codes for a failed destination push. The pipeline's retry rules key on these: a push
+# the remote rejects outright fails identically on every attempt, because copybara mints a new
+# commit for each run, so there is no new state for a retry to succeed against.
+EXIT_PUSH_RETRYABLE = 75
+EXIT_PUSH_REJECTED = 78
+
+# `needs-run` exit code meaning "destination already has every relevant commit". Any other
+# nonzero exit is an error, which callers should treat as "run the sync" — the sync itself is a
+# cheap no-op when there is nothing to do, so running on uncertainty is the safe default.
+EXIT_UP_TO_DATE = 10
+
+# git/remote wording that means the destination moved rather than refused us.
+RETRYABLE_PUSH_MARKERS = (
+    "non-fast-forward",
+    "fetch first",
+    "stale info",
+    "cannot lock ref",
+    "the remote end hung up",
+    "rpc failed",
+    "could not read from remote repository",
+)
 
 
 def _detect_internal_repo() -> Path:
@@ -611,6 +635,85 @@ def fix_commit(
 # ########################
 
 
+def _fail_push(dest_url: str, error: subprocess.CalledProcessError) -> NoReturn:
+    """Report a failed destination push, separating a moved destination from a refusal.
+
+    Exits EXIT_PUSH_RETRYABLE when a rerun can plausibly succeed, EXIT_PUSH_REJECTED when it
+    cannot. Always echoes git's own output, which is the only thing that names the real cause.
+    """
+    detail = "\n".join(
+        stream.strip() for stream in (error.stdout, error.stderr) if stream and stream.strip()
+    )
+
+    click.echo(f"Push to {dest_url} failed (exit {error.returncode}).", err=True)
+    if detail:
+        click.echo(detail, err=True)
+
+    if any(marker in detail.lower() for marker in RETRYABLE_PUSH_MARKERS):
+        click.echo(
+            "\nThe destination advanced during the sync. Rerun this command; copybara is "
+            "incremental and will pick up the new commits from both sides.",
+            err=True,
+        )
+        raise SystemExit(EXIT_PUSH_RETRYABLE)
+
+    click.echo(
+        "\nThe remote rejected the push outright, so check the destination's branch rules and "
+        "the push credential's permissions on it. Rerunning will not help: copybara mints a new "
+        "commit for every run, so each attempt is rejected the same way.",
+        err=True,
+    )
+    raise SystemExit(EXIT_PUSH_REJECTED)
+
+
+def _backfill_partial_clone(repo: Path) -> bool:
+    """Fill in objects the source checkout's partial-clone filter omitted.
+
+    The Buildkite agent checks the source out with `--filter tree:0`, borrowing the omitted
+    objects from a node-local mirror. copybara reads the source through a file:// remote, and
+    git's upload-pack refuses to lazy-fetch while serving, so any tree that mirror happens to
+    lack fails copybara's fetch outright with "fatal: bad tree object".
+
+    `--refetch` (git >= 2.41) skips negotiation and downloads the repo's entire pack (~2GB for
+    the internal monorepo), so this must only run as a recovery step after copybara has actually
+    failed — never on the happy path, where the mirror serves everything.
+
+    Returns True if a refetch completed and a retry is worthwhile.
+    """
+    probe = subprocess.run(
+        ["git", "config", "--get", "remote.origin.partialclonefilter"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    active_filter = probe.stdout.strip()
+    if not active_filter:
+        return False
+
+    click.echo(f"Source is a partial clone ({active_filter}); backfilling omitted objects ...")
+    subprocess.run(
+        ["git", "config", "--unset-all", "remote.origin.partialclonefilter"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    try:
+        git(["fetch", "--refetch", "origin"], cwd=repo)
+    except subprocess.CalledProcessError as e:
+        detail = "\n".join(
+            stream.strip() for stream in (e.stdout, e.stderr) if stream and stream.strip()
+        )
+        click.echo(
+            f"Could not backfill the partial source clone (exit {e.returncode}); continuing. "
+            f"`--refetch` needs git >= 2.41.\n{detail}",
+            err=True,
+        )
+        return False
+    return True
+
+
 def _adapt_copybara_config(config_path: Path, url_map: dict[str, str]) -> str:
     """Read a copy.bara.sky config and substitute URLs."""
     content = config_path.read_text(encoding="utf-8")
@@ -622,6 +725,108 @@ def _adapt_copybara_config(config_path: Path, url_map: dict[str, str]) -> str:
             )
         content = content.replace(old_url, new_url)
     return content
+
+
+@monorepo_sync.command(name="needs-run")
+@click.option(
+    "-s",
+    "--sync",
+    "sync_name",
+    type=click.Choice(SYNC_NAMES, case_sensitive=False),
+    required=True,
+    help="Which sync pair to check.",
+)
+@click.option(
+    "--dest-repo-url",
+    default=None,
+    help="Override the destination repo URL (default: from SyncConfig).",
+)
+def needs_run(sync_name: str, dest_repo_url: str | None):
+    """Check whether an outbound sync's destination is behind the current checkout.
+
+    Exits 0 when the destination is missing at least one relevant commit (or when that cannot be
+    determined), EXIT_UP_TO_DATE (10) when it provably is not. Unlike a `git diff HEAD~1` gate,
+    this also catches a destination left behind by earlier failed syncs, so any later build can
+    catch it up.
+    """
+    config = get_sync_config(sync_name)
+    effective_dest_url = dest_repo_url or config.dest_repo_url
+    if not effective_dest_url:
+        raise click.ClickException(f"Sync config {sync_name!r} has no dest_repo_url.")
+
+    try:
+        last_synced = _dest_last_synced_rev(effective_dest_url, config.synced_label)
+    except subprocess.CalledProcessError as e:
+        click.echo(
+            f"Could not inspect {effective_dest_url} (exit {e.returncode}); assuming a sync is needed."
+        )
+        return
+
+    if last_synced is None:
+        click.echo(f"No {config.synced_label} found in destination history; a sync is needed.")
+        return
+
+    head = git(["rev-parse", "HEAD"]).strip()
+    if last_synced == head:
+        click.echo(f"Destination is up to date with HEAD ({head[:12]}).")
+        raise SystemExit(EXIT_UP_TO_DATE)
+
+    # The synced rev must exist locally to anchor the range; if it doesn't (rewritten history,
+    # rev from a different branch), fall through to running the sync.
+    probe = subprocess.run(
+        ["git", "cat-file", "-e", f"{last_synced}^{{commit}}"], capture_output=True, check=False
+    )
+    if probe.returncode != 0:
+        click.echo(
+            f"Last synced rev {last_synced[:12]} not found locally; assuming a sync is needed."
+        )
+        return
+
+    # Commits that originated at the destination (inbound-synced, carrying the pair's
+    # originated_label) never need syncing back — the outbound workflow skips them as no-ops,
+    # so the destination's synced_label never advances past them and counting them would leave
+    # the verdict stuck on "behind" forever.
+    pending_args = ["log", "--format=%H", f"{last_synced}..HEAD"]
+    if config.originated_label:
+        pending_args += ["--grep", f"{config.originated_label}:", "--invert-grep"]
+    pending = git([*pending_args, "--", config.internal_path]).strip()
+    if pending:
+        count = len(pending.splitlines())
+        click.echo(
+            f"Destination is behind: {count} commit(s) since {last_synced[:12]} touch "
+            f"{config.internal_path}."
+        )
+        return
+    click.echo(f"No commits since {last_synced[:12]} touch {config.internal_path}.")
+    raise SystemExit(EXIT_UP_TO_DATE)
+
+
+def _dest_last_synced_rev(dest_url: str, label: str) -> str | None:
+    """Return the newest source rev recorded under `label` in the destination's master.
+
+    Clones commits only (`--filter=tree:0 --depth 200`), which is a few hundred KB even for
+    large destinations. Depth 200 is far deeper than any realistic run of unlabeled commits on
+    a destination whose master is written almost exclusively by the sync.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dest = Path(tmpdir) / "dest"
+        git(
+            [
+                "clone",
+                "--bare",
+                "--filter=tree:0",
+                "--single-branch",
+                "--branch",
+                "master",
+                "--depth",
+                "200",
+                dest_url,
+                str(dest),
+            ]
+        )
+        raw = git(["log", "--grep", f"{label}:", "-1", "--format=%B", "master"], cwd=dest)
+    match = re.search(rf"{re.escape(label)}:\s+([0-9a-f]{{40}})", raw)
+    return match.group(1) if match else None
 
 
 @monorepo_sync.command(name="run")
@@ -744,6 +949,14 @@ def run_sync(
         click.echo(f"Running copybara {config.copybara_workflow} ...")
         result = subprocess.run(cmd, check=False)
 
+        # Exit 3 is copybara's repo/fetch error class. When the source is a partial clone that
+        # error usually means upload-pack hit an object the node mirror lacks; backfilling the
+        # clone and retrying once recovers it. The backfill is expensive (full repo pack), so it
+        # runs only on this failure path.
+        if result.returncode == 3 and _backfill_partial_clone(source_repo):
+            click.echo("Retrying copybara after backfill ...")
+            result = subprocess.run(cmd, check=False)
+
         if result.returncode == 4:
             click.echo("No changes to sync (copybara exit 4).")
             return
@@ -784,19 +997,9 @@ def run_sync(
         if fixed:
             click.echo(f"Fixed {fixed} commit(s).")
 
-        # Push to the real remote. A non-fast-forward error here means the
-        # destination's master advanced between our initial clone and now —
-        # rerunning the sync against fresh state should resolve it, since
-        # copybara is incremental.
         click.echo(f"Pushing to {effective_dest_url} ...")
         try:
             git(["push", "origin", "master"], cwd=dest_clone)
         except subprocess.CalledProcessError as e:
-            raise click.ClickException(
-                f"Push to {effective_dest_url} failed (exit {e.returncode}). "
-                f"The destination's master likely advanced during sync "
-                f"(concurrent commits from another pipeline run, or a direct push). "
-                f"Rerun this command; copybara will pick up any new commits from "
-                f"both sides and the next push should succeed against fresh state."
-            ) from e
+            _fail_push(effective_dest_url, e)
         click.echo("Done.")

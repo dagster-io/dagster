@@ -1,4 +1,3 @@
-import logging
 import os
 import subprocess
 import tempfile
@@ -25,12 +24,8 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes import serialize_value
 from dagster_shared.seven.temp_dir import get_system_temp_directory
 
-from dagster_dg_cli.cli.plus.build import get_agent_type_and_platform, get_serverless_agent_platform
-from dagster_dg_cli.cli.plus.constants import (
-    DgPlusAgentPlatform,
-    DgPlusAgentType,
-    DgPlusDeploymentType,
-)
+from dagster_dg_cli.cli.plus.build import get_agent_type_and_platform
+from dagster_dg_cli.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg_cli.cli.plus.deploy.configure.commands import deploy_configure_group
 from dagster_dg_cli.cli.plus.deploy.deploy_session import (
     build_artifact,
@@ -52,29 +47,12 @@ def _get_statedir():
     return os.getenv("DAGSTER_BUILD_STATEDIR", DEFAULT_STATEDIR_PATH)
 
 
-def _resolve_agent_type_and_platform(
+def _resolve_agent_type(
     agent_type_str: str | None, plus_config: DagsterPlusCliConfig
-) -> tuple[DgPlusAgentType, DgPlusAgentPlatform]:
-    # When --agent-type is passed (e.g. in CI) we still resolve the platform for Serverless so a
-    # PEX build targeting Serverless v2 (Kubernetes) can be redirected to Docker.
+) -> DgPlusAgentType:
     if not agent_type_str:
-        return get_agent_type_and_platform(plus_config)
-
-    agent_type = DgPlusAgentType(agent_type_str.upper())
-    if agent_type != DgPlusAgentType.SERVERLESS:
-        return agent_type, DgPlusAgentPlatform.UNKNOWN
-
-    # Platform detection is a best-effort GraphQL round-trip (auth sourced from the dg config or
-    # the DAGSTER_CLOUD_* env vars CI uses). If it fails (offline, missing credentials, unreachable
-    # API) we fall back to UNKNOWN and build as configured rather than failing the deploy — the
-    # redirect is an enhancement, not a correctness requirement.
-    try:
-        return agent_type, get_serverless_agent_platform(plus_config)
-    except Exception:
-        logging.getLogger(__name__).debug(
-            "Serverless platform detection failed; defaulting to UNKNOWN", exc_info=True
-        )
-        return agent_type, DgPlusAgentPlatform.UNKNOWN
+        return get_agent_type_and_platform(plus_config)[0]
+    return DgPlusAgentType(agent_type_str.upper())
 
 
 def _get_snapshot_base_deployment_conditions():
@@ -286,7 +264,7 @@ def deploy_group(
 
     statedir = _get_statedir()
 
-    agent_type, agent_platform = _resolve_agent_type_and_platform(agent_type_str, plus_config)
+    agent_type = _resolve_agent_type(agent_type_str, plus_config)
 
     build_strategy_enum = BuildStrategy(build_strategy)
     pex_build_method_enum = BuildMethod(pex_build_method)
@@ -309,14 +287,13 @@ def deploy_group(
 
     build_artifact(
         dg_context,
-        agent_type,
-        build_strategy_enum,
-        pex_build_method_enum,
-        statedir,
-        bool(use_editable_dagster),
-        python_version,
-        location_names,
-        agent_platform=agent_platform,
+        agent_type=agent_type,
+        build_strategy=build_strategy_enum,
+        pex_build_method=pex_build_method_enum,
+        statedir=statedir,
+        use_editable_dagster=bool(use_editable_dagster),
+        python_version=python_version,
+        location_names=location_names,
     )
 
     finish_deploy_session(dg_context, statedir, location_names)
@@ -496,7 +473,7 @@ def build_and_push_command(
     plus_config = (
         DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else DagsterPlusCliConfig()
     )
-    agent_type, agent_platform = _resolve_agent_type_and_platform(agent_type_str, plus_config)
+    agent_type = _resolve_agent_type(agent_type_str, plus_config)
 
     build_strategy_enum = BuildStrategy(build_strategy)
     pex_build_method_enum = BuildMethod(pex_build_method)
@@ -505,14 +482,13 @@ def build_and_push_command(
 
     build_artifact(
         dg_context,
-        agent_type,
-        build_strategy_enum,
-        pex_build_method_enum,
-        statedir,
-        bool(use_editable_dagster),
-        python_version,
-        location_names,
-        agent_platform=agent_platform,
+        agent_type=agent_type,
+        build_strategy=build_strategy_enum,
+        pex_build_method=pex_build_method_enum,
+        statedir=statedir,
+        use_editable_dagster=bool(use_editable_dagster),
+        python_version=python_version,
+        location_names=location_names,
     )
 
 

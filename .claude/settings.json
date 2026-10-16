@@ -62,8 +62,7 @@
       "Bash(git cat-file:*)",
       "Bash(git ls-remote:*)",
       "Bash(pytest:*)",
-      "Bash(dagster-dev:*)",
-      "Bash(erk:*)"
+      "Bash(dagster-dev:*)"
     ],
     "deny": [
       "Read(./.git/**)",
@@ -154,30 +153,6 @@
       "Read(docs/vale/**)",
       "Read(docs/src/code-examples-content.js)",
       "Read(docs/sphinx/_build/**)"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
-          }
-        ]
-      }
     ]
   }
 }

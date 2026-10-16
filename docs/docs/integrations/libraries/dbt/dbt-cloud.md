@@ -22,6 +22,14 @@ Our updated dbt Cloud integration offers two capabilities:
 
 <PackageInstallInstructions packageName="dagster-dbt" />
 
+`dagster-dbt` does not install dbt Core. If you pass a non-default `select`, `exclude`, or `selector` to the integration, evaluating it against the dbt Cloud manifest requires dbt Core's selection engine — install it with `dagster-dbt[dbt-core]`.
+
+:::warning
+
+Do not install dbt Core into an environment that has the `dbt` package (dbt Fusion) installed. Both claim the `dbt` import namespace and overwrite each other's files, which leaves neither engine working — and `pip` reports no error. Nothing in the dbt Cloud integration runs dbt locally, so Fusion is not needed for it.
+
+:::
+
 ## Observability example
 
 To make use of the observability capability, you will need to add code to your Dagster project that does the following:

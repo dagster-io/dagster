@@ -28,9 +28,15 @@ def get_project_specified_env_vars(dg_context: DgContext) -> Mapping[str, Sequen
     env_vars = defaultdict(list)
 
     for component_dir in dg_context.defs_path.rglob("*"):
-        defs_path = component_dir / "defs.yaml"
+        # defs.yaml/.yml take precedence, component.yaml is deprecated
+        candidates = (
+            component_dir / "defs.yaml",
+            component_dir / "defs.yml",
+            component_dir / "component.yaml",
+        )
+        defs_path = next((p for p in candidates if p.exists()), None)
 
-        if defs_path.exists():
+        if defs_path:
             text = defs_path.read_text()
             try:
                 component_doc_trees = parse_yamls_with_source_position(

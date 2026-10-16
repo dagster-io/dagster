@@ -19,7 +19,6 @@ from dagster._utils import pushd
 from typing_extensions import TypeVar
 
 from dagster_dbt.asset_utils import default_metadata_from_dbt_resource_props
-from dagster_dbt.compat import DBT_PYTHON_VERSION
 from dagster_dbt.core.dbt_cli_event import EventHistoryMetadata, _build_column_lineage_metadata
 
 if TYPE_CHECKING:
@@ -61,7 +60,9 @@ def _fetch_column_metadata(
         event (DbtDagsterEventType): The dbt event to append column metadata to.
         with_column_lineage (bool): Whether to include column lineage metadata in the event.
     """
-    adapter = check.not_none(invocation.adapter)
+    adapter = invocation.adapter
+    if adapter is None:
+        return {}
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
 
@@ -155,7 +156,9 @@ def _fetch_row_count_metadata(
     if not isinstance(event, (AssetMaterialization, Output)):
         return None
 
-    adapter = check.not_none(invocation.adapter)
+    adapter = invocation.adapter
+    if adapter is None:
+        return None
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
     is_view = dbt_resource_props["config"]["materialized"] == "view"
@@ -232,6 +235,13 @@ class DbtEventIterator(Iterator[T]):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
+        if self._dbt_cli_invocation.is_fusion:
+            logger.warning(
+                "Row counts are fetched through the dbt Core adapter, which the dbt Fusion engine"
+                " does not provide. Row count metadata will not be included in the emitted events."
+            )
+            return DbtEventIterator(events=self, dbt_cli_invocation=self._dbt_cli_invocation)
+
         return self._attach_metadata(_fetch_row_count_metadata)
 
     @public
@@ -251,9 +261,15 @@ class DbtEventIterator(Iterator[T]):
                 A set of corresponding Dagster events for dbt models, with column metadata attached,
                 yielded in the order they are emitted by dbt.
         """
-        check.invariant(
-            DBT_PYTHON_VERSION is not None, "Column metadata not supported for dbt Fusion."
-        )
+        if self._dbt_cli_invocation.is_fusion:
+            logger.warning(
+                "Column metadata is fetched through the dbt Core adapter, which the dbt Fusion"
+                " engine does not provide. To emit column schema and column lineage under Fusion,"
+                " add the `dagster` dbt package's `log_column_level_metadata` macro as a post-hook"
+                " in your dbt project; `stream()` attaches the metadata it logs without this call."
+            )
+            return DbtEventIterator(events=self, dbt_cli_invocation=self._dbt_cli_invocation)
+
         fetch_metadata = lambda invocation, event: _fetch_column_metadata(
             invocation, event, with_column_lineage
         )

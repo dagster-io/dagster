@@ -4,6 +4,7 @@ import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
 import {assertUnreachable} from '../app/Util';
 import {RunStatus} from '../graphql/types';
+import {shortenId} from '../util/shortenId';
 
 const statusToIntent = (status: RunStatus) => {
   switch (status) {
@@ -18,6 +19,7 @@ const statusToIntent = (status: RunStatus) => {
       return 'danger';
     case RunStatus.STARTING:
     case RunStatus.STARTED:
+    case RunStatus.SUSPENDED:
     case RunStatus.CANCELING:
       return 'primary';
     default:
@@ -39,6 +41,8 @@ const runStatusToString = (status: RunStatus) => {
       return 'Failure';
     case RunStatus.STARTED:
       return 'Started';
+    case RunStatus.SUSPENDED:
+      return 'Suspended';
     case RunStatus.MANAGED:
       return 'Managed';
     case RunStatus.CANCELING:
@@ -60,6 +64,7 @@ export const runStatusToBackfillStateString = (status: RunStatus) => {
       return 'Failed';
     case RunStatus.STARTING:
     case RunStatus.STARTED:
+    case RunStatus.SUSPENDED:
       return 'In progress';
     case RunStatus.QUEUED:
       return 'Queued';
@@ -79,6 +84,7 @@ export const RUN_STATUS_COLORS = {
   MANAGED: Colors.accentGray(),
   STARTED: Colors.accentBlue(),
   STARTING: Colors.accentBlue(),
+  SUSPENDED: Colors.accentBlue(),
   CANCELING: Colors.accentBlue(),
   SUCCESS: Colors.accentGreen(),
   FAILURE: Colors.accentRed(),
@@ -106,7 +112,7 @@ export const RunStatusTagWithID = ({runId, status}: {runId: string; status: RunS
       <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
         <RunStatusIndicator status={status} size={10} />
         <Text size={12} family="mono">
-          {runId.slice(0, 8)}
+          {shortenId(runId)}
         </Text>
       </Box>
     </Tag>

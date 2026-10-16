@@ -1,13 +1,18 @@
 import {Box, Button, ButtonGroup, Icon, Tooltip} from '@dagster-io/ui-components';
 import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
+import {useGitBackedComponentAuthoringEnabled} from '@shared/app/useGitBackedComponentAuthoringEnabled';
 import {useGitProviderConnected} from '@shared/app/useGitProviderConnected';
+import {useIsBranchDeployment} from '@shared/app/useIsBranchDeployment';
+import {AppManagedComponentRepoBindingSection} from '@shared/code-location/AppManagedComponentRepoBindingSection';
 import {CodeLocationPageHeader} from '@shared/code-location/CodeLocationPageHeader';
 import {CodeLocationTabs} from '@shared/code-location/CodeLocationTabs';
+import {useAppManagedComponentRepoBinding} from '@shared/code-location/useAppManagedComponentRepoBinding';
 import {useContext, useState} from 'react';
 import {Redirect, useHistory, useLocation, useParams} from 'react-router-dom';
 
 import {CodeLocationComponentInstancesSubtab} from './CodeLocationComponentInstancesSubtab';
 import {CodeLocationComponentsCatalogSubtab} from './CodeLocationComponentsCatalogSubtab';
+import {addComponentDisabledReason} from './appManagedComponentAddGate';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -26,6 +31,22 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
   // Git-backed authoring needs a connected repo to open the PR against; without
   // one the author action is disabled with a nudge to connect an integration.
   const gitProviderConnected = useGitProviderConnected();
+  // Git-backed authoring commits to the location's bound repo, so a location
+  // with no binding has nowhere to write. Block it here rather than letting the
+  // form be filled in and rejected at submit.
+  const gitBackedEnabled = useGitBackedComponentAuthoringEnabled();
+  const isBranchDeployment = useIsBranchDeployment();
+  const {binding, loading: bindingLoading} = useAppManagedComponentRepoBinding(
+    repoAddress.location,
+  );
+
+  const addDisabledReason = addComponentDisabledReason({
+    isBranchDeployment,
+    gitProviderConnected,
+    gitBackedEnabled,
+    bindingLoading,
+    hasBinding: binding !== null,
+  });
 
   const params = useParams<{
     packageName?: string;
@@ -110,23 +131,21 @@ export const CodeLocationComponentsRoot = ({repoAddress}: Props) => {
             onClick={onSubTabClick}
           />
           {subTab === 'instances' ? (
-            gitProviderConnected ? (
+            <Tooltip content={addDisabledReason ?? ''} canShow={!!addDisabledReason}>
               <Button
                 intent="primary"
                 icon={<Icon name="add_circle" />}
+                disabled={!!addDisabledReason}
                 onClick={() => setIsAddOpen(true)}
               >
                 Add
               </Button>
-            ) : (
-              <Tooltip content="Connect a git integration to author components.">
-                <Button intent="primary" icon={<Icon name="add_circle" />} disabled>
-                  Add
-                </Button>
-              </Tooltip>
-            )
+            </Tooltip>
           ) : null}
         </Box>
+      ) : null}
+      {componentInstanceUIEnabled && subTab === 'instances' ? (
+        <AppManagedComponentRepoBindingSection locationName={repoAddress.location} />
       ) : null}
       <Box flex={{direction: 'column'}} style={{flex: 1, overflow: 'auto'}}>
         {renderSubTab()}

@@ -10,12 +10,26 @@ from dagster._utils.names import clean_name_lower
 from packaging import version
 
 from dagster_dbt.compat import DBT_PYTHON_VERSION
+from dagster_dbt.errors import DagsterDbtCoreNotInstalledError
 
 if TYPE_CHECKING:
     from dagster_dbt.core.resource import DbtProject
 
 # dbt resource types that may be considered assets
 ASSET_RESOURCE_TYPES = ["model", "seed", "snapshot"]
+
+# Manifest collections holding nodes that participate in the selection graph. Mirrors the
+# collections dbt itself walks in `Manifest.build_parent_and_child_maps`; keep in sync with it.
+_GRAPH_MEMBER_COLLECTIONS = (
+    "nodes",
+    "sources",
+    "exposures",
+    "functions",
+    "metrics",
+    "semantic_models",
+    "saved_queries",
+    "unit_tests",
+)
 
 clean_name = clean_name_lower
 
@@ -40,16 +54,29 @@ def select_unique_ids(
     # dbt-core available, fastest to use the library directly
     if DBT_PYTHON_VERSION is not None:
         return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json, project)
+    # The default selection is every node in the manifest and needs no selection engine. Read it
+    # from the manifest rather than asking dbt Fusion, whose graph omits nodes with neither
+    # parents nor children — those would otherwise vanish from the asset graph with no error.
+    if _is_select_all(select, exclude, selector):
+        return set(manifest_json["nodes"])
     # dbt Fusion available, efficient(ish) to invoke the CLI for selection
     if manifest_version.major >= 2 and project is not None:
         return _select_unique_ids_from_cli(select, exclude, selector, project)
-    else:
-        # in theory, as long as dbt-core is a dependency of dagster-dbt, this can't happen, but adding
-        # this for now to be safe
-        check.failed(
-            "dbt-core is not installed and no `project` was passed to `select_unique_ids`. "
-            "This can happen if you are using the dbt Cloud integration without the dbt-core package installed."
-        )
+    raise DagsterDbtCoreNotInstalledError(
+        f"Cannot evaluate the dbt selection (select={select!r}, exclude={exclude!r},"
+        f" selector={selector!r}): dagster-dbt does not install dbt-core, and there is no"
+        " `project` to evaluate the selection with the dbt CLI instead."
+        "\n\nInstall dbt-core with `pip install 'dagster-dbt[dbt-core]'` — any dbt adapter package,"
+        " such as `dbt-snowflake`, also pulls it in — or pass a `DbtProject`."
+        "\n\nIf the `dbt` package (dbt Fusion) is installed here, install dbt-core into a"
+        " different environment instead: the two share the `dbt` import namespace and"
+        " overwrite each other's files."
+    )
+
+
+def _is_select_all(select: str, exclude: str, selector: str) -> bool:
+    """Whether the selection is the default one, i.e. every node in the manifest."""
+    return select in ("", "fqn:*") and not exclude and not selector
 
 
 def _select_unique_ids_from_cli(
@@ -203,7 +230,18 @@ def _select_unique_ids_from_manifest(
 
     child_map = manifest_json["child_map"]
 
-    graph = graph_selector.Graph(DiGraph(incoming_graph_data=child_map))
+    digraph = DiGraph(incoming_graph_data=child_map)
+    # dbt-fusion omits nodes with neither parents nor children from `child_map`, and a node
+    # absent from the graph can never be selected. Add every graph member back so isolated
+    # nodes stay selectable; a no-op for dbt-core, which keys `child_map` by every node.
+    # See https://github.com/dagster-io/dagster/issues/33801.
+    digraph.add_nodes_from(
+        unique_id
+        for collection in _GRAPH_MEMBER_COLLECTIONS
+        for unique_id in manifest_json.get(collection, {})
+    )
+
+    graph = graph_selector.Graph(digraph)
 
     # create a parsed selection from the select string
     _set_flag_attrs(

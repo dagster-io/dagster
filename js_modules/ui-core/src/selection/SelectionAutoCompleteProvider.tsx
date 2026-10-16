@@ -54,12 +54,13 @@ export interface SelectionAutoCompleteProvider {
    *
    * @param query - The search string to match substrings against.
    * @param textCallback - An optional callback to transform the display text of each result. Used to insert spaces or double quotes if necessary depending on surrounding context
-   * @returns A single substring result that matches the query.
+   * @returns A single substring result that matches the query, or null when the input has no
+   * wildcard attribute.
    */
   getSubstringResultMatchingQuery: (prop: {
     query: string;
     textCallback?: (value: string) => string;
-  }) => Suggestion;
+  }) => Suggestion | null;
 
   /**
    * Retrieves a list of attribute values, including their corresponding attribute names, that match the provided query string.
@@ -89,6 +90,7 @@ export interface SelectionAutoCompleteProvider {
   };
 
   supportsTraversal?: boolean;
+  supportsNot?: boolean;
 }
 
 export type Suggestion =
@@ -205,7 +207,8 @@ export const createProvider = <
   functions = ['sinks', 'roots'],
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
-  primaryAttributeKey: TPrimaryAttributeKey;
+  /** The attribute that bare terms search with wildcards. Omit when the input has none. */
+  primaryAttributeKey?: TPrimaryAttributeKey;
   attributesMap: TAttributeMap;
   functions?: Functions;
 }): Omit<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
@@ -317,13 +320,14 @@ export const createProvider = <
   }
 
   function createSubstringSuggestion({
+    attribute,
     query,
     textCallback,
   }: {
+    attribute: string;
     query: string;
     textCallback?: (text: string) => string;
   }) {
-    const attribute = primaryAttributeKey as string;
     const text = `${attribute}:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -452,7 +456,14 @@ export const createProvider = <
         });
     },
     getSubstringResultMatchingQuery: ({query, textCallback}) => {
-      return createSubstringSuggestion({query, textCallback});
+      if (primaryAttributeKey === undefined) {
+        return null;
+      }
+      return createSubstringSuggestion({
+        attribute: primaryAttributeKey as string,
+        query,
+        textCallback,
+      });
     },
     getAllResults: ({query, textCallback}) => {
       return Object.keys(attributesMap).flatMap((attribute) => {

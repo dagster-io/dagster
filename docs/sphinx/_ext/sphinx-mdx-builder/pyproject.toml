@@ -46,6 +46,7 @@ test-sphinx8 = [
 ]
 
 [tool.uv]
+exclude-newer = "48h"
 conflicts = [
     [{group = "test-sphinx7"}, {group = "test-sphinx8"}],
 ]
