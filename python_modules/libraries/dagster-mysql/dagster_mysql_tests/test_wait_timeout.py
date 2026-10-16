@@ -6,9 +6,13 @@ import sqlalchemy.exc
 from dagster_mysql.run_storage import MySQLRunStorage
 
 
-def retry_connect(conn_string: str, num_retries: int = 5, pool_recycle=-1):
+def retry_connect(
+    conn_string: str, num_retries: int = 5, pool_recycle=-1, pool_pre_ping: bool = True
+):
     storage = MySQLRunStorage.create_clean_storage(conn_string)
-    storage.optimize_for_webserver(-1, pool_recycle=pool_recycle, max_overflow=20)
+    storage.optimize_for_webserver(
+        -1, pool_recycle=pool_recycle, max_overflow=20, pool_pre_ping=pool_pre_ping
+    )
 
     with storage.connect() as conn:
         conn.execute(db.text("SET SESSION wait_timeout = 2;"))
@@ -22,8 +26,10 @@ def retry_connect(conn_string: str, num_retries: int = 5, pool_recycle=-1):
 
 
 def test_pool_recycle_greater_than_wait_timeout(conn_string):
+    # Disable pre-ping so a server-side wait_timeout drop surfaces as OperationalError
+    # (with pre-ping the pool reconnects transparently).
     with pytest.raises(db.exc.OperationalError):
-        retry_connect(conn_string)
+        retry_connect(conn_string, pool_pre_ping=False)
 
 
 def test_pool_recycle_less_than_wait_timeout(conn_string):

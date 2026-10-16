@@ -218,6 +218,17 @@ def test_statement_timeouts(hostname):
                 conn.execute(db.text("select pg_sleep(1)")).fetchone()
 
 
+@pytest.mark.parametrize("pool_pre_ping", [True, False])
+def test_pool_pre_ping(hostname, pool_pre_ping):
+    with instance_for_test(overrides=safe_load_yaml(full_pg_config(hostname))) as instance:
+        instance.optimize_for_webserver(
+            statement_timeout=500, pool_recycle=-1, max_overflow=20, pool_pre_ping=pool_pre_ping
+        )
+        assert instance._run_storage._engine.pool._pre_ping is pool_pre_ping  # noqa: SLF001
+        assert instance._event_storage._engine.pool._pre_ping is pool_pre_ping  # noqa: SLF001
+        assert instance._schedule_storage._engine.pool._pre_ping is pool_pre_ping  # noqa: SLF001
+
+
 def test_skip_autocreate(hostname, conn_string):
     with instance_for_test(overrides=safe_load_yaml(unified_pg_config(hostname))) as instance:
         instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # ty: ignore[unresolved-attribute]
