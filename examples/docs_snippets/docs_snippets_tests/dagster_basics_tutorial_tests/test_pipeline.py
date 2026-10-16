@@ -1,3 +1,8 @@
+import copy
+
+import duckdb
+from dagster_duckdb import DuckDBResource
+
 import dagster as dg
 from dagster.components.testing.utils import create_defs_folder_sandbox
 from docs_snippets.dagster_basics_tutorial.src.dagster_tutorial.components.tutorial import (
@@ -8,9 +13,6 @@ from docs_snippets.dagster_basics_tutorial.src.dagster_tutorial.defs.assets impo
     orders,
     orders_aggregation,
     payments,
-)
-from docs_snippets.dagster_basics_tutorial.src.dagster_tutorial.defs.resources import (
-    database_resource,
 )
 
 yaml_config = {
@@ -35,8 +37,9 @@ yaml_config = {
 }
 
 
-def test_pipeline():
+def test_pipeline(tmp_path):
     """Ensure pipeline works with asset version of assets."""
+    db_path = str(tmp_path / "jaffle_platform.duckdb")
     result = dg.materialize(
         assets=[
             customers,
@@ -45,18 +48,34 @@ def test_pipeline():
             orders_aggregation,
         ],
         resources={
-            "duckdb": database_resource,
+            "duckdb": DuckDBResource(database=db_path),
         },
     )
     assert result.success
 
+    with duckdb.connect(db_path) as conn:
+        for table_name in [
+            "customers",
+            "orders",
+            "payments",
+            "orders_aggregation",
+        ]:
+            row_count = conn.execute(f"select count(*) from {table_name}").fetchone()[0]
+            assert row_count > 0
 
-def test_pipeline_components():
+
+def test_pipeline_components(tmp_path):
     """Ensure pipeline works with component version of assets."""
+    db_path = str(tmp_path / "jaffle_platform.duckdb")
+    test_yaml_config = copy.deepcopy(yaml_config)
+    test_yaml_config["attributes"]["duckdb_database"] = db_path
+
     with create_defs_folder_sandbox() as sandbox:
         defs_path = sandbox.scaffold_component(component_cls=Tutorial)
         sandbox.scaffold_component(
-            component_cls=Tutorial, defs_path=defs_path, defs_yaml_contents=yaml_config
+            component_cls=Tutorial,
+            defs_path=defs_path,
+            defs_yaml_contents=test_yaml_config,
         )
 
         # Check that all assets are created
@@ -75,7 +94,19 @@ def test_pipeline_components():
                     orders_aggregation,
                 ],
                 resources={
-                    "duckdb": database_resource,
+                    "duckdb": DuckDBResource(database=db_path),
                 },
             )
             assert result.success
+
+            with duckdb.connect(db_path) as conn:
+                for table_name in [
+                    "customers",
+                    "orders",
+                    "payments",
+                    "orders_aggregation",
+                ]:
+                    row_count = conn.execute(
+                        f"select count(*) from {table_name}"
+                    ).fetchone()[0]
+                    assert row_count > 0
