@@ -528,3 +528,190 @@ def test_select_unique_ids_includes_isolated_fusion_models(
     )
 
     assert selected == expected_unique_ids
+
+
+def _test_node(unique_id: str, name: str, attached_node: str) -> dict[str, Any]:
+    return {
+        **_model_node(unique_id, name, depends_on=[attached_node]),
+        "resource_type": "test",
+        "attached_node": attached_node,
+        "config": {"enabled": True, "tags": [], "severity": "ERROR"},
+    }
+
+
+def _manifest_with_tested_model(indirect_selection: str) -> dict[str, Any]:
+    return {
+        "nodes": {
+            "model.test.parent": _model_node("model.test.parent", "parent"),
+            "test.test.not_null_parent_id": _test_node(
+                "test.test.not_null_parent_id", "not_null_parent_id", "model.test.parent"
+            ),
+        },
+        "sources": {},
+        "metrics": {},
+        "exposures": {},
+        "selectors": {
+            "selector.test.tested": {
+                "name": "tested",
+                "definition": {
+                    "method": "fqn",
+                    "value": "parent",
+                    "indirect_selection": indirect_selection,
+                },
+            }
+        },
+        "child_map": {
+            "model.test.parent": ["test.test.not_null_parent_id"],
+            "test.test.not_null_parent_id": [],
+        },
+        "parent_map": {
+            "model.test.parent": [],
+            "test.test.not_null_parent_id": ["model.test.parent"],
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "indirect_selection, expected_unique_ids",
+    [
+        pytest.param("eager", {"model.test.parent", "test.test.not_null_parent_id"}, id="eager"),
+        pytest.param(
+            "cautious", {"model.test.parent", "test.test.not_null_parent_id"}, id="cautious"
+        ),
+        pytest.param(
+            "buildable", {"model.test.parent", "test.test.not_null_parent_id"}, id="buildable"
+        ),
+        pytest.param("empty", {"model.test.parent"}, id="empty"),
+    ],
+)
+def test_select_unique_ids_selector_with_indirect_selection(
+    indirect_selection: str, expected_unique_ids: set[str]
+) -> None:
+    """A YAML selector whose criteria set ``indirect_selection`` overrides the global eager flag,
+    so dbt reads ``depends_on_nodes`` from the selected node's tests. Nodes are dict shims built
+    from ``manifest.json``, which has no ``depends_on_nodes`` key, so this used to raise
+    ``TypeError: 'NoneType' object is not iterable``.
+
+    Regression test for https://github.com/dagster-io/dagster/issues/34244.
+    """
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*",
+        exclude="",
+        selector="tested",
+        manifest_json=_manifest_with_tested_model(indirect_selection),
+    )
+
+    assert selected == expected_unique_ids
+
+
+def _manifest_with_multi_parent_test(indirect_selection: str) -> dict[str, Any]:
+    """``parent`` depends on ``upstream``. A relationships test attached to ``parent`` also
+    depends on ``other``, which is neither selected nor upstream of the selection.
+    """
+    return {
+        "nodes": {
+            "model.test.upstream": _model_node("model.test.upstream", "upstream"),
+            "model.test.parent": _model_node(
+                "model.test.parent", "parent", depends_on=["model.test.upstream"]
+            ),
+            "model.test.other": _model_node("model.test.other", "other"),
+            "test.test.relationships_parent_other": {
+                **_test_node(
+                    "test.test.relationships_parent_other",
+                    "relationships_parent_other",
+                    "model.test.parent",
+                ),
+                "depends_on": {
+                    "nodes": ["model.test.parent", "model.test.other"],
+                    "macros": [],
+                },
+            },
+            "test.test.relationships_parent_upstream": {
+                **_test_node(
+                    "test.test.relationships_parent_upstream",
+                    "relationships_parent_upstream",
+                    "model.test.parent",
+                ),
+                "depends_on": {
+                    "nodes": ["model.test.parent", "model.test.upstream"],
+                    "macros": [],
+                },
+            },
+        },
+        "sources": {},
+        "metrics": {},
+        "exposures": {},
+        "selectors": {
+            "selector.test.tested": {
+                "name": "tested",
+                "definition": {
+                    "method": "fqn",
+                    "value": "parent",
+                    "indirect_selection": indirect_selection,
+                },
+            }
+        },
+        "child_map": {
+            "model.test.upstream": [
+                "model.test.parent",
+                "test.test.relationships_parent_upstream",
+            ],
+            "model.test.parent": [
+                "test.test.relationships_parent_other",
+                "test.test.relationships_parent_upstream",
+            ],
+            "model.test.other": ["test.test.relationships_parent_other"],
+            "test.test.relationships_parent_other": [],
+            "test.test.relationships_parent_upstream": [],
+        },
+        "parent_map": {
+            "model.test.upstream": [],
+            "model.test.parent": ["model.test.upstream"],
+            "model.test.other": [],
+            "test.test.relationships_parent_other": ["model.test.parent", "model.test.other"],
+            "test.test.relationships_parent_upstream": [
+                "model.test.parent",
+                "model.test.upstream",
+            ],
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    "indirect_selection, expected_unique_ids",
+    [
+        # eager selects every test attached to the selected model
+        pytest.param(
+            "eager",
+            {
+                "model.test.parent",
+                "test.test.relationships_parent_other",
+                "test.test.relationships_parent_upstream",
+            },
+            id="eager",
+        ),
+        # cautious only selects tests whose parents are all selected
+        pytest.param("cautious", {"model.test.parent"}, id="cautious"),
+        # buildable selects tests whose other parents are selected or upstream of the selection
+        pytest.param(
+            "buildable",
+            {"model.test.parent", "test.test.relationships_parent_upstream"},
+            id="buildable",
+        ),
+        pytest.param("empty", {"model.test.parent"}, id="empty"),
+    ],
+)
+def test_select_unique_ids_selector_indirect_selection_modes_differ(
+    indirect_selection: str, expected_unique_ids: set[str]
+) -> None:
+    """A test depending on a model outside the selection must be handled differently by each
+    ``indirect_selection`` mode, following dbt's documented semantics.
+    """
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*",
+        exclude="",
+        selector="tested",
+        manifest_json=_manifest_with_multi_parent_test(indirect_selection),
+    )
+
+    assert selected == expected_unique_ids
