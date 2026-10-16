@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import contextvars
 import json
 import random
 import shutil
@@ -13,7 +14,10 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.defs_state.base import DefsStateStorage
 from dagster._utils.env import environ
 from dagster._utils.test.definitions import scoped_definitions_load_context
-from dagster.components.component.state_backed_component import StateBackedComponent
+from dagster.components.component.state_backed_component import (
+    StateBackedComponent,
+    _run_coroutine_sync,
+)
 from dagster.components.core.component_tree_state import DuplicateDefsStateKeyWarning
 from dagster.components.testing.utils import create_defs_folder_sandbox
 from dagster.components.utils.defs_state import (
@@ -498,3 +502,36 @@ def test_state_backed_component_migration_from_versioned_to_local_storage() -> N
             assert dev_metadata_value != "initial"
             # Should be different from the versioned value since it's a new random value
             assert dev_metadata_value != versioned_metadata_value
+
+
+def test_run_coroutine_sync_outside_running_loop() -> None:
+    async def sample() -> str:
+        return "value"
+
+    assert _run_coroutine_sync(sample()) == "value"
+
+
+def test_run_coroutine_sync_inside_running_loop() -> None:
+    # Regression test for #33790: build_defs is synchronous but refreshes state
+    # via a coroutine, and `dg utils refresh-defs-state` invokes it from inside a
+    # running event loop, where a bare asyncio.run raises RuntimeError.
+    async def sample() -> str:
+        return "value"
+
+    async def call_from_running_loop() -> str:
+        return _run_coroutine_sync(sample())
+
+    assert asyncio.run(call_from_running_loop()) == "value"
+
+
+def test_run_coroutine_sync_propagates_contextvars() -> None:
+    var: contextvars.ContextVar[str] = contextvars.ContextVar("var", default="unset")
+    var.set("set-value")
+
+    async def read_var() -> str:
+        return var.get()
+
+    async def call_from_running_loop() -> str:
+        return _run_coroutine_sync(read_var())
+
+    assert asyncio.run(call_from_running_loop()) == "set-value"
