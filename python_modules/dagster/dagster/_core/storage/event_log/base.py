@@ -431,6 +431,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
         return build_run_step_stats_from_events(run_id, logs)
 
+    def get_step_lifecycle_stats_for_run(
+        self, run_id: str, step_keys: Sequence[str] | None = None
+    ) -> Sequence[RunStepKeyStatsSnapshot]:
+        """Per-step stats for callers that only need step status, timing and attempt counts.
+
+        Implementations may omit the materialization and expectation events, which are unbounded
+        per run.
+        """
+        return self.get_step_stats_for_run(run_id, step_keys)
+
     @abstractmethod
     def store_event(self, event: "EventLogEntry") -> None:
         """Store an event corresponding to a pipeline run.
