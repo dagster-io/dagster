@@ -71,7 +71,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     Args:
         name (str): Name of the op. Must be unique within any :py:class:`GraphDefinition` or
             :py:class:`JobDefinition` that contains the op.
-        input_defs (List[InputDefinition]): Inputs of the op.
+        ins (Optional[Mapping[str, In]]): Inputs of the op.
         compute_fn (Callable): The core of the op, the function that performs the actual
             computation. The signature of this function is determined by ``input_defs``, and
             optionally, an injected first argument, ``context``, a collection of information
@@ -81,7 +81,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             one :py:class:`Output` for each of the op's ``output_defs``, and additionally may
             yield other types of Dagster events, including :py:class:`AssetMaterialization` and
             :py:class:`ExpectationResult`.
-        output_defs (List[OutputDefinition]): Outputs of the op.
+        outs (Optional[Mapping[str, Out]]): Outputs of the op.
         config_schema (Optional[ConfigSchema): The schema for the config. If set, Dagster will check
             that the config provided for the op matches this schema and will fail if it does not. If
             not set, Dagster will accept any config provided for the op.
