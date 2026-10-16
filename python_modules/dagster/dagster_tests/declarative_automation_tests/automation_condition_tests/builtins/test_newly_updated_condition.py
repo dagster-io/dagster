@@ -126,3 +126,41 @@ def test_newly_updated_on_asset_check() -> None:
     instance.report_runless_asset_event(dg.AssetMaterialization("A"))
     result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
+
+
+def test_newly_updated_any_deps_match_specific_partitions_mapping() -> None:
+    condition = AutomationCondition.any_deps_match(AutomationCondition.newly_updated())
+
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["a", "b"]))
+    def parent() -> None: ...
+
+    @dg.asset(
+        deps=[dg.AssetDep(parent, partition_mapping=dg.SpecificPartitionsPartitionMapping(["a"]))],
+        automation_condition=condition,
+    )
+    def child_a() -> None: ...
+
+    @dg.asset(
+        deps=[dg.AssetDep(parent, partition_mapping=dg.SpecificPartitionsPartitionMapping(["b"]))],
+        automation_condition=condition,
+    )
+    def child_b() -> None: ...
+
+    defs = dg.Definitions(assets=[parent, child_a, child_b])
+    instance = DagsterInstance.ephemeral()
+
+    # not updated
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # only partition a updated, so only child_a should be requested
+    instance.report_runless_asset_event(dg.AssetMaterialization("parent", partition="a"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.get_num_requested(child_a.key) == 1
+    assert result.get_num_requested(child_b.key) == 0
+
+    # only partition b updated, so only child_b should be requested
+    instance.report_runless_asset_event(dg.AssetMaterialization("parent", partition="b"))
+    result = dg.evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.get_num_requested(child_a.key) == 0
+    assert result.get_num_requested(child_b.key) == 1
