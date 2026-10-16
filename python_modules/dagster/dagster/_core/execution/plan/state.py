@@ -18,6 +18,10 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.plan.handle import StepHandle, UnresolvedStepHandle
+from dagster._core.execution.plan.inputs import (
+    FromPendingDynamicStepOutput,
+    FromUnresolvedStepOutput,
+)
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.plan.step import ResolvedFromDynamicStepHandle
 from dagster._core.execution.retries import RetryState
@@ -305,6 +309,11 @@ def _derive_state_of_past_run(
 
     # expand type to allow filling in None mappings for skips
     dynamic_outputs = cast("dict[str, dict[str, list[str] | None]]", observed_dynamic_outputs)
+    initial_dynamic_mappings = (
+        execution_plan_snapshot.initial_known_state.dynamic_mappings
+        if execution_plan_snapshot.initial_known_state
+        else {}
+    )
     to_retry: TrackingDict = defaultdict(set)
     execution_deps = execution_plan.execution_deps()
     for step_snap in execution_plan.topological_steps():
@@ -314,8 +323,11 @@ def _derive_state_of_past_run(
         if parent_run.step_keys_to_execute and step_snap.key not in parent_run.step_keys_to_execute:
             continue
 
-        # Dont retry steps that we already skipped in the parent run
-        if _in_tracking_dict(step_handle, skipped_steps_in_parent_run_logs):
+        # A skipped mapped instance does not mean all of its siblings were skipped.
+        if _in_tracking_dict(step_handle, skipped_steps_in_parent_run_logs) and (
+            not isinstance(step_handle, UnresolvedStepHandle)
+            or step_handle in skipped_steps_in_parent_run_logs[step_key]
+        ):
             continue
 
         for output in step_snap.outputs:
@@ -372,6 +384,24 @@ def _derive_state_of_past_run(
 
                 else:
                     _update_tracking_dict(to_retry, step_handle)
+
+        # A mapped step may have started only some of the instances produced by its
+        # dynamic output. Include the remaining instances, unless a retrying dependency
+        # already requires the entire unresolved step to run again.
+        if isinstance(step_handle, UnresolvedStepHandle) and step_handle not in to_retry.get(
+            step_key, set()
+        ):
+            for step_input in step_snap.inputs:
+                source = step_input.source
+                if isinstance(source, (FromPendingDynamicStepOutput, FromUnresolvedStepOutput)):
+                    mapping_keys = dynamic_outputs.get(
+                        source.resolved_by_step_key,
+                        initial_dynamic_mappings.get(source.resolved_by_step_key, {}),
+                    ).get(source.resolved_by_output_name)
+                    for mapping_key in mapping_keys or []:
+                        resolved_handle = step_handle.resolve(mapping_key)
+                        if not _in_tracking_dict(resolved_handle, all_steps_in_parent_run_logs):
+                            _update_tracking_dict(to_retry, resolved_handle)
 
     steps_to_retry = [
         step_handle.to_key() for step_set in to_retry.values() for step_handle in step_set
