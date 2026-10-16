@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 from typing import TYPE_CHECKING
 
 import boto3
@@ -167,6 +168,8 @@ def test_sanitize_ecs_tag_value(value: str, expected: str):
 
 
 def test_ecs_pipes_multipartition_tags(pipes_ecs_client, local_ecs_mock_client, monkeypatch):
+    git_branch = "修正/١٢٣\u00a0"
+    monkeypatch.setenv("DAGSTER_CLOUD_GIT_BRANCH", git_branch)
     partition_key = MultiPartitionKey({"date": "2025-02-26", "region": "us"})
     caller_tags = [{"key": "owner", "value": "user+ecs@example.com"}]
     run_task = local_ecs_mock_client.run_task
@@ -175,7 +178,10 @@ def test_ecs_pipes_multipartition_tags(pipes_ecs_client, local_ecs_mock_client, 
     def run_task_with_tag_validation(**kwargs):
         # Moto does not enforce the ECS tag character restrictions.
         for tag in kwargs["tags"]:
-            assert re.fullmatch(r"[a-zA-Z0-9 +\-=._:/@]*", tag["value"]), tag
+            assert all(
+                unicodedata.category(char).startswith(("L", "N", "Z")) or char in "+-=._:/@"
+                for char in tag["value"]
+            ), tag
             assert len(tag["value"]) <= 256
         captured_tags.update({tag["key"]: tag["value"] for tag in kwargs["tags"]})
         env = {
@@ -219,6 +225,7 @@ def test_ecs_pipes_multipartition_tags(pipes_ecs_client, local_ecs_mock_client, 
         assert mat.asset_materialization.partition == partition_key
         assert mat.asset_materialization.metadata["bar"].value == "baz"
         assert captured_tags["dagster/partition"] == "2025-02-26-us"
+        assert captured_tags["dagster/git-branch"] == git_branch
         assert captured_tags["dagster/run-id"] == result.run_id
         assert captured_tags["dagster/job"] == "__ephemeral_asset_job__"
         assert captured_tags["owner"] == "user+ecs@example.com"
