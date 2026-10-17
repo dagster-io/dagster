@@ -3364,6 +3364,32 @@ def test_automation_condition_allowed_on_partitioned_job(
 
 @ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
 @ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
+def test_automation_condition_partitioned_job_subset_and_ephemeral() -> None:
+    # Reconstructing a partitioned job with an automation condition must not mistake
+    # the internally synthesized config for user-supplied config.
+    partitions_def = dg.DailyPartitionsDefinition(start_date="2026-09-01")
+
+    @dg.asset(partitions_def=partitions_def)
+    def part_asset() -> int:
+        return 1
+
+    condition = dg.AutomationCondition.all_job_root_assets_match(
+        dg.AutomationCondition.missing()
+    )
+    job = dg.define_asset_job(
+        "my_job", selection=[part_asset], automation_condition=condition
+    )
+    job_def = dg.Definitions(assets=[part_asset], jobs=[job]).resolve_job_def("my_job")
+
+    subset = job_def.get_subset(asset_selection={part_asset.key})
+    assert subset.automation_condition == condition
+
+    result = job_def.execute_in_process(partition_key="2026-09-18")
+    assert result.success
+
+
+@ignore_warning("Parameter `automation_condition` of function `define_asset_job`")
+@ignore_warning("Static method `AutomationCondition.all_job_root_assets_match`")
 def test_automation_condition_allowed_on_partitioned_job_with_unpartitioned_assets() -> None:
     # without user-supplied config, a partitioned job with a condition is supported
     partitions_def = dg.StaticPartitionsDefinition(["p1", "p2"])
