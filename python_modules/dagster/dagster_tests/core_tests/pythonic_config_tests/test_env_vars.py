@@ -28,6 +28,18 @@ def test_direct_use_int_env_var_ok() -> None:
 
     assert EnvVar.int("A_NON_EXISTENT_VAR").get_value() is None
     assert EnvVar.int("A_NON_EXISTENT_VAR").get_value(default=100) == 100
+    assert EnvVar.int("A_NON_EXISTENT_VAR").get_value(default=0) == 0
+
+
+def test_direct_use_int_env_var_zero_and_empty() -> None:
+    with environ({"AN_INT": "0"}):
+        assert EnvVar.int("AN_INT").get_value() == 0
+        assert EnvVar.int("AN_INT").get_value(default=10) == 0
+
+    with environ({"AN_INT": ""}):
+        assert EnvVar.int("AN_INT").get_value() is None
+        assert EnvVar.int("AN_INT").get_value(default=0) == 0
+        assert EnvVar.int("AN_INT").get_value(default=10) == 10
 
 
 def test_direct_use_env_var_err() -> None:
