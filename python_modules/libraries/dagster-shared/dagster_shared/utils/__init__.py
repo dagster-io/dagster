@@ -120,9 +120,9 @@ def find_uv_workspace_root(start_path: Path | str) -> tuple[Path, dict] | None:
     while True:
         data = _read_pyproject_toml(current)
         if data:
-            workspace_config = data.get("tool", {}).get("uv", {}).get("workspace", {})
-            if workspace_config:
-                return current, workspace_config
+            uv_config = data.get("tool", {}).get("uv", {})
+            if "workspace" in uv_config:
+                return current, uv_config["workspace"]
         parent = current.parent
         if parent == current:
             return None
