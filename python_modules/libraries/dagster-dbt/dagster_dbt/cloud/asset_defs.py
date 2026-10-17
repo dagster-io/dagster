@@ -515,7 +515,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             # the `dbt docs generate` step.
             materialization_command_step = len(dbt_cloud_output.run_details.get("run_steps", []))
             materialization_command_step -= len(job_commands) - job_materialization_command_step - 1
-            if dbt_cloud_output.run_details.get("job", {}).get("generate_docs"):
+            if (dbt_cloud_output.run_details.get("job") or {}).get("generate_docs"):
                 materialization_command_step -= 1
 
             # TODO: Assume the run completely fails or completely succeeds.
