@@ -4,6 +4,7 @@ from datetime import timedelta
 from dagster import (
     AssetMaterialization,
     DefaultSensorStatus,
+    EnvVar,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
@@ -30,6 +31,19 @@ from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_f
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
 DEFAULT_FIVETRAN_SENSOR_INTERVAL_SECONDS = 30
 START_LOOKBACK_SECONDS = 60
+
+
+def _get_account_id_label(workspace: FivetranWorkspace) -> str:
+    """Returns a printable account id for naming and describing the sensor.
+
+    ``account_id`` may be configured with ``dg.EnvVar``, which raises if it is converted to a
+    string directly. In that case, read the value from the environment, and fall back to the
+    name of the environment variable if it is not set while the definitions are being loaded.
+    """
+    account_id = workspace.account_id
+    if isinstance(account_id, EnvVar):
+        return account_id.get_value() or account_id.env_var_name
+    return account_id
 
 
 @whitelist_for_serdes
@@ -284,17 +298,30 @@ def build_fivetran_polling_sensor(
         SensorDefinition: A sensor definition.
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-    sensor_name = name or f"fivetran_{workspace.account_id}__sync_status_sensor"
+    account_id_label = _get_account_id_label(workspace)
+    sensor_name = name or f"fivetran_{account_id_label}__sync_status_sensor"
+
+    # Resolve any EnvVars in the workspace config the first time the sensor runs, and reuse
+    # the resolved workspace on later ticks so its cached workspace data and client are kept.
+    initialized_workspaces: list[FivetranWorkspace] = []
+
+    def get_initialized_workspace() -> FivetranWorkspace:
+        if not initialized_workspaces:
+            initialized_workspaces.append(workspace.process_config_and_initialize())
+        return initialized_workspaces[0]
 
     @sensor(
         name=sensor_name,
-        description=(f"Fivetran polling sensor for workspace account {workspace.account_id}"),
+        description=f"Fivetran polling sensor for workspace account {account_id_label}",
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
     )
     def fivetran_sync_status_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for Fivetran connector syncs."""
-        context.log.info(f"Running Fivetran polling sensor for account {workspace.account_id}")
+        initialized_workspace = get_initialized_workspace()
+        context.log.info(
+            f"Running Fivetran polling sensor for account {initialized_workspace.account_id}"
+        )
 
         try:
             cursor = (
@@ -308,10 +335,10 @@ def build_fivetran_polling_sensor(
 
         current_date = get_current_datetime()
 
-        workspace_data = workspace.get_or_fetch_workspace_data()
+        workspace_data = initialized_workspace.get_or_fetch_workspace_data()
         selected_workspace_data = workspace_data.to_workspace_data_selection(connector_selector_fn)
 
-        client = workspace.get_client()
+        client = initialized_workspace.get_client()
 
         all_asset_events: list[AssetMaterialization] = []
         new_effective_timestamps = dict(cursor.effective_timestamp_by_connector_id)
