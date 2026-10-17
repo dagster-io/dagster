@@ -169,7 +169,7 @@ During the deployment process, environment variables configured in your Dagster+
     - Optionally update the variable type, environments, visibility, flags, and description fields as needed.
     - Click **Add variable**.
 
-After following these steps, commiting and pushing additional changes to your Dagster project in GitLab will deploy them to your Dagster+ organization.
+After following these steps, committing and pushing additional changes to your Dagster project in GitLab will deploy them to your Dagster+ organization.
 
 ## Other Git providers or local Git repository
 
