@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 import subprocess
+import threading
+from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -822,9 +824,34 @@ def test_column_lineage_shares_one_scope_per_model(
 ) -> None:
     # Without a scope, sqlglot's lineage() re-qualifies the whole query for every column,
     # which makes lineage on wide models take minutes.
-    from dagster_dbt.core.dbt_cli_event import lineage
+    from dagster_dbt.core.dbt_cli_event import _build_column_lineage_metadata, lineage
 
-    lineage_spy = mocker.patch("dagster_dbt.core.dbt_cli_event.lineage", side_effect=lineage)
+    # Lineage runs in a thread pool, so attribute each lineage() call to the model being
+    # built on the same thread.
+    current_model = threading.local()
+    scope_ids_by_model: dict[str | None, set[int | None]] = defaultdict(set)
+    calls_by_model: Counter[str | None] = Counter()
+
+    def build_column_lineage_metadata(**kwargs: Any) -> dict[str, Any]:
+        current_model.unique_id = kwargs["dbt_resource_props"]["unique_id"]
+        try:
+            return _build_column_lineage_metadata(**kwargs)
+        finally:
+            current_model.unique_id = None
+
+    def record_lineage(**kwargs: Any) -> Any:
+        unique_id = getattr(current_model, "unique_id", None)
+        scope = kwargs.get("scope")
+        scope_ids_by_model[unique_id].add(None if scope is None else id(scope))
+        calls_by_model[unique_id] += 1
+        return lineage(**kwargs)
+
+    mocker.patch("dagster_dbt.core.dbt_cli_event.lineage", side_effect=record_lineage)
+    for module in ("dbt_cli_event", "dbt_event_iterator"):
+        mocker.patch(
+            f"dagster_dbt.core.{module}._build_column_lineage_metadata",
+            side_effect=build_column_lineage_metadata,
+        )
 
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
 
@@ -839,15 +866,11 @@ def test_column_lineage_shares_one_scope_per_model(
     result = materialize([my_dbt_assets], resources={"dbt": dbt})
     assert result.success
 
-    models_with_lineage = [
-        event.materialization.asset_key
-        for event in result.get_asset_materialization_events()
-        if TableMetadataSet.extract(event.materialization.metadata).column_lineage is not None
-    ]
-    scopes = [call.kwargs.get("scope") for call in lineage_spy.call_args_list]
-    assert None not in scopes
-    # A model whose columns are all implicitly aliased never calls lineage(), so <=.
-    assert len({id(scope) for scope in scopes}) <= len(models_with_lineage) < len(scopes)
+    assert scope_ids_by_model
+    assert None not in scope_ids_by_model
+    for unique_id, scope_ids in scope_ids_by_model.items():
+        assert len(scope_ids) == 1 and None not in scope_ids, unique_id
+    assert any(count > 1 for count in calls_by_model.values())
 
 
 @pytest.mark.parametrize(
