@@ -27,6 +27,8 @@ from sqlglot import MappingSchema, exp, parse_one, to_table
 from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
+from sqlglot.optimizer.qualify import qualify
+from sqlglot.optimizer.scope import build_scope
 
 from dagster_dbt.asset_utils import (
     default_metadata_from_dbt_resource_props,
@@ -160,6 +162,17 @@ def _build_column_lineage_metadata(
     # un-serialized AST on sqlglot 24.0.0, 28.0.0, and 28.1.0.
     optimized_node_sql = optimized_node_ast.sql(dialect=sql_dialect)
 
+    # Without a scope, lineage() parses, qualifies, and scopes the whole query again for
+    # every column, so wide models pay that cost once per column. Do it once and share it.
+    qualified_node_ast = qualify(
+        parse_one(sql=optimized_node_sql, dialect=sql_dialect),
+        dialect=sql_dialect,
+        schema=sqlglot_mapping_schema,
+        validate_qualify_columns=False,
+        identify=False,
+    )
+    node_scope = build_scope(qualified_node_ast)
+
     # 2. Retrieve the column names from the current node.
     schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
     sqlglot_column_names = set(optimized_node_ast.named_selects)
@@ -204,9 +217,11 @@ def _build_column_lineage_metadata(
         column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
-            sql=optimized_node_sql,
+            sql=qualified_node_ast,
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
+            scope=node_scope,
+            copy=False,
         ).walk():
             # Only the leaves of the lineage graph contain relevant information.
             if sqlglot_lineage_node.downstream:
