@@ -28,7 +28,7 @@ from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 from sqlglot.optimizer.qualify import qualify
-from sqlglot.optimizer.scope import build_scope
+from sqlglot.optimizer.scope import Scope, build_scope
 
 from dagster_dbt.asset_utils import (
     default_metadata_from_dbt_resource_props,
@@ -162,17 +162,6 @@ def _build_column_lineage_metadata(
     # un-serialized AST on sqlglot 24.0.0, 28.0.0, and 28.1.0.
     optimized_node_sql = optimized_node_ast.sql(dialect=sql_dialect)
 
-    # Without a scope, lineage() parses, qualifies, and scopes the whole query again for
-    # every column, so wide models pay that cost once per column. Do it once and share it.
-    qualified_node_ast = qualify(
-        parse_one(sql=optimized_node_sql, dialect=sql_dialect),
-        dialect=sql_dialect,
-        schema=sqlglot_mapping_schema,
-        validate_qualify_columns=False,
-        identify=False,
-    )
-    node_scope = build_scope(qualified_node_ast)
-
     # 2. Retrieve the column names from the current node.
     schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
     sqlglot_column_names = set(optimized_node_ast.named_selects)
@@ -210,9 +199,23 @@ def _build_column_lineage_metadata(
 
         deps_by_column = {column: [] for column in implicit_alias_column_names}
 
+    # Without a scope, lineage() parses, qualifies, and scopes the whole query again for
+    # every column. Build it on the first column that needs it and share it.
+    qualified_node_ast: exp.Expression | None = None
+    node_scope: Scope | None = None
     for column_name in sqlglot_column_names:
         if column_name.lower() not in schema_column_names:
             continue
+
+        if qualified_node_ast is None:
+            qualified_node_ast = qualify(
+                parse_one(sql=optimized_node_sql, dialect=sql_dialect),
+                dialect=sql_dialect,
+                schema=sqlglot_mapping_schema,
+                validate_qualify_columns=False,
+                identify=False,
+            )
+            node_scope = build_scope(qualified_node_ast)
 
         column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
