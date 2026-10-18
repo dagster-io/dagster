@@ -815,6 +815,41 @@ def test_column_lineage_integration(
         assert len(relation_keys_passed) <= len(set(relation_keys_passed)) + REPEAT_QUERIES_PADDING
 
 
+def test_column_lineage_shares_one_scope_per_model(
+    test_metadata_manifest: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
+) -> None:
+    # Without a scope, sqlglot's lineage() re-qualifies the whole query for every column,
+    # which makes lineage on wide models take minutes.
+    from dagster_dbt.core.dbt_cli_event import lineage
+
+    lineage_spy = mocker.patch("dagster_dbt.core.dbt_cli_event.lineage", side_effect=lineage)
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt.cli(["--quiet", "seed"]).wait()
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    models_with_lineage = [
+        event.materialization.asset_key
+        for event in result.get_asset_materialization_events()
+        if TableMetadataSet.extract(event.materialization.metadata).column_lineage is not None
+    ]
+    scopes = [call.kwargs.get("scope") for call in lineage_spy.call_args_list]
+    assert None not in scopes
+    # A model whose columns are all implicitly aliased never calls lineage(), so <=.
+    assert len({id(scope) for scope in scopes}) <= len(models_with_lineage) < len(scopes)
+
+
 @pytest.mark.parametrize(
     "command",
     ["parse", "build"],
