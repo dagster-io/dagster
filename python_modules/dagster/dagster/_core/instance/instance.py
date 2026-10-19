@@ -253,7 +253,7 @@ class DagsterInstance(
             tempdir (Optional[str]): The path of a directory to be used for local artifact storage.
             preload (Optional[Sequence[DebugRunPayload]]): A sequence of payloads to load into the
                 instance's run storage. Useful for debugging.
-            settings (Optional[Dict]): Settings for the instance.
+            settings (Optional[Mapping[str, Any]]): Settings for the instance.
 
         Returns:
             DagsterInstance: An ephemeral DagsterInstance.
