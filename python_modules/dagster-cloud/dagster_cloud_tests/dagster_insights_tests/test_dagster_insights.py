@@ -1,6 +1,7 @@
 import os
 from contextlib import nullcontext
 from datetime import datetime, timezone
+from unittest import mock
 
 import pytest
 from dagster import AssetExecutionContext, materialize
@@ -15,7 +16,7 @@ from dagster_cloud.dagster_insights.snowflake.dagster_snowflake_insights import 
     get_cost_data_for_hour,
 )
 from dagster_cloud.dagster_insights.snowflake.snowflake_utils import OPAQUE_ID_METADATA_KEY_PREFIX
-from dagster_dbt import DbtCliResource, dbt_assets
+from dagster_dbt import DbtCliInvocation, DbtCliResource, dbt_assets
 
 from dagster_cloud_tests.dagster_insights_tests.conftest import (
     JAFFLE_SHOP_ASSET_KEYS,
@@ -229,6 +230,55 @@ def test_format_bigquery_timestamp_uses_utc():
         format_bigquery_timestamp(datetime(2026, 9, 6, 6, 45, 17, 109273, tzinfo=timezone.utc))
         == "2026-09-06 06:45:17.109273 UTC"
     )
+
+
+def test_bigquery_bad_run_results_timestamp_does_not_fail_step(
+    bigquery_manifest_path,
+    bigquery_jaffle_dir,
+    default_bigquery_client,
+):
+    """A run_results.json timestamp that cannot be parsed must not fail the asset step: the
+    cost query should still run with a fallback window and the cost metadata still be emitted.
+    """
+    original_get_artifact = DbtCliInvocation.get_artifact
+
+    def get_artifact_with_bad_timestamp(self: DbtCliInvocation, artifact):
+        result = original_get_artifact(self, artifact)
+        if artifact == "run_results.json":
+            result["metadata"]["invocation_started_at"] = "not-a-timestamp"
+            result["metadata"]["generated_at"] = "not-a-timestamp"
+        return result
+
+    @dbt_assets(manifest=bigquery_manifest_path)
+    def jaffle_shop_dbt_assets(
+        context: AssetExecutionContext,
+        dbt: DbtCliResource,
+    ):
+        dbt_cli_invocation = dbt.cli(["build", "--profile", "unittest"], context=context)
+        yield from dbt_with_bigquery_insights(context, dbt_cli_invocation)
+
+    with mock.patch.object(DbtCliInvocation, "get_artifact", get_artifact_with_bad_timestamp):
+        result = materialize(
+            [jaffle_shop_dbt_assets],
+            resources={
+                "dbt": DbtCliResource(project_dir=os.fspath(bigquery_jaffle_dir)),
+            },
+            raise_on_error=False,
+        )
+
+    assert result.success
+
+    asset_keys_with_metadata = set()
+    for event in result.get_asset_observation_events():
+        for key in event.asset_observation_data.asset_observation.metadata.keys():
+            if key == BIGQUERY_METADATA_BYTES_BILLED or key == BIGQUERY_METADATA_SLOTS_MS:
+                asset_keys_with_metadata.add(
+                    event.asset_observation_data.asset_observation.asset_key.to_user_string()
+                )
+
+    assert asset_keys_with_metadata == JAFFLE_SHOP_ASSET_KEYS
+    assert default_bigquery_client.query.call_count == 1
+    assert "creation_time >=" in default_bigquery_client.query.call_args[0][0]
 
 
 @pytest.mark.parametrize(

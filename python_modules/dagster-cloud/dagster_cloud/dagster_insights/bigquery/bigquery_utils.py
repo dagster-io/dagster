@@ -9,6 +9,7 @@ BIGQUERY_METADATA_BYTES_BILLED = "__bigquery_bytes_billed"
 BIGQUERY_METADATA_SLOTS_MS = "__bigquery_slots_ms"
 BIGQUERY_METADATA_JOB_IDS = "__bigquery_job_ids"
 INVOCATION_TIME_BUFFER = timedelta(hours=1)
+FALLBACK_INVOCATION_LOOKBACK = timedelta(days=2)
 
 
 def marker_asset_key_for_job(
@@ -58,7 +59,7 @@ def derive_invocation_time_bounds(run_results_json: Mapping[str, Any]) -> tuple[
         if started_at_values:
             start = _parse_run_results_timestamp(min(started_at_values))
         else:
-            start = datetime.now(timezone.utc) - timedelta(days=2)
+            start = datetime.now(timezone.utc) - FALLBACK_INVOCATION_LOOKBACK
 
     if metadata.get("generated_at"):
         end = _parse_run_results_timestamp(metadata["generated_at"])
@@ -75,6 +76,12 @@ def derive_invocation_time_bounds(run_results_json: Mapping[str, Any]) -> tuple[
             end = datetime.now(timezone.utc)
 
     return start - INVOCATION_TIME_BUFFER, end + INVOCATION_TIME_BUFFER
+
+
+def fallback_invocation_time_bounds() -> tuple[datetime, datetime]:
+    """Return a wide window ending now, for when run_results.json timing cannot be read."""
+    now = datetime.now(timezone.utc)
+    return now - FALLBACK_INVOCATION_LOOKBACK - INVOCATION_TIME_BUFFER, now + INVOCATION_TIME_BUFFER
 
 
 def format_bigquery_timestamp(value: datetime) -> str:

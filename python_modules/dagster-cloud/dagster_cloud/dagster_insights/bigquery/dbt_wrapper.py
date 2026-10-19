@@ -21,6 +21,7 @@ from packaging import version
 from dagster_cloud.dagster_insights.bigquery.bigquery_utils import (
     build_bigquery_cost_metadata,
     derive_invocation_time_bounds,
+    fallback_invocation_time_bounds,
     format_bigquery_timestamp,
     marker_asset_key_for_job,
 )
@@ -151,9 +152,17 @@ def dbt_with_bigquery_insights(
     marker_asset_key = marker_asset_key_for_job(context.job_def)
     run_results_json = dbt_cli_invocation.get_artifact("run_results.json")
     invocation_id = run_results_json["metadata"]["invocation_id"]
-    creation_time_lower_bound, creation_time_upper_bound = derive_invocation_time_bounds(
-        run_results_json
-    )
+    try:
+        creation_time_lower_bound, creation_time_upper_bound = derive_invocation_time_bounds(
+            run_results_json
+        )
+    except Exception:
+        context.log.warning(
+            "Could not derive invocation time bounds from run_results.json; falling back to a"
+            " two-day window for the BigQuery cost query.",
+            exc_info=True,
+        )
+        creation_time_lower_bound, creation_time_upper_bound = fallback_invocation_time_bounds()
 
     # backcompat-proof in case the invocation does not have an instantiated adapter on it
     adapter: BaseAdapter | None = getattr(dbt_cli_invocation, "adapter", None)
