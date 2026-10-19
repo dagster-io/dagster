@@ -124,7 +124,7 @@ class LegacyFreshnessPolicy(
                 get_timezone(cron_schedule_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
-                    "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "
+                    f"Invalid cron schedule timezone '{cron_schedule_timezone}'.   "
                 ) from e
         return super().__new__(
             cls,
