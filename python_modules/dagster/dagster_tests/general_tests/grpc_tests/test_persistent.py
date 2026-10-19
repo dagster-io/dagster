@@ -724,9 +724,11 @@ def test_code_server_reload_after_subprocess_exit_starts_one_subprocess() -> Non
 
 
 @contextmanager
-def _in_process_proxy_servicer(monkeypatch) -> Iterator[DagsterProxyApiServicer]:
-    # Keep the watchdog out of the way: these tests run its restart step themselves.
-    monkeypatch.setattr(proxy_server, "SUBPROCESS_WATCHDOG_INTERVAL", 3600)
+def _in_process_proxy_servicer(
+    monkeypatch, watchdog_interval: float = 3600
+) -> Iterator[DagsterProxyApiServicer]:
+    # By default keep the watchdog out of the way, for tests that run its restart step themselves.
+    monkeypatch.setattr(proxy_server, "SUBPROCESS_WATCHDOG_INTERVAL", watchdog_interval)
     servicer = DagsterProxyApiServicer(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -800,6 +802,37 @@ def test_watchdog_does_not_replace_subprocess_that_reload_already_replaced(monke
         assert servicer._restart_subprocess(only_if_exited=True) is False  # noqa: SLF001
         assert _active_subprocess(servicer) is new_subprocess
         assert new_subprocess.poll() is None
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Kills a subprocess by pid")
+def test_watchdog_keeps_running_after_an_error(monkeypatch) -> None:
+    with _in_process_proxy_servicer(monkeypatch, watchdog_interval=0.1) as servicer:
+        registry = servicer._grpc_server_registry  # noqa: SLF001
+        get_active_process_exit_code = registry.get_active_process_exit_code
+        calls = []
+
+        def fail_first_check(code_location_origin):
+            calls.append(code_location_origin)
+            if len(calls) == 1:
+                raise Exception("first check fails")
+            return get_active_process_exit_code(code_location_origin)
+
+        monkeypatch.setattr(registry, "get_active_process_exit_code", fail_first_check)
+
+        old_subprocess = _active_subprocess(servicer)
+        old_subprocess.kill()
+        old_subprocess.wait(timeout=10)
+
+        # Polls the registry directly: its entry is briefly missing while a restart is in progress.
+        start_time = time.time()
+        while True:
+            entry = registry._active_entries.get(servicer._origin.get_id())  # noqa: SLF001
+            process = getattr(entry, "process", None)
+            if process and process.server_process is not old_subprocess:
+                break
+            assert time.time() - start_time < 60, "watchdog stopped after an error"
+            time.sleep(0.1)
+        assert len(calls) > 1
 
 
 def test_load_timeout_code_server_cli() -> None:

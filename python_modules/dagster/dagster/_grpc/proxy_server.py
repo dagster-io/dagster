@@ -225,7 +225,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 try:
                     old_client.shutdown_server()
                 except DagsterUserCodeUnreachableError:
-                    # It exited while the new subprocess was starting.
+                    # It exited while the new subprocess was starting. If it is hung rather
+                    # than exited, it shuts itself down once heartbeats stop below.
                     pass
         finally:
             if old_heartbeat_shutdown_event:
@@ -241,32 +242,37 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         last_restart_time: float | None = None
         exit_seen_time: float | None = None
         while not self._shutdown_once_executions_finish_event.wait(SUBPROCESS_WATCHDOG_INTERVAL):
-            # None while running, and also after a failed load: that error is reported by
-            # ListRepositories, and restarting would only fail the same way.
-            exit_code = self._grpc_server_registry.get_active_process_exit_code(self._origin)
-            if exit_code is None:
-                exit_seen_time = None
-                continue
+            # An exception here would end the watchdog silently and bring back the outage it
+            # prevents, so log it and keep watching.
+            try:
+                # None while running, and also after a failed load: that error is reported by
+                # ListRepositories, and restarting would only fail the same way.
+                exit_code = self._grpc_server_registry.get_active_process_exit_code(self._origin)
+                if exit_code is None:
+                    exit_seen_time = None
+                    continue
 
-            if exit_seen_time is None:
-                # Measure uptime once, at the exit, so time spent waiting out the backoff
-                # does not count as the subprocess staying up.
-                exit_seen_time = time.monotonic()
-                if last_restart_time is not None:
-                    restart_backoff = next_subprocess_restart_backoff(
-                        restart_backoff, uptime=exit_seen_time - last_restart_time
+                if exit_seen_time is None:
+                    # Measure uptime once, at the exit, so time spent waiting out the backoff
+                    # does not count as the subprocess staying up.
+                    exit_seen_time = time.monotonic()
+                    if last_restart_time is not None:
+                        restart_backoff = next_subprocess_restart_backoff(
+                            restart_backoff, uptime=exit_seen_time - last_restart_time
+                        )
+                    self._logger.warning(
+                        f"Code server subprocess exited unexpectedly with return code {exit_code}, "
+                        f"starting a new one in {restart_backoff:.0f}s"
                     )
-                self._logger.warning(
-                    f"Code server subprocess exited unexpectedly with return code {exit_code}, "
-                    f"starting a new one in {restart_backoff:.0f}s"
-                )
 
-            if time.monotonic() - exit_seen_time < restart_backoff:
-                continue
+                if time.monotonic() - exit_seen_time < restart_backoff:
+                    continue
 
-            if self._restart_subprocess(only_if_exited=True):
-                last_restart_time = time.monotonic()
-                exit_seen_time = None
+                if self._restart_subprocess(only_if_exited=True):
+                    last_restart_time = time.monotonic()
+                    exit_seen_time = None
+            except Exception:
+                self._logger.exception("Error in the code server subprocess watchdog")
 
     def RefreshComponentState(self, request, context):
         if self._load_error:
@@ -296,7 +302,6 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def cleanup(self):
         # In case ShutdownServer was not called
         self._shutdown_once_executions_finish_event.set()
-        self.__subprocess_watchdog_thread.join()
         self._grpc_server_registry.shutdown_all_processes()
 
         if self._client_heartbeat_shutdown_event:
@@ -310,6 +315,11 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         if self.__server_heartbeat_thread:
             self.__server_heartbeat_thread.join()
             self.__server_heartbeat_thread = None
+
+        # Joined late so a restart in progress does not delay shutting down the running
+        # processes; the restart shuts down its own subprocess once it sees the shutdown.
+        # Joined before closing the registry, which the watchdog uses.
+        self.__subprocess_watchdog_thread.join()
 
         self._exit_stack.close()
 
