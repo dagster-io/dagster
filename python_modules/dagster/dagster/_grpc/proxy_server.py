@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import InstanceRef
 from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
@@ -218,15 +219,20 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 # A shutdown may have stopped every process before this one was created.
                 self._grpc_server_registry.shutdown_all_processes()
 
-        # An exited subprocess cannot be asked to shut down; asking fails the whole reload.
-        if old_client and not old_subprocess_exited:
-            old_client.shutdown_server()
+        try:
+            # An exited subprocess cannot be asked to shut down; asking fails the whole reload.
+            if old_client and not old_subprocess_exited:
+                try:
+                    old_client.shutdown_server()
+                except DagsterUserCodeUnreachableError:
+                    # It exited while the new subprocess was starting.
+                    pass
+        finally:
+            if old_heartbeat_shutdown_event:
+                old_heartbeat_shutdown_event.set()
 
-        if old_heartbeat_shutdown_event:
-            old_heartbeat_shutdown_event.set()
-
-        if old_heartbeat_thread:
-            old_heartbeat_thread.join()
+            if old_heartbeat_thread:
+                old_heartbeat_thread.join()
 
         return True
 

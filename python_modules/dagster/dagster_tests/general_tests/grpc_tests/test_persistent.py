@@ -1,9 +1,13 @@
 import json
+import logging
 import os
 import re
 import subprocess
 import sys
+import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import dagster as dg
 import psutil
@@ -20,11 +24,13 @@ from dagster._core.remote_representation.external_data import SensorExecutionErr
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test, environ, new_cwd, poll_for_finished_run
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._grpc import proxy_server
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.proxy_server import (
     MAX_SUBPROCESS_RESTART_BACKOFF,
     SUBPROCESS_WATCHDOG_INTERVAL,
+    DagsterProxyApiServicer,
     next_subprocess_restart_backoff,
 )
 from dagster._grpc.server import ExecuteExternalJobArgs, open_server_process, wait_for_grpc_server
@@ -703,7 +709,7 @@ def test_code_server_reload_after_subprocess_exit_starts_one_subprocess() -> Non
         wait_for_grpc_server(process, client, args)
         [subprocess_before] = _code_server_subprocesses(process)
 
-        # The watchdog and ReloadCode now race to replace the same subprocess.
+        # The watchdog may also try to replace it; the in-process tests below fix that order.
         subprocess_before.kill()
         subprocess_before.wait(timeout=10)
         client.reload_code(timeout=60)
@@ -715,6 +721,85 @@ def test_code_server_reload_after_subprocess_exit_starts_one_subprocess() -> Non
     finally:
         process.terminate()
         process.wait()
+
+
+@contextmanager
+def _in_process_proxy_servicer(monkeypatch) -> Iterator[DagsterProxyApiServicer]:
+    # Keep the watchdog out of the way: these tests run its restart step themselves.
+    monkeypatch.setattr(proxy_server, "SUBPROCESS_WATCHDOG_INTERVAL", 3600)
+    servicer = DagsterProxyApiServicer(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=dg.file_relative_path(__file__, "grpc_repo.py"),
+        ),
+        fixed_server_id=None,
+        container_image=None,
+        container_context=None,
+        inject_env_vars_from_instance=False,
+        location_name=None,
+        log_level="INFO",
+        startup_timeout=60,
+        server_termination_event=threading.Event(),
+        instance_ref=None,
+        logger=logging.getLogger("dagster.code_server"),
+        server_heartbeat=False,
+        server_heartbeat_timeout=30,
+        heartbeat_ttl=30,
+        defs_state_info=None,
+    )
+    try:
+        yield servicer
+    finally:
+        servicer.cleanup()
+
+
+def _active_subprocess(servicer: DagsterProxyApiServicer) -> subprocess.Popen:
+    registry = servicer._grpc_server_registry  # noqa: SLF001
+    entry = registry._active_entries[servicer._origin.get_id()]  # noqa: SLF001
+    return entry.process.server_process
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Kills a subprocess by pid")
+def test_reload_when_subprocess_exits_while_replacement_starts(monkeypatch) -> None:
+    with _in_process_proxy_servicer(monkeypatch) as servicer:
+        old_subprocess = _active_subprocess(servicer)
+        old_heartbeat_thread = servicer._client_heartbeat_thread  # noqa: SLF001
+        assert old_heartbeat_thread
+
+        reload_location = servicer._reload_location  # noqa: SLF001
+
+        def exit_then_reload_location():
+            old_subprocess.kill()
+            old_subprocess.wait(timeout=10)
+            reload_location()
+
+        monkeypatch.setattr(servicer, "_reload_location", exit_then_reload_location)
+        servicer.ReloadCode(None, None)
+
+        assert _active_subprocess(servicer) is not old_subprocess
+        client = servicer._client  # noqa: SLF001
+        assert client
+        assert client.ping("foobar")["echo"] == "foobar"
+        assert not old_heartbeat_thread.is_alive()
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Kills a subprocess by pid")
+def test_watchdog_does_not_replace_subprocess_that_reload_already_replaced(monkeypatch) -> None:
+    with _in_process_proxy_servicer(monkeypatch) as servicer:
+        old_subprocess = _active_subprocess(servicer)
+        old_subprocess.kill()
+        old_subprocess.wait(timeout=10)
+
+        # The watchdog has seen the exit, but a ReloadCode replaces the subprocess first...
+        registry = servicer._grpc_server_registry  # noqa: SLF001
+        assert registry.get_active_process_exit_code(servicer._origin) is not None  # noqa: SLF001
+        servicer.ReloadCode(None, None)
+        new_subprocess = _active_subprocess(servicer)
+
+        # ...so when the watchdog acts on what it saw, there is nothing left to replace.
+        assert servicer._restart_subprocess(only_if_exited=True) is False  # noqa: SLF001
+        assert _active_subprocess(servicer) is new_subprocess
+        assert new_subprocess.poll() is None
 
 
 def test_load_timeout_code_server_cli() -> None:
