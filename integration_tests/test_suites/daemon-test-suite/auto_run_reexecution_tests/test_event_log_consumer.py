@@ -3,8 +3,10 @@ import time
 
 from dagster import DagsterEvent, DagsterEventType, EventLogEntry
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test
 from dagster._daemon.auto_run_reexecution.event_log_consumer import (
+    _MAX_WAIT_FOR_RUN_FAILURE_STATUS_SECONDS,
     EventLogConsumerDaemon,
     get_new_cursor,
 )
@@ -45,6 +47,28 @@ def _create_success_event(instance, run):
     )
 
     instance.handle_new_event(event_record)
+
+
+def _store_run_failure_event(instance, run, timestamp=None) -> EventLogEntry:
+    """Store a RUN_FAILURE event without updating the run status, like the run worker does right
+    before it updates the run status to FAILURE.
+    """
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.RUN_FAILURE.value,
+        job_name="foo",
+        message="run failed",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=timestamp if timestamp is not None else time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.event_log_storage.store_event(event_record)
+    return event_record
 
 
 def test_daemon(instance: DagsterInstance, empty_workspace_context):
@@ -164,6 +188,76 @@ def test_cursor_init(instance: DagsterInstance, empty_workspace_context):
 
     list(daemon.run_iteration(empty_workspace_context))
     assert len(daemon.run_records) == 1
+
+
+def test_run_failure_event_before_run_status_update(
+    instance: DagsterInstance, empty_workspace_context
+):
+    daemon = MockEventLogConsumerDaemon()
+    list(daemon.run_iteration(empty_workspace_context))
+
+    run1 = create_run_for_test(instance, "foo", status=DagsterRunStatus.STARTED)
+    run2 = create_run_for_test(instance, "foo", status=DagsterRunStatus.STARTED)
+    run3 = create_run_for_test(instance, "foo", status=DagsterRunStatus.STARTED)
+
+    instance.report_run_failed(run1)
+    run2_failure = _store_run_failure_event(instance, run2)  # run status not updated yet
+    instance.report_run_failed(run3)
+
+    # stops at the failure event of run2, run3 is handled after run2
+    list(daemon.run_iteration(empty_workspace_context))
+    assert [record.dagster_run.run_id for record in daemon.run_records] == [run1.run_id]
+    cursors = instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY})
+
+    # still waiting for the run status of run2 to be updated
+    daemon.run_records = []
+    list(daemon.run_iteration(empty_workspace_context))
+    assert daemon.run_records == []
+    assert instance.run_storage.get_cursor_values({FAILURE_KEY, SUCCESS_KEY}) == cursors
+
+    instance.handle_run_event(run2.run_id, run2_failure.get_dagster_event())
+
+    list(daemon.run_iteration(empty_workspace_context))
+    assert {record.dagster_run.run_id for record in daemon.run_records} == {
+        run2.run_id,
+        run3.run_id,
+    }
+
+    # not called again for the same events
+    daemon.run_records = []
+    list(daemon.run_iteration(empty_workspace_context))
+    assert daemon.run_records == []
+
+
+def test_run_failure_event_without_run_status_update_after_max_wait(
+    instance: DagsterInstance, empty_workspace_context
+):
+    daemon = MockEventLogConsumerDaemon()
+    list(daemon.run_iteration(empty_workspace_context))
+
+    run1 = create_run_for_test(instance, "foo", status=DagsterRunStatus.STARTED)
+    run2 = create_run_for_test(instance, "foo", status=DagsterRunStatus.STARTED)
+
+    # the run status of run1 is never updated, so it must not block the handling of run2
+    _store_run_failure_event(
+        instance, run1, timestamp=time.time() - _MAX_WAIT_FOR_RUN_FAILURE_STATUS_SECONDS - 1
+    )
+    instance.report_run_failed(run2)
+
+    list(daemon.run_iteration(empty_workspace_context))
+    assert {record.dagster_run.run_id for record in daemon.run_records} == {
+        run1.run_id,
+        run2.run_id,
+    }
+
+    run1_engine_events = instance.get_records_for_run(
+        run1.run_id, of_type=DagsterEventType.ENGINE_EVENT
+    ).records
+    assert len(run1_engine_events) == 1
+    assert "Handling it anyway" in run1_engine_events[0].event_log_entry.message
+    assert not instance.get_records_for_run(
+        run2.run_id, of_type=DagsterEventType.ENGINE_EVENT
+    ).records
 
 
 def test_get_new_cursor():
