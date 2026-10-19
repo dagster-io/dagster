@@ -1481,11 +1481,11 @@ class SqlEventLogStorage(EventLogStorage):
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
-        rows = self._fetch_asset_rows(asset_keys=[asset_key])
+        rows = self._fetch_asset_rows(asset_keys=[asset_key], key_only=True)
         return bool(rows)
 
     def all_asset_keys(self):
-        rows = self._fetch_asset_rows()
+        rows = self._fetch_asset_rows(key_only=True)
         asset_keys = [
             AssetKey.from_db_string(row["asset_key"])
             for row in sorted(rows, key=lambda x: x["asset_key"])
@@ -1498,7 +1498,7 @@ class SqlEventLogStorage(EventLogStorage):
         limit: int | None = None,
         cursor: str | None = None,
     ) -> Sequence[AssetKey]:
-        rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
+        rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor, key_only=True)
         asset_keys = [
             AssetKey.from_db_string(row["asset_key"])
             for row in sorted(rows, key=lambda x: x["asset_key"])
@@ -1520,9 +1520,11 @@ class SqlEventLogStorage(EventLogStorage):
     def _fetch_asset_rows(
         self,
         asset_keys=None,
+        *,
         prefix: Sequence[str] | None = None,
         limit: int | None = None,
         cursor: str | None = None,
+        key_only: bool = False,
     ) -> Sequence[SqlAlchemyRow]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.
@@ -1544,7 +1546,11 @@ class SqlEventLogStorage(EventLogStorage):
 
         while should_query:
             rows, has_more, current_cursor = self._fetch_raw_asset_rows(
-                asset_keys=asset_keys, prefix=prefix, limit=fetch_limit, cursor=current_cursor
+                asset_keys=asset_keys,
+                prefix=prefix,
+                limit=fetch_limit,
+                cursor=current_cursor,
+                key_only=key_only,
             )
             result.extend(rows)
             should_query = bool(has_more) and bool(limit) and len(result) < cast("int", limit)
@@ -1558,9 +1564,11 @@ class SqlEventLogStorage(EventLogStorage):
     def _fetch_raw_asset_rows(
         self,
         asset_keys: Sequence[AssetKey] | None = None,
+        *,
         prefix: Sequence[str] | None = None,
         limit: int | None = None,
         cursor=None,
+        key_only: bool = False,
     ) -> tuple[Iterable[SqlAlchemyRow], bool, str | None]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.  Does not guarantee that the number of
@@ -1571,27 +1579,35 @@ class SqlEventLogStorage(EventLogStorage):
         # asset_key, materialization, and asset_details
         # TODO update comment
 
-        columns = [
-            AssetKeyTable.c.id,
-            AssetKeyTable.c.asset_key,
-            AssetKeyTable.c.last_materialization,
-            AssetKeyTable.c.last_run_id,
-            AssetKeyTable.c.asset_details,
-        ]
-        if self.can_read_asset_status_cache():
-            columns.extend([AssetKeyTable.c.cached_status_data])
+        has_asset_key_index = self.has_secondary_index(ASSET_KEY_INDEX_COLS)
 
-        is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
-        if self.has_asset_key_index_cols() and not is_partial_query:
-            # if the schema has been migrated, fetch the last_materialization_timestamp to see if
-            # we can lazily migrate the data table
-            columns.append(AssetKeyTable.c.last_materialization_timestamp)
-            columns.append(AssetKeyTable.c.wipe_timestamp)
+        if key_only and has_asset_key_index:
+            # With the index the wipe filter runs in SQL below, so the key alone is enough. Without
+            # it the filtering happens in Python off asset_details and last_materialization, so
+            # those columns stay in the projection even for key-only callers.
+            columns = [AssetKeyTable.c.asset_key]
+        else:
+            columns = [
+                AssetKeyTable.c.id,
+                AssetKeyTable.c.asset_key,
+                AssetKeyTable.c.last_materialization,
+                AssetKeyTable.c.last_run_id,
+                AssetKeyTable.c.asset_details,
+            ]
+            if self.can_read_asset_status_cache():
+                columns.extend([AssetKeyTable.c.cached_status_data])
+
+            is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
+            if self.has_asset_key_index_cols() and not is_partial_query:
+                # if the schema has been migrated, fetch the last_materialization_timestamp to see
+                # if we can lazily migrate the data table
+                columns.append(AssetKeyTable.c.last_materialization_timestamp)
+                columns.append(AssetKeyTable.c.wipe_timestamp)
 
         query = db_select(columns).order_by(AssetKeyTable.c.asset_key.asc())
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
 
-        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+        if has_asset_key_index:
             query = query.where(
                 db.or_(
                     AssetKeyTable.c.wipe_timestamp.is_(None),
