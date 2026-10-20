@@ -495,6 +495,12 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
             "git": {
                 "commit_hash": kwargs.get("commit_hash"),
                 "url": kwargs.get("git_url"),
+                # Where this location's UI-authored components belong. Absent for
+                # deploys from CLIs that predate them.
+                "repo_owner": kwargs.get("repo_owner"),
+                "repo_name": kwargs.get("repo_name"),
+                "base_branch": kwargs.get("base_branch"),
+                "defs_base_path": kwargs.get("defs_base_path"),
             },
             "pex_metadata": (
                 {

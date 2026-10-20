@@ -269,6 +269,26 @@ CONFIG_SCHEMA_FIELDS = {
                     is_required=False,
                     description="Specifies a source code reference link for this location.",
                 ),
+                "repo_owner": Field(
+                    config=str,
+                    is_required=False,
+                    description="Owner of the repo this location deploys from.",
+                ),
+                "repo_name": Field(
+                    config=str,
+                    is_required=False,
+                    description="Name of the repo this location deploys from.",
+                ),
+                "base_branch": Field(
+                    config=str,
+                    is_required=False,
+                    description="Branch that pull requests for this location should target.",
+                ),
+                "defs_base_path": Field(
+                    config=str,
+                    is_required=False,
+                    description="Repo-relative path of this location's defs folder.",
+                ),
             }
         ),
         is_required=False,

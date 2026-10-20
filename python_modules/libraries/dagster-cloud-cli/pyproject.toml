@@ -18,6 +18,7 @@ dependencies = [
     "click",
     "PyYAML>=5.1",
     "github3.py",
+    "gitpython",
     "Jinja2",
     "setuptools",
     "tomli>=1.1.0;python_version<\"3.11\"",

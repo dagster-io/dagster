@@ -10,11 +10,23 @@ from dagster_shared.serdes.serdes import serialize_value
 from dagster_cloud_cli.core.agent_queue import AgentQueue
 
 
-@whitelist_for_serdes
+# The repo fields are skipped when unset so deploy data from CLIs that don't
+# report them serializes exactly as before.
+@whitelist_for_serdes(
+    skip_when_none_fields={"repo_owner", "repo_name", "base_branch", "defs_base_path"}
+)
 @record(kw_only=False)
 class GitMetadata:
     commit_hash: str | None = None
     url: str | None = None
+    # Identify the repo, the branch pull requests should target, and the
+    # repo-relative folder definitions are autoloaded from. Reported by the
+    # deploy so the server knows where UI-authored components belong; all
+    # optional, since deploys from older CLIs never send them.
+    repo_owner: str | None = None
+    repo_name: str | None = None
+    base_branch: str | None = None
+    defs_base_path: str | None = None
 
 
 @whitelist_for_serdes
