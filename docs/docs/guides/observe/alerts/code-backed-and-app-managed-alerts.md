@@ -68,4 +68,4 @@ Your YAML file is the source of truth for a code-backed alert policy. The UI dis
 
 ## Default alert policies
 
-New organizations start with two alert policies, `[Dagster Plus] Credit Limit Exceeded` and `[Dagster Plus] Run Exceeds 24 Hours`. These alert policies are app-managed.
+New organizations start with one alert policy, `[Dagster Plus] Run Exceeds 24 Hours`. This alert policy is app-managed.
