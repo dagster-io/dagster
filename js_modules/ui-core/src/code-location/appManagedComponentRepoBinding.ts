@@ -15,4 +15,7 @@ export interface AppManagedComponentRepoBinding {
   defsBasePath: string;
   /** Reported by the location's last deploy, so it can't be edited by hand. */
   isFromDeploy: boolean;
+  /** Set by hand, but pointing away from the repo the location deploys from. */
+  divergesFromDeployedRepo: boolean;
+  deployedRepoUrl: string | null;
 }
