@@ -13,4 +13,6 @@ export interface AppManagedComponentRepoBinding {
   repoName: string;
   baseBranch: string;
   defsBasePath: string;
+  /** Reported by the location's last deploy, so it can't be edited by hand. */
+  isFromDeploy: boolean;
 }
