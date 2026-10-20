@@ -171,7 +171,31 @@ def init_deploy_session(
         snapshot_base_condition=snapshot_base_condition,
         clean_statedir=False,
         location_name=list(location_names),
+        defs_base_path=_repo_relative_defs_path(dg_context),
     )
+
+
+def _repo_relative_defs_path(dg_context: DgContext) -> str | None:
+    """The project's defs folder as a path relative to the checkout root.
+
+    Reported with the deploy so the server knows where UI-authored components
+    are committed. Repo-relative rather than project-relative: in a workspace
+    the project sits below the checkout root, and a pull request commits against
+    the repo.
+    """
+    from dagster_cloud_cli.core import git_repo_context
+
+    if not dg_context.is_project or not dg_context.has_defs_path:
+        return None
+
+    repo_root = git_repo_context.discover_repo_root(str(dg_context.root_path))
+    if not repo_root:
+        return None
+
+    # A defs folder outside the checkout has no repo-relative path to report.
+    if not dg_context.defs_path.is_relative_to(repo_root):
+        return None
+    return dg_context.defs_path.relative_to(repo_root).as_posix()
 
 
 def build_artifact(

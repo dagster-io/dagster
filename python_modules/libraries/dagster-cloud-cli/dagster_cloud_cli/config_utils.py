@@ -497,6 +497,7 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
                 "url": kwargs.get("git_url"),
                 # Where this location's UI-authored components belong. Absent for
                 # deploys from CLIs that predate them.
+                "provider": kwargs.get("git_provider"),
                 "repo_owner": kwargs.get("repo_owner"),
                 "repo_name": kwargs.get("repo_name"),
                 "base_branch": kwargs.get("base_branch"),

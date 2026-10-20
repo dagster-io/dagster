@@ -13,7 +13,7 @@ from dagster_cloud_cli.core.agent_queue import AgentQueue
 # The repo fields are skipped when unset so deploy data from CLIs that don't
 # report them serializes exactly as before.
 @whitelist_for_serdes(
-    skip_when_none_fields={"repo_owner", "repo_name", "base_branch", "defs_base_path"}
+    skip_when_none_fields={"repo_owner", "repo_name", "base_branch", "defs_base_path", "provider"}
 )
 @record(kw_only=False)
 class GitMetadata:
@@ -27,6 +27,7 @@ class GitMetadata:
     repo_name: str | None = None
     base_branch: str | None = None
     defs_base_path: str | None = None
+    provider: str | None = None  # "github" / "gitlab"
 
 
 @whitelist_for_serdes

@@ -269,6 +269,11 @@ CONFIG_SCHEMA_FIELDS = {
                     is_required=False,
                     description="Specifies a source code reference link for this location.",
                 ),
+                "provider": Field(
+                    config=str,
+                    is_required=False,
+                    description="Git provider hosting the repo this location deploys from.",
+                ),
                 "repo_owner": Field(
                     config=str,
                     is_required=False,

@@ -138,3 +138,42 @@ def test_reads_a_checkout(monkeypatch, tmp_path):
 
     assert git_repo_context.discover_repo_owner_and_name(str(project_dir)) == ("acme", "proj")
     assert git_repo_context.discover_base_branch(str(project_dir)) == "main"
+
+
+_PROVIDER_ENV_VARS = ("GITLAB_CI", "GITHUB_ACTIONS")
+
+
+@pytest.mark.parametrize(
+    "env_var,expected",
+    [("GITLAB_CI", "gitlab"), ("GITHUB_ACTIONS", "github")],
+)
+def test_provider_comes_from_the_ci_system(monkeypatch, tmp_path, env_var, expected):
+    for name in _PROVIDER_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(env_var, "true")
+    assert git_repo_context.discover_git_provider(str(tmp_path)) == expected
+
+
+# A local deploy has no CI variables, and is often run without --git-url.
+@pytest.mark.parametrize(
+    "remote,expected",
+    [
+        ("git@gitlab.com:acme/team/proj.git", "gitlab"),
+        ("https://gitlab.example.com/acme/proj.git", "gitlab"),
+        ("git@github.com:acme/proj.git", "github"),
+        ("ssh://git@github.com/acme/proj.git", "github"),
+        # A self-hosted host that doesn't name its provider can't be told apart.
+        ("git@git.example.com:acme/proj.git", None),
+    ],
+)
+def test_provider_falls_back_to_the_origin_remote(monkeypatch, tmp_path, remote, expected):
+    for name in _PROVIDER_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    Repo.init(tmp_path).create_remote("origin", remote)
+    assert git_repo_context.discover_git_provider(str(tmp_path)) == expected
+
+
+def test_provider_reports_nothing_outside_a_checkout(monkeypatch, tmp_path):
+    for name in _PROVIDER_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    assert git_repo_context.discover_git_provider(str(tmp_path)) is None

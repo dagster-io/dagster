@@ -35,6 +35,7 @@ class BuildMetadata(BaseModel):
     # Where UI-authored components belong. Written at session init and read back
     # by ``finish`` in a separate process, so these have to live in the statedir.
     # Default to None so a statedir written before these existed still loads.
+    git_provider: str | None = None
     repo_owner: str | None = None
     repo_name: str | None = None
     base_branch: str | None = None

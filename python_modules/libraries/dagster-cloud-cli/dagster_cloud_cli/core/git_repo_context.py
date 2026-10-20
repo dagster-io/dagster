@@ -10,6 +10,7 @@ import logging
 import os
 import re
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from git import Repo
@@ -55,17 +56,48 @@ def discover_repo_owner_and_name(project_dir: str) -> tuple[str | None, str | No
         owner, _, name = from_env.rpartition("/")
         return owner, name
 
+    remote = _origin_url(project_dir)
+    parsed = parse_owner_and_repo(remote) if remote else None
+    return parsed if parsed else (None, None)
+
+
+def discover_git_provider(project_dir: str) -> str | None:
+    """``"github"`` or ``"gitlab"``, or None when it can't be told.
+
+    Taken from the CI system when there is one, since a self-hosted GitLab's
+    hostname need not mention GitLab; otherwise from the origin remote's host.
+    """
+    if os.environ.get("GITLAB_CI"):
+        return "gitlab"
+    if os.environ.get("GITHUB_ACTIONS"):
+        return "github"
+
+    remote = _origin_url(project_dir)
+    host = _remote_host(remote) if remote else ""
+    if "gitlab" in host:
+        return "gitlab"
+    if "github" in host:
+        return "github"
+    return None
+
+
+def _origin_url(project_dir: str) -> str | None:
     repo = _open_repo(project_dir)
     if repo is None:
-        return None, None
+        return None
     from git import GitCommandError
 
     try:
-        remote = repo.remote("origin").url
+        return repo.remote("origin").url
     except (ValueError, GitCommandError):
-        return None, None
-    parsed = parse_owner_and_repo(remote)
-    return parsed if parsed else (None, None)
+        return None
+
+
+def _remote_host(remote_url: str) -> str:
+    if "://" in remote_url:
+        return (urlparse(remote_url).hostname or "").lower()
+    # scp-like syntax, e.g. git@gitlab.com:acme/proj.git
+    return remote_url.rpartition("@")[2].partition(":")[0].lower()
 
 
 def _github_default_branch() -> str | None:
@@ -124,3 +156,13 @@ def discover_base_branch(project_dir: str) -> str | None:
         # No origin/HEAD, or it isn't symbolic.
         return None
     return target.remote_head if isinstance(target, RemoteReference) else None
+
+
+def discover_repo_root(project_dir: str) -> str | None:
+    """The checkout root, which a project directory may sit below.
+
+    The binding's defs path is repo-relative, and in a workspace the project
+    root is a subdirectory of the repo, so the two differ.
+    """
+    repo = _open_repo(project_dir)
+    return str(repo.working_tree_dir) if repo and repo.working_tree_dir else None

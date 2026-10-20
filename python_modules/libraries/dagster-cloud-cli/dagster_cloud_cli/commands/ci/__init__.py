@@ -452,6 +452,7 @@ def init_impl(
     # the server falls back to whatever binding was set by hand.
     repo_owner, repo_name = git_repo_context.discover_repo_owner_and_name(project_dir)
     base_branch = git_repo_context.discover_base_branch(project_dir)
+    git_provider = git_repo_context.discover_git_provider(project_dir)
 
     yaml_path = pathlib.Path(project_dir) / dagster_cloud_yaml_path
     if not yaml_path.exists():
@@ -531,6 +532,7 @@ def init_impl(
                 git_url=git_url,
                 commit_hash=commit_hash,
                 build_config=location.build,
+                git_provider=git_provider,
                 repo_owner=repo_owner,
                 repo_name=repo_name,
                 base_branch=base_branch,
@@ -1243,6 +1245,7 @@ def _deploy(
             "location_file": location_state.location_file,
             "git_url": location_state.build.git_url,
             "commit_hash": location_state.build.commit_hash,
+            "git_provider": location_state.build.git_provider,
             "repo_owner": location_state.build.repo_owner,
             "repo_name": location_state.build.repo_name,
             "base_branch": location_state.build.base_branch,

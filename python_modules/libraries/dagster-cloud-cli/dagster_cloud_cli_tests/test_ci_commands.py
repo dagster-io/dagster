@@ -123,6 +123,7 @@ def test_ci_init_local_branch_deployment(monkeypatch, mocker, empty_config) -> N
                     "git_url": "http://some-git-url",
                     # Discovery finds nothing: the project dir is a temp dir, not
                     # a checkout, and no CI environment variables are set.
+                    "git_provider": None,
                     "repo_owner": None,
                     "repo_name": None,
                     "base_branch": None,
@@ -186,6 +187,7 @@ def test_ci_init(monkeypatch, mocker, empty_config) -> None:
                     "git_url": "http://some-git-url",
                     # Discovery finds nothing: the project dir is a temp dir, not
                     # a checkout, and no CI environment variables are set.
+                    "git_provider": None,
                     "repo_owner": None,
                     "repo_name": None,
                     "base_branch": None,
