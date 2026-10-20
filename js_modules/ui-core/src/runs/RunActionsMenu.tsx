@@ -11,6 +11,7 @@ import {
   MenuExternalLink,
   MenuItem,
   Popover,
+  Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
@@ -41,6 +42,7 @@ import {AppContext} from '../app/AppContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {ReexecutionStrategy} from '../graphql/types';
+import {useMenuPopover} from '../hooks/useMenuPopover';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
 import {CopyButton} from '../ui/CopyButton';
@@ -67,6 +69,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
   const {rootServerURI} = React.useContext(AppContext);
 
   const reexecute = useJobReexecution({onCompleted: refetch});
+  const {buttonRef, menuRef, isMenuOpen, onInteraction, onMenuClick} = useMenuPopover();
 
   const [loadEnv, {called, loading, data}] = useLazyQuery<
     PipelineEnvironmentQuery,
@@ -127,8 +130,10 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
       <JoinedButtons>
         <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
         <Popover
+          isOpen={isMenuOpen}
+          onInteraction={onInteraction}
           content={
-            <Menu>
+            <Menu ref={menuRef} onClick={onMenuClick}>
               <AISummaryForRunMenuItem run={run} />
               {canCreateIssue && (
                 <MenuItem
@@ -197,7 +202,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                   <MenuItem
                     text="Re-execute"
                     disabled={reexecutionDisabledState.disabled}
-                    icon="refresh"
+                    icon={reexecute.loading ? <Spinner purpose="caption-text" /> : 'refresh'}
                     onClick={async (e) => {
                       await reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey);
                     }}
@@ -243,7 +248,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
             }
           }}
         >
-          <Button icon={<Icon name="expand_more" />} />
+          <Button ref={buttonRef} icon={<Icon name="expand_more" />} />
         </Popover>
       </JoinedButtons>
       {run.hasTerminatePermission ? (

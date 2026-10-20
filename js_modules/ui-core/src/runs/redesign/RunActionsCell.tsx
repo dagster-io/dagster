@@ -6,6 +6,7 @@ import {
   MenuItem,
   Popover,
   Skeleton,
+  Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from '@shared/launchpad/LaunchRootExecutionButton';
@@ -13,7 +14,7 @@ import {AISummaryForRunMenuItem} from '@shared/runs/AISummaryForRunMenuItem';
 import {RunMetricsDialog} from '@shared/runs/RunMetricsDialog';
 import {useCanCreateIssueForRun} from '@shared/runs/useCanCreateIssueForRun';
 import uniqBy from 'lodash/uniqBy';
-import {MouseEvent, ReactNode, RefObject, useContext, useEffect, useRef, useState} from 'react';
+import {MouseEvent, ReactNode, RefObject, useContext, useEffect} from 'react';
 import * as yaml from 'yaml';
 
 import {RUN_ACTIONS_MENU_QUERY} from './RunActionsMenuQuery';
@@ -32,6 +33,7 @@ import {useCopyToClipboard} from '../../app/browser';
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../../asset-graph/Utils';
 import {globalAssetGraphPathForAssets} from '../../assets/globalAssetGraphPathToString';
 import {AssetKeyInput, ReexecutionStrategy, RunStatus} from '../../graphql/types';
+import {useMenuPopover} from '../../hooks/useMenuPopover';
 import {getPipelineSnapshotLink} from '../../pipelines/PipelinePathUtils';
 import {MenuLink} from '../../ui/MenuLink';
 import {isThisThingAJob} from '../../workspace/WorkspaceContext/util';
@@ -166,18 +168,20 @@ type RunActionsMenuItemsProps = {
   run: MappedRun;
   canCreateIssue: boolean;
   menuRef: RefObject<HTMLUListElement>;
+  onMenuClick: (event: MouseEvent<HTMLUListElement>) => void;
   onOpenDialog: (dialog: RunDialog) => void;
   onReexecute: () => void;
-  onSelect: () => void;
+  isReexecuting: boolean;
 };
 
 const RunActionsMenuItems = ({
   run,
   canCreateIssue,
   menuRef,
+  onMenuClick,
   onOpenDialog,
   onReexecute,
-  onSelect,
+  isReexecuting,
 }: RunActionsMenuItemsProps) => {
   const copy = useCopyToClipboard();
   const {data, loading} = useQuery<RunActionsMenuQuery, RunActionsMenuQueryVariables>(
@@ -223,19 +227,12 @@ const RunActionsMenuItems = ({
       ?.focus();
   }, [menuRef]);
 
-  const handleMenuClick = (event: MouseEvent<HTMLUListElement>) => {
-    // Disabled items stop their clicks, so only enabled ones reach here.
-    if (event.target instanceof Element && event.target.closest('[role="menuitem"]')) {
-      onSelect();
-    }
-  };
-
   return (
     <>
       <span role="status" className={styles.visuallyHidden}>
         {isLoading ? 'Loading' : null}
       </span>
-      <Menu ref={menuRef} onClick={handleMenuClick}>
+      <Menu ref={menuRef} onClick={onMenuClick}>
         <MenuItem
           icon="content_copy"
           text="Copy full run ID"
@@ -307,7 +304,7 @@ const RunActionsMenuItems = ({
         <MenuDivider className={styles.divider} />
         <ReasonTooltip reason={reexecute.reason}>
           <MenuItem
-            icon="refresh"
+            icon={isReexecuting ? <Spinner purpose="caption-text" /> : 'refresh'}
             text="Re-execute"
             disabled={reexecute.disabled}
             onClick={onReexecute}
@@ -346,26 +343,7 @@ export const RunActionsCell = ({run, onOpenRunDialog}: RunActionsCellProps) => {
   const {refetch} = useContext(RunsQueryRefetchContext);
   const reexecute = useJobReexecution({onCompleted: refetch});
   const canCreateIssue = useCanCreateIssueForRun(run.runStatus);
-
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLUListElement>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // The popover doesn't manage focus, and the focused item unmounts with the menu.
-  const closeMenu = () => {
-    if (menuRef.current?.contains(document.activeElement)) {
-      buttonRef.current?.focus();
-    }
-    setIsMenuOpen(false);
-  };
-
-  const handleInteraction = (nextOpen: boolean) => {
-    if (nextOpen) {
-      setIsMenuOpen(true);
-    } else {
-      closeMenu();
-    }
-  };
+  const {buttonRef, menuRef, isMenuOpen, onInteraction, onMenuClick} = useMenuPopover();
 
   const openDialog = (dialog: RunDialog) => {
     if (buttonRef.current) {
@@ -384,16 +362,17 @@ export const RunActionsCell = ({run, onOpenRunDialog}: RunActionsCellProps) => {
   return (
     <Popover
       isOpen={isMenuOpen}
-      onInteraction={handleInteraction}
+      onInteraction={onInteraction}
       position="bottom-right"
       content={
         <RunActionsMenuItems
           run={run}
           canCreateIssue={canCreateIssue}
           menuRef={menuRef}
+          onMenuClick={onMenuClick}
           onOpenDialog={openDialog}
           onReexecute={reexecuteRun}
-          onSelect={closeMenu}
+          isReexecuting={reexecute.loading}
         />
       }
     >
