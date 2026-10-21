@@ -8,7 +8,7 @@ version = "1!0+dev"
 description = "A Dagster integration for dbt"
 authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 dependencies = [
     "dagster==1!0+dev",
     "gitpython",
