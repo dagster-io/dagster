@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster._record import record
 from dagster._time import get_current_timestamp
-from dateutil import parser
+from dagster._vendored.dateutil import parser
 from requests.exceptions import RequestException
 
 from dagster_dbt.asset_utils import get_asset_check_key_for_test
