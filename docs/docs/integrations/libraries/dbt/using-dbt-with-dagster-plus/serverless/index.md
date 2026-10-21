@@ -1,6 +1,6 @@
 ---
 title: Importing a dbt project to Dagster+ Serverless
-description: Deploy your dbt & Dagster project with Serverless deployments in Dagster+.
+description: Import an existing dbt project, or a Dagster project that includes one, into Dagster+ Serverless to load your dbt models as Dagster assets.
 sidebar_position: 300
 canonicalUrl: '/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverless'
 slug: '/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverless'

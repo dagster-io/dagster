@@ -1102,7 +1102,7 @@ This version of Dagster inadvertently did not include the webapp code in the pub
 
 - We launched a new [Support Center](https://support.dagster.io/) with help articles on Dagster+ Hybrid and Serverless troubleshooting, and answers to customer questions previously answered by our support team.
 - In our [docs](https://docs.dagster.io/):
-  - We reorganized the [Examples section](https://docs.dagster.io/examples) for easier navigation, and added new full pipeline examples on using Dagster with [DSpy](https://docs.dagster.io/examples/dspy) and [PyTorch](https://docs.dagster.io/examples/ml), as well as targeted mini examples that showcase best practices for:
+  - We reorganized the [Examples section](https://docs.dagster.io/examples) for easier navigation, and added new full pipeline examples on using Dagster with [DSpy](https://dagster.io/docs/examples/full-pipelines/dspy) and [PyTorch](https://dagster.io/docs/examples/full-pipelines/ml), as well as targeted mini examples that showcase best practices for:
     - [implementing dynamic fanout patterns](https://docs.dagster.io/examples/mini-examples/dynamic-fanout)
     - [using Dagster dynamic outputs for parallel processing](https://docs.dagster.io/examples/mini-examples/dynamic-vs-parallel)
     - [caching resources](https://docs.dagster.io/examples/mini-examples/resource-caching)
@@ -1570,7 +1570,7 @@ The `dg` CLI provides a single surface for scaffolding, local iteration, executi
 - **Fivetran integration GA:** the **`FivetranWorkspace`** resource is now GA [[docs](http://docs.dagster.io/integrations/libraries/fivetran)].
 - **Airflow (Beta):** Airflow Component lets you surface Airflow DAGs inside Dagster for mixed-orchestrator observability [[docs](http://docs.dagster.io/migration/airflow-to-dagster/airflow-component-tutorial)].
 - **dbt Cloud (Beta):** first-class job launches and lineage capture [[docs](http://docs.dagster.io/integrations/libraries/dbt/dbt-cloud)].
-- **Apache Iceberg (Preview):** Iceberg IOManager writes/reads lake-house tables [[docs](http://docs.dagster.io/integrations/libraries/iceberg/)].
+- **Apache Iceberg (Preview):** Iceberg IOManager writes/reads lake-house tables [[docs](https://dagster.io/docs/integrations/libraries/iceberg)].
 - **Integrations Marketplace (Preview):** “Integrations” tab to browse first- and third-party integrations natively in Dagster UI (enable via User Settings → “Display integrations marketplace”).
 
 ## Changes since 1.10.21 (core) / 0.25.21 (libraries)
@@ -3487,7 +3487,7 @@ This version of Dagster resulted in errors when trying to launch runs that targe
 
 ### Documentation
 
-- Added some additional copy, headings, and other formatting to the [dbt quickstart](https://docs.dagster.io/integrations/dbt/quickstart).
+- Added some additional copy, headings, and other formatting to the [dbt quickstart](https://dagster.io/docs/integrations/libraries/dbt).
 - Added information about asset checks to the [Testing assets guide](https://docs.dagster.io/guides/dagster/testing-assets).
 - Updated `dagster-plus CLI` in the sidenav to correctly be `dagster-cloud CLI`.
 - Thanks to Tim Nordenfur and Dimitar Vanguelov for fixing a few typos!
@@ -4602,7 +4602,7 @@ This version of Dagster resulted in errors when trying to launch runs that targe
 - [getting-started] Added an [overview to the Getting Started section](https://docs.dagster.io/getting-started/overview) that explains the whats and whys of Dagster.
 - [pipes] Added [a guide](https://docs.dagster.io/guides/dagster-pipes/aws-lambda) for using the new `PipesLambdaClient` with Dagster Pipes.
 - [getting-started] Simplified the **Getting Started** category. The following pages have been moved:
-  - [Understanding Dagster project files](https://docs.dagster.io/guides/understanding-dagster-project-files) is now in **Guides**
+  - [Understanding Dagster project files](https://dagster.io/docs/guides/build/projects/project-structure/project-overview) is now in **Guides**
   - [Telemetry](https://docs.dagster.io/about/telemetry) is now in **About**
 - [guides] Fixed a broken link in the [Airflow-to-Dagster concept mapping guide](https://docs.dagster.io/integrations/airflow).
 - [deployment] Cleaned up and updated the [Executing with Celery OSS deployment guide](https://docs.dagster.io/deployment/guides/celery).
@@ -4717,7 +4717,7 @@ This version of Dagster resulted in errors when trying to launch runs that targe
 - Added all [OSS deployment guides](https://docs.dagster.io/deployment/guides) to the site’s side navigation (**Deployment > Open Source > Guides**)
 - Updated formatting in the [Migrating your Dagster instance while upgrading Helm guide](https://docs.dagster.io/deployment/guides/kubernetes/how-to-migrate-your-instance)
 - Added **Experimental** tags to [Dagster Cloud Insights docs](https://docs.dagster.io/dagster-cloud/insights)
-- The [Transitioning Data Pipelines from Development to Production](https://docs.dagster.io/guides/dagster/transitioning-data-pipelines-from-development-to-production) and [Testing against production with Dagster Cloud Branch Deployments](https://docs.dagster.io/guides/dagster/branch_deployments) guides have been updated to use Pythonic Resources
+- The [Transitioning Data Pipelines from Development to Production](https://dagster.io/docs/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data) and [Testing against production with Dagster Cloud Branch Deployments](https://docs.dagster.io/guides/dagster/branch_deployments) guides have been updated to use Pythonic Resources
 
 ### Dagster Cloud
 
@@ -5102,7 +5102,7 @@ def my_op(context: OpExecutionContext): ...
   - Global asset lineage
   - Overview > Resources
 - The [Resources](https://docs.dagster.io/concepts/resources) documentation has been updated to include additional context about using resources, as well as when to use `os.getenv()` versus Dagster’s `EnvVar`.
-- Information about custom loggers has been moved from the Loggers documentation to its own page, [Custom loggers](https://docs.dagster.io/concepts/logging/custom-loggers).
+- Information about custom loggers has been moved from the Loggers documentation to its own page, [Custom loggers](https://dagster.io/docs/guides/log-debug/logging/custom-logging).
 
 ## 1.4.16 / 0.20.16 (libraries)
 
@@ -5734,7 +5734,7 @@ dbt_manifest.build_schedule(
 
 ### Documentation
 
-- For Dagster Cloud Serverless users, we’ve added our static IP addresses to [the Serverless docs](https://docs.dagster.io/dagster-cloud/deployment/serverless#whitelisting-dagsters-ip-addresses).
+- For Dagster Cloud Serverless users, we’ve added our static IP addresses to [the Serverless docs](https://dagster.io/docs/deployment/dagster-plus/serverless/dagster-ips).
 
 ## 1.3.11 (core) / 0.19.11 (libraries)
 
@@ -6130,11 +6130,11 @@ models:
 ### Experimental
 
 - [dagster-airbyte] `load_assets_from_airbyte_instance` and `load_assets_from_airbyte_project` now take a `connection_to_auto_materialize_policy_fn` for setting `AutoMaterializePolicy`s on Airbyte assets
-- [dagster-airbyte] Introduced experimental support for Airbyte Cloud. See the [using Dagster with Airbyte Cloud docs for more information](https://docs.dagster.io/integrations/airbyte-cloud).
+- [dagster-airbyte] Introduced experimental support for Airbyte Cloud. See the [using Dagster with Airbyte Cloud docs for more information](https://dagster.io/docs/integrations/libraries/airbyte/airbyte-cloud-legacy).
 
 ### Documentation
 
-- Ever wanted to know more about the files in Dagster projects, including where to put them in your project? Check out the new [Dagster project files reference](https://docs.dagster.io/getting-started/project-file-reference) for more info!
+- Ever wanted to know more about the files in Dagster projects, including where to put them in your project? Check out the new [Dagster project files reference](https://dagster.io/docs/guides/build/projects/project-structure/project-overview) for more info!
 - We’ve made some improvements to the sidenav / information architecture of our docs!
   - The **Guides** section now contains several new categories, including **Working with data assets** and **Working with tasks**
   - The **Community** section is now under **About**
@@ -6208,7 +6208,7 @@ models:
 
 - **Improved run concurrency docs** - You asked (in support), and we answered! This [new guide](https://docs.dagster.io/guides/limiting-concurrency-in-data-pipelines) is a one-stop-shop for understanding and implementing run concurrency, whether you’re on Dagster Cloud or deploying to your own infrastructure.
 - **Additions to the Intro to Assets tutorial** - We’ve added two new sections to the assets tutorial, focused on [scheduling](https://docs.dagster.io/tutorial/scheduling-your-pipeline) and [I/O](https://docs.dagster.io/tutorial/saving-your-data). While we’re close to wrapping things up for the tutorial revamp, we still have a few topics to cover - stay tuned!
-- **New guide about building machine learning pipelines** - Many of our users learn best by example - [this guide](https://docs.dagster.io/guides/dagster/ml-pipeline) is one way we’re expanding our library of examples. In this guide, we walk you through building a simple machine learning pipeline using Dagster.
+- **New guide about building machine learning pipelines** - Many of our users learn best by example - [this guide](https://dagster.io/docs/examples/full-pipelines/ml) is one way we’re expanding our library of examples. In this guide, we walk you through building a simple machine learning pipeline using Dagster.
 - **Re-organized Dagster Cloud docs** - We overhauled how the Dagster Cloud docs are organized, bringing them more in line with the UI.
 
 ## **Since 1.2.7 (core) / 0.18.7 (libraries)**
@@ -6584,7 +6584,7 @@ models:
 ### Docs
 
 - [Automating pipelines guide](https://docs.dagster.io/guides/dagster/automating-pipelines) - Check out the best practices for automating your Dagster data pipelines with this new guide. Learn when to use different Dagster tools, such as schedules and sensors, using this guide and its included cheatsheet.
-- [Structuring your Dagster project guide](https://docs.dagster.io/guides/dagster/recommended-project-structure) - Need some help structuring your Dagster project? Learn about our recommendations for getting started and scaling sustainably.
+- [Structuring your Dagster project guide](https://dagster.io/docs/guides/build/projects/project-structure/organizing-dagster-projects) - Need some help structuring your Dagster project? Learn about our recommendations for getting started and scaling sustainably.
 - [Tutorial revamp](https://docs.dagster.io/tutorial) - Goodbye cereals and hello HackerNews! We’ve overhauled our intro to assets tutorial to not only focus on a more realistic example, but to touch on more Dagster concepts as you build your first end-to-end pipeline in Dagster. [Check it out here.](https://docs.dagster.io/tutorial)
 
 Stay tuned, as this is only the first part of the overhaul. We’ll be adding more chapters - including automating materializations, using resources, using I/O managers, and more - in the next few weeks.
@@ -6637,7 +6637,7 @@ Stay tuned, as this is only the first part of the overhaul. We’ll be adding mo
 
   Each of these features can be disabled in the Helm chart to restore the previous behavior.
 
-- [dagster-k8s] The experimental [`k8s_job_op`](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_op) op and [`execute_k8s_job`](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.execute_k8s_job) functions no longer automatically include configuration from a `dagster-k8s/config` tag on the Dagster job in the launched Kubernetes job. To include raw Kubernetes configuration in a `k8s_job_op`, you can set the `container_config`, `pod_template_spec_metadata`, `pod_spec_config`, or `job_metadata` config fields on the `k8s_job_op` (or arguments to the `execute_k8s_job` function).
+- [dagster-k8s] The experimental [`k8s_job_op`](https://dagster.io/docs/integrations/libraries/k8s/dagster-k8s#dagster_k8s.k8s_job_op) op and [`execute_k8s_job`](https://dagster.io/docs/integrations/libraries/k8s/dagster-k8s#dagster_k8s.execute_k8s_job) functions no longer automatically include configuration from a `dagster-k8s/config` tag on the Dagster job in the launched Kubernetes job. To include raw Kubernetes configuration in a `k8s_job_op`, you can set the `container_config`, `pod_template_spec_metadata`, `pod_spec_config`, or `job_metadata` config fields on the `k8s_job_op` (or arguments to the `execute_k8s_job` function).
 - [dagster-databricks] The integration has now been refactored to support the official Databricks API.
   - `create_databricks_job_op` is now deprecated. To submit one-off runs of Databricks tasks, you must now use the `create_databricks_submit_run_op`.
   - The Databricks token that is passed to the `databricks_client` resource must now begin with `https://`.

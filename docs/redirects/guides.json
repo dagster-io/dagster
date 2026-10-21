@@ -516,7 +516,7 @@
   },
   {
     "source": "/docs/concepts/logging/custom-loggers",
-    "destination": "/docs/guides/monitor/logging/custom-logging",
+    "destination": "/docs/guides/log-debug/logging/custom-logging",
     "permanent": true
   },
   {
@@ -616,7 +616,7 @@
   },
   {
     "source": "/docs/guides/understanding-dagster-project-files",
-    "destination": "/docs/guides/build/projects/dagster-project-file-reference",
+    "destination": "/docs/guides/build/projects/project-structure/project-overview",
     "permanent": true
   },
   {
@@ -626,7 +626,7 @@
   },
   {
     "source": "/docs/guides/dagster/transitioning-data-pipelines-from-development-to-production",
-    "destination": "/docs/guides/operate/dev-to-prod",
+    "destination": "/docs/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data",
     "permanent": true
   },
   {
@@ -691,7 +691,7 @@
   },
   {
     "source": "/docs/guides/dagster/recommended-project-structure",
-    "destination": "/docs/guides/build/projects/structuring-your-dagster-project",
+    "destination": "/docs/guides/build/projects/project-structure/organizing-dagster-projects",
     "permanent": true
   },
   {
@@ -725,11 +725,6 @@
     "permanent": true
   },
   {
-    "source": "/docs/next/guides/build/components/",
-    "destination": "/docs/guides/build/components",
-    "permanent": true
-  },
-  {
     "source": "/docs/guides/labs/dg/scaffolding-a-project",
     "destination": "/docs/guides/build/projects/creating-projects",
     "permanent": true
@@ -751,7 +746,7 @@
   },
   {
     "source": "/docs/guides/labs/components/existing-code-location",
-    "destination": "/docs/guides/build/projects/migrating-project",
+    "destination": "/docs/guides/build/projects/moving-to-components/migrating-project",
     "permanent": true
   },
   {
@@ -761,7 +756,7 @@
   },
   {
     "source": "/docs/guides/labs/components/setting-up-a-deployment",
-    "destination": "/docs/guides/build/projects/multiple-projects",
+    "destination": "/docs/guides/build/projects/workspaces/creating-workspaces",
     "permanent": true
   },
   {
@@ -786,7 +781,7 @@
   },
   {
     "source": "/docs/guides/labs/components/incrementally-adopting-components/existing-code-location",
-    "destination": "/docs/guides/build/components/incrementally-adopting-components/existing-project",
+    "destination": "/docs/guides/build/projects/moving-to-components/adding-components-to-existing-project",
     "permanent": true
   },
   {
@@ -795,17 +790,12 @@
     "permanent": true
   },
   {
-    "source": "/docs/guides/preview/",
-    "destination": "/docs/guides/labs",
-    "permanent": true
-  },
-  {
     "source": "/docs/guides/preview",
     "destination": "/docs/guides/labs",
     "permanent": true
   },
   {
-    "source": "/docs/guides/preview/components/",
+    "source": "/docs/guides/preview/components",
     "destination": "/docs/guides/build/components",
     "permanent": true
   },
@@ -846,7 +836,7 @@
   },
   {
     "source": "/docs/master/concepts/logging/loggers",
-    "destination": "/docs/guides/monitor/logging",
+    "destination": "/docs/guides/log-debug/logging",
     "permanent": true
   },
   {
@@ -866,7 +856,7 @@
   },
   {
     "source": "/docs/getting-started/project-file-reference",
-    "destination": "/docs/guides/build/projects/dagster-project-file-reference",
+    "destination": "/docs/guides/build/projects/project-structure/project-overview",
     "permanent": true
   },
   {
@@ -941,7 +931,7 @@
   },
   {
     "source": "/docs/guides/deploy/dev-to-prod",
-    "destination": "/docs/guides/operate/dev-to-prod",
+    "destination": "/docs/deployment/dagster-plus/deploying-code/branch-deployments/testing-against-prod-data",
     "permanent": true
   },
   {
@@ -1036,7 +1026,7 @@
   },
   {
     "source": "/docs/guides/labs/dg/multiple-projects",
-    "destination": "/docs/guides/build/projects/multiple-projects",
+    "destination": "/docs/guides/build/projects/workspaces/creating-workspaces",
     "permanent": true
   },
   {
@@ -1146,7 +1136,7 @@
   },
   {
     "source": "/docs/guides/build/assets/asset-catalog/catalog-views",
-    "destination": "/docs/guides/observe/asset-catalog/catalog-views",
+    "destination": "/docs/guides/observe/asset-catalog",
     "permanent": true
   },
   {
@@ -1222,6 +1212,31 @@
   {
     "source": "/docs/guides/labs/dagster-ai-agent",
     "destination": "/docs/guides/labs/dagster-ai",
+    "permanent": true
+  },
+  {
+    "source": "/docs/concepts/components",
+    "destination": "/docs/guides/build/components",
+    "permanent": true
+  },
+  {
+    "source": "/docs/guides/build/projects/dagster-project-file-reference",
+    "destination": "/docs/guides/build/projects/project-structure/project-overview",
+    "permanent": true
+  },
+  {
+    "source": "/docs/guides/build/projects/migrating-project",
+    "destination": "/docs/guides/build/projects/moving-to-components/migrating-project",
+    "permanent": true
+  },
+  {
+    "source": "/docs/guides/build/components/incrementally-adopting-components/existing-project",
+    "destination": "/docs/guides/build/projects/moving-to-components/adding-components-to-existing-project",
+    "permanent": true
+  },
+  {
+    "source": "/docs/guides/observe/asset-catalog/catalog-views",
+    "destination": "/docs/guides/observe/asset-catalog",
     "permanent": true
   }
 ]

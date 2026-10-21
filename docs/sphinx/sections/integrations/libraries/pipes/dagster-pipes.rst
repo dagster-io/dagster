@@ -8,7 +8,7 @@ The ``dagster-pipes`` library is intended for inclusion in an external process t
 
 For a detailed look at the Pipes process, including how to customize it, see `Dagster Pipes details and customization <https://docs.dagster.io/integrations/external-pipelines/dagster-pipes-details-and-customization>`__.
 
-**Looking to set up a Pipes client in Dagster?** See the `Dagster Pipes API reference <https://docs.dagster.io/api/dagster/pipe>`_.
+**Looking to set up a Pipes client in Dagster?** See the `Dagster Pipes API reference <https://docs.dagster.io/api/dagster/pipes>`_.
 
 **Note**: This library isn't included with ``dagster`` and must be `installed separately <https://pypi.org/project/dagster-pipes>`_.
 

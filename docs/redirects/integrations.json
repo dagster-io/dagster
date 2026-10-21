@@ -256,22 +256,22 @@
   },
   {
     "source": "/docs/integrations/dbt/using-dbt-with-dagster/part-one",
-    "destination": "/docs/integrations/libraries/dbt/transform-dbt",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
     "source": "/docs/integrations/dbt/using-dbt-with-dagster/part-two",
-    "destination": "/docs/integrations/libraries/dbt/transform-dbt",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
     "source": "/docs/integrations/dbt/using-dbt-with-dagster/part-three",
-    "destination": "/docs/integrations/libraries/dbt/transform-dbt",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
     "source": "/docs/integrations/dbt/using-dbt-with-dagster/part-four",
-    "destination": "/docs/integrations/libraries/dbt/transform-dbt",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
@@ -396,7 +396,7 @@
   },
   {
     "source": "/docs/integrations/airbyte-cloud",
-    "destination": "/docs/integrations/libraries/airbyte/airbyte-cloud",
+    "destination": "/docs/integrations/libraries/airbyte/airbyte-cloud-legacy",
     "permanent": true
   },
   {
@@ -421,7 +421,7 @@
   },
   {
     "source": "/docs/integrations/dbt/quickstart",
-    "destination": "/docs/integrations/libraries/dbt/quickstart",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
@@ -471,7 +471,7 @@
   },
   {
     "source": "/docs/integrations/libraries/dbt/transform-dbt",
-    "destination": "/docs/integrations/libraries/dbt/quickstart",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
@@ -686,7 +686,7 @@
   },
   {
     "source": "/docs/guides/build/components/integrations/airbyte-cloud-component-tutorial",
-    "destination": "/docs/integrations/libraries/airbyte/airbyte-cloud-component",
+    "destination": "/docs/integrations/libraries/airbyte/airbyte-component",
     "permanent": true
   },
   {
@@ -706,7 +706,7 @@
   },
   {
     "source": "/docs/guides/build/components/integrations/dbt-component-tutorial",
-    "destination": "/docs/integrations/libraries/dbt/dbt-component",
+    "destination": "/docs/integrations/libraries/dbt",
     "permanent": true
   },
   {
@@ -1026,7 +1026,7 @@
   },
   {
     "source": "/docs/_modules/dagster_duckdb_pyspark/duckdb_pyspark_type_handler",
-    "destination": "/docs/integrations/libraries/motherduck/duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler",
+    "destination": "/docs/integrations/libraries/motherduck/dagster-duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler",
     "permanent": true
   },
   {
@@ -1171,7 +1171,7 @@
   },
   {
     "source": "/docs/api/libraries/dagster-msteams",
-    "destination": "/docs/integrations/libraries/fivetran/dagster-msteams",
+    "destination": "/docs/integrations/libraries/msteams/dagster-msteams",
     "permanent": true
   },
   {
@@ -1331,7 +1331,7 @@
   },
   {
     "source": "/docs/api/libraries/dagster-datadog",
-    "destination": "/docs/integrations/libraries/fivetran/dagster-datadog",
+    "destination": "/docs/integrations/libraries/datadog/dagster-datadog",
     "permanent": true
   },
   {
@@ -1421,17 +1421,17 @@
   },
   {
     "source": "/docs/_modules/dagstermill/context",
-    "destination": "/docs/integrations/libraries/dagstermill#dagstermill.DagstermillExecutionContext",
+    "destination": "/docs/integrations/libraries/jupyter/dagstermill#dagstermill.DagstermillExecutionContext",
     "permanent": true
   },
   {
     "source": "/docs/_modules/dagstermill/factory",
-    "destination": "/docs/integrations/libraries/dagstermill",
+    "destination": "/docs/integrations/libraries/jupyter/dagstermill",
     "permanent": true
   },
   {
     "source": "/docs/_modules/dagstermill/io_managers",
-    "destination": "/docs/integrations/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager",
+    "destination": "/docs/integrations/libraries/jupyter/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager",
     "permanent": true
   },
   {
@@ -1571,7 +1571,7 @@
   },
   {
     "source": "/docs/api/python-api/libraries/dagster-fivetran",
-    "destination": "/docs/integrations/libraries/motherduck/dagster-fivetran",
+    "destination": "/docs/integrations/libraries/fivetran/dagster-fivetran",
     "permanent": true
   },
   {
@@ -1716,12 +1716,47 @@
   },
   {
     "source": "/docs/guides/integrations/approaches-to-writing-integrations",
-    "destination": "/docs/integrations/guides/integration-approaches",
+    "destination": "/docs/guides/build/components/creating-new-components/creating-and-registering-a-component",
     "permanent": true
   },
   {
     "source": "/docs/concepts/dagster-pipes/pyspark",
     "destination": "/docs/integrations/external-pipelines/pyspark-pipeline",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/dagster-k8s",
+    "destination": "/docs/integrations/libraries/k8s/dagster-k8s",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/airbyte/airbyte-cloud",
+    "destination": "/docs/integrations/libraries/airbyte/airbyte-cloud-legacy",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/motherduck/duckdb-pyspark",
+    "destination": "/docs/integrations/libraries/motherduck/dagster-duckdb-pyspark",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/fivetran/dagster-msteams",
+    "destination": "/docs/integrations/libraries/msteams/dagster-msteams",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/fivetran/dagster-datadog",
+    "destination": "/docs/integrations/libraries/datadog/dagster-datadog",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/dagstermill",
+    "destination": "/docs/integrations/libraries/jupyter/dagstermill",
+    "permanent": true
+  },
+  {
+    "source": "/docs/integrations/libraries/motherduck/dagster-fivetran",
+    "destination": "/docs/integrations/libraries/fivetran/dagster-fivetran",
     "permanent": true
   }
 ]

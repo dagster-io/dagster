@@ -35,7 +35,7 @@
     "permanent": true
   },
   {
-    "source": "/docs/integrations/libraries/airlift/federation-tutorial/",
+    "source": "/docs/integrations/libraries/airlift/federation-tutorial",
     "destination": "/docs/migration/airflow-to-dagster/airlift-v1/federation",
     "permanent": true
   },
@@ -95,7 +95,7 @@
     "permanent": true
   },
   {
-    "source": "/docs/integrations/libraries/airlift/operator-migration/",
+    "source": "/docs/integrations/libraries/airlift/operator-migration",
     "destination": "/docs/migration/airflow-to-dagster/airflow-operator-migration",
     "permanent": true
   },

@@ -1,5 +1,6 @@
 ---
-title: Ingestion
+title: Ingest data from Bluesky
+sidebar_label: Ingestion
 description: Ingesting data from Bluesky
 last_update:
   author: Dennis Hume
