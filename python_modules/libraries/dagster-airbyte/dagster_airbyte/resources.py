@@ -611,9 +611,17 @@ class BaseAirbyteWorkspace(ConfigurableResource):
         self,
         airbyte_output: AirbyteOutput,
         dagster_airbyte_translator: DagsterAirbyteTranslator,
+        client: AirbyteClient,
     ):
         connection = AirbyteConnection.from_connection_details(
             connection_details=airbyte_output.connection_details
+        )
+        # The translator gets the destination info when the asset specs are loaded,
+        # so it needs it here too to build the same asset keys.
+        destination = AirbyteDestination.from_destination_details(
+            destination_details=client.get_destination_details(
+                destination_id=connection.destination_id
+            )
         )
 
         for stream in connection.streams.values():
@@ -630,9 +638,9 @@ class BaseAirbyteWorkspace(ConfigurableResource):
                         json_schema=stream.json_schema,
                         connection_id=connection.id,
                         connection_name=connection.name,
-                        destination_type=None,
-                        database=None,
-                        schema=None,
+                        destination_type=destination.type,
+                        database=destination.database,
+                        schema=destination.schema,
                     )
                 )
 
@@ -673,7 +681,9 @@ class BaseAirbyteWorkspace(ConfigurableResource):
 
         materialized_asset_keys = set()
         for materialization in self._generate_materialization(
-            airbyte_output=airbyte_output, dagster_airbyte_translator=dagster_airbyte_translator
+            airbyte_output=airbyte_output,
+            dagster_airbyte_translator=dagster_airbyte_translator,
+            client=client,
         ):
             # Scan through all tables actually created, if it was expected then emit a MaterializeResult.
             # Otherwise, emit a runtime AssetMaterialization.
