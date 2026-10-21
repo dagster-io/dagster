@@ -2789,7 +2789,7 @@ requires-dist = [
     { name = "packaging" },
     { name = "requests" },
     { name = "rich" },
-    { name = "sqlglot", extras = ["rs"], specifier = "<28.1.0" },
+    { name = "sqlglot", extras = ["rs"] },
     { name = "typer", specifier = ">=0.9.0" },
 ]
 
@@ -3550,7 +3550,7 @@ dependencies = [
 requires-dist = [
     { name = "dagster", editable = "../../python_modules/dagster" },
     { name = "google-auth", specifier = "!=2.23.1" },
-    { name = "kubernetes", specifier = "<37" },
+    { name = "kubernetes", specifier = "<38" },
 ]
 
 [package.metadata.requires-dev]
@@ -3571,6 +3571,7 @@ test = [
 test-kubernetes-12 = [{ name = "kubernetes", specifier = "==12.0.0" }]
 test-kubernetes-35 = [{ name = "kubernetes", specifier = ">=35.0.0,<36" }]
 test-kubernetes-36 = [{ name = "kubernetes", specifier = ">=36.0.0,<37" }]
+test-kubernetes-37 = [{ name = "kubernetes", specifier = ">=37.0.0,<38" }]
 
 [[package]]
 name = "dagster-k8s-test-infra"
