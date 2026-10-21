@@ -33,6 +33,8 @@ from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.runs.migration import BACKFILL_JOB_NAME_AND_TAGS, RUN_BACKFILL_ID
+from dagster._core.storage.schedules.sqlite import sqlite_schedule_storage
+from dagster._core.storage.sql import get_alembic_config, run_alembic_downgrade
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.tags import BACKFILL_ID_TAG, REPOSITORY_LABEL_TAG
 from dagster._core.utils import make_new_run_id
@@ -1551,6 +1553,28 @@ def test_add_run_tags_run_id_idx():
         assert "run_tags" in get_sqlite3_tables(db_path)
         assert "idx_run_tags" in get_sqlite3_indexes(db_path, "run_tags")
         assert "idx_run_tags_run_id" not in get_sqlite3_indexes(db_path, "run_tags")
+
+
+def test_add_asset_daemon_asset_evaluations_create_timestamp_idx(tmp_path):
+    test_dir = str(tmp_path)
+    db_path = os.path.join(test_dir, "schedules", "schedules.db")
+    index_name = "idx_asset_daemon_asset_evaluations_create_timestamp"
+
+    with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+        # A new database gets the index from the schema
+        assert index_name in get_sqlite3_indexes(db_path, "asset_daemon_asset_evaluations")
+
+        # After downgrade (same as before migration)
+        alembic_config = get_alembic_config(sqlite_schedule_storage.__file__)
+        with instance.schedule_storage.connect() as conn:  # ty: ignore[unresolved-attribute]
+            run_alembic_downgrade(alembic_config, conn, rev="29b539ebc72a")
+        assert get_current_alembic_version(db_path) == "29b539ebc72a"
+        assert index_name not in get_sqlite3_indexes(db_path, "asset_daemon_asset_evaluations")
+
+        # After upgrade
+        instance.upgrade()
+        assert get_current_alembic_version(db_path) != "29b539ebc72a"
+        assert index_name in get_sqlite3_indexes(db_path, "asset_daemon_asset_evaluations")
 
 
 # Prior to 0.10.0, it was possible to have `Materialization` events with no asset key.
