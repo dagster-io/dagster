@@ -158,9 +158,15 @@ class UPathIOManager(IOManager):
         Returns:
             Dict[str, Any]: fsspec storage_options.
         """
+        import upath
+        from packaging.version import Version
         from upath import UPath
 
         if isinstance(self._base_path, UPath):
+            # universal-pathlib 0.2.0 added `storage_options` and deprecated `_kwargs`,
+            # which 0.3.0 removed.
+            if Version(upath.__version__) >= Version("0.2.0"):
+                return dict(self._base_path.storage_options)
             return self._base_path._kwargs.copy()  # noqa
         elif isinstance(self._base_path, Path):
             return {}
