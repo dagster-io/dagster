@@ -12,6 +12,7 @@ from dagster._core.definitions.partitions.context import (
 )
 from dagster._core.definitions.partitions.utils import get_time_partitions_def
 from dagster._core.definitions.temporal_context import TemporalContext
+from dagster._core.instance import CachingDynamicPartitionsLoader
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._time import create_datetime
 
@@ -75,6 +76,125 @@ def test_multi_dimensional_time_window_static_partitions():
 
     assert partition_keys[0].keys_by_dimension["date"] == "2021-05-05"
     assert partition_keys[0].keys_by_dimension["abc"] == "a"
+
+
+@pytest.mark.parametrize("use_context", [False, True])
+def test_dynamic_partition_keys_respect_store(use_context: bool) -> None:
+    partitions = dg.MultiPartitionsDefinition(
+        {
+            "dynamic": dg.DynamicPartitionsDefinition(name="customers"),
+            "static": dg.StaticPartitionsDefinition(["a"]),
+        }
+    )
+    current_time = create_datetime(2026, 1, 1)
+
+    def get_keys(instance: dg.DagsterInstance) -> set[str]:
+        if use_context:
+            with partition_loading_context(current_time, instance):
+                return set(partitions.get_partition_keys())
+        return set(partitions.get_partition_keys(current_time, instance))
+
+    with dg.DagsterInstance.ephemeral() as first, dg.DagsterInstance.ephemeral() as second:
+        first.add_dynamic_partitions("customers", ["first"])
+        second.add_dynamic_partitions("customers", ["second"])
+        assert get_keys(first) == {"first|a"}
+        assert get_keys(second) == {"second|a"}
+        assert get_keys(first) == {"first|a"}
+
+
+def test_dynamic_partition_keys_reflect_store_changes() -> None:
+    partitions = dg.MultiPartitionsDefinition(
+        {
+            "dynamic": dg.DynamicPartitionsDefinition(name="customers"),
+            "static": dg.StaticPartitionsDefinition(["a"]),
+        }
+    )
+    with (
+        dg.DagsterInstance.ephemeral() as instance,
+        partition_loading_context(create_datetime(2026, 1, 1), instance),
+    ):
+        instance.add_dynamic_partitions("customers", ["first"])
+        assert set(partitions.get_partition_keys()) == {"first|a"}
+        instance.add_dynamic_partitions("customers", ["second"])
+        assert set(partitions.get_partition_keys()) == {"first|a", "second|a"}
+        instance.delete_dynamic_partition("customers", "first")
+        assert set(partitions.get_partition_keys()) == {"second|a"}
+
+
+def test_dynamic_partition_keys_require_store_after_cached_call() -> None:
+    partitions = dg.MultiPartitionsDefinition(
+        {
+            "dynamic": dg.DynamicPartitionsDefinition(name="customers"),
+            "static": dg.StaticPartitionsDefinition(["a"]),
+        }
+    )
+    current_time = create_datetime(2026, 1, 1)
+    with dg.DagsterInstance.ephemeral() as instance:
+        instance.add_dynamic_partitions("customers", ["first"])
+        assert set(partitions.get_partition_keys(current_time, instance)) == {"first|a"}
+
+    with pytest.raises(CheckError, match="instance is not available to load partitions"):
+        partitions.get_partition_keys(current_time)
+
+
+def test_dynamic_partition_keys_respect_cached_loader() -> None:
+    partitions = dg.MultiPartitionsDefinition(
+        {
+            "dynamic": dg.DynamicPartitionsDefinition(name="customers"),
+            "static": dg.StaticPartitionsDefinition(["a"]),
+        }
+    )
+    current_time = create_datetime(2026, 1, 1)
+    with dg.DagsterInstance.ephemeral() as instance:
+        instance.add_dynamic_partitions("customers", ["first"])
+        loader = CachingDynamicPartitionsLoader(instance)
+        assert set(partitions.get_partition_keys(current_time, loader)) == {"first|a"}
+        instance.add_dynamic_partitions("customers", ["second"])
+        assert set(partitions.get_partition_keys(current_time, loader)) == {"first|a"}
+        assert set(
+            partitions.get_partition_keys(current_time, CachingDynamicPartitionsLoader(instance))
+        ) == {"first|a", "second|a"}
+
+
+def test_dynamic_partition_keys_reuse_unchanged_product() -> None:
+    partitions = dg.MultiPartitionsDefinition(
+        {
+            "dynamic": dg.DynamicPartitionsDefinition(name="customers"),
+            "static": dg.StaticPartitionsDefinition(["a"]),
+        }
+    )
+    current_time = create_datetime(2026, 1, 1)
+    with dg.DagsterInstance.ephemeral() as first, dg.DagsterInstance.ephemeral() as second:
+        first.add_dynamic_partitions("customers", ["first"])
+        second.add_dynamic_partitions("customers", ["first"])
+        keys = partitions.get_partition_keys(current_time, first)
+        assert set(keys) == {"first|a"}
+        assert partitions.get_partition_keys(current_time, first) is keys
+        assert partitions.get_partition_keys(current_time, second) is keys
+
+        first.add_dynamic_partitions("customers", ["second"])
+        updated_keys = partitions.get_partition_keys(current_time, first)
+        assert set(updated_keys) == {"first|a", "second|a"}
+        assert partitions.get_partition_keys(current_time, first) is updated_keys
+
+
+@pytest.mark.parametrize(
+    "other_dimension",
+    [
+        dg.StaticPartitionsDefinition(["b"]),
+        dg.DailyPartitionsDefinition(start_date="2026-01-01"),
+    ],
+)
+def test_nondynamic_partition_keys_are_cached(other_dimension: dg.PartitionsDefinition) -> None:
+    static = dg.StaticPartitionsDefinition(["a"])
+    partitions = dg.MultiPartitionsDefinition({"first": static, "second": other_dimension})
+    with mock.patch.object(static, "get_partition_keys", wraps=static.get_partition_keys) as spy:
+        current_time = create_datetime(2026, 1, 2)
+        first_keys = partitions.get_partition_keys(current_time)
+        assert partitions.get_partition_keys(current_time) == first_keys
+        assert spy.call_count == 1
+        partitions.get_partition_keys(create_datetime(2026, 1, 3))
+        assert spy.call_count == 2
 
 
 def test_tags_multi_dimensional_partitions():

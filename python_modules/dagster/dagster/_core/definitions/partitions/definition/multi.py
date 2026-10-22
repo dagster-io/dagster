@@ -212,11 +212,16 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     # store results for repeated calls with the same current_time
     @lru_cache(maxsize=1)
-    def _get_partition_keys(self, _current_time: datetime) -> Sequence[MultiPartitionKey]:
-        partition_key_sequences = [
-            partition_dim.partitions_def.get_partition_keys()
-            for partition_dim in self._partitions_defs
-        ]
+    def _get_partition_keys(
+        self,
+        _current_time: datetime,
+        partition_key_sequences: tuple[tuple[str, ...], ...] | None = None,
+    ) -> Sequence[MultiPartitionKey]:
+        if partition_key_sequences is None:
+            partition_key_sequences = tuple(
+                tuple(partition_dim.partitions_def.get_partition_keys())
+                for partition_dim in self._partitions_defs
+            )
 
         keys = [
             MultiPartitionKey(
@@ -250,6 +255,17 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             Sequence[MultiPartitionKey]
         """
         with partition_loading_context(current_time, dynamic_partitions_store) as ctx:
+            if any(
+                isinstance(dim.partitions_def, DynamicPartitionsDefinition)
+                for dim in self._partitions_defs
+            ):
+                return self._get_partition_keys(
+                    _current_time=ctx.effective_dt,
+                    partition_key_sequences=tuple(
+                        tuple(dim.partitions_def.get_partition_keys())
+                        for dim in self._partitions_defs
+                    ),
+                )
             return self._get_partition_keys(_current_time=ctx.effective_dt)
 
     def get_paginated_partition_keys(
