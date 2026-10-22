@@ -34,6 +34,8 @@ const TIMINGS_DAYS = 90;
 // Runs compared for the trend tile: the newest few against the few before them.
 const TREND_WINDOW = 5;
 const PLOT_HEIGHT = 200;
+// A failure that died this quickly never did real work; it is left off the chart.
+const IMMEDIATE_FAILURE_SECS = 120;
 const JOBS_PANEL_KEY = 'hillpointe-timings-jobs-open';
 
 type TimedRun = Extract<
@@ -43,10 +45,27 @@ type TimedRun = Extract<
 
 type Point = {run: TimedRun; start: number; seconds: number};
 
-/** Every finished run of one job, oldest first, with its duration. */
+/**
+ * Whether a run belongs on the chart: successes always, failures only if they
+ * ran long enough to be interesting, canceled runs never.
+ */
+const isPlottable = (r: TimedRun) => {
+  if (!r.startTime || !r.endTime) {
+    return false;
+  }
+  if (r.status === RunStatus.SUCCESS) {
+    return true;
+  }
+  if (r.status === RunStatus.FAILURE) {
+    return (durationSec(r.startTime, r.endTime) ?? 0) >= IMMEDIATE_FAILURE_SECS;
+  }
+  return false;
+};
+
+/** Runs of one job for the chart, oldest first, with durations. */
 const pointsFor = (runs: TimedRun[], job: string): Point[] =>
   runs
-    .filter((r) => r.pipelineName === job && r.startTime && r.endTime)
+    .filter((r) => r.pipelineName === job && isPlottable(r))
     .map((r) => ({
       run: r,
       start: r.startTime ?? 0,
@@ -83,7 +102,7 @@ export const JobTimingsRoot = () => {
       const entry = byJob.get(r.pipelineName) ?? {latest: 0, durations: []};
       entry.latest = Math.max(entry.latest, r.startTime ?? 0);
       const seconds = durationSec(r.startTime, r.endTime);
-      if (seconds !== null && r.endTime) {
+      if (seconds !== null && r.endTime && r.status === RunStatus.SUCCESS) {
         entry.durations.push(seconds);
       }
       byJob.set(r.pipelineName, entry);
@@ -160,12 +179,14 @@ export const JobTimingsRoot = () => {
 };
 
 const JobTimings = ({job, points}: {job: string; points: Point[]}) => {
-  const seconds = points.map((p) => p.seconds);
+  // Only successful runs feed the numbers; failures on the chart are context.
+  const good = points.filter((p) => p.run.status === RunStatus.SUCCESS);
+  const seconds = good.map((p) => p.seconds);
   const avg = average(seconds);
-  const fastest = points.length ? points.reduce((a, b) => (b.seconds < a.seconds ? b : a)) : null;
-  const slowest = points.length ? points.reduce((a, b) => (b.seconds > a.seconds ? b : a)) : null;
-  const last = points[points.length - 1] ?? null;
-  const previous = points[points.length - 2] ?? null;
+  const fastest = good.length ? good.reduce((a, b) => (b.seconds < a.seconds ? b : a)) : null;
+  const slowest = good.length ? good.reduce((a, b) => (b.seconds > a.seconds ? b : a)) : null;
+  const last = good[good.length - 1] ?? null;
+  const previous = good[good.length - 2] ?? null;
 
   // Trend: the newest TREND_WINDOW runs against the TREND_WINDOW before them.
   const recent = average(seconds.slice(-TREND_WINDOW));
@@ -203,7 +224,7 @@ const JobTimings = ({job, points}: {job: string; points: Point[]}) => {
         <div className={styles.tile}>
           <div className={styles.tileLabel}>Average</div>
           <div className={styles.tileValue}>{formatDuration(avg)}</div>
-          <div className={styles.tileSub}>{points.length} finished runs</div>
+          <div className={styles.tileSub}>{good.length} successful runs</div>
         </div>
         <div className={styles.tile}>
           <div className={styles.tileLabel}>Fastest</div>
@@ -229,7 +250,10 @@ const JobTimings = ({job, points}: {job: string; points: Point[]}) => {
       <div className={styles.card}>
         <div className={styles.cardTitle}>
           {job}
-          <span className={styles.cardSub}>Duration of every finished run, oldest to newest</span>
+          <span className={styles.cardSub}>
+            Successful runs, oldest to newest. Canceled and quickly failed runs are left out; longer
+            failures show in red but do not count toward the average.
+          </span>
         </div>
         <div className={styles.plot} style={{height: PLOT_HEIGHT}}>
           <div className={styles.gridline}>
