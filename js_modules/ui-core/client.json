@@ -202,5 +202,6 @@
   "MobileRecentRunsQuery": "0cb427eb72a56523e266e66a62b04f109bec84b7e580593fa34194c5016e94de",
   "MobileRunQuery": "5d12e04396e72b3793b27bbfe498bfdfa6a7e18dd8444d6d64ea675a05e07f21",
   "HillpointeSchedulesQuery": "fdf53db9a1ad8e1c6303dcd8565d9734a2d7b86d9e67452a154add3bca13ca79",
-  "HillpointeJobTimingsQuery": "0b2f0642228ade5f23e7230d7df36a77b9bbc801947d5c8cc103787fbceaac8c"
+  "HillpointeJobTimingsQuery": "0b2f0642228ade5f23e7230d7df36a77b9bbc801947d5c8cc103787fbceaac8c",
+  "HillpointeJobRunStatsQuery": "c515cade284562246aabea75fdc82dcc75c32b3e9faf41f3b7ac18ade66f8e6f"
 }

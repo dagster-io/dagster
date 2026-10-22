@@ -15,6 +15,8 @@ import {gql, useQuery} from '../apollo-client';
 import {durationSec, formatDuration, startOfDay} from './HillpointeRoot';
 import styles from './css/HillpointeRoot.module.css';
 import {
+  HillpointeJobRunStatsQuery,
+  HillpointeJobRunStatsQueryVariables,
   HillpointeJobTimingsQuery,
   HillpointeJobTimingsQueryVariables,
 } from './types/JobTimingsRoot.types';
@@ -63,9 +65,9 @@ const isPlottable = (r: TimedRun) => {
 };
 
 /** Runs of one job for the chart, oldest first, with durations. */
-const pointsFor = (runs: TimedRun[], job: string): Point[] =>
+const pointsFor = (runs: TimedRun[], job: string, partial: Set<string>): Point[] =>
   runs
-    .filter((r) => r.pipelineName === job && isPlottable(r))
+    .filter((r) => r.pipelineName === job && isPlottable(r) && !partial.has(r.runId))
     .map((r) => ({
       run: r,
       start: r.startTime ?? 0,
@@ -122,7 +124,46 @@ export const JobTimingsRoot = () => {
   const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
     typeof value === 'boolean' ? value : true,
   );
-  const points = useMemo(() => (selected ? pointsFor(runs, selected) : []), [runs, selected]);
+  // A run that materialised fewer assets than the job's biggest successful run
+  // was a partial run (someone picked one or two assets), so it is left out.
+  const statsResult = useQuery<HillpointeJobRunStatsQuery, HillpointeJobRunStatsQueryVariables>(
+    HILLPOINTE_JOB_RUN_STATS_QUERY,
+    {variables: {job: selected ?? ''}, skip: !selected},
+  );
+  const partial = useMemo(() => {
+    const result = statsResult.data?.runsOrError;
+    const set = new Set<string>();
+    if (result?.__typename !== 'Runs') {
+      return set;
+    }
+    const counts = new Map<string, number>();
+    result.results.forEach((r) => {
+      if (r.stats.__typename === 'RunStatsSnapshot') {
+        counts.set(r.runId, r.stats.materializations);
+      }
+    });
+    const full = Math.max(
+      0,
+      ...result.results
+        .filter((r) => r.status === RunStatus.SUCCESS)
+        .map((r) => counts.get(r.runId) ?? 0),
+    );
+    counts.forEach((count, runId) => {
+      if (full > 1 && count < full) {
+        set.add(runId);
+      }
+    });
+    return set;
+  }, [statsResult.data]);
+
+  const points = useMemo(
+    () => (selected ? pointsFor(runs, selected, partial) : []),
+    [runs, selected, partial],
+  );
+  const partialCount = useMemo(
+    () => runs.filter((r) => r.pipelineName === selected && partial.has(r.runId)).length,
+    [runs, selected, partial],
+  );
 
   if (queryResult.loading && !runs.length) {
     return (
@@ -172,13 +213,30 @@ export const JobTimingsRoot = () => {
             ) : null}
           </div>
         </div>
-        {selected ? <JobTimings job={selected} points={points} /> : null}
+        {selected ? (
+          <JobTimings
+            job={selected}
+            points={points}
+            partialCount={partialCount}
+            checkingPartial={statsResult.loading && !statsResult.data}
+          />
+        ) : null}
       </div>
     </div>
   );
 };
 
-const JobTimings = ({job, points}: {job: string; points: Point[]}) => {
+const JobTimings = ({
+  job,
+  points,
+  partialCount,
+  checkingPartial,
+}: {
+  job: string;
+  points: Point[];
+  partialCount: number;
+  checkingPartial: boolean;
+}) => {
   // Only successful runs feed the numbers; failures on the chart are context.
   const good = points.filter((p) => p.run.status === RunStatus.SUCCESS);
   const seconds = good.map((p) => p.seconds);
@@ -251,8 +309,13 @@ const JobTimings = ({job, points}: {job: string; points: Point[]}) => {
         <div className={styles.cardTitle}>
           {job}
           <span className={styles.cardSub}>
-            Successful runs, oldest to newest. Canceled and quickly failed runs are left out; longer
-            failures show in red but do not count toward the average.
+            Successful runs, oldest to newest. Canceled, quickly failed and partial runs are left
+            out; longer failures show in red but do not count toward the average.
+            {checkingPartial
+              ? ' Checking which runs were partial…'
+              : partialCount
+                ? ` ${partialCount} partial ${partialCount === 1 ? 'run' : 'runs'} left out.`
+                : ''}
           </span>
         </div>
         <div className={styles.plot} style={{height: PLOT_HEIGHT}}>
@@ -422,6 +485,28 @@ export const HILLPOINTE_JOB_TIMINGS_QUERY = gql`
           status
           startTime
           endTime
+        }
+      }
+    }
+  }
+`;
+
+// Materialization counts for one job's runs, used to spot partial runs. Run
+// stats come from the event log, so this is asked only for the selected job.
+export const HILLPOINTE_JOB_RUN_STATS_QUERY = gql`
+  query HillpointeJobRunStatsQuery($job: String!) {
+    runsOrError(filter: {pipelineName: $job}, limit: 500) {
+      ... on Runs {
+        results {
+          id
+          runId
+          status
+          stats {
+            ... on RunStatsSnapshot {
+              id
+              materializations
+            }
+          }
         }
       }
     }
