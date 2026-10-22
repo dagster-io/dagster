@@ -215,12 +215,19 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def _get_partition_keys(
         self,
         _current_time: datetime,
-        partition_key_sequences: tuple[tuple[str, ...], ...] | None = None,
+        dynamic_partition_key_sequences: tuple[tuple[str, ...] | None, ...] | None = None,
     ) -> Sequence[MultiPartitionKey]:
-        if partition_key_sequences is None:
-            partition_key_sequences = tuple(
-                tuple(partition_dim.partitions_def.get_partition_keys())
-                for partition_dim in self._partitions_defs
+        partition_key_sequences = []
+        for index, partition_dim in enumerate(self._partitions_defs):
+            dynamic_keys = (
+                dynamic_partition_key_sequences[index]
+                if dynamic_partition_key_sequences is not None
+                else None
+            )
+            partition_key_sequences.append(
+                dynamic_keys
+                if dynamic_keys is not None
+                else partition_dim.partitions_def.get_partition_keys()
             )
 
         keys = [
@@ -261,8 +268,11 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             ):
                 return self._get_partition_keys(
                     _current_time=ctx.effective_dt,
-                    partition_key_sequences=tuple(
+                    # Only dynamic keys depend on the store. Resolve other dimensions on a miss.
+                    dynamic_partition_key_sequences=tuple(
                         tuple(dim.partitions_def.get_partition_keys())
+                        if isinstance(dim.partitions_def, DynamicPartitionsDefinition)
+                        else None
                         for dim in self._partitions_defs
                     ),
                 )
