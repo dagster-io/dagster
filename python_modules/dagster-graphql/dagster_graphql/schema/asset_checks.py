@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from enum import Enum
+from functools import partial
 from typing import TYPE_CHECKING, Optional, TypeAlias, Union, cast
 
 import dagster._check as check
@@ -382,10 +383,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
             get_partition_keys_from_snap,
         )
 
-        # Accepts startIdx and endIdx arguments. This will be used to select a range of
-        # time partitions. StartIdx is inclusive, endIdx is exclusive.
-        # For non time partition definitions, these arguments will be ignored
-        # and the full list of partition keys will be returned.
+        # startIdx is inclusive, endIdx is exclusive. Honored for time window and dynamic
+        # partition definitions; static definitions ignore them and return every key.
         if not self._asset_check.partitions_def_snapshot:
             return []
 
@@ -394,7 +393,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
             return [
                 GrapheneDimensionPartitionKeys(
                     name=dimension.name,
-                    partition_keys=get_partition_keys_from_snap(
+                    get_partition_keys=partial(
+                        get_partition_keys_from_snap,
                         dimension.partitions,
                         dynamic_partitions_loader,
                         startIdx,
@@ -416,7 +416,8 @@ class GrapheneAssetCheck(graphene.ObjectType):
                 type=GraphenePartitionDefinitionType.from_partition_def_data(
                     self._asset_check.partitions_def_snapshot
                 ),
-                partition_keys=get_partition_keys_from_snap(
+                get_partition_keys=partial(
+                    get_partition_keys_from_snap,
                     partitions_snap=self._asset_check.partitions_def_snapshot,
                     dynamic_partitions_loader=dynamic_partitions_loader,
                     start_idx=startIdx,

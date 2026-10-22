@@ -66,6 +66,24 @@ query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int, $pipe
 }
 """
 
+GET_ASSET_CHECK_PARTITION_KEYS_QUERY = """
+query AssetCheckPartitionKeysQuery($assetKeys: [AssetKeyInput!], $startIdx: Int, $endIdx: Int) {
+    assetNodes(assetKeys: $assetKeys) {
+        assetChecksOrError {
+            ... on AssetChecks {
+                checks {
+                    name
+                    partitionKeysByDimension(startIdx: $startIdx, endIdx: $endIdx) {
+                        name
+                        partitionKeys
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
 GET_ASSET_CHECK_HISTORY_WITH_ID = """
 query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!, $limit: Int!, $cursor: String) {
     assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: $limit, cursor: $cursor) {
@@ -380,6 +398,25 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             ]
         }
+
+    def test_asset_check_partition_keys_by_dimension(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_PARTITION_KEYS_QUERY,
+            variables={"assetKeys": [{"path": ["partitioned_asset_for_checks"]}]},
+        )
+        assert res.data
+        checks = res.data["assetNodes"][0]["assetChecksOrError"]["checks"]
+        assert checks == [
+            {
+                "name": "partitioned_asset_check",
+                "partitionKeysByDimension": [
+                    {"name": "default", "partitionKeys": ["a", "b", "c", "d"]}
+                ],
+            }
+        ]
 
     def test_asset_check_asset_node_limit(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(graphql_context, GET_ASSET_CHECK_NAMES_QUERY)

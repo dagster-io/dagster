@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, AbstractSet, cast  # noqa: UP035
 
 import dagster._check as check
@@ -643,6 +643,32 @@ class GraphenePartitionDefinition(graphene.ObjectType):
         )
 
 
+def _get_dynamic_partition_keys_between_indexes(
+    partitions_snap: DynamicPartitionsSnap,
+    dynamic_partitions_loader: DynamicPartitionsStore,
+    start_idx: int,
+    end_idx: int,
+) -> Sequence[str]:
+    """Keys at ``[start_idx, end_idx)`` in the store's ascending order.
+
+    The store paginates by keyset, so there is no cursor for an arbitrary start_idx; reading a
+    page of ``end_idx`` keys and dropping the prefix still bounds what would otherwise be a read
+    of the whole definition, which can hold millions of keys.
+    """
+    # An empty or backwards window needs no query at all, and a negative end_idx would reach the
+    # store as a negative SQL LIMIT -- which Postgres rejects and SQLite reads as "no limit".
+    start_idx = max(start_idx, 0)
+    if end_idx <= start_idx:
+        return []
+
+    page = dynamic_partitions_loader.get_paginated_dynamic_partitions(
+        partitions_def_name=partitions_snap.name,
+        limit=end_idx,
+        ascending=True,
+    )
+    return page.results[start_idx:]
+
+
 def get_partition_keys_from_snap(
     partitions_snap: PartitionsSnap,
     dynamic_partitions_loader: DynamicPartitionsStore,
@@ -661,15 +687,19 @@ def get_partition_keys_from_snap(
             MultiPartitionsSnap,
         ),
     ):
-        if start_idx and end_idx and isinstance(partitions_snap, TimeWindowPartitionsSnap):
+        if end_idx is not None and isinstance(partitions_snap, TimeWindowPartitionsSnap):
             return partitions_snap.get_partitions_definition().get_partition_keys_between_indexes(
-                start_idx, end_idx
+                start_idx or 0, end_idx
             )
         else:
             return partitions_snap.get_partitions_definition().get_partition_keys(
                 dynamic_partitions_store=dynamic_partitions_loader
             )
     elif isinstance(partitions_snap, DynamicPartitionsSnap):
+        if end_idx is not None:
+            return _get_dynamic_partition_keys_between_indexes(
+                partitions_snap, dynamic_partitions_loader, start_idx or 0, end_idx
+            )
         return dynamic_partitions_loader.get_dynamic_partitions(
             partitions_def_name=partitions_snap.name
         )
@@ -686,6 +716,20 @@ class GrapheneDimensionPartitionKeys(graphene.ObjectType):
 
     class Meta:
         name = "DimensionPartitionKeys"
+
+    def __init__(
+        self,
+        name: str,
+        type: GraphenePartitionDefinitionType,  # noqa: A002
+        get_partition_keys: Callable[[], Sequence[str]],
+    ):
+        super().__init__(name=name, type=type)
+        # Loading the keys is a database read that a dynamic definition can answer with millions of
+        # rows, so defer it until the field is actually selected.
+        self._get_partition_keys = get_partition_keys
+
+    def resolve_partition_keys(self, _graphene_info: ResolveInfo) -> Sequence[str]:
+        return self._get_partition_keys()
 
 
 types = [
