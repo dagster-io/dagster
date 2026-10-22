@@ -36,6 +36,8 @@ const TIMINGS_DAYS = 90;
 // Runs compared for the trend tile: the newest few against the few before them.
 const TREND_WINDOW = 5;
 const PLOT_HEIGHT = 200;
+// A run with fewer than this share of the job's assets is a partial run.
+const PARTIAL_RUN_FRACTION = 0.5;
 // A failure that died this quickly never did real work; it is left off the chart.
 const IMMEDIATE_FAILURE_SECS = 120;
 const JOBS_PANEL_KEY = 'hillpointe-timings-jobs-open';
@@ -124,8 +126,10 @@ export const JobTimingsRoot = () => {
   const [jobsOpen, setJobsOpen] = useStateWithStorage<boolean>(JOBS_PANEL_KEY, (value) =>
     typeof value === 'boolean' ? value : true,
   );
-  // A run that materialised fewer assets than the job's biggest successful run
-  // was a partial run (someone picked one or two assets), so it is left out.
+  // A run that materialised well under half the assets of the job's biggest
+  // successful run was a partial run (someone picked one or two assets), so it
+  // is left out. Half, not "fewer", so a full run with one asset more or less
+  // than usual still counts.
   const statsResult = useQuery<HillpointeJobRunStatsQuery, HillpointeJobRunStatsQueryVariables>(
     HILLPOINTE_JOB_RUN_STATS_QUERY,
     {variables: {job: selected ?? ''}, skip: !selected},
@@ -149,7 +153,7 @@ export const JobTimingsRoot = () => {
         .map((r) => counts.get(r.runId) ?? 0),
     );
     counts.forEach((count, runId) => {
-      if (full > 1 && count < full) {
+      if (full > 1 && count < full * PARTIAL_RUN_FRACTION) {
         set.add(runId);
       }
     });
