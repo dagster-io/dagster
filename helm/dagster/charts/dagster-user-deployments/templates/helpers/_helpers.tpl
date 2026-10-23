@@ -152,19 +152,35 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     {{- if $.Values.imagePullSecrets }}
     image_pull_secrets: {{- $.Values.imagePullSecrets | toYaml | nindent 6 }}
     {{- end }}
+    {{- /* env_secrets and env_config_maps are name-only, so optional refs are emitted separately. */}}
+    {{- $optionalEnvFrom := list }}
+    {{- range $envConfigMap := .envConfigMaps }}
+    {{- if and (hasKey $envConfigMap "name") $envConfigMap.optional }}
+    {{- $optionalEnvFrom = append $optionalEnvFrom (dict "config_map_ref" (dict "name" $envConfigMap.name "optional" true)) }}
+    {{- end }}
+    {{- end }}
+    {{- range $envSecret := .envSecrets }}
+    {{- if and (hasKey $envSecret "name") $envSecret.optional }}
+    {{- $optionalEnvFrom = append $optionalEnvFrom (dict "secret_ref" (dict "name" $envSecret.name "optional" true)) }}
+    {{- end }}
+    {{- end }}
     env_config_maps:
     - {{ include "dagster.fullname" $ }}-{{ .name }}-user-env
     {{- range $envConfigMap := .envConfigMaps }}
-    {{- if hasKey $envConfigMap "name" }}
+    {{- if and (hasKey $envConfigMap "name") (not $envConfigMap.optional) }}
     - {{ $envConfigMap.name }}
     {{- end }}
     {{- end }}
-    {{- if .envSecrets }}
-    env_secrets:
+    {{- $requiredSecrets := list }}
     {{- range $envSecret := .envSecrets }}
-    {{- if hasKey $envSecret "name" }}
-    - {{ $envSecret.name }}
+    {{- if and (hasKey $envSecret "name") (not $envSecret.optional) }}
+    {{- $requiredSecrets = append $requiredSecrets $envSecret.name }}
     {{- end }}
+    {{- end }}
+    {{- if $requiredSecrets }}
+    env_secrets:
+    {{- range $secretName := $requiredSecrets }}
+    - {{ $secretName }}
     {{- end }}
     {{- end }}
     {{- if .volumeMounts }}
@@ -188,6 +204,11 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
     env: {{- .env | toYaml | nindent 6 }}
     {{- end }}
     run_k8s_config:
+      {{- if $optionalEnvFrom }}
+      container_config:
+        env_from:
+          {{- toYaml $optionalEnvFrom | nindent 10 }}
+      {{- end }}
       pod_spec_config:
         automount_service_account_token: true
         {{- if .nodeSelector }}

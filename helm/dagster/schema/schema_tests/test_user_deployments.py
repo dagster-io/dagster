@@ -3,6 +3,7 @@ import subprocess
 from typing import Any
 
 import pytest
+from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
@@ -1213,6 +1214,165 @@ def test_user_deployment_secrets_and_configmaps(
         }
     else:
         _assert_no_container_context(user_deployments[0])
+
+
+@pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
+def test_user_deployment_optional_env_secrets_and_configmaps(
+    template: HelmTemplate, include_config_in_launched_runs: bool
+):
+    """Optional envSecrets/envConfigMaps must stay optional on launched run pods.
+
+    env_secrets and env_config_maps only accept names, so optional refs are forwarded through
+    run_k8s_config.container_config.env_from. Required refs stay in the name lists.
+    """
+    name = "foo"
+    annotations = kubernetes.Annotations.parse_obj({"my-annotation-key": "my-annotation-val"})
+
+    secrets = [
+        {"name": "my-secret"},
+        {"name": "my-required-secret", "optional": False},
+        {"name": "my-optional-secret", "optional": True},
+    ]
+    configmaps = [
+        {"name": "my-configmap"},
+        {"name": "my-optional-configmap", "optional": True},
+    ]
+
+    deployment = UserDeployment.construct(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        annotations=annotations,
+        envConfigMaps=[
+            kubernetes.ConfigMapEnvSource.construct(None, **configmap) for configmap in configmaps
+        ],
+        envSecrets=[kubernetes.SecretEnvSource.construct(None, **secret) for secret in secrets],
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
+    )
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    user_deployments = template.render(helm_values)
+    assert len(user_deployments) == 1
+
+    container = user_deployments[0].spec.template.spec.containers[0]
+    secret_optional = {
+        source.secret_ref.name: source.secret_ref.optional
+        for source in container.env_from
+        if source.secret_ref is not None
+    }
+    configmap_optional = {
+        source.config_map_ref.name: source.config_map_ref.optional
+        for source in container.env_from
+        if source.config_map_ref is not None
+    }
+    assert secret_optional["my-optional-secret"] is True
+    assert secret_optional["my-secret"] is None
+    # Explicit optional: false is still a required secretRef on the code server.
+    assert secret_optional["my-required-secret"] is False
+    assert configmap_optional["my-optional-configmap"] is True
+    assert configmap_optional["release-name-dagster-user-deployments-foo-user-env"] is None
+
+    if include_config_in_launched_runs:
+        container_context_env = next(
+            env for env in container.env if env.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+        )
+        container_context = json.loads(container_context_env.value)
+        assert container_context == {
+            "k8s": {
+                "image_pull_policy": "Always",
+                "env_secrets": ["my-secret", "my-required-secret"],
+                "env_config_maps": [
+                    "release-name-dagster-user-deployments-foo-user-env",
+                    "my-configmap",
+                ],
+                "namespace": "default",
+                "service_account_name": "release-name-dagster-user-deployments-user-deployments",
+                "run_k8s_config": {
+                    "container_config": {
+                        "env_from": [
+                            {
+                                "config_map_ref": {
+                                    "name": "my-optional-configmap",
+                                    "optional": True,
+                                }
+                            },
+                            {"secret_ref": {"name": "my-optional-secret", "optional": True}},
+                        ]
+                    },
+                    "pod_spec_config": {
+                        "automount_service_account_token": True,
+                    },
+                    "pod_template_spec_metadata": {
+                        "annotations": annotations.model_dump(),
+                    },
+                },
+            }
+        }
+
+        # The same document is what the code server persists onto launched runs.
+        parsed = K8sContainerContext.create_from_config(container_context)
+        assert parsed.run_k8s_config.container_config["env_from"] == [
+            {"config_map_ref": {"name": "release-name-dagster-user-deployments-foo-user-env"}},
+            {"config_map_ref": {"name": "my-configmap"}},
+            {"secret_ref": {"name": "my-secret"}},
+            {"secret_ref": {"name": "my-required-secret"}},
+            {"config_map_ref": {"name": "my-optional-configmap", "optional": True}},
+            {"secret_ref": {"name": "my-optional-secret", "optional": True}},
+        ]
+    else:
+        _assert_no_container_context(user_deployments[0])
+
+
+def test_user_deployment_only_optional_env_secret(template: HelmTemplate):
+    """A deployment whose envSecrets are all optional must not emit a required secretRef."""
+    name = "foo"
+    deployment = UserDeployment.construct(
+        name=name,
+        image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", name],
+        port=3030,
+        envSecrets=[
+            kubernetes.SecretEnvSource.construct(None, name="my-optional-secret", optional=True)
+        ],
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(enabled=True),
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            enabled=True,
+            enableSubchart=True,
+            deployments=[deployment],
+        )
+    )
+
+    [user_deployment] = template.render(helm_values)
+    container = user_deployment.spec.template.spec.containers[0]
+    container_context_env = next(
+        env for env in container.env if env.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
+    )
+    container_context = json.loads(container_context_env.value)
+    assert "env_secrets" not in container_context["k8s"]
+    assert container_context["k8s"]["run_k8s_config"]["container_config"]["env_from"] == [
+        {"secret_ref": {"name": "my-optional-secret", "optional": True}}
+    ]
+    assert container_context["k8s"]["run_k8s_config"]["pod_spec_config"] == {
+        "automount_service_account_token": True,
+    }
+
+    parsed = K8sContainerContext.create_from_config(container_context)
+    assert parsed.run_k8s_config.container_config["env_from"] == [
+        {"config_map_ref": {"name": "release-name-dagster-user-deployments-foo-user-env"}},
+        {"secret_ref": {"name": "my-optional-secret", "optional": True}},
+    ]
 
 
 @pytest.mark.parametrize("include_config_in_launched_runs", [False, True])
