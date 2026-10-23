@@ -952,6 +952,39 @@ def test_init_container_with_pull_policy(template: HelmTemplate):
     assert init_containers[0].image_pull_policy == "IfNotPresent"
 
 
+def _env_from_identity(source):
+    """(kind, name, optional) for a Deployment envFrom entry or a run container_config dict.
+
+    Missing optional and explicit false are both required refs. Kubernetes last-wins is by
+    position, so callers compare the full sequence.
+    """
+    if isinstance(source, dict):
+        if "secret_ref" in source:
+            ref = source["secret_ref"]
+            return ("secret", ref["name"], bool(ref.get("optional")))
+        ref = source["config_map_ref"]
+        return ("configmap", ref["name"], bool(ref.get("optional")))
+
+    if source.secret_ref is not None:
+        return ("secret", source.secret_ref.name, bool(source.secret_ref.optional))
+    return ("configmap", source.config_map_ref.name, bool(source.config_map_ref.optional))
+
+
+# Chart infrastructure on the code server that is not copied into the launched run context.
+_CODE_SERVER_ONLY_ENV_FROM = {
+    "release-name-dagster-user-deployments-user-deployments-shared-env",
+    "dagster-celery-config-secret",
+}
+
+
+def _code_server_user_env_from(container):
+    return [
+        _env_from_identity(source)
+        for source in container.env_from
+        if _env_from_identity(source)[1] not in _CODE_SERVER_ONLY_ENV_FROM
+    ]
+
+
 def _assert_no_container_context(user_deployment):
     # No container context set by default
     env_names = [env.name for env in user_deployment.spec.template.spec.containers[0].env]
@@ -1220,22 +1253,25 @@ def test_user_deployment_secrets_and_configmaps(
 def test_user_deployment_optional_env_secrets_and_configmaps(
     template: HelmTemplate, include_config_in_launched_runs: bool
 ):
-    """Optional envSecrets/envConfigMaps must stay optional on launched run pods.
+    """Optional refs stay optional, and run envFrom keeps code server precedence.
 
-    env_secrets and env_config_maps only accept names, so optional refs are forwarded through
-    run_k8s_config.container_config.env_from. Required refs stay in the name lists.
+    env_config_maps and env_secrets cannot express optional, and dagster-k8s appends
+    container_config.env_from after those name lists. When any ref is optional, every user ref
+    is emitted in Deployment order (config maps, then secrets) so a later secret still wins.
     """
     name = "foo"
     annotations = kubernetes.Annotations.parse_obj({"my-annotation-key": "my-annotation-val"})
 
+    # Optional entries are intentionally earlier than required ones. Last envFrom wins, so the
+    # required secret must stay after the optional config map on the run pod.
     secrets = [
+        {"name": "my-optional-secret", "optional": True},
         {"name": "my-secret"},
         {"name": "my-required-secret", "optional": False},
-        {"name": "my-optional-secret", "optional": True},
     ]
     configmaps = [
-        {"name": "my-configmap"},
         {"name": "my-optional-configmap", "optional": True},
+        {"name": "my-configmap"},
     ]
 
     deployment = UserDeployment.construct(
@@ -1287,13 +1323,12 @@ def test_user_deployment_optional_env_secrets_and_configmaps(
             env for env in container.env if env.name == "DAGSTER_CLI_API_GRPC_CONTAINER_CONTEXT"
         )
         container_context = json.loads(container_context_env.value)
+        assert "env_secrets" not in container_context["k8s"]
         assert container_context == {
             "k8s": {
                 "image_pull_policy": "Always",
-                "env_secrets": ["my-secret", "my-required-secret"],
                 "env_config_maps": [
                     "release-name-dagster-user-deployments-foo-user-env",
-                    "my-configmap",
                 ],
                 "namespace": "default",
                 "service_account_name": "release-name-dagster-user-deployments-user-deployments",
@@ -1306,7 +1341,10 @@ def test_user_deployment_optional_env_secrets_and_configmaps(
                                     "optional": True,
                                 }
                             },
+                            {"config_map_ref": {"name": "my-configmap"}},
                             {"secret_ref": {"name": "my-optional-secret", "optional": True}},
+                            {"secret_ref": {"name": "my-secret"}},
+                            {"secret_ref": {"name": "my-required-secret"}},
                         ]
                     },
                     "pod_spec_config": {
@@ -1319,15 +1357,19 @@ def test_user_deployment_optional_env_secrets_and_configmaps(
             }
         }
 
-        # The same document is what the code server persists onto launched runs.
+        # create_from_config prepends env_config_maps, then appends container_config.env_from.
         parsed = K8sContainerContext.create_from_config(container_context)
-        assert parsed.run_k8s_config.container_config["env_from"] == [
+        run_env_from = parsed.run_k8s_config.container_config["env_from"]
+        assert [
+            _env_from_identity(source) for source in run_env_from
+        ] == _code_server_user_env_from(container)
+        assert run_env_from == [
             {"config_map_ref": {"name": "release-name-dagster-user-deployments-foo-user-env"}},
+            {"config_map_ref": {"name": "my-optional-configmap", "optional": True}},
             {"config_map_ref": {"name": "my-configmap"}},
+            {"secret_ref": {"name": "my-optional-secret", "optional": True}},
             {"secret_ref": {"name": "my-secret"}},
             {"secret_ref": {"name": "my-required-secret"}},
-            {"config_map_ref": {"name": "my-optional-configmap", "optional": True}},
-            {"secret_ref": {"name": "my-optional-secret", "optional": True}},
         ]
     else:
         _assert_no_container_context(user_deployments[0])
@@ -1369,7 +1411,11 @@ def test_user_deployment_only_optional_env_secret(template: HelmTemplate):
     }
 
     parsed = K8sContainerContext.create_from_config(container_context)
-    assert parsed.run_k8s_config.container_config["env_from"] == [
+    run_env_from = parsed.run_k8s_config.container_config["env_from"]
+    assert [_env_from_identity(source) for source in run_env_from] == _code_server_user_env_from(
+        container
+    )
+    assert run_env_from == [
         {"config_map_ref": {"name": "release-name-dagster-user-deployments-foo-user-env"}},
         {"secret_ref": {"name": "my-optional-secret", "optional": True}},
     ]
