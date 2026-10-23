@@ -162,6 +162,120 @@ ALINOS_DARK = {
     "neg_hover": "hsl(0 100% 80%)",
 }
 
+# "Halloween" -- midnight purple page, witch-purple sidebar, pumpkin orange
+# accent, slime green success and blood red failure.
+HALLOWEEN = {
+    "bg0": "hsl(268 40% 7%)",
+    "bg1": "hsl(268 38% 10%)",
+    "bg2": "hsl(268 36% 14%)",
+    "bg3": "hsl(268 34% 19%)",
+    "text": "hsl(40 30% 93%)",
+    "text2": "hsl(270 30% 78%)",
+    "text3": "hsl(270 20% 62%)",
+    "brand": "hsl(25 100% 56%)",
+    "brand_hover": "hsl(28 100% 64%)",
+    "brand_2": "hsl(275 70% 45%)",
+    "brand_2_ink": "hsl(275 80% 72%)",
+    "brand_line": "hsl(25 100% 56% / .6)",
+    "line": "hsl(270 40% 80% / .14)",
+    "line2": "hsl(270 40% 80% / .26)",
+    "pos": "hsl(100 85% 55%)",
+    "pos_hover": "hsl(100 90% 63%)",
+    "neg": "hsl(355 90% 58%)",
+    "neg_hover": "hsl(355 90% 66%)",
+    "warn": "hsl(45 100% 60%)",
+    "warn_hover": "hsl(45 100% 68%)",
+    "warn_ink": "hsl(45 100% 60%)",
+    "scrim": "hsl(268 50% 3% / .75)",
+    "shadow": "hsl(25 100% 50% / .25)",
+    "nav_bg": "hsl(272 55% 20%)",
+    "tooltip_bg": "hsl(272 55% 20%)",
+    "tooltip_text": "hsl(40 30% 93%)",
+    "disabled_bg": "hsl(270 40% 80% / .1)",
+    "soft": ".2",
+    "soft_hover": ".3",
+    "viz_green": None,
+    "viz_red": None,
+    "viz_yellow": None,
+}
+
+
+def team_extras(cls, nav_bg, stripe):
+    """Themes with a solid-colour sidebar, so every token the nav uses is
+    re-pointed inside it (white text, white washes for hover and selection),
+    plus a trim stripe along the top of the page."""
+    return f"""
+.{cls} .hp-nav {{
+  background: {nav_bg};
+  box-shadow: inset -1px 0 0 hsl(0 0% 100% / 0.25);
+  --color-text-default: hsl(0 0% 100%);
+  --color-text-light: hsl(0 0% 100% / 0.9);
+  --color-text-lighter: hsl(0 0% 100% / 0.78);
+  --color-accent-gray: hsl(0 0% 100% / 0.78);
+  --color-accent-primary: hsl(0 0% 100%);
+  --color-accent-blue: hsl(0 0% 100%);
+  --color-link-default: hsl(0 0% 100%);
+  --color-link-hover: hsl(0 0% 100%);
+  --color-background-light: hsl(0 0% 100% / 0.1);
+  --color-background-lighter: hsl(0 0% 100% / 0.12);
+  --color-background-lighter-hover: hsl(0 0% 100% / 0.18);
+  --color-background-blue: hsl(0 0% 100% / 0.22);
+  --color-background-blue-hover: hsl(0 0% 100% / 0.3);
+  --color-keyline-default: hsl(0 0% 100% / 0.18);
+  --color-border-default: hsl(0 0% 100% / 0.18);
+  --color-focus-ring: hsl(0 0% 100% / 0.6);
+}}
+
+.{cls} .hp-main {{
+  box-shadow: inset 0 4px 0 {stripe};
+}}
+"""
+
+
+# A pumpkin glow rising from the bottom of the sidebar.
+HALLOWEEN_EXTRAS = team_extras(
+    "themeHalloween",
+    "linear-gradient(180deg, hsl(272 55% 20%) 55%, hsl(25 90% 32%) 100%)",
+    "hsl(25 100% 56%)",
+)
+
+# Halloween only: a cobweb in the top-right corner and a spider swinging on a
+# thread. Both fixed to the viewport and click-through.
+HALLOWEEN_DECOR = """
+.themeHalloween .hp-main::before,
+.themeHalloween .hp-main::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: 5;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.themeHalloween .hp-main::before {
+  top: 4px;
+  right: 0;
+  width: 110px;
+  height: 110px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='white' stroke-opacity='0.55' stroke-width='1.2'%3E %3Cpath d='M200 0 L0 0 M200 0 L0 40 M200 0 L0 110 M200 0 L30 200 M200 0 L110 200 M200 0 L200 200'/%3E %3Cpath d='M160 0 Q150 25 170 40 Q190 55 200 40'/%3E %3Cpath d='M120 0 Q105 45 140 80 Q175 110 200 80'/%3E %3Cpath d='M80 0 Q60 70 110 120 Q160 165 200 120'/%3E %3Cpath d='M40 0 Q15 95 80 160 Q145 220 200 160'/%3E %3C/svg%3E");
+}
+
+.themeHalloween .hp-main::after {
+  top: 4px;
+  right: 150px;
+  width: 32px;
+  height: 110px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 200'%3E %3Cline x1='30' y1='0' x2='30' y2='150' stroke='white' stroke-opacity='0.6' stroke-width='1'/%3E %3Cg stroke='%23111' stroke-width='2.5' stroke-linecap='round' fill='none'%3E %3Cpath d='M24 158 L8 146 L2 134 M24 162 L6 160 M24 166 L8 176 L2 186 M26 170 L14 186'/%3E %3Cpath d='M36 158 L52 146 L58 134 M36 162 L54 160 M36 166 L52 176 L58 186 M34 170 L46 186'/%3E %3C/g%3E %3Ccircle cx='30' cy='154' r='5' fill='%23111'/%3E %3Cellipse cx='30' cy='168' rx='9' ry='11' fill='%23111'/%3E %3Ccircle cx='28' cy='152' r='1.2' fill='%23ff5a1f'/%3E%3Ccircle cx='32' cy='152' r='1.2' fill='%23ff5a1f'/%3E %3C/svg%3E");
+  transform-origin: top center;
+  animation: hpSpiderSwing 4s ease-in-out infinite;
+}
+
+@keyframes hpSpiderSwing {
+  0%, 100% { transform: rotate(-6deg) translateY(0); }
+  50% { transform: rotate(6deg) translateY(10px); }
+}
+"""
+
 # hue-only forms, for building translucent fills
 HUE = {
     "light": {"pos": "145 60% 27%", "neg": "0 70% 44%", "warn": "48 66% 40%",
@@ -174,6 +288,8 @@ HUE = {
                     "brand": "211 87% 69%", "brand_2": "211 60% 45%", "gray": "41 42% 93%"},
     "custom1": {"pos": "145 70% 50%", "neg": "0 85% 62%", "warn": "48 95% 55%",
                  "brand": "35 95% 58%", "brand_2": "25 85% 45%", "gray": "40 30% 90%"},
+    "halloween": {"pos": "100 85% 55%", "neg": "355 90% 58%", "warn": "45 100% 60%",
+                  "brand": "25 100% 56%", "brand_2": "275 70% 45%", "gray": "270 40% 80%"},
 }
 
 
@@ -331,6 +447,9 @@ def main():
     out.append(".themeAlinosLight {\n" + block(ALINOS_LIGHT, "light", "alinos_light") + "}\n")
     out.append(".themeAlinosDark {\n" + block(ALINOS_DARK, "dark", "alinos_dark") + "}\n")
     out.append(CUSTOM_1_EXTRAS)
+    out.append(".themeHalloween {\n" + block(HALLOWEEN, "dark", "halloween") + "}\n")
+    out.append(HALLOWEEN_EXTRAS)
+    out.append(HALLOWEEN_DECOR)
 
     return "\n".join(out)
 

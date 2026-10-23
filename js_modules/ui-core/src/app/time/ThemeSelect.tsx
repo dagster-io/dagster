@@ -44,6 +44,11 @@ export const THEME_OPTIONS: {key: DagsterTheme; label: string; icon: IconName}[]
     label: 'Alinos dark',
     icon: 'nightlight',
   },
+  {
+    key: DagsterTheme.Halloween,
+    label: 'Halloween',
+    icon: 'nightlight',
+  },
 ];
 
 export const ThemeSelect = ({theme, onChange}: Props) => {

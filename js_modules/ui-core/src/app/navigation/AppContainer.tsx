@@ -23,6 +23,7 @@ export const AppContainer = (props: Props) => {
     <div className={styles.container}>
       <div
         className={clsx(
+          'hp-nav',
           styles.nav,
           isFullScreenEnabled ? styles.hidden : null,
           isCollapsed ? styles.collapsed : null,
@@ -30,7 +31,7 @@ export const AppContainer = (props: Props) => {
       >
         <MainNavigation collapsed={isCollapsed} topGroups={topGroups} bottomGroups={bottomGroups} />
       </div>
-      <div className={clsx(styles.main, isFullScreenEnabled ? styles.fullScreen : null)}>
+      <div className={clsx('hp-main', styles.main, isFullScreenEnabled ? styles.fullScreen : null)}>
         <div>{banner}</div>
         <div className={styles.child}>{children}</div>
       </div>

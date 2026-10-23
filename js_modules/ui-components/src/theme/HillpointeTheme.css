@@ -705,3 +705,159 @@
 .themeCustom1 *::after {
   border-radius: 0 !important;
 }
+
+.themeHalloween {
+  --browser-color-scheme: dark;
+
+  --color-background-default: hsl(268 40% 7%);
+  --color-background-default-hover: hsl(268 38% 10%);
+  --color-background-light: hsl(268 38% 10%);
+  --color-background-light-hover: hsl(268 36% 14%);
+  --color-background-lighter: hsl(268 36% 14%);
+  --color-background-lighter-hover: hsl(268 34% 19%);
+  --color-background-disabled: hsl(270 40% 80% / .1);
+
+  --color-text-default: hsl(40 30% 93%);
+  --color-text-light: hsl(270 30% 78%);
+  --color-text-lighter: hsl(270 20% 62%);
+  --color-text-disabled: hsl(270 20% 62%);
+
+  --color-accent-primary: hsl(25 100% 56%);
+  --color-accent-primary-hover: hsl(28 100% 64%);
+  --color-accent-blue: hsl(25 100% 56%);
+  --color-accent-blue-hover: hsl(28 100% 64%);
+  --color-accent-reversed: hsl(268 40% 7%);
+  --color-accent-reversed-hover: hsl(268 38% 10%);
+  --color-accent-gray: hsl(270 20% 62%);
+  --color-accent-gray-hover: hsl(270 30% 78%);
+  --color-link-default: hsl(25 100% 56%);
+  --color-link-hover: hsl(28 100% 64%);
+  --color-link-disabled: hsl(270 20% 62%);
+  --color-text-blue: hsl(25 100% 56%);
+  --color-focus-ring: hsl(25 100% 56% / .6);
+  --color-checkbox-checked: hsl(25 100% 56%);
+  --color-checkbox-unchecked: hsl(270 20% 62%);
+  --color-checkbox-disabled: hsl(270 20% 62%);
+
+  --color-border-default: hsl(270 40% 80% / .14);
+  --color-border-hover: hsl(270 40% 80% / .26);
+  --color-border-disabled: hsl(270 40% 80% / .14);
+  --color-keyline-default: hsl(270 40% 80% / .14);
+
+  --color-accent-green: hsl(100 85% 55%);
+  --color-accent-green-hover: hsl(100 90% 63%);
+  --color-accent-red: hsl(355 90% 58%);
+  --color-accent-red-hover: hsl(355 90% 66%);
+  --color-accent-yellow: hsl(45 100% 60%);
+  --color-accent-yellow-hover: hsl(45 100% 68%);
+  --color-text-green: hsl(100 85% 55%);
+  --color-text-red: hsl(355 90% 58%);
+  --color-text-yellow: hsl(45 100% 60%);
+  --color-background-green: hsl(100 85% 55% / .2);
+  --color-background-green-hover: hsl(100 85% 55% / .3);
+  --color-background-red: hsl(355 90% 58% / .2);
+  --color-background-red-hover: hsl(355 90% 58% / .3);
+  --color-background-yellow: hsl(45 100% 60% / .2);
+  --color-background-yellow-hover: hsl(45 100% 60% / .3);
+  --color-background-blue: hsl(25 100% 56% / .2);
+  --color-background-blue-hover: hsl(25 100% 56% / .3);
+  --color-background-gray: hsl(270 40% 80% / .2);
+  --color-background-gray-hover: hsl(270 40% 80% / .3);
+
+  --color-nav-background: hsl(272 55% 20%);
+  --color-nav-text: hsl(270 30% 78%);
+  --color-nav-text-hover: hsl(40 30% 93%);
+  --color-nav-text-selected: hsl(40 30% 93%);
+  --color-nav-button: hsl(268 36% 14%);
+  --color-nav-button-hover: hsl(268 34% 19%);
+
+  --color-popover-background: hsl(268 36% 14%);
+  --color-popover-background-hover: hsl(268 34% 19%);
+  --color-dialog-background: hsl(268 50% 3% / .75);
+  --color-tooltip-background: hsl(272 55% 20%);
+  --color-tooltip-text: hsl(40 30% 93%);
+  --color-shadow-default: hsl(25 100% 50% / .25);
+
+  --color-lineage-edge: hsl(270 40% 80% / .26);
+  --color-lineage-edge-highlighted: hsl(25 100% 56%);
+  --color-lineage-node-background: hsl(268 36% 14%);
+  --color-lineage-node-background-hover: hsl(268 34% 19%);
+  --color-lineage-node-border: hsl(270 40% 80% / .14);
+  --color-lineage-node-border-hover: hsl(270 40% 80% / .26);
+  --color-lineage-node-border-selected: hsl(25 100% 56%);
+  --color-lineage-group-node-background: hsl(268 38% 10%);
+  --color-lineage-group-node-background-hover: hsl(268 36% 14%);
+  --color-lineage-group-node-border: hsl(270 40% 80% / .14);
+  --color-lineage-group-node-border-hover: hsl(270 40% 80% / .26);
+
+  --color-data-viz-green: hsl(100 85% 55%);
+  --color-data-viz-green-alt: hsl(100 90% 63%);
+  --color-data-viz-red: hsl(355 90% 58%);
+  --color-data-viz-red-alt: hsl(355 90% 66%);
+  --color-data-viz-blue: hsl(25 100% 56%);
+  --color-data-viz-blue-alt: hsl(275 70% 45%);
+  --color-data-viz-yellow: hsl(45 100% 60%);
+  --color-data-viz-yellow-alt: hsl(45 100% 68%);
+  --color-data-viz-gray: hsl(270 20% 62%);
+  --color-data-viz-gray-alt: hsl(270 30% 78%);
+}
+
+
+.themeHalloween .hp-nav {
+  background: linear-gradient(180deg, hsl(272 55% 20%) 55%, hsl(25 90% 32%) 100%);
+  box-shadow: inset -1px 0 0 hsl(0 0% 100% / 0.25);
+  --color-text-default: hsl(0 0% 100%);
+  --color-text-light: hsl(0 0% 100% / 0.9);
+  --color-text-lighter: hsl(0 0% 100% / 0.78);
+  --color-accent-gray: hsl(0 0% 100% / 0.78);
+  --color-accent-primary: hsl(0 0% 100%);
+  --color-accent-blue: hsl(0 0% 100%);
+  --color-link-default: hsl(0 0% 100%);
+  --color-link-hover: hsl(0 0% 100%);
+  --color-background-light: hsl(0 0% 100% / 0.1);
+  --color-background-lighter: hsl(0 0% 100% / 0.12);
+  --color-background-lighter-hover: hsl(0 0% 100% / 0.18);
+  --color-background-blue: hsl(0 0% 100% / 0.22);
+  --color-background-blue-hover: hsl(0 0% 100% / 0.3);
+  --color-keyline-default: hsl(0 0% 100% / 0.18);
+  --color-border-default: hsl(0 0% 100% / 0.18);
+  --color-focus-ring: hsl(0 0% 100% / 0.6);
+}
+
+.themeHalloween .hp-main {
+  box-shadow: inset 0 4px 0 hsl(25 100% 56%);
+}
+
+
+.themeHalloween .hp-main::before,
+.themeHalloween .hp-main::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: 5;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.themeHalloween .hp-main::before {
+  top: 4px;
+  right: 0;
+  width: 110px;
+  height: 110px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200' fill='none' stroke='white' stroke-opacity='0.55' stroke-width='1.2'%3E %3Cpath d='M200 0 L0 0 M200 0 L0 40 M200 0 L0 110 M200 0 L30 200 M200 0 L110 200 M200 0 L200 200'/%3E %3Cpath d='M160 0 Q150 25 170 40 Q190 55 200 40'/%3E %3Cpath d='M120 0 Q105 45 140 80 Q175 110 200 80'/%3E %3Cpath d='M80 0 Q60 70 110 120 Q160 165 200 120'/%3E %3Cpath d='M40 0 Q15 95 80 160 Q145 220 200 160'/%3E %3C/svg%3E");
+}
+
+.themeHalloween .hp-main::after {
+  top: 4px;
+  right: 150px;
+  width: 32px;
+  height: 110px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 200'%3E %3Cline x1='30' y1='0' x2='30' y2='150' stroke='white' stroke-opacity='0.6' stroke-width='1'/%3E %3Cg stroke='%23111' stroke-width='2.5' stroke-linecap='round' fill='none'%3E %3Cpath d='M24 158 L8 146 L2 134 M24 162 L6 160 M24 166 L8 176 L2 186 M26 170 L14 186'/%3E %3Cpath d='M36 158 L52 146 L58 134 M36 162 L54 160 M36 166 L52 176 L58 186 M34 170 L46 186'/%3E %3C/g%3E %3Ccircle cx='30' cy='154' r='5' fill='%23111'/%3E %3Cellipse cx='30' cy='168' rx='9' ry='11' fill='%23111'/%3E %3Ccircle cx='28' cy='152' r='1.2' fill='%23ff5a1f'/%3E%3Ccircle cx='32' cy='152' r='1.2' fill='%23ff5a1f'/%3E %3C/svg%3E");
+  transform-origin: top center;
+  animation: hpSpiderSwing 4s ease-in-out infinite;
+}
+
+@keyframes hpSpiderSwing {
+  0%, 100% { transform: rotate(-6deg) translateY(0); }
+  50% { transform: rotate(6deg) translateY(10px); }
+}
