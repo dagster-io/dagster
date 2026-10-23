@@ -1,4 +1,6 @@
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
@@ -896,3 +898,107 @@ def test_get_pyproject_deps_requirements_multi_location_scenario() -> None:
             assert any("dagster" in dep for dep in deps2_lines), (
                 f"Location 2 missing dagster: {deps2_lines}"
             )
+
+
+# --- uv.lock: the deps pex gets the locked versions ------------------------------------
+
+
+def _write_uv_project(directory: Path, dependencies: str = '"requests>=2"') -> None:
+    (directory / "pyproject.toml").write_text(
+        f"""
+[project]
+name = "app"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [{dependencies}]
+"""
+    )
+
+
+def test_get_deps_requirements_uses_uv_lock(tmp_path, monkeypatch):
+    """With a uv.lock, dependencies come from `uv export` (pinned), not pyproject.toml."""
+    monkeypatch.delenv(deps.USE_UV_LOCK_ENV_VAR, raising=False)
+    _write_uv_project(tmp_path)
+    (tmp_path / "uv.lock").write_text("version = 1\n")
+
+    exported = "certifi==2026.1.4\nidna==3.10\nrequests==2.32.5\n"
+    with (
+        patch("dagster_cloud_cli.core.pex_builder.deps.shutil.which", return_value="/bin/uv"),
+        patch("dagster_cloud_cli.core.pex_builder.deps.subprocess.run") as mock_run,
+    ):
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = exported
+        local_packages, deps_requirements = deps.get_deps_requirements(
+            str(tmp_path), version.Version("3.11.0")
+        )
+
+    args = mock_run.call_args.args[0]
+    assert args[:2] == ["/bin/uv", "export"]
+    assert {"--frozen", "--no-emit-project", "--no-editable", "--no-hashes"} <= set(args)
+    assert mock_run.call_args.kwargs["cwd"] == str(tmp_path)
+
+    assert local_packages.local_package_paths == []
+    # Exactly the locked pins: no unpinned pyproject.toml line, and no extra build
+    # constraints (the lock is already the version set the project tested).
+    assert deps_requirements.requirements_txt.split() == [
+        "certifi==2026.1.4",
+        "idna==3.10",
+        "requests==2.32.5",
+    ]
+
+
+def test_get_deps_requirements_uv_lock_opt_out(tmp_path, monkeypatch):
+    monkeypatch.setenv(deps.USE_UV_LOCK_ENV_VAR, "0")
+    _write_uv_project(tmp_path)
+    (tmp_path / "uv.lock").write_text("version = 1\n")
+
+    with patch("dagster_cloud_cli.core.pex_builder.deps.subprocess.run") as mock_run:
+        _, deps_requirements = deps.get_deps_requirements(str(tmp_path), version.Version("3.11.0"))
+
+    mock_run.assert_not_called()
+    assert "requests>=2" in deps_requirements.requirements_txt.split("\n")
+
+
+def test_get_deps_requirements_uv_lock_without_uv_falls_back(tmp_path, monkeypatch):
+    monkeypatch.delenv(deps.USE_UV_LOCK_ENV_VAR, raising=False)
+    _write_uv_project(tmp_path)
+    (tmp_path / "uv.lock").write_text("version = 1\n")
+
+    with (
+        patch("dagster_cloud_cli.core.pex_builder.deps.shutil.which", return_value=None),
+        patch("dagster_cloud_cli.core.pex_builder.deps.ui.warn") as mock_warn,
+    ):
+        _, deps_requirements = deps.get_deps_requirements(str(tmp_path), version.Version("3.11.0"))
+
+    assert "uv.lock" in mock_warn.call_args.args[0]
+    assert "requests>=2" in deps_requirements.requirements_txt.split("\n")
+
+
+@pytest.mark.skipif(shutil.which("uv") is None, reason="needs the uv executable")
+def test_get_deps_requirements_uv_workspace_member_paths(tmp_path, monkeypatch):
+    """A real uv workspace: the lock is at the workspace root, the project is a member, and its
+    workspace dependency becomes a local package resolved relative to the lock, not the member.
+    No PyPI dependencies, so `uv lock` runs offline.
+    """
+    monkeypatch.delenv(deps.USE_UV_LOCK_ENV_VAR, raising=False)
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.uv.workspace]\nmembers = ["apps/app", "libs/shared"]\n'
+    )
+    shared = tmp_path / "libs" / "shared"
+    shared.mkdir(parents=True)
+    (shared / "pyproject.toml").write_text(
+        '[project]\nname = "shared"\nversion = "0.1.0"\nrequires-python = ">=3.10"\n'
+    )
+    app = tmp_path / "apps" / "app"
+    app.mkdir(parents=True)
+    _write_uv_project(app, dependencies='"shared"')
+    with open(app / "pyproject.toml", "a", encoding="utf-8") as f:
+        f.write("\n[tool.uv.sources]\nshared = { workspace = true }\n")
+    subprocess.run(["uv", "lock", "--offline"], cwd=tmp_path, check=True, capture_output=True)
+
+    local_packages, deps_requirements = deps.get_deps_requirements(
+        str(app), version.Version("3.11.0")
+    )
+
+    assert local_packages.local_package_paths == [str(shared.resolve())]
+    assert deps_requirements.requirements_txt.strip() == ""
