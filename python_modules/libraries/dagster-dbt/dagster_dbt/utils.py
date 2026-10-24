@@ -182,7 +182,10 @@ def _select_unique_ids_from_manifest(
         )
 
     manifest = Manifest(
-        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},  # ty: ignore[invalid-argument-type]
+        nodes={  # ty: ignore[invalid-argument-type]
+            unique_id: _DictShim(_with_default_node_config(info))
+            for unique_id, info in manifest_json["nodes"].items()
+        },
         sources={  # ty: ignore[invalid-argument-type]
             unique_id: _DictShim(info) for unique_id, info in manifest_json["sources"].items()
         },
@@ -289,6 +292,16 @@ def _dbt_selector_project_root(project: Optional["DbtProject"]) -> Iterator[None
 
     with task_contextvars(project_root=str(project.project_dir)):
         yield
+
+
+def _with_default_node_config(info: Mapping[str, Any]) -> Mapping[str, Any]:
+    """dbt-fusion writes `on-run-start`/`on-run-end` hooks as `operation` nodes without a `config`
+    key, while dbt's `NodeSelector` reads `node.config.enabled` for every graph member. A node
+    listed under `nodes` is enabled (disabled ones are listed under `disabled`), so default it.
+    """
+    if info.get("config") is not None:
+        return info
+    return {**info, "config": {"enabled": True}}
 
 
 def _set_flag_attrs(kvs: dict[str, Any]):
