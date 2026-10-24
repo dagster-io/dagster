@@ -24,7 +24,7 @@ visualize the growth of a package over time.
 This project demonstrates the use of partitions and software-defined assets.
 Daily partitions are created for fetching data related to both
 
-## Prequisites
+## Prerequisites
 
 ### Local Development
 
@@ -84,7 +84,7 @@ steampipe plugin install github
 ```
 
 You'll need to create a [Github token](https://hub.steampipe.io/plugins/turbot/github#documentation:~:text=must%20create%20a-,personal%20access%20token,-and%20assign%20the)
-and update the steampipe confing file: `~/.steampipe/config/github.spc`
+and update the steampipe config file: `~/.steampipe/config/github.spc`
 See the [docs](https://hub.steampipe.io/plugins/turbot/github#documentation)
 for more information
 

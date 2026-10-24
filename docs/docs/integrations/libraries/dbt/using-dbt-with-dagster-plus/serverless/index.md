@@ -6,7 +6,7 @@ canonicalUrl: '/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverles
 slug: '/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverless'
 ---
 
-Importing an existing dbt project in Dagster+ allows you to automatically load your dbt models as Dagster assets. This can be be done with:
+Importing an existing dbt project in Dagster+ allows you to automatically load your dbt models as Dagster assets. This can be done with:
 
 - An existing dbt project that is not already using Dagster, or
 - A Dagster project in which your dbt project is included

@@ -16,7 +16,7 @@ Using jobs provides the following benefits:
 
 - **Automation**: With [schedules](/guides/automate/schedules) and [sensors](/guides/automate/sensors), jobs can be used to automate the execution of your Dagster pipelines. Refer to the [Automation guide](/guides/automate) for more info.
 - **Control job run priority**: If using a [run queue](/deployment/execution/run-coordinators), you can apply custom prioritization rules to how job runs are prioritized and executed.
-- **Potential for improved efficency**: By applying concurrency limits to job runs, there may be benefits to your pipeline's efficiency. Refer to the [Managing concurrency guide](/guides/operate/managing-concurrency) for more info and examples.
+- **Potential for improved efficiency**: By applying concurrency limits to job runs, there may be benefits to your pipeline's efficiency. Refer to the [Managing concurrency guide](/guides/operate/managing-concurrency) for more info and examples.
 
 ## Uses
 
