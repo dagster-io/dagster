@@ -199,6 +199,57 @@ def test_get_upstream_single_dimension_to_multi_partition_mapping(
     )
 
 
+@pytest.mark.parametrize("dimension_name", ["a", "b"])
+@pytest.mark.parametrize("upstream_is_multi", [False, True])
+def test_explicit_partition_dimension_mapping(dimension_name: str, upstream_is_multi: bool):
+    single_def = dg.StaticPartitionsDefinition(["1", "2", "3"])
+    multi_def = dg.MultiPartitionsDefinition({"a": single_def, "b": single_def})
+    single_subset = single_def.empty_subset().with_partition_keys(["1"])
+    other_dimension = "b" if dimension_name == "a" else "a"
+    multi_subset = multi_def.empty_subset().with_partition_keys(
+        dg.MultiPartitionKey({dimension_name: "1", other_dimension: key})
+        for key in single_def.get_partition_keys()
+    )
+    upstream_def, downstream_def = (
+        (multi_def, single_def) if upstream_is_multi else (single_def, multi_def)
+    )
+    upstream_subset, downstream_subset = (
+        (multi_subset, single_subset) if upstream_is_multi else (single_subset, multi_subset)
+    )
+    mapping = dg.MultiToSingleDimensionPartitionMapping(dimension_name)
+
+    result = mapping.get_upstream_mapped_partitions_result_for_partitions(
+        downstream_subset, downstream_def, upstream_def
+    )
+    assert result.partitions_subset == upstream_subset
+    assert result.required_but_nonexistent_subset.is_empty
+    assert (
+        mapping.get_downstream_partitions_for_partitions(
+            upstream_subset, upstream_def, downstream_def
+        )
+        == downstream_subset
+    )
+
+
+@pytest.mark.parametrize("dimension_name", ["a", "b", "missing"])
+@pytest.mark.parametrize("upstream_is_multi", [False, True])
+def test_explicit_partition_dimension_validation(dimension_name: str, upstream_is_multi: bool):
+    single_def = dg.StaticPartitionsDefinition(["1", "2", "3"])
+    multi_def = dg.MultiPartitionsDefinition({"a": single_def, "b": single_def})
+    upstream_def, downstream_def = (
+        (multi_def, single_def) if upstream_is_multi else (single_def, multi_def)
+    )
+    mapping = dg.MultiToSingleDimensionPartitionMapping(dimension_name)
+
+    if dimension_name == "missing":
+        with pytest.raises(CheckError, match="Provided partition dimension name missing not found"):
+            mapping.validate_partition_mapping(upstream_def, downstream_def)
+        with pytest.raises(CheckError, match="Provided partition dimension name missing not found"):
+            mapping.get_dimension_dependencies(upstream_def, downstream_def)
+    else:
+        mapping.validate_partition_mapping(upstream_def, downstream_def)
+
+
 def test_error_thrown_when_no_partition_dimension_name_provided():
     multipartitions_def = dg.MultiPartitionsDefinition(
         {
