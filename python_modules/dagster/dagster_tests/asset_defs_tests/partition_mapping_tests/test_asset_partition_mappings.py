@@ -758,6 +758,26 @@ def test_partition_mapping_with_asset_deps():
     assert multi_asset_2.get_partition_mapping(dg.AssetKey("asset_2")) == asset_2_partition_mapping
 
 
+def test_asset_partition_key_for_input_against_auto_created_stub_asset():
+    """A dep on an asset key with no corresponding definition in the Definitions object (e.g. an
+    asset that actually lives in another code location) gets resolved to an auto-created stub
+    asset with no partitions_def. Calling a partition-based context method for that input should
+    raise a clear, actionable error rather than an opaque internal CheckError.
+    """
+    partitions_def = dg.StaticPartitionsDefinition(["a", "b"])
+
+    @dg.asset(
+        partitions_def=partitions_def,
+        deps=[dg.AssetDep("upstream", partition_mapping=dg.IdentityPartitionMapping())],
+    )
+    def downstream(context: AssetExecutionContext):
+        context.asset_partition_key_for_input("upstream")
+
+    # Note: `upstream` is intentionally not included here, so it resolves to a stub asset.
+    with pytest.raises(dg.DagsterInvariantViolationError, match="auto-created as a stub asset"):
+        dg.materialize([downstream], partition_key="a")
+
+
 def test_conflicting_mappings_with_asset_deps():
     partitions_def = dg.DailyPartitionsDefinition(start_date="2023-08-15")
 
