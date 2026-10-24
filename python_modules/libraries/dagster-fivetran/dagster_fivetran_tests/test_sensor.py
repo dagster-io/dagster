@@ -1,8 +1,9 @@
+import base64
 from collections.abc import Iterator
 
 import pytest
 import responses
-from dagster import AssetMaterialization, build_sensor_context
+from dagster import AssetMaterialization, EnvVar, build_sensor_context
 from dagster._core.test_utils import instance_for_test
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.test.definitions import scoped_definitions_load_context
@@ -88,6 +89,80 @@ def test_sensor_name_override(fivetran_workspace: FivetranWorkspace) -> None:
         workspace=fivetran_workspace, name="my_custom_sensor"
     )
     assert sensor_def.name == "my_custom_sensor"
+
+
+def test_sensor_name_and_description_with_env_var_account_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An EnvVar account_id is read from the environment instead of raising on str conversion."""
+    monkeypatch.setenv("FIVETRAN_ACCOUNT_ID", TEST_ACCOUNT_ID)
+    workspace = FivetranWorkspace(
+        account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
+        api_key=EnvVar("FIVETRAN_API_KEY"),
+        api_secret=EnvVar("FIVETRAN_API_SECRET"),
+    )
+
+    sensor_def = build_fivetran_polling_sensor(workspace=workspace)
+
+    assert sensor_def.name == f"fivetran_{TEST_ACCOUNT_ID}__sync_status_sensor"
+    assert sensor_def.description == (
+        f"Fivetran polling sensor for workspace account {TEST_ACCOUNT_ID}"
+    )
+
+
+def test_sensor_name_with_unset_env_var_account_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    """If the environment variable is not set while loading definitions, building the sensor
+    still succeeds and falls back to the variable name.
+    """
+    monkeypatch.delenv("FIVETRAN_ACCOUNT_ID", raising=False)
+    workspace = FivetranWorkspace(
+        account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
+        api_key=TEST_API_KEY,
+        api_secret=TEST_API_SECRET,
+    )
+
+    sensor_def = build_fivetran_polling_sensor(workspace=workspace)
+
+    assert sensor_def.name == "fivetran_FIVETRAN_ACCOUNT_ID__sync_status_sensor"
+
+
+def test_sensor_tick_resolves_env_var_workspace_config(
+    monkeypatch: pytest.MonkeyPatch,
+    sensor_api_mocks: responses.RequestsMock,
+) -> None:
+    """A workspace configured with EnvVars calls the Fivetran API with the resolved credentials."""
+    monkeypatch.setenv("FIVETRAN_ACCOUNT_ID", TEST_ACCOUNT_ID)
+    monkeypatch.setenv("FIVETRAN_API_KEY", TEST_API_KEY)
+    monkeypatch.setenv("FIVETRAN_API_SECRET", TEST_API_SECRET)
+    workspace = FivetranWorkspace(
+        account_id=EnvVar("FIVETRAN_ACCOUNT_ID"),
+        api_key=EnvVar("FIVETRAN_API_KEY"),
+        api_secret=EnvVar("FIVETRAN_API_SECRET"),
+    )
+    sensor_api_mocks.add(
+        method=responses.GET,
+        url=get_fivetran_connector_api_url(TEST_CONNECTOR_ID),
+        json=get_sample_connection_details(
+            succeeded_at=TEST_MAX_TIME_STR,
+            failed_at=TEST_PREVIOUS_MAX_TIME_STR,
+        ),
+        status=200,
+    )
+
+    sensor_def = build_fivetran_polling_sensor(workspace=workspace)
+
+    with instance_for_test() as instance:
+        result = sensor_def.evaluate_tick(build_sensor_context(instance=instance))
+
+    mats = [e for e in result.asset_events if isinstance(e, AssetMaterialization)]
+    assert len(mats) == 4
+
+    expected_auth = (
+        "Basic " + base64.b64encode(f"{TEST_API_KEY}:{TEST_API_SECRET}".encode()).decode()
+    )
+    assert sensor_api_mocks.calls
+    for call in sensor_api_mocks.calls:
+        assert call.request.headers["Authorization"] == expected_auth
 
 
 def test_materializations_on_successful_sync(
