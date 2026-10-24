@@ -86,6 +86,7 @@ class Manager:
         instance: DagsterInstance | None,
         emit_persistent_events: bool | None,
         event_loop: AbstractEventLoop | None,
+        job_def: JobDefinition | None = None,
     ):
         """Drop-in replacement for
         `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
@@ -101,6 +102,7 @@ class Manager:
             instance=instance,
             emit_persistent_events=emit_persistent_events,
             event_loop=event_loop,
+            job_def=job_def,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
             generator, ScopedResourcesBuilder
