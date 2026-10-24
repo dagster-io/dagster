@@ -11,6 +11,8 @@ def test_format_duration():
         (10.123, "10ms"),
         (533.12123, "533ms"),
         (4567.123123, "4.57s"),
+        (59994.0, "59.99s"),  # just under a minute, stays in seconds
+        (59999.0, "1m0s"),  # rounding must roll into minutes, not print "60.0s"
         (320000.1232, "5m20s"),
         (3910056.123, "1h5m"),
         (9022312.1233, "2h30m"),
