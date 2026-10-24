@@ -172,14 +172,11 @@ class CloudwatchLogsHandler(logging.Handler):
                 self.retry(record)
             else:
                 logging.error(f"Cloudwatch logger: Service unavailable: {res}")
-        except self.client.exceptions.ServiceUnavailableException:
-            if not retry:
-                self.retry(record)
-            else:
-                logging.error(
-                    "Cloudwatch logger: Unrecognized client. Check your AWS access key id and "
-                    f"secret key: {res}"
-                )
+        except self.client.exceptions.UnrecognizedClientException:
+            logging.error(
+                "Cloudwatch logger: Unrecognized client. Check your AWS access key id and "
+                f"secret key: {res}"
+            )
 
 
 @logger(
