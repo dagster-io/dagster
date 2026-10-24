@@ -199,6 +199,7 @@ from dagster._core.definitions.partitions.partition_key_range import (
 from dagster._core.definitions.partitions.partitioned_schedule import (
     build_schedule_from_partitioned_job as build_schedule_from_partitioned_job,
 )
+from dagster._core.definitions.partitions.schedule_type import ScheduleType as ScheduleType
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext as RunFailureSensorContext,
     RunStatusSensorContext as RunStatusSensorContext,
