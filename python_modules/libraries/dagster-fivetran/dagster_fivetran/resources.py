@@ -651,7 +651,7 @@ class FivetranClient:
                 },
             )
             connectors = data["items"]
-            cursor = data.get("nextCursor")
+            cursor = data.get("next_cursor")
             results.extend(connectors)
             if not cursor:
                 break
@@ -711,7 +711,22 @@ class FivetranClient:
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
         """
-        return self._make_and_handle_request("GET", "groups")
+        groups: list[Mapping[str, Any]] = []
+        cursor = None
+        while True:
+            data = self._make_and_handle_request(
+                method="GET",
+                endpoint="groups",
+                params={
+                    "limit": DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT,
+                    **({"cursor": cursor} if cursor else {}),
+                },
+            )
+            groups.extend(data["items"])
+            cursor = data.get("next_cursor")
+            if not cursor:
+                break
+        return {"items": groups}
 
     def update_schedule_type_for_connector(
         self, connector_id: str, schedule_type: str
