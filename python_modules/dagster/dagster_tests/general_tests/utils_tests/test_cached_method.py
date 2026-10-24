@@ -6,6 +6,7 @@ import random
 from typing import NamedTuple
 
 import objgraph
+import pytest
 from dagster_shared.utils.cached_method import (
     CACHED_METHOD_CACHE_FIELD,
     cached_method,
@@ -99,6 +100,29 @@ def test_collisions() -> None:
     assert b1 != b2
 
 
+@pytest.mark.parametrize("value", [0, 1, -1, 2**64])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_cached_method_distinguishes_scalar_types(value: int, reverse: bool) -> None:
+    class MyClass:
+        def __init__(self) -> None:
+            self.calls: list[int | str] = []
+
+        @cached_method
+        def my_method(self, arg1: int | str) -> int | str:
+            self.calls.append(arg1)
+            return arg1
+
+    obj = MyClass()
+    values: list[int | str] = [value, str(value)]
+    if reverse:
+        values.reverse()
+
+    for arg in values:
+        assert obj.my_method(arg) == arg
+        assert obj.my_method(arg1=arg) == arg
+    assert obj.calls == values
+
+
 def test_ordinal_args() -> None:
     class MyClass:
         @cached_method
@@ -172,6 +196,29 @@ def test_async_cached_method() -> None:
     assert asyncio.run(obj2.my_method(arg1="a")) == ("a", 5)
     assert asyncio.run(obj2.my_method(arg1="b")) == ("b", 5)
     assert obj2.calls == ["a", "b"]
+
+
+@pytest.mark.parametrize("value", [0, 1, -1, 2**64])
+@pytest.mark.parametrize("reverse", [False, True])
+def test_async_cached_method_distinguishes_scalar_types(value: int, reverse: bool) -> None:
+    class MyClass:
+        def __init__(self) -> None:
+            self.calls: list[int | str] = []
+
+        @cached_method
+        async def my_method(self, arg1: int | str) -> int | str:
+            self.calls.append(arg1)
+            return arg1
+
+    obj = MyClass()
+    values: list[int | str] = [value, str(value)]
+    if reverse:
+        values.reverse()
+
+    for arg in values:
+        assert asyncio.run(obj.my_method(arg)) == arg
+        assert asyncio.run(obj.my_method(arg1=arg)) == arg
+    assert obj.calls == values
 
 
 def test_cached_property():

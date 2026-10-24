@@ -181,12 +181,12 @@ def make_cached_method_cache_key(
     if not canonical_kwargs:
         return NO_ARGS_HASH_VALUE
 
-    # if single fast (str/int) arg, use that value for hash
+    # if single fast (str/int) arg, keep its name and value without a wrapper
     if len(canonical_kwargs) == 1:
         k, v = next(iter(canonical_kwargs.items()))
         type_v = type(v)
         if type_v is str or type_v is int:
-            return f"{k}.{v}"
+            return (k, v)
 
     return _HashedSeq(tuple(sorted(canonical_kwargs.items())))
 
