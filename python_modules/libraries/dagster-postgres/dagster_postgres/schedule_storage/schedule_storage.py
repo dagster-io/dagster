@@ -78,6 +78,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         should_autocreate_tables: bool = True,
         inst_data: ConfigurableClassData | None = None,
         token_provider: "PgTokenProvider | None" = None,
+        pool_size: int | None = None,
+        max_overflow: int | None = None,
+        pool_recycle: int | None = None,
+        pool_mode: str | None = None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.postgres_url = postgres_url
@@ -85,6 +89,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             should_autocreate_tables, "should_autocreate_tables"
         )
         self._token_provider = token_provider
+        self._config_pool_size = pool_size
+        self._config_max_overflow = max_overflow
+        self._config_pool_recycle = pool_recycle
+        self._config_pool_mode = pool_mode
 
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_pg_engine(
@@ -115,16 +123,32 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.optimize()
 
     def optimize_for_webserver(
-        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int, pool_size: int = 1
     ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
-        kwargs: dict[str, Any] = {
-            "isolation_level": "AUTOCOMMIT",
-            "pool_size": 1,
-            "pool_recycle": pool_recycle,
-            "max_overflow": max_overflow,
-        }
         existing_options = self._engine.url.query.get("options")
+        if self._config_pool_mode == "transaction":
+            # NullPool: no persistent connections, required for pgBouncer transaction-mode pooling
+            kwargs: dict[str, Any] = {
+                "isolation_level": "AUTOCOMMIT",
+                "poolclass": db_pool.NullPool,
+            }
+        else:
+            effective_pool_size = (
+                self._config_pool_size if self._config_pool_size is not None else pool_size
+            )
+            effective_max_overflow = (
+                self._config_max_overflow if self._config_max_overflow is not None else max_overflow
+            )
+            effective_pool_recycle = (
+                self._config_pool_recycle if self._config_pool_recycle is not None else pool_recycle
+            )
+            kwargs = {
+                "isolation_level": "AUTOCOMMIT",
+                "pool_size": effective_pool_size,
+                "pool_recycle": effective_pool_recycle,
+                "max_overflow": effective_max_overflow,
+            }
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
         self._engine = create_pg_engine(self.postgres_url, self._token_provider, **kwargs)
@@ -151,6 +175,10 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             postgres_url=pg_url_from_config(config_value),
             should_autocreate_tables=config_value.get("should_autocreate_tables", True),
             token_provider=get_token_provider_from_config(config_value),
+            pool_size=config_value.get("pool_size"),
+            max_overflow=config_value.get("max_overflow"),
+            pool_recycle=config_value.get("pool_recycle"),
+            pool_mode=config_value.get("pool_mode"),
         )
 
     @staticmethod

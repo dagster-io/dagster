@@ -312,6 +312,20 @@ def test_webserver_db_pool_max_overflow(deployment_template: HelmTemplate):
     assert f"--db-pool-max-overflow {pool_max_overflow_s}" in command
 
 
+def test_webserver_db_pool_size(deployment_template: HelmTemplate):
+    # Use 0 specifically to verify that zero (disabling persistent connections for pgBouncer
+    # transaction-mode compatibility) is correctly passed through and not skipped.
+    pool_size = 0
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(dbPoolSize=pool_size)
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--db-pool-size {pool_size}" in command
+
+
 def test_webserver_log_level(deployment_template: HelmTemplate):
     log_level = "trace"
     helm_values = DagsterHelmValues.construct(
