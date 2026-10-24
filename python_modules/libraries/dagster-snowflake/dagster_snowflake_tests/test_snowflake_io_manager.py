@@ -262,3 +262,53 @@ def test_io_manager_snowflake_additional_snowflake_connection_args():
         materialize([return_one], resources={"io_manager": io_mgr})
         assert snowflake_conn_mock.call_count == 1
         assert snowflake_conn_mock.call_args[1]["foo"] == "bar"
+
+
+def test_ensure_schema_exists_creates_missing_schema():
+    """Tests that ensure_schema_exists queries information_schema.schemata and creates the
+    schema when it does not exist.
+    """
+    mock_cursor = mock.MagicMock()
+    mock_cursor.fetchall.return_value = []
+    mock_cursor.__enter__ = mock.MagicMock(return_value=mock_cursor)
+    mock_cursor.__exit__ = mock.MagicMock(return_value=False)
+
+    mock_connection = mock.MagicMock()
+    mock_connection.cursor.return_value = mock_cursor
+
+    table_slice = TableSlice(database="test_db", schema="test_schema", table="test_table")
+
+    SnowflakeDbClient.ensure_schema_exists(
+        context=mock.MagicMock(), table_slice=table_slice, connection=mock_connection
+    )
+
+    assert mock_connection.cursor.call_count == 2
+    schema_query, schema_params = mock_cursor.execute.call_args_list[0][0]
+    create_query = mock_cursor.execute.call_args_list[1][0][0]
+    assert "information_schema.schemata" in schema_query
+    assert "LOWER(schema_name) = LOWER(%s)" in schema_query
+    assert schema_params == ("test_schema",)
+    assert "create schema test_schema" in create_query
+
+
+def test_ensure_schema_exists_skips_create_when_schema_exists():
+    """Tests that ensure_schema_exists does not create the schema when it already exists."""
+    mock_cursor = mock.MagicMock()
+    mock_cursor.fetchall.return_value = [(1,)]
+    mock_cursor.__enter__ = mock.MagicMock(return_value=mock_cursor)
+    mock_cursor.__exit__ = mock.MagicMock(return_value=False)
+
+    mock_connection = mock.MagicMock()
+    mock_connection.cursor.return_value = mock_cursor
+
+    table_slice = TableSlice(database="test_db", schema="test_schema", table="test_table")
+
+    SnowflakeDbClient.ensure_schema_exists(
+        context=mock.MagicMock(), table_slice=table_slice, connection=mock_connection
+    )
+
+    assert mock_connection.cursor.call_count == 1
+    schema_query, schema_params = mock_cursor.execute.call_args_list[0][0]
+    assert "information_schema.schemata" in schema_query
+    assert "LOWER(schema_name) = LOWER(%s)" in schema_query
+    assert schema_params == ("test_schema",)
