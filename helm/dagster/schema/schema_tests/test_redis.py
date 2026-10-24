@@ -18,6 +18,26 @@ def helm_template() -> HelmTemplate:
     )
 
 
+@pytest.fixture(name="redis_master_template")
+def redis_master_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="charts/redis/templates/redis-master-statefulset.yaml",
+        model=models.V1StatefulSet,
+    )
+
+
+@pytest.fixture(name="redis_slave_template")
+def redis_slave_template() -> HelmTemplate:
+    return HelmTemplate(
+        helm_dir_path="helm/dagster",
+        subchart_paths=["charts/dagster-user-deployments"],
+        output="charts/redis/templates/redis-slave-statefulset.yaml",
+        model=models.V1StatefulSet,
+    )
+
+
 def test_default_redis_config(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         generateCeleryConfigSecret=True,
@@ -174,3 +194,51 @@ def test_celery_backend_override_only_one(template: HelmTemplate):
     assert secret.data["DAGSTER_CELERY_BACKEND_URL"] == base64.b64encode(
         bytes(custom_url, encoding="utf-8")
     ).decode("utf-8")
+
+
+def test_internal_redis_master_resources(redis_master_template: HelmTemplate):
+    resources = {
+        "limits": {"cpu": "200m", "memory": "256Mi"},
+        "requests": {"cpu": "100m", "memory": "128Mi"},
+    }
+
+    [stateful_set] = redis_master_template.render(
+        values_dict={
+            "redis": {
+                "enabled": True,
+                "internal": True,
+                "master": {"resources": resources},
+            }
+        }
+    )
+
+    assert (
+        redis_master_template.api_client.sanitize_for_serialization(
+            stateful_set.spec.template.spec.containers[0].resources
+        )
+        == resources
+    )
+
+
+def test_internal_redis_slave_resources(redis_slave_template: HelmTemplate):
+    resources = {
+        "limits": {"cpu": "200m", "memory": "256Mi"},
+        "requests": {"cpu": "100m", "memory": "128Mi"},
+    }
+
+    [stateful_set] = redis_slave_template.render(
+        values_dict={
+            "redis": {
+                "enabled": True,
+                "internal": True,
+                "slave": {"resources": resources},
+            }
+        }
+    )
+
+    assert (
+        redis_slave_template.api_client.sanitize_for_serialization(
+            stateful_set.spec.template.spec.containers[0].resources
+        )
+        == resources
+    )

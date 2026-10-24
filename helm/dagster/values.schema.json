@@ -2197,6 +2197,28 @@
                 "backendUrl": {
                     "title": "Backendurl",
                     "type": "string"
+                },
+                "master": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/RedisNode"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
+                "slave": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/RedisNode"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 }
             },
             "required": [
@@ -2212,6 +2234,24 @@
                 "backendUrl"
             ],
             "title": "Redis",
+            "type": "object"
+        },
+        "RedisNode": {
+            "additionalProperties": true,
+            "properties": {
+                "resources": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/Resources"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                }
+            },
+            "title": "RedisNode",
             "type": "object"
         },
         "ResourceRequirements": {
