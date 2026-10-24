@@ -30,7 +30,7 @@ includeInstance: false
 # All user code will be invoked within the images.
 ####################################################################################################
 deployments:
-  - name: "k8s-example-user-code-1"
+  k8s-example-user-code-1:
     image:
       # When a tag is not supplied, it will default as the Helm chart version.
       repository: "docker.io/dagster/user-code-example"
