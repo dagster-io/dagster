@@ -1282,7 +1282,11 @@ class MultiAssetSensorDefinition(SensorDefinition, IHasInternalInit):
         )
 
         context_param = {context_param_name: context} if context_param_name and context else {}
-        result = self._raw_asset_materialization_fn(**context_param, **resources)
+        resource_args = {
+            arg.name: resources[arg.name]
+            for arg in get_resource_args(self._raw_asset_materialization_fn)
+        }
+        result = self._raw_asset_materialization_fn(**context_param, **resource_args)
 
         if context:
             context.update_cursor_after_evaluation()
