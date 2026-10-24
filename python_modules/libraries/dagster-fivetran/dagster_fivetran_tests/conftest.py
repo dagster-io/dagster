@@ -89,7 +89,10 @@ SAMPLE_GROUPS_PAGINATED_PAGE_TWO = {
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
 def list_connectors_for_group_sample(
-    setup_state: str, next_cursor: str | None = None, include_extra_connector: bool = False
+    setup_state: str,
+    next_cursor: str | None = None,
+    include_extra_connector: bool = False,
+    group_id: str = TEST_GROUP_ID,
 ) -> Mapping[str, Any]:
     return {
         "code": "Success",
@@ -127,7 +130,7 @@ def list_connectors_for_group_sample(
                     "daily_sync_time": "14:00",
                     "succeeded_at": "2024-12-01T15:45:29.013729Z",
                     "sync_frequency": 360,
-                    "group_id": TEST_GROUP_ID,
+                    "group_id": group_id,
                     "connected_by": "user_id",
                     "setup_tests": [
                         {

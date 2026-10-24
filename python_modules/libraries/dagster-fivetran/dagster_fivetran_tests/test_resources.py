@@ -18,7 +18,6 @@ from dagster_fivetran_tests.conftest import (
     FIVETRAN_API_BASE,
     FIVETRAN_API_VERSION,
     SAMPLE_CONNECTORS_FOR_GROUP,
-    SAMPLE_CONNECTORS_FOR_GROUP_WITH_EXTRA_CONNECTOR,
     SAMPLE_DESTINATION_DETAILS,
     SAMPLE_GROUPS_PAGINATED_PAGE_ONE,
     SAMPLE_GROUPS_PAGINATED_PAGE_TWO,
@@ -191,6 +190,12 @@ def test_get_groups_pagination():
     )
     client = resource.get_client()
 
+    # Include a non-items field on the final page: get_groups must preserve it,
+    # as the previous single-request implementation returned the full response data.
+    paginated_page_two = {
+        **SAMPLE_GROUPS_PAGINATED_PAGE_TWO,
+        "data": {**SAMPLE_GROUPS_PAGINATED_PAGE_TWO["data"], "extra_field": "kept"},
+    }
     with responses.RequestsMock() as response:
         response.add(
             method=responses.GET,
@@ -201,12 +206,14 @@ def test_get_groups_pagination():
         response.add(
             method=responses.GET,
             url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
-            json=SAMPLE_GROUPS_PAGINATED_PAGE_TWO,
+            json=paginated_page_two,
             status=200,
         )
         groups = client.get_groups()
         request_urls = [call.request.url for call in response.calls]
 
+    assert groups["extra_field"] == "kept"
+    assert "next_cursor" not in groups
     assert [group["id"] for group in groups["items"]] == [TEST_GROUP_ID, TEST_SECOND_GROUP_ID]
     assert len(request_urls) == 2
     assert "cursor" not in parse_qs(urlparse(request_urls[0]).query)
@@ -260,7 +267,11 @@ def test_fetch_fivetran_workspace_data_with_paginated_groups():
         response.add(
             method=responses.GET,
             url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{TEST_SECOND_GROUP_ID}/connectors",
-            json=SAMPLE_CONNECTORS_FOR_GROUP_WITH_EXTRA_CONNECTOR,
+            json=list_connectors_for_group_sample(
+                setup_state=FivetranConnectorSetupStateType.CONNECTED.value,
+                include_extra_connector=True,
+                group_id=TEST_SECOND_GROUP_ID,
+            ),
             status=200,
         )
         # the test connector appears in both groups, so its schema is fetched twice
@@ -283,6 +294,7 @@ def test_fetch_fivetran_workspace_data_with_paginated_groups():
     # the group on page 2 was visited
     assert TEST_SECOND_GROUP_ID in workspace_data.destinations_by_id
     assert EXTRA_TEST_CONNECTOR_ID in workspace_data.connectors_by_id
+    assert workspace_data.connectors_by_id[EXTRA_TEST_CONNECTOR_ID].group_id == TEST_SECOND_GROUP_ID
     assert any(f"groups/{TEST_SECOND_GROUP_ID}/connectors" in url for url in request_urls)
 
 

@@ -726,7 +726,9 @@ class FivetranClient:
             cursor = data.get("next_cursor")
             if not cursor:
                 break
-        return {"items": groups}
+        # Preserve any other fields from the final page's response data,
+        # as the previous single-request implementation returned them.
+        return {**data, "items": groups}
 
     def update_schedule_type_for_connector(
         self, connector_id: str, schedule_type: str
