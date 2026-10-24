@@ -95,6 +95,7 @@ def build_asset_job(
     hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: RetryPolicy | None = None,
     owners: Sequence[str] | None = None,
+    group_name: str | None = None,
     automation_condition: "AutomationCondition | None" = None,
     _asset_selection_data: AssetSelectionData | None = None,
 ) -> JobDefinition:
@@ -118,6 +119,8 @@ def build_asset_job(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the job.
             Each string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        group_name (Optional[str]): A string name used to organize this job alongside other jobs
+            into a group.
 
     Examples:
         .. code-block:: python
@@ -193,6 +196,7 @@ def build_asset_job(
             logger_defs=original_job.loggers,
             hooks=original_job.hook_defs,
             op_retry_policy=original_job.op_retry_policy,
+            group_name=group_name or original_job.specified_group_name,
             automation_condition=automation_condition or original_job.automation_condition,
         )
     return graph.to_job(
@@ -207,6 +211,7 @@ def build_asset_job(
         hooks=hooks,
         op_retry_policy=op_retry_policy,
         owners=owners,
+        group_name=group_name,
         automation_condition=automation_condition,
         _asset_selection_data=_asset_selection_data,
     )

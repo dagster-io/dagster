@@ -101,7 +101,7 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
     storage_name="PipelineSnapshot",
     serializer=JobSnapSerializer,
     skip_when_empty_fields={"metadata"},
-    skip_when_none_fields={"run_tags", "owners", "automation_condition"},
+    skip_when_none_fields={"run_tags", "owners", "group_name", "automation_condition"},
     field_serializers={"metadata": MetadataFieldSerializer},
     storage_field_names={"node_defs_snapshot": "solid_definitions_snapshot"},
 )
@@ -125,6 +125,7 @@ class JobSnap(IHaveNew):
     graph_def_name: str
     metadata: Mapping[str, MetadataValue]
     owners: Sequence[str] | None
+    group_name: str | None
     automation_condition: AutomationCondition | None
 
     def __new__(
@@ -142,6 +143,7 @@ class JobSnap(IHaveNew):
         graph_def_name: str,
         metadata: Mapping[str, RawMetadataValue] | None,
         owners: Sequence[str] | None = None,
+        group_name: str | None = None,
         automation_condition: AutomationCondition | None = None,
     ):
         return super().__new__(
@@ -161,6 +163,7 @@ class JobSnap(IHaveNew):
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
             ),
             owners=owners,
+            group_name=group_name,
             automation_condition=automation_condition,
         )
 
@@ -202,6 +205,7 @@ class JobSnap(IHaveNew):
             lineage_snapshot=lineage,
             graph_def_name=job_def.graph.name,
             owners=job_def.owners,
+            group_name=job_def.specified_group_name,
             automation_condition=automation_condition,
         )
 
