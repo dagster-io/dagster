@@ -6,6 +6,7 @@ import uuid
 from urllib.parse import urlparse
 
 import boto3
+from botocore.config import Config
 from botocore.stub import Stubber
 from dagster import (
     ConfigurableResource,
@@ -16,6 +17,8 @@ from dagster._annotations import deprecated
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
+
+from dagster_aws.version import __version__
 
 
 class AthenaError(Exception):
@@ -268,6 +271,7 @@ class AthenaClientResource(ResourceWithAthenaConfig):
             "athena",
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
+            config=Config(user_agent_extra=f"dagster-aws/{__version__}"),
         )
         return AthenaClient(
             client=client,
