@@ -27,7 +27,7 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   workspace.yaml: |
-    {{- $deployments := ternary $webserverWorkspace.servers $userDeployments.deployments $webserverWorkspace.enabled }}
+    {{- $deployments := ternary $webserverWorkspace.servers (include "dagsterUserDeployments.deploymentsList" $userDeployments.deployments | fromYamlArray) $webserverWorkspace.enabled }}
     {{- if $deployments }}
     load_from:
       {{- range $deployment := $deployments }}
