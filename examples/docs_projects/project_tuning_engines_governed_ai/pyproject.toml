@@ -1,0 +1,37 @@
+[project]
+name = "project_tuning_engines_governed_ai"
+version = "0.0.1"
+description = "Dagster asset using Tuning Engines as a governed AI endpoint"
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "dagster",
+    "httpx",
+]
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+    "dagster-dg-cli",
+    "pytest",
+]
+
+[build-system]
+requires = ["hatchling>=1.19.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+force-include = { "pyproject.toml" = "pyproject.toml" }
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_tuning_engines_governed_ai"
+registry_modules = [
+    "project_tuning_engines_governed_ai.components.*",
+]
+
+[tool.ruff]
+lint.extend-select = ["I"]
+extend-exclude = ["*.ipynb"]
