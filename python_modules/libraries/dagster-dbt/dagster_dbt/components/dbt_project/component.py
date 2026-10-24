@@ -214,8 +214,20 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
 
     @property
     def defs_state_config(self) -> DefsStateConfig:
+        key_base = self._project_manager.defs_state_discriminator
+        # When the user configures a distinct op name, fold it into the
+        # state key so multiple DbtProjectComponent instances against the
+        # same project_dir (each `select`ing a different slice — e.g.
+        # silver, gold, report) don't collide in defs state and trigger
+        # DuplicateDefsStateKeyWarning.
+        op_name = self.op.name if self.op else None
+        key = (
+            f"DbtProjectComponent[{key_base}][{op_name}]"
+            if op_name
+            else f"DbtProjectComponent[{key_base}]"
+        )
         return DefsStateConfig(
-            key=f"DbtProjectComponent[{self._project_manager.defs_state_discriminator}]",
+            key=key,
             management_type=DefsStateManagementType.LOCAL_FILESYSTEM,
             refresh_if_dev=self.prepare_if_dev,
         )
