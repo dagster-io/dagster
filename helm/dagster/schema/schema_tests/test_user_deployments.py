@@ -1959,3 +1959,39 @@ def test_include_instance(subchart_template: HelmTemplate, include_instance: boo
         )
     else:
         assert "dagster-instance" not in volume_names
+
+
+def test_tolerations_omitted_when_unset(template: HelmTemplate):
+    # `tolerations` is an atomic list, so rendering `tolerations: []` claims the field
+    # under server-side apply and wipes tolerations added by admission webhooks.
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(
+            deployments=[create_simple_user_deployment("foo")]
+        )
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    assert dagster_user_deployment.spec.template.spec.tolerations is None
+
+
+def test_tolerations_rendered_when_set(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.tolerations = kubernetes.Tolerations.parse_obj(
+        [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}]
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    assert dagster_user_deployment.spec.template.spec.tolerations == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Toleration,
+            k8s_snake_case_dict(
+                k8s_client.models.V1Toleration,
+                {"key": "key1", "operator": "Exists", "effect": "NoSchedule"},
+            ),
+        )
+    ]

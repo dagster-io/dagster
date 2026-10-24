@@ -121,3 +121,38 @@ def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTempl
         )
         for volume in volumes
     ]
+
+
+def test_job_instance_migrate_omits_unset_tolerations(template: HelmTemplate):
+    # `tolerations` is an atomic list, so rendering `tolerations: []` claims the field
+    # under server-side apply and wipes tolerations added by admission webhooks.
+    helm_values = DagsterHelmValues.construct(
+        migrate=Migrate(enabled=True, extraContainers=[], initContainers=[])
+    )
+
+    [job] = template.render(helm_values)
+
+    assert job.spec.template.spec.tolerations is None
+
+
+def test_job_instance_migrate_keeps_tolerations(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        migrate=Migrate(enabled=True, extraContainers=[], initContainers=[]),
+        dagsterWebserver=Webserver.construct(
+            tolerations=kubernetes.Tolerations.parse_obj(
+                [{"key": "key1", "operator": "Exists", "effect": "NoSchedule"}]
+            )
+        ),
+    )
+
+    [job] = template.render(helm_values)
+
+    assert job.spec.template.spec.tolerations == [
+        k8s_model_from_dict(
+            k8s_client.models.V1Toleration,
+            k8s_snake_case_dict(
+                k8s_client.models.V1Toleration,
+                {"key": "key1", "operator": "Exists", "effect": "NoSchedule"},
+            ),
+        )
+    ]
