@@ -115,6 +115,7 @@ class DbtProjectComponent(StateBackedComponent, dg.Resolvable):
             description="The path to the dbt project or a mapping defining a DbtProject",
             examples=[
                 "{{ project_root }}/path/to/dbt_project",
+                "{{ project_root }}/../sibling_dbt_project",
                 {
                     "project_dir": "path/to/dbt_project",
                     "profile": "your_profile",
