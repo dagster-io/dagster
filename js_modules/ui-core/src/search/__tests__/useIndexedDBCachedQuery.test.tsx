@@ -12,7 +12,12 @@ import {
 import {buildAssetConnection} from '../../graphql/builders';
 import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {cache as _cache} from '../../util/idb-lru-cache';
-import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
+import {
+  __resetForJest,
+  clearCachedData,
+  getCachedData,
+  useIndexedDBCachedQuery,
+} from '../useIndexedDBCachedQuery';
 
 const mockCache = _cache as unknown as jest.Mock<{
   has: jest.Mock;
@@ -233,5 +238,65 @@ describe('useIndexedDBCachedQuery', () => {
         });
       },
     );
+  });
+});
+
+// The CacheManager behind these helpers keeps an in-memory mirror of the single entry it stores
+// in IndexedDB, and it is a process-wide singleton per key. If that mirror is allowed to drift
+// from what's on disk, callers keep reading data that was already replaced or deleted -- which is
+// how the UI ends up showing a previous deployment's asset definitions until the user clears
+// their browser storage.
+const flushMicrotasks = async () => {
+  for (let i = 0; i < 5; i++) {
+    await Promise.resolve();
+  }
+};
+
+describe('cached data helpers', () => {
+  beforeEach(() => {
+    mockShouldThrowError = false;
+    jest.clearAllMocks();
+    __resetForJest();
+  });
+
+  it('does not return an entry cached under a different version', async () => {
+    mockCache().has.mockResolvedValue(true);
+    mockCache().get.mockResolvedValue({value: {data: 'version-1-data', version: 1}});
+
+    await expect(getCachedData({key: 'versionKey', version: 1})).resolves.toEqual('version-1-data');
+    await expect(getCachedData({key: 'versionKey', version: 2})).resolves.toBeUndefined();
+  });
+
+  it('does not resurrect a cleared entry from a read that was already in flight', async () => {
+    // `clear` can land while a read is suspended on IndexedDB. The read resolves with the value
+    // it captured before the delete, and must not write it back into the in-memory mirror.
+    let resolveGet: (value: unknown) => void = () => {};
+    mockCache().has.mockReturnValue(true);
+    mockCache().get.mockReturnValue(
+      new Promise((resolve) => {
+        resolveGet = resolve;
+      }),
+    );
+
+    const pendingRead = getCachedData({key: 'raceKey', version: 1});
+    await flushMicrotasks();
+
+    await clearCachedData({key: 'raceKey'});
+    resolveGet({value: {data: 'cleared-entry', version: 1}});
+
+    await expect(pendingRead).resolves.toBeUndefined();
+    await expect(getCachedData({key: 'raceKey', version: 1})).resolves.toBeUndefined();
+  });
+
+  it('does not return data after clearCachedData', async () => {
+    mockCache().has.mockResolvedValue(true);
+    mockCache().get.mockResolvedValue({value: {data: 'removed-location', version: 1}});
+
+    await expect(getCachedData({key: 'clearKey', version: 1})).resolves.toEqual('removed-location');
+
+    await clearCachedData({key: 'clearKey'});
+    expect(mockCache().delete).toHaveBeenCalledWith('cache');
+
+    await expect(getCachedData({key: 'clearKey', version: 1})).resolves.toBeUndefined();
   });
 });
