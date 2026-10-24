@@ -3,6 +3,7 @@ import re
 import dagster as dg
 import pytest
 from dagster._check import ParameterCheckError
+from dagster._core.definitions.node_container import normalize_dependency_dict
 from dagster._core.utility_ops import create_stub_op
 
 
@@ -220,7 +221,7 @@ def test_op_tags():
 
     with pytest.raises(
         dg.DagsterInvalidDefinitionError,
-        match="Could not JSON encode value",
+        match=r'Could not JSON encode value "<.*X object',
     ):
 
         @dg.op(tags={"bad": X()})
@@ -235,3 +236,17 @@ def test_op_tags():
         @dg.op(tags={"set_comes_back_as_dict": (1, 2)})
         def _also_bad_tags(_):
             pass
+
+
+def test_dependency_dict_errors_name_the_bad_value():
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=re.escape("Received value [1] of type <class 'list'> at the top level"),
+    ):
+        normalize_dependency_dict([1])  # pyright: ignore[reportArgumentType]
+
+    with pytest.raises(
+        dg.DagsterInvalidDefinitionError,
+        match=re.escape("Received value 1 of type <class 'int'>"),
+    ):
+        normalize_dependency_dict({1: {}})  # pyright: ignore[reportArgumentType]
