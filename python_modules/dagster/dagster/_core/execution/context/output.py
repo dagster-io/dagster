@@ -24,6 +24,7 @@ from dagster._core.definitions.partitions.utils import (
     has_one_dimension_time_window_partitioning,
     time_window_for_partition_key_range,
 )
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
 from dagster._core.execution.context.input import KeyRangeNoPartitionsDefPartitionsSubset
 from dagster._core.execution.plan.utils import build_resources_for_manager
@@ -395,6 +396,26 @@ class OutputContext:
                 " OutputContext"
             )
         return self._asset_spec
+
+    @public
+    @property
+    def asset_group_name(self) -> str:
+        """The group name of the asset that is being stored as an output."""
+        if self._asset_spec is not None:
+            return self._asset_spec.group_name or DEFAULT_GROUP_NAME
+
+        if self._asset_key is not None and self._step_context is not None:
+            return self._step_context.job_def.asset_layer.get(self._asset_key).group_name
+
+        if self._asset_key is not None:
+            raise DagsterInvariantViolationError(
+                "Attempting to access asset_group_name, but it was not provided when constructing"
+                " the OutputContext"
+            )
+
+        raise DagsterInvariantViolationError(
+            "Attempting to access asset_group_name, but output does not correspond to an asset"
+        )
 
     @property
     def step_context(self) -> "StepExecutionContext":
