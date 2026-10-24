@@ -31,7 +31,7 @@ import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterUtils';
 import {testId} from '../../testing/testId';
 import {numberFormatter} from '../../ui/formatters';
 
-const TEMPLATE_COLUMNS = '60% repeat(4, 1fr)';
+const TEMPLATE_COLUMNS = '60% repeat(5, 1fr)';
 
 type AssetBackfillStatus = NonNullable<
   BackfillDetailsBackfillFragment['assetBackfillData']
@@ -149,6 +149,7 @@ export const VirtualizedBackfillPartitionsHeader = ({
       <HeaderCell>
         <Link to={getRunsUrl(backfill.id, 'failed')}>Failed</Link>
       </HeaderCell>
+      <HeaderCell>Skipped</HeaderCell>
     </HeaderRow>
   );
 };
@@ -166,16 +167,19 @@ export const VirtualizedBackfillPartitionsRow = ({
   let inProgress;
   let succeeded;
   let failed;
+  let skipped;
   if (asset.__typename === 'AssetPartitionsStatusCounts') {
     targeted = asset.numPartitionsTargeted;
     inProgress = asset.numPartitionsInProgress;
     succeeded = asset.numPartitionsMaterialized;
     failed = asset.numPartitionsFailed;
+    skipped = asset.numPartitionsSkipped;
   } else {
     targeted = 1;
     failed = asset.failed ? 1 : 0;
     inProgress = asset.inProgress ? 1 : 0;
     succeeded = asset.materialized ? 1 : 0;
+    skipped = asset.skipped ? 1 : 0;
   }
 
   return (
@@ -198,6 +202,7 @@ export const VirtualizedBackfillPartitionsRow = ({
               inProgress={inProgress}
               succeeded={succeeded}
               failed={failed}
+              skipped={skipped}
             />
           </Box>
         </RowCell>
@@ -207,6 +212,7 @@ export const VirtualizedBackfillPartitionsRow = ({
             <RowCell>{numberFormatter.format(inProgress)}</RowCell>
             <RowCell>{numberFormatter.format(succeeded)}</RowCell>
             <RowCell>{numberFormatter.format(failed)}</RowCell>
+            <RowCell>{numberFormatter.format(skipped)}</RowCell>
           </>
         ) : (
           <>
@@ -235,6 +241,15 @@ export const VirtualizedBackfillPartitionsRow = ({
               {failed ? (
                 <div>
                   <Tag intent="danger">Failed</Tag>
+                </div>
+              ) : (
+                '-'
+              )}
+            </RowCell>
+            <RowCell>
+              {skipped ? (
+                <div>
+                  <Tag>Skipped</Tag>
                 </div>
               ) : (
                 '-'
@@ -269,17 +284,20 @@ export function StatusBar({
   inProgress,
   succeeded,
   failed,
+  skipped = 0,
 }: {
   targeted: number;
   inProgress: number;
   succeeded: number;
   failed: number;
+  skipped?: number;
 }) {
   const pctSucceeded = (100 * succeeded) / targeted;
   const pctFailed = (100 * failed) / targeted;
+  const pctSkipped = (100 * skipped) / targeted;
   const pctInProgress = (100 * inProgress) / targeted;
 
-  const pctFinal = Math.floor(pctSucceeded + pctFailed);
+  const pctFinal = Math.floor(pctSucceeded + pctFailed + pctSkipped);
 
   return (
     <Box flex={{direction: 'column', alignItems: 'flex-end', gap: 2}}>
@@ -288,7 +306,7 @@ export function StatusBar({
           borderRadius: '8px',
           backgroundColor: Colors.backgroundLight(),
           display: 'grid',
-          gridTemplateColumns: `${pctSucceeded.toFixed(2)}% ${pctFailed.toFixed(2)}% ${pctInProgress.toFixed(2)}%`,
+          gridTemplateColumns: `${pctSucceeded.toFixed(2)}% ${pctFailed.toFixed(2)}% ${pctSkipped.toFixed(2)}% ${pctInProgress.toFixed(2)}%`,
           gridTemplateRows: '100%',
           height: '12px',
           width: '200px',
@@ -297,6 +315,7 @@ export function StatusBar({
       >
         <div style={{background: Colors.accentGreen()}} />
         <div style={{background: Colors.accentRed()}} />
+        <div style={{background: Colors.accentGray()}} />
         <div style={{background: Colors.accentBlue()}} />
       </div>
       <Text size={12} color="textLight">{`${pctFinal}% completed`}</Text>
