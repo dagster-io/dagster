@@ -209,7 +209,7 @@ class MultiToSingleDimensionPartitionMapping(
                 "downstream_partitions_def must be provided for MultiToSingleDimensionPartitionMapping"
             )
         infer_mapping_result = get_infer_single_to_multi_dimension_deps_result(
-            upstream_partitions_def, downstream_partitions_def
+            upstream_partitions_def, downstream_partitions_def, self.partition_dimension_name
         )
         if not infer_mapping_result.can_infer:
             check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
@@ -221,7 +221,7 @@ class MultiToSingleDimensionPartitionMapping(
         downstream_partitions_def: PartitionsDefinition,
     ) -> Sequence[DimensionDependency]:
         infer_mapping_result = get_infer_single_to_multi_dimension_deps_result(
-            upstream_partitions_def, downstream_partitions_def
+            upstream_partitions_def, downstream_partitions_def, self.partition_dimension_name
         )
 
         if not infer_mapping_result.can_infer:
