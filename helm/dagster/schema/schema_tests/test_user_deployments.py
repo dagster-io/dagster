@@ -1604,6 +1604,35 @@ def test_scheduler_name(template: HelmTemplate):
     assert dagster_user_deployment.spec.template.spec.scheduler_name == "myscheduler"
 
 
+def test_priority_class_name(template: HelmTemplate):
+    deployment = UserDeployment.construct(
+        name="foo",
+        image=kubernetes.Image(repository="repo/foo", tag="tag1", pullPolicy="Always"),
+        dagsterApiGrpcArgs=["-m", "foo"],
+        port=3030,
+        includeConfigInLaunchedRuns=None,
+        priorityClassName="high-priority",
+    )
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    assert dagster_user_deployment.spec.template.spec.priority_class_name == "high-priority"
+
+
+def test_priority_class_name_default(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    [dagster_user_deployment] = template.render(helm_values)
+
+    assert dagster_user_deployment.spec.template.spec.priority_class_name is None
+
+
 def test_automount_svc_acct_token(template: HelmTemplate):
     helm_values = UserDeployment.construct()
 
