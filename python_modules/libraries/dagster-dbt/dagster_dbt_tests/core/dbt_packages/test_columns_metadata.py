@@ -2,6 +2,8 @@ import json
 import os
 import shutil
 import subprocess
+import threading
+from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
@@ -813,6 +815,62 @@ def test_column_lineage_integration(
         # number of instances where we get column metadata (around 33 instead of 60+)
         REPEAT_QUERIES_PADDING = 10
         assert len(relation_keys_passed) <= len(set(relation_keys_passed)) + REPEAT_QUERIES_PADDING
+
+
+def test_column_lineage_shares_one_scope_per_model(
+    test_metadata_manifest: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    mocker: MockFixture,
+) -> None:
+    # Without a scope, sqlglot's lineage() re-qualifies the whole query for every column,
+    # which makes lineage on wide models take minutes.
+    from dagster_dbt.core.dbt_cli_event import _build_column_lineage_metadata, lineage
+
+    # Lineage runs in a thread pool, so attribute each lineage() call to the model being
+    # built on the same thread.
+    current_model = threading.local()
+    scope_ids_by_model: dict[str | None, set[int | None]] = defaultdict(set)
+    calls_by_model: Counter[str | None] = Counter()
+
+    def build_column_lineage_metadata(**kwargs: Any) -> dict[str, Any]:
+        current_model.unique_id = kwargs["dbt_resource_props"]["unique_id"]
+        try:
+            return _build_column_lineage_metadata(**kwargs)
+        finally:
+            current_model.unique_id = None
+
+    def record_lineage(**kwargs: Any) -> Any:
+        unique_id = getattr(current_model, "unique_id", None)
+        scope = kwargs.get("scope")
+        scope_ids_by_model[unique_id].add(None if scope is None else id(scope))
+        calls_by_model[unique_id] += 1
+        return lineage(**kwargs)
+
+    mocker.patch("dagster_dbt.core.dbt_cli_event.lineage", side_effect=record_lineage)
+    for module in ("dbt_cli_event", "dbt_event_iterator"):
+        mocker.patch(
+            f"dagster_dbt.core.{module}._build_column_lineage_metadata",
+            side_effect=build_column_lineage_metadata,
+        )
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
+    dbt.cli(["--quiet", "seed"]).wait()
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    assert scope_ids_by_model
+    assert None not in scope_ids_by_model
+    for unique_id, scope_ids in scope_ids_by_model.items():
+        assert len(scope_ids) == 1 and None not in scope_ids, unique_id
+    assert any(count > 1 for count in calls_by_model.values())
 
 
 @pytest.mark.parametrize(
