@@ -102,6 +102,7 @@ SELECT *
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
 {/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). */} When materializing the above assets, a partition must be selected. In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -130,6 +131,7 @@ SELECT *
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
 {/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). */} When materializing the above assets, a partition must be selected. The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -153,6 +155,7 @@ The Snowflake I/O manager can also store data partitioned on multiple dimensions
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
 {/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). */} When materializing the above assets, a partition must be selected. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/guides/build/partitions-and-backfills/partitioning-assets#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *
@@ -173,21 +176,21 @@ You can specify the default schema where data will be stored as configuration to
 To store assets in different schemas, specify the schema as metadata:
 
 {/* TODO add dedent=4 prop to CodeExample below */}
-
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/snowflake/schema.py"
   startAfter="start_metadata"
   endBefore="end_metadata"
+  dedent="4"
 />
 
 You can also specify the schema as part of the asset's asset key:
-
 {/* TODO add dedent=4 prop to CodeExample below */}
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/snowflake/schema.py"
   startAfter="start_asset_key"
   endBefore="end_asset_key"
+  dedent="4"
 />
 
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
