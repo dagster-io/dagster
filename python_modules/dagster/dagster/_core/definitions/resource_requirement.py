@@ -168,7 +168,7 @@ class OutputManagerRequirement(ResourceKeyRequirement):
     def describe_requirement(self) -> str:
         return (
             f"io manager with key '{self.key}' required by output '{self.output_name}' of"
-            f" {self.node_description}'"
+            f" {self.node_description}"
         )
 
 
