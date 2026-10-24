@@ -3,12 +3,19 @@ import os
 import re
 import sys
 import time
+import unicodedata
 from typing import TYPE_CHECKING
 
 import boto3
 import botocore
 import pytest
-from dagster import asset, materialize
+from dagster import (
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+    asset,
+    materialize,
+)
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -19,9 +26,10 @@ from dagster._core.definitions.metadata import MarkdownMetadataValue
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster_pipes import DAGSTER_PIPES_CONTEXT_ENV_VAR, decode_param
 
 from dagster_aws.pipes import PipesCloudWatchMessageReader, PipesECSClient
-from dagster_aws.pipes.clients.ecs import WaiterConfig
+from dagster_aws.pipes.clients.ecs import WaiterConfig, _sanitize_ecs_tag_value
 from dagster_aws_tests.pipes_tests.fake_ecs import LocalECSMockClient
 from dagster_aws_tests.pipes_tests.utils import _MOTO_SERVER_URL
 
@@ -135,6 +143,93 @@ def test_ecs_pipes(
         )
         assert len(asset_check_executions) == 1
         assert asset_check_executions[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+
+
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        ("2025-02-26|us", "2025-02-26-us"),
+        ("a?b#c|d", "a-b-c-d"),
+        ("", ""),
+        ("a" * 256, "a" * 256),
+        ("a" * 257, "a" * 256),
+        ("東" * 257, "東" * 256),
+        ("12345678-1234-1234-1234-123456789abc", "12345678-1234-1234-1234-123456789abc"),
+        ("https://example.com/repo", "https://example.com/repo"),
+        ("user+ecs@example.com", "user+ecs@example.com"),
+        ("letters numbers +-=._:/@", "letters numbers +-=._:/@"),
+        ("東京 café ١٢٣\u00a0", "東京 café ١٢٣\u00a0"),
+        ("cafe\u0301🚀", "cafe--"),
+        ("a\tb\nc", "a-b-c"),
+    ],
+)
+def test_sanitize_ecs_tag_value(value: str, expected: str):
+    assert _sanitize_ecs_tag_value(value) == expected
+
+
+def test_ecs_pipes_multipartition_tags(pipes_ecs_client, local_ecs_mock_client, monkeypatch):
+    git_branch = "修正/١٢٣\u00a0"
+    monkeypatch.setenv("DAGSTER_CLOUD_GIT_BRANCH", git_branch)
+    partition_key = MultiPartitionKey({"date": "2025-02-26", "region": "us"})
+    caller_tags = [{"key": "owner", "value": "user+ecs@example.com"}]
+    run_task = local_ecs_mock_client.run_task
+    captured_tags = {}
+
+    def run_task_with_tag_validation(**kwargs):
+        # Moto does not enforce the ECS tag character restrictions.
+        for tag in kwargs["tags"]:
+            assert all(
+                unicodedata.category(char).startswith(("L", "N", "Z")) or char in "+-=._:/@"
+                for char in tag["value"]
+            ), tag
+            assert len(tag["value"]) <= 256
+        captured_tags.update({tag["key"]: tag["value"] for tag in kwargs["tags"]})
+        env = {
+            item["name"]: item["value"]
+            for item in kwargs["overrides"]["containerOverrides"][0]["environment"]
+        }
+        context_data = decode_param(env[DAGSTER_PIPES_CONTEXT_ENV_VAR])["data"]
+        assert context_data["partition_key"] == partition_key
+        return run_task(**kwargs)
+
+    monkeypatch.setattr(local_ecs_mock_client, "run_task", run_task_with_tag_validation)
+
+    @asset(
+        partitions_def=MultiPartitionsDefinition(
+            {
+                "date": StaticPartitionsDefinition(["2025-02-26"]),
+                "region": StaticPartitionsDefinition(["us"]),
+            }
+        ),
+        check_specs=[AssetCheckSpec(name="foo_check", asset="partitioned_asset")],
+    )
+    def partitioned_asset(context: AssetExecutionContext):
+        return pipes_ecs_client.run(
+            context=context,
+            extras={"bar": "baz"},
+            run_task_params={
+                "cluster": "test-cluster",
+                "taskDefinition": "test-task",
+                "tags": caller_tags,
+                "launchType": "FARGATE",
+                "networkConfiguration": {"awsvpcConfiguration": {"subnets": ["subnet-12345678"]}},
+            },
+            waiter_config=WaiterConfig(Delay=1, MaxAttempts=30),
+        ).get_results()
+
+    with instance_for_test() as instance:
+        result = materialize([partitioned_asset], instance=instance, partition_key=partition_key)
+        assert result.success
+        mat = instance.get_latest_materialization_event(partitioned_asset.key)
+        assert mat and mat.asset_materialization
+        assert mat.asset_materialization.partition == partition_key
+        assert mat.asset_materialization.metadata["bar"].value == "baz"
+        assert captured_tags["dagster/partition"] == "2025-02-26-us"
+        assert captured_tags["dagster/git-branch"] == git_branch
+        assert captured_tags["dagster/run-id"] == result.run_id
+        assert captured_tags["dagster/job"] == "__ephemeral_asset_job__"
+        assert captured_tags["owner"] == "user+ecs@example.com"
+        assert caller_tags == [{"key": "owner", "value": "user+ecs@example.com"}]
 
 
 def _materialize_asset(env, return_dict, task_started_event, materialization_done_event):
