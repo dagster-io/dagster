@@ -56,3 +56,11 @@ def test_event_generation_manager():
     assert result == 2
     teardown_events = list(basic_manager.generate_teardown_events())
     assert teardown_events == ["C"]
+
+
+def test_ensure_dir_rejects_existing_regular_file(tmp_path):
+    existing_file = tmp_path / "existing"
+    existing_file.write_text("data", encoding="utf-8")
+    with pytest.raises(FileExistsError):
+        ensure_dir(str(existing_file))
+    assert existing_file.read_text(encoding="utf-8") == "data"

@@ -332,7 +332,7 @@ def ensure_dir(file_path: str) -> str:
     try:
         os.makedirs(file_path)
     except OSError as e:
-        if e.errno != errno.EEXIST:
+        if e.errno != errno.EEXIST or not os.path.isdir(file_path):
             raise
     return file_path
 
