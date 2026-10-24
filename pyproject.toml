@@ -26,6 +26,7 @@ filterwarnings = [
 # when running pytest, e.g. `pytest -m "not slow"` to run all tests except
 # those marked as slow.
 markers = [
+  "dagster_run: Executes a Dagster job or asset; local verification only",
   "integration: Tests requiring real git operations or other I/O",
   "slow: Tests that take more than 1 second",
 

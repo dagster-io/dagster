@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
+from dagster._core.execution.backfill import run_uses_stop_protocol
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -131,7 +132,11 @@ def monitor_started_run(
                 )
                 logger.info(msg)
                 return
-            if num_prev_attempts < instance.run_monitoring_max_resume_run_attempts:
+            uses_stop_protocol = run_uses_stop_protocol(instance, recheck_run)
+            if (
+                not uses_stop_protocol
+                and num_prev_attempts < instance.run_monitoring_max_resume_run_attempts
+            ):
                 msg = (
                     f"Detected run worker status {check_health_result}. Resuming run"
                     f" {run.run_id} with a new worker."
@@ -147,7 +152,12 @@ def monitor_started_run(
                 # Return rather than immediately checking for a timeout, since we only just resumed
                 return
             else:
-                if (
+                if uses_stop_protocol:
+                    msg = (
+                        f"Detected run worker status {check_health_result}. Marking run {run.run_id} "
+                        "as failed because backfill worker resumption requires a new owned retry run."
+                    )
+                elif (
                     instance.run_launcher.supports_resume_run
                     and instance.run_monitoring_max_resume_run_attempts > 0
                 ):

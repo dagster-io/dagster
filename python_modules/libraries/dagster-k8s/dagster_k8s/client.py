@@ -3,6 +3,7 @@ import os
 import sys
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Optional, TypeVar
 
@@ -1091,6 +1092,19 @@ class DagsterKubernetesClient:
             + "".join(["\n\n" + log_str for log_str in log_strs])
             + f"\n\n{warning_str}"
         )
+
+    def create_namespaced_job_once(self, body: V1Job, namespace: str) -> None:
+        """Issue one create request; ambiguous responses must remain unacknowledged."""
+        # Retrying a timed-out POST can leave an earlier create request in flight after
+        # a later request succeeds. Deleting that Job could then permit its recreation.
+        # The dedicated transport also prevents SDK retries without changing shared clients.
+        # https://github.com/dagster-io/dagster/issues/34293
+        configuration = deepcopy(self.batch_api.api_client.configuration)
+        configuration.retries = 0
+        with PatchedApiClient(configuration=configuration) as api_client:
+            kubernetes.client.BatchV1Api(api_client=api_client).create_namespaced_job(
+                body=body, namespace=namespace, _request_timeout=DEFAULT_JOB_CREATION_TIMEOUT
+            )
 
     def create_namespaced_job_with_retries(
         self,
