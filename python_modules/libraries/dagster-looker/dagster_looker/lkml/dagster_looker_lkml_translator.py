@@ -159,10 +159,10 @@ def build_deps_for_looker_view(
             source
             for scope in cast("Iterator[Scope]", root_scope.traverse() if root_scope else [])
             for (_, source) in scope.selected_sources.values()
-            # Table-valued functions such as `ML.PREDICT(...)` are parsed as tables whose `this`
-            # is the function call; the tables they read are found in their own scopes.
+            # `ML.PREDICT(...)` is parsed as a table whose last part has no name, which would
+            # give an asset key with an empty part. The tables it reads have their own scopes.
             if isinstance(source, exp.Table)
-            and isinstance(source.this, exp.Identifier)
+            and all(part.name for part in source.parts)
             and not (source.name in placeholder_names and not source.db and not source.catalog)
         ]
     except Exception as e:
