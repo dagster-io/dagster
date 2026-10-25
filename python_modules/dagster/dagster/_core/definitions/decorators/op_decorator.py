@@ -26,7 +26,11 @@ from dagster._core.definitions.inference import infer_input_props
 from dagster._core.definitions.input import In, InputDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_annotation import (
+    ResourceArgSpec,
+    get_resource_arg_specs,
+    get_resource_args,
+)
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterTypeKind
@@ -320,6 +324,10 @@ class DecoratedOpFunction(NamedTuple):
 
     def get_resource_args(self) -> Sequence[Parameter]:
         return get_resource_args(self.decorated_fn)
+
+    @lru_cache(maxsize=1)
+    def get_resource_arg_specs(self) -> Sequence[ResourceArgSpec]:
+        return get_resource_arg_specs(self.decorated_fn)
 
     def positional_inputs(self) -> Sequence[str]:
         params = self._get_function_params()
