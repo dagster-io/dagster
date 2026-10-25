@@ -11,6 +11,7 @@ from dagster_looker.lkml.dagster_looker_lkml_translator import (
 )
 
 from dagster_looker_tests.looker_projects import (
+    test_derived_table_view_references_path,
     test_exception_derived_table_path,
     test_extensions,
     test_liquid_path,
@@ -163,6 +164,7 @@ def test_asset_deps() -> None:
             AssetKey(["date_comparison"]),
         },
         AssetKey(["view", "distances"]): {
+            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_stations"]),
             AssetKey(["view", "stores"]),
         },
         AssetKey(["view", "events"]): {
@@ -256,6 +258,7 @@ def test_asset_deps() -> None:
             AssetKey(["view", "weather_pivoted"]),
         },
         AssetKey(["view", "stores"]): {
+            AssetKey(["looker-private-demo", "retail", "us_stores"]),
             AssetKey(["view", "transactions"]),
         },
         AssetKey(["view", "total_order_product"]): {
@@ -297,6 +300,31 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
         "Failed to parse derived table SQL for view `exception_derived_table`"
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
+    ) in caplog.text
+
+
+def test_asset_deps_derived_table_view_references(caplog: pytest.LogCaptureFixture) -> None:
+    specs = build_looker_asset_specs(project_dir=test_derived_table_view_references_path)
+    asset_deps = {spec.key: {dep.asset_key for dep in spec.deps} for spec in specs}
+
+    # Derived table SQL that references a view keeps the tables it reads directly.
+    assert asset_deps[AssetKey(["view", "orders_by_customer"])] == {
+        AssetKey(["raw", "customers"]),
+        AssetKey(["view", "orders"]),
+    }
+    # Table-valued functions are not upstream tables.
+    assert asset_deps[AssetKey(["view", "order_predictions"])] == {
+        AssetKey(["view", "orders"]),
+    }
+    # When the SQL cannot be parsed, the view references are still kept.
+    assert asset_deps[AssetKey(["view", "unparsable_orders"])] == {
+        AssetKey(["view", "orders"]),
+    }
+    assert (
+        "Failed to parse derived table SQL for view `unparsable_orders`"
+        " in file `unparsable_orders.view.lkml`."
+        " The upstream table dependencies for the view will be omitted;"
+        " its dependencies on other views are kept."
     ) in caplog.text
 
 
