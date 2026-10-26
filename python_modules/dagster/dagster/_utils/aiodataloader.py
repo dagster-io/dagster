@@ -85,6 +85,7 @@ class BlockingDataLoader(Generic[KeyT, ReturnT]):
         return self._cache[self.get_cache_key(key)]
 
     def blocking_load_many(self, keys: Iterable[KeyT]) -> Iterable[ReturnT]:
+        keys = list(keys)
         self.prepare(keys)
         return [self.blocking_load(key) for key in keys]
 
