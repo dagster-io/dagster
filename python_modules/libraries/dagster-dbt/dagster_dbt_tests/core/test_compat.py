@@ -48,17 +48,30 @@ MANIFEST = {
             "description": "",
         },
     },
+    # Unit tests live here, not under `nodes`, in both dbt Core and dbt Fusion manifests.
+    "unit_tests": {
+        "unit_test.jaffle_shop.customers.test_customers": {
+            "unique_id": "unit_test.jaffle_shop.customers.test_customers",
+            "name": "test_customers",
+            "resource_type": "unit_test",
+            "depends_on": {"nodes": ["model.jaffle_shop.customers"]},
+        },
+    },
 }
 
 
-def _fusion_test_event(status: str) -> DbtFusionCliEventMessage:
+def _fusion_test_event(
+    status: str,
+    unique_id: str = "test.jaffle_shop.unique_customers_customer_id",
+    resource_type: str = "test",
+) -> DbtFusionCliEventMessage:
     return DbtFusionCliEventMessage(
         raw_event={
             "data": {
                 "node_info": {
-                    "unique_id": "test.jaffle_shop.unique_customers_customer_id",
+                    "unique_id": unique_id,
                     "node_status": status,
-                    "resource_type": "test",
+                    "resource_type": resource_type,
                     "node_started_at": "",
                     "node_finished_at": "",
                 },
@@ -121,3 +134,20 @@ def test_fusion_test_result_to_check_evaluation(
     assert isinstance(evaluation, AssetCheckEvaluation)
     assert evaluation.passed is passed
     assert evaluation.severity is severity
+
+
+@pytest.mark.parametrize("status", ["pass", "success", "fail", "error"])
+def test_fusion_unit_test_result_is_not_a_result_event(status: str) -> None:
+    """A dbt Fusion unit test result yields no asset events, as on dbt Core.
+
+    Its unique id is under `unit_tests` rather than `nodes`, so treating it as a result
+    event raised a `KeyError` and failed any `dbt build` that ran a unit test.
+    """
+    event = _fusion_test_event(
+        status,
+        unique_id="unit_test.jaffle_shop.customers.test_customers",
+        resource_type="unit_test",
+    )
+
+    assert not event.is_result_event
+    assert list(event.to_default_asset_events(MANIFEST, DagsterDbtTranslator())) == []
