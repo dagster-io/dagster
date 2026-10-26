@@ -107,7 +107,7 @@ To choose which metrics to compare across selections, click **Choose metrics**, 
 
 :::note
 
-Capacity metrics like runs queued, runs in progress, and run queue time are best viewed with the **Max** aggregation, which shows the peak value within each time window.
+Capacity metrics like runs queued, runs in progress, and run queue time are best viewed with the **Max** aggregation, which shows the peak value within each time window. Runs queued and runs in progress are counts at a point in time, so **Sum**, **Average**, and percentile aggregations give misleading results for them; requests that don't specify an aggregation use **Max** for these two metrics.
 
 :::
 

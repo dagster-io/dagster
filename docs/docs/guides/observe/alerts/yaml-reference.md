@@ -289,7 +289,7 @@ alert_targets:
 
 #### Deployment capacity metric
 
-Monitors an Insights metric aggregated across the entire deployment against thresholds over a rolling lookback window. Intended for deployment capacity metrics such as queued runs (`__dagster_runs_queued`), runs in progress (`__dagster_runs_in_progress`), and run queue time (`__dagster_run_queue_time_ms`), typically with the `MAX` aggregation.
+Monitors an Insights metric aggregated across the entire deployment against thresholds over a rolling lookback window. Intended for deployment capacity metrics such as queued runs (`__dagster_runs_queued`), runs in progress (`__dagster_runs_in_progress`), and run queue time (`__dagster_run_queue_time_ms`), typically with the `MAX` aggregation. Use `MAX`, `MIN`, or `LATEST` for queued runs and runs in progress: they are counts at a point in time, so `SUM` gives misleading results.
 
 ```yaml
 alert_targets:
