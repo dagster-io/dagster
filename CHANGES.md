@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.13.27 (core) / 0.29.27 (libraries)
+
+### New
+
+- New Dagster+ organizations no longer start with a `[Dagster Plus] Credit Limit Exceeded` alert policy. Only the `[Dagster Plus] Run Exceeds 24 Hours` policy is created by default.
+- [ui] Added a mobile layout for the run details page, showing the run's tags, logs, and steps.
+- [dagster-cloud] BigQuery Insights cost queries now bound the `INFORMATION_SCHEMA.JOBS` scan to the dbt invocation's time window, instead of scanning up to 180 days of job history. (Thanks, [@pathisaivarun](https://github.com/pathisaivarun)!)
+- [dagster-sling] Snowflake connections defined with `connection_string` now identify Dagster as the partner application, unless `application` is already set.
+
+### Bugfixes
+
+- [ui] Fixed an issue where run action menus stayed open after selecting an item, so clicking "Re-execute" more than once while a launch was in progress created duplicate runs.
+- [ui] Fixed a crash when selecting an asset from the asset graph's "Jump to…" search with the keyboard.
+- [ui] Fixed an issue where pages could fail to load, or emit repeated errors, when the browser's IndexedDB storage was unavailable or over quota. Cached data now falls back to memory.
+- [ui] Selection inputs no longer drop values containing characters such as `@`, `-`, or `.`, so values like email addresses and dbt model names are kept whole when committing and in autocomplete suggestions.
+- [ui] Selection inputs, including the Runs search, now suggest and apply queries correctly when the query starts with whitespace.
+- [ui] Fixed an issue where selection inputs containing emoji, or spaces around commas, could commit a corrupted query.
+- [ui] Failing backfills now appear when filtering the Runs page by Failed, and are included in the Failed count.
+- [ui] The delete run dialog no longer offers "Terminate instead" to users without permission to terminate the run.
+
+### Documentation
+
+- Added a guide for deploying the Dagster+ Hybrid agent on Azure Container Apps.
+
 ## 1.13.26 (core) / 0.29.26 (libraries)
 
 ### Breaking Changes
