@@ -162,3 +162,14 @@ def test_indenting_block_printer_block_printing():
             with printer.with_indent():
                 printer.comment(LOREM_IPSUM)
         assert printer.read() == FORMATTED_LOREM
+
+
+def test_with_indent_restores_indentation_after_exception():
+    printer = create_printer()
+    with pytest.raises(ValueError, match="rendering failed"):
+        with printer.with_indent():
+            printer.line("indented")
+            raise ValueError("rendering failed")
+    printer.line("after")
+    assert printer.current_indent == 0
+    assert printer.result() == "  indented\nafter"
