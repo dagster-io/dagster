@@ -102,6 +102,10 @@ def get_requirements_lines(local_dir, python_interpreter: str) -> list[str]:
 # project has a uv.lock.
 USE_UV_LOCK_ENV_VAR = "DAGSTER_CLOUD_PEX_USE_UV_LOCK"
 
+# requirements.txt options that name requirements (already covered by the lock), as opposed to
+# package-source options such as --extra-index-url or --find-links, which are kept.
+_REQUIREMENT_OPTION_PREFIXES = ("-e", "--editable", "-r", "--requirement", "-c", "--constraint")
+
 
 def find_uv_lock_root(code_directory: str) -> str | None:
     """The directory holding the uv.lock that pins this project: the project itself, or the root
@@ -138,32 +142,48 @@ def get_uv_lock_requirements(code_directory: str) -> tuple[list[str], str] | Non
             " match the lock. Install uv to build from the lock."
         )
         return None
+    export_args = [
+        uv,
+        "export",
+        "--frozen",  # the lock as committed: never re-resolve or rewrite it
+        "--no-emit-project",  # the project itself goes in the source pex
+        "--no-default-groups",  # like [project] deps: no dev or other groups
+        "--all-extras",  # like the pyproject.toml path, which includes optional deps
+        "--no-editable",  # "./path", not "-e ./path", for local_path_for
+        "--no-hashes",  # one requirement per line
+        "--no-header",
+        "--no-annotate",
+        "--format",
+        "requirements.txt",
+    ]
+    # Keep package sources configured in uv ([[tool.uv.index]], find-links); older uv versions
+    # don't have these flags, so retry without them.
+    source_flags = ["--emit-index-url", "--emit-find-links"]
     proc = subprocess.run(
-        [
-            uv,
-            "export",
-            "--frozen",  # the lock as committed: never re-resolve or rewrite it
-            "--no-emit-project",  # the project itself goes in the source pex
-            "--no-default-groups",  # like [project] deps: no dev or other groups
-            "--all-extras",  # like the pyproject.toml path, which includes optional deps
-            "--no-editable",  # "./path", not "-e ./path", for local_path_for
-            "--no-hashes",  # one requirement per line
-            "--no-header",
-            "--no-annotate",
-            "--format",
-            "requirements.txt",
-        ],
+        export_args + source_flags,
         cwd=code_directory,
         capture_output=True,
         text=True,
         check=False,
     )
+    if proc.returncode and "unexpected argument" in proc.stderr:
+        proc = subprocess.run(
+            export_args, cwd=code_directory, capture_output=True, text=True, check=False
+        )
     if proc.returncode:
         raise Exception(f"`uv export` failed in {code_directory}:\n{proc.stderr}")
     lines = [
         line.strip()
         for line in proc.stdout.splitlines()
         if line.strip() and not line.lstrip().startswith("#")
+    ]
+    # Keep pip options from requirements.txt that tell pip where to find packages
+    # (--extra-index-url, --find-links, --trusted-host, ...): the pins replace its requirements,
+    # not its package sources.
+    lines += [
+        line
+        for line in get_requirements_txt_deps(code_directory)
+        if line.startswith("-") and not line.startswith(_REQUIREMENT_OPTION_PREFIXES)
     ]
     return lines, lock_root
 

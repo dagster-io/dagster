@@ -5,7 +5,7 @@ import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from dagster_cloud_cli.commands.serverless import _check_source_directory
@@ -947,6 +947,61 @@ def test_get_deps_requirements_uses_uv_lock(tmp_path, monkeypatch):
     ]
 
 
+def test_get_deps_requirements_uv_lock_keeps_package_sources(tmp_path, monkeypatch):
+    """Package-source options survive: uv's (emitted by `uv export`) and requirements.txt's."""
+    monkeypatch.delenv(deps.USE_UV_LOCK_ENV_VAR, raising=False)
+    _write_uv_project(tmp_path)
+    (tmp_path / "uv.lock").write_text("version = 1\n")
+    (tmp_path / "requirements.txt").write_text(
+        "--extra-index-url https://pkgs.example.com/simple\n"
+        "--find-links ./wheels\n"
+        "-r other-requirements.txt\n"
+        "requests>=2\n"
+    )
+
+    exported = "--index-url https://pypi.org/simple\nrequests==2.32.5\n"
+    with (
+        patch("dagster_cloud_cli.core.pex_builder.deps.shutil.which", return_value="/bin/uv"),
+        patch("dagster_cloud_cli.core.pex_builder.deps.subprocess.run") as mock_run,
+    ):
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = exported
+        _, deps_requirements = deps.get_deps_requirements(str(tmp_path), version.Version("3.11.0"))
+
+    assert {"--emit-index-url", "--emit-find-links"} <= set(mock_run.call_args.args[0])
+    lines = deps_requirements.requirements_txt.strip().split("\n")
+    assert sorted(lines) == sorted(
+        [
+            "--index-url https://pypi.org/simple",
+            "requests==2.32.5",
+            "--extra-index-url https://pkgs.example.com/simple",
+            "--find-links ./wheels",
+        ]
+    )
+
+
+def test_get_deps_requirements_uv_lock_older_uv_without_emit_flags(tmp_path, monkeypatch):
+    monkeypatch.delenv(deps.USE_UV_LOCK_ENV_VAR, raising=False)
+    _write_uv_project(tmp_path)
+    (tmp_path / "uv.lock").write_text("version = 1\n")
+
+    rejected = MagicMock(
+        returncode=2, stdout="", stderr="error: unexpected argument '--emit-index-url'"
+    )
+    exported = MagicMock(returncode=0, stdout="requests==2.32.5\n", stderr="")
+    with (
+        patch("dagster_cloud_cli.core.pex_builder.deps.shutil.which", return_value="/bin/uv"),
+        patch(
+            "dagster_cloud_cli.core.pex_builder.deps.subprocess.run",
+            side_effect=[rejected, exported],
+        ) as mock_run,
+    ):
+        _, deps_requirements = deps.get_deps_requirements(str(tmp_path), version.Version("3.11.0"))
+
+    assert "--emit-index-url" not in mock_run.call_args.args[0]
+    assert deps_requirements.requirements_txt.split() == ["requests==2.32.5"]
+
+
 def test_get_deps_requirements_uv_lock_opt_out(tmp_path, monkeypatch):
     monkeypatch.setenv(deps.USE_UV_LOCK_ENV_VAR, "0")
     _write_uv_project(tmp_path)
@@ -1001,4 +1056,6 @@ def test_get_deps_requirements_uv_workspace_member_paths(tmp_path, monkeypatch):
     )
 
     assert local_packages.local_package_paths == [str(shared.resolve())]
-    assert deps_requirements.requirements_txt.strip() == ""
+    # Only package-source options (e.g. the --index-url uv emits); no requirement lines.
+    lines = deps_requirements.requirements_txt.split("\n")
+    assert [line for line in lines if line and not line.startswith("-")] == []
