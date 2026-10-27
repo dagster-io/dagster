@@ -1145,6 +1145,14 @@ describe('createAssetSelectionHint', () => {
       ],
       to: 13,
     });
+    expect(testAutocomplete('tag:key=value| or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
   });
 
   it('should be case insensitive', () => {
