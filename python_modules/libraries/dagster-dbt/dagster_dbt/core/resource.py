@@ -659,11 +659,11 @@ class DbtCliResource(ConfigurableResource):
         )
         if not target_path.is_absolute():
             # Large selections run dbt in a temporary project copy. A relative
-            # DBT_TARGET_PATH would be resolved against that copy and deleted with
-            # it. Anchor artifacts to the real project first, then pass the
-            # absolute path through to the CLI.
-            anchor = updated_params.artifact_project_dir or project_dir
-            target_path = Path(anchor).joinpath(target_path)
+            # DBT_TARGET_PATH is resolved against that copy and deleted with it.
+            # Resolve the real project directory first so the artifact path is
+            # absolute, then pass that path through to the CLI.
+            anchor = Path(updated_params.artifact_project_dir or project_dir).resolve()
+            target_path = anchor.joinpath(target_path)
         env = {
             # Allow IO streaming when running in Windows.
             # Also, allow it to be overriden by the current environment.

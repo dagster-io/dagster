@@ -83,6 +83,55 @@ def test_ephemeral_copy_skips_build_dirs_and_keeps_packages(tmp_path: Path) -> N
             shutil.rmtree(temp_dir)
 
 
+def test_ephemeral_copy_keeps_sources_beside_nested_output_dirs(tmp_path: Path) -> None:
+    """`build/target` must not drop sources that live in `build/models`."""
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "dbt_project.yml").write_text(
+        "\n".join(
+            [
+                "name: proj",
+                "profile: proj",
+                "target-path: build/target",
+                "log-path: build/logs",
+                "",
+            ]
+        )
+    )
+    (project_dir / "build" / "models").mkdir(parents=True)
+    (project_dir / "build" / "models" / "m.sql").write_text("select 1 as id")
+    (project_dir / "build" / "target").mkdir()
+    (project_dir / "build" / "target" / "manifest.json").write_text("x")
+    (project_dir / "build" / "logs").mkdir()
+    (project_dir / "build" / "logs" / "dbt.log").write_text("x")
+    (project_dir / "artifacts" / "dagster_target").mkdir(parents=True)
+    (project_dir / "artifacts" / "dagster_target" / "manifest.json").write_text("x")
+    (project_dir / "artifacts" / "sources").mkdir()
+    (project_dir / "artifacts" / "sources" / "seed.csv").write_text("id\n1\n")
+    (project_dir / "target").mkdir()
+    (project_dir / "target" / "manifest.json").write_text("x")
+    (project_dir / "logs").mkdir()
+    (project_dir / "logs" / "dbt.log").write_text("x")
+
+    project = DbtProject(project_dir=project_dir, target_path="artifacts/dagster_target")
+    temp_dir = _copy_dbt_project_for_ephemeral_selector(Path(project.project_dir), project)
+    try:
+        assert (temp_dir / "build" / "models" / "m.sql").read_text() == "select 1 as id"
+        assert (temp_dir / "artifacts" / "sources" / "seed.csv").read_text() == "id\n1\n"
+        assert (temp_dir / "dbt_project.yml").exists()
+        for skipped in (
+            "build/target",
+            "build/logs",
+            "artifacts/dagster_target",
+            "target",
+            "logs",
+        ):
+            assert not (temp_dir / skipped).exists(), skipped
+    finally:
+        if temp_dir.exists():
+            shutil.rmtree(temp_dir)
+
+
 def _fake_invocation(
     temp_dir: Path,
     stdout: io.BytesIO,
@@ -126,6 +175,19 @@ def test_failed_wait_removes_temp_project(tmp_path: Path) -> None:
 
     with pytest.raises(DagsterDbtCliRuntimeError):
         invocation.wait()
+
+    assert not temp_dir.exists()
+
+
+def test_failed_stream_next_removes_temp_project(tmp_path: Path) -> None:
+    """next() on a failed stream() still deletes the temporary project."""
+    temp_dir = tmp_path / "copy"
+    temp_dir.mkdir()
+    invocation = _fake_invocation(temp_dir, io.BytesIO(b""), returncode=1)
+
+    stream = invocation.stream()
+    with pytest.raises(DagsterDbtCliRuntimeError):
+        next(stream)
 
     assert not temp_dir.exists()
 

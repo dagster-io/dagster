@@ -249,7 +249,9 @@ class DbtEventIterator(Iterator[T]):
     def __next__(self) -> T:
         try:
             return next(self._inner_iterator)
-        except StopIteration:
+        except BaseException:
+            # StopIteration and real failures. stream() already turned off cleanup
+            # in stream_raw_events(), so next() has to remove the temp project.
             self._on_iteration_finished()
             raise
 

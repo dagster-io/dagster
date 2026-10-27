@@ -139,29 +139,42 @@ def _parse_selection_args(
     return select_resources, exclude_resources
 
 
-def _relative_root_dir_name(path_value: object) -> str | None:
-    """Top-level directory name for a project-relative path, if it has one."""
+def _relative_output_dir(path_value: object) -> Path | None:
+    """Project-relative output directory, if it stays inside the project.
+
+    Absolute paths and any path that climbs out with `..` are skipped. A nested
+    path such as `build/target` is kept whole so a sibling like `build/models`
+    is still copied.
+    """
     if isinstance(path_value, Path):
         path = path_value
     elif isinstance(path_value, str):
         path = Path(path_value)
     else:
         return None
-    if path.is_absolute() or not path.parts or path.parts[0] in {".", ".."}:
+    if path.is_absolute():
         return None
-    return path.parts[0]
+    parts: list[str] = []
+    for part in path.parts:
+        if part in {"", "."}:
+            continue
+        if part == "..":
+            return None
+        parts.append(part)
+    if not parts:
+        return None
+    return Path(*parts)
 
 
-def _ephemeral_copy_excluded_root_names(
-    project_dir: Path, dbt_project: DbtProject | None
-) -> set[str]:
-    """Build-output directory names at the project root that the temp copy should skip.
+def _ephemeral_copy_excluded_dirs(project_dir: Path, dbt_project: DbtProject | None) -> set[Path]:
+    """Build-output directories, relative to the project root, that the temp copy skips.
 
     Defaults match dbt (`target`, `logs`). `target-path` and `log-path` from
     dbt_project.yml are honored when they are plain relative paths, and so is
     `DbtProject.target_path` when it points at a directory inside the project.
+    The whole relative path is matched, not just its first component.
     """
-    names = {_DEFAULT_DBT_TARGET_DIR, _DEFAULT_DBT_LOG_DIR}
+    excluded = {Path(_DEFAULT_DBT_TARGET_DIR), Path(_DEFAULT_DBT_LOG_DIR)}
     project_yml_path = project_dir / "dbt_project.yml"
     if project_yml_path.exists():
         try:
@@ -170,29 +183,33 @@ def _ephemeral_copy_excluded_root_names(
             loaded = None
         if isinstance(loaded, dict):
             for key in ("target-path", "log-path"):
-                dir_name = _relative_root_dir_name(loaded.get(key))
-                if dir_name:
-                    names.add(dir_name)
-    if dbt_project is not None and not dbt_project.target_path.is_absolute():
-        dir_name = _relative_root_dir_name(dbt_project.target_path)
-        if dir_name:
-            names.add(dir_name)
-    return names
+                output_dir = _relative_output_dir(loaded.get(key))
+                if output_dir is not None:
+                    excluded.add(output_dir)
+    if dbt_project is not None:
+        output_dir = _relative_output_dir(dbt_project.target_path)
+        if output_dir is not None:
+            excluded.add(output_dir)
+    return excluded
 
 
 def _ephemeral_project_copy_ignore(
     project_dir: Path, dbt_project: DbtProject | None
 ) -> Callable[[str, list[str]], set[str]]:
-    root_excluded = _ephemeral_copy_excluded_root_names(project_dir, dbt_project)
+    excluded_dirs = _ephemeral_copy_excluded_dirs(project_dir, dbt_project)
     project_root = project_dir.resolve()
 
     def _ignore(src_dir: str, names: list[str]) -> set[str]:
-        at_project_root = Path(src_dir).resolve() == project_root
+        try:
+            relative_src = Path(src_dir).resolve().relative_to(project_root)
+        except ValueError:
+            relative_src = None
+
         return {
             name
             for name in names
             if name in _EPHEMERAL_COPY_EXCLUDED_DIR_NAMES
-            or (at_project_root and name in root_excluded)
+            or (relative_src is not None and (relative_src / name) in excluded_dirs)
         }
 
     return _ignore
@@ -204,9 +221,11 @@ def _copy_dbt_project_for_ephemeral_selector(
     """Copy a dbt project so an ephemeral selectors.yml can be written next to its sources.
 
     The copy skips build output (`target` / `logs`, or the paths configured on the
-    project) and local junk. The dbt invocation writes artifacts to an explicit
-    target path, so those directories are not needed in the copy. Installed
-    packages are copied because selection and materialization both need them.
+    project) and local junk. Nested output paths are skipped only at that path,
+    so sources that share a parent directory are kept. The dbt invocation writes
+    artifacts to an explicit target path, so those directories are not needed in
+    the copy. Installed packages are copied because selection and materialization
+    both need them.
     """
     temp_project_dir = Path(tempfile.mkdtemp())
     try:
