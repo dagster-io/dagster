@@ -13,9 +13,6 @@ from dagster._core.definitions.asset_checks.asset_check_evaluation import (
 from dagster._core.definitions.asset_checks.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets.graph.remote_asset_graph import RemoteAssetCheckNode
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AutomationConditionSnapshot,
-)
 from dagster._core.definitions.partitions.snap import MultiPartitionsSnap
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.asset_check_execution_record import (
@@ -25,8 +22,10 @@ from dagster._core.storage.asset_check_execution_record import (
 from dagster._core.storage.dagster_run import RunRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
-from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
+from dagster_graphql.schema.automation_condition import (
+    GrapheneAutomationCondition,
+    snapshot_from_raw,
+)
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
@@ -347,19 +346,15 @@ class GrapheneAssetCheck(graphene.ObjectType):
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
-    ) -> GrapheneAutoMaterializePolicy | None:
-        automation_condition = (
+    ) -> GrapheneAutomationCondition | None:
+        # we only store one of automation_condition or automation_condition_snapshot
+        raw = (
             self._asset_check.automation_condition_snapshot
             or self._asset_check.automation_condition
         )
-        if automation_condition:
-            return GrapheneAutomationCondition(  # ty: ignore[invalid-return-type]
-                # we only store one of automation_condition or automation_condition_snapshot
-                automation_condition
-                if isinstance(automation_condition, AutomationConditionSnapshot)
-                else automation_condition.get_snapshot()
-            )
-        return None
+        if raw is None:
+            return None
+        return GrapheneAutomationCondition(lambda: snapshot_from_raw(raw))
 
     def resolve_partitionDefinition(
         self, _graphene_info: ResolveInfo

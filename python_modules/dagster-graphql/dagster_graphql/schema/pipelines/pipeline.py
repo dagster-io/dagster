@@ -1304,7 +1304,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         else:
             automation_condition = job_entry.job.automation_condition
         if automation_condition is not None:
-            return GrapheneAutomationCondition(automation_condition.get_snapshot())
+            return GrapheneAutomationCondition(automation_condition.get_snapshot)
         return None
 
     def resolve_presets(self, _graphene_info: ResolveInfo):

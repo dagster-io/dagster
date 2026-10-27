@@ -3528,6 +3528,42 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "(handled)",
         ]
 
+    def test_automation_condition_presence_only_is_lazy(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """A `{ __typename }`-only query must not build a snapshot or expanded label."""
+        query = """
+            query AssetNodeQuery {
+                assetNodes {
+                    id
+                    automationCondition {
+                        __typename
+                    }
+                }
+            }
+        """
+        with (
+            # patch where it's bound: asset_graph imports get_ac_snapshot by name
+            mock.patch(
+                "dagster_graphql.schema.asset_graph.get_ac_snapshot"
+            ) as get_ac_snapshot_mock,
+            mock.patch(
+                "dagster_graphql.schema.automation_condition.get_expanded_label"
+            ) as get_expanded_label_mock,
+        ):
+            result = execute_dagster_graphql(graphql_context, query)
+
+        assert result.data
+        automation_condition_asset = [
+            a for a in result.data["assetNodes"] if a["id"] == "w.asset_with_automation_condition"
+        ]
+        assert len(automation_condition_asset) == 1
+        assert automation_condition_asset[0]["automationCondition"]["__typename"] == (
+            "AutomationCondition"
+        )
+        get_ac_snapshot_mock.assert_not_called()
+        get_expanded_label_mock.assert_not_called()
+
     def test_tags(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(
             graphql_context,
