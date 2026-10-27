@@ -1855,8 +1855,8 @@ requires-dist = [
     { name = "requests" },
     { name = "responses", marker = "extra == 'test'", specifier = "<=0.23.1" },
     { name = "rich" },
-    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.16.2" },
-    { name = "ruff", marker = "extra == 'test'", specifier = "==0.16.2" },
+    { name = "ruff", marker = "extra == 'ruff'", specifier = "==0.17.2" },
+    { name = "ruff", marker = "extra == 'test'", specifier = "==0.17.2" },
     { name = "six" },
     { name = "sqlalchemy", specifier = ">=1.0,<3" },
     { name = "structlog" },
@@ -1868,7 +1868,7 @@ requires-dist = [
     { name = "tox", marker = "extra == 'test'", specifier = ">=4.22" },
     { name = "tox-uv", marker = "extra == 'test'", specifier = ">=1.16" },
     { name = "tqdm", specifier = "<5" },
-    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.74" },
+    { name = "ty", marker = "extra == 'ty'", specifier = "==0.0.91" },
     { name = "types-backports", marker = "extra == 'pyright'" },
     { name = "types-backports", marker = "extra == 'ty'" },
     { name = "types-certifi", marker = "extra == 'pyright'" },
@@ -2092,6 +2092,7 @@ dependencies = [
     { name = "click" },
     { name = "dagster-shared" },
     { name = "github3-py" },
+    { name = "gitpython" },
     { name = "jinja2" },
     { name = "packaging" },
     { name = "pyyaml" },
@@ -2107,6 +2108,7 @@ requires-dist = [
     { name = "click" },
     { name = "dagster-shared", editable = "../python_modules/libraries/dagster-shared" },
     { name = "github3-py" },
+    { name = "gitpython" },
     { name = "jinja2" },
     { name = "packaging", specifier = ">=20.9" },
     { name = "pyyaml", specifier = ">=5.1" },
@@ -2161,7 +2163,6 @@ version = "1!0+dev"
 source = { editable = "../python_modules/libraries/dagster-dbt" }
 dependencies = [
     { name = "dagster" },
-    { name = "dbt-core" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx" },
@@ -2177,7 +2178,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../python_modules/dagster" },
-    { name = "dbt-core", specifier = ">=1.7,<1.13" },
+    { name = "dbt-core", marker = "extra == 'dbt-core'", specifier = ">=1.7,<1.13" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx" },
@@ -2185,9 +2186,10 @@ requires-dist = [
     { name = "packaging" },
     { name = "requests" },
     { name = "rich" },
-    { name = "sqlglot", extras = ["rs"], specifier = "<28.1.0" },
+    { name = "sqlglot", extras = ["rs"] },
     { name = "typer", specifier = ">=0.9.0" },
 ]
+provides-extras = ["dbt-core"]
 
 [package.metadata.requires-dev]
 test = [
@@ -2202,6 +2204,21 @@ test = [
     { name = "dagster-shared", editable = "../python_modules/libraries/dagster-shared" },
     { name = "dbt-duckdb", specifier = "<1.9.2" },
     { name = "duckdb", specifier = "<1.4.0" },
+    { name = "msgpack" },
+    { name = "pytest-order" },
+    { name = "pytest-rerunfailures" },
+]
+test-bare = [
+    { name = "dagster", extras = ["test"], editable = "../python_modules/dagster" },
+    { name = "dagster-cloud-cli", editable = "../python_modules/libraries/dagster-cloud-cli" },
+    { name = "dagster-dg-cli", editable = "../python_modules/libraries/dagster-dg-cli" },
+    { name = "dagster-dg-core", editable = "../python_modules/libraries/dagster-dg-core" },
+    { name = "dagster-duckdb", editable = "../python_modules/libraries/dagster-duckdb" },
+    { name = "dagster-duckdb-pandas", editable = "../python_modules/libraries/dagster-duckdb-pandas" },
+    { name = "dagster-pipes", editable = "../python_modules/dagster-pipes" },
+    { name = "dagster-rest-resources", editable = "../python_modules/libraries/dagster-rest-resources" },
+    { name = "dagster-shared", editable = "../python_modules/libraries/dagster-shared" },
+    { name = "msgpack" },
     { name = "pytest-order" },
     { name = "pytest-rerunfailures" },
 ]

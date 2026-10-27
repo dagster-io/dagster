@@ -6,15 +6,7 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from functools import cached_property
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    ContextManager,
-    NamedTuple,
-    TypeAlias,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, ContextManager, NamedTuple, TypeAlias, cast  # noqa: UP035
 
 import dagster_shared.seven as seven
 import sqlalchemy as db

@@ -6,17 +6,7 @@ import sys
 import uuid
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import (  # noqa: F401, UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, NamedTuple, Optional, Tuple, Union, cast  # noqa: F401, UP035
 
 from dagster_shared.serdes.serdes import (
     EnumSerializer,

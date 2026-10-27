@@ -5,9 +5,7 @@ from project_datastage.components.data_stage_job_component import (  # ty: ignor
     DataStageTranslator,
     datastage_assets,
 )
-from project_datastage.components.scheduled_job_component import (  # ty: ignore[unresolved-import]
-    ScheduledJobComponent,
-)
+from project_datastage.components.scheduled_job_component import ScheduledJobComponent  # ty: ignore[unresolved-import]
 
 
 def test_translator_asset_key():

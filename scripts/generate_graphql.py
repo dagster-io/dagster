@@ -149,9 +149,7 @@ def main():
     generate_oss_permissions()
 
     if _are_dagster_cloud_packages_available():
-        from dagster_cloud_dagit.graphql.schema import (  # ty: ignore[unresolved-import]
-            create_dagster_cloud_dagit_schema,
-        )
+        from dagster_cloud_dagit.graphql.schema import create_dagster_cloud_dagit_schema  # ty: ignore[unresolved-import]
 
         app_cloud_gql_schema = create_dagster_cloud_dagit_schema().graphql_schema
 

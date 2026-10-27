@@ -1,15 +1,7 @@
 import functools
 from collections.abc import Awaitable, Iterable
 from datetime import datetime, timedelta
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Callable,
-    Literal,
-    NamedTuple,
-    Optional,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, AbstractSet, Callable, Literal, NamedTuple, Optional, TypeVar  # noqa: UP035
 
 from dagster import _check as check
 from dagster._check import CheckError

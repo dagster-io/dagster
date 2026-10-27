@@ -2,16 +2,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from enum import Enum
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Generic,
-    NamedTuple,
-    Optional,
-    TypeAlias,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, NamedTuple, Optional, TypeAlias, cast  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 from dagster_shared.utils.hash import hash_collection

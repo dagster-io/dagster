@@ -9,16 +9,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from functools import cached_property
 from itertools import count
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Generic,
-    Optional,
-    TypeAlias,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, TypeAlias, TypeVar, Union  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value
 from typing_extensions import Self

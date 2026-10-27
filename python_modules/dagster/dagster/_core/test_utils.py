@@ -16,15 +16,7 @@ from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    NamedTuple,
-    NoReturn,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, NoReturn, TypeVar  # noqa: UP035
 
 if TYPE_CHECKING:
     import subprocess

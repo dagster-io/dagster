@@ -1,16 +1,7 @@
 from collections.abc import Mapping, Sequence
 from functools import lru_cache, update_wrapper
 from inspect import Parameter
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    NamedTuple,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Union, cast, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public

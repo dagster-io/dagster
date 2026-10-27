@@ -44,7 +44,7 @@ test = [
     "dagster-cloud-cli",
     "dagster-rest-resources",
     "create-dagster",
-    "dagster-dbt",
+    "dagster-dbt[dbt-core]",
     "dagster-fivetran",
     "dagster-sling",
     "syrupy>=4.0.0",

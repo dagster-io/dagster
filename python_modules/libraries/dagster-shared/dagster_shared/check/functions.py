@@ -2,16 +2,7 @@ import collections.abc
 import inspect
 from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from os import PathLike, fspath
-from typing import (  # noqa: UP035
-    AbstractSet,
-    Any,
-    Callable,
-    NoReturn,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import AbstractSet, Any, Callable, NoReturn, TypeAlias, TypeVar, cast, overload  # noqa: UP035
 
 from typing_extensions import Never
 
