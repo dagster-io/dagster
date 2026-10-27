@@ -22,7 +22,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
 
     @abstractmethod
     def get_partition_keys_not_in_subset(
-        self, partitions_def: PartitionsDefinition[T_str]
+        self,
+        partitions_def: PartitionsDefinition[T_str],  # ty: ignore[invalid-generic-class]
     ) -> Iterable[T_str]: ...
 
     @abstractmethod
@@ -38,7 +39,9 @@ class PartitionsSubset(ABC, Generic[T_str]):
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset[T_str]": ...
 
     def with_partition_key_range(
-        self, partitions_def: PartitionsDefinition[T_str], partition_key_range: PartitionKeyRange
+        self,
+        partitions_def: PartitionsDefinition[T_str],  # ty: ignore[invalid-generic-class]
+        partition_key_range: PartitionKeyRange,
     ) -> "PartitionsSubset[T_str]":
         return self.with_partition_keys(
             partitions_def.get_partition_keys_in_range(partition_key_range)
@@ -91,7 +94,9 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @classmethod
     @abstractmethod
     def from_serialized(
-        cls, partitions_def: PartitionsDefinition[T_str], serialized: str
+        cls,
+        partitions_def: PartitionsDefinition[T_str],  # ty: ignore[invalid-generic-class]
+        serialized: str,
     ) -> "PartitionsSubset[T_str]": ...
 
     @classmethod
