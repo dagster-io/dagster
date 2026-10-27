@@ -4,7 +4,10 @@ import {useState} from 'react';
 
 import {DagsterTag} from '../../RunTag';
 import {RunFilterToken} from '../../RunsFilterUtils';
-import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
+import {
+  buildRunTagFocusMocks,
+  buildRunTagValuesQueryMockedResponse,
+} from '../../__fixtures__/RunTagQueries.fixtures';
 import {RunsSearchInput} from '../RunsSearchInput';
 
 // eslint-disable-next-line import/no-default-export
@@ -13,12 +16,16 @@ export default {
   component: RunsSearchInput,
 };
 
-const MOCKS = buildRunTagFocusMocks({
-  values: {
-    [DagsterTag.SensorName]: ['new_files_sensor'],
-    [DagsterTag.User]: ['marco@dagsterlabs.com'],
-  },
-});
+const MOCKS = [
+  ...buildRunTagFocusMocks({
+    values: {
+      [DagsterTag.SensorName]: ['new_files_sensor'],
+      [DagsterTag.User]: ['marco@dagsterlabs.com'],
+    },
+  }),
+  buildRunTagValuesQueryMockedResponse('team', ['data', 'devrel']),
+  buildRunTagValuesQueryMockedResponse('env', ['prod', 'staging']),
+];
 
 type InputTemplateProps = {
   initialTokens: RunFilterToken[];

@@ -12,7 +12,10 @@ import {WorkspaceProvider} from '../../../workspace/WorkspaceContext/WorkspaceCo
 import {buildWorkspaceMocks} from '../../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DUNDER_REPO_NAME} from '../../../workspace/buildRepoAddress';
 import {DagsterTag} from '../../RunTag';
-import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
+import {
+  buildRunTagFocusMocks,
+  buildRunTagValuesQueryMockedResponse,
+} from '../../__fixtures__/RunTagQueries.fixtures';
 import {getRunsSearchText} from '../getRunsSearchText';
 import {parseRunsSearch} from '../parseRunsSearch';
 import {useRunsSearchAutoCompleteProvider} from '../useRunsSearchAutoCompleteProvider';
@@ -70,19 +73,25 @@ type MocksProps = {
 };
 
 const Mocks = ({children}: MocksProps) => (
-  <MockedProvider mocks={[...WORKSPACE_MOCKS, ...SEARCH_VALUE_MOCKS]}>
+  <MockedProvider
+    mocks={[
+      ...WORKSPACE_MOCKS,
+      ...SEARCH_VALUE_MOCKS,
+      buildRunTagValuesQueryMockedResponse('team', ['dev', '', 'data']),
+    ]}
+  >
     <WorkspaceProvider>{children}</WorkspaceProvider>
   </MockedProvider>
 );
 
-/** Renders the provider for `line` with the cursor at its end, after the input gains focus. */
-const renderSuggestions = (line: string) => {
+/** Renders the provider for `line` after the input gains focus. */
+const renderSuggestions = (line: string, cursorIndex = line.length) => {
   const {result} = renderHook(
     () => {
       const {useAutoComplete, fetchValues} = useRunsSearchAutoCompleteProvider();
       return {
         fetchValues,
-        ...useAutoComplete({line, cursorIndex: line.length}),
+        ...useAutoComplete({line, cursorIndex}),
       };
     },
     {wrapper: Mocks},
@@ -143,6 +152,10 @@ describe('useRunsSearchAutoCompleteProvider', () => {
     },
     {line: 'sensor:', rows: ['my_sensor']},
     {line: 'user:', rows: ['"a@b.com"']},
+    {line: 'tag:team=', rows: ['team=data', 'team=dev']},
+    {line: 'tag:team=da', rows: ['team=data']},
+    {line: 'tag:"team"=', rows: ['team=data', 'team=dev']},
+    {line: 'job:hourly and tag:team=da', rows: ['team=data']},
   ])('suggests values for $line as the search writes them', async ({line, rows}) => {
     const result = renderSuggestions(line);
 
@@ -150,6 +163,55 @@ describe('useRunsSearchAutoCompleteProvider', () => {
     const applied = applyRows(line, result);
     expect(applied.map((text) => getRunsSearchText(parseRunsSearch(text).tokens ?? []))).toEqual(
       applied,
+    );
+  });
+
+  it.each([
+    {line: 'tag:team', applied: 'tag:team='},
+    {line: 'tag:my-team', applied: 'tag:"my-team"='},
+  ])('offers the typed key for $line, leaving the cursor on the value', async ({line, applied}) => {
+    const result = renderSuggestions(line);
+
+    await waitFor(() => expect(applyRows(line, result)).toEqual([applied]));
+    expect(result.current.autoCompleteResults.list).toEqual([
+      expect.not.objectContaining({trailingSpace: true}),
+    ]);
+  });
+
+  it.each(['tag:a\\b', 'tag:my*'])(
+    'offers no typed key for %s, which quoting would change',
+    async (line) => {
+      const result = renderSuggestions(line);
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(getRowTexts(result)).toEqual([]);
+    },
+  );
+
+  it.each([
+    {input: 'tag:te|am=data', applied: 'tag:team=data'},
+    {input: 'tag:te|am=', applied: 'tag:team='},
+    {input: 'tag:team|=', applied: 'tag:team='},
+    {input: 'tag:"te|am"=data', applied: 'tag:team=data'},
+    {input: 'tag:"my|*"', applied: 'tag:"my*"='},
+    {input: 'tag:te|am=data and job:nightly', applied: 'tag:team=data and job:nightly'},
+  ])('keeps the rest of the pair when choosing a key in $input', async ({input, applied}) => {
+    const cursorIndex = input.indexOf('|');
+    const line = input.replace('|', '');
+    const result = renderSuggestions(line, cursorIndex);
+
+    await waitFor(() => expect(applyRows(line, result)).toEqual([applied]));
+  });
+
+  it('keeps the shared range for operators after a quoted key', async () => {
+    const line = 'tag:"team"=data';
+    const cursorIndex = line.indexOf('=');
+    const result = renderSuggestions(line, cursorIndex);
+
+    await waitFor(() =>
+      expect(result.current.autoCompleteResults).toEqual(
+        expect.objectContaining({from: cursorIndex, to: cursorIndex}),
+      ),
     );
   });
 });

@@ -1,6 +1,7 @@
-import {IconName} from '@dagster-io/ui-components';
+import {IconName, MiddleTruncate} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
+import {getTagPairAtCursor} from './getTagPairAtCursor';
 import {
   RUNS_SEARCH_ATTRIBUTES,
   RUN_STATUSES,
@@ -17,10 +18,13 @@ import {
 } from '../../selection/SelectionAutoComplete';
 import {
   SelectionAutoCompleteProvider,
+  Suggestion,
+  SuggestionJSXBase,
   createProvider,
 } from '../../selection/SelectionAutoCompleteProvider';
+import {getUnquotedValueProblem} from '../../selection/SelectionInputUtil';
 import {DagsterRepoOption, useRepositoryOptions} from '../../workspace/WorkspaceContext/util';
-import {useLazyRunTagValues} from '../useRunTagQueries';
+import {useLazyRunTagValues, useRunTagValues} from '../useRunTagQueries';
 
 const ATTRIBUTE_ICONS = {
   id: 'id',
@@ -42,7 +46,7 @@ const ATTRIBUTE_LABELS = {
   snapshot_id: 'Snapshot ID',
 } as const satisfies Partial<Record<RunsSearchAttribute, string>>;
 
-type ValuesByAttribute = Record<RunsSearchAttribute, string[]>;
+type ValuesByAttribute = Record<Exclude<RunsSearchAttribute, 'tag'>, string[]>;
 
 // The shared provider inserts an empty value as `<null>`, which the Runs search rejects.
 const withoutEmptyValues = (values: string[]) => values.filter((value) => value !== '');
@@ -64,20 +68,113 @@ const getWorkspaceValues = (options: DagsterRepoOption[]) => {
   };
 };
 
-const createRunsSearchHint = (valuesByAttribute: ValuesByAttribute) =>
-  createSelectionAutoComplete({
-    ...createProvider({
-      attributesMap: Object.fromEntries(
-        RUNS_SEARCH_ATTRIBUTES.map((attribute) => [attribute, valuesByAttribute[attribute]]),
-      ),
-      attributeToIcon: ATTRIBUTE_ICONS,
-      attributeToLabel: ATTRIBUTE_LABELS,
-      functions: [],
-      formatValue: formatRunsSearchValue,
-    }),
+const createTagKeySuggestion = (key: string, textCallback?: (text: string) => string) => {
+  const text = `${formatRunsSearchValue(key)}=`;
+  return {
+    text: textCallback ? textCallback(text) : text,
+    jsx: <SuggestionJSXBase label={<MiddleTruncate text={key} />} />,
+  };
+};
+
+type TagKeyResultsOptions = {
+  query: string;
+  quoted: boolean;
+  textCallback?: (text: string) => string;
+};
+
+/**
+ * The typed key for the first half of a pair, so choosing it leaves the cursor on the value.
+ * Skipped when quoting the unquoted key would change or not fix it.
+ */
+const getTagKeyResults = ({query, quoted, textCallback}: TagKeyResultsOptions): Suggestion[] => {
+  if (!query || (!quoted && getUnquotedValueProblem(query))) {
+    return [];
+  }
+
+  return [createTagKeySuggestion(query, textCallback)];
+};
+
+type RunsSearchHintOptions = {
+  valuesByAttribute: ValuesByAttribute;
+  /** The key of the tag pair whose value the cursor is in, if any. */
+  valueKey: string | null;
+  tagValues: string[];
+  keyQuoted: boolean;
+};
+
+const createRunsSearchHint = ({
+  valuesByAttribute,
+  valueKey,
+  tagValues,
+  keyQuoted,
+}: RunsSearchHintOptions) => {
+  const tagPairs = valueKey ? tagValues.map((value) => ({key: valueKey, value})) : [];
+  const provider = createProvider({
+    attributesMap: Object.fromEntries(
+      RUNS_SEARCH_ATTRIBUTES.map((attribute) => [
+        attribute,
+        attribute === 'tag' ? tagPairs : valuesByAttribute[attribute],
+      ]),
+    ),
+    attributeToIcon: ATTRIBUTE_ICONS,
+    attributeToLabel: ATTRIBUTE_LABELS,
+    functions: [],
+    formatValue: formatRunsSearchValue,
+  });
+
+  return createSelectionAutoComplete({
+    ...provider,
+    getAttributeValueResultsMatchingQuery: (props) =>
+      props.attribute === 'tag' && props.key === undefined
+        ? getTagKeyResults({
+            query: props.query,
+            quoted: keyQuoted,
+            textCallback: props.textCallback,
+          })
+        : provider.getAttributeValueResultsMatchingQuery(props),
     supportsTraversal: false,
     supportsNot: false,
   });
+};
+
+type RunsSearchResultsOptions = {
+  line: string;
+  cursorIndex: number;
+  valuesByAttribute: ValuesByAttribute;
+  loading: boolean;
+};
+
+const useRunsSearchResults = ({
+  line,
+  cursorIndex,
+  valuesByAttribute,
+  loading,
+}: RunsSearchResultsOptions) => {
+  const {valueKey, keyRangeEnd, keyQuoted} = useMemo(
+    () => getTagPairAtCursor(line, cursorIndex),
+    [line, cursorIndex],
+  );
+  const tagValues = useRunTagValues(valueKey);
+
+  const hint = useMemo(
+    () =>
+      createRunsSearchHint({valuesByAttribute, valueKey, tagValues: tagValues.values, keyQuoted}),
+    [valuesByAttribute, valueKey, tagValues.values, keyQuoted],
+  );
+
+  const results = useSelectionAutoCompleteResults(hint, line, cursorIndex);
+
+  // The shared visitor replaces the whole pair, but a key row writes only `key=`, so keep the value.
+  const autoCompleteResults = useMemo(
+    () => (keyRangeEnd !== null ? {...results, to: keyRangeEnd} : results),
+    [results, keyRangeEnd],
+  );
+
+  return {
+    autoCompleteResults,
+    loading: loading || tagValues.loading,
+  };
+};
 
 export const useRunsSearchAutoCompleteProvider = () => {
   const {options, loading: workspaceLoading} = useRepositoryOptions();
@@ -89,21 +186,20 @@ export const useRunsSearchAutoCompleteProvider = () => {
   const partitions = useLazyRunTagValues(TAG_KEY_BY_ATTRIBUTE.partition);
   const tagValueQueries = [sensors, schedules, users, backfills, partitions];
 
-  const hint = useMemo(() => {
+  const valuesByAttribute = useMemo(() => {
     const {jobs, codeLocations} = getWorkspaceValues(options);
-    return createRunsSearchHint({
+    return {
+      id: [],
       status: RUN_STATUSES,
+      job: jobs,
+      code_location: codeLocations,
       sensor: withoutEmptyValues(sensors.values),
       schedule: withoutEmptyValues(schedules.values),
       user: withoutEmptyValues(users.values),
-      job: jobs,
-      code_location: codeLocations,
-      id: [],
       backfill: withoutEmptyValues(backfills.values),
       partition: withoutEmptyValues(partitions.values),
-      tag: [],
       snapshot_id: [],
-    });
+    } satisfies ValuesByAttribute;
   }, [
     options,
     sensors.values,
@@ -122,13 +218,8 @@ export const useRunsSearchAutoCompleteProvider = () => {
       .forEach((query) => query.fetch());
   };
 
-  const useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'] = ({
-    line,
-    cursorIndex,
-  }) => ({
-    autoCompleteResults: useSelectionAutoCompleteResults(hint, line, cursorIndex),
-    loading,
-  });
+  const useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'] = ({line, cursorIndex}) =>
+    useRunsSearchResults({line, cursorIndex, valuesByAttribute, loading});
 
   return {useAutoComplete, fetchValues};
 };

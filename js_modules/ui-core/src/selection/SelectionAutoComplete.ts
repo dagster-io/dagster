@@ -2,7 +2,7 @@ import {useMemo} from 'react';
 
 import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor';
-import {parseInput} from './SelectionInputParser';
+import {getParseTreeAtCursor, parseInput} from './SelectionInputParser';
 
 export function createSelectionAutoComplete({
   getAttributeResultsMatchingQuery,
@@ -16,10 +16,7 @@ export function createSelectionAutoComplete({
 }: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
-    const treeAtCursor = parseTrees.find(
-      ({startOffset, line: treeLine}) =>
-        actualCursorIndex >= startOffset && actualCursorIndex - startOffset <= treeLine.length,
-    );
+    const treeAtCursor = getParseTreeAtCursor(line, actualCursorIndex);
     const isInLeadingWhitespace = actualCursorIndex < (parseTrees[0]?.startOffset ?? 0);
     const start = treeAtCursor?.startOffset ?? 0;
 

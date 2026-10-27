@@ -17,6 +17,7 @@ import {OpSelectionParser} from '../../op-selection/generated/OpSelectionParser'
 import {opGraphSelectionSyntaxSupportedAttributes} from '../../pipelines/useOpGraphSelectionAutoCompleteProvider';
 import {RunSelectionLexer} from '../../run-selection/generated/RunSelectionLexer';
 import {RunSelectionParser} from '../../run-selection/generated/RunSelectionParser';
+import {buildRunTagValuesQueryMockedResponse} from '../../runs/__fixtures__/RunTagQueries.fixtures';
 import {parseRunsSearch} from '../../runs/redesign/parseRunsSearch';
 import {useRunsSearchAutoCompleteProvider} from '../../runs/redesign/useRunsSearchAutoCompleteProvider';
 import {SyntaxError} from '../CustomErrorListener';
@@ -57,7 +58,16 @@ type RunsSearchMocksProps = {
 };
 
 const RunsSearchMocks = ({children}: RunsSearchMocksProps) =>
-  createElement(MockedProvider, {mocks: []}, children);
+  createElement(
+    MockedProvider,
+    {
+      mocks: [
+        buildRunTagValuesQueryMockedResponse('a-b', []),
+        buildRunTagValuesQueryMockedResponse('a*', []),
+      ],
+    },
+    children,
+  );
 
 const getRunsSearchResults = (line: string, cursorIndex: number) =>
   renderHook(() => useRunsSearchAutoCompleteProvider().useAutoComplete({line, cursorIndex}), {
@@ -140,7 +150,7 @@ const CONSUMERS: Consumer[] = [
     name: 'Runs search',
     getResults: getRunsSearchResults,
     lint: (text) => parseRunsSearch(text).errors,
-    quoted: ['job:zzz@q', 'id:12ab-34cd', 'code_location:a.b', 'tag:a-b=c-d', 'tag:a-b|="star*"'],
+    quoted: ['job:zzz@q', 'id:12ab-34cd', 'code_location:a.b', 'tag:a-b=c-d'],
     heldBack: ['job:a-b=c-d', 'job:a-b*', 'tag:a-b=c*', 'tag:a*=c-d'],
   },
 ];

@@ -1,7 +1,7 @@
 import {useCallback, useMemo} from 'react';
 
 import {RUN_TAG_KEYS_QUERY, RUN_TAG_VALUES_QUERY} from './RunTagQueries';
-import {useLazyQuery} from '../apollo-client';
+import {useLazyQuery, useQuery} from '../apollo-client';
 import {
   RunTagKeysQuery,
   RunTagKeysQueryVariables,
@@ -49,4 +49,18 @@ export const useLazyRunTagValues = (tagKey: string) => {
     loaded: data?.runTagsOrError?.__typename === 'RunTags',
     loading,
   };
+};
+
+/** Loads and sorts the values for a run tag key, or none when `tagKey` is null. */
+export const useRunTagValues = (tagKey: string | null) => {
+  const {data, loading} = useQuery<RunTagValuesQuery, RunTagValuesQueryVariables>(
+    RUN_TAG_VALUES_QUERY,
+    {
+      variables: {tagKeys: tagKey ? [tagKey] : []},
+      skip: !tagKey,
+    },
+  );
+  const values = useMemo(() => (tagKey ? getSortedRunTagValues(data) : []), [data, tagKey]);
+
+  return {values, loading};
 };

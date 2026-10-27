@@ -124,3 +124,10 @@ export const parseInput = memoize((input: string): ParseResult => {
 
   return {parseTrees, errors};
 });
+
+/** The parse tree containing the cursor, if any. */
+export const getParseTreeAtCursor = (line: string, cursorIndex: number) =>
+  parseInput(line).parseTrees.find(
+    ({startOffset, line: treeLine}) =>
+      cursorIndex >= startOffset && cursorIndex - startOffset <= treeLine.length,
+  );
