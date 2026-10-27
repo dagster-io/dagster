@@ -15,6 +15,7 @@ dependencies = [
     "Jinja2",
     "networkx",
     "orjson",
+    "python-dateutil",
     "requests",
     "rich",
     # FW-731 pinned <28.1.0 after that release's optimizer change crashed
