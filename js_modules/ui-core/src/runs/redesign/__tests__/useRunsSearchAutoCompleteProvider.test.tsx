@@ -1,5 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, renderHook, waitFor} from '@testing-library/react';
+import {act, render, renderHook, screen, waitFor} from '@testing-library/react';
 import {ReactNode} from 'react';
 
 import {
@@ -60,6 +60,8 @@ const WORKSPACE_MOCKS = buildWorkspaceMocks([
     }),
   }),
 ]);
+
+const RUN_ID = '8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f';
 
 const FOCUS_MOCKS = buildRunTagFocusMocks({
   tagKeys: ['team', 'dagster/schedule_name', 'dagster/auto_materialize'],
@@ -168,6 +170,7 @@ describe('useRunsSearchAutoCompleteProvider', () => {
     {line: 'tag:team=da', rows: ['team=data']},
     {line: 'tag:"team"=', rows: ['team=data', 'team=dev']},
     {line: 'job:hourly and tag:team=da', rows: ['team=data']},
+    {line: `id:${RUN_ID}`, rows: [`"${RUN_ID}"`]},
   ])('suggests values for $line as the search writes them', async ({line, rows}) => {
     const result = renderSuggestions(line);
 
@@ -243,4 +246,39 @@ describe('useRunsSearchAutoCompleteProvider', () => {
 
     await waitFor(() => expect(getRowTexts(result)).toHaveLength(tagKeys.length));
   });
+
+  it.each([
+    {line: 'id:', hint: 'Type or paste a full run ID'},
+    {line: 'snapshot_id:', hint: 'Type or paste a snapshot ID'},
+    {line: 'backfill:', hint: 'Type or paste a backfill ID'},
+    {line: 'id:abc', hint: 'Use the full 36-character run ID'},
+    {line: 'id:8d3e6c1a-4f2b', hint: 'Use the full 36-character run ID'},
+  ])('shows only a hint for $line', async ({line, hint}) => {
+    const result = renderSuggestions(line);
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    const {list} = result.current.autoCompleteResults;
+    expect(list).toEqual([expect.objectContaining({text: '', type: 'no-match'})]);
+    render(list[0]?.jsx);
+    expect(await screen.findByText(hint)).toBeVisible();
+  });
+
+  it('suggests loaded backfill IDs instead of the hint', async () => {
+    const focusMocks = buildRunTagFocusMocks({
+      values: {[DagsterTag.Backfill]: ['abcdefgh', 'ijklmnop']},
+    });
+    const result = renderSuggestions('backfill:', {focusMocks});
+
+    await waitFor(() => expect(getRowTexts(result)).toEqual(['abcdefgh', 'ijklmnop']));
+  });
+
+  it.each(['snapshot_id:abc', 'backfill:abc'])(
+    'suggests nothing for an unmatched %s',
+    async (line) => {
+      const result = renderSuggestions(line);
+
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      expect(result.current.autoCompleteResults.list).toEqual([]);
+    },
+  );
 });

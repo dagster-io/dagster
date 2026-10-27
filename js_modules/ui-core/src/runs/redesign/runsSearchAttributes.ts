@@ -48,6 +48,16 @@ const SINGLE_REPOSITORY_PREFIX = `${DUNDER_REPO_NAME}@`;
 const UNQUOTED_VALUE_PATTERN = /^[a-zA-Z0-9_][a-zA-Z0-9_/]*$/;
 const KEYWORDS = ['and', 'or', 'not'];
 
+const FULL_RUN_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export const FULL_RUN_ID_MESSAGE = 'Use the full 36-character run ID';
+
+/** Run IDs are stored lowercase, so pasted IDs are trimmed and lowercased before matching. */
+export const normalizeRunId = (value: string) => value.trim().toLowerCase();
+
+/** Whether a value is a complete run ID (a UUID). */
+export const isFullRunId = (value: string) => FULL_RUN_ID_PATTERN.test(normalizeRunId(value));
+
 export const isTagBackedAttribute = (
   attribute: RunsSearchAttribute,
 ): attribute is TagBackedAttribute => attribute in TAG_KEY_BY_ATTRIBUTE;

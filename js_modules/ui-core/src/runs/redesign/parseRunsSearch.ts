@@ -2,6 +2,7 @@ import {AbstractParseTreeVisitor, CommonTokenStream, ParseTree, ParserRuleContex
 import uniqBy from 'lodash/uniqBy';
 
 import {
+  FULL_RUN_ID_MESSAGE,
   RUNS_SEARCH_ATTRIBUTES,
   RUN_STATUSES,
   RunsSearchAttribute,
@@ -9,7 +10,9 @@ import {
   codeLocationToTagValue,
   formatRunsSearchValue,
   getAttributeTermForTag,
+  isFullRunId,
   isTagBackedAttribute,
+  normalizeRunId,
 } from './runsSearchAttributes';
 import {AntlrInputErrorListener} from '../../selection/AntlrInputErrorListener';
 import {SyntaxError} from '../../selection/CustomErrorListener';
@@ -245,6 +248,10 @@ const getScalarValueError = (attribute: RunsSearchAttribute, value: string) => {
     return `Add a value after ${attribute}:`;
   }
 
+  if (attribute === 'id' && !isFullRunId(value)) {
+    return FULL_RUN_ID_MESSAGE;
+  }
+
   if (attribute === 'status' && !RUN_STATUSES.includes(value.toUpperCase())) {
     return `Unknown status: ${value}`;
   }
@@ -282,8 +289,9 @@ const createTagTerm = (
 const createScalarTerm = (
   ctx: AttributeExpressionContext,
   attribute: Exclude<RunsSearchAttribute, 'tag'>,
-  value: string,
+  rawValue: string,
 ): RunsSearchNode => {
+  const value = attribute === 'id' ? normalizeRunId(rawValue) : rawValue;
   const error = getScalarValueError(attribute, value);
   if (error) {
     return createErrorNode(error, ctx);

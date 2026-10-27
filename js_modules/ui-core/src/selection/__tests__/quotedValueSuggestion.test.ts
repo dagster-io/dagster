@@ -150,8 +150,13 @@ const CONSUMERS: Consumer[] = [
     name: 'Runs search',
     getResults: getRunsSearchResults,
     lint: (text) => parseRunsSearch(text).errors,
-    quoted: ['job:zzz@q', 'id:12ab-34cd', 'code_location:a.b', 'tag:a-b=c-d'],
-    heldBack: ['job:a-b=c-d', 'job:a-b*', 'tag:a-b=c*', 'tag:a*=c-d'],
+    quoted: [
+      'job:zzz@q',
+      'id:8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f',
+      'code_location:a.b',
+      'tag:a-b=c-d',
+    ],
+    heldBack: ['job:a-b=c-d', 'job:a-b*', 'tag:a-b=c*', 'tag:a*=c-d', 'id:12ab-34cd'],
   },
 ];
 

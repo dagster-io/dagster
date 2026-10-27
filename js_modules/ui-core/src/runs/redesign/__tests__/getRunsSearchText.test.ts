@@ -6,6 +6,9 @@ import {RunFilterToken, runsFilterForSearchTokens} from '../../RunsFilterUtils';
 import {getRunsSearchText} from '../getRunsSearchText';
 import {parseRunsSearch} from '../parseRunsSearch';
 
+const RUN_A = '8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f';
+const RUN_B = '2b7f9e4d-1c3a-4e5b-8f6d-9a0b1c2d3e4f';
+
 // The token types `useQueryPersistedRunFilters` decodes from `q[]`.
 const URL_TOKEN_PROVIDERS = [
   'id',
@@ -39,8 +42,8 @@ const parseTokens = (text: string) => {
 };
 
 const LEGACY_QUERIES = [
-  ['id:8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f'],
-  ['id:a', 'id:b', 'id:a'],
+  [`id:${RUN_A}`],
+  [`id:${RUN_A}`, `id:${RUN_B}`, `id:${RUN_A}`],
   ['status:FAILURE', 'status:CANCELED'],
   ['job:my_job'],
   ['pipeline:old_job'],
@@ -60,7 +63,7 @@ const LEGACY_QUERIES = [
   ['tag:.custom/key=x'],
   ['job:and'],
   ['some free text', 'foo:bar'],
-  ['status:QUEUED', 'job:etl', 'tag:dagster/sensor_name=s', 'id:abc-123'],
+  ['status:QUEUED', 'job:etl', 'tag:dagster/sensor_name=s', `id:${RUN_A}`],
 ];
 
 describe('getRunsSearchText', () => {
@@ -115,7 +118,8 @@ describe('getRunsSearchText', () => {
   );
 
   it.each([
-    {text: 'tag:team=data and job:my_job and id:"abc-123" and sensor:s'},
+    {text: `tag:team=data and job:my_job and id:"${RUN_A}" and sensor:s`},
+    {text: `id:" ${RUN_A.toUpperCase()} "`},
     {text: 'tag:dagster/sensor_name=s and snapshot_id:"1700000000.5"'},
     {text: 'partition:"region=west" and tag:team="a=b"'},
     {text: 'user:"a@b.com" and code_location:"repo@loc" and partition:"2024-01-01"'},
@@ -130,8 +134,8 @@ describe('getRunsSearchText', () => {
 
   // Tags the renderer keeps generic must not parse into a dedicated attribute's slot.
   it.each([
-    {query: ['id:x', 'tag:.dagster/repository=loc']},
-    {query: ['id:x', 'tag:dagster/sensor_name=']},
+    {query: [`id:${RUN_A}`, 'tag:.dagster/repository=loc']},
+    {query: [`id:${RUN_A}`, 'tag:dagster/sensor_name=']},
   ])('parses the rendered form of $query in rendering order', ({query}) => {
     expect(tokensAsStringArray(parseTokens(getRunsSearchText(decodeQuery(query))))).toEqual(query);
   });
@@ -201,7 +205,8 @@ describe('render and parse across generated legacy tokens', () => {
   ];
 
   const getValidTokens = (): RunFilterToken[] => [
-    ...['id', 'pipeline', 'job', 'snapshotId'].flatMap((token) =>
+    {token: 'id', value: RUN_A},
+    ...['pipeline', 'job', 'snapshotId'].flatMap((token) =>
       VALUES.map((value) => ({token, value}) as RunFilterToken),
     ),
     ...Object.values(RunStatus).map((value) => ({token: 'status', value}) as RunFilterToken),
@@ -210,9 +215,10 @@ describe('render and parse across generated legacy tokens', () => {
     ),
   ];
 
-  // Values the server can't filter on, plus characters that need grammar escapes.
+  // Values the search rejects (including short IDs, which OSS would filter on), plus characters that need grammar escapes.
   const getUnusableTokens = (): RunFilterToken[] => [
     ...['id', 'job', 'snapshotId', 'status'].map((token) => ({token, value: ''}) as RunFilterToken),
+    {token: 'id', value: 'abc'},
     {token: 'status', value: 'bogus'},
     {token: 'tag', value: '=a'},
     {token: 'tag', value: 'note=a"b'},

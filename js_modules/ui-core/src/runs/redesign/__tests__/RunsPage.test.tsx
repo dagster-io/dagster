@@ -25,6 +25,7 @@ jest.mock('../../../selection/SelectionInput', () => ({
 const FIRST_PAGE_RUN_ID = 'aaaaaaaa-1111-2222-3333-444455556666';
 const SECOND_PAGE_RUN_ID = 'bbbbbbbb-1111-2222-3333-444455556666';
 const BACKFILL_ID = 'bkfl1234';
+const INVALID_SEARCH = `id:"${FIRST_PAGE_RUN_ID}" or job:b`;
 
 type PageOptions = {
   cursor: string;
@@ -288,10 +289,10 @@ describe('RunsPage', () => {
     const {history, operations} = renderPage('/runs', [mockFeed({data: FIRST_PAGE})]);
 
     await findRunLink(FIRST_PAGE_RUN_ID);
-    const input = await applySearch('id:a or job:b');
+    const input = await applySearch(INVALID_SEARCH);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
-    expect(input).toHaveValue('id:a or job:b');
+    expect(input).toHaveValue(INVALID_SEARCH);
     expect(history.length).toBe(1);
     expect(operations.filter((operation) => operation === 'RunsFeedQuery')).toEqual([
       'RunsFeedQuery',
@@ -375,7 +376,7 @@ describe('RunsPage', () => {
     ]);
 
     await screen.findByText('No matching runs');
-    const input = await applySearch('id:a or job:b');
+    const input = await applySearch(INVALID_SEARCH);
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
 
     await user.click(await screen.findByRole('button', {name: 'Created date: After Nov 14, 2023'}));
@@ -383,7 +384,7 @@ describe('RunsPage', () => {
 
     expect(await findRunLink(FIRST_PAGE_RUN_ID)).toBeVisible();
     expect(history.location.search).toBe('');
-    expect(input).toHaveValue('id:a or job:b');
+    expect(input).toHaveValue(INVALID_SEARCH);
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
   });
 

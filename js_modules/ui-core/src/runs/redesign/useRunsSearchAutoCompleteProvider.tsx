@@ -1,14 +1,16 @@
-import {IconName, MiddleTruncate} from '@dagster-io/ui-components';
+import {IconName, MiddleTruncate, Text} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {getTagPairAtCursor} from './getTagPairAtCursor';
 import {
+  FULL_RUN_ID_MESSAGE,
   RUNS_SEARCH_ATTRIBUTES,
   RUN_STATUSES,
   RunsSearchAttribute,
   TAG_KEY_BY_ATTRIBUTE,
   formatRunsSearchValue,
   getAttributeForTagKey,
+  isFullRunId,
   tagValueToCodeLocation,
 } from './runsSearchAttributes';
 import {COMMON_COLLATOR} from '../../app/Util';
@@ -45,6 +47,12 @@ const ATTRIBUTE_LABELS = {
   id: 'Run ID',
   backfill: 'Backfill ID',
   snapshot_id: 'Snapshot ID',
+} as const satisfies Partial<Record<RunsSearchAttribute, string>>;
+
+const FREE_TEXT_HINTS = {
+  id: 'Type or paste a full run ID',
+  snapshot_id: 'Type or paste a snapshot ID',
+  backfill: 'Type or paste a backfill ID',
 } as const satisfies Partial<Record<RunsSearchAttribute, string>>;
 
 type ValuesByAttribute = Record<Exclude<RunsSearchAttribute, 'tag'>, string[]>;
@@ -106,6 +114,36 @@ const getTagKeyResults = ({
   return matches.map((key) => createTagKeySuggestion(key, textCallback));
 };
 
+const isFreeTextAttribute = (attribute: string): attribute is keyof typeof FREE_TEXT_HINTS =>
+  attribute in FREE_TEXT_HINTS;
+
+const createHintRow = (hint: string): Suggestion => ({
+  text: '',
+  jsx: (
+    <Text size={12} color="textLight">
+      {hint}
+    </Text>
+  ),
+  type: 'no-match',
+});
+
+type FreeTextResultsOptions = {
+  results: Suggestion[];
+  query: string;
+  hint: string;
+};
+
+/** Drops the no-match row, or shows the hint when nothing is typed or suggested. */
+const getFreeTextResults = ({results, query, hint}: FreeTextResultsOptions): Suggestion[] => {
+  const matches = results.filter((row) => !('type' in row && row.type === 'no-match'));
+
+  if (!query && !matches.length) {
+    return [createHintRow(hint)];
+  }
+
+  return matches;
+};
+
 type RunsSearchHintOptions = {
   valuesByAttribute: ValuesByAttribute;
   /** The key of the tag pair whose value the cursor is in, if any. */
@@ -138,15 +176,32 @@ const createRunsSearchHint = ({
 
   return createSelectionAutoComplete({
     ...provider,
-    getAttributeValueResultsMatchingQuery: (props) =>
-      props.attribute === 'tag' && props.key === undefined
-        ? getTagKeyResults({
-            tagKeys,
-            query: props.query,
-            quoted: keyQuoted,
-            textCallback: props.textCallback,
-          })
-        : provider.getAttributeValueResultsMatchingQuery(props),
+    getAttributeValueResultsMatchingQuery: (props) => {
+      if (props.attribute === 'tag' && props.key === undefined) {
+        return getTagKeyResults({
+          tagKeys,
+          query: props.query,
+          quoted: keyQuoted,
+          textCallback: props.textCallback,
+        });
+      }
+
+      // Say what's wrong with a partial ID while typing, as the lint will.
+      if (props.attribute === 'id' && props.query && !isFullRunId(props.query)) {
+        return [createHintRow(FULL_RUN_ID_MESSAGE)];
+      }
+
+      const results = provider.getAttributeValueResultsMatchingQuery(props);
+      if (isFreeTextAttribute(props.attribute)) {
+        return getFreeTextResults({
+          results,
+          query: props.query,
+          hint: FREE_TEXT_HINTS[props.attribute],
+        });
+      }
+
+      return results;
+    },
     supportsTraversal: false,
     supportsNot: false,
   });

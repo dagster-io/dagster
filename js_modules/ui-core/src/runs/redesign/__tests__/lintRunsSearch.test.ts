@@ -1,5 +1,7 @@
 import {lintRunsSearch} from '../lintRunsSearch';
 
+const RUN_ID = '8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f';
+
 describe('lintRunsSearch', () => {
   it('accepts a valid search', () => {
     expect(lintRunsSearch('job:my_job and (status:failure or status:canceled)')).toEqual([]);
@@ -32,14 +34,16 @@ describe('lintRunsSearch', () => {
   });
 
   it('suggests quotes for an unquoted value with special characters', () => {
-    expect(lintRunsSearch('id:abc-123')).toEqual([
-      {message: 'Add quotes: `id:"abc-123"`', from: 0, to: 10},
+    const text = `id:${RUN_ID}`;
+    expect(lintRunsSearch(text)).toEqual([
+      {message: `Add quotes: \`id:"${RUN_ID}"\``, from: 0, to: text.length},
     ]);
   });
 
   it('reports runs search rules once the syntax is valid', () => {
-    expect(lintRunsSearch('id:a or job:b')).toEqual([
-      {message: 'or only combines IDs or statuses', from: 0, to: 13},
+    const text = `id:"${RUN_ID}" or job:b`;
+    expect(lintRunsSearch(text)).toEqual([
+      {message: 'or only combines IDs or statuses', from: 0, to: text.length},
     ]);
   });
 

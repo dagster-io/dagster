@@ -19,6 +19,9 @@ const LEGACY_TOKENS: RunFilterToken[] = [
   {token: 'tag', value: 'user=a@b.com'},
 ];
 
+const RUN_ID = '8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f';
+const INVALID_SEARCH = `id:"${RUN_ID}" or job:b`;
+
 // Each query can answer twice, so a repeated request shows up in the call count.
 const buildCountedFocusMocks = () =>
   buildRunTagFocusMocks().map((mock) => ({
@@ -85,10 +88,10 @@ describe('RunsSearchInput', () => {
     const onChange = jest.fn();
     renderSearch({tokens: LEGACY_TOKENS, onChange});
 
-    const input = await replaceSearch('id:a or job:b');
+    const input = await replaceSearch(INVALID_SEARCH);
 
     expect(onChange).not.toHaveBeenCalled();
-    expect(input).toHaveValue('id:a or job:b');
+    expect(input).toHaveValue(INVALID_SEARCH);
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
   });
 
@@ -119,13 +122,13 @@ describe('RunsSearchInput', () => {
 
   it('discards an invalid search when the tokens change, even after returning to them', async () => {
     const {rerender} = renderSearch({tokens: LEGACY_TOKENS});
-    await replaceSearch('id:a or job:b');
+    await replaceSearch(INVALID_SEARCH);
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
 
-    rerender(<RunsSearchInput tokens={[{token: 'id', value: 'abc'}]} onChange={jest.fn()} />);
+    rerender(<RunsSearchInput tokens={[{token: 'id', value: RUN_ID}]} onChange={jest.fn()} />);
 
     expect(await screen.findByRole('textbox', {name: 'Search and filter runs'})).toHaveValue(
-      'id:abc',
+      `id:"${RUN_ID}"`,
     );
     expect(await screen.findByRole('alert')).toBeEmptyDOMElement();
 
