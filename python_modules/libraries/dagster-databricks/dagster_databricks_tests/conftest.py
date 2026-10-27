@@ -1,5 +1,13 @@
 import pytest
+from databricks.sdk.config import Config
 from databricks.sdk.service.jobs import JobsHealthMetric, JobsHealthOperator
+
+
+@pytest.fixture(autouse=True)
+def disable_databricks_host_metadata_probe(monkeypatch):
+    # The SDK fetches host metadata when building a client and retries for up to 5 minutes
+    # on fake hosts, outlasting the test timeout. Absent in older SDK versions.
+    monkeypatch.setattr(Config, "_resolve_host_metadata", lambda self: None, raising=False)
 
 
 @pytest.fixture
