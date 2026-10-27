@@ -1,16 +1,23 @@
 import {useEffect, useState} from 'react';
 
-type Props = {
+type MockSelectionInputProps = {
   placeholder: string;
   value: string;
   linter: (text: string) => {message: string}[];
   onChange: (value: string) => void;
+  onFocus?: () => void;
 };
 
 // CodeMirror doesn't run in jsdom. This keeps the input's contract: the draft is local,
 // Enter commits it, a new `value` replaces the draft, a draft that differs from `value` is
 // marked uncommitted, and errors reflect `linter(value)`.
-export const MockSelectionInput = ({placeholder, value, linter, onChange}: Props) => {
+export const MockSelectionInput = ({
+  placeholder,
+  value,
+  linter,
+  onChange,
+  onFocus,
+}: MockSelectionInputProps) => {
   const [draft, setDraft] = useState(value);
   const [firstError] = linter(value);
 
@@ -25,6 +32,7 @@ export const MockSelectionInput = ({placeholder, value, linter, onChange}: Props
         data-uncommitted={draft !== value}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
+        onFocus={onFocus}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             onChange(draft);

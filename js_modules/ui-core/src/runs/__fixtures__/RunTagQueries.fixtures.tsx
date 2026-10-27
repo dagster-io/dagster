@@ -5,7 +5,7 @@ import {DagsterTag} from '../RunTag';
 import {RUN_TAG_KEYS_QUERY, RUN_TAG_VALUES_QUERY} from '../RunTagQueries';
 import {RunTagKeysQuery, RunTagValuesQuery} from '../types/RunTagQueries.types';
 
-// The tags whose values the Runs filter loads when it gains focus.
+// The tags whose values the Runs filter and search load when they gain focus.
 const FOCUS_TAG_KEYS = [
   DagsterTag.SensorName,
   DagsterTag.ScheduleName,
@@ -60,7 +60,7 @@ export function buildRunTagKeysQueryMockedResponse(
   };
 }
 
-/** Mocks for the run tag queries fired when the Runs filter gains focus. */
+/** Mocks for the run tag queries fired when the Runs filter or search gains focus. */
 export function buildRunTagFocusMocks({
   tagKeys = [],
   values = {},

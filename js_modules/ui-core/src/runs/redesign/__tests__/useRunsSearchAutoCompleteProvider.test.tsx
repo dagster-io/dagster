@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {renderHook, waitFor} from '@testing-library/react';
+import {act, renderHook, waitFor} from '@testing-library/react';
 import {ReactNode} from 'react';
 
 import {
@@ -11,6 +11,8 @@ import {
 import {WorkspaceProvider} from '../../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DUNDER_REPO_NAME} from '../../../workspace/buildRepoAddress';
+import {DagsterTag} from '../../RunTag';
+import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
 import {getRunsSearchText} from '../getRunsSearchText';
 import {parseRunsSearch} from '../parseRunsSearch';
 import {useRunsSearchAutoCompleteProvider} from '../useRunsSearchAutoCompleteProvider';
@@ -56,22 +58,36 @@ const WORKSPACE_MOCKS = buildWorkspaceMocks([
   }),
 ]);
 
+const SEARCH_VALUE_MOCKS = buildRunTagFocusMocks({
+  values: {
+    [DagsterTag.SensorName]: ['my_sensor'],
+    [DagsterTag.User]: ['a@b.com', ''],
+  },
+});
+
 type MocksProps = {
   children: ReactNode;
 };
 
 const Mocks = ({children}: MocksProps) => (
-  <MockedProvider mocks={WORKSPACE_MOCKS}>
+  <MockedProvider mocks={[...WORKSPACE_MOCKS, ...SEARCH_VALUE_MOCKS]}>
     <WorkspaceProvider>{children}</WorkspaceProvider>
   </MockedProvider>
 );
 
-/** Renders the provider for `line` with the cursor at its end. */
+/** Renders the provider for `line` with the cursor at its end, after the input gains focus. */
 const renderSuggestions = (line: string) => {
   const {result} = renderHook(
-    () => useRunsSearchAutoCompleteProvider().useAutoComplete({line, cursorIndex: line.length}),
+    () => {
+      const {useAutoComplete, fetchValues} = useRunsSearchAutoCompleteProvider();
+      return {
+        fetchValues,
+        ...useAutoComplete({line, cursorIndex: line.length}),
+      };
+    },
     {wrapper: Mocks},
   );
+  act(() => result.current.fetchValues());
   return result;
 };
 
@@ -108,7 +124,11 @@ describe('useRunsSearchAutoCompleteProvider', () => {
   });
 
   it('reports loading until the workspace loads', async () => {
-    const result = renderSuggestions('job:');
+    // Skips fetchValues so no tag value query is in flight.
+    const {result} = renderHook(
+      () => useRunsSearchAutoCompleteProvider().useAutoComplete({line: 'job:', cursorIndex: 4}),
+      {wrapper: Mocks},
+    );
 
     expect(result.current.loading).toBe(true);
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -121,6 +141,8 @@ describe('useRunsSearchAutoCompleteProvider', () => {
       line: 'code_location:',
       rows: ['"__repository__@my@loc"', '"repo_a@zeta"', '"repo_b@zeta"', 'single'],
     },
+    {line: 'sensor:', rows: ['my_sensor']},
+    {line: 'user:', rows: ['"a@b.com"']},
   ])('suggests values for $line as the search writes them', async ({line, rows}) => {
     const result = renderSuggestions(line);
 

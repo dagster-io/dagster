@@ -1,7 +1,10 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {Box, Text, tokensAsStringArray} from '@dagster-io/ui-components';
 import {useState} from 'react';
 
+import {DagsterTag} from '../../RunTag';
 import {RunFilterToken} from '../../RunsFilterUtils';
+import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
 import {RunsSearchInput} from '../RunsSearchInput';
 
 // eslint-disable-next-line import/no-default-export
@@ -9,6 +12,13 @@ export default {
   title: 'Runs Redesign/RunsSearchInput',
   component: RunsSearchInput,
 };
+
+const MOCKS = buildRunTagFocusMocks({
+  values: {
+    [DagsterTag.SensorName]: ['new_files_sensor'],
+    [DagsterTag.User]: ['marco@dagsterlabs.com'],
+  },
+});
 
 type InputTemplateProps = {
   initialTokens: RunFilterToken[];
@@ -19,12 +29,14 @@ const InputTemplate = ({initialTokens}: InputTemplateProps) => {
   const tokenStrings = tokensAsStringArray(tokens);
 
   return (
-    <Box flex={{direction: 'column', gap: 12}} style={{width: 640}}>
-      <RunsSearchInput tokens={tokens} onChange={setTokens} />
-      <Text as="div" size={12} family="mono" color="textLight">
-        q[]: {tokenStrings.join(', ')}
-      </Text>
-    </Box>
+    <MockedProvider mocks={MOCKS}>
+      <Box flex={{direction: 'column', gap: 12}} style={{width: 640}}>
+        <RunsSearchInput tokens={tokens} onChange={setTokens} />
+        <Text as="div" size={12} family="mono" color="textLight">
+          q[]: {tokenStrings.join(', ')}
+        </Text>
+      </Box>
+    </MockedProvider>
   );
 };
 

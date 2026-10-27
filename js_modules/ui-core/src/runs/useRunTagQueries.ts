@@ -42,5 +42,11 @@ export const useLazyRunTagValues = (tagKey: string) => {
   const fetch = useCallback(() => execute({variables: {tagKeys: [tagKey]}}), [execute, tagKey]);
   const values = useMemo(() => getSortedRunTagValues(data), [data]);
 
-  return {fetch, values, loading};
+  return {
+    fetch,
+    values,
+    /** True once a request has returned the tag values. */
+    loaded: data?.runTagsOrError?.__typename === 'RunTags',
+    loading,
+  };
 };

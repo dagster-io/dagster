@@ -1,4 +1,6 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {render, renderHook} from '@testing-library/react';
+import {ReactNode, createElement} from 'react';
 
 import {AssetSelectionLexer} from '../../asset-selection/generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../../asset-selection/generated/AssetSelectionParser';
@@ -50,9 +52,17 @@ const createHint = (
     supportsTraversal,
   });
 
+type RunsSearchMocksProps = {
+  children: ReactNode;
+};
+
+const RunsSearchMocks = ({children}: RunsSearchMocksProps) =>
+  createElement(MockedProvider, {mocks: []}, children);
+
 const getRunsSearchResults = (line: string, cursorIndex: number) =>
-  renderHook(() => useRunsSearchAutoCompleteProvider().useAutoComplete({line, cursorIndex})).result
-    .current.autoCompleteResults;
+  renderHook(() => useRunsSearchAutoCompleteProvider().useAutoComplete({line, cursorIndex}), {
+    wrapper: RunsSearchMocks,
+  }).result.current.autoCompleteResults;
 
 const CONSUMERS: Consumer[] = [
   {

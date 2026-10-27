@@ -21,7 +21,7 @@ type UnappliedCommit = {
 
 export const RunsSearchInput = ({tokens, onChange}: RunsSearchInputProps) => {
   const [unappliedCommit, setUnappliedCommit] = useState<UnappliedCommit | null>(null);
-  const {useAutoComplete} = useRunsSearchAutoCompleteProvider();
+  const {useAutoComplete, fetchValues} = useRunsSearchAutoCompleteProvider();
 
   const appliedText = getRunsSearchText(tokens);
   const tokenStrings = tokensAsStringArray(tokens);
@@ -62,6 +62,7 @@ export const RunsSearchInput = ({tokens, onChange}: RunsSearchInputProps) => {
       recentSearchesKey="runs-search"
       placeholder="Search and filter runs"
       useAutoComplete={useAutoComplete}
+      onFocus={fetchValues}
       linter={lintRunsSearch}
       value={value}
       onChange={onCommit}

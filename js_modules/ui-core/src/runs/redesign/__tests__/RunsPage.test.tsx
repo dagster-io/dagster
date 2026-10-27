@@ -10,6 +10,7 @@ import {buildPythonError, buildRunsFeedConnection} from '../../../graphql/builde
 import possibleTypes from '../../../graphql/possibleTypes.generated.json';
 import {RunStatus, RunsFeedView, RunsFilter} from '../../../graphql/types';
 import {shortenId} from '../../../util/shortenId';
+import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
 import {RUNS_FEED_QUERY} from '../RunsFeedQuery';
 import {RunsPage} from '../RunsPage';
 import {buildBackfillSummary, buildRunSummary} from '../__fixtures__/RunsFeedEntries.fixtures';
@@ -94,7 +95,7 @@ const renderPage = (
     <AnalyticsContext.Provider value={ANALYTICS}>
       <Router history={history}>
         <MockedProvider
-          link={ApolloLink.from([logLink, new MockLink(mocks)])}
+          link={ApolloLink.from([logLink, new MockLink([...mocks, ...buildRunTagFocusMocks()])])}
           cache={new InMemoryCache({possibleTypes})}
         >
           <RunsPage />
@@ -292,7 +293,9 @@ describe('RunsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
     expect(input).toHaveValue('id:a or job:b');
     expect(history.length).toBe(1);
-    expect(operations).toEqual(['RunsFeedQuery']);
+    expect(operations.filter((operation) => operation === 'RunsFeedQuery')).toEqual([
+      'RunsFeedQuery',
+    ]);
   });
 
   it('shows the search text for a deep link with several legacy tokens', async () => {

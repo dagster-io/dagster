@@ -1,7 +1,13 @@
-import {render, screen} from '@testing-library/react';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {ReactNode} from 'react';
 
+import {DefaultOptions} from '../../../apollo-client';
+import {buildPythonError} from '../../../graphql/builders';
+import {RUN_TAG_KEYS_QUERY} from '../../RunTagQueries';
 import {RunFilterToken} from '../../RunsFilterUtils';
+import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
 import {RunsSearchInput} from '../RunsSearchInput';
 
 jest.mock('../../../selection/SelectionInput', () => ({
@@ -14,6 +20,40 @@ const LEGACY_TOKENS: RunFilterToken[] = [
   {token: 'tag', value: 'user=a@b.com'},
 ];
 
+// Each value query can answer twice, so a repeated request shows up in the call count.
+const buildCountedValueMocks = () =>
+  buildRunTagFocusMocks()
+    .filter(({request}) => request.query !== RUN_TAG_KEYS_QUERY)
+    .map((mock) => ({
+      ...mock,
+      result: jest.fn().mockReturnValue(mock.result),
+      maxUsageCount: 2,
+    }));
+
+// Matches the app client's default, under which each lazy fetch sends a request.
+const APP_DEFAULT_OPTIONS = {
+  watchQuery: {fetchPolicy: 'cache-and-network'},
+} as const satisfies DefaultOptions;
+
+type RenderSearchProps = {
+  tokens?: RunFilterToken[];
+  onChange?: jest.Mock;
+  mocks?: MockedResponse[];
+};
+
+const renderSearch = ({
+  tokens = [],
+  onChange = jest.fn(),
+  mocks = buildRunTagFocusMocks(),
+}: RenderSearchProps = {}) =>
+  render(<RunsSearchInput tokens={tokens} onChange={onChange} />, {
+    wrapper: ({children}: {children: ReactNode}) => (
+      <MockedProvider mocks={mocks} defaultOptions={APP_DEFAULT_OPTIONS}>
+        {children}
+      </MockedProvider>
+    ),
+  });
+
 const replaceSearch = async (text: string) => {
   const user = userEvent.setup();
   const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
@@ -24,7 +64,7 @@ const replaceSearch = async (text: string) => {
 
 describe('RunsSearchInput', () => {
   it('shows legacy tokens as search text', async () => {
-    render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={jest.fn()} />);
+    renderSearch({tokens: LEGACY_TOKENS});
 
     expect(await screen.findByRole('textbox', {name: 'Search and filter runs'})).toHaveValue(
       'user:"a@b.com" and job:nightly_etl',
@@ -33,7 +73,7 @@ describe('RunsSearchInput', () => {
 
   it('applies a valid search as legacy tokens', async () => {
     const onChange = jest.fn();
-    render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={onChange} />);
+    renderSearch({tokens: LEGACY_TOKENS, onChange});
 
     await replaceSearch('status:failure and code_location:"repo@loc"');
 
@@ -46,7 +86,7 @@ describe('RunsSearchInput', () => {
 
   it('keeps the applied filter and shows the error for an invalid search', async () => {
     const onChange = jest.fn();
-    render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={onChange} />);
+    renderSearch({tokens: LEGACY_TOKENS, onChange});
 
     const input = await replaceSearch('id:a or job:b');
 
@@ -57,7 +97,7 @@ describe('RunsSearchInput', () => {
 
   it('does not apply a search that matches the current filter', async () => {
     const onChange = jest.fn();
-    render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={onChange} />);
+    renderSearch({tokens: LEGACY_TOKENS, onChange});
 
     const input = await replaceSearch('user:"a@b.com" and job:nightly_etl');
 
@@ -72,7 +112,7 @@ describe('RunsSearchInput', () => {
       {token: 'status', value: 'FAILURE'},
       {token: 'status', value: 'SUCCESS'},
     ];
-    render(<RunsSearchInput tokens={tokens} onChange={onChange} />);
+    renderSearch({tokens, onChange});
 
     const input = await replaceSearch('status:success or status:failure');
 
@@ -81,7 +121,7 @@ describe('RunsSearchInput', () => {
   });
 
   it('discards an invalid search when the tokens change, even after returning to them', async () => {
-    const {rerender} = render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={jest.fn()} />);
+    const {rerender} = renderSearch({tokens: LEGACY_TOKENS});
     await replaceSearch('id:a or job:b');
     expect(await screen.findByRole('alert')).toHaveTextContent('or only combines IDs or statuses');
 
@@ -98,5 +138,81 @@ describe('RunsSearchInput', () => {
       'user:"a@b.com" and job:nightly_etl',
     );
     expect(await screen.findByRole('alert')).toBeEmptyDOMElement();
+  });
+
+  it('loads the suggested values when the input gains focus', async () => {
+    const mocks = buildCountedValueMocks();
+    renderSearch({mocks});
+    const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
+    mocks.forEach(({result}) => expect(result).not.toHaveBeenCalled());
+
+    await userEvent.setup().click(input);
+
+    await waitFor(() => {
+      mocks.forEach(({result}) => expect(result).toHaveBeenCalledTimes(1));
+    });
+  });
+
+  it('does not reload the suggested values when the input gains focus again', async () => {
+    const mocks = buildCountedValueMocks();
+    renderSearch({mocks});
+    const user = userEvent.setup();
+    const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
+    await user.click(input);
+    await waitFor(() => {
+      mocks.forEach(({result}) => expect(result).toHaveBeenCalledTimes(1));
+    });
+
+    await user.tab();
+    await user.click(input);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+
+    mocks.forEach(({result}) => expect(result).toHaveBeenCalledTimes(1));
+  });
+
+  it('retries a failed value query when the input gains focus again', async () => {
+    const mocks = buildCountedValueMocks();
+    const failed = mocks.at(-1);
+    if (!failed) {
+      throw new Error('Expected a value query mock');
+    }
+    renderSearch({
+      mocks: [{request: failed.request, error: new Error('Request failed')}, ...mocks],
+    });
+    const user = userEvent.setup();
+    const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
+    await user.click(input);
+    await waitFor(() => {
+      mocks.slice(0, -1).forEach(({result}) => expect(result).toHaveBeenCalledTimes(1));
+    });
+    expect(failed.result).not.toHaveBeenCalled();
+
+    await user.tab();
+    await user.click(input);
+
+    await waitFor(() => expect(failed.result).toHaveBeenCalledTimes(1));
+    mocks.forEach(({result}) => expect(result).toHaveBeenCalledTimes(1));
+  });
+
+  it('retries a value query that returned an error when the input gains focus again', async () => {
+    const mocks = buildCountedValueMocks();
+    const failed = mocks.at(-1);
+    if (!failed) {
+      throw new Error('Expected a value query mock');
+    }
+    const errorResult = jest.fn().mockReturnValue({
+      data: {__typename: 'Query', runTagsOrError: buildPythonError()},
+    });
+    renderSearch({mocks: [{request: failed.request, result: errorResult}, ...mocks]});
+    const user = userEvent.setup();
+    const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
+    await user.click(input);
+    await waitFor(() => expect(errorResult).toHaveBeenCalledTimes(1));
+    expect(failed.result).not.toHaveBeenCalled();
+
+    await user.tab();
+    await user.click(input);
+
+    await waitFor(() => expect(failed.result).toHaveBeenCalledTimes(1));
   });
 });
