@@ -1,6 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {act, render, waitFor} from '@testing-library/react';
-import {renderHook} from '@testing-library/react-hooks';
+import {act, render, renderHook, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 
@@ -8,7 +7,6 @@ import {
   buildPipeline,
   buildRepository,
   buildRepositoryLocation,
-  buildRunTagKeys,
   buildWorkspaceLocationEntry,
 } from '../../graphql/builders';
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
@@ -17,7 +15,6 @@ import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceConte
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
 import {DagsterTag} from '../RunTag';
 import {
-  RUN_TAG_KEYS_QUERY,
   RunsFilterInputProps,
   tagSuggestionValueObject,
   tagValueToFilterObject,
@@ -25,8 +22,11 @@ import {
   useTagDataFilterValues,
 } from '../RunsFilterInput';
 import {RunFilterToken} from '../RunsFilterUtils';
-import {buildRunTagValuesQueryMockedResponse} from '../__fixtures__/RunsFilterInput.fixtures';
-import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
+import {
+  buildRunTagFocusMocks,
+  buildRunTagKeysQueryMockedResponse,
+  buildRunTagValuesQueryMockedResponse,
+} from '../__fixtures__/RunTagQueries.fixtures';
 
 const workspaceMocks = buildWorkspaceMocks([
   buildWorkspaceLocationEntry({
@@ -47,19 +47,10 @@ const workspaceMocks = buildWorkspaceMocks([
   }),
 ]);
 
-const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
-  request: {
-    query: RUN_TAG_KEYS_QUERY,
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      runTagKeysOrError: buildRunTagKeys({
-        keys: [DagsterTag.Partition, DagsterTag.PartitionSet],
-      }),
-    },
-  },
-};
+const runTagKeysMock = buildRunTagKeysQueryMockedResponse([
+  DagsterTag.Partition,
+  DagsterTag.PartitionSet,
+]);
 
 const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTag.Backfill, [
   'value1',
@@ -165,7 +156,7 @@ function TestRunsFilterInput({
     );
   }
   return (
-    <MockedProvider mocks={mocks?.length ? [...workspaceMocks, ...mocks] : workspaceMocks}>
+    <MockedProvider mocks={[...workspaceMocks, ...(mocks ?? []), ...buildRunTagFocusMocks()]}>
       <WorkspaceProvider>
         <RunsFilterInput tokens={tokens} onChange={onChange} enabledFilters={enabledFilters} />
       </WorkspaceProvider>
@@ -302,13 +293,6 @@ describe('<RunFilterInput  />', () => {
         mocks={[
           runTagKeysMock,
           buildRunTagValuesQueryMockedResponse(DagsterTag.PartitionSet, ['set1', 'set2']),
-          ...[
-            DagsterTag.User,
-            DagsterTag.SensorName,
-            DagsterTag.ScheduleName,
-            DagsterTag.Partition,
-            DagsterTag.Backfill,
-          ].map((tagKey) => buildRunTagValuesQueryMockedResponse(tagKey, [])),
         ]}
       />,
     );
