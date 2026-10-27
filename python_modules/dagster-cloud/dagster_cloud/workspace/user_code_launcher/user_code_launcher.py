@@ -55,6 +55,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.typed_dict import init_optional_typeddict
 from dagster_cloud_cli.core.errors import raise_http_error
 from dagster_cloud_cli.core.workspace import CodeLocationDeployData
+from dagster_shared.record import copy, record
 from typing_extensions import Self
 
 from dagster_cloud.agent.queries import GET_AGENTS_QUERY
@@ -109,6 +110,69 @@ PENDING_DELETE_SERVER_CHECK_INTERVAL = 30
 
 # How often to sync actual_entries with server liveness
 ACTUAL_ENTRIES_REFRESH_INTERVAL = 30
+
+DEFAULT_START_RETRY_BACKOFF_SECONDS = 300
+
+# Image errors that a retry cannot fix (missing tag, bad name, wrong architecture, bad config).
+# Matched case-insensitively; the ones that need a pull context are ambiguous on their own.
+_PERMANENT_IMAGE_ERROR_MARKERS = (
+    "errimageneverpull",
+    "invalidimagename",
+    "createcontainerconfigerror",
+    "invalid reference format",
+)
+# Wording that places an error in an image pull (the Docker SDK never says "pull" for a missing tag)
+_IMAGE_PULL_CONTEXT_MARKERS = ("pull", "images/create", "failed to resolve reference", "manifest")
+_PERMANENT_IMAGE_PULL_ERROR_MARKERS = (
+    "manifest unknown",
+    "not found",
+    "notfound",
+    "no matching manifest",
+)
+# An expired pull token looks the same as bad credentials, and a retry fixes the former, so a
+# line that mentions auth is never permanent even when the registry also answered 404 / not found.
+_AUTH_ERROR_MARKERS = (
+    "pull access denied",
+    "unauthorized",
+    "authentication required",
+    "requested access to the resource is denied",
+)
+
+
+class InvalidCodeLocationImageError(Exception):
+    """The location's image setting can never work with this launcher; only a redeploy fixes it."""
+
+
+def is_permanent_image_error(error: SerializableErrorInfo) -> bool:
+    """Whether a start failure is an image problem that retrying will not fix.
+
+    Everything else (registry timeouts, rate limits, 5xx, startup timeouts, auth failures)
+    counts as retryable. Lines are classified independently: a Kubernetes start error carries
+    the pod's log tail and warning events, so an unrelated "not found" in user logs must not
+    combine with a "Back-off pulling image" event into a permanent verdict.
+    """
+    if error.cls_name == InvalidCodeLocationImageError.__name__:
+        return True
+    for line in error.message.lower().splitlines():
+        if any(marker in line for marker in _AUTH_ERROR_MARKERS):
+            continue
+        if any(marker in line for marker in _PERMANENT_IMAGE_ERROR_MARKERS):
+            return True
+        if any(marker in line for marker in _IMAGE_PULL_CONTEXT_MARKERS) and any(
+            marker in line for marker in _PERMANENT_IMAGE_PULL_ERROR_MARKERS
+        ):
+            return True
+    return False
+
+
+@record
+class _StartRetryState:
+    """Retry budget for one location, scoped to the version that failed."""
+
+    update_timestamp: float
+    attempts: int
+    last_attempt_at: float
+
 
 CLEANUP_SERVER_GRACE_PERIOD_SECONDS = int(
     os.getenv("DAGSTER_CLOUD_CLEANUP_SERVER_GRACE_PERIOD_SECONDS", "3600")
@@ -261,6 +325,29 @@ SHARED_USER_CODE_LAUNCHER_CONFIG = {
             "will be uploaded."
         ),
     ),
+    "code_location_start_retry": Field(
+        {
+            "max_attempts": Field(
+                IntSource,
+                is_required=False,
+                default_value=0,
+                description=(
+                    "How many times to retry a code location whose code server failed to start"
+                    " (for example an image pull failure or startup timeout) after Dagster Cloud"
+                    " has been told about the failure. The count resets when a new version of the"
+                    " location is deployed. Code errors such as import errors are never retried."
+                    " 0 disables retries."
+                ),
+            ),
+            "backoff_seconds": Field(
+                IntSource,
+                is_required=False,
+                default_value=DEFAULT_START_RETRY_BACKOFF_SECONDS,
+                description=("Delay before the first retry. The delay doubles after each attempt."),
+            ),
+        },
+        is_required=False,
+    ),
     "requires_healthcheck": Field(
         BoolSource,
         is_required=False,
@@ -355,8 +442,6 @@ def _only_defs_state_info_changed(
     ``defs_state_info``. Lets the reconciler take the in-place ReloadCodeWithState
     fast path instead of a full destroy-and-recreate.
     """
-    from dagster_shared.record import copy
-
     if desired == actual:
         return False
     if desired.defs_state_info == actual.defs_state_info:
@@ -376,6 +461,7 @@ class DagsterCloudUserCodeLauncher(
         code_server_metrics: Mapping[str, Any] | None = None,
         agent_metrics: Mapping[str, Any] | None = None,
         direct_snapshot_uploads: bool = False,
+        code_location_start_retry: Mapping[str, Any] | None = None,
         # ignored old setting, allowed to flow through to avoid breakage
         defer_job_snapshots: bool = True,
     ):
@@ -410,6 +496,8 @@ class DagsterCloudUserCodeLauncher(
         self._control_plane_error_locations: set[DeploymentAndLocation] = set()
         self._control_plane_outdated_locations: set[DeploymentAndLocation] = set()
 
+        self._start_retry_state: dict[DeploymentAndLocation, _StartRetryState] = {}
+
         self._logger = logging.getLogger("dagster_cloud.user_code_launcher")
         self._event_logger = logging.getLogger("cloud-events")
         self._started: bool = False
@@ -431,6 +519,14 @@ class DagsterCloudUserCodeLauncher(
             server_process_startup_timeout,
             "server_process_startup_timeout",
             DEFAULT_SERVER_PROCESS_STARTUP_TIMEOUT,
+        )
+
+        start_retry = check.opt_mapping_param(
+            code_location_start_retry, "code_location_start_retry", key_type=str
+        )
+        self._start_retry_max_attempts: int = start_retry.get("max_attempts", 0)
+        self._start_retry_backoff_seconds: int = start_retry.get(
+            "backoff_seconds", DEFAULT_START_RETRY_BACKOFF_SECONDS
         )
 
         self._code_server_metrics_config = code_server_metrics
@@ -1513,7 +1609,7 @@ class DagsterCloudUserCodeLauncher(
 
         if now - self._last_refreshed_actual_entries > ACTUAL_ENTRIES_REFRESH_INTERVAL:
             try:
-                self._refresh_actual_entries(
+                upload_locations |= self._refresh_actual_entries(
                     desired_entries,
                     control_plane_error_locations,
                     control_plane_outdated_locations,
@@ -1674,6 +1770,69 @@ class DagsterCloudUserCodeLauncher(
             return False  # about to be updated in normal reconciliation, no need to retry
         return True
 
+    def _should_retry_failed_start(
+        self,
+        *,
+        location_key: DeploymentAndLocation,
+        server_or_error: DagsterCloudGrpcServer | SerializableErrorInfo,
+        desired_entries: dict[DeploymentAndLocation, UserCodeLauncherEntry],
+        control_plane_outdated_locations: set[DeploymentAndLocation],
+        upload_locations: set[DeploymentAndLocation],
+    ) -> bool:
+        """Whether a location whose code server failed to start is due for another attempt.
+
+        - Only server-level failures (image pull, startup timeout) are stored as errors in
+          `_grpc_servers`; code load errors leave a running server and are never retried.
+        - Attempts are capped per deploy and back off exponentially.
+        """
+        max_attempts = self._start_retry_max_attempts
+        if max_attempts <= 0 or not isinstance(server_or_error, SerializableErrorInfo):
+            return False
+        if location_key in control_plane_outdated_locations or location_key in upload_locations:
+            return False
+        actual_entry = self._actual_entries.get(location_key)
+        desired_entry = desired_entries.get(location_key)
+        if (
+            actual_entry is None
+            or desired_entry is None
+            or actual_entry.update_timestamp != desired_entry.update_timestamp
+        ):
+            return False  # normal reconciliation is handling this location
+
+        now = get_current_timestamp()
+        state = self._start_retry_state.get(location_key)
+        if state is None or state.update_timestamp != desired_entry.update_timestamp:
+            state = _StartRetryState(
+                update_timestamp=desired_entry.update_timestamp, attempts=0, last_attempt_at=now
+            )
+            self._start_retry_state[location_key] = state
+
+        if state.attempts >= max_attempts:
+            return False
+        if is_permanent_image_error(server_or_error):
+            self._start_retry_state[location_key] = copy(state, attempts=max_attempts)
+            self._logger.warning(
+                "Not retrying failed start of %s:%s: the image error looks permanent "
+                "(for example a missing tag or an invalid image name). Fix the image and redeploy.",
+                location_key[0],
+                location_key[1],
+            )
+            return False
+        if now - state.last_attempt_at < self._start_retry_backoff_seconds * 2**state.attempts:
+            return False
+
+        self._start_retry_state[location_key] = copy(
+            state, attempts=state.attempts + 1, last_attempt_at=now
+        )
+        self._logger.warning(
+            "Retrying failed start of %s:%s (attempt %s of %s)",
+            location_key[0],
+            location_key[1],
+            state.attempts + 1,
+            max_attempts,
+        )
+        return True
+
     def _trigger_recovery_server_restart(self, deployment_location: DeploymentAndLocation):
         del self._actual_entries[deployment_location]
 
@@ -1692,7 +1851,9 @@ class DagsterCloudUserCodeLauncher(
         control_plane_error_locations: set[DeploymentAndLocation],
         control_plane_outdated_locations: set[DeploymentAndLocation],
         upload_locations: set[DeploymentAndLocation],
-    ) -> None:
+    ) -> set[DeploymentAndLocation]:
+        """Returns the locations whose (retried) result must be uploaded this cycle."""
+        to_upload: set[DeploymentAndLocation] = set()
         for deployment_location, multipex_server in self._multipex_servers.copy().items():
             if deployment_location in self._actual_entries:
                 # If a multipex server exists, we query it over gRPC
@@ -1710,7 +1871,7 @@ class DagsterCloudUserCodeLauncher(
                         "Multipex server entry exists but server is not running. "
                         "Will wait for server to come up."
                     )
-                    return
+                    return to_upload
                 deployment_name, location_name = deployment_location
 
                 # If we expect there to be a running code location here but there is none,
@@ -1748,12 +1909,32 @@ class DagsterCloudUserCodeLauncher(
             if running_locations:
                 self._check_server_health(running_locations, unavailable_server_timeout)
 
+        # Optional bounded retry of code servers that failed to start
+        with self._grpc_servers_lock:
+            failed_starts = []
+            for location_key, server_or_error in self._grpc_servers.items():
+                if not isinstance(server_or_error, SerializableErrorInfo):
+                    # A running server ends the failure episode; a later one gets a fresh budget
+                    self._start_retry_state.pop(location_key, None)
+                elif self._should_retry_failed_start(
+                    location_key=location_key,
+                    server_or_error=server_or_error,
+                    desired_entries=desired_entries,
+                    control_plane_outdated_locations=control_plane_outdated_locations,
+                    upload_locations=upload_locations,
+                ):
+                    failed_starts.append(location_key)
+        for location_key in failed_starts:
+            self._trigger_recovery_server_restart(location_key)
+            # The control plane still has the error; upload the new result either way
+            to_upload.add(location_key)
+
         # Recovery: if the server has no error for a location but we have a local
         # error, force a redeploy to resolve transient failures. Only trigger recovery
         # when the normal reconciliation diff would not already handle the location
         # (i.e. the location is in both actual and desired with matching timestamps).
         if os.environ.get("DAGSTER_CLOUD_DISABLE_LOCAL_ERROR_SERVER_RECOVERY"):
-            return
+            return to_upload
 
         with self._grpc_servers_lock:
             for location_key, server_or_error in self._grpc_servers.items():
@@ -1773,6 +1954,7 @@ class DagsterCloudUserCodeLauncher(
                         location_name,
                     )
                     self._trigger_recovery_server_restart(location_key)
+        return to_upload
 
     SENTINEL_BASE_DIR_ENV_VAR = "DAGSTER_CLOUD_AGENT_SENTINEL_DIR"
 
@@ -1806,14 +1988,14 @@ class DagsterCloudUserCodeLauncher(
         image = self._resolve_image(metadata)
 
         if self.requires_images and not image:
-            raise Exception(
+            raise InvalidCodeLocationImageError(
                 "Your agent's configuration requires you to specify an image. "
                 "Use the `--image` flag when specifying your location to tell the agent "
                 "which image to use to load your code."
             )
 
         if (not self.requires_images) and image:
-            raise Exception(
+            raise InvalidCodeLocationImageError(
                 "Your agent's configuration cannot load locations that specify a Docker image."
                 " Either update your location to not include an image, or change the"
                 " `user_code_launcher` field in your agent's `dagster.yaml` file to a launcher that"
@@ -1821,7 +2003,7 @@ class DagsterCloudUserCodeLauncher(
             )
 
         if image and (image != image.strip()):
-            raise Exception(
+            raise InvalidCodeLocationImageError(
                 f"Invalid image '{image}'. Images must not have leading or trailing whitespace."
             )
 
@@ -2219,6 +2401,7 @@ class DagsterCloudUserCodeLauncher(
             with self._grpc_servers_lock:
                 del self._grpc_servers[to_remove_key]
             del self._actual_entries[to_remove_key]
+            self._start_retry_state.pop(to_remove_key, None)
 
             if to_remove_key in self._multipex_servers:
                 del self._multipex_servers[to_remove_key]
