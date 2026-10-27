@@ -133,7 +133,6 @@ def get_assets(
             if (
                 (not prefix or asset_key.path[: len(prefix)] == prefix)
                 and (not normalized_cursor_str or asset_key.to_string() > normalized_cursor_str)
-                and (not asset_keys or asset_key in asset_keys)
             )
         }
 

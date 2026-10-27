@@ -183,8 +183,7 @@ class SensorLaunchContext(AbstractContextManager):
         if kwargs:
             check.inst_param(status, "status", TickStatus)
 
-        if status:
-            self._tick = self._tick.with_status(status=status, **kwargs)
+        self._tick = self._tick.with_status(status=status, **kwargs)
 
         if skip_reason:
             self._tick = self._tick.with_reason(skip_reason=skip_reason)

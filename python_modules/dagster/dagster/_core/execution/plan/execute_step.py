@@ -329,8 +329,8 @@ def _create_step_input_event(
             type_check_data=TypeCheckData(
                 success=success,
                 label=input_name,
-                description=type_check.description if type_check else None,
-                metadata=type_check.metadata if type_check else {},
+                description=type_check.description,
+                metadata=type_check.metadata,
             ),
         ),
     )
@@ -416,8 +416,8 @@ def _type_check_output(
             type_check_data=TypeCheckData(
                 success=type_check.success,
                 label=step_output_handle.output_name,
-                description=type_check.description if type_check else None,
-                metadata=type_check.metadata if type_check else {},
+                description=type_check.description,
+                metadata=type_check.metadata,
             ),
             metadata=output.metadata,
         ),
@@ -803,7 +803,7 @@ def _store_output(
             def _gen_fn():
                 gen_output = output_manager.handle_output(output_context, output.value)
                 yield from output_context.consume_events()
-                if gen_output:
+                if gen_output:  # ty: ignore[redundant-condition]
                     yield gen_output
 
             handle_output_gen = _gen_fn()

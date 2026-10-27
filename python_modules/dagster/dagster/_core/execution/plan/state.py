@@ -248,7 +248,8 @@ def _derive_state_of_past_run(
         check.not_none(parent_run.execution_plan_snapshot_id)
     )
 
-    if not execution_plan_snapshot:
+    # storage returns None for a missing snapshot despite the annotation
+    if not execution_plan_snapshot:  # ty: ignore[redundant-condition]
         raise DagsterExecutionPlanSnapshotNotFoundError(
             f"Could not load execution plan snapshot for run {parent_run_id}"
         )

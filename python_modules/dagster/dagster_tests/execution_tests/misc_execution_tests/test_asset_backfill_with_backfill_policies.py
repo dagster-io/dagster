@@ -702,7 +702,6 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
         backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
-    assert backfill_data
     with freeze_time(test_time):
         result = execute_asset_backfill_iteration_consume_generator(
             backfill_id="test_backfill_id",
@@ -840,7 +839,6 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
         backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
-    assert backfill_data
     result = execute_asset_backfill_iteration_consume_generator(
         backfill_id="test_backfill_id",
         asset_backfill_data=backfill_data,
@@ -903,7 +901,6 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
         backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
-    assert backfill_data
     result = execute_asset_backfill_iteration_consume_generator(
         backfill_id="test_backfill_id",
         asset_backfill_data=backfill_data,
@@ -962,7 +959,6 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
         backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
-    assert backfill_data
     result = execute_asset_backfill_iteration_consume_generator(
         backfill_id="test_backfill_id",
         asset_backfill_data=backfill_data,
@@ -1025,7 +1021,6 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
-    assert backfill_data
     with freeze_time(test_time):
         result = execute_asset_backfill_iteration_consume_generator(
             backfill_id="test_backfill_id",

@@ -621,7 +621,7 @@ class TimeWindowPartitionsSubset(
             for included_time_window in self.included_time_windows
         )
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # ty: ignore[invalid-method-override]
         return self.num_partitions
 
     def __eq__(self, other) -> bool:

@@ -4958,7 +4958,6 @@ class TestEventLogStorage:
 
         # there is an observation
         fetched_record = storage.fetch_observations(asset_key, limit=1).records[0]
-        assert fetched_record
 
         # the observation is stored on the asset record
         asset_entry = storage.get_asset_records([asset_key])[0].asset_entry

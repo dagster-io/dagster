@@ -152,8 +152,8 @@ def test_two_invocations_deps_snap(snapshot):
         noop_op.alias("two")()
 
     index = DependencyStructureIndex(build_dep_structure_snapshot_from_graph_def(two_op_job.graph))
-    assert index.get_invocation("one")
-    assert index.get_invocation("two")
+    assert index.has_invocation("one")
+    assert index.has_invocation("two")
 
     job_snapshot = JobSnap.from_job_def(two_op_job)
     assert job_snapshot == serialize_rt(job_snapshot)
@@ -179,8 +179,8 @@ def test_basic_dep():
         build_dep_structure_snapshot_from_graph_def(single_dep_job.graph)
     )
 
-    assert index.get_invocation("return_one")
-    assert index.get_invocation("passthrough")
+    assert index.has_invocation("return_one")
+    assert index.has_invocation("passthrough")
 
     outputs = index.get_upstream_outputs("passthrough", "value")
     assert len(outputs) == 1
@@ -206,9 +206,9 @@ def test_basic_dep_fan_out(snapshot):
     dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(single_dep_job.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
-    assert index.get_invocation("return_one")
-    assert index.get_invocation("passone")
-    assert index.get_invocation("passtwo")
+    assert index.has_invocation("return_one")
+    assert index.has_invocation("passone")
+    assert index.has_invocation("passtwo")
 
     assert index.get_upstream_output("passone", "value") == OutputHandleSnap("return_one", "result")
     assert index.get_upstream_output("passtwo", "value") == OutputHandleSnap("return_one", "result")
@@ -253,8 +253,8 @@ def test_basic_fan_in(snapshot):
     dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(fan_in_test.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
-    assert index.get_invocation("nothing_one")
-    assert index.get_invocation("take_nothings")
+    assert index.has_invocation("nothing_one")
+    assert index.has_invocation("take_nothings")
 
     assert index.get_upstream_outputs("take_nothings", "nothing") == [
         OutputHandleSnap("nothing_one", "result"),

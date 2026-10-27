@@ -4,7 +4,7 @@ from dagster_k8s.version import __version__
 
 
 def test_version():
-    assert __version__
+    assert __version__  # ty: ignore[redundant-condition]
 
 
 from dagster_k8s.kubernetes_version import KUBERNETES_VERSION_UPPER_BOUND

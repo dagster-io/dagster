@@ -376,7 +376,7 @@ class EventMethods:
             message = f"[{cls.__name__}] {message}"
 
         log_level = logging.INFO
-        if engine_event_data and engine_event_data.error:
+        if engine_event_data.error:
             log_level = logging.ERROR
 
         dagster_event = DagsterEvent(

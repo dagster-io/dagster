@@ -799,7 +799,7 @@ class GrapheneRun(graphene.ObjectType):
             GrapheneExecutionPlan(
                 RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
             )
-            if execution_plan_snapshot
+            if execution_plan_snapshot  # ty: ignore[redundant-condition]
             else None
         )
 

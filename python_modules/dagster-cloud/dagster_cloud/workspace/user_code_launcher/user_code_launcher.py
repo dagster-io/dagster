@@ -2545,7 +2545,7 @@ class DagsterCloudUserCodeLauncher(
         timeout,
         additional_check: Callable[[], None] | None = None,
         additional_check_interval: int = 5,
-        get_timeout_debug_info: Callable[[], None] | None = None,
+        get_timeout_debug_info: Callable[[], Any] | None = None,
     ) -> None:
         start_time = time.time()
 

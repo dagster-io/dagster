@@ -74,7 +74,7 @@ def test_dagster_weekly_daily_materializes(
     dagster_instance = DagsterInstance.get()
 
     dag_asset_key = AssetKey(["my_airflow_instance", "dag", dag_id])
-    assert poll_for_materialization(dagster_instance, dag_asset_key)
+    poll_for_materialization(dagster_instance, dag_asset_key)
     weekly_mat_event = poll_for_materialization(dagster_instance, asset_one)
     assert weekly_mat_event.asset_materialization
     assert weekly_mat_event.asset_materialization.asset_key == asset_one

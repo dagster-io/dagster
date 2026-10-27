@@ -220,7 +220,7 @@ def test_create_job_with_empty_ops_list():
 
     result = empty_pipe.execute_in_process()
     assert result.success
-    assert result.get_run_success_event()
+    result.get_run_success_event()
 
 
 def test_singleton_job():
@@ -606,7 +606,7 @@ def test_job_init_failure():
     assert result.success is False
     event = result.all_events[-1]
     assert event.event_type_value == "PIPELINE_FAILURE"
-    assert event.job_failure_data
+    assert event.job_failure_data  # ty: ignore[redundant-condition]
     assert mem_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # ty: ignore[unresolved-attribute]
 
     with dg.instance_for_test() as fs_instance:
@@ -618,7 +618,7 @@ def test_job_init_failure():
         assert result.success is False
         event = result.get_run_failure_event()
         assert event.event_type_value == "PIPELINE_FAILURE"
-        assert event.job_failure_data
+        assert event.job_failure_data  # ty: ignore[redundant-condition]
         assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled  # ty: ignore[unresolved-attribute]
 
 

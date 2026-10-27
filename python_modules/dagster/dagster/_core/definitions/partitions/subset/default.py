@@ -200,7 +200,7 @@ class DefaultPartitionsSubset(
 
     __hash__ = None
 
-    def __len__(self) -> int:
+    def __len__(self) -> int:  # ty: ignore[invalid-method-override]
         return len(self.subset)
 
     def __contains__(self, value) -> bool:

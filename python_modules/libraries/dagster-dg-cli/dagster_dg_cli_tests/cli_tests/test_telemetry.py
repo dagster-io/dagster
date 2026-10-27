@@ -84,7 +84,7 @@ def test_basic_logging_success_failure(
 
         assert first_message["action"] == "check_yaml_command_started"
         assert second_message["action"] == "check_yaml_command_ended"
-        assert second_message["metadata"]["command_success"] == "True" if success else "False", (
+        assert second_message["metadata"]["command_success"] == ("True" if success else "False"), (
             second_message["metadata"]
         )
 

@@ -139,7 +139,7 @@ def test_error_notebook_saved_asset():
             ) as result:
                 storage_dir = instance.storage_directory()
                 files = os.listdir(storage_dir)
-                notebook_found = (False,)
+                notebook_found = False
                 for f in files:
                     if "-out.ipynb" in f:
                         notebook_found = True

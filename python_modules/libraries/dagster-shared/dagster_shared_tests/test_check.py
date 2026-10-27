@@ -1656,9 +1656,6 @@ def test_is_iterable_typing() -> None:
         # is_iterable flows type information correctly
         return retval  # type: ignore
 
-    # meaningless assert. The test is show the typechecker working
-    assert returns_iterable_of_t
-
 
 # ###################################################################################################
 # ##### CHECK BUILDER

@@ -679,7 +679,7 @@ class AssetGraphView(LoadingContext):
             known_statuses = self.get_empty_subset(key=key)
             for serializable_subset in cache_value.subsets.values():
                 subset = self.get_subset_from_serializable_subset(serializable_subset)
-                if subset:
+                if subset is not None:
                     known_statuses = known_statuses.compute_union(subset)
             return from_subset.compute_difference(known_statuses) or self.get_empty_subset(key=key)
         else:

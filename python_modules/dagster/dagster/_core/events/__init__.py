@@ -1076,13 +1076,9 @@ class DagsterEvent(
                 input_name=step_input_data.input_name,
                 input_type=input_def.dagster_type.display_name,
                 type_check_clause=(
-                    (
-                        " Warning! Type check failed."
-                        if not step_input_data.type_check_data.success
-                        else " (Type check passed)."
-                    )
-                    if step_input_data.type_check_data
-                    else " (No type check)."
+                    " Warning! Type check failed."
+                    if not step_input_data.type_check_data.success
+                    else " (Type check passed)."
                 ),
             ),
         )

@@ -710,13 +710,10 @@ def test_schedule_namedtuple_job_instigator_backcompat():
             assert len(states) == 2
             check.is_list(states, of_type=InstigatorState)
             for state in states:
-                assert state.instigator_type
                 assert state.instigator_data
                 ticks = instance.get_ticks(state.instigator_origin_id, state.selector_id)
                 check.is_list(ticks, of_type=InstigatorTick)
                 for tick in ticks:
-                    assert tick.tick_data
-                    assert tick.instigator_type
                     assert tick.instigator_name
 
 

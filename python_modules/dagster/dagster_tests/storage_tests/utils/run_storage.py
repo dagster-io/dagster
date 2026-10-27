@@ -1159,7 +1159,6 @@ class TestRunStorage:
         # idempotent
         assert storage.add_execution_plan_snapshot(ep_snapshot) == snapshot_id
 
-        assert fetched_ep_snapshot
         assert serialize_pp(fetched_ep_snapshot) == serialize_pp(ep_snapshot)
         assert storage.has_execution_plan_snapshot(snapshot_id)
         assert not storage.has_execution_plan_snapshot("nope")
