@@ -31,6 +31,8 @@ export interface SelectionAutoCompleteProvider {
     textCallback?: (value: string) => string;
     /** The typed value with quotes added, offered in place of "No match found" for a known attribute. */
     quotedValue?: QuotedValue;
+    /** Limits results to this tag key's values; set when the cursor is in a key=value pair's value. */
+    key?: string;
   }) => Array<Suggestion>;
 
   /**
@@ -441,15 +443,23 @@ export const createProvider = <
           }),
         );
     },
-    getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback, quotedValue}) => {
+    getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback, quotedValue, key}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
 
       const regex = createRegex(query, shouldTreatAsteriskAsWildcard);
+      const keyLower = key?.toLowerCase();
       const results = values
         ? filterMap<AttributeItems[0], Suggestion>(
             values,
             (value) => {
+              if (keyLower !== undefined && typeof value !== 'string') {
+                return (
+                  value.key.toLowerCase() === keyLower &&
+                  !!value.value &&
+                  doesValueIncludeQuery({value: value.value, query})
+                );
+              }
               if (shouldTreatAsteriskAsWildcard) {
                 if (typeof value === 'string') {
                   return regex.test(value);
@@ -470,6 +480,10 @@ export const createProvider = <
         ) {
           return [createQuotedValueSuggestion({attribute, text: quotedValue.text, textCallback})];
         }
+
+        // A bare <null> means an empty value, so it isn't shown quoted.
+        const typedQuery = query === '<null>' ? query : `"${query}"`;
+        const typedValue = key !== undefined ? `"${key}"=${typedQuery}` : typedQuery;
         return [
           {
             text: '',
@@ -477,7 +491,7 @@ export const createProvider = <
               <Text size={12} color="textLight">
                 No match found for{' '}
                 <Text size={12} family="mono" color="textDefault">
-                  {attribute}:&quot;{query}&quot;
+                  {attribute}:{typedValue}
                 </Text>
               </Text>
             ),

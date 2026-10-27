@@ -22,6 +22,7 @@ import {
   ColonTokenContext,
   DownTraversalContext,
   FunctionNameContext,
+  IncompleteAttributeExpressionMissingSecondValueContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompleteLeftQuotedStringValueContext,
   IncompletePlusTraversalExpressionContext,
@@ -51,6 +52,11 @@ const VALUE_END_PATTERN = /^(?:[ \t\r\n)]|$)/;
 
 /** On pages with traversal, a complete downstream layer (`+` or `+2`) can also follow a value. */
 const TRAVERSAL_VALUE_END_PATTERN = /^(?:\+[0-9]*)?(?:[ \t\r\n)]|$)/;
+
+type AttributeValueResultsOptions = {
+  quotedValue?: QuotedValue;
+  key?: string;
+};
 
 /**
  * The expression's value with quotes added, when the shared grammar rejects part of it unquoted
@@ -275,7 +281,9 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
 
   public visitAttributeValue(ctx: AttributeValueContext) {
     const stopIndex = ctx.stop?.stop ?? 0;
+    // A lone `"` lexes as an opening quote, so only a closing quote ends the value here.
     if (
+      !(ctx.value() instanceof IncompleteLeftQuotedStringValueContext) &&
       this.cursorIndex >= stopIndex &&
       this.line[this.cursorIndex - 1] === '"' &&
       this.line[this.cursorIndex] !== '"'
@@ -286,10 +294,10 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.startReplacementIndex = ctx.start?.start ?? 0;
     this.stopReplacementIndex = (ctx.stop?.stop ?? 0) + 1;
 
-    const parentContext = ctx.parent;
-    if (parentContext instanceof AttributeExpressionContext) {
-      const colonToken = parentContext.colonToken();
-      const postWhitespace = parentContext.postAttributeValueWhitespace();
+    const expression = ctx.parent instanceof AttributeExpressionContext ? ctx.parent : undefined;
+    if (expression) {
+      const colonToken = expression.colonToken();
+      const postWhitespace = expression.postAttributeValueWhitespace();
       if (colonToken?.start) {
         this.startReplacementIndex = colonToken.start.start + 1;
       }
@@ -301,16 +309,14 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     const parentChildren = ctx.parent?.children ?? [];
     if (parentChildren[0] instanceof AttributeNameContext) {
       const rawValue = getValueNodeValue(ctx.value());
-      const quotedValue =
-        parentContext instanceof AttributeExpressionContext
-          ? getQuotedValue(parentContext, this.supportsTraversal)
+      const quotedValue = expression
+        ? getQuotedValue(expression, this.supportsTraversal)
+        : undefined;
+      const key =
+        expression?.attributeValue(1) === ctx
+          ? getValueNodeValue(expression.attributeValue(0))
           : undefined;
-      this.addAttributeValueResults(
-        parentChildren[0].getText(),
-        rawValue,
-        DEFAULT_TEXT_CALLBACK,
-        quotedValue,
-      );
+      this.addAttributeValueResults(parentChildren[0].getText(), rawValue, {quotedValue, key});
     }
   }
 
@@ -430,6 +436,21 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.stopReplacementIndex = this.startReplacementIndex;
       this.addAttributeValueResults(attrNameCtx.getText(), '');
     }
+  }
+
+  public visitIncompleteAttributeExpressionMissingSecondValue(
+    ctx: IncompleteAttributeExpressionMissingSecondValueContext,
+  ) {
+    const attribute = ctx.attributeName().getText();
+    const isKeyValueAttribute = (KEY_VALUE_ATTRIBUTES as readonly string[]).includes(attribute);
+    if (!isKeyValueAttribute || this.cursorIndex <= ctx.EQUAL().symbol.start) {
+      this.visitChildren(ctx);
+      return;
+    }
+    const keyCtx = ctx.attributeValue();
+    this.startReplacementIndex = keyCtx.start?.start ?? 0;
+    this.stopReplacementIndex = this.cursorIndex;
+    this.addAttributeValueResults(attribute, '', {key: getValueNodeValue(keyCtx)});
   }
 
   public visitPostNotOperatorWhitespace(ctx: PostNotOperatorWhitespaceContext) {
@@ -569,18 +590,18 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   private addAttributeValueResults(
-    attributeKey: string,
+    attribute: string,
     value: string,
-    textCallback: (value: string) => string = DEFAULT_TEXT_CALLBACK,
-    quotedValue?: QuotedValue,
+    {quotedValue, key}: AttributeValueResultsOptions = {},
   ) {
     const unquotedValue = removeQuotesFromString(value);
     this.list.push(
       ...this.getAttributeValueResultsMatchingQuery({
-        attribute: attributeKey,
+        attribute,
         query: unquotedValue,
-        textCallback,
+        textCallback: DEFAULT_TEXT_CALLBACK,
         quotedValue,
+        key,
       }),
     );
   }

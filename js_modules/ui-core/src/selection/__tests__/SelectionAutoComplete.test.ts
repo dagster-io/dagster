@@ -1,7 +1,11 @@
 import {render, screen} from '@testing-library/react';
 
+import {AssetSelectionLexer} from '../../asset-selection/generated/AssetSelectionLexer';
+import {AssetSelectionParser} from '../../asset-selection/generated/AssetSelectionParser';
+import {assetSelectionSyntaxSupportedAttributes} from '../../asset-selection/input/util';
 import {createSelectionAutoComplete} from '../SelectionAutoComplete';
 import {createProvider} from '../SelectionAutoCompleteProvider';
+import {createSelectionLinter} from '../createSelectionLinter';
 
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
@@ -1581,6 +1585,72 @@ describe('createAssetSelectionHint', () => {
       from,
       to,
     });
+  });
+
+  const hintWithTagPairs = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {
+        key: ['asset1'],
+        owner: ['alice@example.com'],
+        tag: [
+          {key: 'team', value: ''},
+          {key: 'team', value: 'data'},
+          {key: 'team', value: 'dev'},
+          {key: 'myteam', value: 'x'},
+          {key: 'env', value: 'prod'},
+        ],
+      },
+      primaryAttributeKey: 'key',
+      attributeToIcon: {key: 'magnify_glass', owner: 'magnify_glass', tag: 'magnify_glass'},
+    }),
+  );
+
+  it.each([
+    {input: 'tag:team=|', from: 4, to: 9},
+    {input: 'tag:"team"=|', from: 4, to: 11},
+    {input: 'tag:team=d|', from: 4, to: 10},
+    {input: 'tag:Team=|', from: 4, to: 9},
+    {input: 'tag:team="|', from: 4, to: 10},
+    {input: 'tag:"team"="|', from: 4, to: 12},
+  ])("suggests only the key's values for $input", ({input, from, to}) => {
+    expect(testAutocomplete(input, hintWithTagPairs)).toEqual({
+      list: [
+        expect.objectContaining({text: '"team"="data"'}),
+        expect.objectContaining({text: '"team"="dev"'}),
+      ],
+      from,
+      to,
+    });
+  });
+
+  it("names the whole pair when none of the key's values match", async () => {
+    const {list} = testAutocomplete('tag:"enrollments"=fff|', hintWithTagPairs);
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('tag:"enrollments"="fff"')).toBeVisible();
+  });
+
+  it("names a bare <null> without quotes when none of the key's values match", async () => {
+    const {list} = testAutocomplete('tag:team=<null>|', hintWithTagPairs);
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('tag:"team"=<null>')).toBeVisible();
+  });
+
+  it('suggests nothing after = on an attribute that takes no pairs', () => {
+    expect(testAutocomplete('owner:a=|', hintWithTagPairs).list).toEqual([]);
+  });
+
+  it('completes a pair after = into text the asset selection accepts', () => {
+    const lint = createSelectionLinter({
+      Lexer: AssetSelectionLexer,
+      Parser: AssetSelectionParser,
+      supportedAttributes: assetSelectionSyntaxSupportedAttributes,
+    });
+    const input = 'tag:team=';
+    const {list, from, to} = testAutocomplete(`${input}|`, hintWithTagPairs);
+    const text = `${input.slice(0, from)}${list?.[0]?.text}${input.slice(to)}`;
+
+    expect(text).toBe('tag:"team"="data"');
+    expect(lint(text)).toEqual([]);
   });
 
   it.each(['| own', ' | own'])(
