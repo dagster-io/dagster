@@ -1,3 +1,5 @@
+import {useMemo} from 'react';
+
 import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor';
 import {parseInput} from './SelectionInputParser';
@@ -61,4 +63,13 @@ export function createSelectionAutoComplete({
     }
     return {list: [], from: 0, to: 0};
   };
+}
+
+/** Memoizes the hint results, recomputing when the hint itself changes (e.g. when values load). */
+export function useSelectionAutoCompleteResults(
+  selectionHint: ReturnType<typeof createSelectionAutoComplete>,
+  line: string,
+  cursorIndex: number,
+) {
+  return useMemo(() => selectionHint(line, cursorIndex), [selectionHint, line, cursorIndex]);
 }

@@ -1,8 +1,10 @@
 import {IconName} from '@dagster-io/ui-components';
-import {useMemo} from 'react';
 
 import {RUNS_SEARCH_ATTRIBUTES, RunsSearchAttribute} from './runsSearchAttributes';
-import {createSelectionAutoComplete} from '../../selection/SelectionAutoComplete';
+import {
+  createSelectionAutoComplete,
+  useSelectionAutoCompleteResults,
+} from '../../selection/SelectionAutoComplete';
 import {
   SelectionAutoCompleteProvider,
   createProvider,
@@ -37,9 +39,6 @@ export const useRunsSearchAutoComplete: SelectionAutoCompleteProvider['useAutoCo
   line,
   cursorIndex,
 }) => {
-  const autoCompleteResults = useMemo(
-    () => getRunsSearchHint(line, cursorIndex),
-    [line, cursorIndex],
-  );
+  const autoCompleteResults = useSelectionAutoCompleteResults(getRunsSearchHint, line, cursorIndex);
   return {autoCompleteResults, loading: false};
 };
