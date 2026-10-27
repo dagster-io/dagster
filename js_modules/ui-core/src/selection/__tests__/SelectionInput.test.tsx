@@ -54,22 +54,23 @@ const assetLinter = createSelectionLinter({
 type InputOptions = Partial<
   Pick<
     ComponentProps<typeof SelectionAutoCompleteInput>,
-    'linter' | 'wildcardAttributeName' | 'useAutoComplete'
+    'linter' | 'wildcardAttributeName' | 'useAutoComplete' | 'onFocus'
   >
 >;
 
 const renderInput = (value: string, options: InputOptions = {}) => {
   const onChange = jest.fn();
-  const buildInput = (nextValue: string) => (
+  const buildInput = (nextValue: string, nextOptions: InputOptions = options) => (
     <MemoryRouter>
       <SelectionAutoCompleteInput
         id="test"
         placeholder="Search and filter things"
         value={nextValue}
         onChange={onChange}
-        linter={options.linter ?? linter}
-        wildcardAttributeName={options.wildcardAttributeName}
-        useAutoComplete={options.useAutoComplete ?? useAutoComplete}
+        linter={nextOptions.linter ?? linter}
+        wildcardAttributeName={nextOptions.wildcardAttributeName}
+        useAutoComplete={nextOptions.useAutoComplete ?? useAutoComplete}
+        onFocus={nextOptions.onFocus}
       />
     </MemoryRouter>
   );
@@ -84,6 +85,8 @@ const renderInput = (value: string, options: InputOptions = {}) => {
     editor,
     onChange,
     rerenderWithValue: (nextValue: string) => result.rerender(buildInput(nextValue)),
+    rerenderWithOptions: (nextOptions: InputOptions) =>
+      result.rerender(buildInput(value, nextOptions)),
   };
 };
 
@@ -169,6 +172,20 @@ describe('SelectionAutoCompleteInput', () => {
     fireEvent.keyDown(screen.getByRole('textbox'), {key: 'ArrowDown'});
     pressEnter();
     expect(editor.getValue()).toBe('owner:"zzz@q" ');
+  });
+
+  it('calls the latest onFocus each time the editor gains focus', () => {
+    const onFocus = jest.fn();
+    const {editor, rerenderWithOptions} = renderInput('', {onFocus});
+    act(() => editor.focus());
+    expect(onFocus).toHaveBeenCalledTimes(1);
+
+    const nextOnFocus = jest.fn();
+    rerenderWithOptions({onFocus: nextOnFocus});
+    act(() => editor.getInputField().blur());
+    act(() => editor.focus());
+    expect(nextOnFocus).toHaveBeenCalledTimes(1);
+    expect(onFocus).toHaveBeenCalledTimes(1);
   });
 
   it('names the editor after its placeholder', () => {

@@ -1664,4 +1664,47 @@ describe('createAssetSelectionHint', () => {
       });
     },
   );
+
+  it('shows the mapped label on an attribute row', async () => {
+    const hintWithLabels = createSelectionAutoComplete(
+      createProvider({
+        attributesMap: {snapshot_id: []},
+        attributeToIcon: {snapshot_id: 'magnify_glass'},
+        attributeToLabel: {snapshot_id: 'Snapshot ID'},
+      }),
+    );
+    const {list} = testAutocomplete('snap|', hintWithLabels);
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('Snapshot ID')).toBeVisible();
+  });
+
+  describe('formatValue', () => {
+    const hintWithFormat = createSelectionAutoComplete(
+      createProvider({
+        attributesMap: {owner: ['alice'], tag: [{key: 'team', value: 'data'}, {key: 'solo'}]},
+        attributeToIcon: {owner: 'magnify_glass', tag: 'magnify_glass'},
+        formatValue: (value) => `<${value}>`,
+      }),
+    );
+
+    const only = (text: string) => [expect.objectContaining({text})];
+    const including = (text: string) => expect.arrayContaining([expect.objectContaining({text})]);
+
+    it.each([
+      {site: 'value row', input: 'owner:al|', expected: only('<alice>')},
+      {site: 'tag pair', input: 'tag:te|', expected: only('<team>=<data>')},
+      {site: 'key-only tag', input: 'tag:so|', expected: only('<solo>')},
+      {site: 'value row from bare text', input: 'alic|', expected: including('owner:<alice>')},
+      {site: 'tag pair from bare text', input: 'dat|', expected: including('tag:<team>=<data>')},
+      {site: 'key-only tag from bare text', input: 'sol|', expected: including('tag:<solo>')},
+    ])('inserts the $site in the form formatValue writes', ({input, expected}) => {
+      expect(testAutocomplete(input, hintWithFormat).list).toEqual(expected);
+    });
+
+    it('renders a no-match value row in the form formatValue writes', async () => {
+      const {list} = testAutocomplete('owner:zzz|', hintWithFormat);
+      render(list?.[0]?.jsx);
+      expect(await screen.findByText('owner:<zzz>')).toBeVisible();
+    });
+  });
 });

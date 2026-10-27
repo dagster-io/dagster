@@ -212,15 +212,21 @@ export const createProvider = <
   TPrimaryAttributeKey extends keyof TAttributeMap,
 >({
   attributeToIcon,
+  attributeToLabel,
   primaryAttributeKey,
   attributesMap,
   functions = ['sinks', 'roots'],
+  formatValue = (value) => `"${value}"`,
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
+  /** Labels for attribute rows. Defaults to the attribute name in sentence case. */
+  attributeToLabel?: Partial<Record<keyof TAttributeMap, string>>;
   /** The attribute that bare terms search with wildcards. Omit when the input has none. */
   primaryAttributeKey?: TPrimaryAttributeKey;
   attributesMap: TAttributeMap;
   functions?: Functions;
+  /** Formats inserted values and tag keys, and the no-match row's typed value. Quotes by default. */
+  formatValue?: (value: string) => string;
 }): Omit<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
   function doesValueIncludeQuery({
     value,
@@ -240,6 +246,11 @@ export const createProvider = <
     return value.toLowerCase().includes(queryLower);
   }
 
+  function getAttributeLabel(attribute: keyof TAttributeMap) {
+    const name = (attribute as string).replace(/_/g, ' ');
+    return attributeToLabel?.[attribute] ?? name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
   function createAttributeSuggestion({
     attribute,
     text,
@@ -249,9 +260,7 @@ export const createProvider = <
   }) {
     const displayText = `${attribute as string}:`;
     const icon: IconName = attributeToIcon[attribute];
-    let label = (attribute as string).replace(/_/g, ' ');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    label = label[0]!.toUpperCase() + label.slice(1);
+    const label = getAttributeLabel(attribute);
     return {
       text,
       jsx: (
@@ -280,7 +289,9 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     if (typeof value !== 'string') {
-      const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
+      const valueText = value.value
+        ? `${formatValue(value.key)}=${formatValue(value.value)}`
+        : formatValue(value.key);
       if (value.key === '' && !value.value) {
         return nullSuggestion({textCallback});
       }
@@ -294,7 +305,7 @@ export const createProvider = <
       return nullSuggestion({textCallback});
     }
     return {
-      text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
+      text: textCallback ? textCallback(formatValue(value)) : formatValue(value),
       jsx: <SuggestionJSXBase label={<MiddleTruncate text={value} />} />,
       trailingSpace: true,
     };
@@ -339,9 +350,7 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     const text = `${attribute}:"*${query}*"`;
-    let displayAttribute = attribute.replace(/_/g, ' ');
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
+    const displayAttribute = getAttributeLabel(attribute);
     const displayText = (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
         {displayAttribute} contains <MiddleTruncate text={query} />
@@ -367,14 +376,14 @@ export const createProvider = <
     let valueText;
     if (typeof value !== 'string') {
       if (value.value) {
-        text = `${attribute as string}:"${value.key}"="${value.value}"`;
+        text = `${attribute as string}:${formatValue(value.key)}=${formatValue(value.value)}`;
         valueText = `${value.key}=${value.value}`;
       } else {
-        text = `${attribute as string}:"${value.key}"`;
+        text = `${attribute as string}:${formatValue(value.key)}`;
         valueText = value.key;
       }
     } else {
-      text = `${attribute as string}:"${value}"`;
+      text = `${attribute as string}:${formatValue(value)}`;
       valueText = value;
     }
     return {
@@ -482,8 +491,8 @@ export const createProvider = <
         }
 
         // A bare <null> means an empty value, so it isn't shown quoted.
-        const typedQuery = query === '<null>' ? query : `"${query}"`;
-        const typedValue = key !== undefined ? `"${key}"=${typedQuery}` : typedQuery;
+        const typedQuery = query === '<null>' ? query : formatValue(query);
+        const typedValue = key !== undefined ? `${formatValue(key)}=${typedQuery}` : typedQuery;
         return [
           {
             text: '',

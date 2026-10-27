@@ -47,6 +47,8 @@ type SelectionAutoCompleteInputProps = {
   /** Omit to make the input read only. */
   onChange?: (value: string) => void;
   onSubmit?: (value: string) => void;
+  /** Called each time the input gains focus. */
+  onFocus?: () => void;
   className?: string;
 
   /** Enables the "recent searches" section shown when the input is empty. */
@@ -95,6 +97,7 @@ export const SelectionAutoCompleteInput = ({
   placeholder,
   onChange,
   onSubmit,
+  onFocus,
   linter,
   useAutoComplete,
   saveOnBlur = false,
@@ -104,6 +107,7 @@ export const SelectionAutoCompleteInput = ({
   className,
 }: SelectionAutoCompleteInputProps) => {
   const onSubmitRef = useUpdatingRef(onSubmit);
+  const onFocusRef = useUpdatingRef(onFocus);
   const trackEvent = useTrackEvent();
 
   const trackSelection = useMemo(() => {
@@ -263,6 +267,7 @@ export const SelectionAutoCompleteInput = ({
         instance.setOption('lineWrapping', true);
         adjustHeight();
         setShowResults({current: true});
+        onFocusRef.current?.();
       });
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
