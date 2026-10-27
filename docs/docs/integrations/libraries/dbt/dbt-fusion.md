@@ -21,6 +21,8 @@ Dagster invokes dbt through the dbt executable, so moving a project to Fusion on
 
 Fusion support landed in the `dagster` 1.11.5 release. Use `dagster-dbt` 0.29.12 or later, which ships alongside `dagster` 1.13.12, to pick up the Fusion fixes released since then.
 
+To install Fusion from PyPI with the `dagster-dbt[dbt]` extra, use a `dagster-dbt` release later than 0.29.26. Earlier releases have no such extra, and fail to import in an environment without dbt Core with `ModuleNotFoundError: No module named 'dateutil'`.
+
 ## How Dagster selects a dbt executable
 
 `DbtCliResource` chooses an executable in this order:
@@ -35,24 +37,34 @@ A few code paths use the absence of `dbt-core` as the signal that they are runni
 
 ## Set up a project on Fusion
 
-Install Fusion following the [dbt installation documentation](https://docs.getdbt.com/docs/local/install-dbt).
+There are two ways to install Fusion:
+
+- **From PyPI, into the same environment as Dagster.** This is the simplest option:
+
+  ```bash
+  pip install 'dagster-dbt[dbt]'
+  ```
+
+  The extra installs `dbt`, the PyPI package for Fusion, at a version range Dagster supports. That package is the Fusion engine and puts a `dbt` executable in the environment, so Dagster finds Fusion with no further setup. Do not install any adapter package, such as `dbt-snowflake`: Fusion has its own warehouse support.
+
+- **As a standalone binary**, following the [dbt installation documentation](https://docs.getdbt.com/docs/local/install-dbt). Then point Dagster at it as described below.
 
 `dagster-dbt` does not install dbt Core — it is behind the `dagster-dbt[dbt-core]` extra. Any dbt adapter package, such as `dbt-duckdb` or `dbt-snowflake`, pulls dbt Core in, and its `dbt` entrypoint can then shadow the Fusion binary. Remove the adapter packages from the environment that runs your code location if you want `dbt` to resolve to Fusion.
 
 :::warning
 
-Do not install Fusion's `dbt` PyPI package into an environment that also has `dbt-core`. Both distributions own the `dbt` import namespace and overwrite each other's files, so neither engine ends up working and `pip` reports no error. If you install Fusion from PyPI, keep `dbt-core` and every adapter package out of that environment.
+Do not install Fusion's `dbt` PyPI package into an environment that also has `dbt-core`. Both distributions own the `dbt` import namespace and overwrite each other's files, so neither engine ends up working and `pip` reports no error. `dagster-dbt` detects this and raises an `ImportError` on import. If you install Fusion from PyPI, keep `dbt-core`, every adapter package, and the `dagster-dbt[dbt-core]` extra out of that environment. The `dagster-dbt[dbt]` and `dagster-dbt[dbt-core]` extras cannot be combined.
 
 :::
 
-Set up your Dagster project to use the dbt Fusion executable by doing one of the following:
+If you installed Fusion from PyPI, `dbt` already resolves to Fusion and you can skip to [Prepare warehouse drivers](#prepare-warehouse-drivers). Otherwise, set up your Dagster project to use the dbt Fusion executable by doing one of the following:
 
 - [Add a dbtf executable to PATH](#add-a-dbtf-executable-to-path)
 - [Set the executable explicitly](#set-the-executable-explicitly)
 
 ### Add a dbtf executable to PATH
 
-Adding a `dbtf` executable to `PATH` is required to use dbt Fusion with `DbtProjectComponent`, which constructs its own `DbtCliResource` and exposes no executable setting.
+`DbtProjectComponent` constructs its own `DbtCliResource` and exposes no executable setting, so when `dbt` on `PATH` is not Fusion, adding a `dbtf` executable is the way to use Fusion with it.
 
 `dbtf` is a name Dagster looks for, not one any dbt installer provides, so you create it yourself. The dbt installer does define `dbtf`, but as a shell alias, and Dagster cannot see a shell alias. Add a real executable or symlink to `PATH` instead:
 
@@ -74,6 +86,12 @@ dbt = DbtCliResource(
     dbt_executable="/path/to/fusion/dbt",
 )
 ```
+
+### Prepare warehouse drivers
+
+Fusion does not use dbt adapter packages. The first time it connects to a warehouse, it downloads a database driver from dbt Labs' CDN (`public.cdn.getdbt.com`) and caches it under `~/.cache/com.getdbt/`. The process that runs your dbt models therefore needs network access to that CDN, or a cache that already holds the driver.
+
+In a container image, warm the cache at build time so runs don't download the driver on every cold start, for example by running `dbt debug` or `dbt parse` against your project in the image build as the user that runs your code location.
 
 ## Limitations
 
@@ -152,11 +170,11 @@ Fusion has adapter coverage and feature gaps of its own, independent of Dagster.
 
 ## Verify your setup
 
-From the environment your code location runs in, confirm that `dbtf` resolves to the Fusion binary. This is the executable Dagster will pick:
+From the environment your code location runs in, confirm which executable Dagster will pick and that it reports a 2.x version:
 
 ```bash
-which dbtf
-dbtf --version
+which dbtf || which dbt
+dbtf --version || dbt --version
 ```
 
-If `which dbtf` finds nothing, Dagster falls back to `dbt`, and your models run on whichever engine that resolves to.
+Dagster uses `dbtf` if it is on `PATH`, and otherwise falls back to `dbt`, so your models run on whichever engine that resolves to.

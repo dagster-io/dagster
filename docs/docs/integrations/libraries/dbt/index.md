@@ -28,7 +28,7 @@ The [`dagster-dbt` library](/integrations/libraries/dbt/dagster-dbt) provides a 
 
 :::tip dbt Fusion
 
-Dagster supports the dbt Fusion engine as of the 1.11.5 release. Support is in preview and has known limitations, including no supported column-level metadata or column lineage. For setup instructions and the full list of gaps, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion).
+Dagster supports the dbt Fusion engine (dbt v2) as of the 1.11.5 release. Support is in preview and has known limitations: row counts are unavailable, and column metadata requires a dbt-side macro. For setup instructions and the full list of gaps, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion).
 
 :::
 

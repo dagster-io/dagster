@@ -26,7 +26,7 @@ Our updated dbt Cloud integration offers two capabilities:
 
 :::warning
 
-Do not install dbt Core into an environment that has the `dbt` package (dbt Fusion) installed. Both claim the `dbt` import namespace and overwrite each other's files, which leaves neither engine working — and `pip` reports no error. Nothing in the dbt Cloud integration runs dbt locally, so Fusion is not needed for it.
+Do not install dbt Core into an environment that has the `dbt` package (dbt Fusion) installed. Both claim the `dbt` import namespace and overwrite each other's files, which leaves neither engine working. `pip` reports no error, but `dagster-dbt` raises an `ImportError` on import. Nothing in the dbt Cloud integration runs dbt locally, so Fusion is not needed for it.
 
 :::
 
