@@ -27,7 +27,7 @@ describe('RunsSearchInput', () => {
     render(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={jest.fn()} />);
 
     expect(await screen.findByRole('textbox', {name: 'Search and filter runs'})).toHaveValue(
-      'job:nightly_etl and user:"a@b.com"',
+      'user:"a@b.com" and job:nightly_etl',
     );
   });
 
@@ -95,7 +95,7 @@ describe('RunsSearchInput', () => {
     rerender(<RunsSearchInput tokens={LEGACY_TOKENS} onChange={jest.fn()} />);
 
     expect(await screen.findByRole('textbox', {name: 'Search and filter runs'})).toHaveValue(
-      'job:nightly_etl and user:"a@b.com"',
+      'user:"a@b.com" and job:nightly_etl',
     );
     expect(await screen.findByRole('alert')).toBeEmptyDOMElement();
   });

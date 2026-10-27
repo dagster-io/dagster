@@ -5,8 +5,9 @@ import {
   RUNS_SEARCH_ATTRIBUTES,
   RunsSearchAttribute,
   TAG_KEY_BY_ATTRIBUTE,
+  codeLocationToTagValue,
   formatRunsSearchValue,
-  getAttributeForTagKey,
+  getAttributeTermForTag,
   isTagBackedAttribute,
 } from './runsSearchAttributes';
 import {RunStatus} from '../../graphql/types';
@@ -84,7 +85,7 @@ const SINGLE_VALUE_MESSAGES = {
 const OR_MESSAGE = 'or only combines IDs or statuses';
 const TAG_FORMAT_MESSAGE = 'tag needs key=value, for example tag:team=data';
 const BARE_VALUE_MESSAGE = 'Add an attribute, for example job:my_job';
-const SYNTAX_MESSAGE = 'Check the search syntax, for example job:my_job and status:failure';
+const SYNTAX_MESSAGE = 'Check the search syntax, for example job:my_job and status:FAILURE';
 const INCOMPLETE_MESSAGE = 'Finish the search before applying it';
 const NOT_MESSAGE = "not isn't supported in runs search";
 const TRAVERSAL_MESSAGE = "Traversal (+) isn't supported in runs search";
@@ -274,7 +275,7 @@ const createTagTerm = (
   value: string,
 ): RunsSearchNode => ({
   type: 'term',
-  attribute: getAttributeForTagKey(key) ?? 'tag',
+  attribute: getAttributeTermForTag(key, value)?.attribute ?? 'tag',
   conflictKey: `tag:${key}`,
   token: {token: 'tag', value: `${key}=${value}`},
   ...getContextRange(ctx),
@@ -292,11 +293,12 @@ const createScalarTerm = (
 
   if (isTagBackedAttribute(attribute)) {
     const key = TAG_KEY_BY_ATTRIBUTE[attribute];
+    const tagValue = attribute === 'code_location' ? codeLocationToTagValue(value) : value;
     return {
       type: 'term',
       attribute,
       conflictKey: `tag:${key}`,
-      token: {token: 'tag', value: `${key}=${value}`},
+      token: {token: 'tag', value: `${key}=${tagValue}`},
       ...getContextRange(ctx),
     };
   }

@@ -48,6 +48,8 @@ const LEGACY_QUERIES = [
   ['snapshotId:abc', 'snapshotId:def'],
   ['tag:dagster/partition=2024-01-01'],
   ['tag:.dagster/repository=repo@location'],
+  ['tag:.dagster/repository=__repository__@location'],
+  ['tag:.dagster/repository=__repository__@a@b'],
   ['tag:dagster/auto_materialize=true'],
   ['tag:team=data', 'tag:owner=ops'],
   ['tag:a=b=c'],
@@ -73,6 +75,12 @@ describe('getRunsSearchText', () => {
     {query: ['created_date_after:1700000000.5', 'created_date_before:1700000500'], text: ''},
     {query: ['id:abc-123'], text: 'id:"abc-123"'},
     {query: ['tag:.dagster/repository=repo@loc'], text: 'code_location:"repo@loc"'},
+    {query: ['tag:.dagster/repository=__repository__@loc'], text: 'code_location:loc'},
+    {query: ['tag:.dagster/repository=loc'], text: 'tag:".dagster/repository"=loc'},
+    {
+      query: ['tag:.dagster/repository=__repository__@a@b'],
+      text: 'code_location:"__repository__@a@b"',
+    },
     {query: ['tag:dagster/auto_materialize=true'], text: 'tag:dagster/auto_materialize=true'},
     {query: ['tag:.custom/key=x'], text: 'tag:".custom/key"=x'},
     {query: ['tag:a=b=c'], text: 'tag:a="b=c"'},
@@ -83,7 +91,7 @@ describe('getRunsSearchText', () => {
     {query: ['some free text', 'foo:bar'], text: ''},
     {
       query: ['tag:team=data', 'job:etl', 'tag:dagster/sensor_name=s', 'id:a'],
-      text: 'id:a and job:etl and sensor:s and tag:team=data',
+      text: 'sensor:s and job:etl and id:a and tag:team=data',
     },
   ])('renders $query as "$text"', ({query, text}) => {
     expect(getRunsSearchText(decodeQuery(query))).toBe(text);
@@ -111,11 +119,21 @@ describe('getRunsSearchText', () => {
     {text: 'tag:dagster/sensor_name=s and snapshot_id:"1700000000.5"'},
     {text: 'partition:"region=west" and tag:team="a=b"'},
     {text: 'user:"a@b.com" and code_location:"repo@loc" and partition:"2024-01-01"'},
+    {text: 'code_location:loc'},
+    {text: 'code_location:"__repository__@a@b"'},
   ])('treats the rendered form of $text as canonical', ({text}) => {
     const tokens = parseTokens(text);
     expect(tokensAsStringArray(parseTokens(getRunsSearchText(tokens)))).toEqual(
       tokensAsStringArray(tokens),
     );
+  });
+
+  // Tags the renderer keeps generic must not parse into a dedicated attribute's slot.
+  it.each([
+    {query: ['id:x', 'tag:.dagster/repository=loc']},
+    {query: ['id:x', 'tag:dagster/sensor_name=']},
+  ])('parses the rendered form of $query in rendering order', ({query}) => {
+    expect(tokensAsStringArray(parseTokens(getRunsSearchText(decodeQuery(query))))).toEqual(query);
   });
 
   it('keeps everything after the first = as the tag value', () => {

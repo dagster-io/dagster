@@ -26,6 +26,10 @@ describe('parseRunsSearch', () => {
       text: 'code_location:"repo@location"',
       tokens: ['tag:.dagster/repository=repo@location'],
     },
+    {
+      text: 'code_location:location',
+      tokens: ['tag:.dagster/repository=__repository__@location'],
+    },
     {text: 'sensor:my_sensor', tokens: ['tag:dagster/sensor_name=my_sensor']},
     {text: 'schedule:daily', tokens: ['tag:dagster/schedule_name=daily']},
     {text: 'user:"a@b.com"', tokens: ['tag:user=a@b.com']},
@@ -43,7 +47,7 @@ describe('parseRunsSearch', () => {
     {text: 'sensor:s and tag:dagster/sensor_name=s', tokens: ['tag:dagster/sensor_name=s']},
     {
       text: 'tag:team=data and job:my_job and (status:failure or status:canceled) and id:a',
-      tokens: ['id:a', 'status:FAILURE', 'status:CANCELED', 'job:my_job', 'tag:team=data'],
+      tokens: ['status:FAILURE', 'status:CANCELED', 'job:my_job', 'id:a', 'tag:team=data'],
     },
   ])('parses $text', ({text, tokens}) => {
     expect(getTokenStrings(text)).toEqual(tokens);
@@ -52,7 +56,7 @@ describe('parseRunsSearch', () => {
   it.each([
     {
       text: 'job:a job:b',
-      message: 'Check the search syntax, for example job:my_job and status:failure',
+      message: 'Check the search syntax, for example job:my_job and status:FAILURE',
     },
     {text: 'my_job', message: 'Add an attribute, for example job:my_job'},
     {text: 'foo:bar', message: 'Unsupported attribute: "foo"'},
