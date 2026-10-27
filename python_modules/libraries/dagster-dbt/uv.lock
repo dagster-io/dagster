@@ -846,6 +846,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+dbt = [
+    { name = "dbt" },
+]
 dbt-core = [
     { name = "dbt-core", version = "1.7.19", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.13' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt111') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt112') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt112') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt112' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt112' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt112' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt17' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt17' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt18' and extra == 'group-11-dagster-dbt-test-dbt19')" },
     { name = "dbt-core", version = "1.8.8", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.13' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt111') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt112') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt110' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt112') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt111' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt112' and extra == 'group-11-dagster-dbt-test-dbt17') or (extra == 'group-11-dagster-dbt-test-dbt112' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt112' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt17' and extra == 'group-11-dagster-dbt-test-dbt18') or (extra == 'group-11-dagster-dbt-test-dbt17' and extra == 'group-11-dagster-dbt-test-dbt19') or (extra == 'group-11-dagster-dbt-test-dbt18' and extra == 'group-11-dagster-dbt-test-dbt19')" },
@@ -925,6 +928,7 @@ test-dbt19 = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../../dagster" },
+    { name = "dbt", marker = "extra == 'dbt'", specifier = ">=2,<3" },
     { name = "dbt-core", marker = "extra == 'dbt-core'", specifier = ">=1.7,<1.13" },
     { name = "gitpython" },
     { name = "jinja2" },
@@ -937,7 +941,7 @@ requires-dist = [
     { name = "sqlglot", extras = ["rs"] },
     { name = "typer", specifier = ">=0.9.0" },
 ]
-provides-extras = ["dbt-core"]
+provides-extras = ["dbt-core", "dbt"]
 
 [package.metadata.requires-dev]
 test = [
@@ -1258,6 +1262,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/dd/35/3bedb365a0c42b4f6
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c4/02/56cf9e3f231ee6bfab73ead0f08077661c0decaa8e6b7414137b7c3a5d27/db_dtypes-1.6.0-py3-none-any.whl", hash = "sha256:03f0ff5798fa5e407f07e84de2d619cbc363b8dcc40104825a85519793ffee8d", size = 18535, upload-time = "2026-05-07T08:01:59.765Z" },
 ]
+
+[[package]]
+name = "dbt"
+version = "2.0.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mashumaro", extra = ["msgpack"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/27/48a6a7fda183c55d82ac0ab393b21dc742f6ef3e17b2c2fd233fd20c0c4d/dbt-2.0.9.tar.gz", hash = "sha256:791946056d520147925c2057a1935975d82b555cd0a4d7e729b31a647f868d45", size = 3296, upload-time = "2026-10-19T22:40:22.851Z" }
 
 [[package]]
 name = "dbt-adapters"

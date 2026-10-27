@@ -1,6 +1,14 @@
+import importlib.metadata
+from unittest import mock
+
 import pytest
 from dagster import AssetCheckEvaluation, AssetCheckSeverity
-from dagster_dbt.compat import DBT_PYTHON_VERSION, NodeStatus, TestStatus
+from dagster_dbt.compat import (
+    DBT_PYTHON_VERSION,
+    NodeStatus,
+    TestStatus,
+    _check_dbt_v2_and_dbt_core_not_both_installed,
+)
 from dagster_dbt.core.dbt_cli_event import DbtFusionCliEventMessage
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
@@ -121,3 +129,27 @@ def test_fusion_test_result_to_check_evaluation(
     assert isinstance(evaluation, AssetCheckEvaluation)
     assert evaluation.passed is passed
     assert evaluation.severity is severity
+
+
+def test_dbt_v2_and_dbt_core_conflict() -> None:
+    def installed(versions: dict[str, str]):
+        def _version(name: str) -> str:
+            if name not in versions:
+                raise importlib.metadata.PackageNotFoundError(name)
+            return versions[name]
+
+        return mock.patch("dagster_dbt.compat.importlib.metadata.version", side_effect=_version)
+
+    with installed({"dbt": "2.0.9", "dbt-core": "1.12.6"}):
+        with pytest.raises(ImportError, match="uninstall `dbt-core`"):
+            _check_dbt_v2_and_dbt_core_not_both_installed()
+
+    # Either one alone, or the legacy `dbt` 1.x meta-package alongside dbt-core, is fine.
+    for versions in (
+        {"dbt": "2.0.9"},
+        {"dbt-core": "1.12.6"},
+        {"dbt": "1.0.0.40", "dbt-core": "1.12.6"},
+        {},
+    ):
+        with installed(versions):
+            _check_dbt_v2_and_dbt_core_not_both_installed()

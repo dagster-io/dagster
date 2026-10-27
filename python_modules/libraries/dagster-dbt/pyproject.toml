@@ -47,6 +47,9 @@ dagster_dbt = "dagster_dbt"
 # Follow the version support constraints for dbt Core:
 # https://docs.getdbt.com/docs/dbt-versions/core
 dbt-core = ["dbt-core>=1.7,<1.13"]
+# dbt v2: the Fusion engine, published on PyPI as `dbt`. Mutually exclusive with
+# the dbt-core extra -- both install into the `dbt` Python package.
+dbt = ["dbt>=2,<3"]
 
 [dependency-groups]
 # Test deps that pull in no dbt adapter, and so no dbt-core. The dbtfusion

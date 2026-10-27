@@ -1,3 +1,4 @@
+import importlib.metadata
 import logging
 from enum import Enum
 from typing import TYPE_CHECKING, Any, TypeAlias
@@ -10,6 +11,29 @@ from packaging import version
 # after this file is loaded, the root logger's handlers will be unchanged.
 existing_root_logger_handlers = [*logging.getLogger().handlers]
 
+
+def _check_dbt_v2_and_dbt_core_not_both_installed() -> None:
+    """The `dbt` package (dbt v2) and `dbt-core` both install into the `dbt` Python package, so
+    together they overwrite each other's files and break both.
+    """
+    try:
+        dbt_v2_version = version.parse(importlib.metadata.version("dbt"))
+        importlib.metadata.version("dbt-core")
+    except importlib.metadata.PackageNotFoundError:
+        return
+    # `dbt` 1.x on PyPI is an old meta-package that just depends on dbt-core.
+    if dbt_v2_version.major >= 2:
+        raise ImportError(
+            f"Both `dbt=={dbt_v2_version}` (dbt v2) and `dbt-core` are installed in this"
+            " environment. They install into the same `dbt` Python package, so the installation is"
+            " broken. To use dbt v2, uninstall `dbt-core`, any dbt adapter packages (such as"
+            " `dbt-snowflake`, which depend on dbt-core), and the `dagster-dbt[dbt-core]` extra."
+            " To use dbt Core, uninstall `dbt` and the `dagster-dbt[dbt]` extra. Then reinstall the"
+            " one you keep."
+        )
+
+
+_check_dbt_v2_and_dbt_core_not_both_installed()
 
 try:
     from dbt.version import __version__ as dbt_version
