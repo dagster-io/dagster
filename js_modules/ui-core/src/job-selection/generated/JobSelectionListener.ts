@@ -11,6 +11,7 @@ import {OrExpressionContext} from './JobSelectionParser.js';
 import {AttributeExpressionContext} from './JobSelectionParser.js';
 import {ParenthesizedExpressionContext} from './JobSelectionParser.js';
 import {NameExprContext} from './JobSelectionParser.js';
+import {GroupExprContext} from './JobSelectionParser.js';
 import {CodeLocationExprContext} from './JobSelectionParser.js';
 import {ValueContext} from './JobSelectionParser.js';
 import {KeyValueContext} from './JobSelectionParser.js';
@@ -126,6 +127,18 @@ export class JobSelectionListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitNameExpr?: (ctx: NameExprContext) => void;
+  /**
+   * Enter a parse tree produced by the `GroupExpr`
+   * labeled alternative in `JobSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  enterGroupExpr?: (ctx: GroupExprContext) => void;
+  /**
+   * Exit a parse tree produced by the `GroupExpr`
+   * labeled alternative in `JobSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   */
+  exitGroupExpr?: (ctx: GroupExprContext) => void;
   /**
    * Enter a parse tree produced by the `CodeLocationExpr`
    * labeled alternative in `JobSelectionParser.attributeExpr`.

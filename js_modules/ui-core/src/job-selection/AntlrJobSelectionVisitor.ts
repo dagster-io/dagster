@@ -1,6 +1,7 @@
 import {AbstractParseTreeVisitor, ParseTree} from 'antlr4ng';
 import escapeRegExp from 'lodash/escapeRegExp';
 
+import {DEFAULT_JOB_GROUP_NAME} from '../jobs/jobGroups';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {
@@ -8,6 +9,7 @@ import {
   AndExpressionContext,
   AttributeExpressionContext,
   CodeLocationExprContext,
+  GroupExprContext,
   NameExprContext,
   NotExpressionContext,
   OrExpressionContext,
@@ -21,6 +23,7 @@ import {getValue} from '../asset-selection/util';
 type Job = {
   name: string;
   repo: RepoAddress;
+  groupName?: string | null;
 };
 
 export class AntlrJobSelectionVisitor<T extends Job>
@@ -85,6 +88,16 @@ export class AntlrJobSelectionVisitor<T extends Job>
     const value = keyValue ? getValue(keyValue) : '';
     const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
     const selection = [...this.all_jobs].filter((i) => regex.test(i.name));
+    return new Set(selection);
+  }
+
+  visitGroupExpr(ctx: GroupExprContext) {
+    const keyValue = ctx.keyValue();
+    const value = keyValue ? getValue(keyValue) : '';
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
+    const selection = [...this.all_jobs].filter((i) =>
+      regex.test(i.groupName || DEFAULT_JOB_GROUP_NAME),
+    );
     return new Set(selection);
   }
 
