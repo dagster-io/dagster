@@ -178,7 +178,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._inst_data
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
+    def _instance(self) -> "DagsterInstance":
         return self._storage._instance  # noqa: SLF001
 
     def register_instance(self, instance: "DagsterInstance") -> None:
@@ -402,7 +402,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return LegacyEventLogStorage(storage, inst_data=inst_data)
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
+    def _instance(self) -> "DagsterInstance":
         return self._storage._instance  # noqa: SLF001
 
     def index_connection(self):
@@ -867,7 +867,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return LegacyScheduleStorage(storage, inst_data=inst_data)
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
+    def _instance(self) -> "DagsterInstance":
         return self._storage._instance  # noqa: SLF001
 
     def register_instance(self, instance: "DagsterInstance") -> None:

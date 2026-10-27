@@ -101,7 +101,7 @@ from dagster._core.workspace.workspace import (
 )
 from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_timestamp
-from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.aiodataloader import BlockingDataLoader, DataLoader
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -873,7 +873,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._source
 
     @property
-    def loaders(self) -> dict[type, DataLoader]:
+    def loaders(self) -> dict[type, tuple[DataLoader, BlockingDataLoader]]:
         return self._loaders
 
     @property

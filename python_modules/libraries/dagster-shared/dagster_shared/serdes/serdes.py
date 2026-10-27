@@ -398,7 +398,7 @@ def _whitelist_for_serdes(
                 field_serializers=field_serializers,
                 kwargs_fields=kwargs_fields,
             )
-            return klass  # (NamedTuple quirk)
+            return klass  # ty: ignore[invalid-return-type]  # (NamedTuple quirk)
 
         elif is_dataclass(klass) and (
             serializer is None or issubclass(serializer, DataclassSerializer)

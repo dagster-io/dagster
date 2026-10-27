@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any
 
 from typing_extensions import TypedDict
@@ -580,7 +580,7 @@ def _type_check_and_store_output(
 
 def _get_output_asset_events(
     asset_key: AssetKey,
-    asset_partitions: Iterable[str],
+    asset_partitions: Sequence[str],
     output: Output | DynamicOutput,
     output_def: OutputDefinition,
     io_manager_metadata: Mapping[str, MetadataValue],

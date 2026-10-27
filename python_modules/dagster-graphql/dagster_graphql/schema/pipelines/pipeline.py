@@ -155,7 +155,7 @@ class GrapheneTimePartitionRange(graphene.ObjectType):
 class GrapheneTimePartitionRangeStatus(GrapheneTimePartitionRange):
     status = graphene.NonNull(GraphenePartitionRangeStatus)
 
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         name = "TimePartitionRangeStatus"
 
 
@@ -1264,7 +1264,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     nodeNames = non_null_list(graphene.String)
     automationCondition = graphene.Field(GrapheneAutomationCondition)
 
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
@@ -1386,7 +1386,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
 
 class GrapheneJob(GraphenePipeline):
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Job"
 

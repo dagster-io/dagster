@@ -58,7 +58,7 @@ class ExplodingTestPipeline(ReconstructableJob):
             asset_selection,
         )
 
-    def get_definition(self):  # ty: ignore[invalid-method-override]
+    def get_definition(self):  # ty: ignore[invalid-attribute-override]
         if os.getpid() == _explode_pid["pid"]:
             raise Exception("Got the definition in the run worker process")
         return super().get_definition()

@@ -880,7 +880,7 @@ def is_list(
     if not of_type:
         return obj
 
-    return cast("list[T]", list(_check_iterable_items(obj, of_type, "list")))
+    return list(_check_iterable_items(obj, of_type, "list"))
 
 
 # ########################

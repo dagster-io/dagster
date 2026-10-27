@@ -420,7 +420,7 @@ def test_base_class_conflicts() -> None:
         TypeError,
         match="Can't instantiate abstract class DidntImpl",
     ):
-        DidntImpl()  # good job type checker
+        DidntImpl()  # ty: ignore[call-non-callable]
 
     @record
     class A(AbsPropBase):

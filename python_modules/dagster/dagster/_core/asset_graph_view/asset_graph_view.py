@@ -48,7 +48,7 @@ from dagster._core.definitions.partitions.utils import (
 from dagster._core.definitions.temporal_context import TemporalContext
 from dagster._core.loader import LoadingContext
 from dagster._time import get_current_datetime
-from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.aiodataloader import BlockingDataLoader, DataLoader
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import reverse_cron_string_iterator
 
@@ -153,7 +153,7 @@ class AssetGraphView(LoadingContext):
         return self._instance
 
     @property
-    def loaders(self) -> dict[type, DataLoader]:
+    def loaders(self) -> dict[type, tuple[DataLoader, BlockingDataLoader]]:
         return self._loaders
 
     @property

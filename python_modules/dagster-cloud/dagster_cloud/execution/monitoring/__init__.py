@@ -106,10 +106,7 @@ class CloudCodeServerHeartbeat(
     def without_messages_and_errors(self) -> "CloudCodeServerHeartbeat":
         return self._replace(
             error=None,
-            metadata=cast(
-                "CloudCodeServerHeartbeatMetadata",
-                {},
-            ),
+            metadata={},
         )
 
 

@@ -65,7 +65,11 @@ class ParentsPartitionsResult(NamedTuple):
 
 
 class BaseEntityNode(ABC, Generic[T_EntityKey]):
-    key: T_EntityKey
+    # Read-only for type checking so subclasses may implement these as fields or properties.
+    if TYPE_CHECKING:
+
+        @property
+        def key(self) -> T_EntityKey: ...
 
     @property
     @abstractmethod
@@ -73,7 +77,7 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
     @property
     @abstractmethod
-    def partition_mappings(self) -> Mapping[AssetOrCheckKey, PartitionMapping]: ...
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]: ...
 
     @property
     @abstractmethod
@@ -93,9 +97,16 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
 
 
 class BaseAssetNode(BaseEntityNode[AssetKey]):
-    key: AssetKey
-    parent_keys: AbstractSet[AssetKey]
-    child_keys: AbstractSet[AssetKey]
+    if TYPE_CHECKING:
+
+        @property
+        def key(self) -> AssetKey: ...
+
+        @property
+        def parent_keys(self) -> AbstractSet[AssetKey]: ...
+
+        @property
+        def child_keys(self) -> AbstractSet[AssetKey]: ...
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -218,6 +229,8 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
 
 class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
+    key: AssetCheckKey
+
     def __init__(
         self,
         key: AssetCheckKey,
@@ -249,7 +262,7 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         return self._partitions_def
 
     @property
-    def partition_mappings(self) -> Mapping[AssetOrCheckKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return {}
 
     @property
@@ -275,7 +288,7 @@ class BaseAssetJobNode(BaseEntityNode[AssetJobKey]):
         return None
 
     @property
-    def partition_mappings(self) -> Mapping[AssetOrCheckKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return {}
 
     # Job nodes are currently isolated in the entity dep graph (no edges to their member
@@ -293,6 +306,8 @@ class BaseAssetJobNode(BaseEntityNode[AssetJobKey]):
 
 class AssetJobNode(BaseAssetJobNode):
     """Asset-job node for the local (in-process) case, storing pre-resolved asset keys."""
+
+    key: AssetJobKey
 
     def __init__(
         self,
@@ -323,9 +338,15 @@ T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
-    _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
     _asset_check_nodes_by_key: Mapping[AssetCheckKey, AssetCheckNode]
-    _asset_job_nodes_by_key: Mapping[AssetJobKey, BaseAssetJobNode]
+
+    if TYPE_CHECKING:
+
+        @property
+        def _asset_nodes_by_key(self) -> Mapping[AssetKey, T_AssetNode]: ...
+
+        @property
+        def _asset_job_nodes_by_key(self) -> Mapping[AssetJobKey, BaseAssetJobNode]: ...
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:

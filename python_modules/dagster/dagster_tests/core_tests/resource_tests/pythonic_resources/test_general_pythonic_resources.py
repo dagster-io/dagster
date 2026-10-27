@@ -179,7 +179,7 @@ def test_abc_resource():
 
     # Can't instantiate abstract class
     with pytest.raises(TypeError):
-        Writer()
+        Writer()  # ty: ignore[call-non-callable]
 
     @dg.job(resource_defs={"writer": PrefixedWriterResource(prefix="greeting: ")})
     def prefixed_job():

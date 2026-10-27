@@ -4,6 +4,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Callable
 from contextlib import contextmanager
+from functools import cached_property
 from typing import Any
 
 import sqlalchemy as db
@@ -105,7 +106,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def is_persistent(self) -> bool:
         return False
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
         return False
 

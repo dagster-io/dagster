@@ -5,6 +5,7 @@ from asyncio import new_event_loop
 from collections import defaultdict
 from collections.abc import Mapping
 from contextlib import contextmanager
+from functools import cached_property
 from typing import Any, Dict, List, Optional, Set, Type, Union, cast  # noqa: F401, UP035
 
 # top-level include is dangerous in terms of incurring circular deps
@@ -255,13 +256,13 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     on a cron tab) are left unimplemented.
     """
 
-    def __init__(self, artifacts_dir: str, inst_data: object = None):
+    def __init__(self, artifacts_dir: str, inst_data: ConfigurableClassData | None = None):
         check.str_param(artifacts_dir, "artifacts_dir")
         self._artifacts_dir = artifacts_dir
         self._inst_data = inst_data
 
     @property
-    def inst_data(self) -> object:
+    def inst_data(self) -> ConfigurableClassData | None:
         return self._inst_data
 
     @classmethod
@@ -270,7 +271,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
 
     @classmethod
     def from_config_value(
-        cls, inst_data: object, config_value: Mapping[str, object]
+        cls, inst_data: ConfigurableClassData | None, config_value: Mapping[str, object]
     ) -> "FilesystemTestScheduler":
         artifacts_dir = cast("str", config_value["base_dir"])
         return FilesystemTestScheduler(artifacts_dir=artifacts_dir, inst_data=inst_data)
@@ -320,7 +321,7 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
     ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
         return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
         return True
 

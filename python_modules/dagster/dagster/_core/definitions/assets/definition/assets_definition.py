@@ -374,6 +374,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             spec.key: spec for spec in self._check_specs_by_output_name.values()
         }
 
+    @staticmethod
     def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],

@@ -170,7 +170,7 @@ class DynamicPartitionsRequestMixin:
 
 
 class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         name = "DynamicPartitionRequest"
 
     def __init__(
@@ -187,7 +187,7 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
 
 class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         name = "DynamicPartitionsRequestResult"
 
     skippedPartitionKeys = non_null_list(graphene.String)

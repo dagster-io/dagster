@@ -248,7 +248,7 @@ class Node(ABC):
 
 
 class GraphNode(Node):
-    definition: "GraphDefinition"
+    definition: "GraphDefinition"  # ty: ignore[invalid-mutable-override]
 
     def __init__(
         self,
@@ -284,7 +284,7 @@ class GraphNode(Node):
 
 
 class OpNode(Node):
-    definition: "OpDefinition"
+    definition: "OpDefinition"  # ty: ignore[invalid-mutable-override]
 
     def __init__(
         self,

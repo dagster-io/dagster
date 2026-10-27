@@ -85,7 +85,7 @@ def daily(start: datetime):
 @pytest.mark.parametrize("json_data", [0, 0.0, [0, 1, 2], {"a": 0}, [{"a": 0}, {"b": 1}, {"c": 2}]])
 def test_upath_io_manager_with_json(tmp_path: Path, json_data: Any):
     class JSONIOManager(dg.UPathIOManager):
-        extension: str = ".json"
+        extension = ".json"
 
         def dump_to_path(self, context: OutputContext, obj: Any, path: UPath):
             with path.open("w") as file:
