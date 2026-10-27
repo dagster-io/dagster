@@ -71,6 +71,8 @@ The `PipesDatabricksNotebookWidgetsParamsLoader` reads Pipes parameters from not
 
 ## Triggering existing jobs without Pipes
 
+To trigger a job that's already defined in Databricks with Pipes, see [Dagster Pipes with existing Databricks jobs](/integrations/libraries/databricks/pipes/existing-jobs).
+
 If your existing Databricks notebook or job doesn't have Pipes boilerplate, you can still orchestrate it from Dagster using the Databricks SDK directly. This approach blocks downstream assets on job failure and surfaces run metadata, but doesn't support real-time log streaming.
 
 <CodeExample
