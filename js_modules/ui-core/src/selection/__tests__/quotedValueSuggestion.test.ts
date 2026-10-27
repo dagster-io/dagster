@@ -16,7 +16,7 @@ import {opGraphSelectionSyntaxSupportedAttributes} from '../../pipelines/useOpGr
 import {RunSelectionLexer} from '../../run-selection/generated/RunSelectionLexer';
 import {RunSelectionParser} from '../../run-selection/generated/RunSelectionParser';
 import {parseRunsSearch} from '../../runs/redesign/parseRunsSearch';
-import {useRunsSearchAutoComplete} from '../../runs/redesign/useRunsSearchAutoComplete';
+import {useRunsSearchAutoCompleteProvider} from '../../runs/redesign/useRunsSearchAutoCompleteProvider';
 import {SyntaxError} from '../CustomErrorListener';
 import {createSelectionAutoComplete} from '../SelectionAutoComplete';
 import {createProvider} from '../SelectionAutoCompleteProvider';
@@ -51,8 +51,8 @@ const createHint = (
   });
 
 const getRunsSearchResults = (line: string, cursorIndex: number) =>
-  renderHook(() => useRunsSearchAutoComplete({line, cursorIndex})).result.current
-    .autoCompleteResults;
+  renderHook(() => useRunsSearchAutoCompleteProvider().useAutoComplete({line, cursorIndex})).result
+    .current.autoCompleteResults;
 
 const CONSUMERS: Consumer[] = [
   {

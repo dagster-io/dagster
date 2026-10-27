@@ -3,6 +3,7 @@ import uniqBy from 'lodash/uniqBy';
 
 import {
   RUNS_SEARCH_ATTRIBUTES,
+  RUN_STATUSES,
   RunsSearchAttribute,
   TAG_KEY_BY_ATTRIBUTE,
   codeLocationToTagValue,
@@ -10,7 +11,6 @@ import {
   getAttributeTermForTag,
   isTagBackedAttribute,
 } from './runsSearchAttributes';
-import {RunStatus} from '../../graphql/types';
 import {AntlrInputErrorListener} from '../../selection/AntlrInputErrorListener';
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {getLeadingWhitespaceLength} from '../../selection/SelectionInputParser';
@@ -113,8 +113,6 @@ const UNSUPPORTED_EXPRESSION_MESSAGES = [
   [UnclosedFunctionExpressionContext, FUNCTION_MESSAGE],
   [IncompleteAttributeExpressionMissingSecondValueContext, TAG_FORMAT_MESSAGE],
 ] as const satisfies readonly (readonly [ContextClass, string])[];
-
-const RUN_STATUSES: string[] = Object.values(RunStatus);
 
 type RunsSearchParseResult =
   | {

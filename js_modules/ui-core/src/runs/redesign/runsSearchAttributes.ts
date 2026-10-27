@@ -1,3 +1,4 @@
+import {RunStatus} from '../../graphql/types';
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {DagsterTag} from '../RunTag';
 
@@ -17,6 +18,8 @@ export const RUNS_SEARCH_ATTRIBUTES = [
 ] as const;
 
 export type RunsSearchAttribute = (typeof RUNS_SEARCH_ATTRIBUTES)[number];
+
+export const RUN_STATUSES: string[] = Object.values(RunStatus);
 
 const TAG_BACKED_ATTRIBUTES = [
   'code_location',

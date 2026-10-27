@@ -7,9 +7,9 @@ import {lintRunsSearch} from './lintRunsSearch';
 import {parseRunsSearch} from './parseRunsSearch';
 import {SelectionAutoCompleteInput} from '../../selection/SelectionInput';
 import {RunFilterToken} from '../RunsFilterUtils';
-import {useRunsSearchAutoComplete} from './useRunsSearchAutoComplete';
+import {useRunsSearchAutoCompleteProvider} from './useRunsSearchAutoCompleteProvider';
 
-type Props = {
+type RunsSearchInputProps = {
   tokens: RunFilterToken[];
   onChange: (tokens: RunFilterToken[]) => void;
 };
@@ -19,8 +19,9 @@ type UnappliedCommit = {
   tokenStrings: string[];
 };
 
-export const RunsSearchInput = ({tokens, onChange}: Props) => {
+export const RunsSearchInput = ({tokens, onChange}: RunsSearchInputProps) => {
   const [unappliedCommit, setUnappliedCommit] = useState<UnappliedCommit | null>(null);
+  const {useAutoComplete} = useRunsSearchAutoCompleteProvider();
 
   const appliedText = getRunsSearchText(tokens);
   const tokenStrings = tokensAsStringArray(tokens);
@@ -60,7 +61,7 @@ export const RunsSearchInput = ({tokens, onChange}: Props) => {
       id="runs-search"
       recentSearchesKey="runs-search"
       placeholder="Search and filter runs"
-      useAutoComplete={useRunsSearchAutoComplete}
+      useAutoComplete={useAutoComplete}
       linter={lintRunsSearch}
       value={value}
       onChange={onCommit}
