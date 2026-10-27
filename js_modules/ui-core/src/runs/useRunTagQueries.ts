@@ -25,7 +25,13 @@ export const useLazyRunTagKeys = () => {
     [data],
   );
 
-  return {fetch, keys, loading};
+  return {
+    fetch,
+    keys,
+    /** True once a request has returned the tag keys. */
+    loaded: data?.runTagKeysOrError?.__typename === 'RunTagKeys',
+    loading,
+  };
 };
 
 /** Sorted values from a run tag values query result; empty on error. */

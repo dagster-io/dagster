@@ -5,7 +5,6 @@ import {ReactNode} from 'react';
 
 import {DefaultOptions} from '../../../apollo-client';
 import {buildPythonError} from '../../../graphql/builders';
-import {RUN_TAG_KEYS_QUERY} from '../../RunTagQueries';
 import {RunFilterToken} from '../../RunsFilterUtils';
 import {buildRunTagFocusMocks} from '../../__fixtures__/RunTagQueries.fixtures';
 import {RunsSearchInput} from '../RunsSearchInput';
@@ -20,15 +19,13 @@ const LEGACY_TOKENS: RunFilterToken[] = [
   {token: 'tag', value: 'user=a@b.com'},
 ];
 
-// Each value query can answer twice, so a repeated request shows up in the call count.
-const buildCountedValueMocks = () =>
-  buildRunTagFocusMocks()
-    .filter(({request}) => request.query !== RUN_TAG_KEYS_QUERY)
-    .map((mock) => ({
-      ...mock,
-      result: jest.fn().mockReturnValue(mock.result),
-      maxUsageCount: 2,
-    }));
+// Each query can answer twice, so a repeated request shows up in the call count.
+const buildCountedFocusMocks = () =>
+  buildRunTagFocusMocks().map((mock) => ({
+    ...mock,
+    result: jest.fn().mockReturnValue(mock.result),
+    maxUsageCount: 2,
+  }));
 
 // Matches the app client's default, under which each lazy fetch sends a request.
 const APP_DEFAULT_OPTIONS = {
@@ -140,8 +137,8 @@ describe('RunsSearchInput', () => {
     expect(await screen.findByRole('alert')).toBeEmptyDOMElement();
   });
 
-  it('loads the suggested values when the input gains focus', async () => {
-    const mocks = buildCountedValueMocks();
+  it('loads suggestions when the input gains focus', async () => {
+    const mocks = buildCountedFocusMocks();
     renderSearch({mocks});
     const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
     mocks.forEach(({result}) => expect(result).not.toHaveBeenCalled());
@@ -154,7 +151,7 @@ describe('RunsSearchInput', () => {
   });
 
   it('does not reload the suggested values when the input gains focus again', async () => {
-    const mocks = buildCountedValueMocks();
+    const mocks = buildCountedFocusMocks();
     renderSearch({mocks});
     const user = userEvent.setup();
     const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
@@ -171,7 +168,7 @@ describe('RunsSearchInput', () => {
   });
 
   it('retries a failed value query when the input gains focus again', async () => {
-    const mocks = buildCountedValueMocks();
+    const mocks = buildCountedFocusMocks();
     const failed = mocks.at(-1);
     if (!failed) {
       throw new Error('Expected a value query mock');
@@ -195,7 +192,7 @@ describe('RunsSearchInput', () => {
   });
 
   it('retries a value query that returned an error when the input gains focus again', async () => {
-    const mocks = buildCountedValueMocks();
+    const mocks = buildCountedFocusMocks();
     const failed = mocks.at(-1);
     if (!failed) {
       throw new Error('Expected a value query mock');
@@ -214,5 +211,27 @@ describe('RunsSearchInput', () => {
     await user.click(input);
 
     await waitFor(() => expect(failed.result).toHaveBeenCalledTimes(1));
+  });
+
+  it('retries the tag key query that returned an error when the input gains focus again', async () => {
+    const mocks = buildCountedFocusMocks();
+    const [keysMock] = mocks;
+    if (!keysMock) {
+      throw new Error('Expected the tag key query mock');
+    }
+    const errorResult = jest.fn().mockReturnValue({
+      data: {__typename: 'Query', runTagKeysOrError: buildPythonError()},
+    });
+    renderSearch({mocks: [{request: keysMock.request, result: errorResult}, ...mocks]});
+    const user = userEvent.setup();
+    const input = await screen.findByRole('textbox', {name: 'Search and filter runs'});
+    await user.click(input);
+    await waitFor(() => expect(errorResult).toHaveBeenCalledTimes(1));
+    expect(keysMock.result).not.toHaveBeenCalled();
+
+    await user.tab();
+    await user.click(input);
+
+    await waitFor(() => expect(keysMock.result).toHaveBeenCalledTimes(1));
   });
 });

@@ -1,4 +1,4 @@
-import {MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, renderHook, waitFor} from '@testing-library/react';
 import {ReactNode} from 'react';
 
@@ -61,7 +61,8 @@ const WORKSPACE_MOCKS = buildWorkspaceMocks([
   }),
 ]);
 
-const SEARCH_VALUE_MOCKS = buildRunTagFocusMocks({
+const FOCUS_MOCKS = buildRunTagFocusMocks({
+  tagKeys: ['team', 'dagster/schedule_name', 'dagster/auto_materialize'],
   values: {
     [DagsterTag.SensorName]: ['my_sensor'],
     [DagsterTag.User]: ['a@b.com', ''],
@@ -70,13 +71,14 @@ const SEARCH_VALUE_MOCKS = buildRunTagFocusMocks({
 
 type MocksProps = {
   children: ReactNode;
+  focusMocks?: MockedResponse[];
 };
 
-const Mocks = ({children}: MocksProps) => (
+const Mocks = ({children, focusMocks = FOCUS_MOCKS}: MocksProps) => (
   <MockedProvider
     mocks={[
       ...WORKSPACE_MOCKS,
-      ...SEARCH_VALUE_MOCKS,
+      ...focusMocks,
       buildRunTagValuesQueryMockedResponse('team', ['dev', '', 'data']),
     ]}
   >
@@ -84,19 +86,29 @@ const Mocks = ({children}: MocksProps) => (
   </MockedProvider>
 );
 
+type RenderSuggestionsOptions = {
+  cursorIndex?: number;
+  focusMocks?: MockedResponse[];
+};
+
 /** Renders the provider for `line` after the input gains focus. */
-const renderSuggestions = (line: string, cursorIndex = line.length) => {
+const renderSuggestions = (
+  line: string,
+  {cursorIndex = line.length, focusMocks = FOCUS_MOCKS}: RenderSuggestionsOptions = {},
+) => {
   const {result} = renderHook(
     () => {
-      const {useAutoComplete, fetchValues} = useRunsSearchAutoCompleteProvider();
+      const {useAutoComplete, fetchSuggestions} = useRunsSearchAutoCompleteProvider();
       return {
-        fetchValues,
+        fetchSuggestions,
         ...useAutoComplete({line, cursorIndex}),
       };
     },
-    {wrapper: Mocks},
+    {
+      wrapper: ({children}) => <Mocks focusMocks={focusMocks}>{children}</Mocks>,
+    },
   );
-  act(() => result.current.fetchValues());
+  act(() => result.current.fetchSuggestions());
   return result;
 };
 
@@ -133,7 +145,7 @@ describe('useRunsSearchAutoCompleteProvider', () => {
   });
 
   it('reports loading until the workspace loads', async () => {
-    // Skips fetchValues so no tag value query is in flight.
+    // Skips fetchSuggestions so no tag value query is in flight.
     const {result} = renderHook(
       () => useRunsSearchAutoCompleteProvider().useAutoComplete({line: 'job:', cursorIndex: 4}),
       {wrapper: Mocks},
@@ -167,16 +179,25 @@ describe('useRunsSearchAutoCompleteProvider', () => {
   });
 
   it.each([
-    {line: 'tag:team', applied: 'tag:team='},
-    {line: 'tag:my-team', applied: 'tag:"my-team"='},
-  ])('offers the typed key for $line, leaving the cursor on the value', async ({line, applied}) => {
-    const result = renderSuggestions(line);
+    {
+      line: 'tag:',
+      rows: ['dagster/auto_materialize=', 'team='],
+      applied: ['tag:dagster/auto_materialize=', 'tag:team='],
+    },
+    {line: 'tag:tea', rows: ['team='], applied: ['tag:team=']},
+    {line: 'tag:my-team', rows: ['"my-team"='], applied: ['tag:"my-team"=']},
+  ])(
+    'suggests tag keys for $line, leaving the cursor on the value',
+    async ({line, rows, applied}) => {
+      const result = renderSuggestions(line);
 
-    await waitFor(() => expect(applyRows(line, result)).toEqual([applied]));
-    expect(result.current.autoCompleteResults.list).toEqual([
-      expect.not.objectContaining({trailingSpace: true}),
-    ]);
-  });
+      await waitFor(() => expect(getRowTexts(result)).toEqual(rows));
+      expect(result.current.autoCompleteResults.list).toEqual(
+        rows.map(() => expect.not.objectContaining({trailingSpace: true})),
+      );
+      expect(applyRows(line, result)).toEqual(applied);
+    },
+  );
 
   it.each(['tag:a\\b', 'tag:my*'])(
     'offers no typed key for %s, which quoting would change',
@@ -195,10 +216,11 @@ describe('useRunsSearchAutoCompleteProvider', () => {
     {input: 'tag:"te|am"=data', applied: 'tag:team=data'},
     {input: 'tag:"my|*"', applied: 'tag:"my*"='},
     {input: 'tag:te|am=data and job:nightly', applied: 'tag:team=data and job:nightly'},
+    {input: 'tag:dagster/auto|=data', applied: 'tag:dagster/auto_materialize=data'},
   ])('keeps the rest of the pair when choosing a key in $input', async ({input, applied}) => {
     const cursorIndex = input.indexOf('|');
     const line = input.replace('|', '');
-    const result = renderSuggestions(line, cursorIndex);
+    const result = renderSuggestions(line, {cursorIndex});
 
     await waitFor(() => expect(applyRows(line, result)).toEqual([applied]));
   });
@@ -206,12 +228,19 @@ describe('useRunsSearchAutoCompleteProvider', () => {
   it('keeps the shared range for operators after a quoted key', async () => {
     const line = 'tag:"team"=data';
     const cursorIndex = line.indexOf('=');
-    const result = renderSuggestions(line, cursorIndex);
+    const result = renderSuggestions(line, {cursorIndex});
 
     await waitFor(() =>
       expect(result.current.autoCompleteResults).toEqual(
         expect.objectContaining({from: cursorIndex, to: cursorIndex}),
       ),
     );
+  });
+
+  it('suggests every loaded tag key', async () => {
+    const tagKeys = Array.from({length: 60}, (_, index) => `key_${index}`);
+    const result = renderSuggestions('tag:', {focusMocks: buildRunTagFocusMocks({tagKeys})});
+
+    await waitFor(() => expect(getRowTexts(result)).toHaveLength(tagKeys.length));
   });
 });

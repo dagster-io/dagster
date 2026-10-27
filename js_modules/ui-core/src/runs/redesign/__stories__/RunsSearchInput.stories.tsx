@@ -18,6 +18,7 @@ export default {
 
 const MOCKS = [
   ...buildRunTagFocusMocks({
+    tagKeys: ['team', 'env'],
     values: {
       [DagsterTag.SensorName]: ['new_files_sensor'],
       [DagsterTag.User]: ['marco@dagsterlabs.com'],

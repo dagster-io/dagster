@@ -8,6 +8,7 @@ import {
   RunsSearchAttribute,
   TAG_KEY_BY_ATTRIBUTE,
   formatRunsSearchValue,
+  getAttributeForTagKey,
   tagValueToCodeLocation,
 } from './runsSearchAttributes';
 import {COMMON_COLLATOR} from '../../app/Util';
@@ -24,7 +25,7 @@ import {
 } from '../../selection/SelectionAutoCompleteProvider';
 import {getUnquotedValueProblem} from '../../selection/SelectionInputUtil';
 import {DagsterRepoOption, useRepositoryOptions} from '../../workspace/WorkspaceContext/util';
-import {useLazyRunTagValues, useRunTagValues} from '../useRunTagQueries';
+import {useLazyRunTagKeys, useLazyRunTagValues, useRunTagValues} from '../useRunTagQueries';
 
 const ATTRIBUTE_ICONS = {
   id: 'id',
@@ -77,21 +78,32 @@ const createTagKeySuggestion = (key: string, textCallback?: (text: string) => st
 };
 
 type TagKeyResultsOptions = {
+  tagKeys: string[];
   query: string;
   quoted: boolean;
   textCallback?: (text: string) => string;
 };
 
-/**
- * The typed key for the first half of a pair, so choosing it leaves the cursor on the value.
- * Skipped when quoting the unquoted key would change or not fix it.
- */
-const getTagKeyResults = ({query, quoted, textCallback}: TagKeyResultsOptions): Suggestion[] => {
-  if (!query || (!quoted && getUnquotedValueProblem(query))) {
-    return [];
+/** Tag keys for the first half of a pair, or the typed key when none match. */
+const getTagKeyResults = ({
+  tagKeys,
+  query,
+  quoted,
+  textCallback,
+}: TagKeyResultsOptions): Suggestion[] => {
+  const queryLower = query.toLowerCase();
+  const matches = tagKeys.filter((key) => key.toLowerCase().includes(queryLower));
+
+  if (query && !matches.length) {
+    // Quoting an unquoted key with a problem would change the key or still not parse.
+    if (!quoted && getUnquotedValueProblem(query)) {
+      return [];
+    }
+    return [createTagKeySuggestion(query, textCallback)];
   }
 
-  return [createTagKeySuggestion(query, textCallback)];
+  // Uncapped, like the legacy filter, so system keys can't crowd out the rest.
+  return matches.map((key) => createTagKeySuggestion(key, textCallback));
 };
 
 type RunsSearchHintOptions = {
@@ -99,6 +111,7 @@ type RunsSearchHintOptions = {
   /** The key of the tag pair whose value the cursor is in, if any. */
   valueKey: string | null;
   tagValues: string[];
+  tagKeys: string[];
   keyQuoted: boolean;
 };
 
@@ -106,6 +119,7 @@ const createRunsSearchHint = ({
   valuesByAttribute,
   valueKey,
   tagValues,
+  tagKeys,
   keyQuoted,
 }: RunsSearchHintOptions) => {
   const tagPairs = valueKey ? tagValues.map((value) => ({key: valueKey, value})) : [];
@@ -127,6 +141,7 @@ const createRunsSearchHint = ({
     getAttributeValueResultsMatchingQuery: (props) =>
       props.attribute === 'tag' && props.key === undefined
         ? getTagKeyResults({
+            tagKeys,
             query: props.query,
             quoted: keyQuoted,
             textCallback: props.textCallback,
@@ -141,6 +156,7 @@ type RunsSearchResultsOptions = {
   line: string;
   cursorIndex: number;
   valuesByAttribute: ValuesByAttribute;
+  tagKeys: string[];
   loading: boolean;
 };
 
@@ -148,6 +164,7 @@ const useRunsSearchResults = ({
   line,
   cursorIndex,
   valuesByAttribute,
+  tagKeys,
   loading,
 }: RunsSearchResultsOptions) => {
   const {valueKey, keyRangeEnd, keyQuoted} = useMemo(
@@ -158,8 +175,14 @@ const useRunsSearchResults = ({
 
   const hint = useMemo(
     () =>
-      createRunsSearchHint({valuesByAttribute, valueKey, tagValues: tagValues.values, keyQuoted}),
-    [valuesByAttribute, valueKey, tagValues.values, keyQuoted],
+      createRunsSearchHint({
+        valuesByAttribute,
+        valueKey,
+        tagValues: tagValues.values,
+        tagKeys,
+        keyQuoted,
+      }),
+    [valuesByAttribute, valueKey, tagValues.values, tagKeys, keyQuoted],
   );
 
   const results = useSelectionAutoCompleteResults(hint, line, cursorIndex);
@@ -178,6 +201,7 @@ const useRunsSearchResults = ({
 
 export const useRunsSearchAutoCompleteProvider = () => {
   const {options, loading: workspaceLoading} = useRepositoryOptions();
+  const tagKeysQuery = useLazyRunTagKeys();
 
   const sensors = useLazyRunTagValues(TAG_KEY_BY_ATTRIBUTE.sensor);
   const schedules = useLazyRunTagValues(TAG_KEY_BY_ATTRIBUTE.schedule);
@@ -185,6 +209,12 @@ export const useRunsSearchAutoCompleteProvider = () => {
   const backfills = useLazyRunTagValues(TAG_KEY_BY_ATTRIBUTE.backfill);
   const partitions = useLazyRunTagValues(TAG_KEY_BY_ATTRIBUTE.partition);
   const tagValueQueries = [sensors, schedules, users, backfills, partitions];
+
+  // Keys with their own attribute (like `schedule`) are suggested there instead.
+  const tagKeys = useMemo(
+    () => tagKeysQuery.keys.filter((key) => !getAttributeForTagKey(key)),
+    [tagKeysQuery.keys],
+  );
 
   const valuesByAttribute = useMemo(() => {
     const {jobs, codeLocations} = getWorkspaceValues(options);
@@ -209,17 +239,18 @@ export const useRunsSearchAutoCompleteProvider = () => {
     partitions.values,
   ]);
 
-  const loading = workspaceLoading || tagValueQueries.some((query) => query.loading);
+  const loading =
+    workspaceLoading || tagKeysQuery.loading || tagValueQueries.some((query) => query.loading);
 
   /** Load each list once per page, retrying any that failed. */
-  const fetchValues = () => {
-    tagValueQueries
+  const fetchSuggestions = () => {
+    [tagKeysQuery, ...tagValueQueries]
       .filter((query) => !query.loaded && !query.loading)
       .forEach((query) => query.fetch());
   };
 
   const useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'] = ({line, cursorIndex}) =>
-    useRunsSearchResults({line, cursorIndex, valuesByAttribute, loading});
+    useRunsSearchResults({line, cursorIndex, valuesByAttribute, tagKeys, loading});
 
-  return {useAutoComplete, fetchValues};
+  return {useAutoComplete, fetchSuggestions};
 };
