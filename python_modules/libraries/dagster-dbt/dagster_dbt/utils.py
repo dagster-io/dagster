@@ -147,6 +147,17 @@ def _select_unique_ids_from_manifest(
 
         def __getattr__(self, item):
             ret = super().get(item)
+            if ret is None and item == "config":
+                # dbt-core's own parsed manifest nodes always have a `config`
+                # dataclass that defaults to `NodeConfig(enabled=True)`, even
+                # when the raw manifest.json entry omits `config` entirely --
+                # which it legitimately does for on-run-start/on-run-end hook
+                # ("operation") nodes. Without this default,
+                # `dbt.graph.selector.NodeSelector._is_graph_member`'s
+                # `node.config.enabled` raises `AttributeError` the moment any
+                # select/exclude selector is resolved against a manifest that
+                # contains a hook node.
+                return _DictShim({"enabled": True})
             # allow recursive access e.g. foo.bar.baz
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
