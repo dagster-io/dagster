@@ -1,8 +1,14 @@
 import {ParserRuleContext, TerminalNode} from 'antlr4ng';
 
 import {BaseSelectionVisitor} from './BaseSelectionVisitor';
-import {SelectionAutoCompleteProvider, Suggestion} from './SelectionAutoCompleteProvider';
 import {
+  QuotedValue,
+  SelectionAutoCompleteProvider,
+  Suggestion,
+} from './SelectionAutoCompleteProvider';
+import {
+  KEY_VALUE_ATTRIBUTES,
+  getUnquotedValueProblem,
   getValueNodeValue,
   isInsideExpressionlessParenthesizedExpression,
   removeQuotesFromString,
@@ -17,9 +23,12 @@ import {
   DownTraversalContext,
   FunctionNameContext,
   IncompleteAttributeExpressionMissingValueContext,
+  IncompleteLeftQuotedStringValueContext,
   IncompletePlusTraversalExpressionContext,
   IncompletePlusTraversalExpressionMissingValueContext,
+  IncompleteRightQuotedStringValueContext,
   LeftParenTokenContext,
+  NullStringValueContext,
   OrTokenContext,
   PostDigitsWhitespaceContext,
   PostDownwardTraversalWhitespaceContext,
@@ -27,13 +36,90 @@ import {
   PostNeighborTraversalWhitespaceContext,
   PostNotOperatorWhitespaceContext,
   PostUpwardTraversalWhitespaceContext,
+  QuotedStringValueContext,
   UnmatchedValueContext,
+  UnquotedRejectedValueContext,
   UpTraversalContext,
 } from './generated/SelectionAutoCompleteParser';
 
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 const DEBUG = false;
+
+/** What may follow a value that ends where it was typed: whitespace, `)`, or nothing. */
+const VALUE_END_PATTERN = /^(?:[ \t\r\n)]|$)/;
+
+/** On pages with traversal, a complete downstream layer (`+` or `+2`) can also follow a value. */
+const TRAVERSAL_VALUE_END_PATTERN = /^(?:\+[0-9]*)?(?:[ \t\r\n)]|$)/;
+
+/**
+ * The expression's value with quotes added, when the shared grammar rejects part of it unquoted
+ * and quoting can fix it.
+ */
+function getQuotedValue(
+  ctx: AttributeExpressionContext,
+  supportsTraversal: boolean | undefined,
+): QuotedValue | undefined {
+  const values = ctx.attributeValue().map((attributeValue) => attributeValue.value());
+  const problems = values
+    .filter((value) => value instanceof UnquotedRejectedValueContext)
+    .map((value) => getUnquotedValueProblem(value.getText()));
+  if (!problems.length) {
+    return undefined;
+  }
+
+  // A backslash can't be escaped yet and a hidden character should be removed, so quoting isn't
+  // offered for unquoted values with either.
+  if (
+    problems.some(
+      (problem) => problem?.type === 'hidden-character' || problem?.type === 'backslash',
+    )
+  ) {
+    return undefined;
+  }
+
+  // With an incomplete quote the parser can't tell where the value ends, so quoting could cut it short.
+  if (
+    values.some(
+      (value) =>
+        value instanceof IncompleteLeftQuotedStringValueContext ||
+        value instanceof IncompleteRightQuotedStringValueContext,
+    )
+  ) {
+    return undefined;
+  }
+
+  // The parser ends a value at characters like `+` and `:`, so when the typed text runs on past it,
+  // quoting would wrap only the start of what was typed.
+  const lastValueToken = ctx.attributeValue().at(-1)?.stop;
+  const stream = lastValueToken?.inputStream;
+  const rest = stream
+    ? stream.getTextFromRange((lastValueToken?.stop ?? 0) + 1, stream.size - 1)
+    : '';
+  const valueEndPattern = supportsTraversal ? TRAVERSAL_VALUE_END_PATTERN : VALUE_END_PATTERN;
+  if (!valueEndPattern.test(rest)) {
+    return undefined;
+  }
+
+  // Only tag attributes take key=value, so quoting a pair on another attribute is still invalid.
+  const attribute = ctx.attributeName().getText();
+  if (values.length > 1 && !(KEY_VALUE_ATTRIBUTES as readonly string[]).includes(attribute)) {
+    return undefined;
+  }
+
+  const text = values
+    .map((value) =>
+      // A bare <null> means an empty value where it's supported, so quoting it would match the
+      // literal text "<null>" instead.
+      value instanceof NullStringValueContext ? value.getText() : `"${getValueNodeValue(value)}"`,
+    )
+    .join('=');
+  // Accepted unquoted values can hold a `*` too, and the quoted text quotes every value.
+  const hasUnquotedAsterisk = values.some(
+    (value) => !(value instanceof QuotedStringValueContext) && value.getText().includes('*'),
+  );
+  return {text, hasUnquotedAsterisk};
+}
 
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
@@ -215,7 +301,16 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     const parentChildren = ctx.parent?.children ?? [];
     if (parentChildren[0] instanceof AttributeNameContext) {
       const rawValue = getValueNodeValue(ctx.value());
-      this.addAttributeValueResults(parentChildren[0].getText(), rawValue);
+      const quotedValue =
+        parentContext instanceof AttributeExpressionContext
+          ? getQuotedValue(parentContext, this.supportsTraversal)
+          : undefined;
+      this.addAttributeValueResults(
+        parentChildren[0].getText(),
+        rawValue,
+        DEFAULT_TEXT_CALLBACK,
+        quotedValue,
+      );
     }
   }
 
@@ -477,6 +572,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     attributeKey: string,
     value: string,
     textCallback: (value: string) => string = DEFAULT_TEXT_CALLBACK,
+    quotedValue?: QuotedValue,
   ) {
     const unquotedValue = removeQuotesFromString(value);
     this.list.push(
@@ -484,6 +580,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
         attribute: attributeKey,
         query: unquotedValue,
         textCallback,
+        quotedValue,
       }),
     );
   }

@@ -1,3 +1,5 @@
+import {render, screen} from '@testing-library/react';
+
 import {createSelectionAutoComplete} from '../SelectionAutoComplete';
 import {createProvider} from '../SelectionAutoCompleteProvider';
 
@@ -1481,6 +1483,104 @@ describe('createAssetSelectionHint', () => {
     {input: '"a-b"|', to: 5},
   ])('does not suggest a substring match for $input', ({input, to}) => {
     expect(testAutocomplete(input, hintWithRejectedValues)).toEqual({list: [], from: 0, to});
+  });
+
+  const hintForQuoting = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {
+        key: ['asset1'],
+        owner: ['ben@dagsterlabs.com'],
+        tag: [{key: 'team', value: 'data'}],
+        column_tag: [{key: 'team', value: 'data'}],
+        id: [],
+        status: ['SUCCESS', 'FAILURE'],
+      },
+      primaryAttributeKey: 'key',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        owner: 'magnify_glass',
+        tag: 'magnify_glass',
+        column_tag: 'magnify_glass',
+        id: 'magnify_glass',
+        status: 'magnify_glass',
+      },
+    }),
+  );
+
+  it('offers the value in quotes in place of no match', async () => {
+    const {list, from, to} = testAutocomplete('owner:zzz@q|', hintForQuoting);
+    expect({list, from, to}).toEqual({
+      list: [expect.objectContaining({text: '"zzz@q"', trailingSpace: true})],
+      from: 6,
+      to: 11,
+    });
+    expect(list?.[0]).not.toHaveProperty('type');
+
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('Add quotes:')).toBeVisible();
+    expect(await screen.findByTitle('owner:"zzz@q"')).toBeVisible();
+  });
+
+  it.each([
+    {input: 'tag:a-|b=c-d', text: '"a-b"="c-d"', from: 4, to: 11},
+    {input: 'tag:a-b=c-|d', text: '"a-b"="c-d"', from: 4, to: 11},
+    {input: 'tag:a-b=c-d|', text: '"a-b"="c-d"', from: 4, to: 11},
+    {input: 'tag:"a-b"=c-d|', text: '"a-b"="c-d"', from: 4, to: 13},
+    {input: 'tag:a-b="c-|d"', text: '"a-b"="c-d"', from: 4, to: 13},
+    {input: 'tag:a-b=<null>|', text: '"a-b"=<null>', from: 4, to: 14},
+    {input: 'id:12ab-34cd|', text: '"12ab-34cd"', from: 3, to: 12},
+    {input: 'key:a-b*|', text: '"a-b*"', from: 4, to: 8},
+    {input: 'column_tag:a-b=c-d|', text: '"a-b"="c-d"', from: 11, to: 18},
+    {input: 'status:bad-value|', text: '"bad-value"', from: 7, to: 16},
+    {input: '(owner:a-|b)', text: '"a-b"', from: 7, to: 10},
+    {input: 'owner:a-|b and key:x', text: '"a-b"', from: 6, to: 9},
+    {input: 'key:a-|b+', text: '"a-b"', from: 4, to: 7},
+    {input: 'key:a-|b+2 and key:y', text: '"a-b"', from: 4, to: 7},
+  ])('offers $text for $input', ({input, text, from, to}) => {
+    expect(testAutocomplete(input, hintForQuoting)).toEqual({
+      list: [expect.objectContaining({text})],
+      from,
+      to,
+    });
+  });
+
+  it('suggests operators after a closing quote even when the other value needs quotes', () => {
+    expect(testAutocomplete('tag:a-b="c-d"|', hintForQuoting)).toEqual({
+      list: [
+        expect.objectContaining({text: ' and '}),
+        expect.objectContaining({text: ' or '}),
+        expect.objectContaining({text: '+'}),
+      ],
+      from: 13,
+      to: 13,
+    });
+  });
+
+  it.each([
+    {input: 'nope:zzz@q|', from: 5, to: 10},
+    {input: 'owner:zzz|', from: 6, to: 9},
+    {input: 'owner:zzz\\q|', from: 6, to: 11},
+    {input: 'owner:a\u200bb|', from: 6, to: 9},
+    {input: 'owner:a\u00a0b|', from: 6, to: 9},
+    {input: 'owner:a-b=c-d|', from: 6, to: 13},
+    {input: 'owner:a-b*|', from: 6, to: 10},
+    {input: 'tag:a-b=c*|', from: 4, to: 10},
+    {input: 'tag:a*=c-d|', from: 4, to: 10},
+    {input: 'owner:|zzz@q', from: 6, to: 6},
+    {input: 'tag:a-|b="c', from: 4, to: 10},
+    {input: 'tag:a-|b="c\\d"', from: 4, to: 10},
+    {input: 'owner:alice-te|st+foo@example.com', from: 6, to: 16},
+    {input: 'owner:a-|b:c', from: 6, to: 9},
+    {input: 'owner:a-|b,c', from: 6, to: 9},
+    {input: 'owner:a-|b(', from: 6, to: 9},
+    {input: 'tag:a-|b=c:d', from: 4, to: 9},
+    {input: 'key:a-|b+foo', from: 4, to: 7},
+  ])('shows only no match for $input', ({input, from, to}) => {
+    expect(testAutocomplete(input, hintForQuoting)).toEqual({
+      list: [expect.objectContaining({type: 'no-match'})],
+      from,
+      to,
+    });
   });
 
   it.each(['| own', ' | own'])(

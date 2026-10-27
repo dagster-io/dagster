@@ -24,7 +24,7 @@ const ATTRIBUTE_ICONS = {
   snapshot_id: 'snapshot',
 } as const satisfies Record<RunsSearchAttribute, IconName>;
 
-// Suggests attribute names only; value suggestions need workspace and run data.
+// Known attribute values aren't loaded here; they need workspace and run data.
 const getRunsSearchHint = createSelectionAutoComplete({
   ...createProvider({
     attributesMap: Object.fromEntries(RUNS_SEARCH_ATTRIBUTES.map((attribute) => [attribute, []])),

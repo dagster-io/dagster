@@ -29,6 +29,8 @@ export interface SelectionAutoCompleteProvider {
     attribute: string;
     query: string;
     textCallback?: (value: string) => string;
+    /** The typed value with quotes added, offered in place of "No match found" for a known attribute. */
+    quotedValue?: QuotedValue;
   }) => Array<Suggestion>;
 
   /**
@@ -104,6 +106,12 @@ export type Suggestion =
       jsx: React.ReactNode;
       type: 'no-match';
     };
+
+export type QuotedValue = {
+  text: string;
+  /** An unquoted value has a `*`, which quoting makes literal except on the primary attribute. */
+  hasUnquotedAsterisk: boolean;
+};
 
 type OperatorType = 'and' | 'or' | 'not' | 'parenthesis' | 'up-traversal' | 'down-traversal';
 
@@ -387,6 +395,35 @@ export const createProvider = <
     };
   }
 
+  function createQuotedValueSuggestion({
+    attribute,
+    text,
+    textCallback,
+  }: {
+    attribute: string;
+    text: string;
+    textCallback?: (text: string) => string;
+  }) {
+    return {
+      text: textCallback ? textCallback(text) : text,
+      jsx: (
+        <SuggestionJSXBase
+          label={
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+              <Text size={12} color="textLight">
+                Add quotes:
+              </Text>
+              <Text size={12} family="mono" color="textDefault" className={styles.attributeValue}>
+                <MiddleTruncate text={`${attribute}:${text}`} />
+              </Text>
+            </Box>
+          }
+        />
+      ),
+      trailingSpace: true,
+    };
+  }
+
   return {
     createOperatorSuggestion: ({type, text, displayText}) => {
       return {
@@ -404,7 +441,7 @@ export const createProvider = <
           }),
         );
     },
-    getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
+    getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback, quotedValue}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
       const shouldTreatAsteriskAsWildcard = attribute === primaryAttributeKey;
 
@@ -426,6 +463,13 @@ export const createProvider = <
           )
         : [];
       if (results.length === 0) {
+        if (
+          values &&
+          quotedValue &&
+          (!quotedValue.hasUnquotedAsterisk || shouldTreatAsteriskAsWildcard)
+        ) {
+          return [createQuotedValueSuggestion({attribute, text: quotedValue.text, textCallback})];
+        }
         return [
           {
             text: '',

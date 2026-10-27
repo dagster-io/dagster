@@ -13,7 +13,7 @@ import {RunStatus} from '../../graphql/types';
 import {AntlrInputErrorListener} from '../../selection/AntlrInputErrorListener';
 import {SyntaxError} from '../../selection/CustomErrorListener';
 import {getLeadingWhitespaceLength} from '../../selection/SelectionInputParser';
-import {getValueNodeValue} from '../../selection/SelectionInputUtil';
+import {getUnquotedValueProblem, getValueNodeValue} from '../../selection/SelectionInputUtil';
 import {Utf16CharStream} from '../../selection/Utf16CharStream';
 import {SelectionAutoCompleteLexer} from '../../selection/generated/SelectionAutoCompleteLexer';
 import {
@@ -114,7 +114,6 @@ const UNSUPPORTED_EXPRESSION_MESSAGES = [
 ] as const satisfies readonly (readonly [ContextClass, string])[];
 
 const RUN_STATUSES: string[] = Object.values(RunStatus);
-const HIDDEN_CHARACTER_PATTERN = /[\p{C}\p{Z}]/u;
 
 type RunsSearchParseResult =
   | {
@@ -198,17 +197,16 @@ const formatCodePoint = (character: string) =>
   `U+${(character.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`;
 
 const readUnquotedRejectedValue = (text: string): ValueReadResult => {
-  const hiddenCharacter = HIDDEN_CHARACTER_PATTERN.exec(text)?.[0];
-  if (hiddenCharacter) {
-    return {error: `Remove the hidden character (${formatCodePoint(hiddenCharacter)})`};
+  const problem = getUnquotedValueProblem(text);
+  if (problem?.type === 'hidden-character') {
+    return {error: `Remove the hidden character (${formatCodePoint(problem.character)})`};
   }
 
-  if (text.includes('\\')) {
+  if (problem?.type === 'backslash') {
     return {error: "Backslashes aren't supported"};
   }
 
-  // Quoting would make the `*` literal, so suggesting quotes would change the search.
-  if (text.includes('*')) {
+  if (problem?.type === 'wildcard') {
     return {error: WILDCARD_MESSAGE};
   }
 

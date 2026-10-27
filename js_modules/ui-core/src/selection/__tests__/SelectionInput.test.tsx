@@ -5,6 +5,11 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {AssetSelectionLexer} from '../../asset-selection/generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../../asset-selection/generated/AssetSelectionParser';
+import {
+  createSelectionAutoComplete,
+  useSelectionAutoCompleteResults,
+} from '../SelectionAutoComplete';
+import {SelectionAutoCompleteProvider, createProvider} from '../SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteInput} from '../SelectionInput';
 import {createSelectionLinter} from '../createSelectionLinter';
 
@@ -23,6 +28,21 @@ const useAutoComplete = () => ({
   loading: false,
 });
 
+const ownerHint = createSelectionAutoComplete(
+  createProvider({
+    attributesMap: {owner: ['ben@dagsterlabs.com']},
+    attributeToIcon: {owner: 'magnify_glass'},
+  }),
+);
+
+const useOwnerAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'] = ({
+  line,
+  cursorIndex,
+}) => ({
+  autoCompleteResults: useSelectionAutoCompleteResults(ownerHint, line, cursorIndex),
+  loading: false,
+});
+
 const linter = () => [];
 
 const assetLinter = createSelectionLinter({
@@ -32,7 +52,10 @@ const assetLinter = createSelectionLinter({
 });
 
 type InputOptions = Partial<
-  Pick<ComponentProps<typeof SelectionAutoCompleteInput>, 'linter' | 'wildcardAttributeName'>
+  Pick<
+    ComponentProps<typeof SelectionAutoCompleteInput>,
+    'linter' | 'wildcardAttributeName' | 'useAutoComplete'
+  >
 >;
 
 const renderInput = (value: string, options: InputOptions = {}) => {
@@ -46,7 +69,7 @@ const renderInput = (value: string, options: InputOptions = {}) => {
         onChange={onChange}
         linter={options.linter ?? linter}
         wildcardAttributeName={options.wildcardAttributeName}
-        useAutoComplete={useAutoComplete}
+        useAutoComplete={options.useAutoComplete ?? useAutoComplete}
       />
     </MemoryRouter>
   );
@@ -136,6 +159,16 @@ describe('SelectionAutoCompleteInput', () => {
     });
     pressEnter();
     expect(onChange).toHaveBeenCalledWith('(a-b');
+  });
+
+  it('replaces the value with its quoted form when the quoted suggestion is chosen', () => {
+    const {editor} = renderInput('', {useAutoComplete: useOwnerAutoComplete});
+    act(() => {
+      editor.replaceRange('owner:zzz@q', {line: 0, ch: 0}, undefined, '+input');
+    });
+    fireEvent.keyDown(screen.getByRole('textbox'), {key: 'ArrowDown'});
+    pressEnter();
+    expect(editor.getValue()).toBe('owner:"zzz@q" ');
   });
 
   it('names the editor after its placeholder', () => {
