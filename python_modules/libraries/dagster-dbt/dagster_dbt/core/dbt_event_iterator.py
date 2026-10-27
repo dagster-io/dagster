@@ -212,15 +212,46 @@ class DbtEventIterator(Iterator[T]):
         self,
         events: Iterator[T],
         dbt_cli_invocation: "DbtCliInvocation",
+        cleanup_on_close: bool = False,
     ) -> None:
         self._inner_iterator = events
         self._dbt_cli_invocation = dbt_cli_invocation
+        # When set, this iterator removes the ephemeral project copy once it is
+        # exhausted or closed. Wrappers take the flag so cleanup waits until the
+        # outermost stream the caller is consuming has finished.
+        self._cleanup_on_close = cleanup_on_close
+
+    def _on_iteration_finished(self) -> None:
+        if not self._cleanup_on_close:
+            return
+        self._cleanup_on_close = False
+        self._dbt_cli_invocation._cleanup_temp_project()  # noqa: SLF001
+
+    def _with_events(
+        self, events: Iterator[DbtDagsterEventType]
+    ) -> "DbtEventIterator[DbtDagsterEventType]":
+        """Return a wrapper iterator that owns temp-project cleanup."""
+        owns_cleanup = self._cleanup_on_close
+        self._cleanup_on_close = False
+        return DbtEventIterator(
+            events,
+            self._dbt_cli_invocation,
+            cleanup_on_close=owns_cleanup,
+        )
+
+    def __iter__(self) -> Iterator[T]:
+        try:
+            yield from self._inner_iterator
+        finally:
+            # Runs on exhaustion, on error, and when the caller closes the stream early.
+            self._on_iteration_finished()
 
     def __next__(self) -> T:
-        return next(self._inner_iterator)
-
-    def __iter__(self) -> "DbtEventIterator[T]":
-        return self
+        try:
+            return next(self._inner_iterator)
+        except StopIteration:
+            self._on_iteration_finished()
+            raise
 
     @public
     def fetch_row_counts(
@@ -240,7 +271,7 @@ class DbtEventIterator(Iterator[T]):
                 "Row counts are fetched through the dbt Core adapter, which the dbt Fusion engine"
                 " does not provide. Row count metadata will not be included in the emitted events."
             )
-            return DbtEventIterator(events=self, dbt_cli_invocation=self._dbt_cli_invocation)
+            return self._with_events(self)
 
         return self._attach_metadata(_fetch_row_count_metadata)
 
@@ -268,7 +299,7 @@ class DbtEventIterator(Iterator[T]):
                 " add the `dagster` dbt package's `log_column_level_metadata` macro as a post-hook"
                 " in your dbt project; `stream()` attaches the metadata it logs without this call."
             )
-            return DbtEventIterator(events=self, dbt_cli_invocation=self._dbt_cli_invocation)
+            return self._with_events(self)
 
         fetch_metadata = lambda invocation, event: _fetch_column_metadata(
             invocation, event, with_column_lineage
@@ -330,10 +361,7 @@ class DbtEventIterator(Iterator[T]):
                     func=_map_fn,
                 )
 
-        return DbtEventIterator(
-            _threadpool_wrap_map_fn(),
-            dbt_cli_invocation=self._dbt_cli_invocation,
-        )
+        return self._with_events(_threadpool_wrap_map_fn())
 
     @public
     def with_insights(
@@ -379,15 +407,14 @@ class DbtEventIterator(Iterator[T]):
                     " method. Install the library with `pip install dagster-cloud`."
                 ) from e
 
-            return DbtEventIterator(
-                events=dbt_with_snowflake_insights(
+            return self._with_events(
+                dbt_with_snowflake_insights(
                     context=self._dbt_cli_invocation.context,
                     dbt_cli_invocation=self._dbt_cli_invocation,
                     dagster_events=self,
                     skip_config_check=skip_config_check,
                     record_observation_usage=record_observation_usage,
-                ),
-                dbt_cli_invocation=self._dbt_cli_invocation,
+                )
             )
         elif adapter_type == "bigquery":
             try:
@@ -400,15 +427,14 @@ class DbtEventIterator(Iterator[T]):
                     " method. Install the library with `pip install dagster-cloud`."
                 ) from e
 
-            return DbtEventIterator(
-                events=dbt_with_bigquery_insights(
+            return self._with_events(
+                dbt_with_bigquery_insights(
                     context=self._dbt_cli_invocation.context,
                     dbt_cli_invocation=self._dbt_cli_invocation,
                     dagster_events=self,
                     skip_config_check=skip_config_check,
                     record_observation_usage=record_observation_usage,
-                ),
-                dbt_cli_invocation=self._dbt_cli_invocation,
+                )
             )
         else:
             logger.warning(
@@ -416,7 +442,4 @@ class DbtEventIterator(Iterator[T]):
                 f" adapters, but the dbt project uses the `{adapter_type}` adapter. Skipping"
                 " insights; dbt events will pass through unchanged."
             )
-            return DbtEventIterator(
-                events=self,
-                dbt_cli_invocation=self._dbt_cli_invocation,
-            )
+            return self._with_events(self)

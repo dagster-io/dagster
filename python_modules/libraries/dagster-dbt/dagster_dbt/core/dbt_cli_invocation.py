@@ -25,6 +25,7 @@ from dagster._annotations import public
 from dagster._core.errors import DagsterExecutionInterruptedError
 from packaging import version
 
+from dagster_dbt.asset_utils import _remove_ephemeral_dbt_project
 from dagster_dbt.compat import BaseAdapter, BaseColumn, BaseRelation
 from dagster_dbt.core.dbt_cli_event import (
     DbtCliEventMessage,
@@ -109,6 +110,13 @@ class DbtCliInvocation:
     _relation_column_metadata_cache: dict[RelationKey, RelationData] = field(
         init=False, default_factory=dict
     )
+    # Ephemeral project copy created for a large selection. Removed when the
+    # invocation finishes (success, failure, or the stream being closed early).
+    temp_project_dir: Path | None = field(default=None, repr=False)
+    _temp_project_cleaned: bool = field(default=False, init=False, repr=False)
+    # stream() defers removal until post-processing iterators, which still read
+    # the project directory after the raw dbt process has exited, are done.
+    _defer_temp_project_cleanup: bool = field(default=False, init=False, repr=False)
 
     @property
     def is_fusion(self) -> bool:
@@ -153,6 +161,7 @@ class DbtCliInvocation:
         adapter: BaseAdapter | None,
         cli_version: version.Version,
         dbt_project: DbtProject | None = None,
+        temp_project_dir: Path | None = None,
     ) -> "DbtCliInvocation":
         # Attempt to take advantage of partial parsing. If there is a `partial_parse.msgpack` in
         # in the target folder, then copy it to the dynamic target path.
@@ -197,10 +206,35 @@ class DbtCliInvocation:
             context=context,
             adapter=adapter,
             cli_version=cli_version,
+            temp_project_dir=temp_project_dir,
         )
         logger.info(f"Running dbt command: `{dbt_cli_invocation.dbt_command}`.")
 
         return dbt_cli_invocation
+
+    def _cleanup_temp_project(self) -> None:
+        """Remove the ephemeral project copy once dbt is no longer using it."""
+        if self._temp_project_cleaned or self.temp_project_dir is None:
+            return
+        self._temp_project_cleaned = True
+        temp_project_dir = self.temp_project_dir
+        # An early close can get here while dbt is still running with this
+        # directory as its cwd. Stop it before deleting the files.
+        if self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=self.termination_timeout_seconds)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait()
+        _remove_ephemeral_dbt_project(temp_project_dir)
+
+    def __del__(self) -> None:
+        try:
+            self._cleanup_temp_project()
+        except Exception:
+            # Destructors must not raise. wait() and stream consumption remove the copy.
+            return
 
     @public
     def wait(self) -> "DbtCliInvocation":
@@ -218,7 +252,10 @@ class DbtCliInvocation:
 
                 dbt_cli_invocation = dbt.cli(["run"]).wait()
         """
-        list(self.stream_raw_events())
+        try:
+            list(self.stream_raw_events())
+        finally:
+            self._cleanup_temp_project()
 
         return self
 
@@ -327,9 +364,14 @@ class DbtCliInvocation:
                 def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
+        # Post-processing wrappers (column metadata, row counts, insights) still
+        # read the project directory after the raw process stream has ended.
+        # They take ownership of cleanup from this iterator.
+        self._defer_temp_project_cleanup = True
         return DbtEventIterator(
             self._stream_asset_events(),
             self,
+            cleanup_on_close=True,
         )
 
     @public
@@ -341,47 +383,54 @@ class DbtCliInvocation:
         """
         event_history_metadata_by_unique_id: dict[str, dict[str, Any]] = {}
 
-        for raw_event in self._stdout or self._stream_stdout():
-            if isinstance(raw_event, str):
-                # If we can't parse the event, then just emit it as a raw log.
-                sys.stdout.write(raw_event + "\n")
-                sys.stdout.flush()
-                continue
-
-            unique_id: str | None = raw_event["data"].get("node_info", {}).get("unique_id")
-
-            if self.cli_version.major < 2:
-                event = DbtCoreCliEventMessage(raw_event=raw_event, event_history_metadata={})
-            else:
-                event = DbtFusionCliEventMessage(raw_event=raw_event, event_history_metadata={})
-
-            if unique_id and event.is_result_event:
-                event_history_metadata = copy.deepcopy(
-                    event_history_metadata_by_unique_id.get(unique_id, {})
-                )
-                event = replace(event, event_history_metadata=event_history_metadata)
-
-            # Attempt to parse the column level metadata from the event message.
-            # If it exists, save it as historical metadata to attach to the NodeFinished event.
-            if event.raw_event["info"]["name"] == "JinjaLogInfo":
-                with contextlib.suppress(orjson.JSONDecodeError):
-                    column_level_metadata = orjson.loads(event.raw_event["info"]["msg"])
-
-                    event_history_metadata_by_unique_id[cast("str", unique_id)] = (
-                        column_level_metadata
-                    )
-
-                    # Don't show this message in stdout
+        try:
+            for raw_event in self._stdout or self._stream_stdout():
+                if isinstance(raw_event, str):
+                    # If we can't parse the event, then just emit it as a raw log.
+                    sys.stdout.write(raw_event + "\n")
+                    sys.stdout.flush()
                     continue
 
-            # Re-emit the logs from dbt CLI process into stdout.
-            sys.stdout.write(str(event) + "\n")
-            sys.stdout.flush()
+                unique_id: str | None = raw_event["data"].get("node_info", {}).get("unique_id")
 
-            yield event
+                if self.cli_version.major < 2:
+                    event = DbtCoreCliEventMessage(raw_event=raw_event, event_history_metadata={})
+                else:
+                    event = DbtFusionCliEventMessage(raw_event=raw_event, event_history_metadata={})
 
-        # Ensure that the dbt CLI process has completed.
-        self._raise_on_error()
+                if unique_id and event.is_result_event:
+                    event_history_metadata = copy.deepcopy(
+                        event_history_metadata_by_unique_id.get(unique_id, {})
+                    )
+                    event = replace(event, event_history_metadata=event_history_metadata)
+
+                # Attempt to parse the column level metadata from the event message.
+                # If it exists, save it as historical metadata to attach to the NodeFinished event.
+                if event.raw_event["info"]["name"] == "JinjaLogInfo":
+                    with contextlib.suppress(orjson.JSONDecodeError):
+                        column_level_metadata = orjson.loads(event.raw_event["info"]["msg"])
+
+                        event_history_metadata_by_unique_id[cast("str", unique_id)] = (
+                            column_level_metadata
+                        )
+
+                        # Don't show this message in stdout
+                        continue
+
+                # Re-emit the logs from dbt CLI process into stdout.
+                sys.stdout.write(str(event) + "\n")
+                sys.stdout.flush()
+
+                yield event
+
+            # Ensure that the dbt CLI process has completed.
+            self._raise_on_error()
+        finally:
+            # stream() hands cleanup to the event iterator so post-processing can
+            # still read the project. Direct consumers (wait(), stream_raw_events())
+            # remove the copy here, including when the generator is closed early.
+            if not self._defer_temp_project_cleanup:
+                self._cleanup_temp_project()
 
     @public
     def get_artifact(

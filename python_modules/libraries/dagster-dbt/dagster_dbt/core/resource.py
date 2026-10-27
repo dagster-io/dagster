@@ -24,6 +24,7 @@ from pydantic import Field, ValidationInfo, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
     DBT_INDIRECT_SELECTION_ENV,
+    _remove_ephemeral_dbt_project,
     extract_runtime_selection_from_args,
     get_updated_cli_invocation_params_for_context,
 )
@@ -656,6 +657,13 @@ class DbtCliResource(ConfigurableResource):
             if updated_params.dbt_project
             else self.project_dir
         )
+        if not target_path.is_absolute():
+            # Large selections run dbt in a temporary project copy. A relative
+            # DBT_TARGET_PATH would be resolved against that copy and deleted with
+            # it. Anchor artifacts to the real project first, then pass the
+            # absolute path through to the CLI.
+            anchor = updated_params.artifact_project_dir or project_dir
+            target_path = Path(anchor).joinpath(target_path)
         env = {
             # Allow IO streaming when running in Windows.
             # Also, allow it to be overriden by the current environment.
@@ -711,9 +719,6 @@ class DbtCliResource(ConfigurableResource):
             *selection_args,
         ]
 
-        if not target_path.is_absolute():
-            target_path = project_dir.joinpath(target_path)
-
         # run dbt --version to get the dbt core version
         adapter: BaseAdapter | None = None
         with pushd(str(project_dir)):
@@ -727,19 +732,26 @@ class DbtCliResource(ConfigurableResource):
                         exc_info=True,
                     )
 
-            return DbtCliInvocation.run(
-                args=full_dbt_args,
-                env=env,
-                manifest=manifest,
-                dagster_dbt_translator=dagster_dbt_translator,
-                project_dir=project_dir,
-                target_path=target_path,
-                raise_on_error=raise_on_error,
-                context=context,
-                adapter=adapter,
-                cli_version=self._cli_version,
-                dbt_project=updated_params.dbt_project,
-            )
+            try:
+                return DbtCliInvocation.run(
+                    args=full_dbt_args,
+                    env=env,
+                    manifest=manifest,
+                    dagster_dbt_translator=dagster_dbt_translator,
+                    project_dir=project_dir,
+                    target_path=target_path,
+                    raise_on_error=raise_on_error,
+                    context=context,
+                    adapter=adapter,
+                    cli_version=self._cli_version,
+                    dbt_project=updated_params.dbt_project,
+                    temp_project_dir=updated_params.temp_project_dir,
+                )
+            except BaseException:
+                # The invocation did not take ownership of the copy.
+                if updated_params.temp_project_dir is not None:
+                    _remove_ephemeral_dbt_project(updated_params.temp_project_dir)
+                raise
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         packages_yaml = Path(self.project_dir).joinpath("packages.yml")
