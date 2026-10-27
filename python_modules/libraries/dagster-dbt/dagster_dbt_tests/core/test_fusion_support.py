@@ -1,8 +1,12 @@
 import json
+import shutil
+from pathlib import Path
 
 import dagster as dg
 import pytest
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt.errors import DagsterDbtCliRuntimeError
+from dagster_dbt.utils import _select_unique_ids_from_cli
 
 from dagster_dbt_tests.dbt_projects import test_fusion_compatible_jaffle_shop_path
 
@@ -75,3 +79,17 @@ def test_adapter_backed_postprocessing_is_skipped(
         for event in result.get_asset_materialization_events()
     )
     assert any("dbt Fusion engine does not provide" in record.message for record in caplog.records)
+
+
+@pytest.mark.fusion
+def test_select_from_cli_raises_when_dbt_list_fails(tmp_path: Path) -> None:
+    """A failed `dbt list` must not read as an empty selection, or the assets silently vanish."""
+    project_dir = tmp_path / "jaffle_shop"
+    shutil.copytree(test_fusion_compatible_jaffle_shop_path, project_dir)
+    orders = project_dir / "models" / "orders.sql"
+    orders.write_text(orders.read_text().replace("ref('stg_orders')", "ref('stg_orders_missing')"))
+
+    with pytest.raises(DagsterDbtCliRuntimeError, match="stg_orders_missing"):
+        _select_unique_ids_from_cli(
+            select="fqn:*", exclude="", selector="", project=DbtProject(project_dir)
+        )
