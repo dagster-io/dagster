@@ -8,6 +8,7 @@ import {
   NonIdealState,
   Spinner,
 } from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -15,12 +16,15 @@ import {gql, useQuery} from '../../apollo-client';
 import {formatElapsedTimeWithoutMsec} from '../Util';
 import styles from './css/Mobile.module.css';
 import {
+  MobileAssetOutcomesQuery,
+  MobileAssetOutcomesQueryVariables,
   MobileJobAssetsQuery,
   MobileJobAssetsQueryVariables,
   MobileRecentRunsQuery,
   MobileRecentRunsQueryVariables,
 } from './types/MobilePipelines.types';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
+import {StepEventStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunStatusTag} from '../../runs/RunStatusTag';
 import {TimeElapsed} from '../../runs/TimeElapsed';
@@ -227,6 +231,33 @@ const AssetPicker = ({
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const keyOf = (path: string[]) => path.join('/');
 
+  // Green if the asset's step succeeded the last time this job ran it, red if
+  // it failed. Taken from step stats of the job's recent runs (newest first),
+  // since OSS Dagster does not record per-asset failures anywhere else.
+  const outcomes = useQuery<MobileAssetOutcomesQuery, MobileAssetOutcomesQueryVariables>(
+    MOBILE_ASSET_OUTCOMES_QUERY,
+    {variables: {job: job.name}},
+  );
+  const outcomeByOp = useMemo(() => {
+    const map = new Map<string, 'ok' | 'failed'>();
+    const result = outcomes.data?.runsOrError;
+    if (result?.__typename === 'Runs') {
+      result.results.forEach((run) =>
+        run.stepStats.forEach((step) => {
+          if (map.has(step.stepKey)) {
+            return;
+          }
+          if (step.status === StepEventStatus.SUCCESS) {
+            map.set(step.stepKey, 'ok');
+          } else if (step.status === StepEventStatus.FAILURE) {
+            map.set(step.stepKey, 'failed');
+          }
+        }),
+      );
+    }
+    return map;
+  }, [outcomes.data]);
+
   const toggle = (key: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -247,12 +278,23 @@ const AssetPicker = ({
           <div className={styles.assetList}>
             {assets.map((a) => {
               const key = keyOf(a.assetKey.path);
+              const outcome = a.opName ? outcomeByOp.get(a.opName) : undefined;
               return (
                 <Checkbox
                   key={key}
                   checked={selected.has(key)}
                   onChange={() => toggle(key)}
-                  label={<span className={styles.assetLabel}>{key}</span>}
+                  label={
+                    <span
+                      className={clsx(
+                        styles.assetLabel,
+                        outcome === 'ok' && styles.assetOk,
+                        outcome === 'failed' && styles.assetFailed,
+                      )}
+                    >
+                      {key}
+                    </span>
+                  }
                 />
               );
             })}
@@ -283,10 +325,27 @@ const AssetPicker = ({
   );
 };
 
+export const MOBILE_ASSET_OUTCOMES_QUERY = gql`
+  query MobileAssetOutcomesQuery($job: String!) {
+    runsOrError(filter: {pipelineName: $job}, limit: 10) {
+      ... on Runs {
+        results {
+          id
+          stepStats {
+            stepKey
+            status
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const MOBILE_JOB_ASSETS_QUERY = gql`
   query MobileJobAssetsQuery($params: PipelineSelector!) {
     assetNodes(pipeline: $params) {
       id
+      opName
       assetKey {
         path
       }

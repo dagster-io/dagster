@@ -393,3 +393,11 @@
   font-size: 13px;
   word-break: break-all;
 }
+
+.assetOk {
+  color: var(--color-text-green);
+}
+
+.assetFailed {
+  color: var(--color-text-red);
+}

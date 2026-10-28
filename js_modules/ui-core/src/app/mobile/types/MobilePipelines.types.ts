@@ -35,12 +35,29 @@ export type RunStatus =
   | 'STARTING'
   | 'SUCCESS';
 
+export type StepEventStatus =
+  | 'FAILURE'
+  | 'IN_PROGRESS'
+  | 'SKIPPED'
+  | 'SUCCESS';
+
+export type MobileAssetOutcomesQueryVariables = Exact<{
+  job: string;
+}>;
+
+
+export type MobileAssetOutcomesQuery = { __typename: 'Query', runsOrError:
+    | { __typename: 'InvalidPipelineRunsFilterError' }
+    | { __typename: 'PythonError' }
+    | { __typename: 'Runs', results: Array<{ __typename: 'Run', id: string, stepStats: Array<{ __typename: 'RunStepStats', stepKey: string, status: Types.StepEventStatus | null }> }> }
+   };
+
 export type MobileJobAssetsQueryVariables = Exact<{
   params: Types.PipelineSelector;
 }>;
 
 
-export type MobileJobAssetsQuery = { __typename: 'Query', assetNodes: Array<{ __typename: 'AssetNode', id: string, assetKey: { __typename: 'AssetKey', path: Array<string> } }> };
+export type MobileJobAssetsQuery = { __typename: 'Query', assetNodes: Array<{ __typename: 'AssetNode', id: string, opName: string | null, assetKey: { __typename: 'AssetKey', path: Array<string> } }> };
 
 export type MobileRecentRunsQueryVariables = Exact<{
   limit: number;
