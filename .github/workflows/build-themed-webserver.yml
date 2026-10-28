@@ -66,7 +66,9 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VM_DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          # Strip Windows line endings: a key pasted from the clipboard often has them,
+          # and OpenSSH rejects the file with "error in libcrypto".
+          printf '%s\n' "${{ secrets.VM_DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H hillpointedevvm.eastus.cloudapp.azure.com >> ~/.ssh/known_hosts
 
