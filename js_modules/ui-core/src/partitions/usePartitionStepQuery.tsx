@@ -10,6 +10,7 @@ import {ApolloClient, gql, useApolloClient} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
+import {isDocumentVisible} from '../hooks/useDocumentVisibility';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken, splitTagFilterValue} from '../runs/RunsFilterUtils';
 
@@ -134,6 +135,9 @@ export function usePartitionStepQuery({
       const timer: ReturnType<typeof setInterval> = setInterval(async () => {
         if (version.current !== v) {
           return clearInterval(timer);
+        }
+        if (!isDocumentVisible()) {
+          return;
         }
 
         setDataState((state) => ({...state, loading: true}));

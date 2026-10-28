@@ -23,6 +23,7 @@ import {
   ApolloClient,
   ApolloLink,
   ApolloProvider,
+  DefaultOptions,
   HttpLink,
   InMemoryCache,
   split,
@@ -53,6 +54,13 @@ const idempotencyLink = new ApolloLink((operation, forward) => {
 });
 
 const httpStatusCodesToRetry = new Set([502, 503, 504, 429, 409]);
+
+export const WATCH_QUERY_DEFAULTS: DefaultOptions['watchQuery'] = {
+  fetchPolicy: 'cache-and-network',
+  // Pause `pollInterval` / `startPolling` queries in background tabs. Refreshes driven by
+  // `useRefreshAtInterval` already pause on their own.
+  skipPollAttempt: () => document.visibilityState === 'hidden',
+};
 
 export interface AppProviderProps {
   children: React.ReactNode;
@@ -154,11 +162,7 @@ export const AppProvider = (props: AppProviderProps) => {
         idempotencyLink,
         splitLink,
       ]),
-      defaultOptions: {
-        watchQuery: {
-          fetchPolicy: 'cache-and-network',
-        },
-      },
+      defaultOptions: {watchQuery: WATCH_QUERY_DEFAULTS},
     });
   }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient, basePath]);
 
