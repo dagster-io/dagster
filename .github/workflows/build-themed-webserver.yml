@@ -58,7 +58,7 @@ jobs:
 
   # Same pattern as the dagster-pipelines deploy: SSH into the VM and run the
   # update script, which installs the wheel just published and restarts the
-  # webserver. Needs the VM_DEPLOY_KEY secret (the private key for HillpointeAdmin).
+  # webserver. Needs the VM_DEPLOY_KEY_B64 secret (HillpointeAdmin private key, base64).
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -66,9 +66,10 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          # Strip Windows line endings: a key pasted from the clipboard often has them,
-          # and OpenSSH rejects the file with "error in libcrypto".
-          printf '%s\n' "${{ secrets.VM_DEPLOY_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          # The secret holds the private key base64-encoded (one line), so pasting it
+          # cannot mangle line endings or drop lines. Make it with:
+          #   base64 -w0 deploy_key | clip
+          printf '%s' "${{ secrets.VM_DEPLOY_KEY_B64 }}" | tr -d ' \r\n' | base64 -d > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H hillpointedevvm.eastus.cloudapp.azure.com >> ~/.ssh/known_hosts
 
