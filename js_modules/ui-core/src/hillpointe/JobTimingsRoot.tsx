@@ -26,6 +26,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -94,9 +95,12 @@ export const JobTimingsRoot = () => {
     {variables: {after}},
   );
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  // Ad hoc asset materializations run under Dagster's hidden __ASSET_JOB; they
+  // are not one of our pipelines, so they are left out.
   const runs = useMemo(() => {
     const result = queryResult.data?.runsOrError;
-    return result?.__typename === 'Runs' ? result.results : [];
+    const all = result?.__typename === 'Runs' ? result.results : [];
+    return all.filter((r) => !isHiddenAssetGroupJob(r.pipelineName));
   }, [queryResult.data]);
 
   // Jobs ordered by their most recent run, with an average for the picker.
