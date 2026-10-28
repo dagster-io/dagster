@@ -13,10 +13,10 @@ If your work is already defined as a Databricks job (workflow), you can trigger 
 
 Both Pipes clients support this with `run_job`:
 
-| Client                            | Pipes storage        | Use with                                                           |
-| --------------------------------- | -------------------- | ------------------------------------------------------------------ |
-| `PipesDatabricksServerlessClient` | Unity Catalog Volume | Serverless jobs, and classic jobs on Unity Catalog-enabled compute |
-| `PipesDatabricksClient`           | DBFS                 | Classic jobs in workspaces where DBFS is available                 |
+| Client                            | Pipes storage                 | Use with                                                           |
+| --------------------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| `PipesDatabricksServerlessClient` | Unity Catalog Volume          | Serverless jobs, and classic jobs on Unity Catalog-enabled compute |
+| `PipesDatabricksClient`           | Databricks File System (DBFS) | Classic jobs in workspaces where DBFS is available                 |
 
 To submit one-time runs from task definitions in Dagster instead, see [serverless compute](/integrations/libraries/databricks/pipes/serverless-compute) or [DBFS, classic clusters](/integrations/libraries/databricks/pipes/classic-clusters).
 
