@@ -55,3 +55,33 @@ jobs:
             python_modules/dagster-webserver/dist/*.whl \
             --title "Hillpointe-themed dagster-webserver" \
             --notes "Auto-built from the hillpointe-theme branch (based on Dagster 1.13.22). Overwritten on every run."
+
+  # Same pattern as the dagster-pipelines deploy: SSH into the VM and run the
+  # update script, which installs the wheel just published and restarts the
+  # webserver. Needs the VM_DEPLOY_KEY secret (the private key for HillpointeAdmin).
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VM_DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H hillpointedevvm.eastus.cloudapp.azure.com >> ~/.ssh/known_hosts
+
+      - name: Install the new wheel and restart the webserver
+        run: |
+          ssh -i ~/.ssh/deploy_key HillpointeAdmin@hillpointedevvm.eastus.cloudapp.azure.com \
+            "powershell -NoProfile -ExecutionPolicy Bypass -File D:\Projects\Dagster\update_webserver.ps1"
+
+      - name: Health check
+        run: |
+          for i in $(seq 1 12); do
+            out=$(ssh -i ~/.ssh/deploy_key HillpointeAdmin@hillpointedevvm.eastus.cloudapp.azure.com \
+              "curl -s http://localhost:3000/dagit_info" || true)
+            if [ -n "$out" ]; then echo "$out"; exit 0; fi
+            sleep 10
+          done
+          echo "Webserver did not come back within 2 minutes" >&2
+          exit 1
