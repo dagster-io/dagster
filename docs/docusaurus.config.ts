@@ -260,7 +260,7 @@ const config: Config = {
           ],
         },
         googleTagManager: {
-          containerId: 'GTM-T3P7KMM4',
+          containerId: 'GTM-N633BZ8',
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
