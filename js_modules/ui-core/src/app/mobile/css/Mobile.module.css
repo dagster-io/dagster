@@ -369,3 +369,27 @@
   color: var(--color-accent-blue);
   font-weight: 600;
 }
+
+/* Buttons stacked beside a card, or in a row under a run header. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.card .actions {
+  flex-direction: column;
+}
+
+.assetList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assetLabel {
+  font-family: var(--font-family-monospace);
+  font-size: 13px;
+  word-break: break-all;
+}

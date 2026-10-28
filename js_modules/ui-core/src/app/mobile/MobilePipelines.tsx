@@ -1,11 +1,25 @@
-import {Button, Icon, NonIdealState, Spinner} from '@dagster-io/ui-components';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Icon,
+  NonIdealState,
+  Spinner,
+} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {gql, useQuery} from '../../apollo-client';
 import {formatElapsedTimeWithoutMsec} from '../Util';
 import styles from './css/Mobile.module.css';
-import {MobileRecentRunsQuery, MobileRecentRunsQueryVariables} from './types/MobilePipelines.types';
+import {
+  MobileJobAssetsQuery,
+  MobileJobAssetsQueryVariables,
+  MobileRecentRunsQuery,
+  MobileRecentRunsQueryVariables,
+} from './types/MobilePipelines.types';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunStatusTag} from '../../runs/RunStatusTag';
@@ -101,8 +115,10 @@ const PipelineCard = ({
 }) => {
   const launch = useLaunchWithTelemetry();
   const [launching, setLaunching] = useState(false);
+  const [picking, setPicking] = useState(false);
 
-  const onRun = async () => {
+  // No asset selection runs the whole job.
+  const onRun = async (assetSelection?: {path: string[]}[]) => {
     setLaunching(true);
     try {
       await launch(
@@ -112,6 +128,7 @@ const PipelineCard = ({
               repositoryLocationName: job.repositoryLocationName,
               repositoryName: job.repositoryName,
               jobName: job.name,
+              assetSelection,
             },
             runConfigData: {},
             mode: 'default',
@@ -153,18 +170,129 @@ const PipelineCard = ({
           <span className={styles.cardMeta}>Never run</span>
         )}
       </div>
-      <Button
-        intent="primary"
-        icon={<Icon name="execute" />}
-        loading={launching}
-        onClick={onRun}
-        className={styles.runButton}
-      >
-        Run
-      </Button>
+      <div className={styles.actions}>
+        <Button
+          intent="primary"
+          icon={<Icon name="execute" />}
+          loading={launching}
+          onClick={() => onRun()}
+          className={styles.runButton}
+        >
+          Run
+        </Button>
+        <Button icon={<Icon name="asset" />} onClick={() => setPicking(true)}>
+          Assets
+        </Button>
+      </div>
+      {picking ? (
+        <AssetPicker
+          job={job}
+          launching={launching}
+          onClose={() => setPicking(false)}
+          onRun={async (selection) => {
+            await onRun(selection);
+            setPicking(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 };
+
+// Pick some of a job's assets and run just those.
+const AssetPicker = ({
+  job,
+  launching,
+  onClose,
+  onRun,
+}: {
+  job: Job;
+  launching: boolean;
+  onClose: () => void;
+  onRun: (selection: {path: string[]}[]) => void;
+}) => {
+  const {data, loading} = useQuery<MobileJobAssetsQuery, MobileJobAssetsQueryVariables>(
+    MOBILE_JOB_ASSETS_QUERY,
+    {
+      variables: {
+        params: {
+          repositoryLocationName: job.repositoryLocationName,
+          repositoryName: job.repositoryName,
+          pipelineName: job.name,
+        },
+      },
+    },
+  );
+  const assets = data?.assetNodes ?? [];
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const keyOf = (path: string[]) => path.join('/');
+
+  const toggle = (key: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+
+  return (
+    <Dialog isOpen onClose={onClose} title={job.name} style={{width: 'min(94vw, 480px)'}}>
+      <DialogBody>
+        {loading ? (
+          <Spinner purpose="section" />
+        ) : assets.length ? (
+          <div className={styles.assetList}>
+            {assets.map((a) => {
+              const key = keyOf(a.assetKey.path);
+              return (
+                <Checkbox
+                  key={key}
+                  checked={selected.has(key)}
+                  onChange={() => toggle(key)}
+                  label={<span className={styles.assetLabel}>{key}</span>}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <span className={styles.cardMeta}>This job has no assets.</span>
+        )}
+      </DialogBody>
+      <DialogFooter topBorder>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          intent="primary"
+          icon={<Icon name="execute" />}
+          disabled={!selected.size}
+          loading={launching}
+          onClick={() =>
+            onRun(
+              assets
+                .filter((a) => selected.has(keyOf(a.assetKey.path)))
+                .map((a) => ({path: a.assetKey.path})),
+            )
+          }
+        >
+          Run {selected.size ? `${selected.size} ${selected.size === 1 ? 'asset' : 'assets'}` : ''}
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+};
+
+export const MOBILE_JOB_ASSETS_QUERY = gql`
+  query MobileJobAssetsQuery($params: PipelineSelector!) {
+    assetNodes(pipeline: $params) {
+      id
+      assetKey {
+        path
+      }
+    }
+  }
+`;
 
 export const MOBILE_RECENT_RUNS_QUERY = gql`
   query MobileRecentRunsQuery($limit: Int!) {

@@ -8,8 +8,10 @@ import {formatElapsedTimeWithoutMsec} from '../Util';
 import styles from './css/Mobile.module.css';
 import {MobileRunQuery, MobileRunQueryVariables} from './types/MobileRun.types';
 import {LogLevel, StepEventStatus, TerminateRunPolicy} from '../../graphql/types';
+import {useConfirmation} from '../CustomConfirmationProvider';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunStatusTag} from '../../runs/RunStatusTag';
+import {doneStatuses} from '../../runs/RunStatuses';
 import {TERMINATE_MUTATION} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TerminateMutation, TerminateMutationVariables} from '../../runs/types/RunUtils.types';
@@ -67,10 +69,24 @@ export default function MobileRun() {
     TerminateMutationVariables
   >(TERMINATE_MUTATION);
 
-  const onTerminate = async () => {
-    const result = await terminate({
-      variables: {runIds: [runId], terminatePolicy: TerminateRunPolicy.SAFE_TERMINATE},
-    });
+  const confirm = useConfirmation();
+
+  const onTerminate = async (terminatePolicy: TerminateRunPolicy) => {
+    if (terminatePolicy === TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY) {
+      try {
+        await confirm({
+          title: 'Force terminate?',
+          description:
+            'Marks the run as canceled right away without waiting for its steps to stop. Use this when a normal terminate is stuck; the job may keep running in the background until it exits on its own.',
+          buttonText: 'Force terminate',
+          catchOnCancel: true,
+          style: {width: 'min(94vw, 480px)'},
+        });
+      } catch {
+        return;
+      }
+    }
+    const result = await terminate({variables: {runIds: [runId], terminatePolicy}});
     const outcome = result.data?.terminateRuns;
     const first =
       outcome?.__typename === 'TerminateRunsResult' ? outcome.terminateRunResults[0] : null;
@@ -118,16 +134,31 @@ export default function MobileRun() {
           ) : null}
         </div>
         <div className={styles.cardMeta}>{run.runId}</div>
-        {run.canTerminate ? (
-          <Button
-            intent="danger"
-            icon={<Icon name="cancel" />}
-            loading={terminating}
-            onClick={onTerminate}
-            className={styles.runButton}
-          >
-            Terminate
-          </Button>
+        {/* The server only offers a normal terminate for queued or started runs,
+            but a forced cancel is allowed on any unfinished run, including one
+            stuck in Starting or Canceling. */}
+        {!doneStatuses.has(run.status) ? (
+          <div className={styles.actions}>
+            {run.canTerminate ? (
+              <Button
+                intent="danger"
+                icon={<Icon name="cancel" />}
+                loading={terminating}
+                onClick={() => onTerminate(TerminateRunPolicy.SAFE_TERMINATE)}
+                className={styles.runButton}
+              >
+                Terminate
+              </Button>
+            ) : null}
+            <Button
+              icon={<Icon name="warning" />}
+              loading={terminating}
+              onClick={() => onTerminate(TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY)}
+              className={styles.runButton}
+            >
+              Force terminate
+            </Button>
+          </div>
         ) : null}
       </div>
 
