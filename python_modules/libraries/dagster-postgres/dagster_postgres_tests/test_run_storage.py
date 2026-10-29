@@ -43,7 +43,7 @@ class TestPostgresRunStorage(TestRunStorage):
             module: dagster_postgres.run_storage
             class: PostgresRunStorage
             config:
-              postgres_url: postgresql://test:test@{hostname}:5432/test
+              postgres_url: postgresql+psycopg2://test:test@{hostname}:5432/test
         """
 
         explicit_cfg = f"""
