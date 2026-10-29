@@ -88,17 +88,6 @@ export const RunsPage = () => {
     paginationProps.advanceCursor();
   };
 
-  // On a phone, pagination moves into the header so the search input gets the full width.
-  const paginationControls = (
-    <CursorHistoryControls
-      {...paginationProps}
-      popCursor={popCursor}
-      advanceCursor={advanceCursor}
-      style={{marginTop: 0}}
-      iconOnly={isMobile}
-    />
-  );
-
   return (
     <div className={styles.page}>
       <PageHeader
@@ -108,14 +97,16 @@ export const RunsPage = () => {
           </Heading>
         }
         right={
-          isMobile ? (
-            <Box flex={{alignItems: 'center', gap: 12}}>
-              <QueryRefreshCountdown refreshState={refreshState} />
-              {paginationControls}
-            </Box>
-          ) : (
+          <Box flex={{alignItems: 'center', gap: 12}}>
             <QueryRefreshCountdown refreshState={refreshState} />
-          )
+            <CursorHistoryControls
+              {...paginationProps}
+              popCursor={popCursor}
+              advanceCursor={advanceCursor}
+              style={{marginTop: 0}}
+              iconOnly={isMobile}
+            />
+          </Box>
         }
       />
       <Box flex={{alignItems: 'center', gap: 12}} border="bottom" className={styles.toolbar}>
@@ -129,7 +120,6 @@ export const RunsPage = () => {
             onChange={(tokens) => setFilterTokens([...tokens, ...dateTokens])}
           />
         </Box>
-        {isMobile ? null : paginationControls}
       </Box>
       <div ref={bodyRef} className={styles.body}>
         <RunsQueryRefetchContext.Provider value={refetchContext}>
