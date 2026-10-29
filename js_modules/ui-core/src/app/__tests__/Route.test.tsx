@@ -253,6 +253,19 @@ describe('Route', () => {
       expect(screen.getByText('lineage')).toBeVisible();
       expect(status()).toBe('unsupported');
     });
+
+    it('lets a wrapper defer to a page it renders by declaring null', () => {
+      const Page = () => {
+        useDeclareMobileRouteStatus('supported');
+        return <div>asset</div>;
+      };
+      const Wrapper = ({defer}: {defer: boolean}) => {
+        useDeclareMobileRouteStatus(defer ? null : 'unsupported');
+        return <Page />;
+      };
+      renderAt('mobile', '/assets/foo', <Route path="/assets" render={() => <Wrapper defer />} />);
+      expect(status()).toBe('supported');
+    });
   });
 
   describe('lazily-loaded route content', () => {
