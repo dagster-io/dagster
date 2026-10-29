@@ -8,7 +8,6 @@ import {formatElapsedTimeWithoutMsec} from '../Util';
 import styles from './css/Mobile.module.css';
 import {MobileRunQuery, MobileRunQueryVariables} from './types/MobileRun.types';
 import {LogLevel, StepEventStatus, TerminateRunPolicy} from '../../graphql/types';
-import {useConfirmation} from '../CustomConfirmationProvider';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunStatusTag} from '../../runs/RunStatusTag';
 import {doneStatuses} from '../../runs/RunStatuses';
@@ -16,6 +15,7 @@ import {TERMINATE_MUTATION} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TerminateMutation, TerminateMutationVariables} from '../../runs/types/RunUtils.types';
 import {TimeFromNow} from '../../ui/TimeFromNow';
+import {useConfirmation} from '../CustomConfirmationProvider';
 import {useQueryRefreshAtInterval} from '../QueryRefresh';
 
 const FIVE_SECONDS = 5000;
@@ -48,6 +48,8 @@ export default function MobileRun() {
   const {data, loading} = queryResult;
 
   const run = data?.runOrError.__typename === 'Run' ? data.runOrError : null;
+  // A step with more than one attempt failed and was retried by its retry policy.
+  const retriedSteps = run?.stepStats.filter((s) => s.attempts.length > 1).length ?? 0;
   const logs = useMemo(() => {
     const conn = data?.logsForRun;
     if (conn?.__typename !== 'EventConnection') {
@@ -163,6 +165,12 @@ export default function MobileRun() {
       </div>
 
       <Section title="Steps" count={run.stepStats.length}>
+        {retriedSteps ? (
+          <div className={styles.retryNote}>
+            <Icon name="replay" color="var(--color-accent-yellow)" />
+            {retriedSteps} {retriedSteps === 1 ? 'step' : 'steps'} had to retry
+          </div>
+        ) : null}
         {run.stepStats.length ? (
           <div className={styles.steps}>
             {run.stepStats.map((step) => (
@@ -171,6 +179,12 @@ export default function MobileRun() {
                   className={clsx(styles.stepDot, step.status ? STEP_ICON[step.status] : null)}
                 />
                 <span className={styles.stepKey}>{step.stepKey}</span>
+                {step.attempts.length > 1 ? (
+                  <span className={styles.stepRetry} title="Retried after a failure">
+                    <Icon name="replay" size={12} color="var(--color-accent-yellow)" />
+                    {step.attempts.length - 1}
+                  </span>
+                ) : null}
                 <span className={styles.cardMeta}>
                   {step.startTime && step.endTime ? (
                     formatElapsedTimeWithoutMsec((step.endTime - step.startTime) * 1000)
@@ -252,6 +266,9 @@ export const MOBILE_RUN_QUERY = gql`
           status
           startTime
           endTime
+          attempts {
+            startTime
+          }
         }
       }
     }

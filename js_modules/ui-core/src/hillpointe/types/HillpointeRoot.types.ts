@@ -202,6 +202,7 @@ export type HillpointeRunStepStatsQuery = {
           status: Types.StepEventStatus | null;
           startTime: number | null;
           endTime: number | null;
+          attempts: Array<{__typename: 'RunMarker'; startTime: number | null}>;
         }>;
       }
     | {__typename: 'RunNotFoundError'};

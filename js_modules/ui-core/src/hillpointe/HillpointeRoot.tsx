@@ -1328,6 +1328,8 @@ const RunBreakdown = ({
       .sort((a, b) => (b.duration ?? 0) - (a.duration ?? 0));
   }, [data]);
   const max = Math.max(1, ...steps.map((s) => s.duration ?? 0));
+  // Steps with more than one attempt failed and were retried by their retry policy.
+  const retried = steps.filter((s) => s.attempts.length > 1).length;
   const stepStatuses = Object.entries(STEP_COLOR).map(([status, color]) => ({
     label: status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' '),
     color,
@@ -1343,6 +1345,11 @@ const RunBreakdown = ({
           </span>
         </div>
         <RunStatusTag status={run.status} />
+        {retried ? (
+          <Tag intent="warning" icon="replay">
+            {retried} {retried === 1 ? 'step' : 'steps'} retried
+          </Tag>
+        ) : null}
         {isLatest ? (
           <Tag icon="history">Latest run</Tag>
         ) : (
@@ -1369,6 +1376,14 @@ const RunBreakdown = ({
           {steps.map((step) => (
             <div key={step.stepKey} className={styles.stepRow}>
               <div className={styles.stepName} title={step.stepKey}>
+                {step.attempts.length > 1 ? (
+                  <Tooltip content={`Retried ${step.attempts.length - 1}×`}>
+                    <span className={styles.stepRetry}>
+                      <Icon name="replay" size={12} color="var(--color-accent-yellow)" />
+                      {step.attempts.length - 1}
+                    </span>
+                  </Tooltip>
+                ) : null}
                 {step.stepKey}
               </div>
               <div className={styles.stepTrack}>
@@ -1577,6 +1592,9 @@ export const HILLPOINTE_RUN_STEP_STATS_QUERY = gql`
           status
           startTime
           endTime
+          attempts {
+            startTime
+          }
         }
       }
     }

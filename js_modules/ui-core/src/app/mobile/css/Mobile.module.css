@@ -401,3 +401,23 @@
 .assetFailed {
   color: var(--color-text-red);
 }
+
+/* Retry count beside a step that failed and was retried. */
+.stepRetry {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-yellow);
+}
+
+.retryNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--color-text-yellow);
+}

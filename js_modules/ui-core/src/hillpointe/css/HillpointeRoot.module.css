@@ -214,6 +214,16 @@
   white-space: nowrap;
 }
 
+/* Retry count in front of a step that failed and was retried. */
+.stepRetry {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  margin-right: 6px;
+  font-weight: 600;
+  color: var(--color-text-yellow);
+}
+
 .stepTrack {
   height: 12px;
   background: var(--color-background-lighter);
