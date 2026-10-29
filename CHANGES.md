@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.13.28 (core) / 0.29.28 (libraries)
+
+### New
+
+- Dagster now supports protobuf 7.
+- [ui] Selection input suggestions now update when their values finish loading.
+- [ui] Selection inputs now suggest a tag key's values right after `=` or an opening quote, and while typing a tag value.
+- [ui] When no suggestion matches, selection inputs now offer the typed value in quotes if it needs them.
+- [ui] The Runs filter now lists tag keys, tag values, backfills, and partitions alphabetically.
+- [ui] Background browser tabs no longer poll for updates on job tiles, sync pages, and log views, and finished run groups refresh less often.
+- [dagster-cloud] Agents can now retry code locations that fail to start (for example, from an image pull failure or startup timeout) using the new opt-in `code_location_start_retry` setting (Helm: `workspace.codeLocationStartRetry`).
+- [dagster-databricks] Added a preview `run_job()` method to `PipesDatabricksClient` and `PipesDatabricksServerlessClient`, which triggers an existing Databricks job by ID using Dagster Pipes.
+- [dagster-databricks] Raised the `databricks-sdk` upper bound to `<0.156.0`, so newer Jobs API options like `performance_target` can be passed through `submit_args`.
+- [dagster-dbt] Added a `dagster-dbt[dbt]` extra that installs dbt v2 (the Fusion engine) from PyPI. Installing `dbt` 2.x alongside `dbt-core` now raises a clear error instead of an opaque `ImportError`.
+- [dagster-dbt] `DbtProject`, `DagsterDbtProjectPreparer`, and the `DbtProjectComponent` `project` arguments now accept `install_deps=False` to skip running `dbt deps` during project preparation, for users who install dbt packages themselves.
+- [dagster-k8s] `dagster-k8s` now supports version 37 of the `kubernetes` client.
+- [dagster-snowflake] `dagster-snowflake` now requires `snowflake-snowpark-python>=1.37.0` and `snowflake-connector-python>=3.14.0`. Older snowpark releases fail to import with setuptools 82 or newer.
+
+### Bugfixes
+
+- Fixed an issue where `UPathIOManager.storage_options`, used by IO managers such as `PolarsDeltaIOManager`, raised an `AttributeError` with universal-pathlib 0.3.0 or newer. (Thanks, [@abhishekacharya200](https://github.com/abhishekacharya200)!)
+- [dagster-dbt] Fixed a crash when using `select` or `exclude` on a dbt project with `on-run-start` or `on-run-end` hooks.
+- [dagster-dbt] Fixed a `ModuleNotFoundError: No module named 'dateutil'` when importing `dagster-dbt` without `dbt-core` installed, such as with dbt v2 (Fusion).
+
+### Dagster Plus
+
+- The audit log now records organization settings changes, removing users, team and custom role changes, API (SCIM) token creation and revocation, enabling or disabling SCIM, deployment agent type changes, and group and user changes made through SCIM provisioning.
+- The "Runs in progress" and "Runs queued" Insights metrics now capture short-lived spikes, such as bursts of very short runs, that were previously missed. Alerts on these metrics may now trigger on short bursts. Requests for these metrics that don't specify an aggregation now use Max.
+- The "Run concurrency" Insights metric is deprecated in favor of "Runs in progress".
+- The Serverless base and user-code images now ship pip 26.2.2, so `pip install` in images built on `dagster-cloud-serverless-base` no longer trusts the compromised eMudhra/emSign CA roots.
+- Fixed `add_historical_run` (used by Airlift) failing with a GraphQL error.
+- [ui] The audit log event details dialog now scales with the window, wraps long lines, and supports folding the JSON.
+- [ui] Fixed a false warning that a code location's component repository differs from the repository it deploys from.
+
 ## 1.13.27 (core) / 0.29.27 (libraries)
 
 ### New
