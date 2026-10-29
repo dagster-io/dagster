@@ -2,7 +2,10 @@ import {useMemo} from 'react';
 
 import {RunGraphQueryItem} from './toGraphQueryItems';
 import {NO_STATE} from '../run-selection/AntlrRunSelectionVisitor';
-import {createSelectionAutoComplete} from '../selection/SelectionAutoComplete';
+import {
+  createSelectionAutoComplete,
+  useSelectionAutoCompleteResults,
+} from '../selection/SelectionAutoComplete';
 import {
   SelectionAutoCompleteProvider,
   createProvider,
@@ -41,10 +44,7 @@ export function useGanttChartSelectionAutoCompleteProvider(
 
   return {
     useAutoComplete: ({line, cursorIndex}) => {
-      const autoCompleteResults = useMemo(
-        () => selectionHint(line, cursorIndex),
-        [line, cursorIndex],
-      );
+      const autoCompleteResults = useSelectionAutoCompleteResults(selectionHint, line, cursorIndex);
       return {
         autoCompleteResults,
         loading: false,

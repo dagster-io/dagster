@@ -23,6 +23,7 @@ from kubernetes import __version__ as kubernetes_version
 from kubernetes.client.models.v1_job import V1Job
 from kubernetes.client.models.v1_job_status import V1JobStatus
 from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+from kubernetes.client.models.v1_object_reference import V1ObjectReference
 
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event
@@ -792,7 +793,7 @@ def test_get_run_worker_debug_info(kubeconfig_file):
             metadata=V1ObjectMeta(name="event/demo_job"),
             reason="Testing",
             message="test message",
-            involved_object=job_name,
+            involved_object=V1ObjectReference(name=job_name),
         )
     ]
     mock_k8s_client_core_api.list_namespaced_event.return_value = list_namespaced_job_event_response

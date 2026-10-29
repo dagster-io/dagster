@@ -23,6 +23,8 @@ export type DialogProps = {
   onCancel: () => void;
   onApply: (value: [number | null, number | null]) => void;
   hidden?: Matcher[];
+  // Months shown side by side, ending with the current month.
+  numberOfMonths?: 1 | 2;
 };
 
 const buildFormatter = memoize(
@@ -35,7 +37,13 @@ const buildFormatter = memoize(
     }),
 );
 
-export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps) {
+export function DateRangeDialog({
+  onCancel,
+  onApply,
+  isOpen,
+  hidden,
+  numberOfMonths = 2,
+}: DialogProps) {
   const {resolvedTimezone: targetTimezone} = useContext(TimeContext);
 
   const [selected, setSelected] = useState<DateRange>(() => ({from: undefined, to: undefined}));
@@ -48,7 +56,13 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
   }, [isOpen]);
 
   const formatter = buildFormatter(targetTimezone);
-  const startMonth = useMemo(() => dayjs().subtract(1, 'month').toDate(), []);
+  const startMonth = useMemo(
+    () =>
+      dayjs()
+        .subtract(numberOfMonths - 1, 'month')
+        .toDate(),
+    [numberOfMonths],
+  );
 
   const leftContent = () => {
     if (selected.from) {
@@ -89,7 +103,7 @@ export function DateRangeDialog({onCancel, onApply, isOpen, hidden}: DialogProps
             excludeDisabled
             required
             defaultMonth={startMonth}
-            numberOfMonths={2}
+            numberOfMonths={numberOfMonths}
             hidden={hidden}
           />
         </div>

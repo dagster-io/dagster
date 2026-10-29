@@ -1,6 +1,7 @@
 import json
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from typing import Any
 from unittest.mock import patch
 
@@ -94,6 +95,22 @@ def cleanup_gql_mocks() -> None:
     if _patch_state["_active_patch"] is not None:
         _patch_state["_active_patch"].stop()
         _patch_state["_active_patch"] = None
+
+
+@contextmanager
+def capture_gql_client_deployments() -> Iterator[list[str | None]]:
+    """Record the deployment each GraphQL client is constructed with, in construction order."""
+    from dagster_rest_resources.gql_client import IGraphQLClient
+
+    deployments: list[str | None] = []
+    original_init = IGraphQLClient.__init__
+
+    def _spy(self, *, deployment: str | None, **kwargs: Any) -> None:
+        deployments.append(deployment)
+        original_init(self, deployment=deployment, **kwargs)
+
+    with patch.object(IGraphQLClient, "__init__", _spy):
+        yield deployments
 
 
 def mock_serverless_response():

@@ -235,7 +235,7 @@ class ConfigurableResourceFactory(  # ty: ignore[conflicting-metaclass]
         }
         resolved_config_dict = config_dictionary_from_values(casted_data_without_resources, schema)
 
-        self._state__internal__ = ConfigurableResourceFactoryState(
+        self._state__internal__ = ConfigurableResourceFactoryState(  # ty: ignore[invalid-assignment]
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={
@@ -339,7 +339,7 @@ class ConfigurableResourceFactory(  # ty: ignore[conflicting-metaclass]
             {**self._get_non_default_public_field_values(), **values}
         )
         out = self.__class__(**to_populate)
-        out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001
+        out._state__internal__ = out._state__internal__._replace(  # noqa: SLF001  # ty: ignore[invalid-assignment]
             resource_context=self._state__internal__.resource_context
         )
         return out
@@ -394,7 +394,7 @@ class ConfigurableResourceFactory(  # ty: ignore[conflicting-metaclass]
         # This utility is used to create a copy of this resource, without adjusting
         # any values in this case
         copy = self._with_updated_values({})
-        copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001
+        copy._state__internal__ = copy._state__internal__._replace(  # noqa: SLF001  # ty: ignore[invalid-assignment]
             resource_context=resource_context
         )
         return copy
@@ -715,7 +715,7 @@ class PartialResource(
             )  # So that collisions are resolved in favor of the latest provided run config
             return instantiated._get_initialize_and_run_fn()(context)  # noqa: SLF001
 
-        self._state__internal__ = PartialResourceState(
+        self._state__internal__ = PartialResourceState(  # ty: ignore[invalid-assignment]
             # We keep track of any resources we depend on which are not fully configured
             # so that we can retrieve them at runtime
             nested_partial_resources={

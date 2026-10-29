@@ -4,6 +4,7 @@ import {RecoilRoot} from 'recoil';
 
 import {lazy} from '../../util/lazy';
 import {Route} from '../Route';
+import {usePageContext, useRefineCurrentPage} from '../analytics';
 import {LayoutMode} from '../layout/LayoutMode';
 import {LayoutModeProvider} from '../layout/LayoutModeProvider';
 import {
@@ -13,6 +14,7 @@ import {
 } from '../layout/mobileRouteStatus';
 
 const Status = () => <div data-testid="status">{useMobileRouteStatus()}</div>;
+const PageName = () => <div data-testid="page-name">{usePageContext().path}</div>;
 
 let history: ReturnType<typeof useHistory> | null = null;
 const CaptureHistory = () => {
@@ -27,6 +29,7 @@ const renderAt = (mode: LayoutMode, path: string, routes: React.ReactNode) =>
         <MemoryRouter initialEntries={[path]}>
           <CaptureHistory />
           <Status />
+          <PageName />
           <Switch>{routes}</Switch>
         </MemoryRouter>
       </LayoutModeProvider>
@@ -40,6 +43,7 @@ const navigate = (path: string) => {
 };
 
 const status = () => screen.getByTestId('status').textContent as MobileRouteStatus;
+const pageName = () => screen.getByTestId('page-name').textContent;
 
 // A `lazy` component whose import resolves when `load` is called.
 const deferredLazy = (Component: React.ComponentType) => {
@@ -249,6 +253,19 @@ describe('Route', () => {
       expect(screen.getByText('lineage')).toBeVisible();
       expect(status()).toBe('unsupported');
     });
+
+    it('lets a wrapper defer to a page it renders by declaring null', () => {
+      const Page = () => {
+        useDeclareMobileRouteStatus('supported');
+        return <div>asset</div>;
+      };
+      const Wrapper = ({defer}: {defer: boolean}) => {
+        useDeclareMobileRouteStatus(defer ? null : 'unsupported');
+        return <Page />;
+      };
+      renderAt('mobile', '/assets/foo', <Route path="/assets" render={() => <Wrapper defer />} />);
+      expect(status()).toBe('supported');
+    });
   });
 
   describe('lazily-loaded route content', () => {
@@ -349,6 +366,105 @@ describe('Route', () => {
       navigate('/other');
       navigate('/page');
       expect(screen.getByText('page')).toBeVisible();
+    });
+  });
+
+  describe('page name', () => {
+    const JobRoutes = () => (
+      <Switch>
+        <Route path="/locations/:repoPath/jobs/:jobName/runs">
+          <div>job runs</div>
+        </Route>
+        <Route path="/locations/:repoPath/jobs/:jobName/partitions">
+          <div>job partitions</div>
+        </Route>
+      </Switch>
+    );
+    const LocationRoutes = () => (
+      <Switch>
+        <Route path="/locations/:repoPath">
+          <JobRoutes />
+        </Route>
+      </Switch>
+    );
+
+    it('reports the most nested route rather than the routes enclosing it', () => {
+      renderAt(
+        'desktop',
+        '/locations/loc/jobs/my_job/runs',
+        <Route path="/locations">
+          <LocationRoutes />
+        </Route>,
+      );
+      expect(screen.getByText('job runs')).toBeVisible();
+      expect(pageName()).toBe('/locations/:repoPath/jobs/:jobName/runs');
+
+      navigate('/locations/loc/jobs/my_job/partitions');
+      expect(screen.getByText('job partitions')).toBeVisible();
+      expect(pageName()).toBe('/locations/:repoPath/jobs/:jobName/partitions');
+    });
+
+    it('reports a shallower route after leaving a nested tree', () => {
+      renderAt(
+        'desktop',
+        '/locations/loc/jobs/my_job/runs',
+        <>
+          <Route path="/locations">
+            <LocationRoutes />
+          </Route>
+          <Route path="/jobs">
+            <div>jobs</div>
+          </Route>
+        </>,
+      );
+      navigate('/jobs');
+      expect(pageName()).toBe('/jobs');
+    });
+
+    it('reports the nested route once a lazily-loaded subtree loads', async () => {
+      const {Lazy: WorkspaceRoot, load} = deferredLazy(LocationRoutes);
+      renderAt(
+        'desktop',
+        '/locations/loc/jobs/my_job/runs',
+        <Route path="/locations">
+          <WorkspaceRoot />
+        </Route>,
+      );
+      await load();
+      expect(screen.getByText('job runs')).toBeVisible();
+      expect(pageName()).toBe('/locations/:repoPath/jobs/:jobName/runs');
+
+      navigate('/locations/loc/jobs/my_job/partitions');
+      expect(pageName()).toBe('/locations/:repoPath/jobs/:jobName/partitions');
+    });
+
+    it('lets a page component refine the name of its route', () => {
+      const Asset = ({tab}: {tab: string}) => {
+        useRefineCurrentPage(`?view=${tab}`);
+        return <div>{tab}</div>;
+      };
+      renderAt(
+        'desktop',
+        '/assets/my_asset?view=events',
+        <Route path="/assets">
+          <Switch>
+            <Route
+              path="/assets/:assetKey"
+              render={({location}) => (
+                <Asset tab={new URLSearchParams(location.search).get('view') ?? ''} />
+              )}
+            />
+          </Switch>
+        </Route>,
+      );
+      expect(pageName()).toBe('/assets/:assetKey?view=events');
+
+      navigate('/assets/my_asset?view=lineage');
+      expect(pageName()).toBe('/assets/:assetKey?view=lineage');
+
+      // Same route and component instance, so only the pathname changes.
+      navigate('/assets/other_asset?view=lineage');
+      expect(pageName()).toBe('/assets/:assetKey?view=lineage');
     });
   });
 });

@@ -168,10 +168,12 @@ PENDING_STATUSES = [
     DagsterRunStatus.NOT_STARTED,
     DagsterRunStatus.QUEUED,
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.CANCELING,
 ]
 IN_PROGRESS_STATUSES = [
     DagsterRunStatus.STARTED,
+    DagsterRunStatus.SUSPENDED,
     DagsterRunStatus.CANCELING,
 ]
 
@@ -463,7 +465,11 @@ def _fetch_runs_not_in_backfill(
 
 RUN_STATUS_TO_BULK_ACTION_STATUSES = {
     DagsterRunStatus.SUCCESS: [BulkActionStatus.COMPLETED_SUCCESS],
-    DagsterRunStatus.FAILURE: [BulkActionStatus.FAILED, BulkActionStatus.COMPLETED_FAILED],
+    DagsterRunStatus.FAILURE: [
+        BulkActionStatus.FAILED,
+        BulkActionStatus.COMPLETED_FAILED,
+        BulkActionStatus.FAILING,
+    ],
     DagsterRunStatus.CANCELED: [BulkActionStatus.CANCELED],
     DagsterRunStatus.CANCELING: [BulkActionStatus.CANCELING],
     DagsterRunStatus.STARTED: [BulkActionStatus.REQUESTED],

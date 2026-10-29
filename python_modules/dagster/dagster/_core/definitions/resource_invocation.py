@@ -25,8 +25,6 @@ def resource_invocation_result(
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
     check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
 
-    if not resource_def.resource_fn:
-        return None
     _init_context = _check_invocation_requirements(resource_def, init_context)
 
     resource_fn = resource_def.resource_fn

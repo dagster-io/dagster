@@ -72,4 +72,51 @@ describe('createSelectionLinter', () => {
       }),
     ]);
   });
+
+  it.each([
+    {input: 'key:ben@', character: '@', from: 7},
+    {input: 'key:a$', character: '$', from: 5},
+    {input: 'key:😀a', character: '😀', from: 4},
+  ])('reports the character the lexer rejects in $input', ({input, character, from}) => {
+    expect(linter(input)).toEqual([
+      {message: `token recognition error at: '${character}'`, from, to: Infinity},
+    ]);
+  });
+
+  it.each([
+    {
+      input: 'key:😀😀',
+      errors: [
+        {character: '😀', from: 4},
+        {character: '😀', from: 6},
+      ],
+    },
+    {input: 'key:𝒜', errors: [{character: '𝒜', from: 4}]},
+    {input: 'key:\ud83d', errors: [{character: '\ud83d', from: 4}]},
+  ])('reports one error per rejected character in $input', ({input, errors}) => {
+    expect(linter(input)).toEqual([
+      ...errors.map(({character, from}) => ({
+        message: `token recognition error at: '${character}'`,
+        from,
+        to: Infinity,
+      })),
+      {
+        message: "no viable alternative at input 'key:'",
+        offendingSymbol: '<EOF>',
+        from: 0,
+        to: Infinity,
+      },
+    ]);
+  });
+
+  // Error columns restart on each line, so a later error can share a column with an emoji's half.
+  it.each([
+    {above: 'a rejected emoji', input: 'key:😀a\nkey:b$', characters: ['😀', '$']},
+    {above: 'a quoted emoji', input: 'key:"😀"\nkey:a$$', characters: ['$', '$']},
+  ])('keeps each error on a line below $above', ({input, characters}) => {
+    expect(linter(input).map(({message}) => message)).toEqual([
+      ...characters.map((character) => `token recognition error at: '${character}'`),
+      "mismatched input 'key' expecting <EOF>",
+    ]);
+  });
 });

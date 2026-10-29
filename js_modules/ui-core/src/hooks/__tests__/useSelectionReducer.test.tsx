@@ -81,6 +81,26 @@ describe('useSelectionReducer', () => {
     expect(checkD).not.toBeChecked();
   });
 
+  it.each([
+    {from: 9, to: 10, checkedIds: ['j', 'k']},
+    {from: 10, to: 9, checkedIds: ['j', 'k']},
+    {from: 2, to: 12, checkedIds: ['c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm']},
+  ])('shift-click selects every row from $from to $to', async ({from, to, checkedIds}) => {
+    const user = userEvent.setup();
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'];
+    render(<Test ids={ids} />);
+
+    await user.click(await screen.findByRole('checkbox', {name: `checkbox-${ids[from]}`}));
+    await user.keyboard('[ShiftLeft>]');
+    await user.click(await screen.findByRole('checkbox', {name: `checkbox-${ids[to]}`}));
+    await user.keyboard('[/ShiftLeft]');
+
+    const checkedBoxes = await screen.findAllByRole('checkbox', {checked: true});
+    expect(checkedBoxes.map((checkbox) => checkbox.getAttribute('aria-label'))).toEqual(
+      checkedIds.map((id) => `checkbox-${id}`),
+    );
+  });
+
   it('allows toggle-all', async () => {
     const user = userEvent.setup();
     render(<Test ids={['a', 'b', 'c', 'd']} />);

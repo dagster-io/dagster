@@ -1,7 +1,9 @@
 import {Box, CursorHistoryControls, Heading, PageHeader} from '@dagster-io/ui-components';
 import {useEffect, useMemo, useRef} from 'react';
 
+import {RunsDateRangeSelect} from './RunsDateRangeSelect';
 import {RunsFeedList} from './RunsFeedList';
+import {RunsSearchInput} from './RunsSearchInput';
 import styles from './css/RunsPage.module.css';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {useRunsFeed} from './useRunsFeed';
@@ -9,8 +11,8 @@ import {ApolloError} from '../../apollo-client';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
+import {useIsMobile} from '../../app/layout/IsMobileContext';
 import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
-import {RunsFeedView, RunsFilter} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RunTableEmptyState} from '../RunTableEmptyState';
 import {RunsQueryRefetchContext} from '../RunUtils';
@@ -21,13 +23,23 @@ import {
   getSelectedRunsFeedTab,
   useQueryPersistedRunsFeedView,
 } from '../RunsFeedUtils';
-import {runsFilterForSearchTokens, useQueryPersistedRunFilters} from '../RunsFilterUtils';
+import {
+  RunFilterToken,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+} from '../RunsFilterUtils';
+
+const isCreatedDateToken = ({token}: RunFilterToken) =>
+  token === 'created_date_after' || token === 'created_date_before';
 
 export const RunsPage = () => {
   useTrackPageView();
+  const isMobile = useIsMobile();
 
-  const [filterTokens] = useQueryPersistedRunFilters();
+  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters({behavior: 'push'});
   const filter = runsFilterForSearchTokens(filterTokens);
+  const dateTokens = filterTokens.filter(isCreatedDateToken);
+  const searchTokens = filterTokens.filter((token) => !isCreatedDateToken(token));
   const [view] = useQueryPersistedRunsFeedView();
   const selectedTab = getSelectedRunsFeedTab(filterTokens, view);
   useDocumentTitle(getRunsFeedDocumentTitle(selectedTab));
@@ -35,22 +47,12 @@ export const RunsPage = () => {
   const queryView = getRunsFeedQueryView(selectedTab, view);
   const appliedQueryKey = JSON.stringify({filter, view: queryView});
 
-  // A new query remounts with an empty cursor stack; Back/Forward within one query keeps it.
-  return <RunsPageContent key={appliedQueryKey} filter={filter} view={queryView} />;
-};
-
-type RunsPageContentProps = {
-  filter: RunsFilter;
-  view: RunsFeedView;
-};
-
-const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const shouldScrollToTopRef = useRef(false);
 
   const {entries, error, queryResult, paginationProps, refreshState} = useRunsFeed({
     filter,
-    view,
+    view: queryView,
     skip: false,
   });
 
@@ -68,6 +70,12 @@ const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
     }
   }, [cursor, isLoading]);
 
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = 0;
+    }
+  }, [appliedQueryKey]);
+
   const refetchContext = useMemo(() => ({refetch: refreshState.refetch}), [refreshState.refetch]);
 
   const popCursor = () => {
@@ -80,6 +88,17 @@ const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
     paginationProps.advanceCursor();
   };
 
+  // On a phone, pagination moves into the header so the search input gets the full width.
+  const paginationControls = (
+    <CursorHistoryControls
+      {...paginationProps}
+      popCursor={popCursor}
+      advanceCursor={advanceCursor}
+      style={{marginTop: 0}}
+      iconOnly={isMobile}
+    />
+  );
+
   return (
     <div className={styles.page}>
       <PageHeader
@@ -88,23 +107,40 @@ const RunsPageContent = ({filter, view}: RunsPageContentProps) => {
             Runs
           </Heading>
         }
-        right={<QueryRefreshCountdown refreshState={refreshState} />}
+        right={
+          isMobile ? (
+            <Box flex={{alignItems: 'center', gap: 12}}>
+              <QueryRefreshCountdown refreshState={refreshState} />
+              {paginationControls}
+            </Box>
+          ) : (
+            <QueryRefreshCountdown refreshState={refreshState} />
+          )
+        }
       />
-      <Box
-        flex={{alignItems: 'center', justifyContent: 'flex-end'}}
-        padding={{vertical: 12, horizontal: 24}}
-        border="bottom"
-      >
-        <CursorHistoryControls
-          {...paginationProps}
-          popCursor={popCursor}
-          advanceCursor={advanceCursor}
-          style={{marginTop: 0}}
+      <Box flex={{alignItems: 'center', gap: 12}} border="bottom" className={styles.toolbar}>
+        <RunsDateRangeSelect
+          tokens={dateTokens}
+          onChange={(tokens) => setFilterTokens([...searchTokens, ...tokens])}
         />
+        <Box flex={{grow: 1}}>
+          <RunsSearchInput
+            tokens={searchTokens}
+            onChange={(tokens) => setFilterTokens([...tokens, ...dateTokens])}
+          />
+        </Box>
+        {isMobile ? null : paginationControls}
       </Box>
       <div ref={bodyRef} className={styles.body}>
         <RunsQueryRefetchContext.Provider value={refetchContext}>
-          <RunsFeed entries={entries} error={error} isLoading={isLoading} isFiltered={isFiltered} />
+          <RunsFeed
+            // A new query key remounts the list, which closes any open tick dialog.
+            key={appliedQueryKey}
+            entries={entries}
+            error={error}
+            isLoading={isLoading}
+            isFiltered={isFiltered}
+          />
         </RunsQueryRefetchContext.Provider>
       </div>
     </div>
@@ -119,6 +155,8 @@ type RunsFeedProps = {
 };
 
 const RunsFeed = ({entries, error, isLoading, isFiltered}: RunsFeedProps) => {
+  const isMobile = useIsMobile();
+
   if (error instanceof ApolloError) {
     return <RunsFeedError error={error} />;
   }
@@ -132,7 +170,11 @@ const RunsFeed = ({entries, error, isLoading, isFiltered}: RunsFeedProps) => {
   }
 
   if (entries.length === 0 && !isLoading) {
-    return <RunTableEmptyState anyFilter={isFiltered} />;
+    return (
+      <div className={styles.emptyState}>
+        <RunTableEmptyState anyFilter={isFiltered} shrinkable={isMobile} />
+      </div>
+    );
   }
 
   return <RunsFeedList entries={entries} isLoading={isLoading} />;

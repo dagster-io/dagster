@@ -44,13 +44,13 @@ const reducer = (state: State, action: Action): State => {
         return state;
       }
 
-      const [start, end] = [indexOfLast, indexOfChecked].sort();
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      allIds.slice(start, end! + 1).forEach((id) => {
+      const start = Math.min(indexOfLast, indexOfChecked);
+      const end = Math.max(indexOfLast, indexOfChecked);
+      allIds.slice(start, end + 1).forEach((rangeId) => {
         if (checked) {
-          copy.add(id);
+          copy.add(rangeId);
         } else {
-          copy.delete(id);
+          copy.delete(rangeId);
         }
       });
 

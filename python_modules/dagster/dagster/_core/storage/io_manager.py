@@ -1,15 +1,6 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    TypeAlias,
-    TypeGuard,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, TypeAlias, TypeGuard, cast, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public

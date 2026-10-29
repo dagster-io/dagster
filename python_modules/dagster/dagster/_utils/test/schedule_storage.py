@@ -732,6 +732,67 @@ class TestScheduleStorage:
         assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
         assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id
 
+    def test_get_ticks_by_ids(self, storage):
+        if not self.can_get_single_tick():
+            pytest.skip("get_ticks_by_ids not supported by this storage implementation")
+        a = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        _b = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        c = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
+        )
+
+        assert storage.get_ticks_by_ids([]) == []
+
+        ticks = storage.get_ticks_by_ids([a.tick_id, c.tick_id])
+        assert {tick.tick_id for tick in ticks} == {a.tick_id, c.tick_id}
+
+        missing_id = max(a.tick_id, _b.tick_id, c.tick_id) + 1000
+        ticks = storage.get_ticks_by_ids([a.tick_id, missing_id])
+        assert {tick.tick_id for tick in ticks} == {a.tick_id}
+
+    def test_get_tick_summaries(self, storage):
+        if not self.can_get_single_tick():
+            pytest.skip("get_tick_summaries not supported by this storage implementation")
+        # Some OS default to microsecond precision, so add sub-microsecond digits to exercise the
+        # timestamp precision difference between timestamp stored in timestamp column vs tick_body column.
+        now = round(time.time(), 6) + 4.37e-7
+        storage.create_tick(
+            self.build_sensor_tick(now, status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        storage.create_tick(
+            self.build_sensor_tick(now + 1, status=TickStatus.SKIPPED, name="sensor_one")
+        )
+        storage.create_tick(
+            self.build_sensor_tick(
+                now + 2,
+                status=TickStatus.FAILURE,
+                error=SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None),
+                name="sensor_one",
+            )
+        )
+
+        ticks = storage.get_ticks("sensor_one", "sensor_one")
+        summaries = storage.get_tick_summaries("sensor_one", "sensor_one")
+        # summary timestamps are microsecond precision (they come from the timestamp
+        # column, not the tick body float)
+        assert [
+            (s.tick_id, s.instigator_origin_id, s.instigator_type, s.status, s.timestamp)
+            for s in summaries
+        ] == [
+            (t.tick_id, t.instigator_origin_id, t.instigator_type, t.status, round(t.timestamp, 6))
+            for t in ticks
+        ]
+
+        summaries = storage.get_tick_summaries(
+            "sensor_one", "sensor_one", statuses=[TickStatus.FAILURE], limit=1
+        )
+        assert len(summaries) == 1
+        assert summaries[0].status == TickStatus.FAILURE
+
     def test_auto_materialize_asset_evaluations(self, storage) -> None:
         if not self.can_store_auto_materialize_asset_evaluations():
             pytest.skip("Storage cannot store auto materialize asset evaluations")

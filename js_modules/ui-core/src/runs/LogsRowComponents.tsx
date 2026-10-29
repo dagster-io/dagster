@@ -16,6 +16,10 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 export const MAX_ROW_HEIGHT_PX = 200;
 
+// Passed as a variable rather than `width` so the stacked narrow layout can override it.
+const columnWidthStyle = (width: number) =>
+  ({'--column-width': `${width}px`}) as React.CSSProperties;
+
 const rowLevelClass: Record<LogLevel, string | undefined> = {
   [LogLevel.DEBUG]: styles.rowDebug,
   [LogLevel.INFO]: styles.rowInfo,
@@ -41,6 +45,18 @@ export const Row = React.forwardRef<
   />
 ));
 
+export const MessageColumn = React.forwardRef<HTMLDivElement, React.ComponentProps<typeof Box>>(
+  ({className, ...rest}, ref) => (
+    <Box
+      ref={ref}
+      padding={{horizontal: 12}}
+      style={{flex: 1}}
+      className={clsx(styles.messageColumn, className)}
+      {...rest}
+    />
+  ),
+);
+
 export const StructuredContent = ({className, ...rest}: React.HTMLAttributes<HTMLDivElement>) => (
   <div className={clsx(styles.structuredContent, className)} {...rest} />
 );
@@ -55,7 +71,7 @@ export const OpColumn = (props: {stepKey: string | false | null}) => {
   const widths = React.useContext(ColumnWidthsContext);
   const parts = String(props.stepKey).split('.');
   return (
-    <OpColumnContainer style={{width: widths.solid}}>
+    <OpColumnContainer style={columnWidthStyle(widths.solid)}>
       {props.stepKey
         ? parts.map((p, idx) => (
             <div
@@ -140,7 +156,7 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
   const stepElapsedTime = formatElapsedTimeWithMsec(Number(time) - (stepStartTime || 0));
 
   return (
-    <div className={styles.timestampColumnContainer} style={{width: widths.timestamp}}>
+    <div className={styles.timestampColumnContainer} style={columnWidthStyle(widths.timestamp)}>
       <Tooltip
         canShow={canShowTooltip}
         content={
@@ -199,7 +215,7 @@ export const TimestampColumn = React.memo((props: TimestampColumnProps) => {
 export const EventTypeColumn = (props: {children: React.ReactNode}) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
-    <div className={styles.eventTypeColumnContainer} style={{width: widths.eventType}}>
+    <div className={styles.eventTypeColumnContainer} style={columnWidthStyle(widths.eventType)}>
       {props.children}
     </div>
   );

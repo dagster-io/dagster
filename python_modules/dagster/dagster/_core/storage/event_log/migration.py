@@ -109,7 +109,7 @@ def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
 
             if asset_details_str:
                 asset_details = deserialize_value(asset_details_str, AssetDetails)
-                wipe_timestamp = asset_details.last_wipe_timestamp if asset_details else None
+                wipe_timestamp = asset_details.last_wipe_timestamp
 
             if last_materialization_str:
                 event_or_materialization = deserialize_value(last_materialization_str, NamedTuple)  # ty: ignore[no-matching-overload]

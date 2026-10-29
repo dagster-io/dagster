@@ -37,7 +37,7 @@ from dagster_cloud_cli.config_utils import (
     get_org_url,
     get_user_token,
 )
-from dagster_cloud_cli.core import pex_builder
+from dagster_cloud_cli.core import git_repo_context, pex_builder
 from dagster_cloud_cli.core.artifacts import (
     download_organization_artifact,
     upload_organization_artifact,
@@ -446,7 +446,14 @@ def init_impl(
     status_url: str | None,
     snapshot_base_condition: SnapshotBaseDeploymentCondition | None,
     require_branch_deployment: bool,
+    defs_base_path: str | None = None,
 ):
+    # Best-effort: a deploy that isn't run from a checkout reports nothing, and
+    # the server falls back to whatever binding was set by hand.
+    repo_owner, repo_name = git_repo_context.discover_repo_owner_and_name(project_dir)
+    base_branch = git_repo_context.discover_base_branch(project_dir)
+    git_provider = git_repo_context.discover_git_provider(project_dir)
+
     yaml_path = pathlib.Path(project_dir) / dagster_cloud_yaml_path
     if not yaml_path.exists():
         raise ui.error(
@@ -525,6 +532,11 @@ def init_impl(
                 git_url=git_url,
                 commit_hash=commit_hash,
                 build_config=location.build,
+                git_provider=git_provider,
+                repo_owner=repo_owner,
+                repo_name=repo_name,
+                base_branch=base_branch,
+                defs_base_path=defs_base_path,
             ),
             build_output=None,
             status_url=status_url,
@@ -1233,6 +1245,11 @@ def _deploy(
             "location_file": location_state.location_file,
             "git_url": location_state.build.git_url,
             "commit_hash": location_state.build.commit_hash,
+            "git_provider": location_state.build.git_provider,
+            "repo_owner": location_state.build.repo_owner,
+            "repo_name": location_state.build.repo_name,
+            "base_branch": location_state.build.base_branch,
+            "defs_base_path": location_state.build.defs_base_path,
             **(
                 {"defs_state_info": location_state.defs_state_info.model_dump()}
                 if location_state.defs_state_info

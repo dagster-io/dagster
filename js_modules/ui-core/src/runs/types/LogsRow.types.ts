@@ -46,9 +46,11 @@ export type DagsterEventType =
   | 'RUN_DEQUEUED'
   | 'RUN_ENQUEUED'
   | 'RUN_FAILURE'
+  | 'RUN_RESUMED'
   | 'RUN_START'
   | 'RUN_STARTING'
   | 'RUN_SUCCESS'
+  | 'RUN_SUSPENDED'
   | 'STEP_EXPECTATION_RESULT'
   | 'STEP_FAILURE'
   | 'STEP_INPUT'
@@ -2933,6 +2935,15 @@ export type LogsRowStructuredFragment_RunFailureEvent = {
   } | null;
 };
 
+export type LogsRowStructuredFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowStructuredFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -2953,6 +2964,15 @@ export type LogsRowStructuredFragment_RunStartingEvent = {
 
 export type LogsRowStructuredFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  eventType: Types.DagsterEventType | null;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowStructuredFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
   timestamp: string;
@@ -3486,9 +3506,11 @@ export type LogsRowStructuredFragment =
   | LogsRowStructuredFragment_RunDequeuedEvent
   | LogsRowStructuredFragment_RunEnqueuedEvent
   | LogsRowStructuredFragment_RunFailureEvent
+  | LogsRowStructuredFragment_RunResumedEvent
   | LogsRowStructuredFragment_RunStartEvent
   | LogsRowStructuredFragment_RunStartingEvent
   | LogsRowStructuredFragment_RunSuccessEvent
+  | LogsRowStructuredFragment_RunSuspendedEvent
   | LogsRowStructuredFragment_StepExpectationResultEvent
   | LogsRowStructuredFragment_StepWorkerStartedEvent
   | LogsRowStructuredFragment_StepWorkerStartingEvent;
@@ -3773,6 +3795,14 @@ export type LogsRowUnstructuredFragment_RunFailureEvent = {
   stepKey: string | null;
 };
 
+export type LogsRowUnstructuredFragment_RunResumedEvent = {
+  __typename: 'RunResumedEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
 export type LogsRowUnstructuredFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
@@ -3791,6 +3821,14 @@ export type LogsRowUnstructuredFragment_RunStartingEvent = {
 
 export type LogsRowUnstructuredFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+};
+
+export type LogsRowUnstructuredFragment_RunSuspendedEvent = {
+  __typename: 'RunSuspendedEvent';
   message: string;
   timestamp: string;
   level: Types.LogLevel;
@@ -3857,9 +3895,11 @@ export type LogsRowUnstructuredFragment =
   | LogsRowUnstructuredFragment_RunDequeuedEvent
   | LogsRowUnstructuredFragment_RunEnqueuedEvent
   | LogsRowUnstructuredFragment_RunFailureEvent
+  | LogsRowUnstructuredFragment_RunResumedEvent
   | LogsRowUnstructuredFragment_RunStartEvent
   | LogsRowUnstructuredFragment_RunStartingEvent
   | LogsRowUnstructuredFragment_RunSuccessEvent
+  | LogsRowUnstructuredFragment_RunSuspendedEvent
   | LogsRowUnstructuredFragment_StepExpectationResultEvent
   | LogsRowUnstructuredFragment_StepWorkerStartedEvent
   | LogsRowUnstructuredFragment_StepWorkerStartingEvent;

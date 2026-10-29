@@ -103,7 +103,7 @@ def test_default_environment():
     def job_def():
         some_op()
 
-    assert ResolvedRunConfig.build(job_def, {})
+    ResolvedRunConfig.build(job_def, {})
 
 
 def test_op_config():

@@ -34,7 +34,3 @@
   font-family: var(--font-mono);
   font-variant-ligatures: none;
 }
-
-.partitionText {
-  max-width: 160px;
-}

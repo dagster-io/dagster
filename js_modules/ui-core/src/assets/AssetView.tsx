@@ -3,8 +3,7 @@ import {observeEnabled} from '@shared/app/observeEnabled';
 import {getAssetSelectionQueryString} from '@shared/asset-selection/useAssetSelectionState';
 import {AssetPageHeader} from '@shared/assets/AssetPageHeader';
 import React, {useContext, useEffect, useMemo} from 'react';
-import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
-import {useSetRecoilState} from 'recoil';
+import {Link, Redirect, useLocation} from 'react-router-dom';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
@@ -31,7 +30,7 @@ import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
-import {currentPageAtom} from '../app/analytics';
+import {useRefineCurrentPage} from '../app/analytics';
 import {useIsMobile} from '../app/layout/IsMobileContext';
 import {useDeclareMobileRouteStatus} from '../app/layout/mobileRouteStatus';
 import {Timestamp} from '../app/time/Timestamp';
@@ -245,11 +244,7 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
     [definition],
   );
 
-  const setCurrentPage = useSetRecoilState(currentPageAtom);
-  const {path} = useRouteMatch();
-  useEffect(() => {
-    setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
-  }, [path, selectedTab, setCurrentPage]);
+  useRefineCurrentPage(`?view=${selectedTab}`);
 
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
     definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,

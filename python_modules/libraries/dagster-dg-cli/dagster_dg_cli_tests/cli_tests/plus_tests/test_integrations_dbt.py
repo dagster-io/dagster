@@ -1,7 +1,14 @@
 import sys
 from pathlib import Path
 
+import pytest
 from dagster_dg_cli.cli.plus.integrations.dbt import _discover_dbt_projects
+
+# dbt-core does not support Python 3.14: importing it pulls in dbt_common, whose
+# module-level mashumaro schema build fails on 3.14's union types.
+pytestmark = pytest.mark.skipif(
+    sys.version_info >= (3, 14), reason="dbt-core does not support Python 3.14"
+)
 
 
 def test_discover_dbt_projects_from_file_named_dbt(tmp_path: Path) -> None:

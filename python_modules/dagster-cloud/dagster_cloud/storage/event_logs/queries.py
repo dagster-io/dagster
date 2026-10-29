@@ -191,6 +191,17 @@ GET_RECORDS_FOR_RUN_QUERY = (
     """
 )
 
+GET_ASSET_PARTITIONS_FOR_RUN_QUERY = """
+    query getAssetPartitionsForRun($runId: String!, $ofTypes: [String!], $includePartitions: Boolean) {
+        eventLogs {
+            getAssetPartitionsForRun(runId: $runId, ofTypes: $ofTypes, includePartitions: $includePartitions) {
+                assetKey
+                partitions
+            }
+        }
+    }
+    """
+
 GET_STATS_FOR_RUN_QUERY = """
     query getStatsForRun($runId: String!) {
         eventLogs {

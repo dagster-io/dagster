@@ -62,6 +62,7 @@ import {QuotedStringValueContext} from './SelectionAutoCompleteParser.js';
 import {IncompleteLeftQuotedStringValueContext} from './SelectionAutoCompleteParser.js';
 import {IncompleteRightQuotedStringValueContext} from './SelectionAutoCompleteParser.js';
 import {UnquotedStringValueContext} from './SelectionAutoCompleteParser.js';
+import {UnquotedRejectedValueContext} from './SelectionAutoCompleteParser.js';
 import {NullStringValueContext} from './SelectionAutoCompleteParser.js';
 import {DigitsValueContext} from './SelectionAutoCompleteParser.js';
 
@@ -491,6 +492,13 @@ export class SelectionAutoCompleteVisitor<Result> extends AbstractParseTreeVisit
    * @return the visitor result
    */
   visitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => Result;
+  /**
+   * Visit a parse tree produced by the `UnquotedRejectedValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitUnquotedRejectedValue?: (ctx: UnquotedRejectedValueContext) => Result;
   /**
    * Visit a parse tree produced by the `NullStringValue`
    * labeled alternative in `SelectionAutoCompleteParser.value`.

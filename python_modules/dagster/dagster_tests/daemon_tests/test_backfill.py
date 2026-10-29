@@ -39,7 +39,7 @@ from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunsFilter,
@@ -2141,7 +2141,7 @@ def test_asset_backfill_mid_iteration_cancel(
     )
 
     assert instance.get_runs_count() == DEFAULT_CHUNK_SIZE
-    assert instance.get_runs_count(dg.RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)) == 0
+    assert instance.get_runs_count(dg.RunsFilter(statuses=ACTIVE_RUN_STATUSES)) == 0
 
 
 def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(

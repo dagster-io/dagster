@@ -54,11 +54,6 @@ def local_env_fixture() -> Generator[None, None, None]:
     )
 
 
-@pytest.fixture(name="expected_num_dags")
-def expected_num_dags_fixture() -> int:
-    return EXPECTED_NUM_DAGS
-
-
 @pytest.fixture(name="airflow_instance")
 def airflow_instance_fixture(
     local_env: None, expected_num_dags: int

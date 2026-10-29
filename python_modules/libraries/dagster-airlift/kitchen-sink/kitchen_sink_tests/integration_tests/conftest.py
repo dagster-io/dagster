@@ -15,6 +15,7 @@ from dagster._time import get_current_datetime
 from dagster_airlift.constants import DAG_RUN_ID_TAG_KEY
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.test.shared_fixtures import stand_up_airflow, stand_up_dagster
+from kitchen_sink.airflow_instance import EXPECTED_NUM_DAGS
 
 
 def makefile_dir() -> Path:
@@ -60,9 +61,11 @@ def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
+# Airflow serializes dags progressively, so a gate of 1 lets tests start against a
+# partially-populated dagbag and see spurious 404s. Wait for the whole set.
 @pytest.fixture(name="expected_num_dags", scope="module")
 def expected_num_dags_fixture() -> int:
-    return 1
+    return EXPECTED_NUM_DAGS
 
 
 @pytest.fixture(name="airflow_instance", scope="module")
@@ -129,21 +132,20 @@ def poll_for_expected_mats(
         dagster_instance = DagsterInstance.get()
 
         dag_asset_key = AssetKey([af_instance.name, "dag", dag_id])
-        assert poll_for_materialization(dagster_instance, dag_asset_key)
+        poll_for_materialization(dagster_instance, dag_asset_key)
 
         for expected_mat in expected_mats:
             mat_event_log_entry = poll_for_materialization(dagster_instance, expected_mat.asset_key)
             assert mat_event_log_entry.asset_materialization
             assert mat_event_log_entry.asset_materialization.asset_key == expected_mat.asset_key
 
-            assert mat_event_log_entry.asset_materialization
             dagster_run_id = mat_event_log_entry.run_id
 
             all_materializations = dagster_instance.fetch_materializations(
                 records_filter=expected_mat.asset_key, limit=10
             )
 
-            assert all_materializations
+            assert all_materializations.records
 
             if expected_mat.runs_in_dagster:
                 assert dagster_run_id

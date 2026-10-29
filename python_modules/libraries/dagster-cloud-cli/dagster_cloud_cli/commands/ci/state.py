@@ -32,6 +32,14 @@ class BuildMetadata(BaseModel):
     git_url: str | None
     commit_hash: str | None
     build_config: models.Build | None  # copied from dagster_cloud.yaml
+    # Where UI-authored components belong. Written at session init and read back
+    # by ``finish`` in a separate process, so these have to live in the statedir.
+    # Default to None so a statedir written before these existed still loads.
+    git_provider: str | None = None
+    repo_owner: str | None = None
+    repo_name: str | None = None
+    base_branch: str | None = None
+    defs_base_path: str | None = None
 
 
 class LocationStatus(Enum):

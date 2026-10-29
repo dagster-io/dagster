@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, ContextManager  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.config import PostgresStorageConfig, pg_config
@@ -27,6 +26,7 @@ from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._time import datetime_from_timestamp
 from sqlalchemy import event
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.engine import Connection
 
 from dagster_postgres.utils import (
@@ -189,7 +189,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         with self.connect() as conn:
             # insert or update if already present, using postgres specific on_conflict
             conn.execute(
-                db_dialects.postgresql.insert(DaemonHeartbeatsTable)
+                postgresql.insert(DaemonHeartbeatsTable)
                 .values(
                     timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
@@ -215,7 +215,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
         # pg specific on_conflict_do_update
-        insert_stmt = db_dialects.postgresql.insert(KeyValueStoreTable).values(
+        insert_stmt = postgresql.insert(KeyValueStoreTable).values(
             [{"key": k, "value": v} for k, v in pairs.items()]
         )
         upsert_stmt = insert_stmt.on_conflict_do_update(
@@ -235,7 +235,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def _add_snapshot(self, snapshot_id: str, snapshot_obj, snapshot_type: SnapshotType) -> str:
         with self.connect() as conn:
             snapshot_insert = (
-                db_dialects.postgresql.insert(SnapshotsTable)
+                postgresql.insert(SnapshotsTable)
                 .values(
                     snapshot_id=snapshot_id,
                     snapshot_body=zlib.compress(serialize_value(snapshot_obj).encode("utf-8")),

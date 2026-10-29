@@ -2,6 +2,7 @@ import {RunStatus} from '../../graphql/types';
 import {doneStatuses} from '../RunStatuses';
 import {getBackfillPath} from '../RunsFeedUtils';
 import {
+  BackfillSummaryFragment,
   RunSelectionDetailsFragment,
   RunSummaryFragment,
   RunsFeedEntryFragment,
@@ -47,30 +48,31 @@ const getWillRetry = (run: RunSummaryFragment) => {
   );
 };
 
+const mapRun = (run: RunSummaryFragment) => ({
+  ...run,
+  href: `/runs/${run.id}`,
+  timing: getTiming(run),
+  selectionPreviews: {
+    assets: getSelectionPreview(run.assetSelectionPreview, run.assetSelectionCount),
+    checks: getSelectionPreview(run.assetCheckSelectionPreview, run.assetCheckSelectionCount),
+  },
+  isAutomaticRetry: run.tags.some(({key}) => key === 'dagster/retry_number'),
+  willRetry: getWillRetry(run),
+});
+
+const mapBackfill = (backfill: BackfillSummaryFragment) => ({
+  ...backfill,
+  href: getBackfillPath(backfill.id),
+  timing: getTiming(backfill),
+  selectionPreviews: null,
+});
+
 export const mapRunsFeedEntry = (entry: RunsFeedEntryFragment) => {
   switch (entry.__typename) {
     case 'Run':
-      return {
-        ...entry,
-        href: `/runs/${entry.id}`,
-        timing: getTiming(entry),
-        selectionPreviews: {
-          assets: getSelectionPreview(entry.assetSelectionPreview, entry.assetSelectionCount),
-          checks: getSelectionPreview(
-            entry.assetCheckSelectionPreview,
-            entry.assetCheckSelectionCount,
-          ),
-        },
-        isAutomaticRetry: entry.tags.some(({key}) => key === 'dagster/retry_number'),
-        willRetry: getWillRetry(entry),
-      };
+      return mapRun(entry);
     case 'PartitionBackfill':
-      return {
-        ...entry,
-        href: getBackfillPath(entry.id),
-        timing: getTiming(entry),
-        selectionPreviews: null,
-      };
+      return mapBackfill(entry);
   }
 };
 
@@ -91,5 +93,6 @@ export const mapRunSelectionDetails = (detail: RunSelectionDetailsFragment) => {
   return {...detail, annotatedChecks};
 };
 
+export type MappedRun = ReturnType<typeof mapRun>;
 export type MappedRunsFeedEntry = ReturnType<typeof mapRunsFeedEntry>;
 export type MappedRunSelectionDetails = ReturnType<typeof mapRunSelectionDetails>;

@@ -143,7 +143,7 @@ class SSHResource(ConfigurableResource):
                     f"username to ssh to host: {self.remote_host} is not specified. Using system's default provided"
                     " by getpass.getuser()"
                 )
-            self.username = getpass.getuser()
+            self.username = getpass.getuser()  # ty: ignore[invalid-assignment]
 
         user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
         if os.path.isfile(user_ssh_config_filename):
@@ -158,7 +158,7 @@ class SSHResource(ConfigurableResource):
             if not (self.password or self.key_file):
                 identify_file = host_info.get("identityfile")
                 if host_info and identify_file:
-                    self.key_file = identify_file[0]
+                    self.key_file = identify_file[0]  # ty: ignore[invalid-assignment]
 
     @property
     def log(self) -> logging.Logger:

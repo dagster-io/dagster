@@ -1,10 +1,7 @@
 import tempfile
 from datetime import datetime
 
-from dagster_sftp import (  # ty: ignore[unresolved-import]
-    SFTPFileInfoConfig,
-    SFTPResource,
-)
+from dagster_sftp import SFTPFileInfoConfig, SFTPResource  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

@@ -53,7 +53,10 @@ export const AssetGraphExplorerSidebar = React.memo(
     assetGraphData: GraphData;
     fullAssetGraphData: GraphData;
     selectedNodes: GraphNode[];
-    selectNode: (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId: string) => void;
+    selectNode: (
+      e: React.MouseEvent<any> | React.KeyboardEvent<any> | undefined,
+      nodeId: string,
+    ) => void;
     explorerPath: ExplorerPath;
     onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
     hideSidebar: () => void;
@@ -69,7 +72,7 @@ export const AssetGraphExplorerSidebar = React.memo(
       ? assetGraphData
       : fullAssetGraphData;
     const [selectWhenDataAvailable, setSelectWhenDataAvailable] = React.useState<
-      [React.MouseEvent<any> | React.KeyboardEvent<any>, string] | null
+      [React.MouseEvent<any> | React.KeyboardEvent<any> | undefined, string] | null
     >(null);
     const selectedNodeHasDataAvailable = selectWhenDataAvailable
       ? !!graphData.nodes[selectWhenDataAvailable[1]]

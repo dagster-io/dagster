@@ -1,23 +1,24 @@
-import {
-  AbstractParseTreeVisitor,
-  CharStream,
-  CommonTokenStream,
-  ParseTree,
-  ParserRuleContext,
-} from 'antlr4ng';
+import {AbstractParseTreeVisitor, CommonTokenStream, ParseTree, ParserRuleContext} from 'antlr4ng';
 import uniqBy from 'lodash/uniqBy';
 
 import {
+  FULL_RUN_ID_MESSAGE,
   RUNS_SEARCH_ATTRIBUTES,
+  RUN_STATUSES,
   RunsSearchAttribute,
   TAG_KEY_BY_ATTRIBUTE,
-  getAttributeForTagKey,
+  codeLocationToTagValue,
+  formatRunsSearchValue,
+  getAttributeTermForTag,
+  isFullRunId,
   isTagBackedAttribute,
+  normalizeRunId,
 } from './runsSearchAttributes';
-import {RunStatus} from '../../graphql/types';
 import {AntlrInputErrorListener} from '../../selection/AntlrInputErrorListener';
 import {SyntaxError} from '../../selection/CustomErrorListener';
-import {getValueNodeValue} from '../../selection/SelectionInputUtil';
+import {getLeadingWhitespaceLength} from '../../selection/SelectionInputParser';
+import {getUnquotedValueProblem, getValueNodeValue} from '../../selection/SelectionInputUtil';
+import {Utf16CharStream} from '../../selection/Utf16CharStream';
 import {SelectionAutoCompleteLexer} from '../../selection/generated/SelectionAutoCompleteLexer';
 import {
   AllExpressionContext,
@@ -49,6 +50,7 @@ import {
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedFunctionExpressionContext,
   UnmatchedValueContext,
+  UnquotedRejectedValueContext,
   UnquotedStringValueContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
@@ -56,21 +58,13 @@ import {
 import {SelectionAutoCompleteVisitor} from '../../selection/generated/SelectionAutoCompleteVisitor';
 import {RunFilterToken, RunFilterTokenType} from '../RunsFilterUtils';
 
-type TokenBackedAttribute =
-  | 'id'
-  | 'status'
-  | 'job'
-  | 'snapshot_id'
-  | 'created_after'
-  | 'created_before';
+type TokenBackedAttribute = 'id' | 'status' | 'job' | 'snapshot_id';
 
 const TOKEN_TYPE_BY_ATTRIBUTE = {
   id: 'id',
   status: 'status',
   job: 'job',
   snapshot_id: 'snapshotId',
-  created_after: 'created_date_after',
-  created_before: 'created_date_before',
 } as const satisfies Record<TokenBackedAttribute, RunFilterTokenType>;
 
 // The server ORs values within these lists, so they are the only attributes `or` can combine.
@@ -89,14 +83,12 @@ const SINGLE_VALUE_MESSAGES = {
   partition: 'Only one partition per search',
   tag: 'Only one value per tag key',
   snapshot_id: 'Only one snapshot ID per search',
-  created_after: 'Only one created_after per search',
-  created_before: 'Only one created_before per search',
 } as const satisfies Record<Exclude<RunsSearchAttribute, 'id' | 'status'>, string>;
 
 const OR_MESSAGE = 'or only combines IDs or statuses';
 const TAG_FORMAT_MESSAGE = 'tag needs key=value, for example tag:team=data';
 const BARE_VALUE_MESSAGE = 'Add an attribute, for example job:my_job';
-const SYNTAX_MESSAGE = 'Check the search syntax, for example job:my_job and status:failure';
+const SYNTAX_MESSAGE = 'Check the search syntax, for example job:my_job and status:FAILURE';
 const INCOMPLETE_MESSAGE = 'Finish the search before applying it';
 const NOT_MESSAGE = "not isn't supported in runs search";
 const TRAVERSAL_MESSAGE = "Traversal (+) isn't supported in runs search";
@@ -124,9 +116,6 @@ const UNSUPPORTED_EXPRESSION_MESSAGES = [
   [UnclosedFunctionExpressionContext, FUNCTION_MESSAGE],
   [IncompleteAttributeExpressionMissingSecondValueContext, TAG_FORMAT_MESSAGE],
 ] as const satisfies readonly (readonly [ContextClass, string])[];
-
-const RUN_STATUSES: string[] = Object.values(RunStatus);
-const TIMESTAMP_PATTERN = /^\d+(\.\d+)?$/;
 
 type RunsSearchParseResult =
   | {
@@ -176,6 +165,10 @@ type ValueReadResult =
     }
   | {
       error: string;
+    }
+  | {
+      /** A value the Runs search requires quoted. */
+      unquoted: string;
     };
 
 const isRunsSearchAttribute = (attribute: string): attribute is RunsSearchAttribute =>
@@ -202,8 +195,32 @@ const createErrorNode = (message: string, ctx: ParserRuleContext): ErrorNode => 
   },
 });
 
+const formatCodePoint = (character: string) =>
+  `U+${(character.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`;
+
+const readUnquotedRejectedValue = (text: string): ValueReadResult => {
+  const problem = getUnquotedValueProblem(text);
+  if (problem?.type === 'hidden-character') {
+    return {error: `Remove the hidden character (${formatCodePoint(problem.character)})`};
+  }
+
+  if (problem?.type === 'backslash') {
+    return {error: "Backslashes aren't supported"};
+  }
+
+  if (problem?.type === 'wildcard') {
+    return {error: WILDCARD_MESSAGE};
+  }
+
+  return {unquoted: text};
+};
+
 const readValue = (ctx: AttributeValueContext | null): ValueReadResult => {
   const valueCtx = ctx?.value() ?? null;
+
+  if (valueCtx instanceof UnquotedRejectedValueContext) {
+    return readUnquotedRejectedValue(valueCtx.getText());
+  }
 
   if (valueCtx instanceof NullStringValueContext) {
     return {error: "<null> isn't supported in runs search"};
@@ -231,52 +248,50 @@ const getScalarValueError = (attribute: RunsSearchAttribute, value: string) => {
     return `Add a value after ${attribute}:`;
   }
 
+  if (attribute === 'id' && !isFullRunId(value)) {
+    return FULL_RUN_ID_MESSAGE;
+  }
+
   if (attribute === 'status' && !RUN_STATUSES.includes(value.toUpperCase())) {
     return `Unknown status: ${value}`;
-  }
-
-  if (
-    (attribute === 'created_after' || attribute === 'created_before') &&
-    !TIMESTAMP_PATTERN.test(value)
-  ) {
-    return `${attribute} needs a Unix timestamp in seconds`;
-  }
-
-  // The legacy token format splits tag values at `=`, so they can't hold one.
-  if (isTagBackedAttribute(attribute) && value.includes('=')) {
-    return `${attribute} values can't contain =`;
   }
 
   return null;
 };
 
+const getTagKeyError = (key: string) => {
+  if (key === '') {
+    return TAG_FORMAT_MESSAGE;
+  }
+
+  if (key.includes('=')) {
+    return "Tag keys can't contain `=`";
+  }
+
+  return null;
+};
+
+const getReadText = (result: {value: string} | {unquoted: string}) =>
+  'value' in result ? result.value : result.unquoted;
+
 const createTagTerm = (
   ctx: AttributeExpressionContext,
   key: string,
   value: string,
-): RunsSearchNode => {
-  if (key === '') {
-    return createErrorNode(TAG_FORMAT_MESSAGE, ctx);
-  }
-
-  if (key.includes('=') || value.includes('=')) {
-    return createErrorNode("Tag keys and values can't contain =", ctx);
-  }
-
-  return {
-    type: 'term',
-    attribute: getAttributeForTagKey(key) ?? 'tag',
-    conflictKey: `tag:${key}`,
-    token: {token: 'tag', value: `${key}=${value}`},
-    ...getContextRange(ctx),
-  };
-};
+): RunsSearchNode => ({
+  type: 'term',
+  attribute: getAttributeTermForTag(key, value)?.attribute ?? 'tag',
+  conflictKey: `tag:${key}`,
+  token: {token: 'tag', value: `${key}=${value}`},
+  ...getContextRange(ctx),
+});
 
 const createScalarTerm = (
   ctx: AttributeExpressionContext,
   attribute: Exclude<RunsSearchAttribute, 'tag'>,
-  value: string,
+  rawValue: string,
 ): RunsSearchNode => {
+  const value = attribute === 'id' ? normalizeRunId(rawValue) : rawValue;
   const error = getScalarValueError(attribute, value);
   if (error) {
     return createErrorNode(error, ctx);
@@ -284,11 +299,12 @@ const createScalarTerm = (
 
   if (isTagBackedAttribute(attribute)) {
     const key = TAG_KEY_BY_ATTRIBUTE[attribute];
+    const tagValue = attribute === 'code_location' ? codeLocationToTagValue(value) : value;
     return {
       type: 'term',
       attribute,
       conflictKey: `tag:${key}`,
-      token: {token: 'tag', value: `${key}=${value}`},
+      token: {token: 'tag', value: `${key}=${tagValue}`},
       ...getContextRange(ctx),
     };
   }
@@ -397,17 +413,42 @@ class RunsSearchVisitor
       return createErrorNode(second.error, ctx);
     }
 
-    if (attribute === 'tag') {
-      return second
-        ? createTagTerm(ctx, first.value, second.value)
-        : createErrorNode(TAG_FORMAT_MESSAGE, ctx);
+    if (attribute === 'tag' && !second) {
+      return createErrorNode(TAG_FORMAT_MESSAGE, ctx);
     }
 
-    if (second) {
+    if (attribute !== 'tag' && second) {
       return createErrorNode('Only tag takes key=value, for example tag:team=data', ctx);
     }
 
-    return createScalarTerm(ctx, attribute, first.value);
+    // Report errors that quoting wouldn't fix before suggesting quotes.
+    if (attribute === 'tag') {
+      const keyError = getTagKeyError(getReadText(first));
+      if (keyError) {
+        return createErrorNode(keyError, ctx);
+      }
+    } else if ('unquoted' in first) {
+      const scalarError = getScalarValueError(attribute, first.unquoted);
+      if (scalarError) {
+        return createErrorNode(scalarError, ctx);
+      }
+    }
+
+    if ('unquoted' in first || (second && 'unquoted' in second)) {
+      const firstText = formatRunsSearchValue(getReadText(first));
+      const fix = second
+        ? `${attribute}:${firstText}=${formatRunsSearchValue(getReadText(second))}`
+        : `${attribute}:${firstText}`;
+      return createErrorNode(`Add quotes: \`${fix}\``, ctx);
+    }
+
+    if (attribute !== 'tag') {
+      return createScalarTerm(ctx, attribute, first.value);
+    }
+
+    return second
+      ? createTagTerm(ctx, first.value, second.value)
+      : createErrorNode(TAG_FORMAT_MESSAGE, ctx);
   }
 }
 
@@ -534,7 +575,10 @@ export const parseRunsSearch = (text: string): RunsSearchParseResult => {
 
   let tree: StartContext;
   try {
-    const lexer = new SelectionAutoCompleteLexer(CharStream.fromString(text));
+    // The grammar can't start with whitespace. Token offsets stay relative to the whole text.
+    const inputStream = new Utf16CharStream(text);
+    inputStream.seek(getLeadingWhitespaceLength(text));
+    const lexer = new SelectionAutoCompleteLexer(inputStream);
     lexer.removeErrorListeners();
     lexer.addErrorListener(new AntlrInputErrorListener());
 

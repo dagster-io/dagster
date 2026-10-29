@@ -10,6 +10,7 @@ from dagster._utils.names import clean_name_lower
 from packaging import version
 
 from dagster_dbt.compat import DBT_PYTHON_VERSION
+from dagster_dbt.errors import DagsterDbtCoreNotInstalledError
 
 if TYPE_CHECKING:
     from dagster_dbt.core.resource import DbtProject
@@ -53,16 +54,29 @@ def select_unique_ids(
     # dbt-core available, fastest to use the library directly
     if DBT_PYTHON_VERSION is not None:
         return _select_unique_ids_from_manifest(select, exclude, selector, manifest_json, project)
+    # The default selection is every node in the manifest and needs no selection engine. Read it
+    # from the manifest rather than asking dbt Fusion, whose graph omits nodes with neither
+    # parents nor children — those would otherwise vanish from the asset graph with no error.
+    if _is_select_all(select, exclude, selector):
+        return set(manifest_json["nodes"])
     # dbt Fusion available, efficient(ish) to invoke the CLI for selection
     if manifest_version.major >= 2 and project is not None:
         return _select_unique_ids_from_cli(select, exclude, selector, project)
-    else:
-        # in theory, as long as dbt-core is a dependency of dagster-dbt, this can't happen, but adding
-        # this for now to be safe
-        check.failed(
-            "dbt-core is not installed and no `project` was passed to `select_unique_ids`. "
-            "This can happen if you are using the dbt Cloud integration without the dbt-core package installed."
-        )
+    raise DagsterDbtCoreNotInstalledError(
+        f"Cannot evaluate the dbt selection (select={select!r}, exclude={exclude!r},"
+        f" selector={selector!r}): dagster-dbt does not install dbt-core, and there is no"
+        " `project` to evaluate the selection with the dbt CLI instead."
+        "\n\nInstall dbt-core with `pip install 'dagster-dbt[dbt-core]'` — any dbt adapter package,"
+        " such as `dbt-snowflake`, also pulls it in — or pass a `DbtProject`."
+        "\n\nIf the `dbt` package (dbt Fusion) is installed here, install dbt-core into a"
+        " different environment instead: the two share the `dbt` import namespace and"
+        " overwrite each other's files."
+    )
+
+
+def _is_select_all(select: str, exclude: str, selector: str) -> bool:
+    """Whether the selection is the default one, i.e. every node in the manifest."""
+    return select in ("", "fqn:*") and not exclude and not selector
 
 
 def _select_unique_ids_from_cli(
@@ -133,6 +147,17 @@ def _select_unique_ids_from_manifest(
 
         def __getattr__(self, item):
             ret = super().get(item)
+            if ret is None and item == "config":
+                # dbt-core's own parsed manifest nodes always have a `config`
+                # dataclass that defaults to `NodeConfig(enabled=True)`, even
+                # when the raw manifest.json entry omits `config` entirely --
+                # which it legitimately does for on-run-start/on-run-end hook
+                # ("operation") nodes. Without this default,
+                # `dbt.graph.selector.NodeSelector._is_graph_member`'s
+                # `node.config.enabled` raises `AttributeError` the moment any
+                # select/exclude selector is resolved against a manifest that
+                # contains a hook node.
+                return _DictShim({"enabled": True})
             # allow recursive access e.g. foo.bar.baz
             return _DictShim(ret) if isinstance(ret, dict) else ret
 

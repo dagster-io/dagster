@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import sys
 import tempfile
 from collections.abc import Callable, Iterator, Mapping
@@ -37,6 +38,7 @@ from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt.dbt_project import DagsterDbtProjectPreparer
 from dagster_dbt.dbt_project_manager import DbtProjectArgsManager
 from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
@@ -673,6 +675,24 @@ def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
             assert expected_key in load_context.accessed_defs_state_info.info_mapping
 
 
+def test_install_deps_flows_from_component_args(dbt_path: Path) -> None:
+    """`install_deps` set in the component YAML must reach the preparer; the default stays on."""
+    with patch.object(DagsterDbtProjectPreparer, "_prepare_packages") as mock_deps:
+        (dbt_path / "packages.yml").write_text("packages: []\n", encoding="utf-8")
+
+        manager = DbtProjectArgsManager(
+            DbtProjectArgs(project_dir=str(dbt_path), install_deps=False)
+        )
+        project = manager.get_project(None)
+        project.preparer.prepare(project)
+        mock_deps.assert_not_called()
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(dbt_path)))
+        project = manager.get_project(None)
+        project.preparer.prepare(project)
+        mock_deps.assert_called_once()
+
+
 def test_prepare_does_not_recurse_when_state_nested_in_project_dir() -> None:
     """Regression test: when the dbt project sits at the root of the Dagster project, the local
     state directory ends up nested inside the project dir, so the project snapshot copy's
@@ -701,6 +721,65 @@ def test_prepare_does_not_recurse_when_state_nested_in_project_dir() -> None:
         assert (snapshot / "dbt_project.yml").exists()
         # the snapshot must NOT contain a recursive copy of its own destination
         assert not (snapshot / "defs" / ".local_defs_state" / "key" / "project").exists()
+
+
+def test_prepare_excludes_git_directory_from_snapshot() -> None:
+    """A dbt project is commonly a git checkout. Its history is dead weight in the snapshot, and
+    git writes object and pack files read-only, which on Windows blocks the delete that clears
+    the snapshot on the next reload.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = Path(temp_dir) / "dbt_project"
+        (project_dir / "models").mkdir(parents=True)
+        (project_dir / "dbt_project.yml").write_text("name: jaffle_shop", encoding="utf-8")
+        (project_dir / "models" / "a.sql").write_text("select 1", encoding="utf-8")
+
+        git_objects = project_dir / ".git" / "objects" / "ab"
+        git_objects.mkdir(parents=True)
+        git_object = git_objects / "cdef"
+        git_object.write_bytes(b"object")
+        os.chmod(git_object, stat.S_IRUSR)
+
+        state_path = Path(temp_dir) / "state_dir" / "state"
+        state_path.parent.mkdir(parents=True)
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(project_dir)))
+        with patch.object(DbtProjectArgsManager, "get_project", return_value=MagicMock()):
+            manager.prepare(state_path)
+
+        snapshot = state_path.parent / "project"
+        assert (snapshot / "dbt_project.yml").exists()
+        assert (snapshot / "models" / "a.sql").exists()
+        assert not (snapshot / ".git").exists()
+
+
+def test_prepare_replaces_snapshot_containing_read_only_files() -> None:
+    """Regression test: preparing twice must succeed even when the existing snapshot holds
+    read-only files. Clearing the snapshot previously failed on Windows, which left the
+    directory in place and surfaced as a FileExistsError from the subsequent mkdir.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        project_dir = Path(temp_dir) / "dbt_project"
+        project_dir.mkdir()
+        (project_dir / "dbt_project.yml").write_text("name: jaffle_shop", encoding="utf-8")
+
+        state_path = Path(temp_dir) / "state_dir" / "state"
+        state_path.parent.mkdir(parents=True)
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(project_dir)))
+        with patch.object(DbtProjectArgsManager, "get_project", return_value=MagicMock()):
+            manager.prepare(state_path)
+
+            # a stale read-only artifact of the kind a git checkout leaves behind
+            snapshot = state_path.parent / "project"
+            stale = snapshot / "stale.txt"
+            stale.write_bytes(b"stale")
+            os.chmod(stale, stat.S_IRUSR)
+
+            manager.prepare(state_path)
+
+        assert (snapshot / "dbt_project.yml").exists()
+        assert not stale.exists()
 
 
 def test_basic_component_non_dev_mode(tmp_dbt_path: Path) -> None:

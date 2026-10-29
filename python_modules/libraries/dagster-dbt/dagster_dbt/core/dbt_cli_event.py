@@ -33,7 +33,13 @@ from dagster_dbt.asset_utils import (
     get_asset_check_key_for_test,
     get_checks_on_sources_upstream_of_selected_assets,
 )
-from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
+from dagster_dbt.compat import (
+    REFABLE_NODE_TYPES,
+    SUCCESSFUL_NODE_STATUSES,
+    NodeStatus,
+    NodeType,
+    TestStatus,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
@@ -143,6 +149,17 @@ def _build_column_lineage_metadata(
         ),
     )
 
+    # sqlglot >=28.1 changed the optimizer so that an already-optimized AST's
+    # CTE/join aliases can be plain strings rather than Expression objects.
+    # Passing the AST directly to lineage() below then crashes with
+    # `AttributeError: 'str' object has no attribute 'copy'` for CTE/join
+    # queries, because lineage() assumes it can still re-derive that
+    # structure. Serializing back to SQL text here makes lineage() reparse
+    # it into the Expression-based form it expects, on every supported
+    # sqlglot version -- verified to produce identical lineage output to the
+    # un-serialized AST on sqlglot 24.0.0, 28.0.0, and 28.1.0.
+    optimized_node_sql = optimized_node_ast.sql(dialect=sql_dialect)
+
     # 2. Retrieve the column names from the current node.
     schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
     sqlglot_column_names = set(optimized_node_ast.named_selects)
@@ -187,7 +204,7 @@ def _build_column_lineage_metadata(
         column_deps: set[TableColumnDep] = set()
         for sqlglot_lineage_node in lineage(
             column=column_name,
-            sql=optimized_node_ast,
+            sql=optimized_node_sql,
             schema=sqlglot_mapping_schema,
             dialect=sql_dialect,
         ).walk():
@@ -283,7 +300,7 @@ class DbtCliEventMessage(ABC):
         return (
             resource_props["resource_type"] in REFABLE_NODE_TYPES
             and materialized_type != "ephemeral"
-            and self._get_node_status() == NodeStatus.Success
+            and self._get_node_status() in SUCCESSFUL_NODE_STATUSES
         )
 
     def _is_test_execution_event(self, manifest: Mapping[str, Any]) -> bool:
@@ -398,6 +415,9 @@ class DbtCliEventMessage(ABC):
     ) -> dict[str, Any]:
         return {
             **self._get_default_metadata(manifest),
+            # Surfaces that dbt did not rebuild the node (`no-op`, `reused`) or built it with
+            # warnings (`warn`), which is otherwise invisible on a materialization.
+            "status": self._get_node_status(),
             **self._get_lineage_metadata(translator, manifest, target_path, project),
         }
 

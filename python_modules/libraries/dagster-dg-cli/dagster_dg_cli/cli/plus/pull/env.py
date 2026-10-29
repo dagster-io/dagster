@@ -10,6 +10,7 @@ from dagster_dg_core.shared_options import dg_global_options, dg_path_options
 from dagster_dg_core.utils import DgClickCommand
 from dagster_dg_core.utils.telemetry import cli_telemetry_wrapper
 from dagster_shared.plus.config import DagsterPlusCliConfig
+from dagster_shared.plus.config_utils import DEPLOYMENT_OPTION
 
 from dagster_dg_cli.utils.plus.gql import SECRETS_QUERY
 
@@ -55,10 +56,11 @@ def _get_local_secrets_for_locations(
 
 
 @click.command(name="env", cls=DgClickCommand)
+@DEPLOYMENT_OPTION
 @dg_global_options
 @dg_path_options
 @cli_telemetry_wrapper
-def pull_env_command(target_path: Path, **global_options: object) -> None:
+def pull_env_command(target_path: Path, deployment: str | None, **global_options: object) -> None:
     """Pull environment variables from Dagster Plus and save to a .env file for local use.
 
     Example::
@@ -87,7 +89,7 @@ def pull_env_command(target_path: Path, **global_options: object) -> None:
         url=config.organization_url,
         api_token=config.user_token,
         organization=config.organization,
-        deployment=config.default_deployment,
+        deployment=deployment or config.default_deployment,
     )
     secrets_by_location = _get_local_secrets_for_locations(
         gql_client, {project_ctx.project_name for project_ctx in project_ctxs}

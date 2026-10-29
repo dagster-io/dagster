@@ -40,6 +40,7 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
+from dagster._core.storage.tags import RUN_KEY_TAG
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -448,6 +449,16 @@ def large_sensor(_context):
 
 
 @sensor(job_name="config_job")
+def oversized_run_request_sensor(_context):
+    yield dg.RunRequest(run_key="small", run_config={"ops": {"config_op": {"config": "bar"}}})
+    for i in range(20):
+        yield dg.RunRequest(
+            run_key=f"oversized_{i}",
+            run_config={"ops": {"config_op": {"config": _random_string(100000)}}},
+        )
+
+
+@sensor(job_name="config_job")
 def many_request_sensor(_context):
     # create a gRPC response payload larger than the limit (4194304)
     REQUEST_COUNT = 15
@@ -839,6 +850,7 @@ def the_repo():
         foo_job,
         asset_and_check_job,
         large_sensor,
+        oversized_run_request_sensor,
         many_request_sensor,
         many_requests_cursor_sensor,
         simple_sensor,
@@ -1969,6 +1981,65 @@ def test_large_sensor(executor, instance, workspace_context, remote_repo):
             sensor,
             freeze_datetime,
             TickStatus.SUCCESS,
+        )
+
+
+def test_oversized_run_requests_dropped_from_tick(
+    executor, submit_executor, instance, workspace_context, remote_repo
+):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27)
+    run_size_limit = 50000
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo.get_sensor("oversized_run_request_sensor")
+        instance.start_sensor(sensor)
+        with mock.patch(
+            "dagster._core.instance.DagsterInstance.get_run_size_limit_bytes",
+            return_value=run_size_limit,
+        ):
+            evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
+
+        # the request that fits still launches
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.tags[RUN_KEY_TAG] == "small"
+
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        tick_data = ticks[0].tick_data
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [run.run_id],
+            expected_error="exceed the maximum run size",
+        )
+
+        # the oversized requests are identified in the error, capped so that the error cannot
+        # become the oversized payload itself, and their bodies never reach the tick
+        error = str(tick_data.error)
+        assert "yielded 20 run requests that exceed the maximum run size" in error
+        assert "run key oversized_0" in error
+        assert "and 10 more" in error
+        assert [run_request.run_key for run_request in tick_data.run_requests] == ["small"]
+        assert len(dg.serialize_value(tick_data)) < run_size_limit
+
+        # The sensor re-evaluates and yields the oversized request again, since a failed tick
+        # does not advance the cursor. What must not happen is the failed tick being cloned
+        # into a fresh one: with no unlaunched requests left there is nothing to resume, so
+        # each evaluation costs one small tick rather than another copy of the dropped body.
+        with freeze_time(freeze_datetime + datetime.timedelta(seconds=60)):
+            with mock.patch(
+                "dagster._core.instance.DagsterInstance.get_run_size_limit_bytes",
+                return_value=run_size_limit,
+            ):
+                evaluate_sensors(workspace_context, executor, submit_executor=submit_executor)
+
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        assert all(
+            [run_request.run_key for run_request in tick.tick_data.run_requests] == ["small"]
+            for tick in ticks
         )
 
 

@@ -14,7 +14,6 @@ import {
   partitionSetBackfill,
   reExecutionRun,
   scheduleRun,
-  scheduleRunWithTick,
   sensorRun,
   singlePartitionRun,
 } from '../__fixtures__/RunsFeedEntries.fixtures';
@@ -47,7 +46,6 @@ const CellTemplate = ({entry}: {entry: MappedRunsFeedEntry}) => (
 );
 
 export const Schedule = () => <CellTemplate entry={scheduleRun} />;
-export const ScheduleWithTick = () => <CellTemplate entry={scheduleRunWithTick} />;
 export const Sensor = () => <CellTemplate entry={sensorRun} />;
 export const DeclarativeAutomation = () => <CellTemplate entry={defaultAutomationSensorRun} />;
 export const AutoObservation = () => <CellTemplate entry={autoObserveRun} />;

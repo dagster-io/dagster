@@ -63,12 +63,13 @@
 }
 
 .opColumnContainer {
-  width: 250px;
+  width: var(--column-width, 250px);
   flex-shrink: 0;
   padding: 4px 12px;
 }
 
 .timestampColumnContainer {
+  width: var(--column-width);
   flex-shrink: 0;
   padding: 4px 4px 4px 12px;
 }
@@ -86,7 +87,38 @@
 }
 
 .eventTypeColumnContainer {
+  width: var(--column-width);
   flex-shrink: 0;
   color: var(--color-text-light);
   padding: 4px;
+}
+
+/* Narrow pages (phones): the timestamp, step and event type share the first line and the
+   message wraps below at full width. */
+@container (width < 600px) {
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .structuredContent {
+    display: contents;
+  }
+
+  .timestampColumnContainer,
+  .opColumnContainer,
+  .eventTypeColumnContainer {
+    width: auto;
+    min-width: 0;
+  }
+
+  .opColumnContainer > * {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .messageColumn {
+    grid-column: 1 / -1;
+  }
 }

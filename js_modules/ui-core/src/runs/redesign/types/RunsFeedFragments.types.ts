@@ -25,7 +25,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type RunSummaryFragment = {
   __typename: 'Run';
@@ -137,10 +138,9 @@ export type RunsFeedEntryFragment =
   | RunsFeedEntryFragment_PartitionBackfill
   | RunsFeedEntryFragment_Run;
 
-export type RunSelectionDetailsFragment = {
+export type RunAssetSelectionFragment = {
   __typename: 'Run';
   id: string;
-  runId: string;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   assetCheckSelection: Array<{
     __typename: 'AssetCheckhandle';
@@ -150,6 +150,22 @@ export type RunSelectionDetailsFragment = {
   executionPlan: {
     __typename: 'ExecutionPlan';
     assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-    steps: Array<{__typename: 'ExecutionStep'; key: string}>;
   } | null;
+};
+
+export type RunSelectionDetailsFragment = {
+  __typename: 'Run';
+  id: string;
+  runId: string;
+  executionPlan: {
+    __typename: 'ExecutionPlan';
+    steps: Array<{__typename: 'ExecutionStep'; key: string}>;
+    assetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+  } | null;
+  assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+  assetCheckSelection: Array<{
+    __typename: 'AssetCheckhandle';
+    name: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }> | null;
 };

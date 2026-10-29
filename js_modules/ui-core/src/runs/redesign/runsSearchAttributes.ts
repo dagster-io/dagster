@@ -1,22 +1,25 @@
+import {RunStatus} from '../../graphql/types';
+import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {DagsterTag} from '../RunTag';
 
+// Follows the legacy filter's menu order.
 export const RUNS_SEARCH_ATTRIBUTES = [
-  'id',
   'status',
-  'job',
-  'code_location',
   'sensor',
   'schedule',
   'user',
+  'job',
+  'code_location',
+  'id',
   'backfill',
   'partition',
   'tag',
   'snapshot_id',
-  'created_after',
-  'created_before',
 ] as const;
 
 export type RunsSearchAttribute = (typeof RUNS_SEARCH_ATTRIBUTES)[number];
+
+export const RUN_STATUSES: string[] = Object.values(RunStatus);
 
 const TAG_BACKED_ATTRIBUTES = [
   'code_location',
@@ -38,9 +41,22 @@ export const TAG_KEY_BY_ATTRIBUTE = {
   partition: DagsterTag.Partition,
 } as const satisfies Record<TagBackedAttribute, DagsterTag>;
 
+// The repository tag prefix for a location's single, unnamed repository.
+const SINGLE_REPOSITORY_PREFIX = `${DUNDER_REPO_NAME}@`;
+
 // Mirrors the shared grammar's DIGITS and IDENTIFIER tokens, minus `*`, which is never valid here.
 const UNQUOTED_VALUE_PATTERN = /^[a-zA-Z0-9_][a-zA-Z0-9_/]*$/;
 const KEYWORDS = ['and', 'or', 'not'];
+
+const FULL_RUN_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+export const FULL_RUN_ID_MESSAGE = 'Use the full 36-character run ID';
+
+/** Run IDs are stored lowercase, so pasted IDs are trimmed and lowercased before matching. */
+export const normalizeRunId = (value: string) => value.trim().toLowerCase();
+
+/** Whether a value is a complete run ID (a UUID). */
+export const isFullRunId = (value: string) => FULL_RUN_ID_PATTERN.test(normalizeRunId(value));
 
 export const isTagBackedAttribute = (
   attribute: RunsSearchAttribute,
@@ -48,6 +64,32 @@ export const isTagBackedAttribute = (
 
 export const getAttributeForTagKey = (key: string): TagBackedAttribute | null =>
   TAG_BACKED_ATTRIBUTES.find((attribute) => TAG_KEY_BY_ATTRIBUTE[attribute] === key) ?? null;
+
+/** The repository tag value for a `code_location` value; without `@`, the unnamed repository. */
+export const codeLocationToTagValue = (value: string) =>
+  value.includes('@') ? value : `${SINGLE_REPOSITORY_PREFIX}${value}`;
+
+/** The `code_location` value that parses back to this repository tag value, if any. */
+export const tagValueToCodeLocation = (tagValue: string) => {
+  if (tagValue.startsWith(SINGLE_REPOSITORY_PREFIX)) {
+    const location = tagValue.slice(SINGLE_REPOSITORY_PREFIX.length);
+    if (!location.includes('@')) {
+      return location;
+    }
+  }
+
+  // A tag value without `@` can't round-trip, since `code_location:` would add `__repository__@`.
+  return tagValue.includes('@') ? tagValue : null;
+};
+
+/** The dedicated attribute and value a run tag reads as, or null for a generic `tag:` term. */
+export const getAttributeTermForTag = (key: string, value: string) => {
+  // Tag-backed attributes reject an empty value, so an empty value stays a generic tag.
+  const attribute = value ? getAttributeForTagKey(key) : null;
+  const attributeValue = attribute === 'code_location' ? tagValueToCodeLocation(value) : value;
+
+  return attribute && attributeValue ? {attribute, value: attributeValue} : null;
+};
 
 /** Quotes a value unless the shared grammar lexes it as a single bare value. */
 export const formatRunsSearchValue = (value: string) => {

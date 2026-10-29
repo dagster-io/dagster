@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -8,16 +9,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from functools import cached_property
 from itertools import count
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Generic,
-    Optional,
-    TypeAlias,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, TypeAlias, TypeVar, Union  # noqa: UP035
 
 from dagster_shared.serdes import deserialize_value
 from typing_extensions import Self
@@ -100,7 +92,7 @@ from dagster._core.workspace.workspace import (
 )
 from dagster._grpc.constants import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_timestamp
-from dagster._utils.aiodataloader import DataLoader
+from dagster._utils.aiodataloader import BlockingDataLoader, DataLoader
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -872,7 +864,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         return self._source
 
     @property
-    def loaders(self) -> dict[type, DataLoader]:
+    def loaders(self) -> dict[type, tuple[DataLoader, BlockingDataLoader]]:
         return self._loaders
 
     @property
@@ -1176,7 +1168,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext[WorkspaceRequestContext])
 
         load_time = get_current_timestamp()
         if isinstance(location, GrpcServerCodeLocation):
-            version_key = location.server_id
+            # A refresh can correct image metadata without changing the server ID during a rollout.
+            version_key = json.dumps([location.server_id, location.container_image])
         else:
             version_key = str(load_time)
 

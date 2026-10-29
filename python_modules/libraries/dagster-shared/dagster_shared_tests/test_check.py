@@ -571,22 +571,22 @@ def test_generator_param():
     def _test_gen():
         yield 1
 
-    assert check.generator_param(_test_gen(), "gen")
+    check.generator_param(_test_gen(), "gen")
 
     gen = _test_gen()
-    assert check.generator(gen)
+    check.generator(gen)
     assert list(gen) == [1]
-    assert check.generator(gen)
+    check.generator(gen)
     assert list(gen) == []
 
     with pytest.raises(ParameterCheckError):
-        assert check.generator_param(list(gen), "gen")  # ty: ignore[invalid-argument-type]
+        check.generator_param(list(gen), "gen")  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(ParameterCheckError):
-        assert check.generator_param(None, "gen")  # ty: ignore[invalid-argument-type]
+        check.generator_param(None, "gen")  # ty: ignore[invalid-argument-type]
 
     with pytest.raises(ParameterCheckError):
-        assert check.generator_param(_test_gen, "gen")  # ty: ignore[invalid-argument-type]
+        check.generator_param(_test_gen, "gen")  # ty: ignore[invalid-argument-type]
 
 
 def test_opt_generator_param():
@@ -605,19 +605,19 @@ def test_generator():
     def _test_gen():
         yield 1
 
-    assert check.generator(_test_gen())
+    check.generator(_test_gen())
 
     gen = _test_gen()
-    assert check.generator(gen)
+    check.generator(gen)
 
     with pytest.raises(ParameterCheckError):
-        assert check.generator(list(gen))
+        check.generator(list(gen))
 
     with pytest.raises(ParameterCheckError):
-        assert check.generator(None)
+        check.generator(None)
 
     with pytest.raises(ParameterCheckError):
-        assert check.generator(_test_gen)
+        check.generator(_test_gen)
 
 
 def test_opt_generator():
@@ -1563,7 +1563,7 @@ def test_iterable():
     assert check.iterable_param([], "thisisfine") == []
     assert check.iterable_param([1], "thisisfine") == [1]
     assert check.iterable_param([1], "thisisfine", of_type=int) == [1]
-    assert check.iterable_param((i for i in [1, 2]), "thisisfine")
+    check.iterable_param((i for i in [1, 2]), "thisisfine")
     # assert that it does not coerce generator to list
     assert check.iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
     assert list(check.iterable_param((i for i in [1, 2]), "thisisfine")) == [1, 2]
@@ -1594,7 +1594,7 @@ def test_opt_iterable():
     assert check.opt_iterable_param(None, "thisisfine") == []
     assert check.opt_iterable_param([], "thisisfine") == []
     assert check.opt_iterable_param([1], "thisisfine") == [1]
-    assert check.opt_iterable_param((i for i in [1, 2]), "thisisfine")
+    check.opt_iterable_param((i for i in [1, 2]), "thisisfine")
     # assert that it does not coerce generator to list
     assert check.opt_iterable_param((i for i in [1, 2]), "thisisfine") != [1, 2]
     # not_none coerces to Iterable[T] so
@@ -1655,9 +1655,6 @@ def test_is_iterable_typing() -> None:
         # That the type: ignore is necessary is proof that
         # is_iterable flows type information correctly
         return retval  # type: ignore
-
-    # meaningless assert. The test is show the typechecker working
-    assert returns_iterable_of_t
 
 
 # ###################################################################################################

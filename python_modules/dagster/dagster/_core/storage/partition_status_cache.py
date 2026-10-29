@@ -241,15 +241,17 @@ def get_validated_partition_keys(
     partitions_def: PartitionsDefinition,
     partition_keys: set[str],
 ):
-    if isinstance(partitions_def, (DynamicPartitionsDefinition, StaticPartitionsDefinition)):
-        validated_partitions = set(partitions_def.get_partition_keys()) & partition_keys
-    elif isinstance(partitions_def, MultiPartitionsDefinition):
-        validated_partitions = partitions_def.filter_valid_partition_keys(partition_keys)
-    else:
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("Unexpected partitions definition type {partitions_def}")
-        validated_partitions = {pk for pk in partition_keys if partitions_def.has_partition_key(pk)}
-    return validated_partitions
+    if not isinstance(
+        partitions_def,
+        (
+            DynamicPartitionsDefinition,
+            StaticPartitionsDefinition,
+            MultiPartitionsDefinition,
+            TimeWindowPartitionsDefinition,
+        ),
+    ):
+        check.failed(f"Unexpected partitions definition type {partitions_def}")
+    return partitions_def.filter_valid_partition_keys(partition_keys)
 
 
 def get_last_planned_storage_id(

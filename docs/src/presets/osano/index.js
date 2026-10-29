@@ -14,7 +14,7 @@ module.exports = function osanoPreset(_context, _options) {
                 {
                   tagName: 'script',
                   attributes: {
-                    src: 'https://cmp.osano.com/16CVGvUGMuXuz33ME/c128a217-a521-43aa-9278-ca40024674dd/osano.js',
+                    src: 'https://cmp.osano.com/16CVGvUGMuXuz33ME/908ae3fc-0206-4cd2-9d54-c4932c848252/osano.js',
                   },
                 },
               ],

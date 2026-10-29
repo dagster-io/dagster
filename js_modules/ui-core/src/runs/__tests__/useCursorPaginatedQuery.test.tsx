@@ -109,7 +109,7 @@ const remountAndPop = async (history: MemoryHistory) => {
 };
 
 describe('useCursorPaginatedQuery', () => {
-  it('returns to the previous page after browser Back from another page', async () => {
+  it('returns to the previous page after going back from another page', async () => {
     const history = createHistory();
     const {unmount} = await advanceToThirdPage(history);
     unmount();
@@ -119,6 +119,51 @@ describe('useCursorPaginatedQuery', () => {
     expect(history.location.search).toBe('?runs_before=second');
 
     expect(await remountAndPop(history)).toBe('first');
+  });
+
+  it('returns to the previous page after going back to another filter while mounted', async () => {
+    const history = createHistory();
+    const {result} = await advanceToThirdPage(history, [
+      mockPage('filtered-first', undefined, 'filtered'),
+      mockPage('filtered-second', 'filtered-first', 'filtered'),
+    ]);
+
+    act(() => history.push('/runs?filter=filtered'));
+    await waitFor(() => expect(result.current.feed.entries[0]?.id).toBe('filtered-first'));
+
+    act(() => result.current.feed.paginationProps.advanceCursor());
+    await waitFor(() => expect(result.current.feed.entries[0]?.id).toBe('filtered-second'));
+
+    act(() => history.goBack());
+    await waitFor(() => expect(result.current.feed.entries[0]?.id).toBe('third'));
+
+    act(() => result.current.feed.paginationProps.popCursor());
+    expect(result.current.feed.paginationProps.cursor).toBe('first');
+  });
+
+  it('pages back through every earlier page while mounted', async () => {
+    const history = createHistory();
+    const {result} = await advanceToThirdPage(history);
+
+    act(() => result.current.feed.paginationProps.popCursor());
+    await waitFor(() => expect(result.current.feed.entries[0]?.id).toBe('second'));
+    expect(result.current.feed.paginationProps.cursor).toBe('first');
+
+    act(() => result.current.feed.paginationProps.popCursor());
+    await waitFor(() => expect(result.current.feed.entries[0]?.id).toBe('first'));
+    expect(result.current.feed.paginationProps.cursor).toBeUndefined();
+    expect(result.current.feed.paginationProps.hasPrevCursor).toBe(false);
+  });
+
+  it('starts over at page 1 when a URL change drops the saved state', async () => {
+    const history = createHistory();
+    const {result} = await advanceToThirdPage(history);
+
+    act(() => history.replace('/runs?runs_before=second'));
+
+    act(() => result.current.feed.paginationProps.popCursor());
+    await waitFor(() => expect(result.current.feed.entries[0]?.id).toBe('first'));
+    expect(result.current.feed.paginationProps.cursor).toBeUndefined();
   });
 
   it('ignores a saved stack whose cursor differs from the URL cursor', async () => {

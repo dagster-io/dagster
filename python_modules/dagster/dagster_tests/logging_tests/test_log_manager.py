@@ -231,7 +231,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
     assert len(capture_handler.captured) == 1
     captured_record = capture_handler.captured[0]
 
-    assert captured_record.name == "python_log" if use_handler else "user_logger"
+    assert captured_record.name == ("python_log" if use_handler else "user_logger")
     assert captured_record.msg == "job - 123456 - some_step - critical msg"
     assert captured_record.levelno == logging.CRITICAL
     assert captured_record.dagster_meta["orig_message"] == "critical msg"

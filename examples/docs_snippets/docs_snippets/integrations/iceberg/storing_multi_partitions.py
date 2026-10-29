@@ -3,9 +3,7 @@ import random
 
 import pandas as pd
 from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
-from dagster_iceberg.io_manager.pandas import (
-    PandasIcebergIOManager,  # ty: ignore[unresolved-import]
-)
+from dagster_iceberg.io_manager.pandas import PandasIcebergIOManager  # ty: ignore[unresolved-import]
 
 from dagster import (
     DailyPartitionsDefinition,

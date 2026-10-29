@@ -16,6 +16,21 @@ def wait_for_mysql_container(container_name: str, port: int = 3306) -> str:
     )
 
 
+def pull_image_with_retries(image: str) -> str:
+    """Shell command that pulls `image` with the docker CLI before the tests run.
+
+    testcontainers pulls through docker-py, whose socket read timeout is a fixed 60s
+    — enough for a warm Docker Hub mirror, not for a cold one. Pulling here leaves
+    the in-test container start with a local image and nothing to fetch.
+    """
+    attempts = 3
+    return (
+        rf"i=0; until docker pull {image}; do i=\$((i+1)); "
+        rf'if [ \$i -ge {attempts} ]; then echo "failed to pull {image}" >&2; exit 1; fi; '
+        r"sleep 5; done"
+    )
+
+
 # Preceding a line of BK output with "---" turns it into a section header.
 # The characters surrounding the `message` are ANSI escope sequences used to colorize the output.
 # Note that "\" is doubled below to insert a single literal backslash in the string.

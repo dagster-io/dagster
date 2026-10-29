@@ -4,7 +4,13 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
-from dagster_shared.record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
+from dagster_shared.record import (
+    IHaveNew,
+    LegacyNamedTupleMixin,
+    abstract_field,
+    record,
+    record_custom,
+)
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
@@ -93,14 +99,13 @@ class CodeLocationOrigin(ABC):
         # class are `NamedTuple`, but we can't specify `NamedTuple` in the signature here.
         return create_snapshot_id(self)  # type: ignore
 
-    @property
-    @abstractmethod
+    @abstract_field
     def location_name(self) -> str:
-        pass
+        raise NotImplementedError()
 
-    @property
-    @abstractmethod
-    def loadable_target_origin(self) -> LoadableTargetOrigin: ...
+    @abstract_field
+    def loadable_target_origin(self) -> LoadableTargetOrigin:
+        raise NotImplementedError()
 
     @abstractmethod
     def create_location(self, instance: "DagsterInstance") -> "CodeLocation":

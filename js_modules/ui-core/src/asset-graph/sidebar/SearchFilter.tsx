@@ -35,7 +35,7 @@ export const SearchFilter = <T,>({
 }: {
   values: SearchFilterValue<T>[];
 
-  onSelectValue: (e: any, value: T) => void;
+  onSelectValue: (e: React.MouseEvent<HTMLElement> | undefined, value: T) => void;
 }) => {
   const {viewport, containerProps} = useViewport();
   const ref = React.useRef<HTMLDivElement | null>(null);

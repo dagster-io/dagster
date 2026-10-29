@@ -1,13 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    NamedTuple,
-    TypeAlias,
-    TypeVar,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, TypeAlias, TypeVar, cast  # noqa: UP035
 
 from dagster._annotations import public
 from dagster._config import ALL_CONFIG_BUILTINS, ConfigType, Field, Permissive, Selector, Shape

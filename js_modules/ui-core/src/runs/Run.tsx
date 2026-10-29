@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Colors,
   ErrorBoundary,
   Icon,
   NonIdealState,
@@ -11,39 +10,33 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
 
-import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
-import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
-import {LogsScrollingTable} from './LogsScrollingTable';
-import {LogType, LogsToolbar} from './LogsToolbar';
+import {LogsProviderLogs} from './LogsProvider';
+import {MobileRunWithData} from './MobileRun';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
+import {RunLogsPanel, RunViewProps, useRunLogsView} from './RunLogsView';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {runsPathWithFilters} from './RunsFilterUtils';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {GanttChart, GanttChartLoadingState, GanttChartMode} from '../gantt/GanttChart';
-import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
-import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import styles from './css/Run.module.css';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
-import {
-  matchingComputeLogKeyFromStepKey,
-  useComputeLogFileKeyForSelection,
-} from './useComputeLogFileKeyForSelection';
+import {matchingComputeLogKeyFromStepKey} from './useComputeLogFileKeyForSelection';
 import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 import {shortenId} from '../util/shortenId';
 
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
+  logs: LogsProviderLogs;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -54,6 +47,7 @@ const runStatusFavicon = (status: RunStatus) => {
       return '/favicon-run-success.svg';
     case RunStatus.STARTING:
     case RunStatus.STARTED:
+    case RunStatus.SUSPENDED:
     case RunStatus.CANCELING:
       return '/favicon-run-pending.svg';
     default:
@@ -62,7 +56,7 @@ const runStatusFavicon = (status: RunStatus) => {
 };
 
 export const Run = memo((props: RunProps) => {
-  const {run, runId} = props;
+  const {run, runId, logs} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -104,31 +98,26 @@ export const Run = memo((props: RunProps) => {
   };
 
   const logsDependency = useTraceDependency('RunLogs');
+  const RunView = useIsMobile() ? MobileRunWithData : RunWithData;
 
   return (
     <RunContext.Provider value={run}>
-      <LogsProvider key={runId} runId={runId}>
-        {(logs) => (
-          <>
-            <OnLogsLoaded dependency={logsDependency} logs={logs} />
-            <RunMetadataProvider logs={logs}>
-              {(metadata) => (
-                <RunWithData
-                  run={run}
-                  runId={runId}
-                  logs={logs}
-                  logsFilter={logsFilter}
-                  metadata={metadata}
-                  selectionQuery={selectionQuery}
-                  onSetLogsFilter={setLogsFilter}
-                  onSetSelectionQuery={onSetSelectionQuery}
-                  onShowStateDetails={onShowStateDetails}
-                />
-              )}
-            </RunMetadataProvider>
-          </>
+      <OnLogsLoaded dependency={logsDependency} logs={logs} />
+      <RunMetadataProvider logs={logs}>
+        {(metadata) => (
+          <RunView
+            run={run}
+            runId={runId}
+            logs={logs}
+            logsFilter={logsFilter}
+            metadata={metadata}
+            selectionQuery={selectionQuery}
+            onSetLogsFilter={setLogsFilter}
+            onSetSelectionQuery={onSetSelectionQuery}
+            onShowStateDetails={onShowStateDetails}
+          />
         )}
-      </LogsProvider>
+      </RunMetadataProvider>
     </RunContext.Provider>
   );
 });
@@ -148,29 +137,6 @@ const OnLogsLoaded = ({
   return null;
 };
 
-interface RunWithDataProps {
-  run?: RunPageFragment;
-  runId: string;
-  selectionQuery: string;
-  logs: LogsProviderLogs;
-  logsFilter: LogFilter;
-  metadata: IRunMetadataDict;
-  onSetLogsFilter: (v: LogFilter) => void;
-  onSetSelectionQuery: (query: string) => void;
-  onShowStateDetails: (stepKey: string, logs: RunDagsterRunEventFragment[]) => void;
-}
-
-const logTypeFromQuery = (queryLogType: string) => {
-  switch (queryLogType) {
-    case 'stdout':
-      return LogType.stdout;
-    case 'stderr':
-      return LogType.stderr;
-    default:
-      return LogType.structured;
-  }
-};
-
 /**
  * Note: There are two places we keep a "step query string" in the Run view:
  * selectionQuery and logsFilter.logsQuery.
@@ -184,66 +150,19 @@ const logTypeFromQuery = (queryLogType: string) => {
  * We could revisit this in the future but I believe we iterated quite a bit to get to this
  * solution and we should avoid locking the two filter inputs together completely.
  */
-const RunWithData = ({
-  run,
-  runId,
-  logs,
-  logsFilter,
-  metadata,
-  selectionQuery,
-  onSetLogsFilter,
-  onSetSelectionQuery,
-}: RunWithDataProps) => {
-  const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
-    queryKey: 'logType',
-    defaults: {logType: LogType.structured},
-  });
-
-  const logType = logTypeFromQuery(queryLogType);
-  const setLogType = (lt: LogType) => setQueryLogType(LogType[lt]);
-  const [computeLogUrl, setComputeLogUrl] = useState<string | null>(null);
-
-  const stepKeysJSON = JSON.stringify(Object.keys(metadata.steps).sort());
-  const stepKeys = useMemo(() => JSON.parse(stepKeysJSON), [stepKeysJSON]);
-
-  const runtimeGraph = run?.executionPlan && toGraphQueryItems(run?.executionPlan, metadata.steps);
-
-  const selectionStepKeys = useMemo(() => {
-    return runtimeGraph && selectionQuery && selectionQuery !== '*'
-      ? filterRunSelectionByQuery(runtimeGraph, selectionQuery).all.map((n) => n.name)
-      : [];
-  }, [runtimeGraph, selectionQuery]);
-
-  const selection = useMemo(
-    () => ({
-      query: selectionQuery,
-      keys: selectionStepKeys,
-    }),
-    [selectionStepKeys, selectionQuery],
-  );
-
-  const {logCaptureInfo, computeLogFileKey, setComputeLogFileKey} =
-    useComputeLogFileKeyForSelection({
-      stepKeys,
-      selectionStepKeys,
-      metadata,
-      defaultToFirstStep: false,
-    });
-
-  const logsFilterStepKeys = useMemo(
-    () =>
-      runtimeGraph
-        ? logsFilter.logQuery
-            .filter((v) => v.token && v.token === 'query')
-            .reduce((accum, v) => {
-              accum.push(
-                ...filterRunSelectionByQuery(runtimeGraph, v.value).all.map((n) => n.name),
-              );
-              return accum;
-            }, [] as string[])
-        : [],
-    [logsFilter.logQuery, runtimeGraph],
-  );
+const RunWithData = (props: RunViewProps) => {
+  const {
+    run,
+    runId,
+    logs,
+    logsFilter,
+    metadata,
+    selectionQuery,
+    onSetLogsFilter,
+    onSetSelectionQuery,
+  } = props;
+  const view = useRunLogsView({run, metadata, logsFilter, selectionQuery});
+  const {runtimeGraph, selectionStepKeys, selection, setComputeLogFileKey} = view;
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
@@ -350,45 +269,6 @@ const RunWithData = ({
     return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
 
-  const logContent = () => {
-    if (run?.status === 'QUEUED') {
-      return (
-        <NonIdealState
-          icon="arrow_forward"
-          title="Run queued"
-          description="This run is queued for execution and will start soon."
-          action={
-            <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
-              View queued runs
-            </Link>
-          }
-        />
-      );
-    }
-    if (logType === LogType.structured) {
-      return (
-        <LogsScrollingTable
-          logs={logs}
-          filter={logsFilter}
-          filterStepKeys={logsFilterStepKeys}
-          filterKey={`${JSON.stringify(logsFilter)}`}
-          metadata={metadata}
-        />
-      );
-    }
-    if (computeLogFileKey) {
-      return (
-        <CapturedOrExternalLogPanel
-          logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
-          logCaptureInfo={logCaptureInfo}
-          visibleIOType={LogType[logType]}
-          onSetDownloadUrl={setComputeLogUrl}
-        />
-      );
-    }
-    return <NoStepSelectionState type={logType} />;
-  };
-
   return (
     <>
       <SplitPanelContainer
@@ -400,48 +280,23 @@ const RunWithData = ({
         first={gantt(metadata)}
         secondMinSize={56}
         second={
-          <ErrorBoundary region="logs">
-            <div className={styles.logsContainer}>
-              <LogsToolbar
-                logType={logType}
-                onSetLogType={setLogType}
-                filter={logsFilter}
-                onSetFilter={onSetLogsFilter}
-                steps={stepKeys}
-                metadata={metadata}
-                computeLogFileKey={computeLogFileKey}
-                onSetComputeLogKey={setComputeLogFileKey}
-                computeLogUrl={computeLogUrl}
-                counts={logs.counts}
-                isSectionExpanded={isBottomExpanded}
-                toggleExpanded={isBottomExpanded ? resetPanels : expandBottomPanel}
-              />
-              {logContent()}
-            </div>
-          </ErrorBoundary>
+          <RunLogsPanel
+            className={styles.logsContainer}
+            run={run}
+            runId={runId}
+            logs={logs}
+            logsFilter={logsFilter}
+            metadata={metadata}
+            onSetLogsFilter={onSetLogsFilter}
+            view={view}
+            expand={{
+              isSectionExpanded: isBottomExpanded,
+              toggleExpanded: isBottomExpanded ? resetPanels : expandBottomPanel,
+            }}
+          />
         }
       />
     </>
-  );
-};
-
-const NoStepSelectionState = ({type}: {type: LogType}) => {
-  return (
-    <Box
-      flex={{
-        direction: 'row',
-        grow: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      style={{background: Colors.backgroundDefault()}}
-    >
-      <NonIdealState
-        title={`Select a step to view ${type}`}
-        icon="warning"
-        description="Select a step on the Gantt chart or from the dropdown above to view logs."
-      />
-    </Box>
   );
 };
 

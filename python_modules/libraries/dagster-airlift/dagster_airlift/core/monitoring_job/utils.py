@@ -80,7 +80,7 @@ def extract_metadata_from_logs(context: OpExecutionContext, logs: str) -> dict[s
         except json.JSONDecodeError as e:
             raise Exception(f"Invalid JSON found in logs for match: {match}. JSON error: {e}")
         check.mapping_param(raw_external_metadata_map, "raw_external_metadata_map")
-        new_external_metadata_map = {}
+        new_external_metadata_map: dict[str, ExternalMetadataValue] = {}
         for key, value in raw_external_metadata_map.items():
             if not isinstance(key, str):
                 raise Exception(
@@ -97,13 +97,10 @@ def extract_metadata_from_logs(context: OpExecutionContext, logs: str) -> dict[s
                 _assert_param_value(value["type"], EXTERNAL_METADATA_TYPES)
                 new_external_metadata_map[key] = cast("ExternalMetadataValue", value)
             else:
-                new_external_metadata_map[key] = cast(
-                    "ExternalMetadataValue",
-                    {
-                        "raw_value": value,
-                        "type": EXTERNAL_METADATA_TYPE_INFER,
-                    },
-                )
+                new_external_metadata_map[key] = {
+                    "raw_value": value,
+                    "type": EXTERNAL_METADATA_TYPE_INFER,
+                }
 
         metadata_map = metadata_map_from_external(new_external_metadata_map)
         metadata.update(metadata_map)

@@ -836,10 +836,7 @@ def get_output_context(
     op_config = resolved_run_config.ops[str(step.node_handle)]
     outputs_config = op_config.outputs
 
-    if outputs_config:
-        output_config = outputs_config.get_output_manager_config(step_output_handle.output_name)
-    else:
-        output_config = None
+    output_config = outputs_config.get_output_manager_config(step_output_handle.output_name)
 
     step_output = execution_plan.get_step_output(step_output_handle)
     output_def = job_def.get_node(step_output.node_handle).output_def_named(step_output.name)

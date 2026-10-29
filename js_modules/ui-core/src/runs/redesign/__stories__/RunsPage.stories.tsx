@@ -18,6 +18,7 @@ import {DagsterTag} from '../../RunTag';
 import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
 import {RUNS_FEED_QUERY} from '../RunsFeedQuery';
 import {RunsPage} from '../RunsPage';
+import {buildActionsMenuQueryMock} from '../__fixtures__/RunActionsMenuQuery.fixtures';
 import {buildBackfillSummary, buildRunSummary, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {RunsFeedEntryFragment} from '../types/RunsFeedFragments.types';
 import {RunsFeedQuery, RunsFeedQueryVariables} from '../types/RunsFeedQuery.types';
@@ -137,7 +138,10 @@ const statsMockFor = (runId: string) =>
     maxUsageCount: Number.POSITIVE_INFINITY,
   });
 
-const STATS_MOCKS = [...FIRST_PAGE_RUNS, ...SECOND_PAGE_RUNS].map(({id}) => statsMockFor(id));
+const ROW_MOCKS = [...FIRST_PAGE_RUNS, ...SECOND_PAGE_RUNS].flatMap((run) => [
+  statsMockFor(run.id),
+  buildActionsMenuQueryMock(run),
+]);
 
 type PageTemplateProps = {
   mocks: MockedResponse[];
@@ -160,7 +164,7 @@ export const Loaded = () => (
     mocks={[
       buildFeedMock(buildPage([...FIRST_PAGE_RUNS, FIRST_PAGE_BACKFILL], true)),
       buildFeedMock(buildPage(SECOND_PAGE_RUNS, false), {cursor: 'first-page-cursor'}),
-      ...STATS_MOCKS,
+      ...ROW_MOCKS,
     ]}
   />
 );

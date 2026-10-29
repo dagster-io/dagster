@@ -37,7 +37,7 @@ The `dagster` plugin bundles the [`dagster-expert` skill](/getting-started/ai-to
 
    ![Claude Code plugin list showing dagster enabled](/img/getting-started/ai-tools/claude-plugin.png)
 
-5. (Optional) Authenticate the Dagster+ MCP server by typing `/mcp` and selecting the `dagster-plus` MCP server. Select `Authenticate` and follow the instructions.
+5. (Optional) Authenticate the Dagster+ MCP server by typing `/mcp` and selecting the `dagster-plus` MCP server. Select **Authenticate** and follow the instructions.
 
    ![Claude Code MCP server list showing dagster-plus MCP server](/img/getting-started/ai-tools/claude-mcp.png)
 
@@ -87,6 +87,32 @@ The Dagster plugin can be installed from the official Cursor marketplace:
 4. In Codex settings or the skill list, confirm the `dagster-expert` skill is enabled.
 
    ![Codex showing the dagster skill enabled](/img/getting-started/ai-tools/codex-skill.png)
+
+5. (Optional) Authenticate the Dagster+ MCP server.
+
+   :::info For EU users
+
+   Codex does not support plugins with dynamic MCP URLs. Dagster ships the Codex `dagster` plugin with the US MCP URL.
+
+   Run the following command to configure the Dagster+ MCP server to use the EU region:
+
+   ```bash
+   codex mcp add dagster-plus --url https://mcp.agent.eu.dagster.cloud/mcp
+   ```
+
+   Then continue with the following instructions.
+
+   :::
+
+   Run the following command in your terminal:
+
+   ```bash
+   codex mcp login dagster-plus
+   ```
+
+   An authentication flow should immediately open and prompt you to allow the MCP server to access your Dagster+ account. Start a `codex` session and type `/mcp`. You should see `dagster-plus` listed as **connected**.
+
+   ![Codex MCP server list showing dagster-plus MCP server](/img/getting-started/ai-tools/codex-mcp.png)
 
 </TabItem>
 

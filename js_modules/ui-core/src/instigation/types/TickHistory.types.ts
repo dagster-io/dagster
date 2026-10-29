@@ -29,7 +29,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type TickHistoryQueryVariables = Exact<{
   instigationSelector: Types.InstigationSelector;

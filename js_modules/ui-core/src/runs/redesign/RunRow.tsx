@@ -1,6 +1,8 @@
 import {MouseEvent, useRef} from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {RunActionsCell} from './RunActionsCell';
+import {RunDialog} from './RunDialogs';
 import {RunIDCell} from './RunIDCell';
 import {RunLaunchCell} from './RunLaunchCell';
 import {RunStatusCell} from './RunStatusCell';
@@ -22,12 +24,13 @@ const isRowNavigationTarget = (row: HTMLElement | null, target: EventTarget | nu
   row.contains(target) &&
   target.closest(INTERACTIVE_ELEMENT_SELECTOR) === null;
 
-type Props = {
+type RunRowProps = {
   entry: MappedRunsFeedEntry;
   onOpenTickDetails: (tick: TickIdentifier, triggerElement: HTMLElement) => void;
+  onOpenRunDialog: (dialog: RunDialog, triggerElement: HTMLElement) => void;
 };
 
-export const RunRow = ({entry, onOpenTickDetails}: Props) => {
+export const RunRow = ({entry, onOpenTickDetails, onOpenRunDialog}: RunRowProps) => {
   const history = useHistory();
   const openInNewTab = useOpenInNewTab();
   const rowRef = useRef<HTMLDivElement>(null);
@@ -67,6 +70,10 @@ export const RunRow = ({entry, onOpenTickDetails}: Props) => {
       <RunTimingCell entry={entry} />
       <div className={styles.divider} />
       <RunIDCell entry={entry} />
+      <div className={styles.divider} />
+      {entry.__typename === 'Run' && (
+        <RunActionsCell run={entry} onOpenRunDialog={onOpenRunDialog} />
+      )}
     </div>
   );
 };

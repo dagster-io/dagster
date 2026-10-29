@@ -1,9 +1,7 @@
 from dagster_dbt import DbtCliResource, dbt_assets
 
 import dagster as dg
-from docs_snippets.integrations.dbt.pythonic.resources import (
-    dbt_project,  # ty: ignore[unresolved-import]
-)
+from docs_snippets.integrations.dbt.pythonic.resources import dbt_project  # ty: ignore[unresolved-import]
 
 MICROBATCH_SELECTOR = "config.incremental_strategy:microbatch"
 

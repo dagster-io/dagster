@@ -1,7 +1,7 @@
 ---
 title: Dagster & dbt Cloud (Legacy)
 sidebar_label: dbt Cloud integration (Legacy)
-description: Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
+description: The superseded dagster-dbt integration for running dbt Cloud jobs from Dagster. For new projects, use the current dbt Cloud integration instead.
 tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt
 pypi: https://pypi.org/project/dagster-dbt/

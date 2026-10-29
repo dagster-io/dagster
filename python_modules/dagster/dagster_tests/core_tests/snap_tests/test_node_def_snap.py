@@ -123,8 +123,8 @@ def test_basic_graph_definition():
     )
 
     index = DependencyStructureIndex(comp_solid_meta.dep_structure_snapshot)
-    assert index.get_invocation("return_one")
-    assert index.get_invocation("take_one")
+    assert index.has_invocation("return_one")
+    assert index.has_invocation("take_one")
     assert index.get_upstream_output("take_one", "one").node_name == "return_one"
     assert index.get_upstream_output("take_one", "one").output_name == "result"
 
@@ -150,8 +150,8 @@ def test_complex_graph_definition():
     )
 
     index = DependencyStructureIndex(comp_solid_meta.dep_structure_snapshot)
-    assert index.get_invocation("return_one")
-    assert index.get_invocation("take_many")
+    assert index.has_invocation("return_one")
+    assert index.has_invocation("take_many")
     assert index.get_upstream_outputs("take_many", "items")[0].node_name == "return_one"
     assert index.get_upstream_outputs("take_many", "items")[1].node_name == "return_one_also"
 

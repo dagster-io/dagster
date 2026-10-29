@@ -21,7 +21,7 @@ from dagster._core.launcher import LaunchRunContext
 from dagster._core.op_concurrency_limits_counter import GlobalOpConcurrencyLimitsCounter
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunRecord,
@@ -348,7 +348,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         return batch
 
     def _get_in_progress_run_records(self, instance: DagsterInstance) -> Sequence[RunRecord]:
-        return instance.get_run_records(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+        return instance.get_run_records(filters=RunsFilter(statuses=ACTIVE_RUN_STATUSES))
 
     def _priority_sort(self, runs: Iterable[DagsterRun]) -> list[DagsterRun]:
         def get_priority(run: DagsterRun) -> int:

@@ -1,18 +1,17 @@
 import {ButtonLink, Colors, Icon, IconName, MiddleTruncate, Tag} from '@dagster-io/ui-components';
-import {UserDisplay} from '@shared/runs/UserDisplay';
 import {Link} from 'react-router-dom';
 
 import {RunTargets} from './RunTargets';
 import {buildTagMap} from './buildTagMap';
 import styles from './css/RunLaunchCell.module.css';
 import {Initiator, TickIdentifier, getLaunchDetails} from './getLaunchDetails';
+import {getPartitionLabel} from './getPartitionLabel';
 import {getRepoAddress} from './getRepoAddress';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {PipelineTag} from '../../pipelines/PipelineReference';
 import {shortenId} from '../../util/shortenId';
 import {RepoAddress} from '../../workspace/types';
-import {DagsterTag} from '../RunTag';
 import {getBackfillPath} from '../RunsFeedUtils';
 
 type InitiatorDisplay = {
@@ -60,21 +59,6 @@ const getInitiatorDisplay = (initiator: Initiator): InitiatorDisplay => {
         href: null,
       };
   }
-};
-
-const getPartitionLabel = (tags: Map<string, string>) => {
-  const partition = tags.get(DagsterTag.Partition);
-  if (partition !== undefined) {
-    return partition;
-  }
-
-  const start = tags.get(DagsterTag.AssetPartitionRangeStart);
-  const end = tags.get(DagsterTag.AssetPartitionRangeEnd);
-  if (start !== undefined && end !== undefined) {
-    return `${start} → ${end}`;
-  }
-
-  return null;
 };
 
 type InitiatorLabelProps = {
@@ -146,9 +130,7 @@ const JobAndPartitionTags = ({entry}: JobAndPartitionTagsProps) => {
       )}
       {partitionLabel !== null && (
         <Tag icon="partition" className={styles.tag}>
-          <div className={styles.partitionText}>
-            <MiddleTruncate text={partitionLabel} />
-          </div>
+          <MiddleTruncate text={partitionLabel} />
         </Tag>
       )}
     </>
@@ -201,9 +183,9 @@ export const RunLaunchCell = ({entry, onOpenTickDetails}: RunLaunchCellProps) =>
         </Tag>
       )}
       {user && (
-        <span className={styles.tag}>
-          <UserDisplay email={user} />
-        </span>
+        <Tag className={styles.tag}>
+          <MiddleTruncate text={user} />
+        </Tag>
       )}
       <JobAndPartitionTags entry={entry} />
       <RunTargets entry={entry} />

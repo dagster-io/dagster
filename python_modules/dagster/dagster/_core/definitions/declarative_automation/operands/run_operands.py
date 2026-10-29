@@ -16,8 +16,8 @@ from dagster._core.loader import LoadingContext
 from dagster._record import record
 
 if TYPE_CHECKING:
-    from dagster._core.event_api import EventLogRecord
     from dagster._core.storage.dagster_run import RunRecord
+    from dagster._core.storage.event_log.base import AssetEventSummaryRecord
 
 
 @whitelist_for_serdes
@@ -116,7 +116,7 @@ class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
 
     async def _get_run_records_from_materializations(
         self,
-        materializations: Sequence["EventLogRecord"],
+        materializations: Sequence["AssetEventSummaryRecord"],
         context: LoadingContext,
     ) -> Sequence["RunRecord"]:
         from dagster._core.storage.dagster_run import RunRecord
@@ -159,7 +159,7 @@ class NewUpdatesWithRunTagsCondition(SubsetAutomationCondition[AssetKey]):
 
         partitions_to_run_ids = defaultdict(set)
         for materialization in new_materializations:
-            partitions_to_run_ids[materialization.partition_key].add(materialization.run_id)
+            partitions_to_run_ids[materialization.partition].add(materialization.run_id)
 
         matching_partition_keys = set()
 

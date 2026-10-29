@@ -73,7 +73,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type TerminateRunPolicy = 'MARK_AS_CANCELED_IMMEDIATELY' | 'SAFE_TERMINATE';
 

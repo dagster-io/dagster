@@ -18,6 +18,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._core.snowflake_partner import SNOWFLAKE_PARTNER_ENV_VAR
 from dagster._serdes import ConfigurableClass, serialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
@@ -191,9 +192,12 @@ class K8sUserCodeLauncher(DagsterCloudUserCodeLauncher[K8sHandle], ConfigurableC
                     only_allow_user_defined_env_vars = []
 
         if only_allow_user_defined_env_vars is not None:
-            only_allow_user_defined_env_vars = (
-                only_allow_user_defined_env_vars + RESERVED_ENV_VAR_NAMES
-            )
+            only_allow_user_defined_env_vars = [
+                *only_allow_user_defined_env_vars,
+                *RESERVED_ENV_VAR_NAMES,
+                # Not reserved, so a customer setting their own partner name still passes through.
+                SNOWFLAKE_PARTNER_ENV_VAR,
+            ]
 
         self._only_allow_user_defined_k8s_config_fields = only_allow_user_defined_k8s_config_fields
         self._only_allow_user_defined_env_vars = only_allow_user_defined_env_vars

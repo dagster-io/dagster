@@ -50,7 +50,7 @@ from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import AssetRecordsFilter
+from dagster._core.events import DagsterEventType
 from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import NOT_FINISHED_STATUSES, DagsterRunStatus, RunsFilter
@@ -1366,22 +1366,22 @@ def get_asset_backfill_iteration_materialized_subset(
 
     recently_materialized_asset_partitions = AssetGraphSubset()
     for asset_key in asset_backfill_data.target_subset.asset_keys:
-        cursor = None
-        has_more = True
-        while has_more:
-            materializations_result = instance_queryer.instance.fetch_materializations(
-                AssetRecordsFilter(
-                    asset_key=asset_key,
-                    after_storage_id=asset_backfill_data.latest_storage_id,
-                ),
-                cursor=cursor,
+        after_storage_id = asset_backfill_data.latest_storage_id
+        while True:
+            # the projection returns a plain sequence rather than a paginated result, so page off
+            # the last row's storage id
+            rows = instance_queryer.instance.get_asset_event_summary_records(
+                DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=asset_key,
+                after_storage_id=after_storage_id,
                 limit=MATERIALIZATION_CHUNK_SIZE,
+                ascending=True,
             )
+            if not rows:
+                break
+            after_storage_id = rows[-1].storage_id
 
-            cursor = materializations_result.cursor
-            has_more = materializations_result.has_more
-
-            run_ids = [record.run_id for record in materializations_result.records if record.run_id]
+            run_ids = [row.run_id for row in rows if row.run_id]
             if run_ids:
                 run_records = instance_queryer.instance.get_run_records(
                     filters=RunsFilter(run_ids=run_ids),
@@ -1392,11 +1392,7 @@ def get_asset_backfill_iteration_materialized_subset(
                     if run_record.dagster_run.tags.get(BACKFILL_ID_TAG) == backfill_id
                 }
 
-                materialization_records_in_backfill = [
-                    record
-                    for record in materializations_result.records
-                    if record.run_id in run_ids_in_backfill
-                ]
+                rows_in_backfill = [row for row in rows if row.run_id in run_ids_in_backfill]
 
                 # Validate partition consistency for materializations in this backfill
                 asset_is_partitioned_in_target = (
@@ -1406,25 +1402,22 @@ def get_asset_backfill_iteration_materialized_subset(
                     asset_key in asset_backfill_data.target_subset.non_partitioned_asset_keys
                 )
 
-                for record in materialization_records_in_backfill:
-                    if asset_is_partitioned_in_target and record.partition_key is None:
+                for row in rows_in_backfill:
+                    if asset_is_partitioned_in_target and row.partition is None:
                         raise DagsterBackfillFailedError(
                             f"Asset {asset_key.to_user_string()} is partitioned in the backfill target "
-                            f"subset, but received an unpartitioned materialization from run {record.run_id}. "
+                            f"subset, but received an unpartitioned materialization from run {row.run_id}. "
                             f"All materializations for this asset in this backfill must be partitioned."
                         )
-                    elif asset_is_non_partitioned_in_target and record.partition_key is not None:
+                    elif asset_is_non_partitioned_in_target and row.partition is not None:
                         raise DagsterBackfillFailedError(
                             f"Asset {asset_key.to_user_string()} is unpartitioned in the backfill target "
-                            f"subset, but received a partitioned materialization (partition_key={record.partition_key}) "
-                            f"from run {record.run_id}. All materializations for this asset in this backfill must be unpartitioned."
+                            f"subset, but received a partitioned materialization (partition_key={row.partition}) "
+                            f"from run {row.run_id}. All materializations for this asset in this backfill must be unpartitioned."
                         )
 
                 recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
-                    {
-                        AssetKeyPartitionKey(asset_key, record.partition_key)
-                        for record in materialization_records_in_backfill
-                    },
+                    {AssetKeyPartitionKey(asset_key, row.partition) for row in rows_in_backfill},
                     asset_graph,
                 )
 

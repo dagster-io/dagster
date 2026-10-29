@@ -127,7 +127,6 @@ def test_failure_recovery(crash_location: str, terminate: bool) -> None:
             # tick is created
             assert len(ticks) == (1 if cursor_written and terminate else 2)
 
-            assert ticks[0]
             assert ticks[0].status == TickStatus.SUCCESS
             assert len(ticks[0].tick_data.run_ids) == 5
             assert ticks[0].automation_condition_evaluation_id == 1
