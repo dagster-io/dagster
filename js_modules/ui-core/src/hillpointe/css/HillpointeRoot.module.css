@@ -42,6 +42,69 @@
   font-size: 12px;
 }
 
+/* Overnight card: a coloured edge says at a glance how the night went. */
+.overnight {
+  border-left: 4px solid var(--color-accent-green);
+}
+
+.overnight_mixed {
+  border-left-color: var(--color-accent-yellow);
+}
+
+.overnight_bad {
+  border-left-color: var(--color-accent-red);
+}
+
+.overnightStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  color: var(--color-text-default);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.statRed {
+  color: var(--color-text-red);
+}
+
+.statYellow {
+  color: var(--color-text-yellow);
+}
+
+.statLabel {
+  color: var(--color-text-light);
+  font-size: 12px;
+}
+
+.attention {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attentionRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.attentionJob {
+  font-family: var(--font-mono);
+  color: var(--color-text-default);
+}
+
 .chartGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
