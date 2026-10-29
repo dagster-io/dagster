@@ -11,7 +11,7 @@ import {
 import * as React from 'react';
 import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
-import {LogsProvider, LogsProviderLogs} from './LogsProvider';
+import {LogsProviderLogs} from './LogsProvider';
 import {MobileRunWithData} from './MobileRun';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
@@ -36,6 +36,7 @@ import {shortenId} from '../util/shortenId';
 interface RunProps {
   runId: string;
   run?: RunPageFragment;
+  logs: LogsProviderLogs;
 }
 
 const runStatusFavicon = (status: RunStatus) => {
@@ -55,7 +56,7 @@ const runStatusFavicon = (status: RunStatus) => {
 };
 
 export const Run = memo((props: RunProps) => {
-  const {run, runId} = props;
+  const {run, runId, logs} = props;
   const [logsFilter, setLogsFilter] = useQueryPersistedLogFilter();
   const [selectionQuery, setSelectionQuery] = useQueryPersistedState<string>({
     queryKey: 'selection',
@@ -101,28 +102,22 @@ export const Run = memo((props: RunProps) => {
 
   return (
     <RunContext.Provider value={run}>
-      <LogsProvider key={runId} runId={runId}>
-        {(logs) => (
-          <>
-            <OnLogsLoaded dependency={logsDependency} logs={logs} />
-            <RunMetadataProvider logs={logs}>
-              {(metadata) => (
-                <RunView
-                  run={run}
-                  runId={runId}
-                  logs={logs}
-                  logsFilter={logsFilter}
-                  metadata={metadata}
-                  selectionQuery={selectionQuery}
-                  onSetLogsFilter={setLogsFilter}
-                  onSetSelectionQuery={onSetSelectionQuery}
-                  onShowStateDetails={onShowStateDetails}
-                />
-              )}
-            </RunMetadataProvider>
-          </>
+      <OnLogsLoaded dependency={logsDependency} logs={logs} />
+      <RunMetadataProvider logs={logs}>
+        {(metadata) => (
+          <RunView
+            run={run}
+            runId={runId}
+            logs={logs}
+            logsFilter={logsFilter}
+            metadata={metadata}
+            selectionQuery={selectionQuery}
+            onSetLogsFilter={setLogsFilter}
+            onSetSelectionQuery={onSetSelectionQuery}
+            onShowStateDetails={onShowStateDetails}
+          />
         )}
-      </LogsProvider>
+      </RunMetadataProvider>
     </RunContext.Provider>
   );
 });

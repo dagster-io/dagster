@@ -10,6 +10,7 @@ import {
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
+import {LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {Run} from './Run';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
@@ -71,7 +72,10 @@ export const RunRoot = () => {
           right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
-      <RunById data={data} runId={runId} />
+      {/* Mounted above the RunRootQuery gate so logs stream in parallel; they only need runId. */}
+      <LogsProvider key={runId} runId={runId}>
+        {(logs) => <RunById data={data} runId={runId} logs={logs} />}
+      </LogsProvider>
     </div>
   );
 };
@@ -80,8 +84,14 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
-  const {data, runId} = props;
+interface RunByIdProps {
+  data: RunRootQuery | undefined;
+  runId: string;
+  logs: LogsProviderLogs;
+}
+
+const RunById = (props: RunByIdProps) => {
+  const {data, runId, logs} = props;
 
   if (!data || !data.pipelineRunOrError) {
     return null;
@@ -131,7 +141,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
     }
   }
 
-  return <Run run={data.pipelineRunOrError} runId={runId} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} logs={logs} />;
 };
 
 const RUN_ROOT_QUERY = gql`
