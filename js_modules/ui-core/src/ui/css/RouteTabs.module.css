@@ -23,3 +23,11 @@
 .picker:active {
   background-color: var(--color-background-default-hover);
 }
+
+.desktopLabel {
+  color: var(--color-text-light);
+}
+
+.disabledReason {
+  font-size: 12px;
+}

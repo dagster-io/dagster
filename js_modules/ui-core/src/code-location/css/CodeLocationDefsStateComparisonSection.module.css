@@ -1,0 +1,4 @@
+/* Four columns don't fit a phone; scroll the table rather than the page. */
+:global(.dagster-mobile) .tableContainer {
+  overflow-x: auto;
+}

@@ -86,9 +86,10 @@ const AssetViewImpl = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPat
   const selectedTab = params.view || defaultTab;
   const isMobile = useIsMobile();
 
-  // Only the overview tab has a mobile presentation so far; the rest still fall back to
-  // the desktop site, so the status has to come from the page rather than the route.
-  useDeclareMobileRouteStatus(selectedTab === 'overview' ? 'supported' : 'unsupported');
+  // Tabs are `?view=` states of one route, so the page declares the status from the tab's
+  // `mobile` flag, which also drives the "Desktop" labels in the mobile tab picker.
+  const selectedTabIsMobile = !!tabList.find((tab) => tab.id === selectedTab)?.mobile;
+  useDeclareMobileRouteStatus(selectedTabIsMobile ? 'supported' : 'unsupported');
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
   // tab, or just the current node for other tabs. NOTE: Changing the query does not re-fetch data,
