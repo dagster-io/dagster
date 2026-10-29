@@ -1160,8 +1160,8 @@ requires-dist = [
     { name = "filelock" },
     { name = "grpcio", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
     { name = "grpcio", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
-    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0,<1.82" },
-    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2,<1.82" },
+    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0,!=1.82.0" },
+    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2,!=1.82.0" },
     { name = "grpcio-tools", marker = "python_full_version >= '3.13' and extra == 'test'", specifier = ">=1.66.2" },
     { name = "grpcio-tools", marker = "python_full_version < '3.13' and extra == 'test'", specifier = ">=1.44.0" },
     { name = "jinja2" },
@@ -1173,8 +1173,8 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'test-components'", specifier = "<3.0.0" },
     { name = "pandas-stubs", marker = "extra == 'pyright'" },
     { name = "pandas-stubs", marker = "extra == 'ty'" },
-    { name = "protobuf", marker = "python_full_version < '3.11'", specifier = ">=3.20.0,<7" },
-    { name = "protobuf", marker = "python_full_version >= '3.11'", specifier = ">=4,<7" },
+    { name = "protobuf", marker = "python_full_version < '3.11'", specifier = ">=3.20.0,<8" },
+    { name = "protobuf", marker = "python_full_version >= '3.11'", specifier = ">=4,<8" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=1.0" },
     { name = "psutil", marker = "extra == 'test'" },
     { name = "pyright", marker = "extra == 'pyright'", specifier = "==1.1.389" },
@@ -1268,6 +1268,7 @@ test-old-protobuf = [
     { name = "protobuf", marker = "python_full_version < '3.11'", specifier = "<4" },
     { name = "setuptools", marker = "python_full_version < '3.11'", specifier = "<82" },
 ]
+test-protobuf-6 = [{ name = "protobuf", specifier = "<7" }]
 test-sqlalchemy-1-3 = [{ name = "sqlalchemy", specifier = "<1.4" }]
 test-sqlalchemy-1-4 = [{ name = "sqlalchemy", specifier = "<2" }]
 
@@ -1547,6 +1548,7 @@ dependencies = [
     { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "orjson" },
     { name = "packaging" },
+    { name = "python-dateutil" },
     { name = "requests" },
     { name = "rich" },
     { name = "sqlglot", extra = ["rs"] },
@@ -1556,18 +1558,20 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "dagster", editable = "../dagster" },
+    { name = "dbt", marker = "extra == 'dbt'", specifier = ">=2,<3" },
     { name = "dbt-core", marker = "extra == 'dbt-core'", specifier = ">=1.7,<1.13" },
     { name = "gitpython" },
     { name = "jinja2" },
     { name = "networkx" },
     { name = "orjson" },
     { name = "packaging" },
+    { name = "python-dateutil" },
     { name = "requests" },
     { name = "rich" },
     { name = "sqlglot", extras = ["rs"] },
     { name = "typer", specifier = ">=0.9.0" },
 ]
-provides-extras = ["dbt-core"]
+provides-extras = ["dbt-core", "dbt"]
 
 [package.metadata.requires-dev]
 test = [
@@ -1659,7 +1663,7 @@ test = [
     { name = "create-dagster", editable = "../libraries/create-dagster" },
     { name = "dagster", extras = ["test"], editable = "../dagster" },
     { name = "dagster-cloud-cli", editable = "../libraries/dagster-cloud-cli" },
-    { name = "dagster-dbt", editable = "../libraries/dagster-dbt" },
+    { name = "dagster-dbt", extras = ["dbt-core"], editable = "../libraries/dagster-dbt" },
     { name = "dagster-dg-core", extras = ["test"], editable = "../libraries/dagster-dg-core" },
     { name = "dagster-fivetran", editable = "../libraries/dagster-fivetran" },
     { name = "dagster-graphql", editable = "../dagster-graphql" },

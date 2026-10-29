@@ -28,10 +28,11 @@ dependencies = [
     "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
     "grpcio>=1.66.2; python_version>='3.13'",
     "grpcio>=1.44.0; python_version<'3.13'",
-    "grpcio-health-checking>=1.66.2,<1.82; python_version>='3.13'",
-    "grpcio-health-checking>=1.44.0,<1.82; python_version<'3.13'",
-    "protobuf>=3.20.0,<7; python_version<'3.11'",
-    "protobuf>=4,<7; python_version>='3.11'",
+    # 1.82.0 ships protobuf-7 gencode but allows a protobuf 6 runtime
+    "grpcio-health-checking>=1.66.2,!=1.82.0; python_version>='3.13'",
+    "grpcio-health-checking>=1.44.0,!=1.82.0; python_version<'3.13'",
+    "protobuf>=3.20.0,<8; python_version<'3.11'",
+    "protobuf>=4,<8; python_version>='3.11'",
     "python-dotenv",
     "pytz",
     "requests",
@@ -181,12 +182,15 @@ test = [
 test-sqlalchemy-1-3 = ["sqlalchemy<1.4"]
 test-sqlalchemy-1-4 = ["sqlalchemy<2"]
 # Scoped to python<'3.11' because dagster's runtime requires
-# `protobuf>=4,<7` on py>=3.11. On py3.10 the protobuf upper bound is
+# `protobuf>=4,<8` on py>=3.11. On py3.10 the protobuf upper bound is
 # absent, allowing protobuf<4 here. The tox env is py3.10-only as a
 # result.
 test-old-protobuf = [
     "protobuf<4; python_version<'3.11'",
     "setuptools<82; python_version<'3.11'",  # old protobuf versions require pkg_resources
+]
+test-protobuf-6 = [
+    "protobuf<7",
 ]
 test-components = [
     "dagster-dg-cli",
@@ -197,6 +201,7 @@ test-components = [
 exclude-newer = "48h"
 conflicts = [
     [{group = "test-sqlalchemy-1-3"}, {group = "test-sqlalchemy-1-4"}],
+    [{group = "test-old-protobuf"}, {group = "test-protobuf-6"}],
 ]
 
 [tool.uv.sources]

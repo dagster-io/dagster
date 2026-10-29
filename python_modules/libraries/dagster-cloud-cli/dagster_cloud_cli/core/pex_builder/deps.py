@@ -141,13 +141,10 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
     return local_package_paths, deps_lines
 
 
-# TEMP (protobuf<7 compat): grpcio-health-checking 1.82.0 ships grpc_health/v1/health_pb2
-# generated with protobuf-7 gencode, which the protobuf runtime-version guard rejects against
-# the protobuf<7 runtime that dagster pins — the code server then crashes on import. The deps
-# pex resolves from PyPI, so it pulls 1.82.0 regardless of what the resolved dagster's metadata
-# says; force it here so every serverless build is compatible. Remove once dagster's protobuf<7
-# cap is lifted.
-_EXTRA_BUILD_CONSTRAINTS = ["grpcio-health-checking<1.82"]
+# grpcio-health-checking 1.82.0 ships protobuf-7 gencode but its metadata allows a protobuf 6
+# runtime, so the code server crashes on import when the resolver pairs them. Older dagster
+# releases don't exclude it, so exclude it here for every serverless build.
+_EXTRA_BUILD_CONSTRAINTS = ["grpcio-health-checking!=1.82.0"]
 
 
 def get_deps_requirements(
