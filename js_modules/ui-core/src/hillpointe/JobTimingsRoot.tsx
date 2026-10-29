@@ -15,6 +15,8 @@ import {gql, useQuery} from '../apollo-client';
 import {durationSec, formatDuration, startOfDay} from './HillpointeRoot';
 import styles from './css/HillpointeRoot.module.css';
 import {
+  HillpointeJobLocationsQuery,
+  HillpointeJobLocationsQueryVariables,
   HillpointeJobRunStatsQuery,
   HillpointeJobRunStatsQueryVariables,
   HillpointeJobTimingsQuery,
@@ -103,16 +105,39 @@ export const JobTimingsRoot = () => {
     return all.filter((r) => !isHiddenAssetGroupJob(r.pipelineName));
   }, [queryResult.data]);
 
-  // Jobs grouped by code location (live, testing, ...), each group ordered by
-  // its most recent run, with an average for the picker.
+  // Which code location (live, testing, ...) defines each job today. Runs
+  // remember the location name they ran under, which goes stale when a
+  // location is renamed, so the current workspace is the source of truth.
+  const locationsResult = useQuery<
+    HillpointeJobLocationsQuery,
+    HillpointeJobLocationsQueryVariables
+  >(HILLPOINTE_JOB_LOCATIONS_QUERY);
+  const {locationOrder, locationOf} = useMemo(() => {
+    const order: string[] = [];
+    const of = new Map<string, string>();
+    const result = locationsResult.data?.repositoriesOrError;
+    if (result?.__typename === 'RepositoryConnection') {
+      result.nodes.forEach((repo) => {
+        if (!order.includes(repo.location.name)) {
+          order.push(repo.location.name);
+        }
+        repo.pipelines.forEach((p) => {
+          if (!of.has(p.name)) {
+            of.set(p.name, repo.location.name);
+          }
+        });
+      });
+    }
+    return {locationOrder: order, locationOf: of};
+  }, [locationsResult.data]);
+
+  // Jobs grouped by code location in workspace order, each group ordered by
+  // its most recent run, with an average for the picker. Jobs no location
+  // defines any more are grouped at the end.
   const jobs = useMemo(() => {
-    const byJob = new Map<string, {location: string; latest: number; durations: number[]}>();
+    const byJob = new Map<string, {latest: number; durations: number[]}>();
     runs.forEach((r) => {
-      const entry = byJob.get(r.pipelineName) ?? {
-        location: r.repositoryOrigin?.repositoryLocationName ?? '',
-        latest: 0,
-        durations: [],
-      };
+      const entry = byJob.get(r.pipelineName) ?? {latest: 0, durations: []};
       entry.latest = Math.max(entry.latest, r.startTime ?? 0);
       const seconds = durationSec(r.startTime, r.endTime);
       if (seconds !== null && r.endTime && r.status === RunStatus.SUCCESS) {
@@ -121,16 +146,19 @@ export const JobTimingsRoot = () => {
       byJob.set(r.pipelineName, entry);
     });
     return [...byJob.entries()]
-      .map(([name, {location, latest, durations}]) => ({
+      .map(([name, {latest, durations}]) => ({
         name,
-        location,
+        location: locationOf.get(name) ?? '',
         latest,
         avg: average(durations),
         count: durations.length,
       }))
-      .sort((a, b) => a.location.localeCompare(b.location) || b.latest - a.latest);
-  }, [runs]);
-  const locations = useMemo(() => [...new Set(jobs.map((j) => j.location))], [jobs]);
+      .sort((a, b) => b.latest - a.latest);
+  }, [runs, locationOf]);
+  const locations = useMemo(
+    () => [...locationOrder, ''].filter((loc) => jobs.some((j) => j.location === loc)),
+    [jobs, locationOrder],
+  );
 
   const selected = jobName ?? jobs[0]?.name ?? null;
   // The job list can be tucked away to give the chart the full width.
@@ -211,7 +239,7 @@ export const JobTimingsRoot = () => {
           <div className={styles.jobList}>
             {locations.map((location) => (
               <div key={location}>
-                <div className={styles.jobGroup}>{location || 'Other'}</div>
+                <div className={styles.jobGroup}>{location || 'No longer defined'}</div>
                 {jobs
                   .filter((job) => job.location === location)
                   .map((job) => (
@@ -510,9 +538,25 @@ export const HILLPOINTE_JOB_TIMINGS_QUERY = gql`
           status
           startTime
           endTime
-          repositoryOrigin {
+        }
+      }
+    }
+  }
+`;
+
+export const HILLPOINTE_JOB_LOCATIONS_QUERY = gql`
+  query HillpointeJobLocationsQuery {
+    repositoriesOrError {
+      ... on RepositoryConnection {
+        nodes {
+          id
+          location {
             id
-            repositoryLocationName
+            name
+          }
+          pipelines {
+            id
+            name
           }
         }
       }

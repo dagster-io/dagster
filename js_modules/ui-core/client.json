@@ -202,8 +202,9 @@
   "MobileRecentRunsQuery": "0cb427eb72a56523e266e66a62b04f109bec84b7e580593fa34194c5016e94de",
   "MobileRunQuery": "5d12e04396e72b3793b27bbfe498bfdfa6a7e18dd8444d6d64ea675a05e07f21",
   "HillpointeSchedulesQuery": "fdf53db9a1ad8e1c6303dcd8565d9734a2d7b86d9e67452a154add3bca13ca79",
-  "HillpointeJobTimingsQuery": "f3bd20008cc49d9a324b64e4d282b5b94d2985238ec2fb5ad0385a9b195afcf8",
+  "HillpointeJobTimingsQuery": "0b2f0642228ade5f23e7230d7df36a77b9bbc801947d5c8cc103787fbceaac8c",
   "HillpointeJobRunStatsQuery": "c515cade284562246aabea75fdc82dcc75c32b3e9faf41f3b7ac18ade66f8e6f",
   "MobileJobAssetsQuery": "8cc78a31eaa5d13c5d6243a8175218cae3c4a58f224c3a2fcf7468714ef0e839",
-  "MobileAssetOutcomesQuery": "413031c5204bf77c38fe8ff63788cd3de63383c576bf4c6548895df7dafb9148"
+  "MobileAssetOutcomesQuery": "413031c5204bf77c38fe8ff63788cd3de63383c576bf4c6548895df7dafb9148",
+  "HillpointeJobLocationsQuery": "0f5cfc2fac1744318a86160b4c6d5c6eb777ff59a12711d73a5c430c0906d13a"
 }

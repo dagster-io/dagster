@@ -38,13 +38,26 @@ export type HillpointeJobTimingsQuery = {
           status: Types.RunStatus;
           startTime: number | null;
           endTime: number | null;
-          repositoryOrigin: {
-            __typename: 'RepositoryOrigin';
-            id: string;
-            repositoryLocationName: string;
-          } | null;
         }>;
       };
+};
+
+export type HillpointeJobLocationsQueryVariables = Exact<{[key: string]: never}>;
+
+export type HillpointeJobLocationsQuery = {
+  __typename: 'Query';
+  repositoriesOrError:
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'RepositoryConnection';
+        nodes: Array<{
+          __typename: 'Repository';
+          id: string;
+          location: {__typename: 'RepositoryLocation'; id: string; name: string};
+          pipelines: Array<{__typename: 'Pipeline'; id: string; name: string}>;
+        }>;
+      }
+    | {__typename: 'RepositoryNotFoundError'};
 };
 
 export type HillpointeJobRunStatsQueryVariables = Exact<{
