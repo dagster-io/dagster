@@ -16,6 +16,7 @@ import {RunAssetCheckTags} from './RunAssetCheckTags';
 import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
+import {RunRetriedTag} from './RunRetriedTag';
 import {RunStatusTag} from './RunStatusTag';
 import {DagsterTag, RunTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
@@ -119,6 +120,7 @@ export const RunRoot = () => {
             run ? (
               <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
                 <RunStatusTag status={run.status} />
+                <RunRetriedTag runId={run.id} status={run.status} />
                 {!isHiddenAssetGroupJob(run.pipelineName) ? (
                   <Tag icon="run">
                     Run of{' '}
