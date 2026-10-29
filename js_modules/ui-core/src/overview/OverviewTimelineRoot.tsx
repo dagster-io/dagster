@@ -12,6 +12,7 @@ import {useAutomations} from '../automation/useAutomations';
 import {filterAutomationSelectionByQuery} from '../automation-selection/AntlrAutomationSelection';
 import {AutomationSelectionInput} from '../automation-selection/input/AutomationSelectionInput';
 import {Automation} from '../automation-selection/input/useAutomationSelectionAutoCompleteProvider';
+import {OvernightCard} from '../hillpointe/OvernightCard';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {filterJobSelectionByQuery} from '../job-selection/AntlrJobSelection';
@@ -182,9 +183,15 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
           onPageLater={onPageLater}
         />
       </Box>
-      <ErrorBoundary region="timeline">
-        <RunTimeline loading={loading} rangeMs={rangeMs} rows={rows} />
-      </ErrorBoundary>
+      {/* Scrolls so the Overnight card stays reachable under a tall timeline. */}
+      <div style={{flex: 1, minHeight: 0, overflowY: 'auto'}}>
+        <ErrorBoundary region="timeline">
+          <RunTimeline loading={loading} rangeMs={rangeMs} rows={rows} />
+        </ErrorBoundary>
+        <Box padding={{horizontal: 24, vertical: 12}}>
+          <OvernightCard />
+        </Box>
+      </div>
     </>
   );
 };
