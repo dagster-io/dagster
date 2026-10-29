@@ -17,11 +17,12 @@ import {useMutation} from '../apollo-client';
 import {shortenId} from '../util/shortenId';
 import {DeleteMutation, DeleteMutationVariables} from './types/RunUtils.types';
 
-export interface Props {
+export interface DeletionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
-  onTerminateInstead: () => void;
+  /** Receives the IDs the dialog counted, frozen when it opened. */
+  onTerminateInstead: (runIds: string[]) => void;
   selectedRuns: SelectedRuns;
 }
 
@@ -91,15 +92,21 @@ const deletionDialogReducer = (
   }
 };
 
-export const DeletionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, onTerminateInstead, selectedRuns} = props;
+export const DeletionDialog = ({
+  isOpen,
+  onClose,
+  onComplete,
+  onTerminateInstead,
+  selectedRuns,
+}: DeletionDialogProps) => {
   const frozenRuns = useRef<SelectedRuns>(selectedRuns);
 
   const [state, dispatch] = useReducer(deletionDialogReducer, frozenRuns.current, initializeState);
 
-  const runIDs = Object.keys(state.frozenRuns);
-  const count = runIDs.length;
-  const terminatableCount = runIDs.filter((id) => state.frozenRuns[id]).length;
+  const runIds = Object.keys(state.frozenRuns);
+  const runCount = runIds.length;
+  const terminableRunIds = runIds.filter((id) => state.frozenRuns[id]);
+  const terminableRunCount = terminableRunIds.length;
 
   // If the dialog is newly open, update state to match the frozen list.
   useEffect(() => {
@@ -141,16 +148,16 @@ export const DeletionDialog = (props: Props) => {
       case 'initial':
         return (
           <Box flex={{direction: 'column', gap: 8}}>
-            <div>{`${count} ${count === 1 ? 'run' : 'runs'} will be deleted.`}</div>
+            <div>{`${runCount} ${runCount === 1 ? 'run' : 'runs'} will be deleted.`}</div>
             <div>
               Deleting runs will not prevent them from continuing to execute, and may result in
               unexpected behavior.
             </div>
-            {terminatableCount ? (
+            {terminableRunCount ? (
               <div>
-                {terminatableCount > 1 ? (
+                {terminableRunCount > 1 ? (
                   <>
-                    {`${terminatableCount} of these runs can be terminated. `}
+                    {`${terminableRunCount} of these runs can be terminated. `}
                     <strong>
                       Please consider terminating these runs instead of deleting them.
                     </strong>
@@ -168,7 +175,7 @@ export const DeletionDialog = (props: Props) => {
         );
       case 'deleting':
       case 'completed':
-        const value = count > 0 ? state.deletion.completed / count : 1;
+        const value = runCount > 0 ? state.deletion.completed / runCount : 1;
         return (
           <Box flex={{direction: 'column', gap: 8}}>
             <div>Deleting…</div>
@@ -192,12 +199,12 @@ export const DeletionDialog = (props: Props) => {
               Cancel
             </Button>
             <Button intent="danger" onClick={mutate}>
-              {`Yes, delete ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
+              {`Yes, delete ${`${runCount} ${runCount === 1 ? 'run' : 'runs'}`}`}
             </Button>
-            {terminatableCount ? (
-              <Button intent="primary" onClick={onTerminateInstead}>
-                {`Terminate ${`${terminatableCount} ${
-                  terminatableCount === 1 ? 'run' : 'runs'
+            {terminableRunCount ? (
+              <Button intent="primary" onClick={() => onTerminateInstead(terminableRunIds)}>
+                {`Terminate ${`${terminableRunCount} ${
+                  terminableRunCount === 1 ? 'run' : 'runs'
                 }`} instead`}
               </Button>
             ) : null}

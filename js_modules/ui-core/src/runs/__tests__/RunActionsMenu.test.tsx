@@ -4,17 +4,31 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
 import {ApolloLink} from '../../apollo-client';
-import {ReexecutionStrategy} from '../../graphql/types';
+import {
+  buildDeletePipelineRunSuccess,
+  buildRun,
+  buildTerminateRunSuccess,
+  buildTerminateRunsResult,
+} from '../../graphql/builders';
+import {ReexecutionStrategy, RunStatus, TerminateRunPolicy} from '../../graphql/types';
 import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
+import {buildMutationMock} from '../../testing/mocking';
 import {testId} from '../../testing/testId';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
-import {RunActionsMenu} from '../RunActionsMenu';
+import {RunActionsMenu, RunBulkActionsMenu} from '../RunActionsMenu';
+import {DELETE_MUTATION, TERMINATE_MUTATION} from '../RunUtils';
 import {buildLaunchPipelineReexecutionSuccessMock} from '../__fixtures__/Reexecution.fixtures';
 import {
   buildMockRootWorkspaceQuery,
   buildPipelineEnvironmentQuery,
   buildRunActionsMenuFragment,
 } from '../__fixtures__/RunActionsMenu.fixtures';
+import {
+  DeleteMutation,
+  DeleteMutationVariables,
+  TerminateMutation,
+  TerminateMutationVariables,
+} from '../types/RunUtils.types';
 
 const CurrentPath = () => {
   const {pathname} = useLocation();
@@ -162,5 +176,151 @@ describe('RunActionsMenu', () => {
       expect(await screen.findByText('1 run will be deleted.')).toBeVisible();
       expect(screen.queryByRole('button', {name: /instead/})).not.toBeInTheDocument();
     });
+  });
+});
+
+type BulkRun = ReturnType<typeof buildRunActionsMenuFragment>;
+
+const RUNNING = {status: RunStatus.STARTED, endTime: null};
+
+const buildBulkRun = (overrides: Partial<BulkRun>) => {
+  return {...buildRunActionsMenuFragment({hasReExecutePermission: false}), ...overrides};
+};
+
+const buildDeleteMock = (runId: string) =>
+  buildMutationMock<DeleteMutation, DeleteMutationVariables>({
+    query: DELETE_MUTATION,
+    variables: {runId},
+    data: {deletePipelineRun: buildDeletePipelineRunSuccess({runId})},
+  });
+
+const buildTerminateMock = (runId: string) =>
+  buildMutationMock<TerminateMutation, TerminateMutationVariables>({
+    query: TERMINATE_MUTATION,
+    variables: {runIds: [runId], terminatePolicy: TerminateRunPolicy.SAFE_TERMINATE},
+    data: {
+      terminateRuns: buildTerminateRunsResult({
+        terminateRunResults: [
+          buildTerminateRunSuccess({run: buildRun({id: runId, canTerminate: true})}),
+        ],
+      }),
+    },
+  });
+
+const renderBulkMenu = (
+  selected: BulkRun[],
+  mocks: React.ComponentProps<typeof MockedProvider>['mocks'] = [],
+) => {
+  const buildBulkMenu = (runs: BulkRun[]) => (
+    <MockedProvider mocks={mocks}>
+      <MemoryRouter>
+        <RunBulkActionsMenu selected={runs} clearSelection={() => {}} />
+      </MemoryRouter>
+    </MockedProvider>
+  );
+  const {rerender} = render(buildBulkMenu(selected));
+  return {
+    rerenderSelected: (runs: BulkRun[]) => rerender(buildBulkMenu(runs)),
+  };
+};
+
+describe('RunBulkActionsMenu', () => {
+  it('only deletes runs the user can delete', async () => {
+    const user = userEvent.setup();
+    renderBulkMenu(
+      [buildBulkRun({id: 'run-a'}), buildBulkRun({id: 'run-b', hasDeletePermission: false})],
+      [buildDeleteMock('run-a')],
+    );
+
+    await user.click(await screen.findByRole('button', {name: /Actions/}));
+    await user.click(await screen.findByRole('menuitem', {name: /Delete 1 run$/}));
+    await user.click(await screen.findByRole('button', {name: 'Yes, delete 1 run'}));
+
+    expect(await screen.findByText('Successfully deleted 1 run.')).toBeVisible();
+  });
+
+  it('shows actions the user cannot take as disabled with a permission reason', async () => {
+    const user = userEvent.setup();
+    const noPermissions = {hasDeletePermission: false, hasTerminatePermission: false};
+    renderBulkMenu([
+      buildBulkRun({id: 'run-a', ...RUNNING, ...noPermissions}),
+      buildBulkRun({id: 'run-b', ...noPermissions}),
+    ]);
+
+    await user.click(await screen.findByRole('button', {name: /Actions/}));
+
+    const terminateItem = await screen.findByRole('menuitem', {name: /Terminate 1 run$/});
+    expect(terminateItem).toBeDisabled();
+    expect(await screen.findByRole('menuitem', {name: /Delete 2 runs$/})).toBeDisabled();
+    expect(await screen.findByRole('menuitem', {name: /Re-execute 1 run$/})).toBeDisabled();
+
+    await user.hover(terminateItem);
+    expect(await screen.findByRole('tooltip', {name: 'Insufficient permissions'})).toBeVisible();
+  });
+
+  it('hides actions that do not apply to the selected runs', async () => {
+    const user = userEvent.setup();
+    renderBulkMenu([buildBulkRun({hasReExecutePermission: true})]);
+
+    await user.click(await screen.findByRole('button', {name: /Actions/}));
+
+    expect(await screen.findByRole('menuitem', {name: /Delete 1 run$/})).toBeVisible();
+    expect(await screen.findByRole('menuitem', {name: /Re-execute 1 run$/})).toBeVisible();
+    expect(screen.queryByRole('menuitem', {name: /Terminate/})).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', {name: /from failure/})).not.toBeInTheDocument();
+  });
+
+  it('terminate instead covers only the runs the delete dialog counted', async () => {
+    const user = userEvent.setup();
+    renderBulkMenu(
+      [
+        buildBulkRun({id: 'run-a', ...RUNNING}),
+        buildBulkRun({id: 'run-b', hasDeletePermission: false, ...RUNNING}),
+      ],
+      [buildTerminateMock('run-a')],
+    );
+
+    await user.click(await screen.findByRole('button', {name: /Actions/}));
+    await user.click(await screen.findByRole('menuitem', {name: /Delete 1 run$/}));
+    await user.click(await screen.findByRole('button', {name: 'Terminate 1 run instead'}));
+    await user.click(await screen.findByRole('button', {name: 'Terminate 1 run'}));
+
+    expect(await screen.findByText('Successfully requested termination for 1 run.')).toBeVisible();
+  });
+
+  it('terminate instead keeps the runs the delete dialog counted after the list refreshes', async () => {
+    const user = userEvent.setup();
+    const {rerenderSelected} = renderBulkMenu(
+      [
+        buildBulkRun({id: 'run-a', ...RUNNING}),
+        buildBulkRun({id: 'run-b', hasTerminatePermission: false, ...RUNNING}),
+      ],
+      [buildTerminateMock('run-a')],
+    );
+
+    await user.click(await screen.findByRole('button', {name: /Actions/}));
+    await user.click(await screen.findByRole('menuitem', {name: /Delete 2 runs$/}));
+    expect(await screen.findByRole('button', {name: 'Terminate 1 run instead'})).toBeVisible();
+
+    rerenderSelected([
+      buildBulkRun({id: 'run-a', status: RunStatus.SUCCESS, canTerminate: false}),
+      buildBulkRun({id: 'run-b', ...RUNNING}),
+    ]);
+
+    await user.click(await screen.findByRole('button', {name: 'Terminate 1 run instead'}));
+    await user.click(await screen.findByRole('button', {name: 'Terminate 1 run'}));
+
+    expect(await screen.findByText('Successfully requested termination for 1 run.')).toBeVisible();
+  });
+
+  it('does not offer to terminate instead of deleting without terminate permission', async () => {
+    const user = userEvent.setup();
+    renderBulkMenu([buildBulkRun({...RUNNING, hasTerminatePermission: false})]);
+
+    await user.click(await screen.findByRole('button', {name: /Actions/}));
+    await user.click(await screen.findByRole('menuitem', {name: /Delete 1 run$/}));
+
+    expect(await screen.findByText('1 run will be deleted.')).toBeVisible();
+    expect(screen.queryByRole('button', {name: /instead/})).not.toBeInTheDocument();
   });
 });
