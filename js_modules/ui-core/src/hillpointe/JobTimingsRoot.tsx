@@ -103,11 +103,16 @@ export const JobTimingsRoot = () => {
     return all.filter((r) => !isHiddenAssetGroupJob(r.pipelineName));
   }, [queryResult.data]);
 
-  // Jobs ordered by their most recent run, with an average for the picker.
+  // Jobs grouped by code location (live, testing, ...), each group ordered by
+  // its most recent run, with an average for the picker.
   const jobs = useMemo(() => {
-    const byJob = new Map<string, {latest: number; durations: number[]}>();
+    const byJob = new Map<string, {location: string; latest: number; durations: number[]}>();
     runs.forEach((r) => {
-      const entry = byJob.get(r.pipelineName) ?? {latest: 0, durations: []};
+      const entry = byJob.get(r.pipelineName) ?? {
+        location: r.repositoryOrigin?.repositoryLocationName ?? '',
+        latest: 0,
+        durations: [],
+      };
       entry.latest = Math.max(entry.latest, r.startTime ?? 0);
       const seconds = durationSec(r.startTime, r.endTime);
       if (seconds !== null && r.endTime && r.status === RunStatus.SUCCESS) {
@@ -116,14 +121,16 @@ export const JobTimingsRoot = () => {
       byJob.set(r.pipelineName, entry);
     });
     return [...byJob.entries()]
-      .map(([name, {latest, durations}]) => ({
+      .map(([name, {location, latest, durations}]) => ({
         name,
+        location,
         latest,
         avg: average(durations),
         count: durations.length,
       }))
-      .sort((a, b) => b.latest - a.latest);
+      .sort((a, b) => a.location.localeCompare(b.location) || b.latest - a.latest);
   }, [runs]);
+  const locations = useMemo(() => [...new Set(jobs.map((j) => j.location))], [jobs]);
 
   const selected = jobName ?? jobs[0]?.name ?? null;
   // The job list can be tucked away to give the chart the full width.
@@ -202,19 +209,29 @@ export const JobTimingsRoot = () => {
         <div className={clsx(styles.card, !jobsOpen && styles.hidden)}>
           <div className={styles.cardTitle}>Jobs</div>
           <div className={styles.jobList}>
-            {jobs.map((job) => (
-              <Link
-                key={job.name}
-                to={`/hillpointe/timings/${encodeURIComponent(job.name)}`}
-                className={clsx(styles.jobItem, job.name === selected && styles.jobItemActive)}
-              >
-                <span className={styles.jobItemName} title={job.name}>
-                  {job.name}
-                </span>
-                <span className={styles.jobItemMeta}>
-                  {job.avg === null ? '—' : formatDuration(job.avg)} avg · {job.count} runs
-                </span>
-              </Link>
+            {locations.map((location) => (
+              <div key={location}>
+                <div className={styles.jobGroup}>{location || 'Other'}</div>
+                {jobs
+                  .filter((job) => job.location === location)
+                  .map((job) => (
+                    <Link
+                      key={job.name}
+                      to={`/hillpointe/timings/${encodeURIComponent(job.name)}`}
+                      className={clsx(
+                        styles.jobItem,
+                        job.name === selected && styles.jobItemActive,
+                      )}
+                    >
+                      <span className={styles.jobItemName} title={job.name}>
+                        {job.name}
+                      </span>
+                      <span className={styles.jobItemMeta}>
+                        {job.avg === null ? '—' : formatDuration(job.avg)} avg · {job.count} runs
+                      </span>
+                    </Link>
+                  ))}
+              </div>
             ))}
             {!jobs.length ? (
               <div className={styles.muted}>No runs in the last {TIMINGS_DAYS} days.</div>
@@ -493,6 +510,10 @@ export const HILLPOINTE_JOB_TIMINGS_QUERY = gql`
           status
           startTime
           endTime
+          repositoryOrigin {
+            id
+            repositoryLocationName
+          }
         }
       }
     }

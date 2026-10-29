@@ -842,6 +842,20 @@
   margin-top: 8px;
 }
 
+/* Code location heading above its jobs in the picker. */
+.jobGroup {
+  padding: 12px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-lighter);
+}
+
+.jobList > div:first-child > .jobGroup {
+  padding-top: 4px;
+}
+
 .jobItem {
   display: flex;
   flex-direction: column;
