@@ -15,6 +15,7 @@ import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunBulkActionsMenu} from './RunActionsMenu';
+import {useRetriedSteps} from './RunRetriedTag';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
@@ -72,6 +73,11 @@ export const RunsFeedTable = ({
   const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
   const [dialog, setDialog] = useState<null | RunsFeedDialogState>(null);
+  const runIds = useMemo(
+    () => entries.filter((e) => e.__typename === 'Run').map((e) => e.id),
+    [entries],
+  );
+  const retriedSteps = useRetriedSteps(runIds);
 
   const rowVirtualizer = useVirtualizer({
     count: entries.length,
@@ -233,6 +239,7 @@ export const RunsFeedTable = ({
                       refetch={refetch}
                       onAddTag={onAddTag}
                       hideTags={hideTags}
+                      retriedSteps={retriedSteps.get(entry.id)}
                     />
                   </div>
                 </Row>

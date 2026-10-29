@@ -120,7 +120,7 @@ export const RunRoot = () => {
             run ? (
               <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
                 <RunStatusTag status={run.status} />
-                <RunRetriedTag runId={run.id} status={run.status} />
+                <RunRetriedTag runId={run.id} />
                 {!isHiddenAssetGroupJob(run.pipelineName) ? (
                   <Tag icon="run">
                     Run of{' '}

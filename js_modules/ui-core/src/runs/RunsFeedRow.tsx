@@ -15,6 +15,7 @@ import {Link} from 'react-router-dom';
 
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
+import {RetriedTag} from './RunRetriedTag';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
@@ -40,8 +41,10 @@ export const RunsFeedRow = ({
   onToggleChecked,
   refetch,
   hideTags,
+  retriedSteps,
 }: {
   entry: RunsFeedTableEntryFragment;
+  retriedSteps?: string[];
   refetch: () => void;
   onShowDialog: (dialog: RunsFeedDialogState) => void;
   onAddTag?: (token: RunFilterToken) => void;
@@ -175,6 +178,7 @@ export const RunsFeedRow = ({
           ) : (
             <RunStatusTagWithStats status={entry.runStatus} runId={entry.id} />
           )}
+          <RetriedTag steps={retriedSteps} short />
         </div>
       </RowCell>
       <RowCell style={{flexDirection: 'column', gap: 4}}>

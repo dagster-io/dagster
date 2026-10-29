@@ -9,6 +9,7 @@ import styles from './css/Mobile.module.css';
 import {MobileRecentRunsQuery, MobileRecentRunsQueryVariables} from './types/MobilePipelines.types';
 import {RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {RetriedTag, useRetriedSteps} from '../../runs/RunRetriedTag';
 import {RunStatusTag} from '../../runs/RunStatusTag';
 import {failedStatuses, inProgressStatuses, queuedStatuses} from '../../runs/RunStatuses';
 import {TimeElapsed} from '../../runs/TimeElapsed';
@@ -55,6 +56,7 @@ export default function MobileRuns() {
     const all = result?.__typename === 'Runs' ? result.results : [];
     return all.filter((run) => matches(filter, run.status));
   }, [queryResult.data, filter]);
+  const retriedSteps = useRetriedSteps(useMemo(() => runs.map((r) => r.id), [runs]));
 
   return (
     <>
@@ -82,6 +84,7 @@ export default function MobileRuns() {
                   <div className={styles.cardName}>{run.pipelineName}</div>
                   <div className={styles.cardStatus}>
                     <RunStatusTag status={run.status} />
+                    <RetriedTag steps={retriedSteps.get(run.id)} short />
                     {run.startTime ? (
                       <span className={styles.cardMeta}>
                         <TimeFromNow unixTimestamp={run.startTime} />

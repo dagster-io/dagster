@@ -8,22 +8,26 @@ export type Incremental<T> =
 
 import * as Types from '../../graphql/types';
 
-export type RunRetriedStepsQueryVariables = Exact<{
-  runId: string;
+export type RetriedStepsQueryVariables = Exact<{
+  runIds: Array<string> | string;
 }>;
 
-export type RunRetriedStepsQuery = {
+export type RetriedStepsQuery = {
   __typename: 'Query';
-  runOrError:
+  runsOrError:
+    | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}
     | {
-        __typename: 'Run';
-        id: string;
-        stepStats: Array<{
-          __typename: 'RunStepStats';
-          stepKey: string;
-          attempts: Array<{__typename: 'RunMarker'; startTime: number | null}>;
+        __typename: 'Runs';
+        results: Array<{
+          __typename: 'Run';
+          id: string;
+          runId: string;
+          stepStats: Array<{
+            __typename: 'RunStepStats';
+            stepKey: string;
+            attempts: Array<{__typename: 'RunMarker'; startTime: number | null}>;
+          }>;
         }>;
-      }
-    | {__typename: 'RunNotFoundError'};
+      };
 };

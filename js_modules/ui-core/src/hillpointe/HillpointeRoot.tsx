@@ -39,6 +39,7 @@ import {useTrackPageView} from '../app/analytics';
 import {InstigationStatus, RunStatus, StepEventStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {RetriedTag, useRetriedSteps} from '../runs/RunRetriedTag';
 import {RunStatusTag} from '../runs/RunStatusTag';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
@@ -1413,64 +1414,71 @@ interface SelectableProps {
   onSelect: (runId: string) => void;
 }
 
-const RunsTable = ({runs, statsByRun, selectedRunId, onSelect}: SelectableProps) => (
-  <div className={styles.card}>
-    <div className={styles.cardTitle}>
-      Runs this month
-      <span className={styles.cardSub}>
-        Latest {Math.min(TABLE_ROWS, runs.length)} of {runs.length} · click a row to inspect it
-        above
-      </span>
+const RunsTable = ({runs, statsByRun, selectedRunId, onSelect}: SelectableProps) => {
+  const shown = runs.slice(0, TABLE_ROWS);
+  const retriedSteps = useRetriedSteps(useMemo(() => shown.map((r) => r.id), [shown]));
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardTitle}>
+        Runs this month
+        <span className={styles.cardSub}>
+          Latest {Math.min(TABLE_ROWS, runs.length)} of {runs.length} · click a row to inspect it
+          above
+        </span>
+      </div>
+      <div className={styles.tableWrap}>
+        <Table>
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Job</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Duration</th>
+              <th>Steps ok / failed</th>
+              <th>Materializations</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((run) => {
+              const stats = statsByRun?.get(run.runId) ?? null;
+              return (
+                <tr
+                  key={run.runId}
+                  className={clsx(styles.runRow, run.runId === selectedRunId && styles.selected)}
+                  onClick={() => onSelect(run.runId)}
+                >
+                  <td>
+                    <Link to={`/runs/${run.runId}`} onClick={(e) => e.stopPropagation()}>
+                      {run.runId.slice(0, 8)}
+                    </Link>
+                  </td>
+                  <td>{run.jobName}</td>
+                  <td>
+                    <Box flex={{gap: 6, alignItems: 'center', wrap: 'wrap'}}>
+                      <RunStatusTag status={run.status} />
+                      <RetriedTag steps={retriedSteps.get(run.id)} short />
+                    </Box>
+                  </td>
+                  <td>{new Date(run.creationTime * 1000).toLocaleString()}</td>
+                  <td>{formatDuration(durationSec(run.startTime, run.endTime))}</td>
+                  <td>
+                    {stats
+                      ? `${stats.stepsSucceeded} / ${stats.stepsFailed}`
+                      : statsByRun
+                        ? '—'
+                        : '…'}
+                  </td>
+                  <td>{stats ? stats.materializations : statsByRun ? '—' : '…'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+      </div>
     </div>
-    <div className={styles.tableWrap}>
-      <Table>
-        <thead>
-          <tr>
-            <th>Run</th>
-            <th>Job</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Duration</th>
-            <th>Steps ok / failed</th>
-            <th>Materializations</th>
-          </tr>
-        </thead>
-        <tbody>
-          {runs.slice(0, TABLE_ROWS).map((run) => {
-            const stats = statsByRun?.get(run.runId) ?? null;
-            return (
-              <tr
-                key={run.runId}
-                className={clsx(styles.runRow, run.runId === selectedRunId && styles.selected)}
-                onClick={() => onSelect(run.runId)}
-              >
-                <td>
-                  <Link to={`/runs/${run.runId}`} onClick={(e) => e.stopPropagation()}>
-                    {run.runId.slice(0, 8)}
-                  </Link>
-                </td>
-                <td>{run.jobName}</td>
-                <td>
-                  <RunStatusTag status={run.status} />
-                </td>
-                <td>{new Date(run.creationTime * 1000).toLocaleString()}</td>
-                <td>{formatDuration(durationSec(run.startTime, run.endTime))}</td>
-                <td>
-                  {stats
-                    ? `${stats.stepsSucceeded} / ${stats.stepsFailed}`
-                    : statsByRun
-                      ? '—'
-                      : '…'}
-                </td>
-                <td>{stats ? stats.materializations : statsByRun ? '—' : '…'}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </Table>
-    </div>
-  </div>
-);
+  );
+};
 
 export const HILLPOINTE_RUN_METRICS_QUERY = gql`
   query HillpointeRunMetricsQuery($after: Float!, $limit: Int!) {
