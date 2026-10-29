@@ -38,6 +38,7 @@ from dagster_dbt.components.dbt_project.component import (
     _set_resolution_context,
     get_projects_from_dbt_component,
 )
+from dagster_dbt.dbt_project import DagsterDbtProjectPreparer
 from dagster_dbt.dbt_project_manager import DbtProjectArgsManager
 from dagster_dbt_tests.dbt_projects import test_metadata_path
 from dagster_dg_cli.cli import cli as dg_cli
@@ -672,6 +673,24 @@ def test_basic_component_dev_mode(tmp_dbt_path: Path) -> None:
 
             expected_key = "DbtProjectComponent[jaffle_shop]"
             assert expected_key in load_context.accessed_defs_state_info.info_mapping
+
+
+def test_install_deps_flows_from_component_args(dbt_path: Path) -> None:
+    """`install_deps` set in the component YAML must reach the preparer; the default stays on."""
+    with patch.object(DagsterDbtProjectPreparer, "_prepare_packages") as mock_deps:
+        (dbt_path / "packages.yml").write_text("packages: []\n", encoding="utf-8")
+
+        manager = DbtProjectArgsManager(
+            DbtProjectArgs(project_dir=str(dbt_path), install_deps=False)
+        )
+        project = manager.get_project(None)
+        project.preparer.prepare(project)
+        mock_deps.assert_not_called()
+
+        manager = DbtProjectArgsManager(DbtProjectArgs(project_dir=str(dbt_path)))
+        project = manager.get_project(None)
+        project.preparer.prepare(project)
+        mock_deps.assert_called_once()
 
 
 def test_prepare_does_not_recurse_when_state_nested_in_project_dir() -> None:
