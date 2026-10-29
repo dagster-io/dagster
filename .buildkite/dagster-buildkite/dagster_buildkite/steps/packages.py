@@ -556,6 +556,10 @@ def _library_packages_with_custom_config(ctx: BuildkiteContext) -> list[PackageS
                     "general_tests_old_protobuf",
                     resources=ResourceRequests(cpu="2000m", memory="4Gi"),
                 ),
+                ToxFactor(
+                    "general_tests_protobuf_6",
+                    resources=ResourceRequests(cpu="2000m", memory="4Gi"),
+                ),
                 ToxFactor("launcher_tests"),
                 ToxFactor("logging_tests"),
                 ToxFactor("model_tests"),
