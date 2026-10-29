@@ -110,6 +110,22 @@ my_dbt_project = DbtProject(
 
 This is useful when you need access to compiled SQL in asset metadata, descriptions, or custom translators.
 
+### Skipping dbt package installation
+
+Preparation runs `dbt deps` whenever your project declares packages in `packages.yml` or `dependencies.yml`. If you install packages yourself, for example because `dbt deps` must run behind a proxy that is unavailable when Dagster starts, pass `install_deps=False` to skip this step. Dagster then runs `dbt parse` against the packages already present in your `dbt_packages` directory:
+
+```python
+from pathlib import Path
+from dagster_dbt import DbtProject
+
+my_dbt_project = DbtProject(
+    project_dir=Path("path/to/dbt_project"),
+    install_deps=False,
+)
+```
+
+This applies everywhere the project is prepared: `prepare_if_dev()`, `dagster-dbt project prepare-and-package`, and `DbtProjectComponent`.
+
 ## Selecting a profiles directory, profile and target for your dbt project
 
 You can specify which connection information dbt should use when parsing and executing your models. This can be done by passing the profiles directory, profile and target when creating your <PyObject section="libraries" integration="dbt" object="DbtProject" module="dagster_dbt" /> object. These fields are optional - the default values defined in your dbt project will be used for each parameter that is not passed.

@@ -10,6 +10,7 @@ attributes:
     state_path: "example_string"
     prepare_project_cli_args:
       - "example_string"
+    install_deps: true
   cli_args:
     -
       key: "value"
