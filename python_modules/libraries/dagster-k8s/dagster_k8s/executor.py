@@ -1,5 +1,6 @@
 import os
-from collections.abc import Iterator
+from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
 from typing import cast
 
 import kubernetes.config
@@ -31,6 +32,7 @@ from dagster._core.executor.step_delegating import (
 )
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import merge_dicts
+from kubernetes.client.models import V1JobStatus
 
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
@@ -44,7 +46,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.launcher import K8sRunLauncher
-from dagster_k8s.utils import get_deployment_id_label
+from dagster_k8s.utils import get_deployment_id_label, sanitize_k8s_label
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),
@@ -395,6 +397,52 @@ class K8sStepHandler(StepHandler):
             namespace=container_context.namespace,
             job_name=job_name,
         )
+        return self._step_health_from_job_status(step_key, job_name, status)
+
+    def check_step_health_batch(
+        self, step_handler_contexts: Sequence[StepHandlerContext]
+    ) -> Mapping[str, CheckStepHealthResult]:
+        """Check all running steps of the run with one paginated Job LIST per namespace, selected
+        by the run ID label, instead of one Job GET per step.
+
+        Steps whose Job is not in the list (just created, or labels overridden by user config)
+        are left out so the executor checks them individually.
+        """
+        if len(step_handler_contexts) < 2:
+            return {}
+
+        run_ids = {context.execute_step_args.run_id for context in step_handler_contexts}
+        check.invariant(len(run_ids) == 1, f"Expected steps from a single run, got {run_ids}")
+        run_id = next(iter(run_ids))
+
+        job_names_by_namespace: dict[str, dict[str, str]] = defaultdict(dict)
+        for step_handler_context in step_handler_contexts:
+            namespace = check.not_none(self._get_container_context(step_handler_context).namespace)
+            step_key = self._get_step_key(step_handler_context)
+            job_names_by_namespace[namespace][step_key] = self._get_k8s_step_job_name(
+                step_handler_context
+            )
+
+        results: dict[str, CheckStepHealthResult] = {}
+        for namespace, job_names_by_step_key in job_names_by_namespace.items():
+            statuses = self._api_client.list_job_statuses(
+                namespace=namespace,
+                label_selector=(
+                    "app.kubernetes.io/component=step_worker,"
+                    f"dagster/run-id={sanitize_k8s_label(run_id)}"
+                ),
+            )
+            for step_key, job_name in job_names_by_step_key.items():
+                status = statuses.get(job_name)
+                if status is not None:
+                    results[step_key] = self._step_health_from_job_status(
+                        step_key, job_name, status
+                    )
+        return results
+
+    def _step_health_from_job_status(
+        self, step_key: str, job_name: str, status: V1JobStatus | None
+    ) -> CheckStepHealthResult:
         if not status:
             return CheckStepHealthResult.unhealthy(
                 reason=f"Kubernetes job {job_name} for step {step_key} could not be found."

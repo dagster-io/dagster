@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
@@ -99,6 +100,17 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError(
             "This run launcher does not support run monitoring. Please disable it on your instance."
         )
+
+    def check_run_worker_health_batch(
+        self, runs: Sequence[DagsterRun]
+    ) -> Mapping[str, CheckRunHealthResult]:
+        """Check the health of several run workers, keyed by run ID.
+
+        Run launchers can override this to check several runs with fewer API calls. Runs missing
+        from the result are checked individually with check_run_worker_health, so an override
+        may return only the results it can determine cheaply. The default returns no results.
+        """
+        return {}
 
     def get_run_worker_debug_info(
         self, run: DagsterRun, include_container_logs: bool | None = True
