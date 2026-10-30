@@ -5,7 +5,9 @@ import random
 import string
 import sys
 import time
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 from typing import cast
 from unittest import mock
@@ -4759,3 +4761,149 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
         AssetKeyPartitionKey(partially_failing_ranged_asset.key, pk) for pk in partition_keys[:-1]
     }
     assert failed == {AssetKeyPartitionKey(partially_failing_ranged_asset.key, partition_keys[-1])}
+
+
+@contextmanager
+def _queued_instance_and_workspace(
+    tmp_path: Path, max_queued_runs: int
+) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext]]:
+    """Runs submitted by backfills stay QUEUED: no run coordinator daemon dequeues them."""
+    with dg.instance_for_test(
+        overrides={
+            "event_log_storage": {
+                "module": "dagster._core.storage.event_log",
+                "class": "ConsolidatedSqliteEventLogStorage",
+                "config": {"base_dir": str(tmp_path)},
+            },
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator.queued_run_coordinator",
+                "class": "QueuedRunCoordinator",
+            },
+            "backfills": {"max_queued_runs": max_queued_runs},
+        }
+    ) as instance:
+        with create_test_daemon_workspace_context(
+            workspace_load_target=ModuleTarget(
+                module_name="dagster_tests.daemon_tests.test_backfill",
+                attribute="the_repo",
+                working_directory=os.path.join(os.path.dirname(__file__), "..", ".."),
+                location_name="test_location",
+            ),
+            instance=instance,
+        ) as workspace_context:
+            yield instance, workspace_context
+
+
+def _dequeue_all_runs(instance: DagsterInstance) -> None:
+    for run in instance.get_runs(RunsFilter(statuses=[DagsterRunStatus.QUEUED])):
+        instance.report_run_canceling(run)
+        instance.report_run_canceled(run)
+
+
+def test_job_backfill_max_queued_runs(tmp_path: Path):
+    with _queued_instance_and_workspace(tmp_path, max_queued_runs=2) as (
+        instance,
+        workspace_context,
+    ):
+        remote_repo = check.not_none(
+            next(
+                iter(
+                    workspace_context.create_request_context().get_code_location_entries().values()
+                )
+            ).code_location
+        ).get_repository("the_repo")
+        partition_set = remote_repo.get_partition_set("the_job_partition_set")
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="simple",
+                partition_set_origin=partition_set.get_remote_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["one", "two", "three"],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=get_current_timestamp(),
+            )
+        )
+        logger = get_default_daemon_logger("BackfillDaemon")
+
+        list(execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 2
+        assert {run.tags[PARTITION_NAME_TAG] for run in instance.get_runs()} == {"one", "two"}
+
+        # Still at the limit: nothing more is submitted.
+        list(execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 2
+        backfill = check.not_none(instance.get_backfill("simple"))
+        assert backfill.status == BulkActionStatus.REQUESTED
+
+        _dequeue_all_runs(instance)
+        list(execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 3
+        assert {run.tags[PARTITION_NAME_TAG] for run in instance.get_runs()} == {
+            "one",
+            "two",
+            "three",
+        }
+
+
+def test_asset_backfill_max_queued_runs(tmp_path: Path):
+    num_partitions = 5
+    with _queued_instance_and_workspace(tmp_path, max_queued_runs=2) as (
+        instance,
+        workspace_context,
+    ):
+        asset_graph = workspace_context.create_request_context().asset_graph
+        target_partitions = daily_partitions_def.get_partition_keys()[:num_partitions]
+        instance.add_backfill(
+            PartitionBackfill.from_asset_partitions(
+                asset_graph=asset_graph,
+                backfill_id="asset_backfill",
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+                asset_selection=[dg.AssetKey("daily_1")],
+                partition_names=target_partitions,
+                dynamic_partitions_store=instance,
+                all_partitions=False,
+                title=None,
+                description=None,
+                run_config=None,
+            )
+        )
+        logger = get_default_daemon_logger("BackfillDaemon")
+
+        assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 2
+        backfill = check.not_none(instance.get_backfill("asset_backfill"))
+        assert backfill.status == BulkActionStatus.REQUESTED
+        assert len(backfill.submitting_run_requests) == num_partitions - 2
+
+        # Still at the limit: nothing more is submitted.
+        assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 2
+
+        submitted_counts = []
+        while instance.get_runs_count() < num_partitions:
+            _dequeue_all_runs(instance)
+            assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+            submitted_counts.append(instance.get_runs_count())
+        assert submitted_counts == [4, 5]
+
+        backfill = check.not_none(instance.get_backfill("asset_backfill"))
+        assert not backfill.submitting_run_requests
+        assert (
+            backfill.get_asset_backfill_data(asset_graph)
+            .requested_subset.get_partitions_subset(dg.AssetKey("daily_1"))
+            .get_partition_keys()
+            == target_partitions
+        )
+        partition_keys = sorted(run.tags[PARTITION_NAME_TAG] for run in instance.get_runs())
+        assert partition_keys == sorted(target_partitions)
+
+
+@pytest.mark.parametrize("max_queued_runs", [0, -1])
+def test_backfill_daemon_rejects_non_positive_max_queued_runs(max_queued_runs: int):
+    from dagster._daemon.daemon import BackfillDaemon
+
+    with pytest.raises(dg.DagsterInvariantViolationError, match="max_queued_runs must be positive"):
+        BackfillDaemon(settings={"max_queued_runs": max_queued_runs})

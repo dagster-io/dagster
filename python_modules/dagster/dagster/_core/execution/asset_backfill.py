@@ -743,7 +743,12 @@ async def _submit_runs_and_update_backfill_in_chunks(
     asset_backfill_iteration_result: AssetBackfillIterationResult,
     logger: logging.Logger,
     run_tags: Mapping[str, str],
+    max_runs_to_submit: int | None = None,
 ) -> None:
+    """Submits the iteration's run requests, or the first max_runs_to_submit of them. Run
+    requests that are not submitted stay in the backfill's submitting_run_requests and are
+    submitted by later iterations.
+    """
     from dagster._core.execution.backfill import BulkActionStatus
     from dagster._daemon.utils import DaemonErrorCapture
 
@@ -766,7 +771,10 @@ async def _submit_runs_and_update_backfill_in_chunks(
 
     chunk_size = get_asset_backfill_run_chunk_size()
 
-    for run_request_idx, run_request in enumerate(run_requests):
+    run_requests_to_submit = (
+        run_requests if max_runs_to_submit is None else run_requests[:max_runs_to_submit]
+    )
+    for run_request_idx, run_request in enumerate(run_requests_to_submit):
         run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
         try:
             # create a new request context for each run in case the code location server
@@ -817,7 +825,7 @@ async def _submit_runs_and_update_backfill_in_chunks(
 
         # After each chunk or on the final request, write the updated backfill data
         # and check to make sure we weren't interrupted
-        if (num_submitted % chunk_size == 0) or num_submitted == len(run_requests):
+        if (num_submitted % chunk_size == 0) or num_submitted == len(run_requests_to_submit):
             backfill = _write_updated_backfill_data(
                 instance,
                 backfill_id,
@@ -1032,7 +1040,12 @@ async def execute_asset_backfill_iteration(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import (
+        BulkActionStatus,
+        PartitionBackfill,
+        get_backfill_max_queued_runs,
+        get_backfill_queued_run_capacity,
+    )
 
     logger.info(f"Evaluating asset backfill {backfill.backfill_id}")
 
@@ -1073,11 +1086,19 @@ async def execute_asset_backfill_iteration(
         logger.info(
             f"Assets targeted by backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
         )
+        max_queued_runs = get_backfill_max_queued_runs(instance)
         if backfill.submitting_run_requests:
-            # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
-            logger.warn(
-                f"Resuming previous backfill iteration and re-submitting {len(backfill.submitting_run_requests)} runs."
-            )
+            # interrupted in the middle of executing run requests, or held back by
+            # max_queued_runs - re-construct the in-progress iteration result
+            if max_queued_runs is None:
+                logger.warning(
+                    f"Resuming previous backfill iteration and re-submitting {len(backfill.submitting_run_requests)} runs."
+                )
+            else:
+                logger.info(
+                    f"Continuing to submit {len(backfill.submitting_run_requests)} pending runs"
+                    f" (max_queued_runs={max_queued_runs})."
+                )
             result = AssetBackfillIterationResult(
                 run_requests=backfill.submitting_run_requests,
                 backfill_data=previous_asset_backfill_data,
@@ -1126,12 +1147,27 @@ async def execute_asset_backfill_iteration(
                 result,
                 logger,
                 run_tags=updated_backfill.tags,
+                max_runs_to_submit=(
+                    None
+                    if max_queued_runs is None
+                    else get_backfill_queued_run_capacity(
+                        instance, updated_backfill.backfill_id, max_queued_runs
+                    )
+                ),
             )
 
         updated_backfill = cast(
             "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
         )
         if updated_backfill.status == BulkActionStatus.REQUESTED:
+            if max_queued_runs is not None and updated_backfill.submitting_run_requests:
+                # Completion can't be evaluated until the pending run requests are submitted.
+                logger.info(
+                    f"Backfill {updated_backfill.backfill_id} has {max_queued_runs} or more"
+                    f" queued runs. {len(updated_backfill.submitting_run_requests)} runs will be"
+                    " submitted once queued runs are dequeued."
+                )
+                return
             check.invariant(
                 not updated_backfill.submitting_run_requests,
                 "All run requests should have been submitted",

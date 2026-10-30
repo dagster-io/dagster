@@ -13,6 +13,8 @@ from dagster._core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,
     cancel_backfill_runs_and_cancellation_complete,
+    get_backfill_max_queued_runs,
+    get_backfill_queued_run_capacity,
 )
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
@@ -99,16 +101,32 @@ def execute_job_backfill_iteration(
         return
 
     partition_set = _get_partition_set(workspace_process_context, backfill)
+    max_queued_runs = get_backfill_max_queued_runs(instance)
     has_more = True
     while has_more:
         if backfill.status != BulkActionStatus.REQUESTED:
             break
 
+        chunk_size = CHECKPOINT_COUNT
+        if max_queued_runs is not None:
+            capacity = get_backfill_queued_run_capacity(
+                instance, backfill.backfill_id, max_queued_runs
+            )
+            if capacity == 0:
+                # The checkpoint of the last submitted chunk is already saved, so the next
+                # iteration resumes from there.
+                logger.info(
+                    f"Backfill {backfill.backfill_id} has {max_queued_runs} or more queued runs."
+                    " Waiting for queued runs to be dequeued before submitting more."
+                )
+                return
+            chunk_size = min(chunk_size, capacity)
+
         chunk, checkpoint, has_more = _get_partitions_chunk(
             instance,
             logger,
             backfill,
-            CHECKPOINT_COUNT,
+            chunk_size,
             partition_set,
         )
         check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
