@@ -1,5 +1,5 @@
 import {useAugmentSearchResults} from '@shared/search/useAugmentSearchResults';
-import {useCallback, useContext, useEffect, useMemo, useRef} from 'react';
+import {useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 
 import {buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -276,16 +276,13 @@ type IndexBuffer = {
 };
 
 /**
- * Perform global search populated by two lazy queries, to be initialized upon some
- * interaction with the search input. Each query result list is packaged and sent to a worker
- * thread, where we use Fuse.js to respond to querystring searches with matching results.
+ * Perform global search over two indexes, each held by a Fuse.js worker thread:
+ * - "primary": jobs, schedules, sensors, etc. from WorkspaceContext
+ * - "secondary": assets from `useAllAssets`
  *
- * This is done in separate queries so that we can provide results quickly for objects
- * that are already most likely fetched in the app, via the "primary" query.
- *
- * Since the queries use our default fetchPolicy of `cache-and-network`, reopening search
- * will show cached results that can be searched, and the queries will be repeated.
- * When they are complete, the workers will be updated with the fresh data.
+ * Nothing is fetched or indexed until `initialize` is called (e.g. when search is first
+ * opened), since the hook is mounted on every page. After that, the indexes are kept in
+ * sync with the underlying data. Queries made before an index is ready are buffered.
  *
  * A `terminate` function is provided, but it's probably not necessary to use it.
  */
@@ -293,11 +290,14 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
+  const [initialized, setInitialized] = useState(false);
+  const initialize = useCallback(() => setInitialized(true), []);
+
   const augmentSearchResults = useAugmentSearchResults();
 
   const {locationEntries, loadingNonAssets} = useContext(WorkspaceContext);
 
-  const {assets: _assets, loading: assetsLoading} = useAllAssets();
+  const {assets: _assets, loading: assetsLoading} = useAllAssets({skip: !initialized});
   const {showAssetsWithoutDefinitions} = useShowAssetsWithoutDefinitions();
   const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
@@ -330,7 +330,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   );
 
   useEffect(() => {
-    if (loadingNonAssets) {
+    if (!initialized || loadingNonAssets) {
       return;
     }
     const results = primaryDataToSearchResults(
@@ -344,6 +344,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
   }, [
+    initialized,
     consumeBufferEffect,
     locationEntries,
     augmentSearchResults,
@@ -352,7 +353,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   ]);
 
   useEffect(() => {
-    if (assetsLoading) {
+    if (!initialized || assetsLoading) {
       return;
     }
 
@@ -363,7 +364,14 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
     }
     secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, assets, searchContext, augmentSearchResults, assetsLoading]);
+  }, [
+    initialized,
+    consumeBufferEffect,
+    assets,
+    searchContext,
+    augmentSearchResults,
+    assetsLoading,
+  ]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
@@ -429,6 +437,7 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   }, []);
 
   return {
+    initialize,
     loading: assetsLoading || loadingNonAssets,
     searchPrimary,
     searchSecondary,

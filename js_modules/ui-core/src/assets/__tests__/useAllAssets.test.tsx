@@ -14,7 +14,7 @@ import {
   buildUserAssetOwner,
   buildWorkspaceLocationEntry,
 } from '../../graphql/builders';
-import {buildQueryMock} from '../../testing/mocking';
+import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {cache as mockedCache} from '../../util/idb-lru-cache';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
@@ -143,6 +143,79 @@ describe('useAllAssets', () => {
     await waitFor(() => {
       expect(result.current.assets?.length).toBe(5);
     });
+  });
+
+  it('does not request asset records until skip is turned off', async () => {
+    const mock = createMock({nodes: [buildAssetRecord({id: 'asset-id-1'})], returnedCursor: null});
+    const mockResult = getMockResultFn(mock);
+
+    const {result, rerender} = renderHook(
+      ({skip}: {skip: boolean}) => useAllAssets({batchLimit: 2, skip}),
+      {
+        initialProps: {skip: true},
+        wrapper(props) {
+          return <MockedProvider mocks={[mock]}>{props.children}</MockedProvider>;
+        },
+      },
+    );
+
+    // Wait past the mock's delay so a request, if made, would have resolved.
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(mockResult).not.toHaveBeenCalled();
+    expect(result.current.assets).toEqual([]);
+
+    rerender({skip: false});
+
+    await waitFor(() => {
+      expect(result.current.assets?.length).toBe(1);
+    });
+    expect(mockResult).toHaveBeenCalledTimes(1);
+  });
+
+  it('resumes fetching when a subscriber returns after polling stopped', async () => {
+    const firstMock = createMock({
+      limit: 10,
+      nodes: [buildAssetRecord({id: 'asset-id-1'})],
+      returnedCursor: null,
+    });
+    const secondMock = createMock({
+      limit: 10,
+      nodes: [buildAssetRecord({id: 'asset-id-1'}), buildAssetRecord({id: 'asset-id-2'})],
+      returnedCursor: null,
+    });
+    const firstResult = getMockResultFn(firstMock);
+    const secondResult = getMockResultFn(secondMock);
+
+    const {result, rerender} = renderHook(
+      ({skip}: {skip: boolean}) => useAllAssets({batchLimit: 10, skip}),
+      {
+        initialProps: {skip: false},
+        wrapper(props) {
+          // Bypass the Apollo cache so the restarted fetch reaches the mocks.
+          return (
+            <MockedProvider
+              defaultOptions={{query: {fetchPolicy: 'network-only'}}}
+              mocks={[firstMock, secondMock]}
+            >
+              {props.children}
+            </MockedProvider>
+          );
+        },
+      },
+    );
+
+    // Unsubscribe while the first fetch is in flight, so it completes with no subscribers and
+    // schedules no further poll.
+    rerender({skip: true});
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(firstResult).toHaveBeenCalledTimes(1);
+
+    rerender({skip: false});
+
+    await waitFor(() => {
+      expect(result.current.assets?.length).toBe(2);
+    });
+    expect(secondResult).toHaveBeenCalledTimes(1);
   });
 
   it('dedupes SDAs that are defined in multiple locations and combines their definitions', async () => {

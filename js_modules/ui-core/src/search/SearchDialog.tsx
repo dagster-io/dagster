@@ -80,7 +80,7 @@ const sortResultsByFuseScore = (
 
 export const useSearchDialog = () => {
   const history = useHistory();
-  const {loading, searchPrimary, searchSecondary} = useGlobalSearch({
+  const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
     searchContext: 'global',
   });
   const trackEvent = useTrackEvent();
@@ -97,8 +97,9 @@ export const useSearchDialog = () => {
   const openSearch = React.useCallback(() => {
     trackEvent('open-global-search');
     trackEvent('searchOpen');
+    initialize();
     dispatch({type: 'show-dialog'});
-  }, [trackEvent]);
+  }, [initialize, trackEvent]);
 
   React.useEffect(() => {
     __updateSearchVisibility(shown);
