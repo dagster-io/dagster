@@ -5,7 +5,7 @@ import tempfile
 import textwrap
 from argparse import ArgumentParser
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Final  # noqa: UP035
 
@@ -37,6 +37,8 @@ from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.types.dagster_type import Nothing
 from dagster._record import ImportFrom, record
 from dagster_shared.record import replace
+from dagster_shared.utils.fs import rmtree
+from dagster_shared.yaml_utils import safe_load_yaml
 
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.metadata_set import DbtMetadataSet
@@ -67,6 +69,14 @@ DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 # Threshold for switching to selector file to avoid CLI argument length limits
 # https://github.com/dagster-io/dagster/issues/16997
 _SELECTION_ARGS_THRESHOLD: Final[int] = 200
+
+# Omitted everywhere in the ephemeral project copy. dbt_packages is kept: dbt needs
+# installed packages to parse the project and to build the selected resources.
+_EPHEMERAL_COPY_EXCLUDED_DIR_NAMES: Final[frozenset[str]] = frozenset(
+    {".git", ".venv", "venv", "__pycache__"}
+)
+_DEFAULT_DBT_TARGET_DIR: Final[str] = "target"
+_DEFAULT_DBT_LOG_DIR: Final[str] = "logs"
 
 
 def extract_runtime_selection_from_args(
@@ -127,6 +137,113 @@ def _parse_selection_args(
             i += 1
 
     return select_resources, exclude_resources
+
+
+def _relative_output_dir(path_value: object) -> Path | None:
+    """Project-relative output directory, if it stays inside the project.
+
+    Absolute paths and any path that climbs out with `..` are skipped. A nested
+    path such as `build/target` is kept whole so a sibling like `build/models`
+    is still copied.
+    """
+    if isinstance(path_value, Path):
+        path = path_value
+    elif isinstance(path_value, str):
+        path = Path(path_value)
+    else:
+        return None
+    if path.is_absolute():
+        return None
+    parts: list[str] = []
+    for part in path.parts:
+        if part in {"", "."}:
+            continue
+        if part == "..":
+            return None
+        parts.append(part)
+    if not parts:
+        return None
+    return Path(*parts)
+
+
+def _ephemeral_copy_excluded_dirs(project_dir: Path, dbt_project: DbtProject | None) -> set[Path]:
+    """Build-output directories, relative to the project root, that the temp copy skips.
+
+    Defaults match dbt (`target`, `logs`). `target-path` and `log-path` from
+    dbt_project.yml are honored when they are plain relative paths, and so is
+    `DbtProject.target_path` when it points at a directory inside the project.
+    The whole relative path is matched, not just its first component.
+    """
+    excluded = {Path(_DEFAULT_DBT_TARGET_DIR), Path(_DEFAULT_DBT_LOG_DIR)}
+    project_yml_path = project_dir / "dbt_project.yml"
+    if project_yml_path.exists():
+        try:
+            loaded = safe_load_yaml(project_yml_path.read_text(encoding="utf-8"))
+        except yaml.YAMLError:
+            loaded = None
+        if isinstance(loaded, dict):
+            for key in ("target-path", "log-path"):
+                output_dir = _relative_output_dir(loaded.get(key))
+                if output_dir is not None:
+                    excluded.add(output_dir)
+    if dbt_project is not None:
+        output_dir = _relative_output_dir(dbt_project.target_path)
+        if output_dir is not None:
+            excluded.add(output_dir)
+    return excluded
+
+
+def _ephemeral_project_copy_ignore(
+    project_dir: Path, dbt_project: DbtProject | None
+) -> Callable[[str, list[str]], set[str]]:
+    excluded_dirs = _ephemeral_copy_excluded_dirs(project_dir, dbt_project)
+    project_root = project_dir.resolve()
+
+    def _ignore(src_dir: str, names: list[str]) -> set[str]:
+        try:
+            relative_src = Path(src_dir).resolve().relative_to(project_root)
+        except ValueError:
+            relative_src = None
+
+        return {
+            name
+            for name in names
+            if name in _EPHEMERAL_COPY_EXCLUDED_DIR_NAMES
+            or (relative_src is not None and (relative_src / name) in excluded_dirs)
+        }
+
+    return _ignore
+
+
+def _copy_dbt_project_for_ephemeral_selector(
+    project_dir: Path, dbt_project: DbtProject | None
+) -> Path:
+    """Copy a dbt project so an ephemeral selectors.yml can be written next to its sources.
+
+    The copy skips build output (`target` / `logs`, or the paths configured on the
+    project) and local junk. Nested output paths are skipped only at that path,
+    so sources that share a parent directory are kept. The dbt invocation writes
+    artifacts to an explicit target path, so those directories are not needed in
+    the copy. Installed packages are copied because selection and materialization
+    both need them.
+    """
+    temp_project_dir = Path(tempfile.mkdtemp())
+    try:
+        shutil.copytree(
+            project_dir,
+            temp_project_dir,
+            dirs_exist_ok=True,
+            ignore=_ephemeral_project_copy_ignore(project_dir, dbt_project),
+        )
+    except BaseException:
+        shutil.rmtree(temp_project_dir, ignore_errors=True)
+        raise
+    return temp_project_dir
+
+
+def _remove_ephemeral_dbt_project(temp_project_dir: Path) -> None:
+    if temp_project_dir.exists():
+        rmtree(temp_project_dir)
 
 
 DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
@@ -495,6 +612,11 @@ class DbtCliInvocationPartialParams:
     selection_args: Sequence[str]
     indirect_selection: str | None
     dbt_project: DbtProject | None
+    # Set when a large selection runs against a temporary project copy.
+    temp_project_dir: Path | None = None
+    # Real project directory. Relative artifact paths are anchored here so they
+    # are not written inside the temporary copy.
+    artifact_project_dir: Path | None = None
 
 
 def get_updated_cli_invocation_params_for_context(
@@ -527,6 +649,8 @@ def get_updated_cli_invocation_params_for_context(
     indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
     dbt_project = None
     used_generated_selector = False
+    temp_project_dir: Path | None = None
+    artifact_project_dir: Path | None = None
     if context and assets_def is not None:
         manifest, dagster_dbt_translator, dbt_project = get_manifest_and_translator_from_dbt_assets(
             [assets_def]
@@ -550,57 +674,64 @@ def get_updated_cli_invocation_params_for_context(
         total_resources = len(select_resources or []) + len(exclude_resources or [])
 
         if select_resources and project_dir and total_resources > _SELECTION_ARGS_THRESHOLD:
-            temp_project_dir = tempfile.mkdtemp()
-            shutil.copytree(project_dir, temp_project_dir, dirs_exist_ok=True)
-            selectors_path = Path(temp_project_dir) / "selectors.yml"
+            temp_project_dir = _copy_dbt_project_for_ephemeral_selector(project_dir, dbt_project)
+            try:
+                selectors_path = temp_project_dir / "selectors.yml"
 
-            # Delete any existing selectors, we need to create our own
-            if selectors_path.exists():
-                selectors_path.unlink()
+                # Delete any existing selectors, we need to create our own
+                if selectors_path.exists():
+                    selectors_path.unlink()
 
-            selector_name = f"dagster_run_{context.run_id}"
-            # Build selector definition with union of selected resources
-            # and optional exclude section nested inside the union
-            # See: https://docs.getdbt.com/reference/node-selection/yaml-selectors
-            # Note: exclude must be nested inside the union array, not a sibling key
-            union_items: list[Any] = list(select_resources)
-            union_items.extend(runtime_selects)
-            effective_excludes: list[str] = list(exclude_resources) if exclude_resources else []
-            effective_excludes.extend(runtime_excludes)
-            if effective_excludes:
-                union_items.append({"exclude": effective_excludes})
+                selector_name = f"dagster_run_{context.run_id}"
+                # Build selector definition with union of selected resources
+                # and optional exclude section nested inside the union
+                # See: https://docs.getdbt.com/reference/node-selection/yaml-selectors
+                # Note: exclude must be nested inside the union array, not a sibling key
+                union_items: list[Any] = list(select_resources)
+                union_items.extend(runtime_selects)
+                effective_excludes: list[str] = list(exclude_resources) if exclude_resources else []
+                effective_excludes.extend(runtime_excludes)
+                if effective_excludes:
+                    union_items.append({"exclude": effective_excludes})
 
-            temp_selectors = {
-                "selectors": [
-                    {
-                        "name": selector_name,
-                        "definition": {"union": union_items},
-                    }
-                ]
-            }
-            selectors_path.write_text(yaml.safe_dump(temp_selectors))
-            logger.warning(
-                f"DBT selection of {total_resources} resources exceeds threshold of "
-                f"{_SELECTION_ARGS_THRESHOLD}. Executing materialization against temporary "
-                f"copy of DBT project at {temp_project_dir} with ephemeral selector "
-                f"{selector_name!r}. dbt silently ignores runtime --select/--exclude flags "
-                "alongside --selector; any --select/--exclude passed to dbt.cli() has been "
-                "folded into this selector. To skip running tests on dbt build, pass "
-                "--exclude resource_type:test to dbt.cli()."
-            )
-            if runtime_selects:
+                temp_selectors = {
+                    "selectors": [
+                        {
+                            "name": selector_name,
+                            "definition": {"union": union_items},
+                        }
+                    ]
+                }
+                selectors_path.write_text(yaml.safe_dump(temp_selectors))
                 logger.warning(
-                    f"Folded runtime --select {runtime_selects!r} into generated selector "
-                    f"{selector_name!r} and stripped these flags from the dbt CLI args."
+                    f"DBT selection of {total_resources} resources exceeds threshold of "
+                    f"{_SELECTION_ARGS_THRESHOLD}. Executing materialization against temporary "
+                    f"copy of DBT project at {temp_project_dir} with ephemeral selector "
+                    f"{selector_name!r}. dbt silently ignores runtime --select/--exclude flags "
+                    "alongside --selector; any --select/--exclude passed to dbt.cli() has been "
+                    "folded into this selector. To skip running tests on dbt build, pass "
+                    "--exclude resource_type:test to dbt.cli()."
                 )
-            if runtime_excludes:
-                logger.warning(
-                    f"Folded runtime --exclude {runtime_excludes!r} into generated selector "
-                    f"{selector_name!r} and stripped these flags from the dbt CLI args."
-                )
-            selection_args = ["--selector", selector_name]
-            target_project = replace(dbt_project, project_dir=Path(temp_project_dir))
-            used_generated_selector = True
+                if runtime_selects:
+                    logger.warning(
+                        f"Folded runtime --select {runtime_selects!r} into generated selector "
+                        f"{selector_name!r} and stripped these flags from the dbt CLI args."
+                    )
+                if runtime_excludes:
+                    logger.warning(
+                        f"Folded runtime --exclude {runtime_excludes!r} into generated selector "
+                        f"{selector_name!r} and stripped these flags from the dbt CLI args."
+                    )
+                selection_args = ["--selector", selector_name]
+                target_project = replace(dbt_project, project_dir=temp_project_dir)
+                used_generated_selector = True
+                # Anchor artifacts at the real project. The copy is deleted when the
+                # invocation finishes, and DBT_TARGET_PATH / DBT_LOG_PATH point here.
+                artifact_project_dir = project_dir
+            except BaseException:
+                _remove_ephemeral_dbt_project(temp_project_dir)
+                temp_project_dir = None
+                raise
 
         indirect_selection = (
             indirect_selection_override if indirect_selection_override else indirect_selection
@@ -626,6 +757,8 @@ def get_updated_cli_invocation_params_for_context(
         selection_args=selection_args,
         indirect_selection=indirect_selection,
         dbt_project=target_project,
+        temp_project_dir=temp_project_dir,
+        artifact_project_dir=artifact_project_dir,
     )
 
 
