@@ -45,6 +45,9 @@ class TestStepHandler(StepHandler):
     should_raise_on_health_check = False
     should_return_unhealthy = False
     unhealthy_reason = "Test unhealthy reason"
+    batch_health_results: dict[str, CheckStepHealthResult] | None = None
+    should_raise_on_batch_health_check = False
+    check_step_health_batch_calls: list[list[str]] = []
 
     @property
     def name(self):
@@ -72,6 +75,23 @@ class TestStepHandler(StepHandler):
             return CheckStepHealthResult.unhealthy(TestStepHandler.unhealthy_reason)
         return CheckStepHealthResult.healthy()
 
+    def check_step_health_batch(self, step_handler_contexts):
+        TestStepHandler.check_step_health_batch_calls.append(
+            [context.execute_step_args.step_keys_to_execute[0] for context in step_handler_contexts]
+        )
+        if TestStepHandler.should_raise_on_batch_health_check:
+            raise Exception("Test exception during batch health check")
+        if TestStepHandler.batch_health_results is None:
+            return {}
+        return {
+            context.execute_step_args.step_keys_to_execute[0]: TestStepHandler.batch_health_results[
+                context.execute_step_args.step_keys_to_execute[0]
+            ]
+            for context in step_handler_contexts
+            if context.execute_step_args.step_keys_to_execute[0]
+            in TestStepHandler.batch_health_results
+        }
+
     def terminate_step(self, step_handler_context):
         TestStepHandler.terminate_step_count += 1
         raise NotImplementedError()
@@ -86,6 +106,9 @@ class TestStepHandler(StepHandler):
         cls.should_raise_on_health_check = False
         cls.should_return_unhealthy = False
         cls.unhealthy_reason = "Test unhealthy reason"
+        cls.batch_health_results = None
+        cls.should_raise_on_batch_health_check = False
+        cls.check_step_health_batch_calls = []
 
     @classmethod
     def wait_for_processes(cls):
@@ -661,3 +684,52 @@ def test_check_step_health_unhealthy_fails_step():
         event for event in result.all_events if event.event_type == DagsterEventType.STEP_FAILURE
     ]
     assert len(failure_events) > 0, "Expected step failure events"
+
+
+def test_check_step_health_batch_skips_individual_checks():
+    TestStepHandler.reset()
+    TestStepHandler.batch_health_results = {
+        f"slow_op_{i}": CheckStepHealthResult.healthy() for i in range(3)
+    }
+
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(three_op_job),
+            instance=instance,
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert result.success
+    assert TestStepHandler.check_step_health_batch_calls
+    assert any(len(step_keys) == 3 for step_keys in TestStepHandler.check_step_health_batch_calls)
+    assert TestStepHandler.check_step_health_count == 0
+
+
+@pytest.mark.parametrize("batch_raises", [False, True])
+def test_check_step_health_batch_falls_back_to_individual_checks(batch_raises: bool):
+    """Steps missing from the batch result, or all steps if the batch raises, are checked
+    individually.
+    """
+    TestStepHandler.reset()
+    TestStepHandler.should_raise_on_batch_health_check = batch_raises
+    TestStepHandler.should_return_unhealthy = True
+    TestStepHandler.unhealthy_reason = "Step is unhealthy for test"
+
+    with dg.instance_for_test() as instance:
+        result = dg.execute_job(
+            dg.reconstructable(three_op_job),
+            instance=instance,
+            run_config={"execution": {"config": {"check_step_health_interval_seconds": 0}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert not result.success
+    assert TestStepHandler.check_step_health_count > 0
+    batch_error_events = [
+        event
+        for event in result.all_events
+        if event.event_type == DagsterEventType.ENGINE_EVENT
+        and "Error while checking step health in batch" in (event.message or "")
+    ]
+    assert bool(batch_error_events) == batch_raises

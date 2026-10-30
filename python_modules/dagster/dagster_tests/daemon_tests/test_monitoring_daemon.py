@@ -378,16 +378,21 @@ def test_monitoring_iteration_checks_started_runs_in_batch(
         assert check.not_none(instance.get_run_by_id(run_id)).status == DagsterRunStatus.STARTED
 
 
-def test_default_check_run_worker_health_batch(instance: DagsterInstance):
-    runs = [
-        create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED)
-        for _ in range(2)
-    ]
+def test_monitoring_iteration_checks_runs_missing_from_batch_individually(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    logger: Logger,
+):
+    # MockRunLauncher keeps the default check_run_worker_health_batch, which returns no results.
+    run_id = create_run_for_test(instance, job_name="foo", status=DagsterRunStatus.STARTED).run_id
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        results = instance.run_launcher.check_run_worker_health_batch(runs)
-    assert {run_id: result.status for run_id, result in results.items()} == {
-        run.run_id: WorkerStatus.RUNNING for run in runs
-    }
+        assert instance.run_launcher.check_run_worker_health_batch([]) == {}
+        list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert check.not_none(instance.get_run_by_id(run_id)).status == DagsterRunStatus.STARTED
+    assert cast("MockRunLauncher", instance.run_launcher).resume_run_calls == 0
+
+    list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert cast("MockRunLauncher", instance.run_launcher).resume_run_calls == 1
 
 
 @pytest.mark.parametrize(
