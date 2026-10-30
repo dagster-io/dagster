@@ -462,9 +462,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
                 )
             except Exception:
-                results[run.run_id] = CheckRunHealthResult(
-                    WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
-                )
+                # Left out so the caller checks it individually.
                 continue
             job_names_by_namespace[namespace].append((run, job_name))
 
