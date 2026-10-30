@@ -35,6 +35,9 @@ export interface AssetGraphFetchScope {
   skip?: boolean;
 }
 
+// A stable empty array, so getAllAssets' memo still hits when there are no external assets.
+const NO_EXTERNAL_ASSETS: NonNullable<AssetGraphFetchScope['externalAssets']> = [];
+
 export function useFullAssetGraphData(
   options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
 ) {
@@ -47,7 +50,9 @@ export function useFullAssetGraphData(
     () =>
       getAllAssets(
         assets,
-        showAssetsWithoutDefinitions ? (options.externalAssets ?? []) : [],
+        showAssetsWithoutDefinitions
+          ? (options.externalAssets ?? NO_EXTERNAL_ASSETS)
+          : NO_EXTERNAL_ASSETS,
         showStubAssets,
       ),
     [assets, showStubAssets, showAssetsWithoutDefinitions, options.externalAssets],
@@ -96,7 +101,9 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     () =>
       getAllAssets(
         assets,
-        showAssetsWithoutDefinitions ? (options.externalAssets ?? []) : [],
+        showAssetsWithoutDefinitions
+          ? (options.externalAssets ?? NO_EXTERNAL_ASSETS)
+          : NO_EXTERNAL_ASSETS,
         showStubAssets,
       ),
     [assets, options.externalAssets, showAssetsWithoutDefinitions, showStubAssets],
@@ -125,7 +132,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       });
     }
     if (hideNodesMatching) {
-      matching = reject(matching, hideNodesMatching);
+      matching = rejectNodesMatching(matching, hideNodesMatching);
     }
     return matching;
   }, [allNodes, pipelineSelector, groupSelector, hideNodesMatching]);
@@ -186,7 +193,16 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   };
 }
 
-const buildGraphQueryItems = (nodes: AssetNode[]) => {
+// Shared across hook instances so consumers given the same nodes and predicate get the same
+// arrays back, which lets downstream memos (eg: filterAssetSelectionByQuery) hit.
+const rejectNodesMatching = weakMapMemoize(
+  (nodes: WorkspaceAssetNode[], hideNodesMatching: (node: WorkspaceAssetNode) => boolean) => {
+    const matching = reject(nodes, hideNodesMatching);
+    return matching.length === nodes.length ? nodes : matching;
+  },
+);
+
+const buildGraphQueryItems = weakMapMemoize((nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
 
   for (const node of nodes) {
@@ -203,7 +219,7 @@ const buildGraphQueryItems = (nodes: AssetNode[]) => {
     };
   }
   return Object.values(items);
-};
+});
 
 export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: AssetKey) => {
   const map = new Map(items.map((g) => [g.name, g]));

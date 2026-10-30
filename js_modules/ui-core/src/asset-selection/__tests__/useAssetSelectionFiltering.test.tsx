@@ -9,28 +9,22 @@ import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 
 const mockTokenForAssetKeyNotMock = tokenForAssetKey;
 jest.mock('../util', () => ({
-  getAssetsByKey: jest.fn((assets) => {
-    const map = new Map();
-    assets.forEach((asset: {key?: {path: string[]}; assetKey?: {path: string[]}}) => {
-      const key = asset.key || asset.assetKey;
-      if (key) {
-        map.set(mockTokenForAssetKeyNotMock(key), asset);
-      }
-    });
-    return map;
-  }),
+  getAssetsByKey: jest.fn(
+    jest.requireActual('../../util/weakMapMemoize').weakMapMemoize((assets: any[]) => {
+      const map = new Map();
+      assets.forEach((asset: {key?: {path: string[]}; assetKey?: {path: string[]}}) => {
+        const key = asset.key || asset.assetKey;
+        if (key) {
+          map.set(mockTokenForAssetKeyNotMock(key), asset);
+        }
+      });
+      return map;
+    }),
+  ),
 }));
 
 jest.mock('../../asset-graph/useAssetGraphData', () => ({
   useAssetGraphData: jest.fn(),
-}));
-
-jest.mock('../../util/hashObject', () => ({
-  hashObject: jest.fn((obj) => JSON.stringify(obj)),
-}));
-
-jest.mock('../../util/weakMapMemoize', () => ({
-  weakMapMemoize: jest.fn((fn) => fn),
 }));
 
 const mockUseAssetGraphData = useAssetGraphData as jest.MockedFunction<typeof useAssetGraphData>;
@@ -370,6 +364,19 @@ describe('useAssetSelectionFiltering', () => {
       nonExistentNode as unknown as WorkspaceAssetNode,
     );
     expect(shouldHideNonExistent).toBe(true); // Should hide because asset doesn't exist in our list
+  });
+
+  it('passes the same hideNodesMatching to every instance filtering the same assets', () => {
+    const mockAssets = [createMockAsset(['asset1']), createMockAsset(['asset2'])];
+
+    mockUseAssetGraphData.mockReturnValue(createMockAssetGraphResponse([], false));
+
+    renderHook(() => useAssetSelectionFiltering({...defaultProps, assets: mockAssets}));
+    renderHook(() => useAssetSelectionFiltering({...defaultProps, assets: mockAssets}));
+
+    const [first, second] = mockUseAssetGraphData.mock.calls.map((call) => call[1]);
+    expect(first?.hideNodesMatching).toBeDefined();
+    expect(second?.hideNodesMatching).toBe(first?.hideNodesMatching);
   });
 
   it('memoizes external assets based on includeExternalAssets flag', () => {

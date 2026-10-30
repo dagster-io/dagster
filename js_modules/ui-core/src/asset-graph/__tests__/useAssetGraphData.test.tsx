@@ -1,7 +1,34 @@
+import {renderHook} from '@testing-library/react';
 import cloneDeep from 'lodash/cloneDeep';
 
 import {GraphQueryItem} from '../../app/GraphQueryImpl';
-import {calculateGraphDistances} from '../useAssetGraphData';
+import {WorkspaceAssetNode} from '../../assets/useAllAssets';
+import {buildAssetKey, buildAssetNode} from '../../graphql/builders';
+import {calculateGraphDistances, useAssetGraphData} from '../useAssetGraphData';
+
+const mockAssets = [
+  {definition: buildAssetNode({assetKey: buildAssetKey({path: ['a']}), dependencyKeys: []})},
+];
+let mockShowAssetsWithoutDefinitions = false;
+
+jest.mock('../../assets/useAllAssets', () => ({
+  useAllAssetsNodes: () => ({assets: mockAssets, loading: false}),
+}));
+
+jest.mock('../../app/UserSettingsDialog/useShowAssetsWithoutDefinitions', () => ({
+  useShowAssetsWithoutDefinitions: () => ({
+    showAssetsWithoutDefinitions: mockShowAssetsWithoutDefinitions,
+  }),
+}));
+
+jest.mock('../../app/UserSettingsDialog/useShowStubAssets', () => ({
+  useShowStubAssets: () => ({showStubAssets: false}),
+}));
+
+const mockSupplementaryData = {loading: false, data: {}};
+jest.mock('@shared/asset-graph/useAssetGraphSupplementaryData', () => ({
+  useAssetGraphSupplementaryData: () => mockSupplementaryData,
+}));
 
 const TEST_GRAPH: GraphQueryItem[] = [
   // Top Layer
@@ -114,4 +141,26 @@ describe('calculateGraphDistances', () => {
     expect(calculateGraphDistances(TEST_GRAPH, {path: ['asset']}).upstream).toEqual(0);
     expect(calculateGraphDistances(TEST_GRAPH, {path: ['asset']}).downstream).toEqual(0);
   });
+});
+
+describe('useAssetGraphData', () => {
+  const externalAssets = [{id: 'external', key: {path: ['external']}}];
+  const hideNodesMatching = (_node: WorkspaceAssetNode) => false;
+
+  it.each([
+    {name: 'without definitions hidden', showAssetsWithoutDefinitions: false, externalAssets},
+    {name: 'without definitions shown', showAssetsWithoutDefinitions: true, externalAssets},
+    {name: 'no external assets', showAssetsWithoutDefinitions: true, externalAssets: undefined},
+  ])(
+    'shares graph query items across instances with the same inputs ($name)',
+    ({showAssetsWithoutDefinitions, externalAssets}) => {
+      mockShowAssetsWithoutDefinitions = showAssetsWithoutDefinitions;
+      const {result} = renderHook(() => [
+        useAssetGraphData('*', {hideNodesMatching, externalAssets}),
+        useAssetGraphData('*', {hideNodesMatching, externalAssets}),
+      ]);
+      const [first, second] = result.current;
+      expect(second?.graphQueryItems).toBe(first?.graphQueryItems);
+    },
+  );
 });
