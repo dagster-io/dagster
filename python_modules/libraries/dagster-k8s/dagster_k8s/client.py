@@ -546,6 +546,7 @@ class DagsterKubernetesClient:
 
         Lists with resource_version="0", so the API server can answer from its watch cache
         instead of etcd. Results may be slightly stale, which is fine for periodic health checks.
+        Before Kubernetes 1.27, the watch cache ignores limit and returns every Job in one page.
         """
         statuses: dict[str, V1JobStatus] = {}
         continue_token = None
@@ -555,9 +556,10 @@ class DagsterKubernetesClient:
                 kwargs["_continue"] = continue_token
             else:
                 kwargs["resource_version"] = "0"
-                kwargs["resource_version_match"] = "NotOlderThan"
             job_list = k8s_api_retry(
-                lambda: self.batch_api.list_namespaced_job(namespace=namespace, **kwargs),
+                lambda kwargs=kwargs: self.batch_api.list_namespaced_job(
+                    namespace=namespace, **kwargs
+                ),
                 max_retries=3,
                 timeout=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
             )
