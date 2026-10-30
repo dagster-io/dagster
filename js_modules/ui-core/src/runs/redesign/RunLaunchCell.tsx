@@ -1,4 +1,14 @@
-import {ButtonLink, Colors, Icon, IconName, MiddleTruncate, Tag} from '@dagster-io/ui-components';
+import {
+  ButtonLink,
+  Colors,
+  Icon,
+  IconName,
+  MiddleTruncate,
+  Tag,
+  Tooltip,
+} from '@dagster-io/ui-components';
+import clsx from 'clsx';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {RunTargets} from './RunTargets';
@@ -8,10 +18,12 @@ import {Initiator, TickIdentifier, getLaunchDetails} from './getLaunchDetails';
 import {getPartitionLabel} from './getPartitionLabel';
 import {getRepoAddress} from './getRepoAddress';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
+import {canPinTag, usePinnedRunTags} from './usePinnedRunTags';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {PipelineTag} from '../../pipelines/PipelineReference';
 import {shortenId} from '../../util/shortenId';
 import {RepoAddress} from '../../workspace/types';
+import {DagsterTag} from '../RunTag';
 import {getBackfillPath} from '../RunsFeedUtils';
 
 type InitiatorDisplay = {
@@ -157,6 +169,41 @@ const ReexecutionTag = ({entry}: ReexecutionTagProps) => {
   );
 };
 
+type VisibleTagsProps = {
+  entry: MappedRunsFeedEntry;
+};
+
+const VisibleTags = ({entry}: VisibleTagsProps) => {
+  const {pinnedTagKeys} = usePinnedRunTags();
+  const visibleTags = useMemo(() => {
+    if (entry.__typename !== 'Run') {
+      return [];
+    }
+    return pinnedTagKeys
+      .filter(canPinTag)
+      .flatMap((key) => entry.tags.filter((tag) => tag.key === key));
+  }, [entry, pinnedTagKeys]);
+
+  return (
+    <>
+      {visibleTags.map(({key, value}, index) => {
+        const isSystemTag = key.startsWith(DagsterTag.Namespace);
+        const displayedKey = isSystemTag ? key.slice(DagsterTag.Namespace.length) : key;
+        return (
+          <Tooltip key={`${key}=${value}`} content={`${key}: ${value}`}>
+            <Tag
+              icon={isSystemTag ? 'dagster_solid' : undefined}
+              className={clsx(styles.visibleTag, index === 0 && styles.firstVisibleTag)}
+            >
+              <MiddleTruncate text={`${displayedKey}: ${value}`} showTitle={false} />
+            </Tag>
+          </Tooltip>
+        );
+      })}
+    </>
+  );
+};
+
 type RunLaunchCellProps = {
   entry: MappedRunsFeedEntry;
   onOpenTickDetails: (tick: TickIdentifier, triggerElement: HTMLElement) => void;
@@ -190,6 +237,7 @@ export const RunLaunchCell = ({entry, onOpenTickDetails}: RunLaunchCellProps) =>
       <JobAndPartitionTags entry={entry} />
       <RunTargets entry={entry} />
       <ReexecutionTag entry={entry} />
+      <VisibleTags entry={entry} />
     </div>
   );
 };

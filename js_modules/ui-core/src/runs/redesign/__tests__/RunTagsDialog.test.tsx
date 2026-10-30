@@ -32,6 +32,10 @@ const findRow = async (key: string) =>
   within(await screen.findByRole('row', {name: new RegExp(`^${key} `)}));
 
 describe('RunTagsDialog', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('lists the tags sorted by key with the partition and run ID in the header', async () => {
     renderDialog(buildTaggedRun());
 
@@ -67,5 +71,40 @@ describe('RunTagsDialog', () => {
     expect(await navigator.clipboard.readText()).toBe(
       'dagster/partition: 2026-09-08\nenv: "prod: east"\nteam: data\n',
     );
+  });
+
+  it('shows a tag in rows and offers to hide it', async () => {
+    const user = userEvent.setup();
+    renderDialog(buildTaggedRun());
+
+    const row = await findRow('team');
+    await user.click(await row.findByRole('button', {name: 'Show tag in rows'}));
+
+    expect(await row.findByRole('button', {name: 'Hide tag from rows'})).toBeVisible();
+    expect(JSON.parse(window.localStorage.getItem('pinned-run-tags') ?? '[]')).toEqual(['team']);
+  });
+
+  it('hides a key pinned from another run', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('pinned-run-tags', JSON.stringify(['team', 'env']));
+    renderDialog(buildTaggedRun());
+
+    const row = await findRow('team');
+    await user.click(await row.findByRole('button', {name: 'Hide tag from rows'}));
+
+    expect(await row.findByRole('button', {name: 'Show tag in rows'})).toBeVisible();
+    expect(JSON.parse(window.localStorage.getItem('pinned-run-tags') ?? '[]')).toEqual(['env']);
+  });
+
+  it('disables the toggle for a tag the row already shows', async () => {
+    const user = userEvent.setup();
+    renderDialog(buildTaggedRun([tag(DagsterTag.ScheduleName, 'daily_etl_schedule')]));
+
+    const row = await findRow(DagsterTag.ScheduleName);
+    const toggle = await row.findByRole('button', {name: 'Show tag in rows'});
+    expect(toggle).toBeDisabled();
+
+    await user.hover(toggle);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Tag shown in rows automatically');
   });
 });

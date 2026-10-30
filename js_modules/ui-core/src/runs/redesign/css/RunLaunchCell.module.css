@@ -34,3 +34,13 @@
   font-family: var(--font-mono);
   font-variant-ligatures: none;
 }
+
+.visibleTag {
+  display: inline-flex;
+  max-width: 240px;
+}
+
+/* Sets the tags shown from the tags dialog apart from the row's own; adds to the cell gap. */
+.firstVisibleTag {
+  margin-left: 20px;
+}

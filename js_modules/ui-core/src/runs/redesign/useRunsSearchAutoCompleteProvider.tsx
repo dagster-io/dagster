@@ -304,8 +304,14 @@ export const useRunsSearchAutoCompleteProvider = () => {
       .forEach((query) => query.fetch());
   };
 
-  const useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'] = ({line, cursorIndex}) =>
-    useRunsSearchResults({line, cursorIndex, valuesByAttribute, tagKeys, loading});
+  const {useAutoComplete} = useMemo(
+    () =>
+      ({
+        useAutoComplete: ({line, cursorIndex}) =>
+          useRunsSearchResults({line, cursorIndex, valuesByAttribute, tagKeys, loading}),
+      }) satisfies Pick<SelectionAutoCompleteProvider, 'useAutoComplete'>,
+    [valuesByAttribute, tagKeys, loading],
+  );
 
   return {useAutoComplete, fetchSuggestions};
 };

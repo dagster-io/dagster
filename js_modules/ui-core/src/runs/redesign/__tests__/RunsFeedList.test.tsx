@@ -173,11 +173,12 @@ const renderList = ({entries, isLoading = false}: ListProps, mocks: MockedRespon
     </MemoryRouter>
   );
 
-  const {container, rerender} = render(wrap({entries, isLoading}));
+  const {container, rerender, unmount} = render(wrap({entries, isLoading}));
   return {
     list: container.querySelector('[aria-busy]'),
     refetch,
     rerenderList: (next: ListProps) => rerender(wrap(next)),
+    unmount,
   };
 };
 
@@ -195,11 +196,19 @@ const findIdLinks = () => screen.findAllByRole('link', {name: /^(Run|Backfill) /
 const findMenuButton = () => screen.findByRole('button', {name: 'Run actions'});
 
 const chooseMenuItem = async (user: ReturnType<typeof userEvent.setup>, text: string) => {
-  await user.click(await findMenuButton());
+  const [menuButton] = await screen.findAllByRole('button', {name: 'Run actions'});
+  if (!menuButton) {
+    throw new Error('No run menu button');
+  }
+  await user.click(menuButton);
   await user.click(await screen.findByRole('menuitem', {name: new RegExp(`${text}$`)}));
 };
 
 describe('RunsFeedList', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('renders a row for each entry, in order', async () => {
     const {list} = renderList({entries: [salesRun, inventoryRun, completedBackfill]});
 
@@ -394,6 +403,38 @@ describe('RunsFeedList', () => {
     const dialog = await screen.findByRole('dialog');
     expect(await within(dialog).findByRole('row', {name: /^team data/})).toBeVisible();
     expect(await within(dialog).findByText('data')).toBeVisible();
+  });
+
+  it("shows a tag key in rows with each run's value and keeps it across a fresh mount", async () => {
+    const user = userEvent.setup();
+    const dataRun = buildMenuRun({tags: [tag('team', 'data')]});
+    const otherDataRun = runEntry({id: SALES_RUN_ID, tags: [tag('team', 'data')]});
+    const mlRun = runEntry({id: INVENTORY_RUN_ID, tags: [tag('team', 'ml')]});
+    const entries = [dataRun, otherDataRun, mlRun];
+    const mocks = [buildMenuQueryMock(), buildMenuQueryMock()];
+    const {unmount} = renderList({entries}, mocks);
+
+    expect(screen.queryByText('team: data')).not.toBeInTheDocument();
+
+    await chooseMenuItem(user, 'View all tags');
+    const dialog = await screen.findByRole('dialog');
+    await user.click(await within(dialog).findByRole('button', {name: 'Show tag in rows'}));
+    await user.click(await within(dialog).findByRole('button', {name: 'Close'}));
+
+    expect(await screen.findAllByText('team: data')).toHaveLength(2);
+    expect(await screen.findByText('team: ml')).toBeVisible();
+
+    unmount();
+    renderList({entries}, mocks);
+    expect(await screen.findAllByText('team: data')).toHaveLength(2);
+    expect(await screen.findByText('team: ml')).toBeVisible();
+
+    await chooseMenuItem(user, 'View all tags');
+    const reopened = await screen.findByRole('dialog');
+    await user.click(await within(reopened).findByRole('button', {name: 'Hide tag from rows'}));
+    await user.click(await within(reopened).findByRole('button', {name: 'Close'}));
+
+    await waitFor(() => expect(screen.queryByText(/^team: /)).not.toBeInTheDocument());
   });
 
   it('returns focus to the run menu button when a dialog opened from it closes', async () => {
