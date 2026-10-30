@@ -16,6 +16,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import ExitStack, contextmanager, nullcontext, redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from io import StringIO
+from itertools import zip_longest
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Literal, TextIO, TypeAlias, Union
@@ -800,11 +801,16 @@ def fixed_panel_width(width: int = 80) -> Iterator[None]:
 def match_terminal_box_output(output: str, expected_output: str):
     standardized_output = standardize_box_characters(output)
     standardized_expected_output = standardize_box_characters(expected_output)
-    standardized_output_lines = standardized_output.split("\n")
-    standardized_expected_output_lines = standardized_expected_output.split("\n")
-    for i in range(len(standardized_output_lines)):
-        output_line = standardized_output_lines[i].strip()
-        expected_output_line = standardized_expected_output_lines[i].strip()
+    standardized_output_lines = [line.strip() for line in standardized_output.split("\n")]
+    standardized_expected_output_lines = [
+        line.strip() for line in standardized_expected_output.split("\n")
+    ]
+    # zip_longest so that missing or extra lines fail instead of being silently skipped.
+    for i, (output_line, expected_output_line) in enumerate(
+        zip_longest(
+            standardized_output_lines, standardized_expected_output_lines, fillvalue="<missing>"
+        )
+    ):
         assert output_line == expected_output_line, (
             f"Line {i} of output does not match expected output.\n"
             f"Output  : {output_line}\n"

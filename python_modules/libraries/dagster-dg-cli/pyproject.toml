@@ -15,7 +15,8 @@ dependencies = [
     "dagster-rest-resources==1!0+dev",
     "dagster==1!0+dev",
     "requests",
-    "typer",
+    # typer 0.26 vendors its own click fork, which breaks our click-based help rendering.
+    "typer<0.26",
 ]
 
 [project.urls]
