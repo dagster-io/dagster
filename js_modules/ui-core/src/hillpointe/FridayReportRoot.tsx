@@ -57,11 +57,16 @@ const etDate = new Intl.DateTimeFormat('en-US', {
   year: 'numeric',
 });
 
-/** Start of the latest Saturday 00:00 UTC window that has begun, `weeksBack` weeks earlier. */
+/**
+ * Start of this week's window (Saturday 00:00 UTC of the current Monday–Sunday
+ * week), `weeksBack` weeks earlier. During the week that is the coming Friday
+ * night, so the page shows every step as missing until tonight's batch runs.
+ */
 const windowStart = (weeksBack: number) => {
   const d = new Date();
   d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7));
+  const isoWeekday = ((d.getUTCDay() + 6) % 7) + 1;
+  d.setUTCDate(d.getUTCDate() - isoWeekday + 6);
   return new Date(d.getTime() - weeksBack * WEEK_MS);
 };
 
