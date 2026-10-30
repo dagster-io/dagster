@@ -1,5 +1,5 @@
 import {useAugmentSearchResults} from '@shared/search/useAugmentSearchResults';
-import {useCallback, useContext, useEffect, useRef} from 'react';
+import {useCallback, useContext, useEffect, useMemo, useRef} from 'react';
 
 import {buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -302,15 +302,20 @@ export const useGlobalSearch = ({searchContext}: {searchContext: 'global' | 'cat
   const {flagAssetGraphGroupsPerCodeLocation} = useFeatureFlags();
 
   const {showStubAssets} = useShowStubAssets();
-  const assets = _assets.filter((asset) => {
-    if (!showStubAssets && asset.definition?.isAutoCreatedStub) {
-      return false;
-    }
-    if (!showAssetsWithoutDefinitions && !asset.definition) {
-      return false;
-    }
-    return true;
-  });
+  // Memoized because `assets` drives the effect that re-posts every asset to the search worker.
+  const assets = useMemo(
+    () =>
+      _assets.filter((asset) => {
+        if (!showStubAssets && asset.definition?.isAutoCreatedStub) {
+          return false;
+        }
+        if (!showAssetsWithoutDefinitions && !asset.definition) {
+          return false;
+        }
+        return true;
+      }),
+    [_assets, showStubAssets, showAssetsWithoutDefinitions],
+  );
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
