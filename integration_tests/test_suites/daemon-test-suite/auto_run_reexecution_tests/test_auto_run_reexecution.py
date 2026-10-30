@@ -27,7 +27,12 @@ from dagster._core.storage.tags import (
     ROOT_RUN_ID_TAG,
     WILL_RETRY_TAG,
 )
-from dagster._core.test_utils import MockedRunCoordinator, create_run_for_test, instance_for_test
+from dagster._core.test_utils import (
+    MockedRunCoordinator,
+    create_run_for_test,
+    freeze_time,
+    instance_for_test,
+)
 from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
     filter_runs_to_should_retry,
@@ -35,6 +40,7 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     should_retry,
 )
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+from dagster._time import get_current_timestamp
 
 from auto_run_reexecution_tests.utils import bar_repo, foo, get_bar_repo_handle, get_foo_job_handle
 
@@ -832,6 +838,51 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_re
     run = instance.get_run_by_id(run.run_id)
     assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == second_retry.run_id
     assert second_retry.run_id == first_retry.run_id
+
+
+def test_daemon_retries_run_when_failure_event_is_read_before_run_status_update(
+    instance, workspace_context
+):
+    """The run worker stores the RUN_FAILURE event before it updates the run status to FAILURE and
+    adds the WILL_RETRY_TAG. If the daemon reads the event in between, it must not skip the run.
+    """
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    daemon = EventLogConsumerDaemon()
+    list(daemon.run_iteration(workspace_context))  # initialize the cursors
+
+    # freeze time so that the max wait for the run status is never exceeded, even on slow workers
+    with freeze_time(get_current_timestamp()):
+        run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+            job_name="foo",
+            message="",
+        )
+        event_record = EventLogEntry(
+            user_message="",
+            level=logging.ERROR,
+            job_name="foo",
+            run_id=run.run_id,
+            error_info=None,
+            timestamp=get_current_timestamp(),
+            dagster_event=dagster_event,
+        )
+
+        # the run worker has stored the event, but not yet updated the run status or added the tag
+        instance.event_log_storage.store_event(event_record)
+        list(daemon.run_iteration(workspace_context))
+        assert len(instance.run_coordinator.queue()) == 0
+
+        # the run worker finishes handling the event
+        instance.handle_run_event(run.run_id, dagster_event)
+        instance.add_run_tags(run.run_id, {WILL_RETRY_TAG: "true"})
+
+        list(daemon.run_iteration(workspace_context))
+        assert len(instance.run_coordinator.queue()) == 1
+        retry_run = instance.run_coordinator.queue()[0]
+        assert retry_run.parent_run_id == run.run_id
+        assert retry_run.tags.get(RETRY_NUMBER_TAG) == "1"
 
 
 def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, workspace_context):
