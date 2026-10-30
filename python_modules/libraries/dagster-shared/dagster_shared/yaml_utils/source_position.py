@@ -40,7 +40,7 @@ class SourcePositionTree(NamedTuple):
     children: Mapping[KeyPathSegment, "SourcePositionTree"]
 
     def __hash__(self) -> int:
-        return hash((self.position, tuple(sorted(self.children.items()))))
+        return hash((self.position, frozenset(self.children.items())))
 
     def lookup(self, key_path: KeyPath) -> SourcePosition | None:
         """Returns the source position of the descendant at the given path."""
