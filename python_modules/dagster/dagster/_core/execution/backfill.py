@@ -26,10 +26,12 @@ from dagster._core.remote_representation.external_data import job_name_for_parti
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,
+    DagsterRun,
     DagsterRunStatus,
     RunsFilter,
 )
 from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
+from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -39,6 +41,10 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
 CANCELABLE_RUNS_BATCH_SIZE = int(os.getenv("DAGSTER_BACKFILL_CANCEL_RUNS_BATCH_SIZE", "500"))
+# Number of runs canceled concurrently. Each cancellation writes run events and, for started
+# runs, calls the run launcher (for example to delete a Kubernetes Job), so canceling a large
+# backfill one run at a time can take a long time.
+CANCEL_RUNS_MAX_WORKERS = int(os.getenv("DAGSTER_BACKFILL_CANCEL_RUNS_MAX_WORKERS", "1"))
 
 
 @whitelist_for_serdes
@@ -545,6 +551,37 @@ class PartitionBackfill(
         )
 
 
+def _cancel_runs(
+    instance: "DagsterInstance", runs: Sequence[DagsterRun], logger: logging.Logger
+) -> None:
+    """Cancels queued runs and terminates started runs, using up to CANCEL_RUNS_MAX_WORKERS
+    threads. Either way the run status is synchronously set to CANCELING or CANCELED, so the run
+    is not returned as cancelable again.
+    """
+
+    def _cancel(run: DagsterRun) -> None:
+        if run.status == DagsterRunStatus.QUEUED:
+            logger.info(f"Canceling queued run {run.run_id}")
+            instance.report_run_canceling(run, message="Canceling run from the queue.")
+            instance.report_run_canceled(run)
+        else:
+            logger.info(f"Terminating submitted run {run.run_id}")
+            instance.run_launcher.terminate(run.run_id)
+
+    if CANCEL_RUNS_MAX_WORKERS <= 1 or len(runs) <= 1:
+        for run in runs:
+            _cancel(run)
+        return
+
+    # As in the serial case, the first error is raised; the runs left cancelable are picked up by
+    # the next daemon iteration.
+    with InheritContextThreadPoolExecutor(
+        max_workers=min(CANCEL_RUNS_MAX_WORKERS, len(runs)),
+        thread_name_prefix="backfill_cancel_worker",
+    ) as executor:
+        list(executor.map(_cancel, runs))
+
+
 def cancel_backfill_runs_and_cancellation_complete(
     instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
 ) -> bool:
@@ -589,21 +626,7 @@ def cancel_backfill_runs_and_cancellation_complete(
                 break
 
         canceled_any_runs = True
-        for run in runs_to_cancel_in_iteration:
-            run_id = run.run_id
-            logger.info(f"Terminating submitted run {run_id}")
-
-            # in both cases this will synchonrously set its status to CANCELING or CANCELED,
-            # ensuring that it will not be returned in the next loop
-
-            if run.status == DagsterRunStatus.QUEUED:
-                instance.report_run_canceling(
-                    run,
-                    message="Canceling run from the queue.",
-                )
-                instance.report_run_canceled(run)
-            else:
-                instance.run_launcher.terminate(run_id)
+        _cancel_runs(instance, runs_to_cancel_in_iteration, logger)
 
     if canceled_any_runs:
         # since we are canceling some runs in this iteration, we know that there is more work to do.
