@@ -19,7 +19,10 @@ from kubernetes.client.models import V1JobStatus
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_job_name_from_run_id
-from dagster_k8s.utils import get_deployment_id_label, load_kubernetes_config
+from dagster_k8s.utils import get_deployment_id_label, load_kubernetes_config, sanitize_k8s_label
+
+# Label selectors are sent in the request URL, so cap how many run IDs go in one selector.
+RUN_IDS_PER_JOB_LIST = 100
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -450,8 +453,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def check_run_worker_health_batch(
         self, runs: Sequence[DagsterRun]
     ) -> Mapping[str, CheckRunHealthResult]:
-        """Check run workers with one paginated Job LIST per namespace instead of one Job GET per
-        run.
+        """Check run workers with one Job LIST per namespace and up to RUN_IDS_PER_JOB_LIST runs,
+        instead of one Job GET per run.
         """
         job_names_by_namespace: dict[str, list[tuple[DagsterRun, str]]] = defaultdict(list)
         results: dict[str, CheckRunHealthResult] = {}
@@ -466,30 +469,48 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 continue
             job_names_by_namespace[namespace].append((run, job_name))
 
-        for namespace, runs_and_job_names in job_names_by_namespace.items():
-            try:
-                statuses = self._api_client.list_job_statuses(
-                    namespace=namespace,
-                    label_selector="app.kubernetes.io/component=run_worker",
+        for namespace, namespace_runs_and_job_names in job_names_by_namespace.items():
+            # Select the requested runs by ID, so a launcher shared by several deployments does
+            # not list every run worker in the namespace for each of them.
+            for start in range(0, len(namespace_runs_and_job_names), RUN_IDS_PER_JOB_LIST):
+                runs_and_job_names = namespace_runs_and_job_names[
+                    start : start + RUN_IDS_PER_JOB_LIST
+                ]
+                run_ids = ",".join(
+                    sorted({sanitize_k8s_label(run.run_id) for run, _ in runs_and_job_names})
                 )
-            except Exception:
-                error = str(serializable_error_info_from_exc_info(sys.exc_info()))
-                for run, _ in runs_and_job_names:
-                    results[run.run_id] = CheckRunHealthResult(WorkerStatus.UNKNOWN, error)
-                continue
-
-            for run, job_name in runs_and_job_names:
-                status = statuses.get(job_name)
-                if status is None:
-                    # The list is served from the API server cache and may miss a Job created
-                    # moments ago, or one whose labels were overridden by user config. Read it
-                    # directly before reporting it as missing.
-                    results[run.run_id] = self.check_run_worker_health(run)
-                else:
-                    results[run.run_id] = self._run_worker_health_from_job_status(
-                        run, job_name, status
+                try:
+                    statuses = self._api_client.list_job_statuses(
+                        namespace=namespace,
+                        label_selector=(
+                            f"app.kubernetes.io/component=run_worker,dagster/run-id in ({run_ids})"
+                        ),
                     )
+                except Exception:
+                    error = str(serializable_error_info_from_exc_info(sys.exc_info()))
+                    for run, _ in runs_and_job_names:
+                        results[run.run_id] = CheckRunHealthResult(WorkerStatus.UNKNOWN, error)
+                    continue
 
+                results.update(self._run_worker_health_from_statuses(runs_and_job_names, statuses))
+
+        return results
+
+    def _run_worker_health_from_statuses(
+        self,
+        runs_and_job_names: Sequence[tuple[DagsterRun, str]],
+        statuses: Mapping[str, V1JobStatus],
+    ) -> Mapping[str, CheckRunHealthResult]:
+        results: dict[str, CheckRunHealthResult] = {}
+        for run, job_name in runs_and_job_names:
+            status = statuses.get(job_name)
+            if status is None:
+                # The list is served from the API server cache and may miss a Job created
+                # moments ago, or one whose labels were overridden by user config. Read it
+                # directly before reporting it as missing.
+                results[run.run_id] = self.check_run_worker_health(run)
+            else:
+                results[run.run_id] = self._run_worker_health_from_job_status(run, job_name, status)
         return results
 
     def _run_worker_health_from_job_status(

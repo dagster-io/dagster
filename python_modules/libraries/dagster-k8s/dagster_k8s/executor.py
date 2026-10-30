@@ -46,7 +46,7 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.launcher import K8sRunLauncher
-from dagster_k8s.utils import get_deployment_id_label
+from dagster_k8s.utils import get_deployment_id_label, sanitize_k8s_label
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),
@@ -411,23 +411,26 @@ class K8sStepHandler(StepHandler):
         if len(step_handler_contexts) < 2:
             return {}
 
+        run_ids = {context.execute_step_args.run_id for context in step_handler_contexts}
+        check.invariant(len(run_ids) == 1, f"Expected steps from a single run, got {run_ids}")
+        run_id = next(iter(run_ids))
+
         job_names_by_namespace: dict[str, dict[str, str]] = defaultdict(dict)
-        run_ids = set()
         for step_handler_context in step_handler_contexts:
             namespace = check.not_none(self._get_container_context(step_handler_context).namespace)
             step_key = self._get_step_key(step_handler_context)
             job_names_by_namespace[namespace][step_key] = self._get_k8s_step_job_name(
                 step_handler_context
             )
-            run_ids.add(step_handler_context.execute_step_args.run_id)
-        check.invariant(len(run_ids) == 1, f"Expected steps from a single run, got {run_ids}")
-        run_id = next(iter(run_ids))
 
         results: dict[str, CheckStepHealthResult] = {}
         for namespace, job_names_by_step_key in job_names_by_namespace.items():
             statuses = self._api_client.list_job_statuses(
                 namespace=namespace,
-                label_selector=(f"app.kubernetes.io/component=step_worker,dagster/run-id={run_id}"),
+                label_selector=(
+                    "app.kubernetes.io/component=step_worker,"
+                    f"dagster/run-id={sanitize_k8s_label(run_id)}"
+                ),
             )
             for step_key, job_name in job_names_by_step_key.items():
                 status = statuses.get(job_name)
