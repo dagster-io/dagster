@@ -343,15 +343,36 @@ class StepDelegatingExecutor(Executor):
                             curr_time - last_check_step_health_time
                         ).total_seconds() >= self._check_step_health_interval_seconds:
                             last_check_step_health_time = curr_time
+                            step_handler_contexts = {
+                                step.key: self._get_step_handler_context(
+                                    plan_context, [step], active_execution
+                                )
+                                for step in running_steps.values()
+                            }
+                            try:
+                                batch_health_results = self._step_handler.check_step_health_batch(
+                                    list(step_handler_contexts.values())
+                                )
+                            except Exception:
+                                # Fall back to checking each step individually below.
+                                batch_health_results = {}
+                                DagsterEvent.engine_event(
+                                    plan_context,
+                                    "Error while checking step health in batch",
+                                    EngineEventData(
+                                        error=serializable_error_info_from_exc_info(sys.exc_info())
+                                    ),
+                                )
+
                             for step in running_steps.values():
                                 step_context = plan_context.for_step(step)
 
                                 try:
-                                    health_check_result = self._step_handler.check_step_health(
-                                        self._get_step_handler_context(
-                                            plan_context, [step], active_execution
+                                    health_check_result = batch_health_results.get(step.key)
+                                    if health_check_result is None:
+                                        health_check_result = self._step_handler.check_step_health(
+                                            step_handler_contexts[step.key]
                                         )
-                                    )
                                     if not health_check_result.is_healthy:
                                         health_check_error = SerializableErrorInfo(
                                             message=f"Step {step.key} failed health check: {health_check_result.unhealthy_reason}",

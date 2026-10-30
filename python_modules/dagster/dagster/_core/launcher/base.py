@@ -106,18 +106,11 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Mapping[str, CheckRunHealthResult]:
         """Check the health of several run workers, keyed by run ID.
 
-        Run launchers can override this to fetch worker state with fewer API calls than one
-        check_run_worker_health call per run. Runs missing from the result should be checked
-        individually with check_run_worker_health. The default calls check_run_worker_health for
-        each run and leaves out runs whose check raised.
+        Run launchers can override this to check several runs with fewer API calls. Runs missing
+        from the result are checked individually with check_run_worker_health, so an override
+        may return only the results it can determine cheaply. The default returns no results.
         """
-        results: dict[str, CheckRunHealthResult] = {}
-        for run in runs:
-            try:
-                results[run.run_id] = self.check_run_worker_health(run)
-            except Exception:
-                continue
-        return results
+        return {}
 
     def get_run_worker_debug_info(
         self, run: DagsterRun, include_container_logs: bool | None = True
