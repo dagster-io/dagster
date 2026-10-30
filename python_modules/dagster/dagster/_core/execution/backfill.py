@@ -546,13 +546,10 @@ class PartitionBackfill(
 
 
 def get_backfill_max_queued_runs(instance: "DagsterInstance") -> int | None:
-    max_queued_runs = instance.get_backfill_settings().get("max_queued_runs")
-    if max_queued_runs is None:
-        return None
-    check.invariant(
-        max_queued_runs > 0, f"backfills.max_queued_runs must be positive, got {max_queued_runs}"
-    )
-    return max_queued_runs
+    """The backfills.max_queued_runs setting. The backfill daemon checks at startup that it is
+    positive.
+    """
+    return instance.get_backfill_settings().get("max_queued_runs")
 
 
 def get_backfill_queued_run_capacity(

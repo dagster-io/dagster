@@ -374,7 +374,7 @@ def backfills_daemon_config() -> Field:
                 ),
             ),
             "max_queued_runs": Field(
-                int,
+                IntSource,
                 is_required=False,
                 description=(
                     "Maximum number of queued runs per backfill. Once a backfill has this many"
