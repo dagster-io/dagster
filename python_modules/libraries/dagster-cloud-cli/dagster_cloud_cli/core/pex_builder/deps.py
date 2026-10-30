@@ -8,6 +8,7 @@ import logging
 import os
 import os.path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -97,7 +98,105 @@ def get_requirements_lines(local_dir, python_interpreter: str) -> list[str]:
     return lines
 
 
+# Set to 0/false/no to resolve from requirements.txt / setup.py / pyproject.toml even when the
+# project has a uv.lock.
+USE_UV_LOCK_ENV_VAR = "DAGSTER_CLOUD_PEX_USE_UV_LOCK"
+
+# requirements.txt options that name requirements (already covered by the lock), as opposed to
+# package-source options such as --extra-index-url or --find-links, which are kept.
+_REQUIREMENT_OPTION_PREFIXES = ("-e", "--editable", "-r", "--requirement", "-c", "--constraint")
+
+
+def find_uv_lock_root(code_directory: str) -> str | None:
+    """The directory holding the uv.lock that pins this project: the project itself, or the root
+    of the uv workspace it belongs to. None if there is no lock.
+    """
+    if os.path.exists(os.path.join(code_directory, "uv.lock")):
+        return code_directory
+    result = find_uv_workspace_root(code_directory)
+    if result and os.path.exists(os.path.join(str(result[0]), "uv.lock")):
+        return str(result[0])
+    return None
+
+
+def get_uv_lock_requirements(code_directory: str) -> tuple[list[str], str] | None:
+    """The project's dependencies pinned to its uv.lock, one requirement per line, and the
+    directory that local paths in them are relative to (the lock's directory).
+
+    Uses `uv export`, so the deps pex gets exactly the versions the project locked (and tested)
+    rather than a fresh resolve of pyproject.toml's unpinned dependencies. Workspace members and
+    path dependencies come out as plain relative paths ("./libs/shared"), which
+    `local_path_for` turns into local packages. Returns None (fall back to the requirement files)
+    when there is no uv.lock, `uv` is not installed, or USE_UV_LOCK_ENV_VAR disables it.
+    """
+    if os.getenv(USE_UV_LOCK_ENV_VAR, "1").strip().lower() in ("0", "false", "no"):
+        return None
+    lock_root = find_uv_lock_root(code_directory)
+    if not lock_root:
+        return None
+    uv = shutil.which("uv")
+    if not uv:
+        ui.warn(
+            f"Found {os.path.join(lock_root, 'uv.lock')} but `uv` is not on PATH, so dependencies"
+            " are resolved from requirements.txt / setup.py / pyproject.toml instead and may not"
+            " match the lock. Install uv to build from the lock."
+        )
+        return None
+    export_args = [
+        uv,
+        "export",
+        "--frozen",  # the lock as committed: never re-resolve or rewrite it
+        "--no-emit-project",  # the project itself goes in the source pex
+        "--no-default-groups",  # like [project] deps: no dev or other groups
+        "--all-extras",  # like the pyproject.toml path, which includes optional deps
+        "--no-editable",  # "./path", not "-e ./path", for local_path_for
+        "--no-hashes",  # one requirement per line
+        "--no-header",
+        "--no-annotate",
+        "--format",
+        "requirements.txt",
+    ]
+    # Keep package sources configured in uv ([[tool.uv.index]], find-links); older uv versions
+    # don't have these flags, so retry without them.
+    source_flags = ["--emit-index-url", "--emit-find-links"]
+    proc = subprocess.run(
+        export_args + source_flags,
+        cwd=code_directory,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode and "unexpected argument" in proc.stderr:
+        proc = subprocess.run(
+            export_args, cwd=code_directory, capture_output=True, text=True, check=False
+        )
+    if proc.returncode:
+        raise Exception(f"`uv export` failed in {code_directory}:\n{proc.stderr}")
+    lines = [
+        line.strip()
+        for line in proc.stdout.splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    # Keep pip options from requirements.txt that tell pip where to find packages
+    # (--extra-index-url, --find-links, --trusted-host, ...): the pins replace its requirements,
+    # not its package sources.
+    lines += [
+        line
+        for line in get_requirements_txt_deps(code_directory)
+        if line.startswith("-") and not line.startswith(_REQUIREMENT_OPTION_PREFIXES)
+    ]
+    return lines, lock_root
+
+
 def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[str], list[str]]:
+    local_package_paths, deps_lines, _ = _collect_requirements(code_directory, python_interpreter)
+    return local_package_paths, deps_lines
+
+
+def _collect_requirements(
+    code_directory, python_interpreter: str
+) -> tuple[list[str], list[str], bool]:
+    """Local package paths, other requirement lines, and whether they came from a uv.lock."""
     if not os.path.exists(code_directory):
         raise Exception(
             f"Specified a build directory that does not exist: {os.path.abspath(code_directory)}."
@@ -113,6 +212,22 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
         raise Exception(
             f"Could not find a setup.py, requirements.txt, or pyproject.toml in build directory {os.path.abspath(code_directory)}."
         )
+
+    # A uv.lock pins the whole tree, workspace members included, so it replaces the traversal.
+    locked = get_uv_lock_requirements(os.path.abspath(code_directory))
+    if locked is not None:
+        lines, lock_root = locked
+        ui.print(f"Using the versions pinned in {os.path.join(lock_root, 'uv.lock')} (uv export)")
+        local_package_paths = []
+        deps_lines = []
+        for line in lines:
+            local_package_path = local_path_for(line, relative_to=lock_root)
+            if local_package_path:
+                if local_package_path not in local_package_paths:
+                    local_package_paths.append(local_package_path)
+            else:
+                deps_lines.append(line)
+        return local_package_paths, deps_lines, True
 
     # traverse all local packages and return the list of local packages and other requirements
     pending = [os.path.abspath(code_directory)]  # local packages to be processed
@@ -138,7 +253,7 @@ def collect_requirements(code_directory, python_interpreter: str) -> tuple[list[
             else:
                 deps_lines.append(line)
 
-    return local_package_paths, deps_lines
+    return local_package_paths, deps_lines, False
 
 
 # grpcio-health-checking 1.82.0 ships protobuf-7 gencode but its metadata allows a protobuf 6
@@ -154,13 +269,18 @@ def get_deps_requirements(
 
     ui.print(f"Finding dependencies using build directory {os.path.abspath(code_directory)}")
 
-    local_package_paths, deps_lines = collect_requirements(code_directory, python_interpreter)
+    local_package_paths, deps_lines, from_uv_lock = _collect_requirements(
+        code_directory, python_interpreter
+    )
 
     # Skip the extra constraints when the project uses hash-pinned requirements: pip's
     # --require-hashes mode rejects any unhashed requirement, and a hash-pinned project is
     # already fully version-locked (immune to the upstream drift these constraints guard against).
+    # The same holds for a uv.lock: its versions are the ones the project resolved and tested.
     extra_constraints = (
-        [] if any("--hash" in line for line in deps_lines) else _EXTRA_BUILD_CONSTRAINTS
+        []
+        if from_uv_lock or any("--hash" in line for line in deps_lines)
+        else _EXTRA_BUILD_CONSTRAINTS
     )
 
     deps_requirements_text = "\n".join(
