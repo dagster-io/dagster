@@ -64,7 +64,40 @@ def _is_param_valid(param: Parameter, expected_positional: str) -> bool:
 
 
 def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
-    return list(signature(fn).parameters.values())
+    """Returns the parameters of a function, with string annotations (e.g. from
+    `from __future__ import annotations`) resolved to their underlying types where possible.
+    """
+    params = list(signature(fn).parameters.values())
+    if not any(isinstance(param.annotation, str) for param in params):
+        return params
+
+    globalns = dict(getattr(inspect.unwrap(_get_type_hints_target(fn)), "__globals__", {}))
+    return [
+        param.replace(annotation=_resolve_string_annotation(param.annotation, globalns))
+        for param in params
+    ]
+
+
+def _resolve_string_annotation(annotation: Any, globalns: dict[str, Any]) -> Any:
+    if not isinstance(annotation, str):
+        return annotation
+    try:
+        return eval(annotation, globalns)
+    except Exception:
+        # Leave unresolvable annotations (e.g. types only imported under TYPE_CHECKING) as
+        # strings, matching the behavior of `inspect.signature` without `eval_str`.
+        return annotation
+
+
+def _get_type_hints_target(fn: Callable[..., Any]) -> Callable[..., Any]:
+    if isinstance(fn, functools.partial):
+        return fn.func
+    elif inspect.isfunction(fn):
+        return fn
+    elif hasattr(fn, "__call__"):
+        return fn.__call__
+    else:
+        check.failed(f"Unhandled Callable object {fn}")
 
 
 def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Mapping[str, Any]:
@@ -95,14 +128,7 @@ def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Ma
 
 
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
-    if isinstance(fn, functools.partial):
-        target = fn.func
-    elif inspect.isfunction(fn):
-        target = fn
-    elif hasattr(fn, "__call__"):
-        target = fn.__call__
-    else:
-        check.failed(f"Unhandled Callable object {fn}")
+    target = _get_type_hints_target(fn)
 
     # `get_function_params` reads parameters off `signature(fn)`, which honors an explicitly set
     # `__signature__`. When there is one, the hints have to come from that same signature, or
