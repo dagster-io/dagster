@@ -1,4 +1,6 @@
+import sys
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
@@ -7,6 +9,7 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import BaseWorkspaceRequestContext
@@ -99,6 +102,25 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError(
             "This run launcher does not support run monitoring. Please disable it on your instance."
         )
+
+    def check_run_worker_health_batch(
+        self, runs: Sequence[DagsterRun]
+    ) -> Mapping[str, CheckRunHealthResult]:
+        """Check the health of several run workers, keyed by run ID.
+
+        Run launchers can override this to fetch worker state with fewer API calls than one
+        check_run_worker_health call per run. The default calls check_run_worker_health for each
+        run; an exception for one run is returned as an UNKNOWN result for that run.
+        """
+        results: dict[str, CheckRunHealthResult] = {}
+        for run in runs:
+            try:
+                results[run.run_id] = self.check_run_worker_health(run)
+            except Exception:
+                results[run.run_id] = CheckRunHealthResult(
+                    WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+                )
+        return results
 
     def get_run_worker_debug_info(
         self, run: DagsterRun, include_container_logs: bool | None = True

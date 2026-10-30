@@ -1,14 +1,14 @@
 import logging
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 
 from dagster import (
     DagsterInstance,
     _check as check,
 )
 from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
-from dagster._core.launcher import WorkerStatus
+from dagster._core.launcher import CheckRunHealthResult, WorkerStatus
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRunStatus,
@@ -115,11 +115,13 @@ def monitor_started_run(
     workspace: BaseWorkspaceRequestContext,
     run_record: RunRecord,
     logger: logging.Logger,
+    check_health_result: CheckRunHealthResult | None = None,
 ) -> None:
     run = run_record.dagster_run
     check.invariant(run.status == DagsterRunStatus.STARTED)
     if instance.run_launcher.supports_check_run_worker_health:
-        check_health_result = instance.run_launcher.check_run_worker_health(run)
+        if check_health_result is None:
+            check_health_result = instance.run_launcher.check_run_worker_health(run)
         if check_health_result.status not in [WorkerStatus.RUNNING, WorkerStatus.SUCCESS]:
             num_prev_attempts = count_resume_run_attempts(instance, run.run_id)
             recheck_run = check.not_none(instance.get_run_by_id(run.run_id))
@@ -206,6 +208,25 @@ def execute_run_monitoring_iteration(
 
     logger.info(f"Collected {len(run_records)} runs for monitoring")
     workspace = workspace_process_context.create_request_context()
+
+    health_results: Mapping[str, CheckRunHealthResult] = {}
+    if instance.run_launcher.supports_check_run_worker_health:
+        try:
+            health_results = instance.run_launcher.check_run_worker_health_batch(
+                [
+                    run_record.dagster_run
+                    for run_record in run_records
+                    if run_record.dagster_run.status == DagsterRunStatus.STARTED
+                ]
+            )
+        except Exception:
+            # Fall back to checking each run individually below.
+            yield DaemonErrorCapture.process_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message="Hit error while checking run worker health in batch",
+            )
+
     for run_record in run_records:
         try:
             logger.info(f"Checking run {run_record.dagster_run.run_id}")
@@ -217,7 +238,13 @@ def execute_run_monitoring_iteration(
             ):
                 monitor_starting_run(instance, run_record, logger)
             elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
-                monitor_started_run(instance, workspace, run_record, logger)
+                monitor_started_run(
+                    instance,
+                    workspace,
+                    run_record,
+                    logger,
+                    health_results.get(run_record.dagster_run.run_id),
+                )
             elif run_record.dagster_run.status == DagsterRunStatus.SUSPENDED:
                 # No worker to check; time spent suspended still counts toward the runtime limit.
                 check_run_timeout(
