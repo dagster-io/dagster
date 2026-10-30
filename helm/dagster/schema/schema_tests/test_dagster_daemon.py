@@ -638,10 +638,13 @@ def test_backfill_threading(instance_template: HelmTemplate):
     assert instance["backfills"]["use_threads"] is True
     assert instance["backfills"]["num_workers"] == 4
     assert "num_submit_workers" not in instance["backfills"]
+    assert "max_queued_runs" not in instance["backfills"]
 
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            backfills=Backfills.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+            backfills=Backfills.construct(
+                useThreads=True, numWorkers=4, numSubmitWorkers=8, maxQueuedRuns=100
+            )
         )
     )
 
@@ -653,6 +656,7 @@ def test_backfill_threading(instance_template: HelmTemplate):
     assert instance["backfills"]["use_threads"] is True
     assert instance["backfills"]["num_workers"] == 4
     assert instance["backfills"]["num_submit_workers"] == 8
+    assert instance["backfills"]["max_queued_runs"] == 100
 
 
 def test_scheduler_name(template: HelmTemplate):
