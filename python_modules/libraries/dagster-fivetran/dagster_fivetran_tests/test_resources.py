@@ -162,9 +162,51 @@ def test_list_connectors_for_group_cursor(connector_id: str, group_id: str):
                 json=list_connectors_for_group_sample(setup_state=setup_state, next_cursor=None),
                 status=200,
             )
-            return client.list_connectors_for_group(group_id=group_id)
+            connectors = client.list_connectors_for_group(group_id=group_id)
+            assert len(response.calls) == 2
+            assert "cursor=some_cursor" in cast("str", response.calls[1].request.url)
+            return connectors
 
     assert len(cast("list", _mock_interaction())) == 2
+
+
+def test_get_groups_cursor(group_id: str):
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    def _groups_page(page_group_id: str, next_cursor: str | None = None) -> dict:
+        return {
+            "code": "Success",
+            "message": "Operation performed.",
+            "data": {
+                "items": [{"id": page_group_id, "name": page_group_id}],
+                **({"next_cursor": next_cursor} if next_cursor else {}),
+            },
+        }
+
+    with responses.RequestsMock() as response:
+        # initial state, a cursor is returned, we will do a second call
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=_groups_page(group_id, next_cursor="some_cursor"),
+            status=200,
+        )
+        # final state, no cursor so we break after the second call
+        response.add(
+            method=responses.GET,
+            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups",
+            json=_groups_page("other_group_id"),
+            status=200,
+        )
+        groups = client.get_groups()["items"]
+
+        assert len(response.calls) == 2
+        assert "cursor=some_cursor" in cast("str", response.calls[1].request.url)
+
+    assert [group["id"] for group in groups] == [group_id, "other_group_id"]
 
 
 @pytest.mark.parametrize(
