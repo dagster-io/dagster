@@ -212,6 +212,20 @@ export const getTopGroups = (config: NavigationGroupConfig): NavigationGroup[] =
           ),
         },
         {
+          key: 'friday-report',
+          label: 'Friday report',
+          element: (
+            <NavItemWithLink
+              icon={<Icon name="checklist" />}
+              label="Friday report"
+              href="/hillpointe/friday"
+              isActive={(_, currentLocation) =>
+                currentLocation.pathname.startsWith('/hillpointe/friday')
+              }
+            />
+          ),
+        },
+        {
           key: 'hp-status',
           label: 'HP Status',
           element: (

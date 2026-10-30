@@ -76,6 +76,10 @@ module.exports = (phase) => {
               destination: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}/graphql`,
             },
             {
+              source: '/hillpointe/friday_report',
+              destination: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}/hillpointe/friday_report`,
+            },
+            {
               source: '/:path*',
               destination: '/',
             },

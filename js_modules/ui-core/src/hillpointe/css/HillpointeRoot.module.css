@@ -1019,3 +1019,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.fridayTime {
+  white-space: nowrap;
+}
+
+/* max-width: 0 lets the cell shrink to the leftover width instead of widening the table. */
+.fridayMessage {
+  width: 40%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

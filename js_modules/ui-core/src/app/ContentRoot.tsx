@@ -26,6 +26,7 @@ const SettingsRoot = lazy(() => import('../settings/SettingsRoot'));
 const JobsRoot = lazy(() => import('../jobs/JobsRoot'));
 const HillpointeRoot = lazy(() => import('../hillpointe/HillpointeRoot'));
 const JobTimingsRoot = lazy(() => import('../hillpointe/JobTimingsRoot'));
+const FridayReportRoot = lazy(() => import('../hillpointe/FridayReportRoot'));
 
 export const ContentRoot = memo(() => {
   const {pathname} = useLocation();
@@ -95,6 +96,9 @@ export const ContentRoot = memo(() => {
           </Route>
           <Route path="/hillpointe/timings/:jobName?">
             <JobTimingsRoot />
+          </Route>
+          <Route path="/hillpointe/friday">
+            <FridayReportRoot />
           </Route>
           <Route path="/hillpointe">
             <HillpointeRoot />
