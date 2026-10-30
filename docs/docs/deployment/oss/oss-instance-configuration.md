@@ -394,3 +394,5 @@ To process multiple backfills in parallel simultaneously, set the `use_threads` 
 />
 
 You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs.
+
+To limit how many runs each backfill can have queued at once, set the optional `max_queued_runs` key. Once a backfill has that many runs waiting in the run queue, it stops submitting runs until some of them are dequeued. This keeps the run queue small for large backfills, and leaves fewer queued runs to cancel if the backfill is canceled.

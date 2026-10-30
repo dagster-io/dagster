@@ -1234,6 +1234,9 @@ dagsterDaemon:
     #   Uncomment to use a threadpool to submit runs from backfills in parallel. Can be
     #   used to decrease latency when a backfill enqueues many run requests.
     #   numSubmitWorkers: 4
+    #   Uncomment to limit how many runs each backfill can have queued at once. The backfill
+    #   submits more runs as queued runs are dequeued.
+    #   maxQueuedRuns: 100
 
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See

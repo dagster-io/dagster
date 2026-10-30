@@ -76,6 +76,7 @@ class Backfills(BaseModel):
     useThreads: bool
     numWorkers: int | None = None
     numSubmitWorkers: int | None = None
+    maxQueuedRuns: int | None = None
 
 
 class RunRetries(BaseModel):

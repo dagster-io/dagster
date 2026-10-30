@@ -545,6 +545,31 @@ class PartitionBackfill(
         )
 
 
+def get_backfill_max_queued_runs(instance: "DagsterInstance") -> int | None:
+    max_queued_runs = instance.get_backfill_settings().get("max_queued_runs")
+    if max_queued_runs is None:
+        return None
+    check.invariant(
+        max_queued_runs > 0, f"backfills.max_queued_runs must be positive, got {max_queued_runs}"
+    )
+    return max_queued_runs
+
+
+def get_backfill_queued_run_capacity(
+    instance: "DagsterInstance", backfill_id: str, max_queued_runs: int
+) -> int:
+    """How many more runs the backfill can submit before it has max_queued_runs runs waiting to
+    be dequeued.
+    """
+    num_queued_runs = instance.get_runs_count(
+        RunsFilter(
+            tags={BACKFILL_ID_TAG: backfill_id},
+            statuses=[DagsterRunStatus.NOT_STARTED, DagsterRunStatus.QUEUED],
+        )
+    )
+    return max(0, max_queued_runs - num_queued_runs)
+
+
 def cancel_backfill_runs_and_cancellation_complete(
     instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
 ) -> bool:

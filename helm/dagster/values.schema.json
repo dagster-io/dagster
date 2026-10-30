@@ -185,6 +185,18 @@
                     ],
                     "default": null,
                     "title": "Numsubmitworkers"
+                },
+                "maxQueuedRuns": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Maxqueuedruns"
                 }
             },
             "required": [
