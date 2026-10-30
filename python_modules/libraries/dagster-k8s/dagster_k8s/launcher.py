@@ -1,5 +1,6 @@
 import logging
 import sys
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -13,6 +14,7 @@ from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
+from kubernetes.client.models import V1JobStatus
 
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.container_context import K8sContainerContext
@@ -443,6 +445,58 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
 
+        return self._run_worker_health_from_job_status(run, job_name, status)
+
+    def check_run_worker_health_batch(
+        self, runs: Sequence[DagsterRun]
+    ) -> Mapping[str, CheckRunHealthResult]:
+        """Check run workers with one paginated Job LIST per namespace instead of one Job GET per
+        run.
+        """
+        job_names_by_namespace: dict[str, list[tuple[DagsterRun, str]]] = defaultdict(list)
+        results: dict[str, CheckRunHealthResult] = {}
+        for run in runs:
+            try:
+                namespace = check.not_none(self.get_container_context_for_run(run).namespace)
+                job_name = get_job_name_from_run_id(
+                    run.run_id, resume_attempt_number=self._get_resume_attempt_number(run)
+                )
+            except Exception:
+                results[run.run_id] = CheckRunHealthResult(
+                    WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+                )
+                continue
+            job_names_by_namespace[namespace].append((run, job_name))
+
+        for namespace, runs_and_job_names in job_names_by_namespace.items():
+            try:
+                statuses = self._api_client.list_job_statuses(
+                    namespace=namespace,
+                    label_selector="app.kubernetes.io/component=run_worker",
+                )
+            except Exception:
+                error = str(serializable_error_info_from_exc_info(sys.exc_info()))
+                for run, _ in runs_and_job_names:
+                    results[run.run_id] = CheckRunHealthResult(WorkerStatus.UNKNOWN, error)
+                continue
+
+            for run, job_name in runs_and_job_names:
+                status = statuses.get(job_name)
+                if status is None:
+                    # The list is served from the API server cache and may miss a Job created
+                    # moments ago, or one whose labels were overridden by user config. Read it
+                    # directly before reporting it as missing.
+                    results[run.run_id] = self.check_run_worker_health(run)
+                else:
+                    results[run.run_id] = self._run_worker_health_from_job_status(
+                        run, job_name, status
+                    )
+
+        return results
+
+    def _run_worker_health_from_job_status(
+        self, run: DagsterRun, job_name: str, status: V1JobStatus | None
+    ) -> CheckRunHealthResult:
         if not status:
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, f"Job {job_name} could not be found")
 
