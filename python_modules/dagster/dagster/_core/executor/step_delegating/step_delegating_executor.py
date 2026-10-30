@@ -343,12 +343,17 @@ class StepDelegatingExecutor(Executor):
                             curr_time - last_check_step_health_time
                         ).total_seconds() >= self._check_step_health_interval_seconds:
                             last_check_step_health_time = curr_time
-                            step_handler_contexts = {
-                                step.key: self._get_step_handler_context(
-                                    plan_context, [step], active_execution
-                                )
-                                for step in running_steps.values()
-                            }
+                            step_handler_contexts: dict[str, StepHandlerContext] = {}
+                            for step in running_steps.values():
+                                try:
+                                    step_handler_contexts[step.key] = (
+                                        self._get_step_handler_context(
+                                            plan_context, [step], active_execution
+                                        )
+                                    )
+                                except Exception:
+                                    # Rebuilt below, where the error is reported for the step.
+                                    pass
                             try:
                                 batch_health_results = self._step_handler.check_step_health_batch(
                                     list(step_handler_contexts.values())
@@ -371,7 +376,10 @@ class StepDelegatingExecutor(Executor):
                                     health_check_result = batch_health_results.get(step.key)
                                     if health_check_result is None:
                                         health_check_result = self._step_handler.check_step_health(
-                                            step_handler_contexts[step.key]
+                                            step_handler_contexts.get(step.key)
+                                            or self._get_step_handler_context(
+                                                plan_context, [step], active_execution
+                                            )
                                         )
                                     if not health_check_result.is_healthy:
                                         health_check_error = SerializableErrorInfo(
