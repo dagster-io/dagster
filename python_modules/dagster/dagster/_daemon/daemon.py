@@ -17,6 +17,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
@@ -351,6 +352,12 @@ class BackfillDaemon(DagsterDaemon):
         self._exit_stack = ExitStack()
         self._threadpool_executor: InheritContextThreadPoolExecutor | None = None
         self._submit_threadpool_executor: InheritContextThreadPoolExecutor | None = None
+
+        max_queued_runs = settings.get("max_queued_runs")
+        if max_queued_runs is not None and max_queued_runs <= 0:
+            raise DagsterInvariantViolationError(
+                f"backfills.max_queued_runs must be positive, got {max_queued_runs}"
+            )
 
         # Backfill daemon is enabled by default for reasons explained at:
         # https://github.com/dagster-io/dagster/pull/30189#issuecomment-2930805760

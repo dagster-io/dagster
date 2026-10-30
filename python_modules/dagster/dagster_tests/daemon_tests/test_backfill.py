@@ -4899,3 +4899,11 @@ def test_asset_backfill_max_queued_runs(tmp_path: Path):
         )
         partition_keys = sorted(run.tags[PARTITION_NAME_TAG] for run in instance.get_runs())
         assert partition_keys == sorted(target_partitions)
+
+
+@pytest.mark.parametrize("max_queued_runs", [0, -1])
+def test_backfill_daemon_rejects_non_positive_max_queued_runs(max_queued_runs: int):
+    from dagster._daemon.daemon import BackfillDaemon
+
+    with pytest.raises(dg.DagsterInvariantViolationError, match="max_queued_runs must be positive"):
+        BackfillDaemon(settings={"max_queued_runs": max_queued_runs})
