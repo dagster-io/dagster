@@ -247,6 +247,10 @@ class EventMethods:
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
+        from dagster._core.events import RunFailureReason
+        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
+        from dagster._time import datetime_from_timestamp
+
         if not self.should_store_event(event):
             return
 
@@ -263,24 +267,6 @@ class EventMethods:
                 del self._event_buffer_impl[batch_id]
             else:
                 return
-
-        self._store_and_process_events(events)
-
-    def handle_new_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
-        """Store several events with one storage write, then notify subscribers.
-
-        Unlike handle_new_event with batch_metadata, the write is batched even when
-        DAGSTER_EVENT_BATCH_SIZE is unset. Falls back to storing events one by one if the
-        batch write fails.
-        """
-        events = [event for event in events if self.should_store_event(event)]
-        if events:
-            self._store_and_process_events(events)
-
-    def _store_and_process_events(self, events: Sequence["EventLogEntry"]) -> None:
-        from dagster._core.events import RunFailureReason
-        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
-        from dagster._time import datetime_from_timestamp
 
         if len(events) == 1:
             self._event_storage_impl.store_event(events[0])
