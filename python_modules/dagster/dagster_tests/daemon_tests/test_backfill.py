@@ -2144,6 +2144,83 @@ def test_asset_backfill_mid_iteration_cancel(
     assert instance.get_runs_count(dg.RunsFilter(statuses=ACTIVE_RUN_STATUSES)) == 0
 
 
+def test_asset_backfill_max_runs_in_flight(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, set_default_chunk_size
+):
+    """A backfill should stop submitting new runs once the configured max number of in-flight
+    runs for that backfill is reached, deferring the rest to a later daemon tick, and should
+    pick back up once earlier runs are no longer in flight.
+    """
+    asset_selection = [dg.AssetKey("daily_1"), dg.AssetKey("daily_2")]
+    asset_graph = workspace_context.create_request_context().asset_graph
+
+    num_partitions = DEFAULT_CHUNK_SIZE * 3
+    target_partitions = daily_partitions_def.get_partition_keys()[0:num_partitions]
+    backfill_id = f"backfill_with_{num_partitions}_partitions"
+
+    backfill = PartitionBackfill.from_asset_partitions(
+        asset_graph=asset_graph,
+        backfill_id=backfill_id,
+        tags={},
+        backfill_timestamp=get_current_timestamp(),
+        asset_selection=asset_selection,
+        partition_names=target_partitions,
+        dynamic_partitions_store=instance,
+        all_partitions=False,
+        title=None,
+        description=None,
+        run_config=None,
+    )
+    instance.add_backfill(backfill)
+    assert instance.get_runs_count() == 0
+
+    # Runs submitted against this test instance finish synchronously, so by the time this
+    # throttle is checked there are no genuinely in-flight runs left to count. Mock the count
+    # directly to simulate a backfill whose earlier runs are still queued/running elsewhere.
+    with (
+        environ({"DAGSTER_ASSET_BACKFILL_MAX_RUNS_IN_FLIGHT": str(DEFAULT_CHUNK_SIZE)}),
+        mock.patch(
+            "dagster._core.execution.asset_backfill._get_num_in_flight_runs_for_backfill",
+            return_value=DEFAULT_CHUNK_SIZE,
+        ),
+    ):
+        assert all(
+            not error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+        )
+
+    # Only the first chunk was submitted before the max-in-flight check deferred the rest
+    assert instance.get_runs_count() == DEFAULT_CHUNK_SIZE
+
+    updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert updated_backfill.status == BulkActionStatus.REQUESTED
+    assert len(updated_backfill.submitting_run_requests) == num_partitions - DEFAULT_CHUNK_SIZE
+
+    # Simulate the earlier runs no longer being in flight on the next daemon tick: the rest
+    # of the backfill's runs should now get submitted.
+    with (
+        environ({"DAGSTER_ASSET_BACKFILL_MAX_RUNS_IN_FLIGHT": str(DEFAULT_CHUNK_SIZE)}),
+        mock.patch(
+            "dagster._core.execution.asset_backfill._get_num_in_flight_runs_for_backfill",
+            return_value=0,
+        ),
+    ):
+        assert all(
+            not error
+            for error in list(
+                execute_backfill_iteration(
+                    workspace_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+        )
+
+    assert instance.get_runs_count() == num_partitions
+
+
 def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
