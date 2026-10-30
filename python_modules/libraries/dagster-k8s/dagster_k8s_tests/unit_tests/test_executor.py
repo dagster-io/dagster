@@ -901,9 +901,14 @@ def test_check_step_health_batch(kubeconfig_file, k8s_instance):
 
     results = handler.check_step_health_batch(list(contexts.values()))
 
-    # Only healthy steps are returned; the executor checks the others individually.
-    assert set(results) == {"running"}
+    # The step whose Job is not listed is left out for the executor to check individually.
+    assert set(results) == {"running", "failed"}
     assert results["running"].is_healthy
+    assert not results["failed"].is_healthy
+    assert results["failed"].unhealthy_reason == (
+        f"Discovered failed Kubernetes job dagster-step-{get_k8s_job_name(run.run_id, 'failed')}"
+        " for step failed."
+    )
     mock_k8s_client_batch_api.list_namespaced_job.assert_called_once()
     call_kwargs = mock_k8s_client_batch_api.list_namespaced_job.call_args.kwargs
     assert call_kwargs["namespace"] == "foo"

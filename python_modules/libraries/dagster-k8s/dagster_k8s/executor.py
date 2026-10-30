@@ -405,9 +405,8 @@ class K8sStepHandler(StepHandler):
         """Check all running steps of the run with one paginated Job LIST per namespace, selected
         by the run ID label, instead of one Job GET per step.
 
-        Only healthy steps are returned. Other steps (failed, or whose Job is not in the list
-        because it was just created or its labels were overridden) are left out so the executor
-        runs check_step_health on them, which keeps subclass failure reporting in one place.
+        Steps whose Job is not in the list (just created, or labels overridden by user config)
+        are left out so the executor checks them individually.
         """
         if len(step_handler_contexts) < 2:
             return {}
@@ -432,11 +431,10 @@ class K8sStepHandler(StepHandler):
             )
             for step_key, job_name in job_names_by_step_key.items():
                 status = statuses.get(job_name)
-                if status is None:
-                    continue
-                result = self._step_health_from_job_status(step_key, job_name, status)
-                if result.is_healthy:
-                    results[step_key] = result
+                if status is not None:
+                    results[step_key] = self._step_health_from_job_status(
+                        step_key, job_name, status
+                    )
         return results
 
     def _step_health_from_job_status(
