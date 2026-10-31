@@ -4,6 +4,7 @@ import {AbstractParseTreeVisitor, ParseTree, ParserRuleContext, TerminalNode} fr
 type RuleNode = ParserRuleContext;
 
 import {
+  AttributeExpressionContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
   PostExpressionWhitespaceContext,
@@ -136,11 +137,11 @@ export class BaseSelectionVisitor
 
   public visitPostAttributeValueWhitespace(ctx: PostAttributeValueWhitespaceContext) {
     const parent = ctx.parent;
-    if (!parent) {
+    if (!(parent instanceof AttributeExpressionContext)) {
       return;
     }
-    const attributeValue = parent.getChild(2) as ParserRuleContext;
-    if (this.cursorIndex === (attributeValue?.stop?.stop ?? 0) + 1) {
+    const attributeValue = parent.attributeValue().at(-1);
+    if (attributeValue && this.cursorIndex === (attributeValue.stop?.stop ?? 0) + 1) {
       this.forceVisit(attributeValue);
     } else {
       this.visitPostExpressionWhitespace(ctx);

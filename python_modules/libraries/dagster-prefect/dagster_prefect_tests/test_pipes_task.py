@@ -6,7 +6,13 @@ from uuid import uuid4
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster_pipes import PipesMappingParamsLoader, open_dagster_pipes
+from dagster._core.pipes.client import PipesMessageReader
+from dagster._core.pipes.utils import PipesTempFileMessageReader
+from dagster_pipes import (
+    PipesMappingParamsLoader,
+    PipesPrefectLogsMessageWriter,
+    open_dagster_pipes,
+)
 from dagster_prefect.pipes import PrefectRun
 from dagster_prefect.pipes_task import PIPES_PARAMS_TASK_ARGUMENT, PipesPrefectTaskClient
 from dagster_prefect.resource import PrefectResource
@@ -24,9 +30,15 @@ UNREACHABLE_API_URL = "http://127.0.0.1:1/api"
 @task
 def summarize(as_of: str, dagster_pipes_params: dict[str, str] | None = None) -> None:
     with open_dagster_pipes(
-        params_loader=PipesMappingParamsLoader(dagster_pipes_params or {})
+        params_loader=PipesMappingParamsLoader(dagster_pipes_params or {}),
+        message_writer=PipesPrefectLogsMessageWriter(),
     ) as pipes:
         pipes.report_asset_materialization(metadata={"rows": 100, "as_of": as_of})
+
+
+@task
+def never_served(as_of: str, dagster_pipes_params: dict[str, str] | None = None) -> None:
+    """Submitted for real but served by no worker, so its run can't be picked up later."""
 
 
 class RecordingTaskClient(PipesPrefectTaskClient):
@@ -43,6 +55,10 @@ class RecordingTaskClient(PipesPrefectTaskClient):
 
     def _read_state(self, prefect_run: PrefectRun) -> State | None:
         return Completed()
+
+    def _default_message_reader(self) -> PipesMessageReader:
+        # Nothing runs, so the logs reader would only wait out its window for a closed message.
+        return PipesTempFileMessageReader()
 
 
 def materialize_with(client: PipesPrefectTaskClient, **run_kwargs):
@@ -87,8 +103,14 @@ def test_launch_targets_the_resources_server(prefect_resource: PrefectResource) 
     """`.delay()` reads the ambient Prefect settings, so the client has to override them."""
     client = RecordingTaskClient(prefect=prefect_resource, poll_interval_seconds=0)
 
+    @asset
+    def orders_summary(context: AssetExecutionContext):
+        return client.run(
+            context=context, task=never_served, parameters={"as_of": "latest"}
+        ).get_materialize_result()
+
     with temporary_settings({PREFECT_API_URL: UNREACHABLE_API_URL}):
-        assert materialize_with(client, parameters={"as_of": "latest"}).success
+        assert materialize([orders_summary], raise_on_error=True).success
 
     # Readable from the resource's server, which is not the one the ambient settings named.
     assert prefect_resource.get_task_run(client.launched[0].id) is not None

@@ -1,6 +1,8 @@
+import {useMemo} from 'react';
+
 import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor';
-import {parseInput} from './SelectionInputParser';
+import {getParseTreeAtCursor, parseInput} from './SelectionInputParser';
 
 export function createSelectionAutoComplete({
   getAttributeResultsMatchingQuery,
@@ -14,12 +16,13 @@ export function createSelectionAutoComplete({
 }: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
-
-    let start = 0;
+    const treeAtCursor = getParseTreeAtCursor(line, actualCursorIndex);
+    const isInLeadingWhitespace = actualCursorIndex < (parseTrees[0]?.startOffset ?? 0);
+    const start = treeAtCursor?.startOffset ?? 0;
 
     let visitorWithAutoComplete;
-    if (!parseTrees.length) {
-      // Special case empty string to add unmatched value results
+    if (!parseTrees.length || isInLeadingWhitespace) {
+      // An empty input, or the cursor in its leading whitespace, gets unmatched value results
       visitorWithAutoComplete = new SelectionAutoCompleteVisitor({
         line,
         cursorIndex: actualCursorIndex,
@@ -33,29 +36,20 @@ export function createSelectionAutoComplete({
         supportsNot,
       });
       visitorWithAutoComplete.addUnmatchedValueResults('');
-    } else {
-      for (const {tree, line} of parseTrees) {
-        const cursorIndex = actualCursorIndex - start;
-
-        if (cursorIndex <= line.length) {
-          const visitor = new SelectionAutoCompleteVisitor({
-            line,
-            cursorIndex,
-            getAttributeResultsMatchingQuery,
-            getAttributeValueResultsMatchingQuery,
-            getAllResults,
-            getFunctionResultsMatchingQuery,
-            getSubstringResultMatchingQuery,
-            createOperatorSuggestion,
-            supportsTraversal,
-            supportsNot,
-          });
-          tree.accept(visitor);
-          visitorWithAutoComplete = visitor;
-          break;
-        }
-        start += line.length;
-      }
+    } else if (treeAtCursor) {
+      visitorWithAutoComplete = new SelectionAutoCompleteVisitor({
+        line: treeAtCursor.line,
+        cursorIndex: actualCursorIndex - start,
+        getAttributeResultsMatchingQuery,
+        getAttributeValueResultsMatchingQuery,
+        getAllResults,
+        getFunctionResultsMatchingQuery,
+        getSubstringResultMatchingQuery,
+        createOperatorSuggestion,
+        supportsTraversal,
+        supportsNot,
+      });
+      treeAtCursor.tree.accept(visitorWithAutoComplete);
     }
     if (visitorWithAutoComplete) {
       return {
@@ -66,4 +60,13 @@ export function createSelectionAutoComplete({
     }
     return {list: [], from: 0, to: 0};
   };
+}
+
+/** Memoizes the hint results, recomputing when the hint itself changes (e.g. when values load). */
+export function useSelectionAutoCompleteResults(
+  selectionHint: ReturnType<typeof createSelectionAutoComplete>,
+  line: string,
+  cursorIndex: number,
+) {
+  return useMemo(() => selectionHint(line, cursorIndex), [selectionHint, line, cursorIndex]);
 }

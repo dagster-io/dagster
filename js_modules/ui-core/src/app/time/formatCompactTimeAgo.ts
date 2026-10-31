@@ -1,3 +1,5 @@
+import {unitToShortLabel} from '../../ui/formatDuration';
+
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
@@ -6,12 +8,17 @@ const DAY = 24 * HOUR;
 // Past this many days a short date reads better than a day count.
 const MAX_DAYS = 99;
 
+type ShortLabelUnit = keyof typeof unitToShortLabel;
+
+const formatUnitsAgo = (count: number, singular: ShortLabelUnit, plural: ShortLabelUnit) =>
+  `${count} ${unitToShortLabel[count === 1 ? singular : plural]} ago`;
+
 type DateFormatOptions = {
   locale: string;
   timezone: string;
 };
 
-/** Compact elapsed text: 5s ago, 12m ago, 3h ago, 9d ago, then a bare short date. */
+/** Compact elapsed text: 5 sec ago, 12 min ago, 3 hr ago, 9 days ago, then a bare short date. */
 export const formatCompactTimeAgo = (
   nowMs: number,
   thenMs: number,
@@ -19,17 +26,17 @@ export const formatCompactTimeAgo = (
 ) => {
   const elapsedMs = Math.max(0, nowMs - thenMs);
   if (elapsedMs < MINUTE) {
-    return `${Math.floor(elapsedMs / SECOND)}s ago`;
+    return formatUnitsAgo(Math.floor(elapsedMs / SECOND), 'second', 'seconds');
   }
   if (elapsedMs < HOUR) {
-    return `${Math.floor(elapsedMs / MINUTE)}m ago`;
+    return formatUnitsAgo(Math.floor(elapsedMs / MINUTE), 'minute', 'minutes');
   }
   if (elapsedMs < DAY) {
-    return `${Math.floor(elapsedMs / HOUR)}h ago`;
+    return formatUnitsAgo(Math.floor(elapsedMs / HOUR), 'hour', 'hours');
   }
   const days = Math.floor(elapsedMs / DAY);
   if (days <= MAX_DAYS) {
-    return `${days}d ago`;
+    return formatUnitsAgo(days, 'day', 'days');
   }
 
   // Any fixed locale serves the comparison; the displayed date uses the caller's locale.
@@ -57,7 +64,6 @@ const getCompactTimeAgoUnitMs = (elapsedMs: number) => {
   return DAY;
 };
 
-/** Milliseconds until the compact text next changes. */
 export const getNextCompactTimeAgoUpdateMs = (nowMs: number, thenMs: number) => {
   const elapsedMs = Math.max(0, nowMs - thenMs);
   const unit = getCompactTimeAgoUnitMs(elapsedMs);

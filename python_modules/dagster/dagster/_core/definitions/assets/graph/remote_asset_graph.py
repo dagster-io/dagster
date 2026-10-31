@@ -64,6 +64,8 @@ class RemoteAssetCheckNode:
 class RemoteAssetJobNode(BaseAssetJobNode):
     """Asset-job entity node built from a repository snapshot on the host side."""
 
+    key: AssetJobKey
+
     def __init__(
         self,
         handle: RepositoryHandle,

@@ -7,10 +7,11 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
 from dagster._core.pipes.context import PipesSession
-from dagster._core.pipes.utils import PipesEnvContextInjector, PipesTempFileMessageReader
+from dagster._core.pipes.utils import PipesEnvContextInjector
 from prefect import Task
 from prefect.settings import PREFECT_API_KEY, PREFECT_API_URL, temporary_settings
 
+from dagster_prefect.message_readers import PipesPrefectLogsMessageReader
 from dagster_prefect.pipes import BasePipesPrefectClient, PrefectRun
 
 # The task argument carrying the Pipes bootstrap payload. A task worker's environment is
@@ -22,16 +23,22 @@ PIPES_PARAMS_TASK_ARGUMENT = "dagster_pipes_params"
 class PipesPrefectTaskClient(BasePipesPrefectClient):
     """Launches a Prefect background task and materializes when its task run finishes.
 
-    The task must accept a ``dagster_pipes_params`` argument and open a Pipes session with it:
+    The task must accept a ``dagster_pipes_params`` argument. Opening a Pipes session with it
+    is optional, to report metadata and asset checks back:
 
     .. code-block:: python
 
-        from dagster_pipes import PipesMappingParamsLoader, open_dagster_pipes
+        from dagster_pipes import (
+            PipesMappingParamsLoader,
+            PipesPrefectLogsMessageWriter,
+            open_dagster_pipes,
+        )
 
         @task
         def summarize(as_of: str, dagster_pipes_params: dict[str, str] | None = None) -> None:
             with open_dagster_pipes(
-                params_loader=PipesMappingParamsLoader(dagster_pipes_params or {})
+                params_loader=PipesMappingParamsLoader(dagster_pipes_params or {}),
+                message_writer=PipesPrefectLogsMessageWriter(),
             ) as pipes:
                 pipes.report_asset_materialization(metadata={"rows": 100})
 
@@ -83,9 +90,7 @@ class PipesPrefectTaskClient(BasePipesPrefectClient):
         return PipesEnvContextInjector()
 
     def _default_message_reader(self) -> PipesMessageReader:
-        # Only correct when the task worker shares a filesystem with the Dagster step, which
-        # is the case for a worker on the same host. Pass a blob-store reader otherwise.
-        return PipesTempFileMessageReader()
+        return PipesPrefectLogsMessageReader(prefect=self.prefect)
 
     @contextmanager
     def _prefect_settings(self):

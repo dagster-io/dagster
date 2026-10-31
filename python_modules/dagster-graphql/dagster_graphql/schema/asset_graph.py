@@ -1,5 +1,6 @@
 import os
 from collections.abc import Mapping, Sequence
+from functools import partial
 from typing import TYPE_CHECKING, Any, Union, cast
 
 import graphene
@@ -534,9 +535,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         start_idx: int | None = None,
         end_idx: int | None = None,
     ) -> Sequence[str]:
-        # TODO: Add functionality for dynamic partitions definition
-        # Accepts an optional start_idx and end_idx to fetch a subset of time window partition keys
-
         check.opt_inst_param(partitions_snap, "partitions_snap", PartitionsSnap)
         check.opt_int_param(start_idx, "start_idx")
         check.opt_int_param(end_idx, "end_idx")
@@ -971,8 +969,12 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
     ) -> GrapheneAutomationCondition | None:
-        ac_snapshot = get_ac_snapshot(self._asset_node_snap)
-        return GrapheneAutomationCondition(ac_snapshot) if ac_snapshot else None
+        snap = self._asset_node_snap
+        # Presence check only; `snap.automation_condition` would rebuild legacy rule-based
+        # policies and get_ac_snapshot walks the whole tree, so both stay in the thunk.
+        if snap.automation_condition_snapshot is None and snap.auto_materialize_policy is None:
+            return None
+        return GrapheneAutomationCondition(lambda: check.not_none(get_ac_snapshot(snap)))
 
     def resolve_targetingInstigators(
         self, graphene_info: ResolveInfo
@@ -1313,10 +1315,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         startIdx: int | None = None,
         endIdx: int | None = None,
     ) -> Sequence[GrapheneDimensionPartitionKeys]:
-        # Accepts startIdx and endIdx arguments. This will be used to select a range of
-        # time partitions. StartIdx is inclusive, endIdx is exclusive.
-        # For non time partition definitions, these arguments will be ignored
-        # and the full list of partition keys will be returned.
+        # startIdx is inclusive, endIdx is exclusive. Honored for time window and dynamic
+        # partition definitions; static definitions ignore them and return every key.
         if not self._asset_node_snap.partitions:
             return []
 
@@ -1324,7 +1324,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             return [
                 GrapheneDimensionPartitionKeys(
                     name=dimension.name,
-                    partition_keys=self._get_partition_keys(
+                    get_partition_keys=partial(
+                        self._get_partition_keys,
                         graphene_info,
                         dimension.partitions,
                         startIdx,
@@ -1346,8 +1347,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                 type=GraphenePartitionDefinitionType.from_partition_def_data(
                     self._asset_node_snap.partitions
                 ),
-                partition_keys=self._get_partition_keys(
-                    graphene_info=graphene_info, start_idx=startIdx, end_idx=endIdx
+                get_partition_keys=partial(
+                    self._get_partition_keys,
+                    graphene_info=graphene_info,
+                    start_idx=startIdx,
+                    end_idx=endIdx,
                 ),
             )
         ]

@@ -35,7 +35,7 @@ Configure a `SodaScanComponent` in your Dagster project to:
 
 ## Scaffolding with the CLI
 
-Use the Dagster CLI to scaffold a new Soda scan component in your project. This requires [dagster-dg-cli](https://docs.dagster.io/concepts/components#scaffolding-components).
+Use the Dagster CLI to scaffold a new Soda scan component in your project. This requires [dagster-dg-cli](/guides/build/components/building-pipelines-with-components/adding-component-definitions).
 
 ```bash
 dg scaffold defs dagster_soda.SodaScanComponent <path>

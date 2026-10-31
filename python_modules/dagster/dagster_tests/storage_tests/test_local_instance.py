@@ -162,7 +162,7 @@ def test_get_run_by_id():
 
 
 def test_run_step_stats():
-    _called = None
+    _called: bool = False
 
     @dg.job
     def simple():
@@ -182,6 +182,7 @@ def test_run_step_stats():
 
         @dg.op
         def should_not_execute(_, x):
+            nonlocal _called
             _called = True
             return x
 
@@ -207,7 +208,7 @@ def test_run_step_stats():
 
 
 def test_run_step_stats_with_retries():
-    _called = None
+    _called: bool = False
     _count = {"total": 0}
 
     @dg.job
@@ -231,6 +232,7 @@ def test_run_step_stats_with_retries():
 
         @dg.op
         def should_not_execute(_, x):
+            nonlocal _called
             _called = True
             return x
 

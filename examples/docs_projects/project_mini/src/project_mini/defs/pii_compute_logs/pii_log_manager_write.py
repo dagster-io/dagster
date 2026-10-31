@@ -2,9 +2,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 
 from dagster import Bool, Field, StringSource
-from dagster._core.storage.captured_log_manager import (  # ty: ignore[unresolved-import]
-    CapturedLogContext,
-)
+from dagster._core.storage.captured_log_manager import CapturedLogContext  # ty: ignore[unresolved-import]
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 

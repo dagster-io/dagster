@@ -383,7 +383,6 @@ def test_daemon_paused() -> None:
         ticks = _get_asset_daemon_ticks(instance)
 
         assert len(ticks) == 1
-        assert ticks[0]
         assert ticks[0].status == TickStatus.SUCCESS
         assert ticks[0].timestamp == state.current_time.timestamp()
         assert ticks[0].tick_data.end_timestamp == state.current_time.timestamp()
@@ -419,7 +418,6 @@ def test_daemon_skip_env_var() -> None:
         ticks = _get_asset_daemon_ticks(instance)
 
         assert len(ticks) == 1
-        assert ticks[0]
         assert ticks[0].status == TickStatus.SKIPPED
         assert ticks[0].timestamp == state.current_time.timestamp()
         assert ticks[0].tick_data.end_timestamp == state.current_time.timestamp()
@@ -1180,7 +1178,6 @@ def test_custom_purge() -> None:
 
         assert len(ticks) == 2
 
-        assert ticks[-1]
         assert ticks[-1].status == TickStatus.SUCCESS
         assert ticks[-1].timestamp == state.current_time.timestamp()
 

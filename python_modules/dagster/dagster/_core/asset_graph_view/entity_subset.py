@@ -1,14 +1,5 @@
 import operator
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Generic,
-    Literal,
-    NamedTuple,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generic, Literal, NamedTuple, TypeVar  # noqa: UP035
 
 from typing_extensions import Self
 

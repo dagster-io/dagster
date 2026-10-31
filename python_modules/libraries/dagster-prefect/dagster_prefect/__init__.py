@@ -1,5 +1,8 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
 
+from dagster_prefect.message_readers import (
+    PipesPrefectLogsMessageReader as PipesPrefectLogsMessageReader,
+)
 from dagster_prefect.pipes_deployment import (
     PipesPrefectDeploymentClient as PipesPrefectDeploymentClient,
 )

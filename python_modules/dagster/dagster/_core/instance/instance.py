@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import ExitStack
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 if TYPE_CHECKING:
     from tempfile import TemporaryDirectory
@@ -657,6 +657,17 @@ class DagsterInstance(
             partition_key (str): Partition key to check.
         """
         return self._event_storage.has_dynamic_partition(partitions_def_name, partition_key)
+
+    @traced
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        """Return the subset of ``partition_keys`` that exist in the
+        :py:class:`DynamicPartitionsDefinition`.
+        """
+        return self._event_storage.get_existing_dynamic_partitions(
+            partitions_def_name, partition_keys
+        )
 
     # =====================================================================================
     # INTERNAL METHODS

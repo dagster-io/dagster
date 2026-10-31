@@ -263,8 +263,7 @@ def _get_reserved_ids_for_latest_ticks(
     ids = []
     request_context = context.create_request_context()
     for latest_tick in _get_latest_ticks(request_context):
-        if latest_tick.tick_data:
-            ids.extend(latest_tick.tick_data.reserved_run_ids or [])
+        ids.extend(latest_tick.tick_data.reserved_run_ids or [])
     return ids
 
 
@@ -1413,7 +1412,7 @@ def _get_runs_by_instigator_for_latest_ticks(
     """The runs reserved by each automation sensor's latest tick, keyed by sensor name."""
     runs_by_instigator = {}
     for tick in _get_latest_ticks(context.create_request_context()):
-        reserved_ids = (tick.tick_data.reserved_run_ids or []) if tick.tick_data else []
+        reserved_ids = tick.tick_data.reserved_run_ids or []
         runs_by_instigator[tick.instigator_name] = (
             context.instance.get_runs(filters=dg.RunsFilter(run_ids=list(reserved_ids)))
             if reserved_ids

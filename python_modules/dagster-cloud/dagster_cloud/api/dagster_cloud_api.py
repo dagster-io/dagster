@@ -315,6 +315,7 @@ class UserCodeDeploymentType(enum.Enum):
     SERVERLESS = "serverless"
     ECS = "ecs"
     K8S = "k8s"
+    ACA = "aca"
     DOCKER = "docker"
     PROCESS = "process"
     UNKNOWN = "unknown"
@@ -324,6 +325,7 @@ class UserCodeDeploymentType(enum.Enum):
         return self in [
             UserCodeDeploymentType.ECS,
             UserCodeDeploymentType.K8S,
+            UserCodeDeploymentType.ACA,
             UserCodeDeploymentType.SERVERLESS,
         ]
 

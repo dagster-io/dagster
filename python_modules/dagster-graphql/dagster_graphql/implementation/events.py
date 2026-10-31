@@ -269,9 +269,11 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneRunDequeuedEvent,
         GrapheneRunEnqueuedEvent,
         GrapheneRunFailureEvent,
+        GrapheneRunResumedEvent,
         GrapheneRunStartEvent,
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
+        GrapheneRunSuspendedEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneStepWorkerStartedEvent,
         GrapheneStepWorkerStartingEvent,
@@ -362,6 +364,10 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         DagsterEventType.PIPELINE_CANCELING,
     ):
         return GrapheneRunCancelingEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.RUN_SUSPENDED:
+        return GrapheneRunSuspendedEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.RUN_RESUMED:
+        return GrapheneRunResumedEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type in (
         DagsterEventType.RUN_CANCELED,
         DagsterEventType.PIPELINE_CANCELED,

@@ -14,6 +14,7 @@ from dagster_buildkite.defines import (
     GCP_CREDS_LOCAL_FILE,
     TEST_PROJECT_BASE_IMAGE_VERSION,
 )
+from dagster_buildkite.utils import pull_image_with_retries
 
 # Some python packages depend on these images but we don't explicitly define that dependency anywhere other
 # than when we construct said package's Buildkite steps. Until we more explicitly define those dependencies
@@ -93,6 +94,25 @@ def test_project_depends_fn(version: AvailablePythonVersion, _) -> list[str]:
         return [_test_project_step_key(version)]
     else:
         return []
+
+
+def test_project_prepull_cmds() -> list[str]:
+    """Pull the test-project image with the docker CLI before the tests run.
+
+    The run launcher, executor and pipes client all handle a missing image by
+    pulling through docker-py and retrying the create, which then lands on a
+    dockerd still committing the layers — all under docker-py's fixed 60s socket
+    read timeout. Pulling here leaves them a local image and nothing to fetch.
+
+    Empty when integration tests are off, since the image is then never built.
+    """
+    if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
+        return []
+    return [
+        pull_image_with_retries(
+            "$${DAGSTER_DOCKER_REPOSITORY}/test-project:$${DAGSTER_DOCKER_IMAGE_TAG}"
+        )
+    ]
 
 
 def test_project_gate_cmds() -> list[str]:

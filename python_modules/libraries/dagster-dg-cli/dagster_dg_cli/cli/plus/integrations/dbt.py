@@ -35,7 +35,7 @@ def _discover_dbt_projects(
         from dagster._core.code_pointer import load_python_file
         from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 
-        contents = load_python_file(file_path, None)
+        contents = load_python_file(file_path, None, add_uuid_suffix=True)
         return list(find_objects_in_module_of_types(contents, DbtProject))
     else:
         from dagster_dbt.components.dbt_project.component import get_projects_from_dbt_component

@@ -10,13 +10,13 @@ import {
   useRef,
 } from 'react';
 import {Route as ReactRouterRoute, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
-import {useSetRecoilState} from 'recoil';
 
-import {currentPageAtom} from './analytics';
+import {useClaimCurrentPage} from './analytics';
 import {useIsMobileLayout} from './layout/LayoutMode';
 import {
   MobileRouteStatus,
   MobileRouteStatusContext,
+  RouteContentContext,
   RouteDepthContext,
   useClaimMobileRouteStatus,
 } from './layout/mobileRouteStatus';
@@ -109,19 +109,22 @@ const Wrapper = memo(({children, isNestingRoute, mobile}: WrapperProps & {childr
   // Redirects are transient; reporting them would flip the layout for one commit.
   const isRedirect = isValidElement(content) && content.type === Redirect;
 
-  const setCurrentPage = useSetRecoilState(currentPageAtom);
+  const claimPage = useClaimCurrentPage();
   const claimStatus = useClaimMobileRouteStatus();
   useLayoutEffect(() => {
     if (path !== '*' && !isNestingRoute && !isRedirect) {
-      setCurrentPage(({specificPath}) => ({specificPath, path}));
+      claimPage({path, pathname, depth});
       claimStatus({pathname, depth, status});
     }
-  }, [path, pathname, depth, isNestingRoute, isRedirect, status, setCurrentPage, claimStatus]);
+  }, [path, pathname, depth, isNestingRoute, isRedirect, status, claimPage, claimStatus]);
+
+  const contentType = isValidElement(content) ? content.type : null;
+  const routeContent = useMemo(() => ({type: contentType, pathname}), [contentType, pathname]);
 
   return (
     <RouteDepthContext.Provider value={depth}>
       <MobileRouteStatusContext.Provider value={status}>
-        {content}
+        <RouteContentContext.Provider value={routeContent}>{content}</RouteContentContext.Provider>
       </MobileRouteStatusContext.Provider>
     </RouteDepthContext.Provider>
   );

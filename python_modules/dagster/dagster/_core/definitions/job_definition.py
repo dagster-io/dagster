@@ -264,6 +264,7 @@ class JobDefinition(IHasInternalInit):
                     " `AutomationCondition.all_job_root_assets_match(...)`."
                 )
 
+    @staticmethod
     def dagster_internal_init(
         *,
         graph_def: GraphDefinition,

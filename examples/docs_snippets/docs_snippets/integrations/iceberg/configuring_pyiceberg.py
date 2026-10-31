@@ -1,7 +1,5 @@
 from dagster_iceberg.config import IcebergCatalogConfig  # ty: ignore[unresolved-import]
-from dagster_iceberg.io_manager.arrow import (
-    PyArrowIcebergIOManager,  # ty: ignore[unresolved-import]
-)
+from dagster_iceberg.io_manager.arrow import PyArrowIcebergIOManager  # ty: ignore[unresolved-import]
 
 io_manager = PyArrowIcebergIOManager(
     name="test",

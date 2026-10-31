@@ -1,13 +1,14 @@
-import {Box} from '@dagster-io/ui-components';
 import {MouseEvent, useRef} from 'react';
 import {useHistory} from 'react-router-dom';
 
+import {RunActionsCell} from './RunActionsCell';
+import {RunDialog} from './RunDialogs';
 import {RunIDCell} from './RunIDCell';
-import {RunInitiatedByCell} from './RunInitiatedByCell';
+import {RunLaunchCell} from './RunLaunchCell';
 import {RunStatusCell} from './RunStatusCell';
-import {RunTargetsCell} from './RunTargetsCell';
+import {RunTimingCell} from './RunTimingCell';
 import styles from './css/RunRow.module.css';
-import {TickIdentifier} from './getInitiatedBy';
+import {TickIdentifier} from './getLaunchDetails';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {isNewTabClick, useOpenInNewTab} from '../../hooks/useOpenInNewTab';
 
@@ -23,12 +24,13 @@ const isRowNavigationTarget = (row: HTMLElement | null, target: EventTarget | nu
   row.contains(target) &&
   target.closest(INTERACTIVE_ELEMENT_SELECTOR) === null;
 
-type Props = {
+type RunRowProps = {
   entry: MappedRunsFeedEntry;
   onOpenTickDetails: (tick: TickIdentifier, triggerElement: HTMLElement) => void;
+  onOpenRunDialog: (dialog: RunDialog, triggerElement: HTMLElement) => void;
 };
 
-export const RunRow = ({entry, onOpenTickDetails}: Props) => {
+export const RunRow = ({entry, onOpenTickDetails, onOpenRunDialog}: RunRowProps) => {
   const history = useHistory();
   const openInNewTab = useOpenInNewTab();
   const rowRef = useRef<HTMLDivElement>(null);
@@ -62,14 +64,16 @@ export const RunRow = ({entry, onOpenTickDetails}: Props) => {
 
   return (
     <div ref={rowRef} className={styles.row} onClick={handleRowClick} onAuxClick={handleRowClick}>
-      <div className={styles.initiatorAndTargets}>
-        <RunInitiatedByCell entry={entry} onOpenTickDetails={onOpenTickDetails} />
-        <RunTargetsCell entry={entry} />
-      </div>
+      <RunLaunchCell entry={entry} onOpenTickDetails={onOpenTickDetails} />
       <RunStatusCell entry={entry} />
-      <Box border="left" padding={{left: 16}}>
-        <RunIDCell entry={entry} />
-      </Box>
+      <div className={styles.divider} />
+      <RunTimingCell entry={entry} />
+      <div className={styles.divider} />
+      <RunIDCell entry={entry} />
+      <div className={styles.divider} />
+      {entry.__typename === 'Run' && (
+        <RunActionsCell run={entry} onOpenRunDialog={onOpenRunDialog} />
+      )}
     </div>
   );
 };

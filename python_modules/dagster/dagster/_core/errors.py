@@ -563,6 +563,10 @@ class DagsterRunAlreadyExists(DagsterError):
     """Indicates that a pipeline run already exists in a run storage."""
 
 
+class DagsterRunTooLargeError(DagsterError):
+    """Indicates that a run exceeds the maximum size that run storage will accept."""
+
+
 class DagsterSnapshotDoesNotExist(DagsterError):
     """Indicates you attempted to create a pipeline run with a nonexistent snapshot id."""
 

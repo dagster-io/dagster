@@ -1,7 +1,8 @@
 ---
 description: Set up a virtual environment, install Dagster, and configure a local Airflow instance to follow the task-level Airflow to Dagster migration tutorial.
 sidebar_position: 100
-title: Setup
+title: Set up the task-level Airflow migration tutorial
+sidebar_label: Setup
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';

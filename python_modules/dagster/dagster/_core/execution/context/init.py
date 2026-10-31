@@ -218,7 +218,7 @@ class UnboundInitResourceContext(InitResourceContext):
         return self._resource_config
 
     @property
-    def resource_def(self) -> ResourceDefinition | None:
+    def resource_def(self) -> ResourceDefinition:
         raise DagsterInvariantViolationError(
             "UnboundInitResourceContext has not been bound to resource definition."
         )

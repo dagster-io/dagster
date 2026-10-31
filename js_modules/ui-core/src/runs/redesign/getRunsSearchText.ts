@@ -2,9 +2,9 @@ import {
   RUNS_SEARCH_ATTRIBUTES,
   RunsSearchAttribute,
   formatRunsSearchValue,
-  getAttributeForTagKey,
+  getAttributeTermForTag,
 } from './runsSearchAttributes';
-import {RunFilterToken, RunFilterTokenType} from '../RunsFilterUtils';
+import {RunFilterToken, RunFilterTokenType, splitTagFilterValue} from '../RunsFilterUtils';
 
 type RenderedTerm = {
   attribute: RunsSearchAttribute;
@@ -21,14 +21,13 @@ const getScalarTerms = (
   value !== undefined ? [{attribute, text: `${attribute}:${formatRunsSearchValue(value)}`}] : [];
 
 const getTagTerm = (tagValue: string): RenderedTerm => {
-  // Same split as `runsFilterForSearchTokens`, which drops anything after a second `=`.
-  const [key = '', value = ''] = tagValue.split('=');
-  // Tag-backed attributes reject an empty value, so an empty legacy value stays a generic tag.
-  const attribute = value ? getAttributeForTagKey(key) : undefined;
-  if (attribute) {
+  const {key, value} = splitTagFilterValue(tagValue);
+  const attributeTerm = getAttributeTermForTag(key, value);
+
+  if (attributeTerm) {
     return {
-      attribute,
-      text: `${attribute}:${formatRunsSearchValue(value)}`,
+      attribute: attributeTerm.attribute,
+      text: `${attributeTerm.attribute}:${formatRunsSearchValue(attributeTerm.value)}`,
     };
   }
   return {
@@ -40,9 +39,9 @@ const getTagTerm = (tagValue: string): RenderedTerm => {
 /**
  * Renders legacy `q[]` tokens as runs search text.
  *
- * - Follows `runsFilterForSearchTokens` precedence: the last job, snapshot, and created date
- *   win; IDs, statuses, and tags accumulate.
- * - Drops tokens that converter ignores, since they never affected the query.
+ * - Follows `runsFilterForSearchTokens` precedence: the last job and snapshot win; IDs,
+ *   statuses, and tags accumulate.
+ * - Drops tokens that converter ignores, and created-date tokens, which have their own control.
  */
 export const getRunsSearchText = (tokens: RunFilterToken[]) => {
   const terms: RenderedTerm[] = [
@@ -56,8 +55,6 @@ export const getRunsSearchText = (tokens: RunFilterToken[]) => {
     })),
     ...getScalarTerms('job', getValues(tokens, ['job', 'pipeline']).at(-1)),
     ...getScalarTerms('snapshot_id', getValues(tokens, ['snapshotId']).at(-1)),
-    ...getScalarTerms('created_after', getValues(tokens, ['created_date_after']).at(-1)),
-    ...getScalarTerms('created_before', getValues(tokens, ['created_date_before']).at(-1)),
     ...getValues(tokens, ['tag']).map(getTagTerm),
   ];
 

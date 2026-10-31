@@ -177,9 +177,7 @@ def _core_resource_initialization_event_generator(
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
                 )
-                for event in manager.generate_setup_events():
-                    if event:
-                        yield event
+                yield from manager.generate_setup_events()
                 initialized_resource = check.inst(manager.get_object(), InitializedResource)
                 resource_instances[resource_name] = initialized_resource.resource
                 resource_init_times[resource_name] = initialized_resource.duration

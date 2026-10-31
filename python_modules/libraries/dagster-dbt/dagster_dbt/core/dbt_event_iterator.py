@@ -60,7 +60,9 @@ def _fetch_column_metadata(
         event (DbtDagsterEventType): The dbt event to append column metadata to.
         with_column_lineage (bool): Whether to include column lineage metadata in the event.
     """
-    adapter = check.not_none(invocation.adapter)
+    adapter = invocation.adapter
+    if adapter is None:
+        return {}
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
 
@@ -154,7 +156,9 @@ def _fetch_row_count_metadata(
     if not isinstance(event, (AssetMaterialization, Output)):
         return None
 
-    adapter = check.not_none(invocation.adapter)
+    adapter = invocation.adapter
+    if adapter is None:
+        return None
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
     is_view = dbt_resource_props["config"]["materialized"] == "view"
@@ -358,9 +362,7 @@ class DbtEventIterator(Iterator[T]):
         adapter_type = self._dbt_cli_invocation.manifest.get("metadata", {}).get("adapter_type")
         if adapter_type == "snowflake":
             try:
-                from dagster_cloud.dagster_insights import (  # ty: ignore[unresolved-import]
-                    dbt_with_snowflake_insights,
-                )
+                from dagster_cloud.dagster_insights import dbt_with_snowflake_insights  # ty: ignore[unresolved-import]
             except ImportError as e:
                 raise DagsterInvalidPropertyError(
                     "The `dagster_cloud` library is required to use the `with_insights`"
@@ -379,9 +381,7 @@ class DbtEventIterator(Iterator[T]):
             )
         elif adapter_type == "bigquery":
             try:
-                from dagster_cloud.dagster_insights import (  # ty: ignore[unresolved-import]
-                    dbt_with_bigquery_insights,
-                )
+                from dagster_cloud.dagster_insights import dbt_with_bigquery_insights  # ty: ignore[unresolved-import]
             except ImportError as e:
                 raise DagsterInvalidPropertyError(
                     "The `dagster_cloud` library is required to use the `with_insights`"

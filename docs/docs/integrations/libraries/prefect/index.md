@@ -17,7 +17,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-The `dagster-prefect` library uses [Dagster Pipes](/integrations/external-pipelines) to launch work on Prefect from a Dagster asset. Dagster stays the control plane, handling scheduling, partitioning, lineage, and retries, while the work itself runs on Prefect's infrastructure and reports back.
+The `dagster-prefect` library uses [Dagster Pipes](/integrations/external-pipelines) to launch work on Prefect from a Dagster asset. Dagster stays the control plane, handling scheduling, partitioning, lineage, and retries, while the work itself runs on Prefect's infrastructure. Existing deployments work as is, with no change to your Prefect code.
 
 This is useful when a workflow already runs on Prefect and you would rather orchestrate it than rewrite it, and when a step needs the durability of a workflow engine but should still be a node in the asset graph.
 
@@ -28,7 +28,7 @@ This is useful when a workflow already runs on Prefect and you would rather orch
 | `PipesPrefectDeploymentClient` | a [deployment](https://docs.prefect.io/v3/concepts/deployments) run | a worker on the deployment's work pool, a push work pool, or a Prefect Managed work pool |
 | `PipesPrefectTaskClient`       | a [background task](https://docs.prefect.io/v3/concepts/tasks) run  | a task worker (`prefect task serve`)                                                     |
 
-Prefer deployments. A deployment run receives the Pipes payload as environment variables, so your flow's signature stays exactly as it is, and it is the only option that can run on Prefect-managed infrastructure. Background tasks have no environment channel, so the payload has to travel as a task argument.
+Prefer deployments. A deployment runs with no change to the flow, and it is the only option that can run on Prefect-managed infrastructure. Background tasks have no environment channel, so the payload has to travel as a task argument.
 
 ## Installation
 
@@ -57,27 +57,7 @@ pip install dagster-prefect
 
 ## Launching a deployment
 
-Add one line to the flow you already have. `open_dagster_pipes()` needs no configuration, because the deployment run receives everything it needs as environment variables:
-
-```python
-from dagster_pipes import open_dagster_pipes
-from prefect import flow, task
-
-
-@task(retries=2)
-def extract(as_of: str) -> list[dict]: ...
-
-
-@flow
-def refresh_orders(as_of: str = "latest") -> None:
-    rows = extract(as_of)
-    with open_dagster_pipes() as pipes:
-        pipes.report_asset_materialization(metadata={"rows": len(rows)})
-```
-
-That line is safe outside Dagster. Run the flow on its own and `open_dagster_pipes()` warns and returns a no-op context, so existing Prefect runs keep working.
-
-On the Dagster side, configure the resource and launch the deployment by its `flow-name/deployment-name`:
+Launch an existing deployment by its `flow-name/deployment-name`. The flow doesn't need any change:
 
 ```python
 import dagster as dg
@@ -108,9 +88,33 @@ defs = dg.Definitions(
 )
 ```
 
-The Dagster step blocks until the flow run reaches a terminal state. Anything the flow reports through Pipes lands on the materialization, along with a `Prefect Run URL` linking to the run in Prefect.
+The Dagster step blocks until the flow run reaches a terminal state, and materializes the asset if it succeeded, with a `Prefect Run URL` linking to the run in Prefect. The flow run's logs show up in the Dagster step's compute logs.
+
+Without a Pipes session in the flow, that's all Dagster gets: the flow can't report metadata or asset checks, and assets are only materialized once the whole flow run finishes. The step also logs a warning that no Pipes messages were received, which is expected in this case.
 
 `api_url` is the Prefect API, for example `http://127.0.0.1:4200/api` for an open source server. Set `ui_url` as well on Prefect Cloud, whose UI is served from a different host than its API.
+
+### Reporting from the flow
+
+Opening a Pipes session in the flow is optional. It lets the flow report metadata and asset checks back as it runs, for example one materialization per asset of a multi-asset as each one finishes:
+
+```python
+from dagster_pipes import PipesPrefectLogsMessageWriter, open_dagster_pipes
+from prefect import flow, task
+
+
+@task(retries=2)
+def extract(as_of: str) -> list[dict]: ...
+
+
+@flow
+def refresh_orders(as_of: str = "latest") -> None:
+    rows = extract(as_of)
+    with open_dagster_pipes(message_writer=PipesPrefectLogsMessageWriter()) as pipes:
+        pipes.report_asset_materialization(metadata={"rows": len(rows)})
+```
+
+Anything the flow reports lands on the materialization. The block is safe outside Dagster: run the flow on its own and `open_dagster_pipes` warns and returns a no-op context.
 
 ## Partitioning
 
@@ -139,17 +143,22 @@ Multi-dimensional partitions are not supported by `partition_parameter`, because
 
 ## Launching a background task
 
-A background task has no environment channel, so it takes the Pipes payload as an argument and loads it explicitly:
+A background task has no environment channel, so it must accept the Pipes payload as a `dagster_pipes_params` argument. Opening a Pipes session with it is optional, to report metadata and asset checks back:
 
 ```python
-from dagster_pipes import PipesMappingParamsLoader, open_dagster_pipes
+from dagster_pipes import (
+    PipesMappingParamsLoader,
+    PipesPrefectLogsMessageWriter,
+    open_dagster_pipes,
+)
 from prefect import task
 
 
 @task
 def summarize(as_of: str, dagster_pipes_params: dict[str, str] | None = None) -> None:
     with open_dagster_pipes(
-        params_loader=PipesMappingParamsLoader(dagster_pipes_params or {})
+        params_loader=PipesMappingParamsLoader(dagster_pipes_params or {}),
+        message_writer=PipesPrefectLogsMessageWriter(),
     ) as pipes:
         pipes.report_asset_materialization(metadata={"rows": 100})
 ```
@@ -174,7 +183,19 @@ A Prefect run cancelled from Prefect's side fails the Dagster step with a messag
 
 ## Reporting messages back
 
-Both clients default to a temporary-file message reader, which requires the process running your flow or task to share a filesystem with the Dagster step. That holds for a worker on the same host, and does not for a worker in a container, on another machine, or on Prefect-managed infrastructure. Pass a blob store message reader for those, for example:
+Both clients read Pipes messages from the Prefect run's logs, through the same Prefect API they use to launch and poll the run. No shared filesystem, bucket, or extra credentials are needed, so this works for a worker in a container, on another machine, or on Prefect-managed infrastructure.
+
+For messages to arrive:
+
+- The flow or task opens a Pipes session with `message_writer=PipesPrefectLogsMessageWriter()`. It needs `dagster-pipes` 1.13.25 or later in the environment the flow or task runs in.
+- Prefect sends logs to its API, which it does by default. Setting `PREFECT_LOGGING_TO_API_ENABLED=false` turns that off.
+- `PREFECT_LOGGING_LEVEL` is `INFO` or lower, since messages are logged at `INFO`.
+
+The messages show up in the Prefect run's logs as JSON lines, under the `prefect.flow_runs.dagster_pipes` logger. If none arrive, as with a flow that doesn't open a Pipes session, the Dagster step still materializes the asset when the Prefect run succeeds and logs a warning listing what to check.
+
+### Large payloads
+
+A single message can be at most about 900 KB, below Prefect's 1 MB limit on a log. A larger one is replaced by an error in the Dagster step's logs rather than delivered. Each message also counts against Prefect Cloud's [log rate limit](https://docs.prefect.io/v3/concepts/rate-limits). For large metadata or heavy reporting, use a blob store instead, with the matching reader and writer on each side:
 
 ```python
 import boto3
@@ -186,4 +207,10 @@ PipesPrefectDeploymentClient(
 )
 ```
 
-Without a reader the flow can reach, Dagster still materializes the asset when the Prefect run succeeds, but without the metadata, logs, or asset checks the flow reported.
+```python
+import boto3
+from dagster_pipes import PipesS3MessageWriter, open_dagster_pipes
+
+with open_dagster_pipes(message_writer=PipesS3MessageWriter(client=boto3.client("s3"))) as pipes:
+    ...
+```

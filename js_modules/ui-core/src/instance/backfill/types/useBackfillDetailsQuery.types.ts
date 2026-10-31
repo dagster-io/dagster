@@ -27,7 +27,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type JobBackfillDetailsFragment = {
   __typename: 'PartitionStatuses';

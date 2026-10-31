@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset, materialize
+from dagster._core.pipes.client import PipesMessageReader
+from dagster._core.pipes.utils import PipesTempFileMessageReader
 from dagster_prefect.pipes import PrefectRun
 from dagster_prefect.pipes_deployment import PipesPrefectDeploymentClient
 from dagster_prefect.resource import PrefectResource
@@ -34,6 +36,10 @@ class RecordingDeploymentClient(PipesPrefectDeploymentClient):
 
     def _read_state(self, prefect_run: PrefectRun) -> State | None:
         return Completed()
+
+    def _default_message_reader(self) -> PipesMessageReader:
+        # Nothing runs, so the logs reader would only wait out its window for a closed message.
+        return PipesTempFileMessageReader()
 
 
 def materialize_with(client: PipesPrefectDeploymentClient, **run_kwargs):
@@ -128,7 +134,8 @@ def deployment_on_a_work_pool(
 def test_flow_reports_back_through_pipes(
     prefect_resource: PrefectResource, deployment_on_a_work_pool: str
 ) -> None:
-    """The flow's signature is untouched: it only calls `open_dagster_pipes()`.
+    """The flow's signature is untouched: it only opens a Pipes session, and its messages
+    come back through the flow run's logs with the default reader.
 
     Partitioned, so this also covers both ways a flow can learn its slice: `as_of` is filled
     in from the partition key as an ordinary parameter, and the same key arrives on the Pipes

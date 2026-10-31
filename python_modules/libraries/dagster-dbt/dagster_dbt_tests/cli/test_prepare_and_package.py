@@ -3,17 +3,15 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import pytest
 import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
 from dagster_dbt.core.resource import DbtCliResource
+from dagster_dbt.dbt_project import DagsterDbtProjectPreparer, DbtProject
 from typer.testing import CliRunner
-
-if TYPE_CHECKING:
-    from dagster_dbt.dbt_project import DbtProject
 
 runner = CliRunner()
 
@@ -236,6 +234,51 @@ def test_prepare_and_package_runs_deps_when_packages_exist(
     assert any(packages_install_path.iterdir())
 
 
+def test_prepare_and_package_skips_deps_when_install_deps_disabled(
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(dbt_project_dir)
+
+    dependencies_path = dbt_project_dir.joinpath("dependencies.yml")
+    packages_install_path = dbt_project_dir.joinpath("dbt_packages")
+    manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+
+    dependencies_yml = {
+        "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
+    }
+    dependencies_path.write_text(yaml.dump(dependencies_yml), encoding="utf-8")
+
+    # Install packages out-of-band, as a user who opts out of deps would.
+    installed_project = DbtProject(dbt_project_dir)
+    installed_project.preparer.prepare(installed_project)
+    assert any(packages_install_path.iterdir())
+    manifest_path.unlink()
+
+    project_file = dbt_project_dir.joinpath("project.py")
+    project_file.write_text(
+        "from pathlib import Path\n"
+        "from dagster_dbt import DbtProject\n"
+        "jaffle_shop = DbtProject(\n"
+        "    project_dir=Path(__file__).parent.resolve(),\n"
+        "    install_deps=False,\n"
+        ")\n",
+        encoding="utf-8",
+    )
+
+    def _fail_deps(self: DagsterDbtProjectPreparer, project: DbtProject) -> None:
+        raise AssertionError("dbt deps should not run")
+
+    monkeypatch.setattr(DagsterDbtProjectPreparer, "_prepare_packages", _fail_deps)
+
+    result = runner.invoke(
+        app,
+        ["project", "prepare-and-package", "--file", os.fspath(project_file)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert manifest_path.exists()
+
+
 def test_prepare_and_package_with_file_named_dbt(
     monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:
@@ -279,7 +322,7 @@ def test_prepare_and_package_with_file_named_dbt(
 
     recorded_projects: list[DbtProject] = []
 
-    def _fake_prepare(project: "DbtProject") -> None:
+    def _fake_prepare(project: DbtProject) -> None:
         recorded_projects.append(project)
 
     monkeypatch.setattr("dagster_dbt.cli.app.prepare_and_package", _fake_prepare)

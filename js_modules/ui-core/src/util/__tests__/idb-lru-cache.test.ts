@@ -88,4 +88,49 @@ describe('IDBLRUCache', () => {
     expect(keys).toEqual([{value: 'value1'}, undefined, {value: 'value3'}, {value: 'value4'}]);
     await cacheInstance.close();
   });
+
+  describe('when IndexedDB fails', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('falls back to memory if the database cannot be opened', async () => {
+      jest.spyOn(indexedDB, 'open').mockImplementation(() => {
+        throw new DOMException('The operation is insecure.', 'SecurityError');
+      });
+      const cacheInstance = cache(testCacheOptions());
+      await cacheInstance.set('key1', 'value1');
+      expect(await cacheInstance.get('key1')).toEqual({value: 'value1'});
+      expect(await cacheInstance.has('key1')).toBe(true);
+      await expect(cacheInstance.close()).resolves.toBeUndefined();
+    });
+
+    it('swallows write failures and keeps values in memory', async () => {
+      const put = jest.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      });
+      const cacheInstance = cache(testCacheOptions());
+      await cacheInstance.set('key1', 'value1');
+      // close() flushes the pending debounced write, which would reject if the failure leaked.
+      await expect(cacheInstance.close()).resolves.toBeUndefined();
+      expect(put).toHaveBeenCalled();
+      expect(await cacheInstance.get('key1')).toEqual({value: 'value1'});
+      await cacheInstance.close();
+    });
+
+    it('does not reload stale persisted values over newer unsaved ones', async () => {
+      const cacheInstance = cache(testCacheOptions());
+      await cacheInstance.set('key1', 'old');
+      await cacheInstance.close();
+
+      jest.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      });
+      await cacheInstance.set('key1', 'new');
+      await cacheInstance.close();
+
+      expect(await cacheInstance.get('key1')).toEqual({value: 'new'});
+      await cacheInstance.close();
+    });
+  });
 });

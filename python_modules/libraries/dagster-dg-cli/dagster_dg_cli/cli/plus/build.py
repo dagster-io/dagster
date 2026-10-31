@@ -25,7 +25,7 @@ def get_dockerfile_path(
         project_context.build_config,
     )
 
-    if merged_build_config and merged_build_config.get("directory"):
+    if merged_build_config.get("directory"):
         return Path(check.not_none(merged_build_config["directory"])) / "Dockerfile"
     else:
         return project_context.root_path / "Dockerfile"

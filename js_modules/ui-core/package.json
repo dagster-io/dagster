@@ -36,8 +36,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router": "^5.3.4",
-    "react-router-dom": "^5.3.4",
-    "react-router-dom-v5-compat": "^6.30.3"
+    "react-router-dom": "^5.3.4"
   },
   "dependencies": {
     "@koale/useworker": "^4.1.2",
@@ -173,7 +172,6 @@
     "react-dom": "^18.3.1",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
-    "react-router-dom-v5-compat": "^6.30.3",
     "resize-observer-polyfill": "^1.5.1",
     "storybook": "^10.2.10",
     "ts-node": "10.9.2",

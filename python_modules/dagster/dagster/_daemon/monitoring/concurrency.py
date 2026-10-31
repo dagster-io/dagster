@@ -45,7 +45,7 @@ def execute_concurrency_slots_iteration(
             freed_slots = instance.event_log_storage.free_concurrency_slots_for_run(
                 run_record.dagster_run.run_id
             )
-            if freed_slots:
+            if freed_slots:  # ty: ignore[redundant-condition]
                 logger.info(
                     f"Freed {freed_slots} slots for run {run_record.dagster_run.run_id} with status"
                     f" {run_record.dagster_run.status}"

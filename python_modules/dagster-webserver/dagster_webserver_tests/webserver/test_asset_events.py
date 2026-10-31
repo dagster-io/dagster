@@ -193,7 +193,6 @@ def _assert_stored_check_eval(
     results = instance.event_log_storage.get_latest_asset_check_execution_by_key([check_key])
     assert results
     record = results[check_key]
-    assert record
     assert record.event
     evt = record.event.dagster_event
     assert evt
@@ -307,7 +306,6 @@ def _assert_stored_obs(instance: DagsterInstance, asset_key: str):
     assert records
     evt = records[0]
     assert evt.event_log_entry.dagster_event
-    assert evt.event_log_entry.dagster_event.asset_observation_data
     return evt.event_log_entry.dagster_event.asset_observation_data.asset_observation
 
 

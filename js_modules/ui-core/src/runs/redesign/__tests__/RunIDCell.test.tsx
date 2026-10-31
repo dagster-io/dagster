@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router-dom';
 
 import {RunIDCell} from '../RunIDCell';
@@ -29,13 +28,5 @@ describe('RunIDCell', () => {
     const link = await screen.findByRole('link', {name: 'Backfill bkfl1234'});
     expect(link).toHaveAttribute('href', `/runs/b/${BACKFILL_ID}`);
     expect(link).toHaveTextContent(BACKFILL_ID);
-  });
-
-  it('reveals the full id on hover', async () => {
-    const user = userEvent.setup();
-    renderCell(runEntry({id: RUN_ID}));
-
-    await user.hover(await screen.findByRole('link', {name: 'Run a1b2c3d4'}));
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(RUN_ID);
   });
 });

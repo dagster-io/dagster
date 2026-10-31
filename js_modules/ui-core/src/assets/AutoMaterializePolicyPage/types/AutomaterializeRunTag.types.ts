@@ -17,7 +17,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type RunStatusOnlyQueryVariables = Exact<{
   runId: string;

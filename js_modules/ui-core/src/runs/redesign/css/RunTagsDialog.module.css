@@ -1,0 +1,7 @@
+.value {
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  white-space: nowrap;
+}

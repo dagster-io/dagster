@@ -54,16 +54,53 @@ export const useClaimMobileRouteStatus = () => {
   );
 };
 
+// What the enclosing `Route` renders, so a lazily-loaded component can tell whether it's the
+// route's content or a widget inside it.
+export const RouteContentContext = createContext<{type: unknown; pathname: string} | null>(null);
+
+/**
+ * While a route's content is still loading, its status is unknown: the routes inside it that
+ * declare it haven't mounted, and the enclosing route's status is usually just inherited.
+ * Keep the previous page's layout until they report (the content is blank meanwhile), then
+ * fall back to the enclosing route's status if nothing inside claims one.
+ */
+export const useUnknownMobileRouteStatus = (isUnknown: boolean, pathname: string | undefined) => {
+  const setClaim = useSetRecoilState(mobileRouteStatusAtom);
+  const depth = useContext(RouteDepthContext);
+  const inherited = useContext(MobileRouteStatusContext);
+  useLayoutEffect(() => {
+    if (!isUnknown || !pathname) {
+      return;
+    }
+    let placeholder: Claim | null = null;
+    setClaim((prev) => {
+      if (!prev || prev.pathname === pathname) {
+        return prev;
+      }
+      placeholder = {pathname, depth: depth + 1, status: prev.status};
+      return placeholder;
+    });
+    return () => {
+      setClaim((prev) => (prev === placeholder ? {pathname, depth, status: inherited} : prev));
+    };
+  }, [isUnknown, pathname, depth, inherited, setClaim]);
+};
+
 /**
  * Declare the status from inside a page component, for pages whose mobile-friendliness
  * depends on state the route can't see (e.g. a `?view=` tab). Wins over the enclosing
  * route's annotation.
+ *
+ * Pass `null` to leave the decision to a component rendered inside this one: declarations
+ * from the same route share a depth, and the outer one's effect runs last, so it would win.
  */
-export const useDeclareMobileRouteStatus = (status: MobileRouteStatus) => {
+export const useDeclareMobileRouteStatus = (status: MobileRouteStatus | null) => {
   const claimStatus = useClaimMobileRouteStatus();
   const depth = useContext(RouteDepthContext);
   const {pathname} = useLocation();
   useLayoutEffect(() => {
-    claimStatus({pathname, depth: depth + 1, status});
+    if (status) {
+      claimStatus({pathname, depth: depth + 1, status});
+    }
   }, [claimStatus, pathname, depth, status]);
 };

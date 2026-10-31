@@ -8,7 +8,7 @@ from dagster_aws.version import __version__
 
 
 def test_version():
-    assert __version__
+    assert __version__  # ty: ignore[redundant-condition]
 
 
 # Make sure unit tests never connect to real AWS

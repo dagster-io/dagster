@@ -1,14 +1,6 @@
 from collections.abc import Mapping, Sequence
 from functools import update_wrapper
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import beta_param, public

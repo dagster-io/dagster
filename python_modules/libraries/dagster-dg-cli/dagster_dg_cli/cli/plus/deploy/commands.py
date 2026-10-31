@@ -300,7 +300,7 @@ def deploy_group(
 
 
 def _validate_location_names(
-    dg_context: DgContext, location_names: tuple[str], cli_config: DgRawCliConfig
+    dg_context: DgContext, location_names: tuple[str, ...], cli_config: DgRawCliConfig
 ):
     if not location_names:
         return

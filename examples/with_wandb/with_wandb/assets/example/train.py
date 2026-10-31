@@ -63,7 +63,7 @@ class CNNModel(nn.Module):
         # Fully connected 1 (readout)
         self.fc1 = nn.Linear(config.channels_two * 4 * 4, 10)
 
-    def forward(self, x):
+    def forward(self, x):  # ty: ignore[invalid-mutable-override]
         # Convolution 1
         out = self.cnn1(x)
         out = self.relu1(out)

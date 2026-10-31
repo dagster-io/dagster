@@ -4,6 +4,7 @@ import subprocess
 import sys
 from collections.abc import Mapping
 from contextlib import contextmanager
+from functools import cached_property
 from pathlib import Path
 
 import dagster._check as check
@@ -224,8 +225,8 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
             instigator_name=self.name,
         )
 
-    @property
-    def selector_id(self):
+    @cached_property
+    def selector_id(self) -> str:
         """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(

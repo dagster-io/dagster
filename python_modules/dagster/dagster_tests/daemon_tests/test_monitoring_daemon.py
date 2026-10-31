@@ -5,6 +5,7 @@ import time
 from collections.abc import Mapping
 from logging import Logger
 from typing import Any, cast
+from unittest import mock
 
 import dagster as dg
 import dagster._check as check
@@ -24,6 +25,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.run_monitoring import (
+    execute_run_monitoring_iteration,
     monitor_canceling_run,
     monitor_started_run,
     monitor_starting_run,
@@ -157,6 +159,21 @@ def report_started_event(instance: DagsterInstance, run: DagsterRun, timestamp: 
         dagster_event=launch_started_event,
     )
 
+    instance.handle_new_event(event_record)
+
+
+def report_suspended_event(instance, run, timestamp):
+    event_record = dg.EventLogEntry(
+        user_message="",
+        level=logging.INFO,
+        job_name=run.job_name,
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=timestamp,
+        dagster_event=dg.DagsterEvent(
+            event_type_value=DagsterEventType.RUN_SUSPENDED.value, job_name=run.job_name
+        ),
+    )
     instance.handle_new_event(event_record)
 
 
@@ -330,6 +347,100 @@ def test_monitor_started(
     assert run.status == DagsterRunStatus.FAILURE
     assert run_launcher.launch_run_calls == 0
     assert run_launcher.resume_run_calls == 3
+
+
+@pytest.mark.parametrize(
+    "worker_status,debug_info_fails,expect_debug_info",
+    [
+        (WorkerStatus.FAILED, False, True),
+        # The run is still marked failed if fetching debug info raises.
+        (WorkerStatus.FAILED, True, False),
+        # Debug info is only fetched for a failed worker.
+        (WorkerStatus.NOT_FOUND, False, False),
+    ],
+)
+def test_monitor_started_failure_includes_debug_info(
+    logger: Logger,
+    monkeypatch: pytest.MonkeyPatch,
+    worker_status: WorkerStatus,
+    debug_info_fails: bool,
+    expect_debug_info: bool,
+):
+    with dg.instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
+                "class": "MockRunLauncher",
+            },
+            "run_monitoring": {"enabled": True, "max_resume_run_attempts": 0},
+        },
+    ) as instance:
+        with create_test_daemon_workspace_context(
+            workspace_load_target=EmptyWorkspaceTarget(), instance=instance
+        ) as workspace_context:
+            health_check_result = CheckRunHealthResult(worker_status, "worker gone")
+            get_debug_info = mock.Mock(
+                side_effect=Exception("Failed to fetch debug info") if debug_info_fails else None,
+                return_value="Container 'dagster' status: Terminated with exit code 137: OOMKilled",
+            )
+            monkeypatch.setattr(
+                instance.run_launcher, "check_run_worker_health", lambda _run: health_check_result
+            )
+            monkeypatch.setattr(instance.run_launcher, "get_run_worker_debug_info", get_debug_info)
+
+            run_id = create_run_for_test(
+                instance, job_name="foo", status=DagsterRunStatus.STARTED
+            ).run_id
+            monitor_started_run(
+                instance,
+                workspace_context.create_request_context(),
+                check.not_none(instance.get_run_record_by_id(run_id)),
+                logger,
+            )
+
+            run = check.not_none(instance.get_run_by_id(run_id))
+            assert run.status == DagsterRunStatus.FAILURE
+
+            failure_events = instance.all_logs(run_id, of_type=DagsterEventType.RUN_FAILURE)
+            assert len(failure_events) == 1
+            message = failure_events[0].message
+            assert str(health_check_result) in message
+            assert ("OOMKilled" in message) == expect_debug_info
+
+            if worker_status == WorkerStatus.FAILED:
+                get_debug_info.assert_called_once_with(mock.ANY, include_container_logs=False)
+            else:
+                get_debug_info.assert_not_called()
+
+
+def test_monitor_suspended(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
+):
+    run_launcher = cast("MockRunLauncher", instance.run_launcher)
+    initial = create_datetime(2021, 1, 1)
+    with freeze_time(initial):
+        run = create_run_for_test(
+            instance,
+            job_name="foo",
+            status=DagsterRunStatus.STARTING,
+            tags={dg.MAX_RUNTIME_SECONDS_TAG: "500"},
+        )
+        report_started_event(instance, run, initial.timestamp())
+        report_suspended_event(instance, run, initial.timestamp())
+    assert check.not_none(instance.get_run_by_id(run.run_id)).status == DagsterRunStatus.SUSPENDED
+
+    # The worker is gone on purpose, so an unhealthy check must not fail or resume the run.
+    with freeze_time(initial + datetime.timedelta(seconds=100)):
+        list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert check.not_none(instance.get_run_by_id(run.run_id)).status == DagsterRunStatus.SUSPENDED
+    assert run_launcher.resume_run_calls == 0
+    assert not run_launcher.termination_calls
+
+    # Time spent suspended counts toward the maximum runtime.
+    with freeze_time(initial + datetime.timedelta(seconds=501)):
+        list(execute_run_monitoring_iteration(workspace_context, logger))
+    assert check.not_none(instance.get_run_by_id(run.run_id)).status == DagsterRunStatus.FAILURE
+    assert len(run_launcher.termination_calls) == 1
 
 
 def test_long_running_termination(

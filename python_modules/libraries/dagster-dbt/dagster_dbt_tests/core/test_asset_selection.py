@@ -528,3 +528,65 @@ def test_select_unique_ids_includes_isolated_fusion_models(
     )
 
     assert selected == expected_unique_ids
+
+
+def _operation_node(unique_id: str, name: str) -> dict[str, Any]:
+    """An on-run-start/on-run-end hook node. Unlike model/source nodes, dbt-core
+    legitimately omits `config` from these entries in manifest.json -- its own
+    parsed `HookNode.config` field defaults to `NodeConfig(enabled=True)` when
+    absent, but a raw manifest.json dict has no such default baked in.
+    """
+    return {
+        "unique_id": unique_id,
+        "resource_type": "operation",
+        "name": name,
+        "package_name": "test",
+        "fqn": ["test", name],
+        "path": "hooks.sql",
+        "original_file_path": "hooks.sql",
+        "tags": [],
+        "depends_on": {"nodes": [], "macros": []},
+        # Deliberately no "config" key -- matches a real manifest.json.
+    }
+
+
+_MANIFEST_WITH_HOOK_NODE: dict[str, Any] = {
+    "nodes": {
+        "model.test.my_model": _model_node("model.test.my_model", "my_model"),
+        "operation.test.test-on-run-end-0": _operation_node(
+            "operation.test.test-on-run-end-0", "test-on-run-end-0"
+        ),
+    },
+    "sources": {},
+    "metrics": {},
+    "exposures": {},
+    "child_map": {
+        "model.test.my_model": [],
+        "operation.test.test-on-run-end-0": [],
+    },
+    "parent_map": {
+        "model.test.my_model": [],
+        "operation.test.test-on-run-end-0": [],
+    },
+}
+
+
+def test_select_unique_ids_tolerates_hook_nodes_without_config() -> None:
+    """A manifest.json with an on-run-start/on-run-end hook ("operation") node --
+    which dbt-core never gives a `config` block, relying on its own dataclass
+    default of `NodeConfig(enabled=True)` -- used to crash `select`/`exclude`
+    resolution with ``AttributeError: 'NoneType' object has no attribute
+    'enabled'`` the moment ANY selector was applied, because `_DictShim` returned
+    bare `None` instead of a default-enabled config for a node missing that key.
+
+    Regression test reported against a real customer project with on-run-end
+    hooks and an `exclude: package:...` selector.
+    """
+    selected = _select_unique_ids_from_manifest(
+        select="fqn:*",
+        exclude="package:some_other_package",
+        selector="",
+        manifest_json=_MANIFEST_WITH_HOOK_NODE,
+    )
+
+    assert selected == {"model.test.my_model", "operation.test.test-on-run-end-0"}

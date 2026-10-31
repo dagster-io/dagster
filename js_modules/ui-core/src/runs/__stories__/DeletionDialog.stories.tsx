@@ -1,7 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import faker from 'faker';
 
-import {DeletionDialog, Props as DeletionDialogProps} from '../DeletionDialog';
+import {DeletionDialog, DeletionDialogProps} from '../DeletionDialog';
 
 // eslint-disable-next-line import/no-default-export
 export default {

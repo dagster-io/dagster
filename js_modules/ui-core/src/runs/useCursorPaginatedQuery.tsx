@@ -1,8 +1,7 @@
 import {CursorPaginationProps} from '@dagster-io/ui-components';
 import {DocumentNode} from 'graphql';
 import {History} from 'history';
-import {useState} from 'react';
-import {useHistory} from 'react-router-dom';
+import {useHistory, useLocation} from 'react-router-dom';
 
 import {useQuery} from '../apollo-client';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -30,8 +29,7 @@ function isSavedCursorStack(value: unknown): value is SavedCursorStack {
   );
 }
 
-function getSavedCursorStack(history: History, queryKey: string, cursor: string | undefined) {
-  const state = history.location.state;
+function getSavedCursorStack(state: unknown, queryKey: string, cursor: string | undefined) {
   const saved =
     isRecord(state) && isRecord(state.cursorStacks) ? state.cursorStacks[queryKey] : null;
 
@@ -44,8 +42,8 @@ function getSavedCursorStack(history: History, queryKey: string, cursor: string 
 }
 
 /**
- * Saves the stack on the current history entry so Back and reload can restore previous pages.
- * Passing `null` removes it. Other `location.state` fields are kept.
+ * Saves the stack on the current history entry so going back in the browser can restore it.
+ * Code that replaces this entry must keep `location.state`, or the stack is lost.
  */
 function saveCursorStack(history: History, queryKey: string, saved: SavedCursorStack | null) {
   const state = isRecord(history.location.state) ? history.location.state : {};
@@ -62,8 +60,9 @@ function saveCursorStack(history: History, queryKey: string, saved: SavedCursorS
  * takes at least `cursor` and `limit` variables. It manages those two variables internally,
  * and you can pass additional variables via the options.
  *
- * The current pagination "cursor" is saved to the URL query string, which allows the user to
- * navigate "back" in their browser history to move to previous pages.
+ * Paging doesn't add history entries. The cursor is saved in the URL, so reloading or going
+ * back returns to the same page. Earlier cursors are saved in history state, which going back
+ * restores but reloading doesn't, because Next.js replaces history state when the app loads.
  *
  * The returned paginationProps expose methods for moving to the next / previous page and are
  * used by <CursorPaginationControls /> to render the pagination buttons.
@@ -81,9 +80,8 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   const queryKey = options.queryKey || 'cursor';
   const history = useHistory();
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey});
-  const [cursorStack, setCursorStack] = useState<string[]>(() =>
-    getSavedCursorStack(history, queryKey, cursor),
-  );
+  const location = useLocation();
+  const cursorStack = getSavedCursorStack(location.state, queryKey, cursor);
 
   // If you don't provide a hasMoreForResult function for extracting hasMore from
   // the response, we fall back to an old approach that fetched one extra item
@@ -118,7 +116,6 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
       const nextStack = [...cursorStack];
       const prevCursor = nextStack.pop();
       setCursor(prevCursor);
-      setCursorStack(nextStack);
       const saved = prevCursor ? {cursor: prevCursor, stack: nextStack} : null;
       saveCursorStack(history, queryKey, saved);
     },
@@ -128,12 +125,10 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
       if (!nextCursor) {
         return;
       }
-      setCursorStack(nextStack);
       setCursor(nextCursor);
       saveCursorStack(history, queryKey, {cursor: nextCursor, stack: nextStack});
     },
     reset: () => {
-      setCursorStack([]);
       setCursor(undefined);
       saveCursorStack(history, queryKey, null);
     },

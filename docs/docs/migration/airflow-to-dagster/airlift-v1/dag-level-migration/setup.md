@@ -1,7 +1,8 @@
 ---
 description: Set up a virtual environment, install Dagster and the tutorial example code, and configure a local Airflow instance to complete the DAG-level Airflow to Dagster migration tutorial.
 sidebar_position: 100
-title: Setup
+title: Set up the DAG-level Airflow migration tutorial
+sidebar_label: Setup
 ---
 
 import UseAirliftComponent from '@site/docs/partials/\_UseAirliftComponent.md';

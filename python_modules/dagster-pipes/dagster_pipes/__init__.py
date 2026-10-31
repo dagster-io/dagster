@@ -974,7 +974,8 @@ class PipesDefaultMessageWriter(PipesMessageWriter):
         else:
             raise DagsterPipesError(
                 f'Invalid params for {self.__class__.__name__}, expected key "path" or "std",'
-                f" received {params}"
+                f" received {params}. The orchestration side's message reader may expect a"
+                " different message writer: pass it as `message_writer` to `open_dagster_pipes`."
             )
 
 
@@ -1524,6 +1525,80 @@ class PipesDatabricksNotebookWidgetsParamsLoader(PipesParamsLoader):
 
     def load_messages_params(self) -> PipesParams:
         return decode_param(self.widgets.get(DAGSTER_PIPES_MESSAGES_WIDGET_KEY))
+
+
+# ########################
+# ##### IO - Prefect
+# ########################
+
+
+class PipesPrefectLogsMessageWriter(PipesMessageWriter["PipesPrefectLogsMessageWriterChannel"]):
+    """Message writer that sends messages through the logs of the current Prefect flow or task run.
+
+    Must run inside a Prefect run: Prefect's API log handler takes the flow or task run id from the
+    active run context, so this needs no Prefect import.
+    """
+
+    PREFECT_LOGS_KEY = "prefect_logs"
+    MAX_MESSAGE_BYTES_KEY = "max_message_bytes"
+    # A child of Prefect's run logger, so records reach its API handler without hitting the
+    # console formatter that expects the fields `get_run_logger` adds for that exact name.
+    LOGGER_NAME = "prefect.flow_runs.dagster_pipes"
+    # Prefect's own per-log limit is 1 MB, which includes its fields around the message.
+    DEFAULT_MAX_MESSAGE_BYTES = 900_000
+
+    @contextmanager
+    def open(self, params: PipesParams) -> Iterator["PipesPrefectLogsMessageWriterChannel"]:
+        _assert_env_param_type(params, self.PREFECT_LOGS_KEY, bool, self.__class__)
+        max_message_bytes = _assert_opt_env_param_type(
+            params, self.MAX_MESSAGE_BYTES_KEY, int, self.__class__
+        )
+        yield PipesPrefectLogsMessageWriterChannel(
+            logger=logging.getLogger(self.LOGGER_NAME),
+            max_message_bytes=max_message_bytes or self.DEFAULT_MAX_MESSAGE_BYTES,
+        )
+
+
+class PipesPrefectLogsMessageWriterChannel(PipesMessageWriterChannel):
+    """Message writer channel that writes each message as one INFO record to a logger.
+
+    Prefect truncates oversize logs, which would leave unparseable JSON, so an oversize message is
+    replaced by a short error instead.
+    """
+
+    def __init__(self, logger: logging.Logger, max_message_bytes: int):
+        self._logger = logger
+        self._max_message_bytes = max_message_bytes
+
+    def write_message(self, message: PipesMessage) -> None:
+        line = json.dumps(message)
+        size = len(line.encode("utf-8"))
+        if size > self._max_message_bytes:
+            line = json.dumps(self._oversize_replacement(message, size))
+        self._logger.info(line)
+
+    def _oversize_replacement(self, message: PipesMessage, size: int) -> PipesMessage:
+        error = (
+            f"Dropped a `{message['method']}` Pipes message of {size} bytes, over the"
+            f" {self._max_message_bytes}-byte limit for Prefect logs. Use a blob store message"
+            " writer for large payloads."
+        )
+        if message["method"] == "closed":
+            # Keep the close itself so the orchestration side still sees the run end.
+            exc = (message["params"] or {}).get("exception") or {}
+            return _make_message(
+                "closed",
+                {
+                    "exception": {
+                        "message": error,
+                        "stack": [],
+                        "name": exc.get("name"),
+                        "cause": None,
+                        "context": None,
+                    }
+                },
+            )
+        return _make_message("log", {"message": error, "level": "ERROR"})
 
 
 # ########################

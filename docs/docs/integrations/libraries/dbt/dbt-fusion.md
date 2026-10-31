@@ -21,6 +21,8 @@ Dagster invokes dbt through the dbt executable, so moving a project to Fusion on
 
 Fusion support landed in the `dagster` 1.11.5 release. Use `dagster-dbt` 0.29.12 or later, which ships alongside `dagster` 1.13.12, to pick up the Fusion fixes released since then.
 
+To install Fusion from PyPI with the `dagster-dbt[dbt]` extra, use a `dagster-dbt` release later than 0.29.26. Earlier releases have no such extra, and fail to import in an environment without dbt Core with `ModuleNotFoundError: No module named 'dateutil'`.
+
 ## How Dagster selects a dbt executable
 
 `DbtCliResource` chooses an executable in this order:
@@ -35,18 +37,34 @@ A few code paths use the absence of `dbt-core` as the signal that they are runni
 
 ## Set up a project on Fusion
 
-Install Fusion following the [dbt installation documentation](https://docs.getdbt.com/docs/local/install-dbt).
+There are two ways to install Fusion:
 
-`dagster-dbt` declares `dbt-core` as a dependency, so installing `dagster-dbt` also installs dbt Core and puts its `dbt` entrypoint in your environment, where it can shadow the Fusion binary. We do not recommend uninstalling `dbt-core`. Any later resolution of project dependencies will pull it back in. This is tracked in [#33513](https://github.com/dagster-io/dagster/issues/33513).
+- **From PyPI, into the same environment as Dagster.** This is the simplest option:
 
-Set up your Dagster project to use the dbt Fusion executable by doing one of the following:
+  ```bash
+  pip install 'dagster-dbt[dbt]'
+  ```
+
+  The extra installs `dbt`, the PyPI package for Fusion, at a version range Dagster supports. That package is the Fusion engine and puts a `dbt` executable in the environment, so Dagster finds Fusion with no further setup. Do not install any adapter package, such as `dbt-snowflake`: Fusion has its own warehouse support.
+
+- **As a standalone binary**, following the [dbt installation documentation](https://docs.getdbt.com/docs/local/install-dbt). Then point Dagster at it as described below.
+
+`dagster-dbt` does not install dbt Core — it is behind the `dagster-dbt[dbt-core]` extra. Any dbt adapter package, such as `dbt-duckdb` or `dbt-snowflake`, pulls dbt Core in, and its `dbt` entrypoint can then shadow the Fusion binary. Remove the adapter packages from the environment that runs your code location if you want `dbt` to resolve to Fusion.
+
+:::warning
+
+Do not install Fusion's `dbt` PyPI package into an environment that also has `dbt-core`. Both distributions own the `dbt` import namespace and overwrite each other's files, so neither engine ends up working and `pip` reports no error. `dagster-dbt` detects this and raises an `ImportError` on import. If you install Fusion from PyPI, keep `dbt-core`, every adapter package, and the `dagster-dbt[dbt-core]` extra out of that environment. The `dagster-dbt[dbt]` and `dagster-dbt[dbt-core]` extras cannot be combined.
+
+:::
+
+If you installed Fusion from PyPI, `dbt` already resolves to Fusion and you can skip to [Prepare warehouse drivers](#prepare-warehouse-drivers). Otherwise, set up your Dagster project to use the dbt Fusion executable by doing one of the following:
 
 - [Add a dbtf executable to PATH](#add-a-dbtf-executable-to-path)
 - [Set the executable explicitly](#set-the-executable-explicitly)
 
 ### Add a dbtf executable to PATH
 
-Adding a `dbtf` executable to `PATH` is required to use dbt Fusion with `DbtProjectComponent`, which constructs its own `DbtCliResource` and exposes no executable setting.
+`DbtProjectComponent` constructs its own `DbtCliResource` and exposes no executable setting, so when `dbt` on `PATH` is not Fusion, adding a `dbtf` executable is the way to use Fusion with it.
 
 `dbtf` is a name Dagster looks for, not one any dbt installer provides, so you create it yourself. The dbt installer does define `dbtf`, but as a shell alias, and Dagster cannot see a shell alias. Add a real executable or symlink to `PATH` instead:
 
@@ -69,21 +87,61 @@ dbt = DbtCliResource(
 )
 ```
 
+### Prepare warehouse drivers
+
+Fusion does not use dbt adapter packages. The first time it connects to a warehouse, it downloads a database driver from dbt Labs' CDN (`public.cdn.getdbt.com`) and caches it under `~/.cache/com.getdbt/`. The process that runs your dbt models therefore needs network access to that CDN, or a cache that already holds the driver.
+
+In a container image, warm the cache at build time so runs don't download the driver on every cold start, for example by running `dbt debug` or `dbt parse` against your project in the image build as the user that runs your code location.
+
 ## Limitations
 
 Dagster's Fusion support is in preview and has known gaps. Confirm that none of the following block your project before you migrate.
 
-### Column metadata and column lineage are not supported
+### Column metadata needs a dbt-side macro, and row counts are unavailable
 
-Column-level metadata and column lineage are not supported on Fusion, and neither is `fetch_row_counts()`. Both are fetched through dbt Core's adapter, and Dagster does not initialize an adapter when the dbt executable reports a 2.x version. Calling either one on Fusion raises an error that fails the step rather than skipping the metadata.
+`fetch_column_metadata()` and `fetch_row_counts()` read the warehouse through dbt Core's adapter, which Fusion does not provide — Dagster skips adapter initialization when the dbt executable reports a 2.x version. On Fusion both methods log a warning and pass dbt events through unchanged, so a pipeline that calls them runs on either engine without failing.
 
-If your project depends on column lineage in the Dagster+ asset graph, weigh that against the parse-time gain before migrating. Track [#34227](https://github.com/dagster-io/dagster/issues/34227) for support.
+Column schema and column lineage are still available on Fusion through the `dagster` dbt package's `log_column_level_metadata` macro, which introspects over the connection dbt already holds rather than one Dagster opens. Add the package to `packages.yml` or `dependencies.yml` and run `dbt deps`:
 
-### Isolated models are silently dropped from selection
+```yaml
+packages:
+  - git: 'https://github.com/dagster-io/dagster.git'
+    subdirectory: 'python_modules/libraries/dagster-dbt/dbt_packages/dagster'
+    revision: DAGSTER_VERSION # replace with the version of `dagster` you are using.
+```
 
-A model with no `ref()` or `source()` calls can disappear from your asset graph with no error raised. Fusion adds a model to the manifest's `child_map` only when it has at least one parent. This means an isolated model is absent from the Dagster asset graph and any asset selections.
+Then enable the macro as a [post-hook](https://docs.getdbt.com/reference/resource-configs/pre-hook-post-hook) on the resources that should emit it:
 
-Nothing surfaces this at runtime, so check your manifest for isolated nodes rather than waiting to notice missing assets. Every node in `nodes`, including seeds and snapshots, should appear in `child_map`, either as a key or inside one of its lists:
+```yaml
+models:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+
+seeds:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+
+snapshots:
+  +post-hook:
+    - '{{ dagster.log_column_level_metadata() }}'
+```
+
+With the hook in place, a plain `.stream()` attaches `dagster/column_schema` and `dagster/column_lineage`; no `fetch_column_metadata()` call is involved. Note that `dagster-dbt` logs a deprecation notice for this macro pointing at `fetch_column_metadata()` — on Fusion, that method cannot work, and the macro is the supported route.
+
+Row counts have no equivalent on Fusion. Track [#34227](https://github.com/dagster-io/dagster/issues/34227).
+
+### Isolated models are dropped from non-default selections
+
+Fusion adds a model to the manifest's `child_map` only when it has at least one parent, so a model with no `ref()` or `source()` calls is absent from the graph Fusion selects against. Dagster works around this in the two cases it can:
+
+| Your environment     | Default selection | Non-default `select`, `exclude`, or `selector` |
+| -------------------- | ----------------- | ---------------------------------------------- |
+| `dbt-core` installed | Works             | Works                                          |
+| Fusion only          | Works             | **Isolated models dropped**                    |
+
+With `dbt-core` installed, Dagster evaluates the selection itself and adds the missing nodes back to the graph. Without it, Dagster reads the default selection straight from the manifest, but any other selection is evaluated by `dbt list`, which never sees the isolated models.
+
+If you pass a non-default selection on a Fusion-only environment, check your manifest rather than waiting to notice missing assets. Every node in `nodes`, including seeds and snapshots, should appear in `child_map`, either as a key or inside one of its lists:
 
 ```python
 import json
@@ -101,13 +159,10 @@ Anything this prints is missing from your asset graph. As a workaround, give the
 
 ### Open issues
 
-| Issue                                                        | Description                                                                                             |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| [#33513](https://github.com/dagster-io/dagster/issues/33513) | The `dbt-core` dependency puts a `dbt` entrypoint in the environment that can shadow the Fusion binary. |
-| [#34148](https://github.com/dagster-io/dagster/issues/34148) | The dbt Cloud integration raises `KeyError: 'materialized'` when a Fusion run includes seeds.           |
-| [#33512](https://github.com/dagster-io/dagster/issues/33512) | A dbt test that passes under Fusion is occasionally reported as a failed asset check.                   |
-| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                                                     |
-| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Column metadata, column lineage, and row counts are unavailable on Fusion.                              |
+| Issue                                                        | Description                                                                          |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [#33753](https://github.com/dagster-io/dagster/issues/33753) | Fusion applies a hardcoded row limit to `dbt seed`.                                  |
+| [#34227](https://github.com/dagster-io/dagster/issues/34227) | Row counts are unavailable on Fusion, and column metadata requires a dbt-side macro. |
 
 ### Fusion's own compatibility surface
 
@@ -115,11 +170,11 @@ Fusion has adapter coverage and feature gaps of its own, independent of Dagster.
 
 ## Verify your setup
 
-From the environment your code location runs in, confirm that `dbtf` resolves to the Fusion binary. This is the executable Dagster will pick:
+From the environment your code location runs in, confirm which executable Dagster will pick and that it reports a 2.x version:
 
 ```bash
-which dbtf
-dbtf --version
+which dbtf || which dbt
+dbtf --version || dbt --version
 ```
 
-If `which dbtf` finds nothing, Dagster falls back to `dbt`, and your models run on whichever engine that resolves to.
+Dagster uses `dbtf` if it is on `PATH`, and otherwise falls back to `dbt`, so your models run on whichever engine that resolves to.
