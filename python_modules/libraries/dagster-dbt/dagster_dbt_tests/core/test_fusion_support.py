@@ -93,3 +93,26 @@ def test_select_from_cli_raises_when_dbt_list_fails(tmp_path: Path) -> None:
         _select_unique_ids_from_cli(
             select="fqn:*", exclude="", selector="", project=DbtProject(project_dir)
         )
+
+
+@pytest.mark.fusion
+def test_select_from_cli_leaves_no_target_directory(tmp_path: Path) -> None:
+    """Selecting with `dbt list` runs on every definitions load, so it must not leave a
+    <project>/target/<invocation-id>/ directory behind each time.
+    """
+    project_dir = tmp_path / "jaffle_shop"
+    shutil.copytree(test_fusion_compatible_jaffle_shop_path, project_dir)
+    project = DbtProject(project_dir)
+    target_dir = project_dir / "target"
+
+    def target_entries() -> set[str]:
+        return {p.name for p in target_dir.iterdir()} if target_dir.exists() else set()
+
+    before = target_entries()
+    for _ in range(2):
+        unique_ids = _select_unique_ids_from_cli(
+            select="fqn:*", exclude="", selector="", project=project
+        )
+        assert unique_ids
+
+    assert target_entries() == before
