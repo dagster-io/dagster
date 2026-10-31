@@ -1,6 +1,8 @@
+import tempfile
 from argparse import Namespace
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster_shared.check as check
@@ -101,15 +103,18 @@ def _select_unique_ids_from_cli(
         cmd.append("--selector")
         cmd.append(selector)
 
-    raw_events = DbtCliResource(project_dir=project).cli(cmd)._stream_stdout()  # noqa
     unique_ids = set()
-    for event in raw_events:
-        if isinstance(event, dict):
-            try:
-                msg = orjson.loads(event.get("info", {}).get("msg", "{}"))
-            except orjson.JSONDecodeError:
-                continue
-            unique_ids.add(msg.get("unique_id"))
+    # This runs on every definitions load. Without a target path, each `dbt list` would leave a
+    # new <project>/target/<invocation-id>/ directory (manifest, logs) that nothing removes.
+    with tempfile.TemporaryDirectory() as target_dir:
+        invocation = DbtCliResource(project_dir=project).cli(cmd, target_path=Path(target_dir))
+        for event in invocation._stream_stdout():  # noqa
+            if isinstance(event, dict):
+                try:
+                    msg = orjson.loads(event.get("info", {}).get("msg", "{}"))
+                except orjson.JSONDecodeError:
+                    continue
+                unique_ids.add(msg.get("unique_id"))
 
     return unique_ids - {None}
 

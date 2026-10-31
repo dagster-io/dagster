@@ -1,8 +1,11 @@
 import json
+import shutil
+from pathlib import Path
 
 import dagster as dg
 import pytest
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from dagster_dbt.utils import _select_unique_ids_from_cli
 
 from dagster_dbt_tests.dbt_projects import test_fusion_compatible_jaffle_shop_path
 
@@ -75,3 +78,26 @@ def test_adapter_backed_postprocessing_is_skipped(
         for event in result.get_asset_materialization_events()
     )
     assert any("dbt Fusion engine does not provide" in record.message for record in caplog.records)
+
+
+@pytest.mark.fusion
+def test_select_from_cli_leaves_no_target_directory(tmp_path: Path) -> None:
+    """Selecting with `dbt list` runs on every definitions load, so it must not leave a
+    <project>/target/<invocation-id>/ directory behind each time.
+    """
+    project_dir = tmp_path / "jaffle_shop"
+    shutil.copytree(test_fusion_compatible_jaffle_shop_path, project_dir)
+    project = DbtProject(project_dir)
+    target_dir = project_dir / "target"
+
+    def target_entries() -> set[str]:
+        return {p.name for p in target_dir.iterdir()} if target_dir.exists() else set()
+
+    before = target_entries()
+    for _ in range(2):
+        unique_ids = _select_unique_ids_from_cli(
+            select="fqn:*", exclude="", selector="", project=project
+        )
+        assert unique_ids
+
+    assert target_entries() == before
