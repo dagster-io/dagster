@@ -22,7 +22,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type RunsFeedView = 'BACKFILLS' | 'ROOTS' | 'RUNS';
 

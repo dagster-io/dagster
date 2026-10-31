@@ -2,13 +2,14 @@ import {DagsterTag} from '../../RunTag';
 import {
   assetBackfill,
   autoMaterializeRun,
+  autoMaterializeTickRun,
   autoObserveRun,
   autoRetryInBackfillRun,
   backfillChildRun,
   backfillEntry,
   createdByAutoMaterializeRun,
   defaultAutomationSensorRun,
-  legacyAutomationConditionTickRun,
+  defaultAutomationSensorRunNoRepo,
   manualRun,
   manualRunWithUser,
   namedAutomationSensorRun,
@@ -16,9 +17,9 @@ import {
   runEntry,
   scheduleRun,
   scheduleRunWithTick,
-  scheduleRunWithTickNoRepo,
   scheduleRunWithoutRepo,
   sensorRun,
+  sensorRunWithTick,
   tag,
 } from '../__fixtures__/RunsFeedEntries.fixtures';
 import {Initiator, getLaunchDetails} from '../getLaunchDetails';
@@ -157,11 +158,11 @@ describe('getLaunchDetails', () => {
     });
   });
 
-  it('builds a tick selector from the instigator name and the repository origin', () => {
-    expect(getLaunchDetails(scheduleRunWithTick).tick).toEqual({
+  it('builds a tick selector from the automation sensor and the repository origin', () => {
+    expect(getLaunchDetails(defaultAutomationSensorRun).tick).toEqual({
       tickId: 'tick-id',
       instigationSelector: {
-        name: 'hourly_schedule',
+        name: 'default_automation_condition_sensor',
         repositoryName: 'my_repo',
         repositoryLocationName: 'my_location',
       },
@@ -169,9 +170,11 @@ describe('getLaunchDetails', () => {
   });
 
   it.each([
-    ['the repository origin is missing', scheduleRunWithTickNoRepo],
-    ['no instigator name accompanies the tick', legacyAutomationConditionTickRun],
-    ['there is no tick tag', scheduleRun],
+    ['the run is from a schedule', scheduleRunWithTick],
+    ['the run is from a standard sensor', sensorRunWithTick],
+    ['the repository origin is missing', defaultAutomationSensorRunNoRepo],
+    ['an automation run has no sensor name', autoMaterializeTickRun],
+    ['there is no tick tag', namedAutomationSensorRun],
   ])('omits the tick when %s', (_name, entry) => {
     expect(getLaunchDetails(entry).tick).toBeNull();
   });

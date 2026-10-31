@@ -4,7 +4,6 @@ import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider, Toaster} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
-import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 import {v4 as uuidv4} from 'uuid';
 
@@ -24,6 +23,7 @@ import {
   ApolloClient,
   ApolloLink,
   ApolloProvider,
+  DefaultOptions,
   HttpLink,
   InMemoryCache,
   split,
@@ -54,6 +54,13 @@ const idempotencyLink = new ApolloLink((operation, forward) => {
 });
 
 const httpStatusCodesToRetry = new Set([502, 503, 504, 429, 409]);
+
+export const WATCH_QUERY_DEFAULTS: DefaultOptions['watchQuery'] = {
+  fetchPolicy: 'cache-and-network',
+  // Pause `pollInterval` / `startPolling` queries in background tabs. Refreshes driven by
+  // `useRefreshAtInterval` already pause on their own.
+  skipPollAttempt: () => document.visibilityState === 'hidden',
+};
 
 export interface AppProviderProps {
   children: React.ReactNode;
@@ -155,11 +162,7 @@ export const AppProvider = (props: AppProviderProps) => {
         idempotencyLink,
         splitLink,
       ]),
-      defaultOptions: {
-        watchQuery: {
-          fetchPolicy: 'cache-and-network',
-        },
-      },
+      defaultOptions: {watchQuery: WATCH_QUERY_DEFAULTS},
     });
   }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient, basePath]);
 
@@ -199,28 +202,26 @@ export const AppProvider = (props: AppProviderProps) => {
               <BrowserRouter basename={basePath || ''}>
                 <GlobalStyleProvider />
                 <Toaster richColors />
-                <CompatRouter>
-                  <TimeProvider>
-                    <CodeLinkProtocolProvider>
-                      <WorkspaceProvider>
-                        <AssetLiveDataProvider>
-                          <DeploymentStatusProvider include={statusPolling}>
-                            <CustomConfirmationProvider>
-                              <AnalyticsContext.Provider value={analytics}>
-                                <InstancePageContext.Provider value={instancePageValue}>
-                                  <LayoutProvider>{props.children}</LayoutProvider>
-                                </InstancePageContext.Provider>
-                              </AnalyticsContext.Provider>
-                            </CustomConfirmationProvider>
-                            <CustomTooltipProvider />
-                            <CustomAlertProvider />
-                            <AssetRunLogObserver />
-                          </DeploymentStatusProvider>
-                        </AssetLiveDataProvider>
-                      </WorkspaceProvider>
-                    </CodeLinkProtocolProvider>
-                  </TimeProvider>
-                </CompatRouter>
+                <TimeProvider>
+                  <CodeLinkProtocolProvider>
+                    <WorkspaceProvider>
+                      <AssetLiveDataProvider>
+                        <DeploymentStatusProvider include={statusPolling}>
+                          <CustomConfirmationProvider>
+                            <AnalyticsContext.Provider value={analytics}>
+                              <InstancePageContext.Provider value={instancePageValue}>
+                                <LayoutProvider>{props.children}</LayoutProvider>
+                              </InstancePageContext.Provider>
+                            </AnalyticsContext.Provider>
+                          </CustomConfirmationProvider>
+                          <CustomTooltipProvider />
+                          <CustomAlertProvider />
+                          <AssetRunLogObserver />
+                        </DeploymentStatusProvider>
+                      </AssetLiveDataProvider>
+                    </WorkspaceProvider>
+                  </CodeLinkProtocolProvider>
+                </TimeProvider>
               </BrowserRouter>
             </PermissionsProvider>
           </ApolloProvider>

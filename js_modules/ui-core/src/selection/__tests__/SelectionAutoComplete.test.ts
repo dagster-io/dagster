@@ -1,5 +1,11 @@
+import {render, screen} from '@testing-library/react';
+
+import {AssetSelectionLexer} from '../../asset-selection/generated/AssetSelectionLexer';
+import {AssetSelectionParser} from '../../asset-selection/generated/AssetSelectionParser';
+import {assetSelectionSyntaxSupportedAttributes} from '../../asset-selection/input/util';
 import {createSelectionAutoComplete} from '../SelectionAutoComplete';
 import {createProvider} from '../SelectionAutoCompleteProvider';
+import {createSelectionLinter} from '../createSelectionLinter';
 
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
@@ -1145,6 +1151,14 @@ describe('createAssetSelectionHint', () => {
       ],
       to: 13,
     });
+    expect(testAutocomplete('tag:key=value| or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
   });
 
   it('should be case insensitive', () => {
@@ -1415,6 +1429,282 @@ describe('createAssetSelectionHint', () => {
       ],
       from: 0, // cursor location
       to: 0, // cursor location
+    });
+  });
+
+  const hintWithOwners = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {key: ['asset1'], owner: ['ben@x.com']},
+      primaryAttributeKey: 'key',
+      attributeToIcon: {key: 'magnify_glass', owner: 'magnify_glass'},
+    }),
+  );
+
+  it.each([
+    {input: '  own|', text: 'owner:', from: 2, to: 5},
+    {input: ' owner:b|', text: '"ben@x.com"', from: 7, to: 8},
+    {input: '\t\r\nown|', text: 'owner:', from: 3, to: 6},
+  ])('suggests past leading whitespace in $input', ({input, text, from, to}) => {
+    expect(testAutocomplete(input, hintWithOwners)).toEqual({
+      list: expect.arrayContaining([expect.objectContaining({text})]),
+      from,
+      to,
+    });
+  });
+
+  const hintWithRejectedValues = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {key: ['dbt-model'], owner: ['ben@dagsterlabs.com'], tag: ['a-b=c-d']},
+      primaryAttributeKey: 'key',
+      attributeToIcon: {key: 'magnify_glass', owner: 'magnify_glass', tag: 'magnify_glass'},
+    }),
+  );
+
+  it.each([
+    {input: 'owner:ben@dag|', text: '"ben@dagsterlabs.com"', from: 6, to: 13},
+    {input: 'tag:a-|b=c-d', text: '"a-b=c-d"', from: 4, to: 11},
+  ])('completes the whole value in $input', ({input, text, from, to}) => {
+    expect(testAutocomplete(input, hintWithRejectedValues)).toEqual({
+      list: [expect.objectContaining({text})],
+      from,
+      to,
+    });
+  });
+
+  it('suggests a substring match for a value with a character the grammar rejects', () => {
+    expect(testAutocomplete('dbt-mo|', hintWithRejectedValues)).toEqual({
+      list: [
+        expect.objectContaining({text: 'key:"*dbt-mo*"'}),
+        expect.objectContaining({text: 'key:"dbt-model"'}),
+      ],
+      from: 0,
+      to: 6,
+    });
+  });
+
+  it.each([
+    {input: 'a\\b|', to: 3},
+    {input: '"a-b"|', to: 5},
+  ])('does not suggest a substring match for $input', ({input, to}) => {
+    expect(testAutocomplete(input, hintWithRejectedValues)).toEqual({list: [], from: 0, to});
+  });
+
+  const hintForQuoting = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {
+        key: ['asset1'],
+        owner: ['ben@dagsterlabs.com'],
+        tag: [{key: 'team', value: 'data'}],
+        column_tag: [{key: 'team', value: 'data'}],
+        id: [],
+        status: ['SUCCESS', 'FAILURE'],
+      },
+      primaryAttributeKey: 'key',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        owner: 'magnify_glass',
+        tag: 'magnify_glass',
+        column_tag: 'magnify_glass',
+        id: 'magnify_glass',
+        status: 'magnify_glass',
+      },
+    }),
+  );
+
+  it('offers the value in quotes in place of no match', async () => {
+    const {list, from, to} = testAutocomplete('owner:zzz@q|', hintForQuoting);
+    expect({list, from, to}).toEqual({
+      list: [expect.objectContaining({text: '"zzz@q"', trailingSpace: true})],
+      from: 6,
+      to: 11,
+    });
+    expect(list?.[0]).not.toHaveProperty('type');
+
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('Add quotes:')).toBeVisible();
+    expect(await screen.findByTitle('owner:"zzz@q"')).toBeVisible();
+  });
+
+  it.each([
+    {input: 'tag:a-|b=c-d', text: '"a-b"="c-d"', from: 4, to: 11},
+    {input: 'tag:a-b=c-|d', text: '"a-b"="c-d"', from: 4, to: 11},
+    {input: 'tag:a-b=c-d|', text: '"a-b"="c-d"', from: 4, to: 11},
+    {input: 'tag:"a-b"=c-d|', text: '"a-b"="c-d"', from: 4, to: 13},
+    {input: 'tag:a-b="c-|d"', text: '"a-b"="c-d"', from: 4, to: 13},
+    {input: 'tag:a-b=<null>|', text: '"a-b"=<null>', from: 4, to: 14},
+    {input: 'id:12ab-34cd|', text: '"12ab-34cd"', from: 3, to: 12},
+    {input: 'key:a-b*|', text: '"a-b*"', from: 4, to: 8},
+    {input: 'column_tag:a-b=c-d|', text: '"a-b"="c-d"', from: 11, to: 18},
+    {input: 'status:bad-value|', text: '"bad-value"', from: 7, to: 16},
+    {input: '(owner:a-|b)', text: '"a-b"', from: 7, to: 10},
+    {input: 'owner:a-|b and key:x', text: '"a-b"', from: 6, to: 9},
+    {input: 'key:a-|b+', text: '"a-b"', from: 4, to: 7},
+    {input: 'key:a-|b+2 and key:y', text: '"a-b"', from: 4, to: 7},
+  ])('offers $text for $input', ({input, text, from, to}) => {
+    expect(testAutocomplete(input, hintForQuoting)).toEqual({
+      list: [expect.objectContaining({text})],
+      from,
+      to,
+    });
+  });
+
+  it('suggests operators after a closing quote even when the other value needs quotes', () => {
+    expect(testAutocomplete('tag:a-b="c-d"|', hintForQuoting)).toEqual({
+      list: [
+        expect.objectContaining({text: ' and '}),
+        expect.objectContaining({text: ' or '}),
+        expect.objectContaining({text: '+'}),
+      ],
+      from: 13,
+      to: 13,
+    });
+  });
+
+  it.each([
+    {input: 'nope:zzz@q|', from: 5, to: 10},
+    {input: 'owner:zzz|', from: 6, to: 9},
+    {input: 'owner:zzz\\q|', from: 6, to: 11},
+    {input: 'owner:a\u200bb|', from: 6, to: 9},
+    {input: 'owner:a\u00a0b|', from: 6, to: 9},
+    {input: 'owner:a-b=c-d|', from: 6, to: 13},
+    {input: 'owner:a-b*|', from: 6, to: 10},
+    {input: 'tag:a-b=c*|', from: 4, to: 10},
+    {input: 'tag:a*=c-d|', from: 4, to: 10},
+    {input: 'owner:|zzz@q', from: 6, to: 6},
+    {input: 'tag:a-|b="c', from: 4, to: 10},
+    {input: 'tag:a-|b="c\\d"', from: 4, to: 10},
+    {input: 'owner:alice-te|st+foo@example.com', from: 6, to: 16},
+    {input: 'owner:a-|b:c', from: 6, to: 9},
+    {input: 'owner:a-|b,c', from: 6, to: 9},
+    {input: 'owner:a-|b(', from: 6, to: 9},
+    {input: 'tag:a-|b=c:d', from: 4, to: 9},
+    {input: 'key:a-|b+foo', from: 4, to: 7},
+  ])('shows only no match for $input', ({input, from, to}) => {
+    expect(testAutocomplete(input, hintForQuoting)).toEqual({
+      list: [expect.objectContaining({type: 'no-match'})],
+      from,
+      to,
+    });
+  });
+
+  const hintWithTagPairs = createSelectionAutoComplete(
+    createProvider({
+      attributesMap: {
+        key: ['asset1'],
+        owner: ['alice@example.com'],
+        tag: [
+          {key: 'team', value: ''},
+          {key: 'team', value: 'data'},
+          {key: 'team', value: 'dev'},
+          {key: 'myteam', value: 'x'},
+          {key: 'env', value: 'prod'},
+        ],
+      },
+      primaryAttributeKey: 'key',
+      attributeToIcon: {key: 'magnify_glass', owner: 'magnify_glass', tag: 'magnify_glass'},
+    }),
+  );
+
+  it.each([
+    {input: 'tag:team=|', from: 4, to: 9},
+    {input: 'tag:"team"=|', from: 4, to: 11},
+    {input: 'tag:team=d|', from: 4, to: 10},
+    {input: 'tag:Team=|', from: 4, to: 9},
+    {input: 'tag:team="|', from: 4, to: 10},
+    {input: 'tag:"team"="|', from: 4, to: 12},
+  ])("suggests only the key's values for $input", ({input, from, to}) => {
+    expect(testAutocomplete(input, hintWithTagPairs)).toEqual({
+      list: [
+        expect.objectContaining({text: '"team"="data"'}),
+        expect.objectContaining({text: '"team"="dev"'}),
+      ],
+      from,
+      to,
+    });
+  });
+
+  it("names the whole pair when none of the key's values match", async () => {
+    const {list} = testAutocomplete('tag:"enrollments"=fff|', hintWithTagPairs);
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('tag:"enrollments"="fff"')).toBeVisible();
+  });
+
+  it("names a bare <null> without quotes when none of the key's values match", async () => {
+    const {list} = testAutocomplete('tag:team=<null>|', hintWithTagPairs);
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('tag:"team"=<null>')).toBeVisible();
+  });
+
+  it('suggests nothing after = on an attribute that takes no pairs', () => {
+    expect(testAutocomplete('owner:a=|', hintWithTagPairs).list).toEqual([]);
+  });
+
+  it('completes a pair after = into text the asset selection accepts', () => {
+    const lint = createSelectionLinter({
+      Lexer: AssetSelectionLexer,
+      Parser: AssetSelectionParser,
+      supportedAttributes: assetSelectionSyntaxSupportedAttributes,
+    });
+    const input = 'tag:team=';
+    const {list, from, to} = testAutocomplete(`${input}|`, hintWithTagPairs);
+    const text = `${input.slice(0, from)}${list?.[0]?.text}${input.slice(to)}`;
+
+    expect(text).toBe('tag:"team"="data"');
+    expect(lint(text)).toEqual([]);
+  });
+
+  it.each(['| own', ' | own'])(
+    'suggests as for an empty input when the cursor is in leading whitespace: %s',
+    (input) => {
+      const cursorIndex = input.indexOf('|');
+      expect(testAutocomplete(input, hintWithOwners)).toEqual({
+        list: testAutocomplete('|', hintWithOwners).list,
+        from: cursorIndex,
+        to: cursorIndex,
+      });
+    },
+  );
+
+  it('shows the mapped label on an attribute row', async () => {
+    const hintWithLabels = createSelectionAutoComplete(
+      createProvider({
+        attributesMap: {snapshot_id: []},
+        attributeToIcon: {snapshot_id: 'magnify_glass'},
+        attributeToLabel: {snapshot_id: 'Snapshot ID'},
+      }),
+    );
+    const {list} = testAutocomplete('snap|', hintWithLabels);
+    render(list?.[0]?.jsx);
+    expect(await screen.findByText('Snapshot ID')).toBeVisible();
+  });
+
+  describe('formatValue', () => {
+    const hintWithFormat = createSelectionAutoComplete(
+      createProvider({
+        attributesMap: {owner: ['alice'], tag: [{key: 'team', value: 'data'}, {key: 'solo'}]},
+        attributeToIcon: {owner: 'magnify_glass', tag: 'magnify_glass'},
+        formatValue: (value) => `<${value}>`,
+      }),
+    );
+
+    const only = (text: string) => [expect.objectContaining({text})];
+    const including = (text: string) => expect.arrayContaining([expect.objectContaining({text})]);
+
+    it.each([
+      {site: 'value row', input: 'owner:al|', expected: only('<alice>')},
+      {site: 'tag pair', input: 'tag:te|', expected: only('<team>=<data>')},
+      {site: 'key-only tag', input: 'tag:so|', expected: only('<solo>')},
+      {site: 'value row from bare text', input: 'alic|', expected: including('owner:<alice>')},
+      {site: 'tag pair from bare text', input: 'dat|', expected: including('tag:<team>=<data>')},
+      {site: 'key-only tag from bare text', input: 'sol|', expected: including('tag:<solo>')},
+    ])('inserts the $site in the form formatValue writes', ({input, expected}) => {
+      expect(testAutocomplete(input, hintWithFormat).list).toEqual(expected);
+    });
+
+    it('renders a no-match value row in the form formatValue writes', async () => {
+      const {list} = testAutocomplete('owner:zzz|', hintWithFormat);
+      render(list?.[0]?.jsx);
+      expect(await screen.findByText('owner:<zzz>')).toBeVisible();
     });
   });
 });

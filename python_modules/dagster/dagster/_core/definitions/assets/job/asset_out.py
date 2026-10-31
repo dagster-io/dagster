@@ -283,7 +283,7 @@ class AssetOut:
         Returns:
             AssetOut: The AssetOut built from the spec.
         """
-        if spec.deps:
+        if spec.deps:  # ty: ignore[truthiness-test-of-iterable]
             raise DagsterInvalidDefinitionError(
                 "Currently, cannot build AssetOut from spec with deps"
             )

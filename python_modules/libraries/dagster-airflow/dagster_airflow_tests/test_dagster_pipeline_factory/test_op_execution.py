@@ -10,9 +10,7 @@ from airflow.operators.dummy_operator import DummyOperator  # type: ignore
 # We ignore type errors in several places because these operators are imported from
 # deprecated module paths that are not the blessed API of the latest airflow 2.x,
 # which raises pyright "not exported" errors.
-from airflow.providers.apache.spark.operators.spark_submit import (  # type: ignore
-    SparkSubmitOperator,
-)
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator  # type: ignore
 from airflow.utils.dates import days_ago
 from dagster import DagsterEventType
 from dagster._core.instance.utils import AIRFLOW_EXECUTION_DATE_STR

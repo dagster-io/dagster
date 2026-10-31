@@ -36,6 +36,10 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 
 class AssetNode(BaseAssetNode):
+    key: AssetKey
+    parent_keys: AbstractSet[AssetKey]
+    child_keys: AbstractSet[AssetKey]
+
     def __init__(
         self,
         key: AssetKey,
@@ -179,6 +183,8 @@ class AssetNode(BaseAssetNode):
 
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
+    _asset_nodes_by_key: Mapping[AssetKey, AssetNode]
+    _asset_job_nodes_by_key: Mapping[AssetJobKey, AssetJobNode]
     _assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition]
 
     def __init__(

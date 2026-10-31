@@ -3,15 +3,25 @@ import {fireEvent, render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
-import {buildAssetKey, buildRun, buildRunStatsSnapshot} from '../../../graphql/builders';
+import {
+  buildAssetKey,
+  buildExecutionPlan,
+  buildRun,
+  buildRunStatsSnapshot,
+} from '../../../graphql/builders';
 import {buildQueryMock} from '../../../testing/mocking';
 import {testId} from '../../../testing/testId';
 import {RUN_STATS_QUERY} from '../../RunStats';
 import {DagsterTag} from '../../RunTag';
 import {RunStatsQuery, RunStatsQueryVariables} from '../../types/RunStats.types';
+import {RUN_ACTIONS_MENU_QUERY} from '../RunActionsMenuQuery';
 import {RunRow} from '../RunRow';
 import {FIXTURE_NOW_MS, runEntry, tag} from '../__fixtures__/RunsFeedEntries.fixtures';
 import {MappedRunsFeedEntry} from '../mapRunsFeedData';
+import {
+  RunActionsMenuQuery,
+  RunActionsMenuQueryVariables,
+} from '../types/RunActionsMenuQuery.types';
 
 const RUN_ID = 'a1b2c3d4-1111-2222-3333-444455556666';
 
@@ -25,13 +35,21 @@ const succeededRun = runEntry({id: RUN_ID});
 const scheduledRunWithTargets = runEntry({
   id: RUN_ID,
   jobName: 'daily_etl',
-  tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule'), tag(DagsterTag.TickId, 'tick-id')],
+  tags: [tag(DagsterTag.ScheduleName, 'hourly_schedule')],
   assetSelectionPreview: [
     buildAssetKey({path: ['sales', 'daily']}),
     buildAssetKey({path: ['sales', 'hourly']}),
     buildAssetKey({path: ['sales', 'weekly']}),
   ],
   assetSelectionCount: 3,
+});
+
+const automationRunWithTick = runEntry({
+  id: RUN_ID,
+  tags: [
+    tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
+    tag(DagsterTag.TickId, 'tick-id'),
+  ],
 });
 
 const statsMock = buildQueryMock<RunStatsQuery, RunStatsQueryVariables>({
@@ -50,6 +68,21 @@ const statsMock = buildQueryMock<RunStatsQuery, RunStatsQueryVariables>({
   },
 });
 
+const menuMock = buildQueryMock<RunActionsMenuQuery, RunActionsMenuQueryVariables>({
+  query: RUN_ACTIONS_MENU_QUERY,
+  variables: {runId: RUN_ID},
+  data: {
+    runOrError: buildRun({
+      id: RUN_ID,
+      parentPipelineSnapshotId: null,
+      runConfigYaml: '{}\n',
+      assetSelection: null,
+      assetCheckSelection: null,
+      executionPlan: buildExecutionPlan({assetKeys: []}),
+    }),
+  },
+});
+
 const CurrentPath = () => {
   const {pathname} = useLocation();
   return <div data-testid={testId('path')}>{pathname}</div>;
@@ -62,8 +95,8 @@ const windowOpen = jest.fn();
 const renderRow = async (entry: MappedRunsFeedEntry, onOpenTickDetails = jest.fn()) => {
   const {container} = render(
     <MemoryRouter initialEntries={[LIST_PATH]}>
-      <MockedProvider mocks={[statsMock]}>
-        <RunRow entry={entry} onOpenTickDetails={onOpenTickDetails} />
+      <MockedProvider mocks={[statsMock, menuMock]}>
+        <RunRow entry={entry} onOpenTickDetails={onOpenTickDetails} onOpenRunDialog={jest.fn()} />
       </MockedProvider>
       <CurrentPath />
     </MemoryRouter>,
@@ -118,7 +151,7 @@ describe('RunRow', () => {
   it('opens tick details without opening the run', async () => {
     const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     const onOpenTickDetails = jest.fn();
-    await renderRow(scheduledRunWithTargets, onOpenTickDetails);
+    await renderRow(automationRunWithTick, onOpenTickDetails);
 
     await user.click(await screen.findByRole('button', {name: 'View tick'}));
 
@@ -153,6 +186,20 @@ describe('RunRow', () => {
 
     await user.hover(await screen.findByRole('img', {name: 'Success'}));
     await user.click(await screen.findByText('Success'));
+
+    expect(getCurrentPath()).toBe(LIST_PATH);
+  });
+
+  it('keeps a click inside the run menu from opening the run', async () => {
+    const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
+    await renderRow(succeededRun);
+
+    await user.click(await screen.findByRole('button', {name: 'Run actions'}));
+    const [divider] = await screen.findAllByRole('separator');
+    if (divider === undefined) {
+      throw new Error('The run menu rendered no divider');
+    }
+    await user.click(divider);
 
     expect(getCurrentPath()).toBe(LIST_PATH);
   });
@@ -210,17 +257,18 @@ describe('RunRow', () => {
     expect(getCurrentPath()).toBe(LIST_PATH);
   });
 
-  it('puts the id link last in the tab order', async () => {
+  it('puts the id link and then the run menu last in the tab order', async () => {
     const user = userEvent.setup({advanceTimers: jest.advanceTimersByTime});
     await renderRow(scheduledRunWithTargets);
 
     const stops = [
       await screen.findByRole('link', {name: /hourly_schedule/}),
-      await screen.findByRole('button', {name: 'View tick'}),
       await screen.findByRole('link', {name: 'daily_etl'}),
       await screen.findByRole('link', {name: '3 assets'}),
+      await screen.findByRole('img', {name: 'Success'}),
       await screen.findByText('5 min ago'),
       await screen.findByRole('link', {name: RUN_ID_LINK_NAME}),
+      await screen.findByRole('button', {name: 'Run actions'}),
     ];
 
     for (const stop of stops) {

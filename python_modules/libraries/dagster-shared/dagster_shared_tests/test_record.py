@@ -420,7 +420,7 @@ def test_base_class_conflicts() -> None:
         TypeError,
         match="Can't instantiate abstract class DidntImpl",
     ):
-        DidntImpl()  # good job type checker
+        DidntImpl()  # ty: ignore[call-non-callable]
 
     @record
     class A(AbsPropBase):
@@ -784,7 +784,7 @@ def test_replace() -> None:
     obj = NTExample("good")
     assert obj._asdict() == {"name": "good"}
     # namedtuple._replace bypasses NTExample.__new__
-    assert obj._replace(name="bad")
+    obj._replace(name="bad")
     assert obj._replace(name="good") == obj
     assert obj._replace(name="foo").__class__ is obj.__class__
 

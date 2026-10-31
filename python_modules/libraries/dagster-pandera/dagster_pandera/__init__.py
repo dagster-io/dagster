@@ -58,13 +58,13 @@ from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_pandera.version import __version__
 
 # Set up valid classes based on available imports
-if pa_pd and pa_pl and pl:
+if pa_pd and pa_pl and pl:  # ty: ignore[redundant-condition]
     # TODO: pending alternative dataframe support
     VALID_DATAFRAME_CLASSES = (pd.DataFrame, pl.DataFrame)
     VALID_SCHEMA_CLASSES = (pa_pd.DataFrameSchema, pa_pl.DataFrameSchema)
     VALID_SCHEMA_MODEL_CLASSES = (pa_pd.DataFrameModel, pa_pl.DataFrameModel)
     VALID_COLUMN_CLASSES = (pa_pd.Column, pa_pl.Column)
-elif pa_pd and pd:
+elif pa_pd and pd:  # ty: ignore[redundant-condition]
     VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
     VALID_SCHEMA_CLASSES = (pa_pd.DataFrameSchema,)
     VALID_SCHEMA_MODEL_CLASSES = (pa_pd.DataFrameModel,)
@@ -185,7 +185,7 @@ def _pandera_schema_to_type_check_fn(
                     df = check.inst(value, pd.DataFrame, "Must be a pandas DataFrame.")
                     schema.validate(df, lazy=True)
                 # need to check that polars and pandera.polars are available before isinstance
-                elif pl and pa_pl and isinstance(schema, pa_pl.DataFrameSchema):
+                elif pl and pa_pl and isinstance(schema, pa_pl.DataFrameSchema):  # ty: ignore[redundant-condition]
                     df = check.inst(value, pl.DataFrame, "Must be a polars DataFrame.")
                     schema.validate(df, lazy=True)
                 else:

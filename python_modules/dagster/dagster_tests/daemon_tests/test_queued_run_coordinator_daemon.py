@@ -14,7 +14,7 @@ from dagster._core.remote_origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus
+from dagster._core.storage.dagster_run import ACTIVE_RUN_STATUSES, DagsterRunStatus
 from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._core.test_utils import (
     create_run_for_test,
@@ -245,7 +245,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         in_progress_run_ids = [make_new_run_id() for i in range(num_in_progress_runs)]
         for i, run_id in enumerate(in_progress_run_ids):
             # get a selection of all in progress statuses
-            status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
+            status = ACTIVE_RUN_STATUSES[i % len(ACTIVE_RUN_STATUSES)]
             self.create_run(
                 instance,
                 job_handle,
@@ -282,7 +282,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         in_progress_run_ids = [make_new_run_id() for i in range(5)]
         for i, run_id in enumerate(in_progress_run_ids):
             # get a selection of all in progress statuses
-            status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
+            status = ACTIVE_RUN_STATUSES[i % len(ACTIVE_RUN_STATUSES)]
             self.create_run(
                 instance,
                 job_handle,

@@ -353,7 +353,7 @@ test = ["pytest>=6.0.0"]
 
     expected_deps = [
         "dagster-cloud>=1.0.0",
-        "grpcio-health-checking<1.82",
+        "grpcio-health-checking!=1.82.0",
         "pytest>=6.0.0",
         "requests>=2.25.0",
     ]

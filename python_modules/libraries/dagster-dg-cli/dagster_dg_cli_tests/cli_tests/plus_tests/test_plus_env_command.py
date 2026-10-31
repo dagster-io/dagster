@@ -10,7 +10,10 @@ from dagster_test.dg_utils.utils import (
     set_env_var,
 )
 
-from dagster_dg_cli_tests.cli_tests.plus_tests.utils import mock_gql_response
+from dagster_dg_cli_tests.cli_tests.plus_tests.utils import (
+    capture_gql_client_deployments,
+    mock_gql_response,
+)
 
 ########################################################
 # PULL ENV COMMAND
@@ -271,6 +274,42 @@ def test_pull_env_command_workspace_preserves_existing_env(dg_plus_cli_config):
         bar_env = (Path("bar") / ".env").read_text()
         assert "EXISTING_BAR=keep" in bar_env
         assert "BAZ=qux" in bar_env
+
+
+def test_pull_env_command_deployment_override(dg_plus_cli_config, monkeypatch):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        mock_gql_response(
+            query=gql.SECRETS_QUERY,
+            json_data={
+                "data": {
+                    "secretsOrError": {
+                        "secrets": [
+                            {
+                                "secretName": "FOO",
+                                "secretValue": "bar",
+                                "locationNames": ["foo-bar"],
+                                "localDeploymentScope": True,
+                            },
+                        ]
+                    }
+                }
+            },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
+        )
+
+        with capture_gql_client_deployments() as deployments:
+            assert runner.invoke("plus", "pull", "env").exit_code == 0
+            assert runner.invoke("plus", "pull", "env", "--deployment", "hooli-prod").exit_code == 0
+            assert runner.invoke("plus", "pull", "env", "-d", "hooli-staging").exit_code == 0
+
+            monkeypatch.setenv("DAGSTER_CLOUD_DEPLOYMENT", "hooli-from-env")
+            assert runner.invoke("plus", "pull", "env").exit_code == 0
+
+        assert deployments == ["hooli-dev", "hooli-prod", "hooli-staging", "hooli-from-env"]
+        assert "FOO=bar" in Path(".env").read_text(encoding="utf-8")
 
 
 ########################################################
@@ -841,3 +880,52 @@ def test_add_env_command_no_confirm(dg_plus_cli_config):
             == "Environment variable FOO is already configured for local scope for location foo-bar.\n\n"
             "Environment variable FOO set in branch, full, local scope for location foo-bar in deployment hooli-dev"
         )
+
+
+def test_add_env_command_deployment_override(dg_plus_cli_config, monkeypatch):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        mock_gql_response(
+            query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
+            json_data={"data": {"secretsOrError": {"secrets": []}}},
+        )
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+            json_data={
+                "data": {
+                    "createOrUpdateSecretForScopes": {
+                        "secret": {
+                            "secretName": "FOO",
+                            "secretValue": "bar",
+                            "locationNames": ["foo-bar"],
+                        }
+                    }
+                }
+            },
+        )
+
+        with capture_gql_client_deployments() as deployments:
+            result = runner.invoke("plus", "create", "env", "FOO", "bar")
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+            assert result.output.strip().endswith("in deployment hooli-dev")
+
+            result = runner.invoke(
+                "plus", "create", "env", "FOO", "bar", "--deployment", "hooli-prod"
+            )
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+            assert result.output.strip().endswith("in deployment hooli-prod")
+
+            result = runner.invoke(
+                "plus", "create", "env", "FOO", "bar", "--global", "-d", "hooli-staging"
+            )
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+            assert result.output.strip().endswith("in deployment hooli-staging")
+
+            monkeypatch.setenv("DAGSTER_CLOUD_DEPLOYMENT", "hooli-from-env")
+            result = runner.invoke("plus", "create", "env", "FOO", "bar")
+            assert result.exit_code == 0, result.output + " " + str(result.exception)
+            assert result.output.strip().endswith("in deployment hooli-from-env")
+
+        assert deployments == ["hooli-dev", "hooli-prod", "hooli-staging", "hooli-from-env"]

@@ -218,6 +218,14 @@ def execute_run_monitoring_iteration(
                 monitor_starting_run(instance, run_record, logger)
             elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
                 monitor_started_run(instance, workspace, run_record, logger)
+            elif run_record.dagster_run.status == DagsterRunStatus.SUSPENDED:
+                # No worker to check; time spent suspended still counts toward the runtime limit.
+                check_run_timeout(
+                    instance,
+                    run_record,
+                    logger,
+                    float(instance.run_monitoring_max_runtime_seconds),
+                )
             elif (
                 instance.run_monitoring_cancel_timeout_seconds > 0
                 and run_record.dagster_run.status == DagsterRunStatus.CANCELING

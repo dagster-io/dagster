@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta
 
-from dagster_sharepoint import (  # ty: ignore[unresolved-import]
-    FileInfoConfig,
-    SharePointResource,
-)
+from dagster_sharepoint import FileInfoConfig, SharePointResource  # ty: ignore[unresolved-import]
 
 import dagster as dg
 

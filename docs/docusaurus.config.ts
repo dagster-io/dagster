@@ -33,6 +33,7 @@ const config: Config = {
     require.resolve('./src/plugins/scoutos'),
     require.resolve('./src/plugins/segment'),
     require.resolve('./src/plugins/sidebar-scroll-into-view'),
+    require.resolve('./src/plugins/root-url-without-trailing-slash'),
     require.resolve('./src/plugins/llms-txt'),
     // Enable local search when not in a Vercel production instance
     process.env.VERCEL_ENV !== 'production' && [
@@ -259,7 +260,7 @@ const config: Config = {
           ],
         },
         googleTagManager: {
-          containerId: 'GTM-T3P7KMM4',
+          containerId: 'GTM-N633BZ8',
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
@@ -272,7 +273,10 @@ const config: Config = {
             const {defaultCreateSitemapItems, ...rest} = params;
             const items = await defaultCreateSitemapItems(rest);
             //return items.filter((item) => !item.url.includes('/page/'));
-            return items;
+            // Vercel redirects `/docs/` to `/docs`, so list the homepage without the trailing slash
+            return items.map((item) =>
+              item.url === `${config.url}${BASE_URL}` ? {...item, url: item.url.replace(/\/$/, '')} : item,
+            );
           },
         },
       } satisfies Preset.Options,

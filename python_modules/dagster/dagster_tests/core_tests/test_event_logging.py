@@ -96,7 +96,6 @@ def test_single_op_job_success():
     assert "pipeline_tags" not in start_event.dagster_event.logging_tags  # ty: ignore[unresolved-attribute]
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
-    assert output_event
     assert output_event.dagster_event.step_output_data.output_name == "result"  # ty: ignore[unresolved-attribute]
 
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)

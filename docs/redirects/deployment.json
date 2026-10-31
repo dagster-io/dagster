@@ -261,7 +261,7 @@
   },
   {
     "source": "/docs/dagster-plus/managing-deployments/deployment-settings-reference",
-    "destination": "/docs/deployment/dagster-plus/full-deployments/deployment-settings-reference",
+    "destination": "/docs/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference",
     "permanent": true
   },
   {
@@ -311,7 +311,7 @@
   },
   {
     "source": "/docs/dagster-plus/managing-deployments/dagster-cloud-yaml",
-    "destination": "/docs/deployment/management/build-yaml",
+    "destination": "/docs/deployment/dagster-plus/management/build-yaml",
     "permanent": true
   },
   {
@@ -476,7 +476,7 @@
   },
   {
     "source": "/docs/dagster-cloud/developing-testing/deployment-settings-reference",
-    "destination": "/docs/deployment/dagster-plus/full-deployments/deployment-settings-reference",
+    "destination": "/docs/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference",
     "permanent": true
   },
   {
@@ -716,7 +716,7 @@
   },
   {
     "source": "/docs/dagster-plus/deployment/code-locations/dagster-cloud-yaml",
-    "destination": "/docs/deployment/management/build-yaml",
+    "destination": "/docs/deployment/dagster-plus/management/build-yaml",
     "permanent": true
   },
   {
@@ -772,6 +772,16 @@
   {
     "source": "/docs/guides/labs/terraform",
     "destination": "/docs/deployment/dagster-plus/management/terraform",
+    "permanent": true
+  },
+  {
+    "source": "/docs/deployment/dagster-plus/full-deployments/deployment-settings-reference",
+    "destination": "/docs/deployment/dagster-plus/deploying-code/full-deployments/full-deployment-settings-reference",
+    "permanent": true
+  },
+  {
+    "source": "/docs/deployment/management/build-yaml",
+    "destination": "/docs/deployment/dagster-plus/management/build-yaml",
     "permanent": true
   }
 ]

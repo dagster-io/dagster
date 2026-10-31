@@ -34,6 +34,11 @@ const RETRY_INTERVAL = 1000; // 1 second
 
 const DEFAULT_BATCH_LIMIT = 1000;
 
+// Frozen since it's shared by every skipped caller. Cast because the hook's return type is mutable.
+const NO_ASSETS = Object.freeze([]) as unknown as ReturnType<
+  typeof combineSDAsAndExternalAssetsAndFilterByGroup
+>;
+
 // Note: This hook is a bit odd - we use weakMapMemoize instead of useMemo! We do this
 // so that many instances of `useAllAssetsNodes` (eg: in a scrolling list of assets
 // each using useAssetHealthData) all share the SAME cache of allAssetNodes / allAssetKeys.
@@ -56,9 +61,12 @@ export function useAllAssetsNodes() {
 export function useAllAssets({
   groupSelector,
   batchLimit = DEFAULT_BATCH_LIMIT,
+  skip = false,
 }: {
   groupSelector?: AssetGroupSelector;
   batchLimit?: number;
+  // Don't subscribe, which avoids starting the asset records fetch / poll loop.
+  skip?: boolean;
 } = {}) {
   const client = useApolloClient();
   const manager = getFetchManager(client);
@@ -73,6 +81,9 @@ export function useAllAssets({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<PythonErrorFragment | null>(null);
   useLayoutEffect(() => {
+    if (skip) {
+      return;
+    }
     let didCleanup = false;
     manager.setBatchLimit(batchLimit);
     const unsubscribe = manager.subscribe((assetsOrError) => {
@@ -90,7 +101,7 @@ export function useAllAssets({
       didCleanup = true;
       unsubscribe();
     };
-  }, [manager, batchLimit]);
+  }, [manager, batchLimit, skip]);
 
   const {assets: allAssetNodes, loading: allAssetNodesLoading} = useAllAssetsNodes();
 
@@ -98,13 +109,15 @@ export function useAllAssets({
 
   const assets = useMemo(
     () =>
-      combineSDAsAndExternalAssetsAndFilterByGroup(
-        allAssetNodesByKey,
-        materializedAssets,
-        allAssetNodes,
-        groupSelector,
-      ),
-    [allAssetNodesByKey, materializedAssets, allAssetNodes, groupSelector],
+      skip
+        ? NO_ASSETS
+        : combineSDAsAndExternalAssetsAndFilterByGroup(
+            allAssetNodesByKey,
+            materializedAssets,
+            allAssetNodes,
+            groupSelector,
+          ),
+    [skip, allAssetNodesByKey, materializedAssets, allAssetNodes, groupSelector],
   );
 
   const assetsByAssetKey = useMemo(() => getAssetsByAssetKey(assets), [assets]);
@@ -125,7 +138,6 @@ const getFetchManager = weakMapMemoize((client: ApolloClient<any>) => new FetchM
 class FetchManager {
   private _assetsOrError: AssetRecord[] | PythonErrorFragment | null = null;
   private _subscribers = new Set<(assetsOrError: AssetRecord[] | PythonErrorFragment) => void>();
-  private _started = false;
   private _fetchTimeout: NodeJS.Timeout | null = null;
   private _fetchPromise: Promise<AssetRecord[] | PythonErrorFragment> | null = null;
   private _batchLimit = DEFAULT_BATCH_LIMIT;
@@ -167,11 +179,11 @@ class FetchManager {
     this._cache.set('data', {data, version: AssetRecordsQueryVersion});
   }
 
+  // The loop stops once it runs with no subscribers, so restart it whenever it isn't running.
   private startFetchLoop() {
-    if (this._started) {
+    if (this._fetchPromise || this._fetchTimeout) {
       return;
     }
-    this._started = true;
     this.fetchAssets();
   }
 

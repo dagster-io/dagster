@@ -174,7 +174,8 @@ class TranslationFnResolver(Resolver, Generic[T]):
 # Common case of a TranslationFn that takes a single underlying entity and passes it through
 # as a template var called "data".
 ResolvedTranslationFn: TypeAlias = (
-    Annotated[TranslationFn[T], TranslationFnResolver[T](lambda data: {"data": data})] | None
+    Annotated[TranslationFn[T], TranslationFnResolver[T](lambda data: {"data": data})]  # ty: ignore[unbound-type-variable]
+    | None
 )
 
 T_Component = TypeVar("T_Component", bound="Component", covariant=True)

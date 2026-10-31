@@ -142,18 +142,17 @@ export const AssetCatalogTableV2 = React.memo(() => {
     );
   }, [groupedAndSorted]);
 
-  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory}] = useSelectionReducer(displayKeys);
+  const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleMany}] =
+    useSelectionReducer(displayKeys);
 
   const onToggleGroup = useCallback(
     (group: string) => {
       return (checked: boolean) => {
-        groupedAndSorted[group]?.assets.forEach((asset) => {
-          const toggle = onToggleFactory(tokenForAssetKey(asset.key));
-          toggle({checked, shiftKey: false});
-        });
+        const keys = groupedAndSorted[group]?.assets.map((asset) => tokenForAssetKey(asset.key));
+        onToggleMany(keys ?? [], checked);
       };
     },
-    [groupedAndSorted, onToggleFactory],
+    [groupedAndSorted, onToggleMany],
   );
 
   const setCurrentPage = useSetRecoilState(currentPageAtom);

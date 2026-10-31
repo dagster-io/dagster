@@ -70,6 +70,7 @@ from dagster_dbt.asset_utils import (
 from dagster_dbt.cloud_v2.run_handler import (
     COMPLETED_AT_TIMESTAMP_METADATA_KEY,
     get_completed_at_timestamp,
+    get_run_generated_at_timestamp,
 )
 from dagster_dbt.compat import REFABLE_NODE_TYPES, NodeStatus, NodeType, TestStatus
 from dagster_dbt.components.dbt_component_utils import (
@@ -920,6 +921,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
         op_mode = context is not None
         translator = validate_translator(self.translator)
         invocation_id = run_results.get("metadata", {}).get("invocation_id")
+        generated_at_timestamp = get_run_generated_at_timestamp(run_results)
 
         for result in run_results.get("results", []):
             unique_id = result["unique_id"]
@@ -950,7 +952,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                 metadata = {
                     **default_metadata,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: dg.MetadataValue.timestamp(
-                        get_completed_at_timestamp(result)
+                        get_completed_at_timestamp(result, generated_at_timestamp)
                     ),
                 }
                 # Extra metadata only applies during op execution (the sensor skips it).
@@ -991,7 +993,7 @@ class SnowflakeDbtProjectComponent(StateBackedComponent, dg.Resolvable):
                     **default_metadata,
                     "status": status,
                     COMPLETED_AT_TIMESTAMP_METADATA_KEY: dg.MetadataValue.timestamp(
-                        get_completed_at_timestamp(result)
+                        get_completed_at_timestamp(result, generated_at_timestamp)
                     ),
                 }
                 if result.get("failures") is not None:

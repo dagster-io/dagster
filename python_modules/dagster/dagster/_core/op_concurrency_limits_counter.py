@@ -8,7 +8,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.config import PoolGranularity
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot, ExecutionStepSnap
 from dagster._core.storage.dagster_run import (
-    IN_PROGRESS_RUN_STATUSES,
+    ACTIVE_RUN_STATUSES,
     DagsterRun,
     DagsterRunStatus,
     RunOpConcurrency,
@@ -164,7 +164,7 @@ class GlobalOpConcurrencyLimitsCounter:
             return False
 
         status = record.dagster_run.status
-        if status not in IN_PROGRESS_RUN_STATUSES:
+        if status not in ACTIVE_RUN_STATUSES:
             return False
 
         if self._pool_granularity == PoolGranularity.RUN:

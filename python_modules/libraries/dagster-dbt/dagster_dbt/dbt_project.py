@@ -50,6 +50,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
         prepare_project_cli_args: Sequence[str] | None = None,
+        install_deps: bool = True,
     ):
         """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
@@ -59,8 +60,14 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             prepare_project_cli_args (Sequence[str]):
                 The arguments to pass to the dbt cli to generate a manifest.json.
                 Default: ["parse", "--quiet"]
+            install_deps (bool):
+                Whether to run ``dbt deps`` before generating the manifest. Set to ``False`` when
+                dependencies are installed by some other means (e.g. behind a proxy that is not
+                available at preparation time).
+                Default: True
         """
         self._prepare_project_cli_args = prepare_project_cli_args or ["parse", "--quiet"]
+        self._install_deps = install_deps
 
     @public
     def prepare_if_dev(self, project: "DbtProject"):
@@ -89,7 +96,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         """Execute the preparation process.
 
         The preparation process:
-            * pulls and installs the dependencies of the dbt project,
+            * pulls and installs the dependencies of the dbt project (unless ``install_deps`` is ``False``),
             * parses the dbt project and created a loadable manifest file.
 
         Args:
@@ -105,7 +112,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
             project.project_dir.joinpath("dependencies.yml").exists()
             or project.project_dir.joinpath("packages.yml").exists()
         )
-        if has_deps_files:
+        if self._install_deps and has_deps_files:
             run_with_concurrent_update_guard(
                 Path(project.project_dir).joinpath("package-lock.yml"),
                 self._prepare_packages,
@@ -218,6 +225,14 @@ class DbtProject(IHaveNew):
             like when deploying using PEX.
         state_path (Optional[Union[str, Path]]):
             The path, relative to the project directory, to reference artifacts from another run.
+        prepare_project_cli_args (Optional[Sequence[str]]):
+            The arguments passed to the dbt cli to generate the manifest during preparation.
+            Default: ["parse", "--quiet"]
+        install_deps (bool):
+            Whether preparation runs ``dbt deps`` to install the project's packages. Set to
+            ``False`` if you install packages yourself before starting Dagster, e.g. because
+            ``dbt deps`` needs network access that is unavailable at preparation time.
+            Default: True
 
     Examples:
         Creating a DbtProject with by referencing the dbt project directory:
@@ -278,6 +293,7 @@ class DbtProject(IHaveNew):
         packaged_project_dir: Path | str | None = None,
         state_path: Path | str | None = None,
         prepare_project_cli_args: Sequence[str] | None = None,
+        install_deps: bool = True,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
@@ -296,7 +312,10 @@ class DbtProject(IHaveNew):
                 f"profiles {profiles_dir} does not exist."
             )
 
-        preparer = DagsterDbtProjectPreparer(prepare_project_cli_args=prepare_project_cli_args)
+        preparer = DagsterDbtProjectPreparer(
+            prepare_project_cli_args=prepare_project_cli_args,
+            install_deps=install_deps,
+        )
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 

@@ -21,7 +21,7 @@ type StatusDisplay = {
 
 const RUN_STATUS_DISPLAYS = {
   [RunStatus.NOT_STARTED]: {
-    icon: 'dagster_primary',
+    icon: 'pending_actions',
     iconColor: Colors.accentGray(),
     label: 'Not started',
     timingMode: 'placeholder',
@@ -29,7 +29,7 @@ const RUN_STATUS_DISPLAYS = {
     isPulsing: false,
   },
   [RunStatus.QUEUED]: {
-    icon: 'dagster_primary',
+    icon: 'pending_actions',
     iconColor: Colors.accentBlue(),
     label: 'Queued',
     timingMode: 'elapsed-since-creation',
@@ -52,8 +52,16 @@ const RUN_STATUS_DISPLAYS = {
     timingColor: 'textBlue',
     isPulsing: false,
   },
+  [RunStatus.SUSPENDED]: {
+    icon: 'status',
+    iconColor: Colors.accentBlue(),
+    label: 'Suspended',
+    timingMode: 'elapsed-since-start',
+    timingColor: 'textBlue',
+    isPulsing: false,
+  },
   [RunStatus.MANAGED]: {
-    icon: 'spinner',
+    icon: 'broadcast_on_home',
     iconColor: Colors.accentBlue(),
     label: 'Managed',
     timingMode: 'placeholder',

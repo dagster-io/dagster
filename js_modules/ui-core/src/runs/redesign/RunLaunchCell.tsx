@@ -1,13 +1,24 @@
-import {ButtonLink, Colors, Icon, IconName, MiddleTruncate, Tag} from '@dagster-io/ui-components';
-import {UserDisplay} from '@shared/runs/UserDisplay';
+import {
+  ButtonLink,
+  Colors,
+  Icon,
+  IconName,
+  MiddleTruncate,
+  Tag,
+  Tooltip,
+} from '@dagster-io/ui-components';
+import clsx from 'clsx';
+import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {RunTargets} from './RunTargets';
 import {buildTagMap} from './buildTagMap';
 import styles from './css/RunLaunchCell.module.css';
 import {Initiator, TickIdentifier, getLaunchDetails} from './getLaunchDetails';
+import {getPartitionLabel} from './getPartitionLabel';
 import {getRepoAddress} from './getRepoAddress';
 import {MappedRunsFeedEntry} from './mapRunsFeedData';
+import {canPinTag, usePinnedRunTags} from './usePinnedRunTags';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {PipelineTag} from '../../pipelines/PipelineReference';
 import {shortenId} from '../../util/shortenId';
@@ -60,21 +71,6 @@ const getInitiatorDisplay = (initiator: Initiator): InitiatorDisplay => {
         href: null,
       };
   }
-};
-
-const getPartitionLabel = (tags: Map<string, string>) => {
-  const partition = tags.get(DagsterTag.Partition);
-  if (partition !== undefined) {
-    return partition;
-  }
-
-  const start = tags.get(DagsterTag.AssetPartitionRangeStart);
-  const end = tags.get(DagsterTag.AssetPartitionRangeEnd);
-  if (start !== undefined && end !== undefined) {
-    return `${start} → ${end}`;
-  }
-
-  return null;
 };
 
 type InitiatorLabelProps = {
@@ -146,9 +142,7 @@ const JobAndPartitionTags = ({entry}: JobAndPartitionTagsProps) => {
       )}
       {partitionLabel !== null && (
         <Tag icon="partition" className={styles.tag}>
-          <div className={styles.partitionText}>
-            <MiddleTruncate text={partitionLabel} />
-          </div>
+          <MiddleTruncate text={partitionLabel} />
         </Tag>
       )}
     </>
@@ -172,6 +166,41 @@ const ReexecutionTag = ({entry}: ReexecutionTagProps) => {
         {shortenId(entry.parentRunId)}
       </Link>
     </Tag>
+  );
+};
+
+type VisibleTagsProps = {
+  entry: MappedRunsFeedEntry;
+};
+
+const VisibleTags = ({entry}: VisibleTagsProps) => {
+  const {pinnedTagKeys} = usePinnedRunTags();
+  const visibleTags = useMemo(() => {
+    if (entry.__typename !== 'Run') {
+      return [];
+    }
+    return pinnedTagKeys
+      .filter(canPinTag)
+      .flatMap((key) => entry.tags.filter((tag) => tag.key === key));
+  }, [entry, pinnedTagKeys]);
+
+  return (
+    <>
+      {visibleTags.map(({key, value}, index) => {
+        const isSystemTag = key.startsWith(DagsterTag.Namespace);
+        const displayedKey = isSystemTag ? key.slice(DagsterTag.Namespace.length) : key;
+        return (
+          <Tooltip key={`${key}=${value}`} content={`${key}: ${value}`}>
+            <Tag
+              icon={isSystemTag ? 'dagster_solid' : undefined}
+              className={clsx(styles.visibleTag, index === 0 && styles.firstVisibleTag)}
+            >
+              <MiddleTruncate text={`${displayedKey}: ${value}`} showTitle={false} />
+            </Tag>
+          </Tooltip>
+        );
+      })}
+    </>
   );
 };
 
@@ -201,13 +230,14 @@ export const RunLaunchCell = ({entry, onOpenTickDetails}: RunLaunchCellProps) =>
         </Tag>
       )}
       {user && (
-        <span className={styles.tag}>
-          <UserDisplay email={user} />
-        </span>
+        <Tag className={styles.tag}>
+          <MiddleTruncate text={user} />
+        </Tag>
       )}
       <JobAndPartitionTags entry={entry} />
       <RunTargets entry={entry} />
       <ReexecutionTag entry={entry} />
+      <VisibleTags entry={entry} />
     </div>
   );
 };

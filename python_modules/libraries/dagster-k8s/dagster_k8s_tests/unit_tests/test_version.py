@@ -4,7 +4,7 @@ from dagster_k8s.version import __version__
 
 
 def test_version():
-    assert __version__
+    assert __version__  # ty: ignore[redundant-condition]
 
 
 from dagster_k8s.kubernetes_version import KUBERNETES_VERSION_UPPER_BOUND
@@ -37,7 +37,7 @@ def _get_latest_published_k8s_version() -> packaging.version.Version:
 def test_latest_version_pin():
     latest_version = _get_latest_published_k8s_version()
     assert latest_version.major < packaging.version.parse(KUBERNETES_VERSION_UPPER_BOUND).major, (
-        f"A new version {latest_version} of kubernetes has been released to pypi that exceeds our pin. "
-        "Increase the pinned version in kubernetes_version.py and verify that it still passes tests "
-        "and that our PatchedApiClient class is still compatible with the real Kubernetes ApiClient object."
+        f"A new major version {latest_version} of kubernetes has been released to pypi. Port "
+        "dagster-k8s to it and add a test factor for the new major, then raise the pin in "
+        "pyproject.toml and KUBERNETES_VERSION_UPPER_BOUND in kubernetes_version.py together."
     )

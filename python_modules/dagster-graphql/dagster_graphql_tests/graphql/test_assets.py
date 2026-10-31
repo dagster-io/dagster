@@ -458,6 +458,29 @@ GET_PARTITIONS_BY_DIMENSION = """
     }
 """
 
+GET_DYNAMIC_PARTITIONS_BY_DIMENSION = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!, $startIdx: Int, $endIdx: Int) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
+            partitionKeysByDimension(startIdx: $startIdx, endIdx: $endIdx) {
+                name
+                partitionKeys
+            }
+        }
+    }
+"""
+
+GET_PARTITION_DIMENSION_NAMES = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
+            partitionKeysByDimension {
+                name
+            }
+        }
+    }
+"""
+
 GET_LATEST_MATERIALIZATION_PER_PARTITION = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $partitions: [String!]) {
         assetNodes(pipeline: $pipelineSelector) {
@@ -2388,6 +2411,91 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         counts = counter.counts()
         assert counts.get("DagsterInstance.get_dynamic_partitions") == 1
 
+    def test_dynamic_partition_keys_are_loaded_lazily_and_bounded(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        graphql_context.instance.add_dynamic_partitions("foo", [f"key_{i}" for i in range(10)])
+        all_keys = list(graphql_context.instance.get_dynamic_partitions("foo"))
+        selector = infer_job_selector(graphql_context, "dynamic_partitioned_assets_job")
+
+        # Selecting only the dimension name must not read any partition keys.
+        counter = Counter()
+        traced_counter.set(counter)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_PARTITION_DIMENSION_NAMES,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert [
+            dimension["name"]
+            for dimension in result.data["assetNodes"][0]["partitionKeysByDimension"]
+        ] == ["default"]
+        counts = counter.counts()
+        assert counts.get("DagsterInstance.get_dynamic_partitions") is None
+        assert counts.get("StorageMethods.get_paginated_dynamic_partitions") is None
+
+        # A bounded request reads a single page rather than the whole set. A zero or omitted
+        # startIdx still bounds the read -- both are falsy, so a truthiness guard would drop
+        # the first page back onto the unbounded path.
+        # Each case uses a distinct endIdx so the loader's per-(limit, cursor) cache does not
+        # answer a later one from an earlier one's page.
+        for start_idx, end_idx in [(2, 5), (0, 4), (None, 3), (-3, 2)]:
+            expected = all_keys[max(start_idx or 0, 0) : end_idx]
+            graphql_context.clear_loaders()
+            counter = Counter()
+            traced_counter.set(counter)
+            variables = {"pipelineSelector": selector, "endIdx": end_idx}
+            if start_idx is not None:
+                variables["startIdx"] = start_idx
+            result = execute_dagster_graphql(
+                graphql_context, GET_DYNAMIC_PARTITIONS_BY_DIMENSION, variables=variables
+            )
+            assert result.data
+            assert (
+                result.data["assetNodes"][0]["partitionKeysByDimension"][0]["partitionKeys"]
+                == expected
+            )
+            counts = counter.counts()
+            assert counts.get("DagsterInstance.get_dynamic_partitions") is None
+            assert counts.get("StorageMethods.get_paginated_dynamic_partitions") == 1
+
+        # A degenerate window is answered without touching storage at all. A negative endIdx
+        # matters most: it would otherwise reach the store as a negative SQL LIMIT, which
+        # Postgres rejects and SQLite reads as "no limit" -- the full scan this all exists to stop.
+        for start_idx, end_idx in [(0, 0), (5, 5), (10, 5), (0, -5), (-3, 0)]:
+            graphql_context.clear_loaders()
+            counter = Counter()
+            traced_counter.set(counter)
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_DYNAMIC_PARTITIONS_BY_DIMENSION,
+                variables={
+                    "pipelineSelector": selector,
+                    "startIdx": start_idx,
+                    "endIdx": end_idx,
+                },
+            )
+            assert result.data
+            assert (
+                result.data["assetNodes"][0]["partitionKeysByDimension"][0]["partitionKeys"] == []
+            )
+            counts = counter.counts()
+            assert counts.get("DagsterInstance.get_dynamic_partitions") is None
+            assert counts.get("StorageMethods.get_paginated_dynamic_partitions") is None
+
+        # An unbounded request still returns every key.
+        graphql_context.clear_loaders()
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_DYNAMIC_PARTITIONS_BY_DIMENSION,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert (
+            result.data["assetNodes"][0]["partitionKeysByDimension"][0]["partitionKeys"] == all_keys
+        )
+
     def test_dynamic_partitions_exists(self, graphql_context: WorkspaceRequestContext):
         partitions = ["foo", "bar", "baz"]
         graphql_context.instance.add_dynamic_partitions("foo", partitions)
@@ -3419,6 +3527,42 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             "SINCE",
             "(handled)",
         ]
+
+    def test_automation_condition_presence_only_is_lazy(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """A `{ __typename }`-only query must not build a snapshot or expanded label."""
+        query = """
+            query AssetNodeQuery {
+                assetNodes {
+                    id
+                    automationCondition {
+                        __typename
+                    }
+                }
+            }
+        """
+        with (
+            # patch where it's bound: asset_graph imports get_ac_snapshot by name
+            mock.patch(
+                "dagster_graphql.schema.asset_graph.get_ac_snapshot"
+            ) as get_ac_snapshot_mock,
+            mock.patch(
+                "dagster_graphql.schema.automation_condition.get_expanded_label"
+            ) as get_expanded_label_mock,
+        ):
+            result = execute_dagster_graphql(graphql_context, query)
+
+        assert result.data
+        automation_condition_asset = [
+            a for a in result.data["assetNodes"] if a["id"] == "w.asset_with_automation_condition"
+        ]
+        assert len(automation_condition_asset) == 1
+        assert automation_condition_asset[0]["automationCondition"]["__typename"] == (
+            "AutomationCondition"
+        )
+        get_ac_snapshot_mock.assert_not_called()
+        get_expanded_label_mock.assert_not_called()
 
     def test_tags(self, graphql_context: WorkspaceRequestContext):
         result = execute_dagster_graphql(

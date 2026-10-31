@@ -132,21 +132,20 @@ def poll_for_expected_mats(
         dagster_instance = DagsterInstance.get()
 
         dag_asset_key = AssetKey([af_instance.name, "dag", dag_id])
-        assert poll_for_materialization(dagster_instance, dag_asset_key)
+        poll_for_materialization(dagster_instance, dag_asset_key)
 
         for expected_mat in expected_mats:
             mat_event_log_entry = poll_for_materialization(dagster_instance, expected_mat.asset_key)
             assert mat_event_log_entry.asset_materialization
             assert mat_event_log_entry.asset_materialization.asset_key == expected_mat.asset_key
 
-            assert mat_event_log_entry.asset_materialization
             dagster_run_id = mat_event_log_entry.run_id
 
             all_materializations = dagster_instance.fetch_materializations(
                 records_filter=expected_mat.asset_key, limit=10
             )
 
-            assert all_materializations
+            assert all_materializations.records
 
             if expected_mat.runs_in_dagster:
                 assert dagster_run_id

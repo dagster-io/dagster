@@ -735,7 +735,7 @@
   },
   {
     "source": "/docs/api/python-api/cli",
-    "destination": "/docs/api/dagster/cli",
+    "destination": "/docs/api/clis/cli",
     "permanent": true
   },
   {
@@ -780,7 +780,7 @@
   },
   {
     "source": "/docs/api/dagster/external-assets-rest-api",
-    "destination": "/docs/api/rest-apis/external-assets-rest-api",
+    "destination": "/docs/api/rest-api",
     "permanent": true
   },
   {
@@ -860,11 +860,6 @@
   },
   {
     "source": "/docs/api/python-api",
-    "destination": "/docs/api",
-    "permanent": true
-  },
-  {
-    "source": "/docs/api/python-api/",
     "destination": "/docs/api",
     "permanent": true
   },
@@ -1031,6 +1026,11 @@
   {
     "source": "/docs/deployment/resources",
     "destination": "/docs/api/dagster/resources",
+    "permanent": true
+  },
+  {
+    "source": "/docs/api/dagster/pipe",
+    "destination": "/docs/api/dagster/pipes",
     "permanent": true
   }
 ]

@@ -2,7 +2,8 @@
   min-height: 56px;
   display: flex;
   align-items: center;
-  padding: 5px 12px 5px 24px;
+  padding: var(--options-container-padding-vertical, 5px) 12px
+    var(--options-container-padding-vertical, 5px) var(--page-gutter, 24px);
   border-bottom: 1px solid var(--color-keyline-default);
   background: var(--color-background-default);
   flex-shrink: 0;

@@ -1,7 +1,10 @@
 import {IconName} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {createSelectionAutoComplete} from '../../selection/SelectionAutoComplete';
+import {
+  createSelectionAutoComplete,
+  useSelectionAutoCompleteResults,
+} from '../../selection/SelectionAutoComplete';
 import {
   SelectionAutoCompleteProvider,
   createProvider,
@@ -46,9 +49,10 @@ export const useJobSelectionAutoCompleteProvider = <T extends Job>(
   return useMemo(
     () => ({
       useAutoComplete: ({line, cursorIndex}) => {
-        const autoCompleteResults = useMemo(
-          () => selectionHint(line, cursorIndex),
-          [line, cursorIndex],
+        const autoCompleteResults = useSelectionAutoCompleteResults(
+          selectionHint,
+          line,
+          cursorIndex,
         );
         return {
           autoCompleteResults,

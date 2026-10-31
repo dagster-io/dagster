@@ -449,11 +449,11 @@ def test_out():
 
 
 def test_out_dagster_types():
-    assert dg.Out(dagster_type=None)
-    assert dg.Out(dagster_type=int)
-    assert dg.Out(dagster_type=list)
-    assert dg.Out(dagster_type=list[int])  # typing type
-    assert dg.Out(dagster_type=Int)  # dagster type
+    dg.Out(dagster_type=None)
+    dg.Out(dagster_type=int)
+    dg.Out(dagster_type=list)
+    dg.Out(dagster_type=list[int])  # typing type
+    dg.Out(dagster_type=Int)  # dagster type
 
 
 def test_multi_out():

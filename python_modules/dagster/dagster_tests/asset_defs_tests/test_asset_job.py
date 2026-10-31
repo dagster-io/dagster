@@ -379,9 +379,9 @@ def test_multiple_deps():
     dep_structure_snapshot = build_dep_structure_snapshot_from_graph_def(job.graph)
     index = DependencyStructureIndex(dep_structure_snapshot)
 
-    assert index.get_invocation("foo")
-    assert index.get_invocation("key_prefix__bar")
-    assert index.get_invocation("baz")
+    assert index.has_invocation("foo")
+    assert index.has_invocation("key_prefix__bar")
+    assert index.has_invocation("baz")
 
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),

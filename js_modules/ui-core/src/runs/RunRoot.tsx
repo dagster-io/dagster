@@ -6,35 +6,26 @@ import {
   Icon,
   NonIdealState,
   PageHeader,
-  Tag,
 } from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import {Link, useParams} from 'react-router-dom';
 
+import {LogsProvider, LogsProviderLogs} from './LogsProvider';
 import {Run} from './Run';
-import {RunAssetCheckTags} from './RunAssetCheckTags';
-import {RunAssetTags} from './RunAssetTags';
 import {RUN_PAGE_FRAGMENT} from './RunFragments';
 import {RunHeaderActions} from './RunHeaderActions';
-import {RunStatusTag} from './RunStatusTag';
-import {DagsterTag, RunTag} from './RunTag';
-import {RunTimingTags} from './RunTimingTags';
+import {RunHeaderTags} from './RunHeaderTags';
+import {DagsterTag} from './RunTag';
 import {getBackfillPath} from './RunsFeedUtils';
-import {TickTagForRun} from './TickTagForRun';
 import {getExternalRunUrl, isExternalRun} from './externalRuns';
 import {gql, useQuery} from '../apollo-client';
 import {RunPageFragment} from './types/RunFragments.types';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
+import {useRunRepoInfo} from './useRunRepoInfo';
 import {useTrackPageView} from '../app/analytics';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
-import {InstigationSelector} from '../graphql/types';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {PipelineReference} from '../pipelines/PipelineReference';
 import {shortenId} from '../util/shortenId';
-import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 export const RunRoot = () => {
   useTrackPageView();
@@ -48,53 +39,10 @@ export const RunRoot = () => {
   const {data, loading} = queryResult;
 
   const run = data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError : null;
-  const snapshotID = run?.pipelineSnapshotId;
-
-  const repoMatch = useRepositoryForRunWithParentSnapshot(run);
-  const repoAddress = repoMatch?.match
-    ? buildRepoAddress(repoMatch.match.repository.name, repoMatch.match.repositoryLocation.name)
-    : null;
-
-  const isJob = useMemo(
-    () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
-    [run, repoMatch],
-  );
-
-  const automaterializeTag = useMemo(
-    () => run?.tags.find((tag) => tag.key === DagsterTag.AssetEvaluationID) || null,
-    [run],
-  );
-
-  const tickDetails = useMemo(() => {
-    if (repoAddress) {
-      const tags = run?.tags || [];
-      const tickTag = tags.find((tag) => tag.key === DagsterTag.TickId);
-
-      if (tickTag) {
-        const scheduleOrSensor = tags.find(
-          (tag) => tag.key === DagsterTag.ScheduleName || tag.key === DagsterTag.SensorName,
-        );
-        if (scheduleOrSensor) {
-          const instigationSelector: InstigationSelector = {
-            name: scheduleOrSensor.value,
-            repositoryName: repoAddress.name,
-            repositoryLocationName: repoAddress.location,
-          };
-          return {
-            tickId: tickTag.value,
-            instigationType: scheduleOrSensor.key as
-              | DagsterTag.ScheduleName
-              | DagsterTag.SensorName,
-            instigationSelector,
-          };
-        }
-      }
-    }
-
-    return null;
-  }, [run, repoAddress]);
-
-  const partitionTag = run?.tags.find((tag) => tag.key === DagsterTag.Partition);
+  const {repoAddress, isJob} = useRunRepoInfo(run);
+  // On mobile the tags move to the run's Details tab, which external runs don't render.
+  const isMobile = useIsMobile();
+  const showHeaderTags = run && (!isMobile || isExternalRun(run));
 
   return (
     <div
@@ -117,45 +65,17 @@ export const RunRoot = () => {
         <PageHeader
           title={<RunHeaderTitle run={run} runId={runId} />}
           tags={
-            run ? (
-              <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
-                <RunStatusTag status={run.status} />
-                {!isHiddenAssetGroupJob(run.pipelineName) ? (
-                  <Tag icon="run">
-                    Run of{' '}
-                    <PipelineReference
-                      pipelineName={run?.pipelineName}
-                      pipelineHrefContext={repoAddress || 'repo-unknown'}
-                      snapshotId={snapshotID}
-                      size="small"
-                      isJob={isJob}
-                    />
-                  </Tag>
-                ) : null}
-                {tickDetails ? (
-                  <TickTagForRun
-                    instigationSelector={tickDetails.instigationSelector}
-                    instigationType={tickDetails.instigationType}
-                    tickId={tickDetails.tickId}
-                  />
-                ) : null}
-                {partitionTag && <RunTag tag={partitionTag} />}
-                <RunAssetTags run={run} />
-                <RunAssetCheckTags run={run} />
-                <RunTimingTags run={run} loading={loading} />
-                {automaterializeTag && run.assetSelection?.length ? (
-                  <AutomaterializeTagWithEvaluation
-                    assetKeys={run.assetSelection}
-                    evaluationId={automaterializeTag.value}
-                  />
-                ) : null}
-              </Box>
+            showHeaderTags ? (
+              <RunHeaderTags run={run} repoAddress={repoAddress} isJob={isJob} loading={loading} />
             ) : null
           }
           right={run ? <RunHeaderActions run={run} isJob={isJob} /> : null}
         />
       </Box>
-      <RunById data={data} runId={runId} />
+      {/* Mounted above the RunRootQuery gate so logs stream in parallel; they only need runId. */}
+      <LogsProvider key={runId} runId={runId}>
+        {(logs) => <RunById data={data} runId={runId} logs={logs} />}
+      </LogsProvider>
     </div>
   );
 };
@@ -164,8 +84,14 @@ export const RunRoot = () => {
 // eslint-disable-next-line import/no-default-export
 export default RunRoot;
 
-const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
-  const {data, runId} = props;
+interface RunByIdProps {
+  data: RunRootQuery | undefined;
+  runId: string;
+  logs: LogsProviderLogs;
+}
+
+const RunById = (props: RunByIdProps) => {
+  const {data, runId, logs} = props;
 
   if (!data || !data.pipelineRunOrError) {
     return null;
@@ -215,7 +141,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
     }
   }
 
-  return <Run run={data.pipelineRunOrError} runId={runId} />;
+  return <Run run={data.pipelineRunOrError} runId={runId} logs={logs} />;
 };
 
 const RUN_ROOT_QUERY = gql`

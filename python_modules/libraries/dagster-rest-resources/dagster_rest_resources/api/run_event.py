@@ -54,9 +54,11 @@ if TYPE_CHECKING:
         GetRunEventsLogsForRunEventConnectionEventsRunDequeuedEvent,
         GetRunEventsLogsForRunEventConnectionEventsRunEnqueuedEvent,
         GetRunEventsLogsForRunEventConnectionEventsRunFailureEvent,
+        GetRunEventsLogsForRunEventConnectionEventsRunResumedEvent,
         GetRunEventsLogsForRunEventConnectionEventsRunStartEvent,
         GetRunEventsLogsForRunEventConnectionEventsRunStartingEvent,
         GetRunEventsLogsForRunEventConnectionEventsRunSuccessEvent,
+        GetRunEventsLogsForRunEventConnectionEventsRunSuspendedEvent,
         GetRunEventsLogsForRunEventConnectionEventsStepExpectationResultEvent,
         GetRunEventsLogsForRunEventConnectionEventsStepWorkerStartedEvent,
         GetRunEventsLogsForRunEventConnectionEventsStepWorkerStartingEvent,
@@ -194,6 +196,8 @@ class DgApiRunEventApi:
         | GetRunEventsLogsForRunEventConnectionEventsRunEnqueuedEvent
         | GetRunEventsLogsForRunEventConnectionEventsRunDequeuedEvent
         | GetRunEventsLogsForRunEventConnectionEventsRunStartingEvent
+        | GetRunEventsLogsForRunEventConnectionEventsRunSuspendedEvent
+        | GetRunEventsLogsForRunEventConnectionEventsRunResumedEvent
         | GetRunEventsLogsForRunEventConnectionEventsRunCancelingEvent
         | GetRunEventsLogsForRunEventConnectionEventsRunCanceledEvent
         | GetRunEventsLogsForRunEventConnectionEventsRunSuccessEvent

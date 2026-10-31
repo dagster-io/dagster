@@ -28,7 +28,7 @@ The [`dagster-dbt` library](/integrations/libraries/dbt/dagster-dbt) provides a 
 
 :::tip dbt Fusion
 
-Dagster supports the dbt Fusion engine as of the 1.11.5 release. Support is in preview and has known limitations, including no supported column-level metadata or column lineage. For setup instructions and the full list of gaps, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion).
+Dagster supports the dbt Fusion engine (dbt v2) as of the 1.11.5 release. Support is in preview and has known limitations: row counts are unavailable, and column metadata requires a dbt-side macro. For setup instructions and the full list of gaps, see [Dagster & dbt Fusion](/integrations/libraries/dbt/dbt-fusion).
 
 :::
 
@@ -396,7 +396,21 @@ attributes:
 
 This passes the specified arguments to the dbt CLI when generating the manifest, instead of the default `["parse", "--quiet"]`. Using `compile` is useful when you want to leverage `node.compiled_code` in translations or custom subclasses, for example to include the compiled SQL in asset descriptions.
 
-## Step 11: Enable Dagster+ Insights
+## Step 11: Skip dbt package installation
+
+By default, preparation runs `dbt deps` whenever your project declares packages in `packages.yml` or `dependencies.yml`. If you install dbt packages yourself, for example because `dbt deps` must run behind a proxy that is unavailable when Dagster starts, set `install_deps: false` on the `project` attribute. Dagster then parses the manifest against the packages already present in `dbt_packages`:
+
+```yaml
+# defs.yaml
+type: dagster_dbt.DbtProjectComponent
+
+attributes:
+  project:
+    project_dir: '{{ project_root }}/path/to/dbt_project'
+    install_deps: false
+```
+
+## Step 12: Enable Dagster+ Insights
 
 If you are using [Dagster+](/deployment/dagster-plus) with a Snowflake or BigQuery warehouse, you can associate dbt query costs with the produced asset materializations in the [Insights](/guides/observe/insights) dashboard. Add `insights` to the `include_metadata` list:
 

@@ -35,7 +35,7 @@ def test_error_capture(graphql_context):
         seen.append(exc_info)
         return ErrorCapture.default_on_exception(exc_info)
 
-    ErrorCapture.on_exception = _new_on_exc
+    ErrorCapture.on_exception = _new_on_exc  # ty: ignore[invalid-assignment]
 
     with mock.patch(
         "dagster._core.workspace.context.BaseWorkspaceRequestContext.code_locations",

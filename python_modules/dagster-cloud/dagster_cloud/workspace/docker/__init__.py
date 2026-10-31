@@ -91,6 +91,7 @@ class DockerUserCodeLauncher(
     def requires_images(self):
         return True
 
+    @property
     def user_code_deployment_type(self) -> UserCodeDeploymentType:
         return UserCodeDeploymentType.DOCKER
 

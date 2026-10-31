@@ -1,5 +1,6 @@
 ---
-title: Asset checks
+title: Ensure data quality with asset checks
+sidebar_label: Asset checks
 description: Ensuring quality with asset checks
 sidebar_position: 60
 ---

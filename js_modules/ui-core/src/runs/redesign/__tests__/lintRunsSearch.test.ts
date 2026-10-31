@@ -1,5 +1,7 @@
 import {lintRunsSearch} from '../lintRunsSearch';
 
+const RUN_ID = '8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f';
+
 describe('lintRunsSearch', () => {
   it('accepts a valid search', () => {
     expect(lintRunsSearch('job:my_job and (status:failure or status:canceled)')).toEqual([]);
@@ -15,17 +17,55 @@ describe('lintRunsSearch', () => {
     expect(lintRunsSearch('   ')).toEqual([]);
   });
 
-  it('reports a syntax error for an unquoted value with special characters', () => {
-    expect(lintRunsSearch('id:abc-123')).not.toEqual([]);
+  it('accepts leading whitespace and points errors past it', () => {
+    expect(lintRunsSearch(' \tjob:a')).toEqual([]);
+    // An incomplete-quote token would otherwise absorb the leading spaces.
+    expect(lintRunsSearch('  "foo"')).toEqual([
+      {message: 'Add an attribute, for example job:my_job', from: 2, to: 7},
+    ]);
+    expect(lintRunsSearch('  job:a job:b')).toEqual([
+      {
+        message: "mismatched input 'job' expecting <EOF>",
+        offendingSymbol: 'job',
+        from: 8,
+        to: Infinity,
+      },
+    ]);
+  });
+
+  it('suggests quotes for an unquoted value with special characters', () => {
+    const text = `id:${RUN_ID}`;
+    expect(lintRunsSearch(text)).toEqual([
+      {message: `Add quotes: \`id:"${RUN_ID}"\``, from: 0, to: text.length},
+    ]);
   });
 
   it('reports runs search rules once the syntax is valid', () => {
-    expect(lintRunsSearch('id:a or job:b')).toEqual([
-      {message: 'or only combines IDs or statuses', from: 0, to: 13},
+    const text = `id:"${RUN_ID}" or job:b`;
+    expect(lintRunsSearch(text)).toEqual([
+      {message: 'or only combines IDs or statuses', from: 0, to: text.length},
     ]);
   });
 
   it('keeps syntax errors for other malformed searches', () => {
     expect(lintRunsSearch('job:a job:b')).not.toEqual([]);
+  });
+
+  it('reports an unknown attribute after an emoji at its position in the text', () => {
+    expect(lintRunsSearch('tag:"😀"=x and foo:a')).toEqual([
+      {message: 'Unsupported attribute: "foo"', from: 15, to: 18},
+    ]);
+  });
+
+  it('reports an unknown attribute once when a syntax error covers its later uses', () => {
+    expect(lintRunsSearch('key:a key:b')).toEqual([
+      {
+        message: "mismatched input 'key' expecting <EOF>",
+        offendingSymbol: 'key',
+        from: 6,
+        to: Infinity,
+      },
+      {message: 'Unsupported attribute: "key"', from: 0, to: 3},
+    ]);
   });
 });

@@ -30,7 +30,7 @@
     "permanent": true
   },
   {
-    "source": "/docs/community/contributing/",
+    "source": "/docs/community/contributing",
     "destination": "/docs/about/contributing",
     "permanent": true
   },

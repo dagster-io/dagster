@@ -1,17 +1,17 @@
 [
   {
     "source": "/docs/guides/build/ml-pipelines",
-    "destination": "/docs/examples/ml",
+    "destination": "/docs/examples/full-pipelines/ml",
     "permanent": true
   },
   {
     "source": "/docs/guides/dagster/ml-pipeline",
-    "destination": "/docs/examples/ml",
+    "destination": "/docs/examples/full-pipelines/ml",
     "permanent": true
   },
   {
     "source": "/docs/guides/dagster/managing-ml",
-    "destination": "/docs/examples/ml",
+    "destination": "/docs/examples/full-pipelines/ml",
     "permanent": true
   },
   {
@@ -121,12 +121,12 @@
   },
   {
     "source": "/docs/examples/resource-caching",
-    "destination": "/docs/examples/mini-examples/resource-caching",
+    "destination": "/docs/examples/best-practices/resource-caching",
     "permanent": true
   },
   {
     "source": "/docs/examples/shared-module",
-    "destination": "/docs/examples/mini-examples/shared-module",
+    "destination": "/docs/examples/best-practices/shared-module",
     "permanent": true
   },
   {
@@ -145,7 +145,7 @@
     "permanent": true
   },
   {
-    "source": "/docs/tutorials/",
+    "source": "/docs/tutorials",
     "destination": "/docs/examples",
     "permanent": true
   }

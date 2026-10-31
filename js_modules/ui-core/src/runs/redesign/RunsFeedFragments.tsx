@@ -78,10 +78,9 @@ export const RUNS_FEED_ENTRY_FRAGMENT = gql`
   ${BACKFILL_SUMMARY_FRAGMENT}
 `;
 
-export const RUN_SELECTION_DETAILS_FRAGMENT = gql`
-  fragment RunSelectionDetailsFragment on Run {
+export const RUN_ASSET_SELECTION_FRAGMENT = gql`
+  fragment RunAssetSelectionFragment on Run {
     id
-    runId
     assetSelection {
       path
     }
@@ -95,9 +94,21 @@ export const RUN_SELECTION_DETAILS_FRAGMENT = gql`
       assetKeys {
         path
       }
+    }
+  }
+`;
+
+export const RUN_SELECTION_DETAILS_FRAGMENT = gql`
+  fragment RunSelectionDetailsFragment on Run {
+    id
+    runId
+    ...RunAssetSelectionFragment
+    executionPlan {
       steps {
         key
       }
     }
   }
+
+  ${RUN_ASSET_SELECTION_FRAGMENT}
 `;

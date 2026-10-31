@@ -1,6 +1,6 @@
 ---
 title: 'dagstermill integration reference'
-description: The Dagstermill package lets you run notebooks using the Dagster tools and integrate them into your data pipelines.
+description: Reference for the dagstermill library, covering notebooks as assets and ops, notebook context, results, custom materializations, and Dagster events.
 sidebar_position: 200
 ---
 

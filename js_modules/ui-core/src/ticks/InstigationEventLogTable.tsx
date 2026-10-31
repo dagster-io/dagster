@@ -1,10 +1,15 @@
-import {Box, Container, Inner, Row} from '@dagster-io/ui-components';
+import {Container, Inner, Row} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useContext, useEffect, useRef} from 'react';
 
 import {gql} from '../apollo-client';
 import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
-import {EventTypeColumn, Row as LogsRow, TimestampColumn} from '../runs/LogsRowComponents';
+import {
+  EventTypeColumn,
+  Row as LogsRow,
+  MessageColumn,
+  TimestampColumn,
+} from '../runs/LogsRowComponents';
 import {
   ColumnWidthsContext,
   ColumnWidthsProvider,
@@ -83,9 +88,9 @@ export const InstigationEventLogTable = ({events}: {events: InstigationEventLogF
                     <span style={{marginLeft: 8}}>{event.level}</span>
                   </EventTypeColumn>
                   <TimestampColumn time={event.timestamp} />
-                  <Box padding={{horizontal: 12, vertical: 4}} style={{flex: 1}}>
+                  <MessageColumn padding={{horizontal: 12, vertical: 4}}>
                     {event.message}
-                  </Box>
+                  </MessageColumn>
                 </LogsRow>
               </Row>
             );

@@ -90,12 +90,17 @@ export const useUnknownMobileRouteStatus = (isUnknown: boolean, pathname: string
  * Declare the status from inside a page component, for pages whose mobile-friendliness
  * depends on state the route can't see (e.g. a `?view=` tab). Wins over the enclosing
  * route's annotation.
+ *
+ * Pass `null` to leave the decision to a component rendered inside this one: declarations
+ * from the same route share a depth, and the outer one's effect runs last, so it would win.
  */
-export const useDeclareMobileRouteStatus = (status: MobileRouteStatus) => {
+export const useDeclareMobileRouteStatus = (status: MobileRouteStatus | null) => {
   const claimStatus = useClaimMobileRouteStatus();
   const depth = useContext(RouteDepthContext);
   const {pathname} = useLocation();
   useLayoutEffect(() => {
-    claimStatus({pathname, depth: depth + 1, status});
+    if (status) {
+      claimStatus({pathname, depth: depth + 1, status});
+    }
   }, [claimStatus, pathname, depth, status]);
 };

@@ -22,7 +22,6 @@ import {
   reExecutionRun,
   runEntry,
   scheduleRun,
-  scheduleRunWithTick,
   scheduleRunWithoutRepo,
   singlePartitionRun,
   tag,
@@ -39,6 +38,10 @@ const renderCell = (entry: MappedRunsFeedEntry, onOpenTickDetails = jest.fn()) =
   );
 
 describe('RunLaunchCell', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it.each([
     ['declarative automation', defaultAutomationSensorRun, 'default_automation_condition_sensor'],
     ['declarative automation without a sensor', autoMaterializeRun, 'Declarative automation'],
@@ -64,7 +67,7 @@ describe('RunLaunchCell', () => {
 
   it('shows the user who launched a re-execution', async () => {
     renderCell(reExecutionRun);
-    expect(await screen.findByTitle('pat@example.com')).toBeVisible();
+    expect(await screen.findByText('pat@example.com')).toBeVisible();
   });
 
   it('links the backfill a run belongs to', async () => {
@@ -77,13 +80,13 @@ describe('RunLaunchCell', () => {
 
   it('shows the launching user for a manual run', async () => {
     renderCell(manualRunWithUser);
-    expect(await screen.findByTitle('pat@example.com')).toBeVisible();
+    expect(await screen.findByText('pat@example.com')).toBeVisible();
   });
 
   it('reports the tick and its button when View tick is used', async () => {
     const user = userEvent.setup();
     const onOpenTickDetails = jest.fn();
-    renderCell(scheduleRunWithTick, onOpenTickDetails);
+    renderCell(defaultAutomationSensorRun, onOpenTickDetails);
 
     const button = await screen.findByRole('button', {name: 'View tick'});
     await user.click(button);
@@ -93,7 +96,7 @@ describe('RunLaunchCell', () => {
       {
         tickId: 'tick-id',
         instigationSelector: {
-          name: 'hourly_schedule',
+          name: 'default_automation_condition_sensor',
           repositoryName: 'my_repo',
           repositoryLocationName: 'my_location',
         },
@@ -154,7 +157,7 @@ describe('RunLaunchCell', () => {
         assetSelectionPreview: [buildAssetKey({path: ['sales', 'daily']})],
         assetSelectionCount: 1,
         tags: [
-          tag(DagsterTag.ScheduleName, 'hourly_schedule'),
+          tag(DagsterTag.SensorName, 'default_automation_condition_sensor'),
           tag(DagsterTag.TickId, 'tick-id'),
           tag(DagsterTag.Backfill, 'bkfl1234'),
         ],
@@ -162,7 +165,7 @@ describe('RunLaunchCell', () => {
     );
 
     const stops = [
-      await screen.findByRole('link', {name: /hourly_schedule/}),
+      await screen.findByRole('link', {name: /default_automation_condition_sensor/}),
       await screen.findByRole('button', {name: 'View tick'}),
       await screen.findByRole('link', {name: 'bkfl1234'}),
       await screen.findByRole('link', {name: 'daily_etl'}),
@@ -173,5 +176,66 @@ describe('RunLaunchCell', () => {
       await user.tab();
       expect(document.activeElement).toBe(stop);
     }
+  });
+
+  describe('tags shown from the tags dialog', () => {
+    const pinTags = (...keys: string[]) =>
+      window.localStorage.setItem('pinned-run-tags', JSON.stringify(keys));
+
+    it("shows the run's own value for a pinned key", async () => {
+      pinTags('team');
+      renderCell(runEntry({tags: [tag('team', 'ml')]}));
+
+      expect(await screen.findByText('team: ml')).toBeVisible();
+    });
+
+    it('omits a pinned key the run does not carry', async () => {
+      pinTags('team');
+      renderCell(runEntry({tags: [tag('env', 'prod')]}));
+
+      expect(await screen.findByText('Manual')).toBeVisible();
+      expect(screen.queryByText(/team:/)).not.toBeInTheDocument();
+    });
+
+    it('shows nothing extra when no tags are pinned', async () => {
+      renderCell(runEntry({tags: [tag('team', 'data')]}));
+
+      expect(await screen.findByText('Manual')).toBeVisible();
+      expect(screen.queryByText('team: data')).not.toBeInTheDocument();
+    });
+
+    it('shows pinned tags in the order they were pinned', async () => {
+      pinTags('team', 'env');
+      renderCell(runEntry({tags: [tag('env', 'prod'), tag('team', 'data')]}));
+
+      const shown = await screen.findAllByText(/^(team|env): /);
+      expect(shown.map((element) => element.textContent)).toEqual(['team: data', 'env: prod']);
+    });
+
+    it('does not repeat a tag the row already shows', async () => {
+      pinTags(DagsterTag.Partition);
+      renderCell(singlePartitionRun);
+
+      expect(await screen.findByTitle('2026-09-08')).toBeVisible();
+      expect(screen.queryByText('partition: 2026-09-08')).not.toBeInTheDocument();
+    });
+
+    it('drops the system prefix from a shown tag and keeps the full key in its tooltip', async () => {
+      const runKey = `${DagsterTag.Namespace}run_key`;
+      pinTags(runKey);
+      renderCell(runEntry({tags: [tag(runKey, 'nightly')]}));
+
+      const shown = await screen.findByText('run_key: nightly');
+      await userEvent.hover(shown);
+      expect(await screen.findByRole('tooltip')).toHaveTextContent(`${runKey}: nightly`);
+    });
+
+    it('shows no pinned tags on a backfill', async () => {
+      pinTags('team');
+      renderCell(backfillEntry({backfillJobName: 'daily_etl', tags: [tag('team', 'data')]}));
+
+      expect(await screen.findByText('daily_etl')).toBeVisible();
+      expect(screen.queryByText('team: data')).not.toBeInTheDocument();
+    });
   });
 });
