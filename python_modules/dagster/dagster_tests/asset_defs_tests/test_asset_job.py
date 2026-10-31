@@ -2716,6 +2716,40 @@ def test_subset_cycle_resolution_with_checks():
     assert len(list(job.graph.iterate_op_defs())) == 4
 
 
+def test_subset_cycle_resolution_with_check_additional_dep_on_undefined_asset():
+    """Ops:
+        foo produces: a, b
+        foo_prime produces: a', checks a' with an additional dep on an undefined asset
+    Assets:
+        a -> a' -> b.
+    """
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("a", skippable=True),
+            dg.AssetSpec("b", deps=["a_prime"], skippable=True),
+        ],
+        can_subset=True,
+    )
+    def foo(context): ...
+
+    @dg.multi_asset(
+        specs=[dg.AssetSpec("a_prime", deps=["a"], skippable=True)],
+        check_specs=[
+            dg.AssetCheckSpec("a_prime_is_good", asset="a_prime", additional_deps=["undefined"]),
+        ],
+        can_subset=True,
+    )
+    def foo_prime(context): ...
+
+    job = dg.Definitions(assets=[foo, foo_prime]).resolve_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> foo_prime -> foo_2
+    assert {node.name for node in job.graph.nodes} == {"foo", "foo_prime", "foo_2"}
+    check_key = dg.AssetCheckKey(dg.AssetKey("a_prime"), "a_prime_is_good")
+    assert job.asset_layer.get_op_output_handle(check_key).node_handle.name == "foo_prime"
+
+
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
 def test_subset_cycle_resolution_asset_result():
     """Ops:

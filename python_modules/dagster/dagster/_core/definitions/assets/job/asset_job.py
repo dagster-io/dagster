@@ -642,6 +642,10 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
             # level. a job is never computed by an op (it is the run container, not a step), so
             # it contributes nothing to op-graph construction or cycle resolution.
             continue
+        if not asset_graph.has(key):
+            # an asset check's additional_deps may name a key that has no node in the graph
+            # (no stub asset is created for it); nothing computes it, so there is nothing to color.
+            continue
         _dfs(key, 0)
 
     color_mapping_by_assets_defs: dict[AssetsDefinition, Any] = defaultdict(
