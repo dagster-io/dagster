@@ -34,7 +34,7 @@ from dagster._utils.hosted_user_process import remote_job_from_recon_job
 from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig, get_k8s_job_name
-from kubernetes.client.models import V1Job, V1JobStatus, V1ObjectMeta
+from kubernetes.client.models import V1Job, V1JobList, V1JobStatus, V1ListMeta, V1ObjectMeta
 
 
 @job(
@@ -845,6 +845,10 @@ def test_per_step_k8s_config_dynamic_job(k8s_run_launcher_instance: DagsterInsta
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
 
 
+def _job_list(items, continue_token):
+    return V1JobList(items=items, metadata=V1ListMeta(_continue=continue_token))
+
+
 @job(
     executor_def=k8s_job_executor,
     resource_defs={"io_manager": fs_io_manager},
@@ -891,12 +895,12 @@ def test_check_step_health_batch(kubeconfig_file, k8s_instance):
             status=status,
         )
 
-    mock_k8s_client_batch_api.list_namespaced_job.return_value = mock.Mock(
+    mock_k8s_client_batch_api.list_namespaced_job.return_value = _job_list(
         items=[
             _job("running", V1JobStatus(active=1)),
             _job("failed", V1JobStatus(active=0, failed=1)),
         ],
-        metadata=mock.Mock(var_continue=None, _continue=None),
+        continue_token=None,
     )
 
     results = handler.check_step_health_batch(list(contexts.values()))

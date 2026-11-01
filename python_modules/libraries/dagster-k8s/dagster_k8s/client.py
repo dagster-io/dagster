@@ -288,8 +288,8 @@ def _get_list_continue_token(k8s_list: Any) -> str | None:
     metadata = k8s_list.metadata
     if not metadata:
         return None
-    # kubernetes>=37 (pydantic models) renamed the attribute from _continue to var_continue.
-    return getattr(metadata, "var_continue", None) or getattr(metadata, "_continue", None)
+    # The pydantic models of kubernetes>=37 name the field var_continue instead of _continue.
+    return metadata.var_continue if K8S_MODELS_ARE_PYDANTIC else metadata._continue  # noqa: SLF001
 
 
 class DagsterKubernetesClient:

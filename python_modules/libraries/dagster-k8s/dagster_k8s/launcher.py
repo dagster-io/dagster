@@ -493,9 +493,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                         ),
                     )
                 except Exception:
-                    error = str(serializable_error_info_from_exc_info(sys.exc_info()))
-                    for run, _ in runs_and_job_names:
-                        results[run.run_id] = CheckRunHealthResult(WorkerStatus.UNKNOWN, error)
+                    # LIST can fail even when the existing GET checks work (for example,
+                    # with GET-only RBAC). Leave these runs out so the caller uses GET,
+                    # rather than manufacturing unhealthy UNKNOWN results.
                     continue
 
                 results.update(self._run_worker_health_from_statuses(runs_and_job_names, statuses))
