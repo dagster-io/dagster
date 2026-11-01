@@ -4,6 +4,7 @@ import {AssetGraphQueryItem} from '../../../asset-graph/types';
 import {AssetSelectionLexer} from '../../../asset-selection/generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../../../asset-selection/generated/AssetSelectionParser';
 import {
+  ASSET_SELECTION_RECENTS_KEY,
   assetSelectionSyntaxSupportedAttributes,
   unsupportedAttributeMessages,
 } from '../../../asset-selection/input/util';
@@ -25,6 +26,7 @@ export interface AssetSelectionInputProps {
   saveOnBlur?: boolean;
   placeholder?: string;
   className?: string;
+  showRecentSearches?: boolean;
 }
 
 const defaultLinter = createSelectionLinter({
@@ -45,6 +47,7 @@ export const AssetSelectionInput = ({
   onErrorStateChange,
   placeholder = 'Search and filter assets',
   className,
+  showRecentSearches = false,
 }: AssetSelectionInputProps) => {
   const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
 
@@ -60,6 +63,7 @@ export const AssetSelectionInput = ({
       onSubmit={onSubmit}
       saveOnBlur={saveOnBlur}
       onErrorStateChange={onErrorStateChange}
+      recentSearchesKey={showRecentSearches ? ASSET_SELECTION_RECENTS_KEY : undefined}
       className={className}
     />
   );

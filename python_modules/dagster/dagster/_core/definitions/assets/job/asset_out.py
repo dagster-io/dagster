@@ -248,7 +248,7 @@ class AssetOut:
         key: AssetKey,
         deps: Sequence[AssetDep],
         additional_tags: Mapping[str, str] = {},
-        partitions_def: PartitionsDefinition | None | EllipsisType = ...,
+        partitions_def: PartitionsDefinition | EllipsisType | None = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,
@@ -283,7 +283,7 @@ class AssetOut:
         Returns:
             AssetOut: The AssetOut built from the spec.
         """
-        if spec.deps:
+        if spec.deps:  # ty: ignore[truthiness-test-of-iterable]
             raise DagsterInvalidDefinitionError(
                 "Currently, cannot build AssetOut from spec with deps"
             )

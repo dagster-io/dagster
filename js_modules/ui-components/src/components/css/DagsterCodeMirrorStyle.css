@@ -32,7 +32,7 @@
   background-color: var(--color-background-light);
   color: var(--color-text-default);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--input-font-size, 14px);
   font-variant-ligatures: none;
 }
 

@@ -2,7 +2,6 @@ from typing import ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
 import sqlalchemy.exc as db_exc
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
@@ -26,6 +25,7 @@ from dagster._core.storage.sql import (
 )
 from dagster._core.storage.sqlalchemy_compat import db_result
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from sqlalchemy.dialects import mysql
 from sqlalchemy.engine import Connection
 
 from dagster_mysql.utils import (
@@ -167,7 +167,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         )
         if values:
             conn.execute(
-                db_dialects.mysql.insert(AssetKeyTable)
+                mysql.insert(AssetKeyTable)
                 .values(
                     asset_key=event.dagster_event.asset_key.to_string(),
                     **values,
@@ -179,7 +179,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         else:
             try:
                 conn.execute(
-                    db_dialects.mysql.insert(AssetKeyTable).values(
+                    mysql.insert(AssetKeyTable).values(
                         asset_key=event.dagster_event.asset_key.to_string(),
                     )
                 )

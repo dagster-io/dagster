@@ -518,6 +518,9 @@ class MdxTranslator(SphinxTranslator):
 
     def depart_document(self, node: Element) -> None:
         title = next(iter(node.nameids.keys()), "Dagster Python API Reference")
+        # The page heading keeps its original casing (e.g. "Ops" rather than the "ops" section id)
+        heading = node.next_node(nodes.title)
+        page_title = heading.astext() if heading else title
         title_suffix = self.builder.config.mdx_title_suffix
         title_meta = self.builder.config.mdx_title_meta
         meta_description = self.builder.config.mdx_description_meta
@@ -529,6 +532,7 @@ class MdxTranslator(SphinxTranslator):
 
         # Escape single quotes in strings
         title = title.replace("'", "\\'")
+        page_title = page_title.replace("'", "\\'")
         if title_suffix:
             title_suffix = title_suffix.replace("'", "\\'")
         if title_meta:
@@ -536,17 +540,27 @@ class MdxTranslator(SphinxTranslator):
         if meta_description:
             meta_description = meta_description.replace("'", "\\'")
 
+        sidebar_title = f"{title} {title_suffix}" if title_suffix else title
+
         frontmatter = "---\n"
-        frontmatter += f"title: '{title}"
-        if title_suffix:
-            frontmatter += f" {title_suffix}"
-        frontmatter += "'\n"
+        # Docusaurus uses `title` for the <title> tag, so with `title_meta` set the page title becomes
+        # e.g. "Ops API reference" while the sidebar keeps the short name. Without this, API pages
+        # share titles with guides of the same name.
+        if title_meta:
+            # Skip suffix words the heading already ends with, e.g. "dg api reference" or
+            # "External assets instance API"
+            meta_words = title_meta.split()
+            if page_title.lower().endswith(meta_words[-1].lower()):
+                meta_words = []
+            while meta_words and page_title.lower().endswith(meta_words[0].lower()):
+                meta_words = meta_words[1:]
+            frontmatter += f"title: '{' '.join([page_title, *meta_words])}'\n"
+            frontmatter += f"sidebar_label: '{sidebar_title}'\n"
+        else:
+            frontmatter += f"title: '{sidebar_title}'\n"
         frontmatter += sidebar_position
         # if sidebar_position:
         #     frontmatter += "sidebar_position: 1\n"
-
-        if title_meta:
-            frontmatter += f"title_meta: '{title}{title_meta}'\n"
 
         if meta_description:
             frontmatter += f"description: '{title}{meta_description}'\n"

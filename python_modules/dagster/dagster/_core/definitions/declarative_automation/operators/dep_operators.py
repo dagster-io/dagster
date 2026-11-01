@@ -250,7 +250,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
         true_subset = context.get_empty_subset()
 
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
-            dep_result = await context.for_child_condition(
+            dep_result = await context.for_child_condition(  # ty: ignore[invalid-argument-type]
                 child_condition=EntityMatchesCondition(key=dep_key, operand=self.operand),
                 child_indices=[  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
                     None,
@@ -259,13 +259,13 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
                 candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
-            true_subset = true_subset.compute_union(dep_result.true_subset)
+            true_subset = true_subset.compute_union(dep_result.true_subset)  # ty: ignore[invalid-argument-type]
 
         true_subset = context.candidate_subset.compute_intersection(true_subset)
 
         return AutomationResult(
             context,
-            true_subset=true_subset,
+            true_subset=true_subset,  # ty: ignore[invalid-argument-type]
             child_results=dep_results,
             timing_metadata=self._merge_timing_metadata(dep_results),  # ty: ignore[invalid-argument-type]
         )
@@ -288,7 +288,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
         true_subset = context.candidate_subset
 
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
-            dep_result = await context.for_child_condition(
+            dep_result = await context.for_child_condition(  # ty: ignore[invalid-argument-type]
                 child_condition=EntityMatchesCondition(key=dep_key, operand=self.operand),
                 child_indices=[  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
                     None,
@@ -297,6 +297,6 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
                 candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             dep_results.append(dep_result)
-            true_subset = true_subset.compute_intersection(dep_result.true_subset)
+            true_subset = true_subset.compute_intersection(dep_result.true_subset)  # ty: ignore[invalid-argument-type]
 
-        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)
+        return AutomationResult(context, true_subset=true_subset, child_results=dep_results)  # ty: ignore[invalid-argument-type]

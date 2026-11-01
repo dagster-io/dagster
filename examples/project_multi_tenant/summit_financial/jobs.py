@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dagster as dg
 
-
 summit_raw_data_job = dg.define_asset_job(
     name="summit_raw_data_job",
     selection=dg.AssetSelection.groups("bronze"),

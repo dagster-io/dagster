@@ -7,6 +7,7 @@ tags: [dagster-supported, etl]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte
 pypi: https://pypi.org/project/dagster-airbyte/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/airbyte.svg
 partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
 canonicalUrl: '/integrations/libraries/airbyte'

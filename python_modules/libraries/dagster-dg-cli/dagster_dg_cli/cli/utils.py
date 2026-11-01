@@ -354,7 +354,7 @@ def _dagster_cloud_entry_for_project(
         "code_source": {
             **dg_context.target_args,
         },
-        **({"build": merged_build_config} if merged_build_config else {}),
+        **({"build": merged_build_config} if merged_build_config else {}),  # ty: ignore[redundant-condition]
         **(
             {"container_context": merged_container_context_config}
             if merged_container_context_config

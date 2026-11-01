@@ -21,6 +21,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorTick,
+    InstigatorTickSummary,
     TickData,
     TickStatus,
 )
@@ -46,7 +47,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._serdes import serialize_value
-from dagster._time import datetime_from_timestamp, get_current_datetime
+from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
 
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
@@ -351,6 +352,20 @@ class SqlScheduleStorage(ScheduleStorage):
         tick_id, tick_data = rows[0]
         return InstigatorTick(tick_id, deserialize_value(tick_data, TickData))
 
+    def get_ticks_by_ids(self, tick_ids: Sequence[int]) -> Sequence[InstigatorTick]:
+        check.sequence_param(tick_ids, "tick_ids", of_type=int)
+        if not tick_ids:
+            return []
+
+        query = (
+            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.id.in_(tick_ids))
+        )
+
+        rows = self.execute(query)
+        return [InstigatorTick(row[0], deserialize_value(row[1], TickData)) for row in rows]
+
     def get_ticks(
         self,
         origin_id: str,
@@ -360,6 +375,65 @@ class SqlScheduleStorage(ScheduleStorage):
         limit: int | None = None,
         statuses: Sequence[TickStatus] | None = None,
     ) -> Sequence[InstigatorTick]:
+        query = self._ticks_query(
+            [JobTickTable.c.id, JobTickTable.c.tick_body],
+            origin_id,
+            selector_id,
+            before=before,
+            after=after,
+            limit=limit,
+            statuses=statuses,
+        )
+        rows = self.execute(query)
+        return list(map(lambda r: InstigatorTick(r[0], deserialize_value(r[1], TickData)), rows))
+
+    def get_tick_summaries(
+        self,
+        origin_id: str,
+        selector_id: str,
+        before: float | None = None,
+        after: float | None = None,
+        limit: int | None = None,
+        statuses: Sequence[TickStatus] | None = None,
+    ) -> Sequence[InstigatorTickSummary]:
+        query = self._ticks_query(
+            [
+                JobTickTable.c.id,
+                JobTickTable.c.job_origin_id,
+                JobTickTable.c.type,
+                JobTickTable.c.status,
+                JobTickTable.c.timestamp,
+            ],
+            origin_id,
+            selector_id,
+            before=before,
+            after=after,
+            limit=limit,
+            statuses=statuses,
+        )
+        return [
+            InstigatorTickSummary(
+                tick_id=row[0],
+                instigator_origin_id=row[1],
+                instigator_type=InstigatorType(row[2]),
+                status=TickStatus(row[3]),
+                timestamp=(
+                    row[4] if row[4].tzinfo else utc_datetime_from_naive(row[4])
+                ).timestamp(),
+            )
+            for row in self.execute(query)
+        ]
+
+    def _ticks_query(
+        self,
+        columns: Sequence[Any],
+        origin_id: str,
+        selector_id: str,
+        before: float | None,
+        after: float | None,
+        limit: int | None,
+        statuses: Sequence[TickStatus] | None,
+    ):
         check.str_param(origin_id, "origin_id")
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
@@ -367,9 +441,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
         base_query = (
-            db_select([JobTickTable.c.id, JobTickTable.c.tick_body])
-            .select_from(JobTickTable)
-            .order_by(JobTickTable.c.timestamp.desc())
+            db_select(columns).select_from(JobTickTable).order_by(JobTickTable.c.timestamp.desc())
         )
         if self.has_instigators_table():
             query = base_query.where(
@@ -384,12 +456,9 @@ class SqlScheduleStorage(ScheduleStorage):
         else:
             query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
 
-        query = self._add_filter_limit(
+        return self._add_filter_limit(
             query, before=before, after=after, limit=limit, statuses=statuses
         )
-
-        rows = self.execute(query)
-        return list(map(lambda r: InstigatorTick(r[0], deserialize_value(r[1], TickData)), rows))
 
     def create_tick(self, tick_data: TickData) -> InstigatorTick:
         check.inst_param(tick_data, "tick_data", TickData)

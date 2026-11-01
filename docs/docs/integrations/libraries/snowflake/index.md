@@ -7,6 +7,7 @@ tags: [dagster-supported, storage]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-snowflake
 pypi: https://pypi.org/project/dagster-snowflake/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/snowflake.svg
 partnerlink: https://www.snowflake.com/en/
 canonicalUrl: '/integrations/libraries/snowflake'

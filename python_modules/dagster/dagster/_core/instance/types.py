@@ -135,6 +135,16 @@ class DynamicPartitionsStore(Protocol):
     @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        """Return the subset of ``partition_keys`` that exist in the partitions definition.
+
+        Stores that can answer this with a bounded query should override; the default loads the
+        full key set.
+        """
+        return set(self.get_dynamic_partitions(partitions_def_name)) & set(partition_keys)
+
     @abstractmethod
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str: ...
 
@@ -146,6 +156,7 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
 
     def __init__(self, instance: "DagsterInstance"):
         self._instance = instance
+        self._existence_by_partitions_def_name: dict[str, dict[str, bool]] = defaultdict(dict)
 
     @cached_method
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
@@ -159,9 +170,34 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
             partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
         )
 
-    @cached_method
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
+        # A single key goes to the single-key query, which every storage answers with an indexed
+        # lookup. Routing it through the batched form would make storages that have no bounded
+        # batch query load the whole definition to check one key.
+        existence = self._existence_by_partitions_def_name[partitions_def_name]
+        if partition_key not in existence:
+            existence[partition_key] = self._instance.has_dynamic_partition(
+                partitions_def_name, partition_key
+            )
+        return existence[partition_key]
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        existence = self._existence_by_partitions_def_name[partitions_def_name]
+        unknown = [pk for pk in partition_keys if pk not in existence]
+        if unknown:
+            if self._instance.event_log_storage.has_bounded_dynamic_partition_membership_query:
+                existing = self._instance.get_existing_dynamic_partitions(
+                    partitions_def_name, unknown
+                )
+            else:
+                # The storage would load the whole definition for each batch, so load it once
+                # through the cached accessor and answer every later batch from it.
+                existing = set(self.get_dynamic_partitions(partitions_def_name))
+            for pk in unknown:
+                existence[pk] = pk in existing
+        return {pk for pk in partition_keys if existence[pk]}
 
     @cached_method
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
@@ -231,15 +267,30 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
         )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
-        return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(
-            partitions_def_name, set()
-        ) and (
-            partition_key
-            in self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+        deleted = self.deleted_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+        added = self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+        return partition_key not in deleted and (
+            partition_key in added
             or self.wrapped_dynamic_partitions_store.has_dynamic_partition(
                 partitions_def_name, partition_key
             )
         )
+
+    def get_existing_dynamic_partitions(
+        self, partitions_def_name: str, partition_keys: Sequence[str]
+    ) -> AbstractSet[str]:
+        deleted = self.deleted_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+        added = self.added_partition_keys_by_partitions_def_name.get(partitions_def_name, set())
+        candidates = [pk for pk in partition_keys if pk not in deleted]
+        unresolved = [pk for pk in candidates if pk not in added]
+        existing = (
+            self.wrapped_dynamic_partitions_store.get_existing_dynamic_partitions(
+                partitions_def_name, unresolved
+            )
+            if unresolved
+            else set()
+        )
+        return {pk for pk in candidates if pk in added or pk in existing}
 
     def get_dynamic_partitions_definition_id(self, partitions_def_name: str) -> str:
         return self.wrapped_dynamic_partitions_store.get_dynamic_partitions_definition_id(

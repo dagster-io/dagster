@@ -82,6 +82,10 @@ export enum AssetHealthStatus {
   WARNING = 'WARNING',
 }
 
+export type AssetJobKeyInput = {
+  jobName: Scalars['String']['input'];
+};
+
 export type AssetKeyInput = {
   path: Array<Scalars['String']['input']>;
 };
@@ -188,9 +192,11 @@ export enum DagsterEventType {
   RUN_DEQUEUED = 'RUN_DEQUEUED',
   RUN_ENQUEUED = 'RUN_ENQUEUED',
   RUN_FAILURE = 'RUN_FAILURE',
+  RUN_RESUMED = 'RUN_RESUMED',
   RUN_START = 'RUN_START',
   RUN_STARTING = 'RUN_STARTING',
   RUN_SUCCESS = 'RUN_SUCCESS',
+  RUN_SUSPENDED = 'RUN_SUSPENDED',
   STEP_EXPECTATION_RESULT = 'STEP_EXPECTATION_RESULT',
   STEP_FAILURE = 'STEP_FAILURE',
   STEP_INPUT = 'STEP_INPUT',
@@ -450,6 +456,7 @@ export enum RunStatus {
   STARTED = 'STARTED',
   STARTING = 'STARTING',
   SUCCESS = 'SUCCESS',
+  SUSPENDED = 'SUSPENDED',
 }
 
 export enum RunsFeedView {

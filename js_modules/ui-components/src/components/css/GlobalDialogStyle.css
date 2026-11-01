@@ -32,7 +32,7 @@
 .dagster-portal .bp5-dialog-container.bp5-overlay-enter > .bp5-dialog,
 .dagster-portal .bp5-dialog-container.bp5-overlay-appear > .bp5-dialog {
   opacity: 0;
-  transform:scale(0.95);
+  transform: scale(0.95);
 }
 
 .dagster-portal .bp5-dialog-container.bp5-overlay-enter-active > .bp5-dialog,
@@ -53,8 +53,23 @@
 .dagster-portal .bp5-dialog-container.bp5-overlay-exit-active > .bp5-dialog {
   opacity: 0;
   transform: scale(0.95);
-  transition-delay:0;
+  transition-delay: 0;
   transition-duration: 150ms;
   transition-property: opacity, transform;
   transition-timing-function: ease-in-out;
+}
+
+/* Dialogs are authored with desktop inline widths (`width: 60vw`, `min-width: 800px`),
+   which overflow a phone screen. In the mobile layout, clamp every dialog to the space
+   between the gutters. `!important` is the only way for a stylesheet to beat an inline
+   style; the rule is scoped to the mobile layout, so desktop sizing is untouched. */
+body.dagster-mobile .dagster-portal .bp5-dialog-container {
+  grid-template-rows: minmax(16px, 1fr) auto minmax(16px, 2fr);
+  grid-template-columns: var(--page-gutter, 16px) 1fr var(--page-gutter, 16px);
+}
+
+body.dagster-mobile .dagster-portal .bp5-dialog {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
 }

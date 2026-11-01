@@ -292,7 +292,7 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
     [spec] = build_looker_asset_specs(project_dir=test_exception_derived_table_path)
 
     assert spec.key == AssetKey(["view", "exception_derived_table"])
-    assert not spec.deps
+    assert not list(spec.deps)
     assert (
         "Failed to parse derived table SQL for view `exception_derived_table`"
         " in file `exception_derived_table.view.lkml`."
@@ -355,7 +355,7 @@ def test_extension_views(caplog: pytest.LogCaptureFixture):
     # Latest extension should take precedence
     assert double_extension_spec.description == "This is an extension view"
 
-    assert base_spec.deps and (base_spec.deps == extension_spec.deps)
+    assert list(base_spec.deps) and (base_spec.deps == extension_spec.deps)
 
 
 def test_with_asset_key_replacements() -> None:
@@ -374,7 +374,7 @@ def test_with_asset_key_replacements() -> None:
     )
 
     for spec in my_looker_assets:
-        assert spec.deps
+        assert list(spec.deps)
         assert spec.key.has_prefix(["prefix"])
         assert all(dep.asset_key.has_prefix(["prefix"]) for dep in spec.deps)
 
@@ -392,7 +392,7 @@ def test_with_asset_key_replacements_legacy() -> None:
     )
 
     for spec in my_looker_assets:
-        assert spec.deps
+        assert list(spec.deps)
         assert spec.key.has_prefix(["prefix"])
         assert all(dep.asset_key.has_prefix(["prefix"]) for dep in spec.deps)
 
@@ -411,7 +411,7 @@ def test_with_deps_replacements() -> None:
     )
 
     for spec in my_looker_assets:
-        assert not spec.deps
+        assert not list(spec.deps)
 
 
 def test_with_deps_replacements_legacy() -> None:
@@ -425,7 +425,7 @@ def test_with_deps_replacements_legacy() -> None:
     )
 
     for spec in my_looker_assets:
-        assert not spec.deps
+        assert not list(spec.deps)
 
 
 def test_with_description_replacements() -> None:

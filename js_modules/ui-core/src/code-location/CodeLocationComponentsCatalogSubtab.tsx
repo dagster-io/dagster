@@ -6,6 +6,7 @@ import ComponentPageContents from '@dagster-io/dg-docs-components/ComponentPageC
 import PackagePageDetails from '@dagster-io/dg-docs-components/PackagePageDetails';
 import {Contents} from '@dagster-io/dg-docs-components/types';
 import {Tag} from '@dagster-io/ui-components';
+import {useComponentInstanceUIEnabled} from '@shared/app/useComponentInstanceUIEnabled';
 import {HTMLProps, memo, useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
@@ -45,8 +46,13 @@ const renderComponentBadge: RenderComponentBadge = (component, options) => {
   );
 };
 
+// When the instance UI is gated off, components can't be created from the UI,
+// so the "Creatable in UI" badge would be misleading — render nothing.
+const renderNoBadge: RenderComponentBadge = () => null;
+
 export const CodeLocationComponentsCatalogSubtab = memo(
   ({repoAddress, packageName, componentName}: Props) => {
+    const componentInstanceUIEnabled = useComponentInstanceUIEnabled();
     const {data, loading} = useQuery<
       CodeLocationComponentTypesQuery,
       CodeLocationComponentTypesQueryVariables
@@ -135,7 +141,9 @@ export const CodeLocationComponentsCatalogSubtab = memo(
     }
 
     return (
-      <ComponentBadgeProvider value={renderComponentBadge}>
+      <ComponentBadgeProvider
+        value={componentInstanceUIEnabled ? renderComponentBadge : renderNoBadge}
+      >
         <div className={styles.contentContainer}>
           <div className={styles.sidebar}>
             <CodeLocationDocsPackageTree

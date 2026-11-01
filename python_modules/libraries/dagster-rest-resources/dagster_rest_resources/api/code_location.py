@@ -14,7 +14,8 @@ from dagster_rest_resources.schemas.code_location import (
     DgApiDeleteCodeLocationResult,
 )
 from dagster_rest_resources.schemas.exception import (
-    DagsterPlusGraphqlError,
+    DagsterPlusClientError,
+    DagsterPlusServerError,
     DagsterPlusUnauthorizedError,
 )
 
@@ -80,7 +81,7 @@ class DgApiCodeLocationApi:
             if location.location_name == code_location_name:
                 return location
 
-        raise DagsterPlusGraphqlError(f"Code location not found: {code_location_name}")
+        raise DagsterPlusClientError(f"Code location not found: {code_location_name}")
 
     def create_code_location(
         self, document: DgApiCodeLocationDocument
@@ -94,11 +95,11 @@ class DgApiCodeLocationApi:
                 return DgApiAddCodeLocationResult(location_name=result.location_name)  # ty: ignore[unresolved-attribute]
             case "InvalidLocationError":
                 errors = [e for e in result.errors if e is not None]  # ty: ignore[unresolved-attribute]
-                raise DagsterPlusGraphqlError("Invalid code location config:\n" + "\n".join(errors))
+                raise DagsterPlusClientError("Invalid code location config:\n" + "\n".join(errors))
             case "UnauthorizedError":
                 raise DagsterPlusUnauthorizedError(f"Error adding code location: {result.message}")  # ty: ignore[unresolved-attribute]
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error adding code location: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error adding code location: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)
 
@@ -113,6 +114,6 @@ class DgApiCodeLocationApi:
                     f"Error deleting code location: {result.message}"  # ty: ignore[unresolved-attribute]
                 )
             case "PythonError":
-                raise DagsterPlusGraphqlError(f"Error deleting code location: {result.message}")  # ty: ignore[unresolved-attribute]
+                raise DagsterPlusServerError(f"Error deleting code location: {result.message}")  # ty: ignore[unresolved-attribute]
             case _ as unreachable:
                 assert_never(unreachable)

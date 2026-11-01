@@ -495,6 +495,13 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
             "git": {
                 "commit_hash": kwargs.get("commit_hash"),
                 "url": kwargs.get("git_url"),
+                # Where this location's UI-authored components belong. Absent for
+                # deploys from CLIs that predate them.
+                "provider": kwargs.get("git_provider"),
+                "repo_owner": kwargs.get("repo_owner"),
+                "repo_name": kwargs.get("repo_name"),
+                "base_branch": kwargs.get("base_branch"),
+                "defs_base_path": kwargs.get("defs_base_path"),
             },
             "pex_metadata": (
                 {
@@ -504,6 +511,9 @@ def get_location_document(name: str | None, kwargs: dict[str, Any]) -> dict[str,
                 if kwargs.get("pex_tag")
                 else None
             ),
+            # Marks an image that was baked from a PEX build (BuildStrategy.pex_docker) so the
+            # server can identify PEX-origin deploys. Only present (True) for such images.
+            "pex_bundle": kwargs.get("pex_bundle"),
             "defs_state_info": kwargs.get("defs_state_info"),
         }
     )

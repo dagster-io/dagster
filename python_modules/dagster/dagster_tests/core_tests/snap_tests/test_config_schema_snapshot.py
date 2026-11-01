@@ -52,7 +52,6 @@ def test_basic_dict():
     assert child_type_keys
     assert len(child_type_keys) == 1
     assert child_type_keys[0] == "Int"
-    assert child_type_keys[0]
 
     assert dict_snap.fields and len(dict_snap.fields) == 1
 

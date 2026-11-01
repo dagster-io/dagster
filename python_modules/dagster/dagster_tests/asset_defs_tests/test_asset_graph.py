@@ -810,7 +810,7 @@ def test_with_job_nodes() -> None:
     @dg.asset_check(asset=A)
     def Ac(): ...
 
-    condition = AutomationCondition.eager()
+    condition = AutomationCondition.all_job_root_assets_match(AutomationCondition.eager())
     daily = dg.DailyPartitionsDefinition(start_date="2024-01-01")
     job_node = AssetJobNode(
         key=AssetJobKey("my_job"),
@@ -852,7 +852,9 @@ def test_toposort_with_job_nodes() -> None:
             key=AssetJobKey(name),
             asset_keys={A.key},
             partitions_def=None,
-            automation_condition=AutomationCondition.eager(),
+            automation_condition=AutomationCondition.all_job_root_assets_match(
+                AutomationCondition.eager()
+            ),
         )
 
     asset_graph = AssetGraph.from_assets([A, B, Ac]).with_job_nodes(
@@ -894,7 +896,9 @@ def test_conditioned_jobs_become_graph_nodes(
     conditioned_job = dg.define_asset_job(
         name="conditioned_job",
         selection=[A],
-        automation_condition=AutomationCondition.eager(),
+        automation_condition=AutomationCondition.all_job_root_assets_match(
+            AutomationCondition.eager()
+        ),
     )
     unconditioned_job = dg.define_asset_job(name="unconditioned_job", selection=[A])
     defs = dg.Definitions(assets=[A], jobs=[conditioned_job, unconditioned_job])
@@ -911,7 +915,7 @@ def test_asset_job_node_properties() -> None:
     # direct construction of the local node: verify its stored fields and the constant stubs
     key = AssetJobKey("my_job")
     asset_keys = frozenset({dg.AssetKey("a"), dg.AssetKey("b")})
-    condition = AutomationCondition.eager()
+    condition = AutomationCondition.all_job_root_assets_match(AutomationCondition.eager())
     node = AssetJobNode(
         key=key,
         asset_keys=asset_keys,
@@ -965,7 +969,9 @@ def test_local_conditioned_job_node_fields(partitions_def) -> None:
     job = dg.define_asset_job(
         name="the_job",
         selection=[asset_a, asset_b],
-        automation_condition=AutomationCondition.eager(),
+        automation_condition=AutomationCondition.all_job_root_assets_match(
+            AutomationCondition.eager()
+        ),
     )
     defs = dg.Definitions(assets=[asset_a, asset_b], jobs=[job])
 

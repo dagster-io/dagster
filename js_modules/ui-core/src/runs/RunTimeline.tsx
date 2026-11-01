@@ -29,6 +29,7 @@ import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import styles from './css/RunTimeline.module.css';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
 import {COMMON_COLLATOR} from '../app/Util';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {HiddenAssetGroupJobTooltipIcon} from '../asset-graph/HiddenAssetGroupJobTooltip';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -49,8 +50,14 @@ const TIME_HEADER_HEIGHT = 32;
 const DATE_TIME_HEIGHT = TIME_HEADER_HEIGHT * 2;
 const EMPTY_STATE_HEIGHT = 110;
 const LEFT_SIDE_SPACE_ALLOTTED = 320;
-const LABEL_WIDTH = 268;
+const MOBILE_LEFT_SIDE_SPACE_ALLOTTED = 140;
+// Space in the left column taken by gutters, the row icon and gaps.
+const LABEL_CHROME_WIDTH = 52;
 const MIN_DATE_WIDTH_PCT = 10;
+// Time labels closer than this are thinned to a multiple of the interval.
+const MIN_TIME_LABEL_SPACING_PX = 72;
+const MAX_MARKER_INTERVAL_MULTIPLIER = 24;
+const MARKER_INTERVAL_MULTIPLIERS = [1, 2, 3, 4, 6, 12, MAX_MARKER_INTERVAL_MULTIPLIER];
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
@@ -89,6 +96,8 @@ export const RunTimeline = (props: Props) => {
     viewport: {width},
     containerProps: {ref: measureRef},
   } = useViewport();
+  const isMobile = useIsMobile();
+  const leftSideWidth = isMobile ? MOBILE_LEFT_SIDE_SPACE_ALLOTTED : LEFT_SIDE_SPACE_ALLOTTED;
 
   const now = Date.now();
   const [_, end] = rangeMs;
@@ -176,7 +185,7 @@ export const RunTimeline = (props: Props) => {
     <>
       <div ref={measureRef} />
       <Box
-        padding={{left: 24}}
+        className={styles.runsHeader}
         flex={{direction: 'column', justifyContent: 'center'}}
         style={{fontSize: '16px', flex: `0 0 ${DATE_TIME_HEIGHT}px`}}
         border="top-and-bottom"
@@ -184,7 +193,13 @@ export const RunTimeline = (props: Props) => {
         Runs
       </Box>
       <div style={{position: 'relative'}}>
-        <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyObjects ? height : 0} />
+        <TimeDividers
+          interval={ONE_HOUR_MSEC}
+          rangeMs={rangeMs}
+          height={anyObjects ? height : 0}
+          leftOffset={leftSideWidth}
+          width={width - leftSideWidth}
+        />
       </div>
       {repoOrder.length ? (
         <div style={{overflow: 'hidden', position: 'relative'}}>
@@ -222,6 +237,7 @@ export const RunTimeline = (props: Props) => {
                     top={start}
                     rangeMs={rangeMs}
                     width={width}
+                    leftSideWidth={leftSideWidth}
                   />
                 );
               })}
@@ -351,6 +367,9 @@ interface TimeDividersProps {
   rangeMs: [number, number];
   annotations?: {label: string; ms: number}[];
   now?: number;
+  leftOffset?: number;
+  // Pixel width of the timeline area, used to thin time markers when they'd crowd.
+  width?: number;
 }
 
 const dateTimeOptions: Intl.DateTimeFormatOptions = {
@@ -376,9 +395,31 @@ const timeOnlyOptions: Intl.DateTimeFormatOptions = {
 };
 
 export const TimeDividers = (props: TimeDividersProps) => {
-  const {interval, rangeMs, annotations, height, now: _now} = props;
+  const {
+    interval,
+    rangeMs,
+    annotations,
+    height,
+    now: _now,
+    leftOffset = LEFT_SIDE_SPACE_ALLOTTED,
+    width,
+  } = props;
   const [start, end] = rangeMs;
   const formatDateTime = useFormatDateTime();
+
+  // Multiples of the interval stay aligned to midnight, so thinned markers still land on
+  // round hours.
+  const markerInterval = useMemo(() => {
+    if (!width) {
+      return interval;
+    }
+    const pxPerMs = width / (end - start);
+    const multiplier =
+      MARKER_INTERVAL_MULTIPLIERS.find(
+        (m) => interval * m * pxPerMs >= MIN_TIME_LABEL_SPACING_PX,
+      ) ?? MAX_MARKER_INTERVAL_MULTIPLIER;
+    return interval * multiplier;
+  }, [width, interval, start, end]);
 
   // Create a cursor date at midnight in the user's timezone, to be used when
   // generating date and time markers.
@@ -434,7 +475,7 @@ export const TimeDividers = (props: TimeDividersProps) => {
     // Add time boundaries at every interval.
     while (cursor.valueOf() < end) {
       const intervalStart = cursor.getTime();
-      const intervalEnd = new Date(intervalStart).setTime(cursor.getTime() + interval); // Increment by interval.
+      const intervalEnd = new Date(intervalStart).setTime(cursor.getTime() + markerInterval); // Increment by interval.
       cursor = new Date(intervalEnd);
       timeBoundaries.push(intervalStart);
     }
@@ -446,7 +487,7 @@ export const TimeDividers = (props: TimeDividersProps) => {
         const startLeftMsec = intervalStart - start;
         const left = Math.max(0, (startLeftMsec / totalTime) * 100);
         const label =
-          interval < ONE_HOUR_MSEC
+          markerInterval < ONE_HOUR_MSEC
             ? formatDateTime(date, timeOnlyOptionsWithMinute).replace(' ', '')
             : formatDateTime(date, timeOnlyOptions).replace(' ', '');
 
@@ -457,7 +498,7 @@ export const TimeDividers = (props: TimeDividersProps) => {
         };
       })
       .filter((marker) => marker.left > 0);
-  }, [end, start, boundaryCursor, interval, formatDateTime]);
+  }, [end, start, boundaryCursor, markerInterval, formatDateTime]);
 
   const now = _now || Date.now();
   const msToLeft = (ms: number) => `${(((ms - start) / (end - start)) * 100).toPrecision(3)}%`;
@@ -465,7 +506,7 @@ export const TimeDividers = (props: TimeDividersProps) => {
   return (
     <div
       className={styles.dividerContainer}
-      style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`}}
+      style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`, left: leftOffset}}
     >
       <div className={styles.dividerLabels}>
         {dateMarkers.map((marker) => (
@@ -548,15 +589,17 @@ const RunTimelineRow = ({
   height,
   rangeMs,
   width: containerWidth,
+  leftSideWidth,
 }: {
   row: TimelineRow;
   top: number;
   height: number;
   rangeMs: [number, number];
   width: number;
+  leftSideWidth: number;
 }) => {
   const [start, end] = rangeMs;
-  const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
+  const width = containerWidth - leftSideWidth;
   const {runs} = row;
 
   // Batch overlapping runs in this row.
@@ -579,9 +622,9 @@ const RunTimelineRow = ({
 
   return (
     <TimelineRowContainer height={height} start={top}>
-      <div className={styles.rowName}>
+      <div className={styles.rowName} style={{width: leftSideWidth}}>
         <RunTimelineRowIcon type={row.runs[0]?.externalJobSource ? 'airflow' : row.type} />
-        <div style={{width: LABEL_WIDTH}}>
+        <div style={{width: leftSideWidth - LABEL_CHROME_WIDTH}}>
           {row.path ? (
             <Link to={row.path}>
               <MiddleTruncate text={row.name} />

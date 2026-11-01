@@ -10,7 +10,14 @@ This guide covers advanced patterns and best practices for integrating dbt with 
 
 [dbt snapshots](https://docs.getdbt.com/docs/build/snapshots) track changes to data over time by comparing current data to previous snapshots. Running snapshots concurrently can corrupt these tables, so it's critical to ensure only one snapshot operation runs at a time.
 
-### Option 1: Separate snapshots from other models
+This takes two pieces, and you need both:
+
+1. Put your snapshots in their own component and assign that component to a [concurrency pool](/guides/operate/managing-concurrency/concurrency-pools).
+2. Limit that pool to one slot on your instance.
+
+The pool name is the only thing tying the two together — a pool limit on its own does nothing until some component claims the pool.
+
+### Step 1: Isolate snapshots in their own component
 
 Create separate dbt component definitions to isolate snapshots from your regular dbt models. First, scaffold two dbt components:
 
@@ -30,7 +37,7 @@ Configure the regular models component to exclude snapshots:
   language="yaml"
 />
 
-Configure the snapshots component with concurrency control:
+Configure the snapshots component to claim the `dbt-snapshots` pool. Because the whole component executes as a single op, claiming the pool at the `op` level is what serializes snapshot execution:
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/snapshot.yaml"
@@ -38,9 +45,9 @@ Configure the snapshots component with concurrency control:
   language="yaml"
 />
 
-### Option 2: Configure concurrency pools
+### Step 2: Limit the pool to one slot
 
-Configure your Dagster instance to create pools with maximum concurrency of 1. Add this configuration to your `dagster.yaml` (for Dagster Open Source) or deployment settings (for Dagster+):
+The pool named above still has no limit, so nothing is serialized yet. Set it to `1` either in your `dagster.yaml` (for Dagster Open Source) or deployment settings (for Dagster+):
 
 <CodeExample
   path="docs_snippets/docs_snippets/integrations/dbt/component/snapshot/dagster.yaml"
@@ -48,14 +55,15 @@ Configure your Dagster instance to create pools with maximum concurrency of 1. A
   language="yaml"
 />
 
-Then set the pool limit for the snapshot pool:
+or from the CLI, which does the same thing against a running instance:
 
 ```bash
-# Set pool limit using CLI
 dagster instance concurrency set dbt-snapshots 1
 ```
 
-### Option 3: Manage multiple snapshot groups with Dagster components
+`granularity: 'op'` — the default, stated explicitly above — limits how many snapshot _ops_ execute at once across all runs, which is what protects the snapshot tables. Setting `granularity: 'run'` instead would cap concurrent runs rather than concurrent snapshot execution.
+
+### Splitting snapshots across multiple pools
 
 For large projects with many snapshots, you can create multiple snapshot groups while still preventing concurrency issues within each group. Create separate [Dagster components](/guides/build/components/creating-new-components/creating-and-registering-a-component) for different business domains:
 
@@ -83,7 +91,7 @@ Inventory snapshots component:
   language="yaml"
 />
 
-Configure separate [pool limits for each domain](/guides/operate/managing-concurrency/concurrency-pools#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs). This approach allows snapshots from different business domains to run in parallel while preventing concurrent execution within each domain, reducing the risk of corruption while maintaining reasonable performance.
+Then repeat step 2 for each pool, setting separate [pool limits for each domain](/guides/operate/managing-concurrency/concurrency-pools#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs). This approach allows snapshots from different business domains to run in parallel while preventing concurrent execution within each domain, reducing the risk of corruption while maintaining reasonable performance.
 
 ## Microbatch incremental models
 

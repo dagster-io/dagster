@@ -10,6 +10,7 @@ class GrapheneRunStatus(graphene.Enum):
     MANAGED = "MANAGED"
     STARTING = "STARTING"
     STARTED = "STARTED"
+    SUSPENDED = "SUSPENDED"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
     CANCELING = "CANCELING"
@@ -30,6 +31,8 @@ class GrapheneRunStatus(graphene.Enum):
             return "Runs that have been launched, but execution has not yet started."
         elif self == GrapheneRunStatus.STARTED:
             return "Runs that have been launched and execution has started."
+        elif self == GrapheneRunStatus.SUSPENDED:
+            return "Runs that have started and are waiting on external work, with no run worker."
         elif self == GrapheneRunStatus.SUCCESS:
             return "Runs that have successfully completed."
         elif self == GrapheneRunStatus.FAILURE:

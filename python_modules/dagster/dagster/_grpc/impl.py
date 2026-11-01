@@ -51,6 +51,7 @@ from dagster._core.remote_representation.external_data import (
     job_name_for_partition_set_snap_name,
 )
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster._core.snowflake_partner import set_snowflake_partner_env_var
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
@@ -103,6 +104,8 @@ def core_execute_run(
     check.inst_param(recon_job, "recon_job", ReconstructableJob)
     check.inst_param(dagster_run, "dagster_run", DagsterRun)
     check.inst_param(instance, "instance", DagsterInstance)
+
+    set_snowflake_partner_env_var()
 
     if inject_env_vars:
         try:

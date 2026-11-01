@@ -1,17 +1,7 @@
 import os
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import (  # noqa: F401, UP035
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    TypeAlias,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Generic, List, NamedTuple, Optional, TypeAlias, Union, cast  # noqa: F401, UP035
 
 from dagster_shared.serdes.serdes import (
     FieldSerializer,

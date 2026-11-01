@@ -1,5 +1,6 @@
 import multiprocessing
 from pathlib import Path
+from unittest.mock import patch
 
 import msgpack
 import pytest
@@ -224,6 +225,36 @@ def test_prepare_runs_deps_when_packages_exist() -> None:
 
         # dbt deps should have actually installed packages
         assert any(packages_dir.iterdir()), "dbt deps should have installed packages"
+        assert my_project.manifest_path.exists(), "dbt parse should have created manifest"
+
+
+def test_prepare_skips_deps_when_install_deps_disabled() -> None:
+    """With install_deps=False, prepare() parses against already-installed packages without
+    running dbt deps.
+    """
+    with copy_directory(test_jaffle_shop_path) as project_dir:
+        deps_path = Path(project_dir) / "dependencies.yml"
+        deps_path.write_text(
+            "packages:\n  - package: dbt-labs/dbt_utils\n    version: ['>=1.1.1', '<2.0.0']\n",
+            encoding="utf-8",
+        )
+        packages_dir = Path(project_dir) / "dbt_packages"
+
+        # Install packages out-of-band, as a user who opts out of deps would.
+        installed_project = DbtProject(project_dir)
+        installed_project.preparer.prepare(installed_project)
+        assert any(packages_dir.iterdir())
+        installed_project.manifest_path.unlink()
+
+        my_project = DbtProject(project_dir, install_deps=False)
+        with patch.object(
+            DagsterDbtProjectPreparer,
+            "_prepare_packages",
+            side_effect=AssertionError("dbt deps should not run"),
+        ) as mock_deps:
+            my_project.preparer.prepare(my_project)
+
+        mock_deps.assert_not_called()
         assert my_project.manifest_path.exists(), "dbt parse should have created manifest"
 
 

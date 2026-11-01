@@ -30,16 +30,25 @@ class ListRunsRunsOrErrorRunsResults(BaseModel):
     start_time: Optional[float] = Field(alias="startTime")
     end_time: Optional[float] = Field(alias="endTime")
     job_name: str = Field(alias="jobName")
+    tags: list["ListRunsRunsOrErrorRunsResultsTags"]
+
+
+class ListRunsRunsOrErrorRunsResultsTags(BaseModel):
+    key: str
+    value: str
 
 
 class ListRunsRunsOrErrorInvalidPipelineRunsFilterError(BaseModel):
     typename__: Literal["InvalidPipelineRunsFilterError"] = Field(alias="__typename")
+    message: str
 
 
 class ListRunsRunsOrErrorPythonError(BaseModel):
     typename__: Literal["PythonError"] = Field(alias="__typename")
     message: str
+    stack: list[str]
 
 
 ListRuns.model_rebuild()
 ListRunsRunsOrErrorRuns.model_rebuild()
+ListRunsRunsOrErrorRunsResults.model_rebuild()

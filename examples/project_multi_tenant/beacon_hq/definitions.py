@@ -8,7 +8,6 @@ from beacon_hq.sensors import beacon_after_upstream_success_sensor
 from shared.io_managers import make_duckdb_io_manager
 from shared.resources import BriefingWriter, build_llm_resource
 
-
 defs = dg.Definitions(
     assets=dg.load_assets_from_modules(
         [reports],

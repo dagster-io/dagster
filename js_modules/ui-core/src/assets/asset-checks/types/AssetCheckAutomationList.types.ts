@@ -60,6 +60,7 @@ export type AssetCheckAutomationListQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -257,6 +258,7 @@ export type AssetCheckAutomationListQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                 }
               | {
@@ -273,6 +275,7 @@ export type AssetCheckAutomationListQuery = {
                         name: string;
                         assetKey: {__typename: 'AssetKey'; path: Array<string>};
                       }
+                    | {__typename: 'AssetJobKey'; jobName: string}
                     | {__typename: 'AssetKey'; path: Array<string>};
                   metadataEntries: Array<
                     | {
@@ -478,6 +481,7 @@ export type AssetCheckAutomationListQuery = {
                   name: string;
                   assetKey: {__typename: 'AssetKey'; path: Array<string>};
                 }
+              | {__typename: 'AssetJobKey'; jobName: string}
               | {__typename: 'AssetKey'; path: Array<string>};
             sinceMetadata: {
               __typename: 'SinceConditionMetadata';
@@ -493,4 +497,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = '96ee49b9705f97bba87a7854956d527146b7152f615e7d68e9e2bcab336f0f66';
+export const AssetCheckAutomationListQueryVersion = 'e428f03ced62f0e54656511f5b56d5b6b20193ae15bc78a7999b7c1c6a5c7ffa';

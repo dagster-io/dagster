@@ -1,3 +1,5 @@
+import os
+
 import dagster as dg
 import pytest
 from dagster import (
@@ -13,6 +15,10 @@ from dagster._core.execution.api import (
     execute_plan_iterator,
     execute_run,
     execute_run_iterator,
+)
+from dagster._core.snowflake_partner import (
+    SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER,
+    SNOWFLAKE_PARTNER_ENV_VAR,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._grpc.impl import core_execute_run
@@ -337,6 +343,26 @@ def test_execute_plan_iterator():
         messages = [record.user_message for record in records if not record.is_dagster_event]
         assert len([message for message in messages if message == "CLEANING A"]) > 0
         assert len([message for message in messages if message == "CLEANING B"]) > 0
+
+
+def test_core_execute_run_sets_snowflake_partner_env_var(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv(SNOWFLAKE_PARTNER_ENV_VAR, raising=False)
+
+    with dg.instance_for_test() as instance:
+        run = instance.create_run_for_job(job_def=simple_job, run_config={})
+        list(core_execute_run(dg.reconstructable(simple_job), run, instance, inject_env_vars=False))
+
+    assert os.environ[SNOWFLAKE_PARTNER_ENV_VAR] == SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+
+
+def test_core_execute_run_preserves_snowflake_partner_env_var(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv(SNOWFLAKE_PARTNER_ENV_VAR, "CustomerApp")
+
+    with dg.instance_for_test() as instance:
+        run = instance.create_run_for_job(job_def=simple_job, run_config={})
+        list(core_execute_run(dg.reconstructable(simple_job), run, instance, inject_env_vars=False))
+
+    assert os.environ[SNOWFLAKE_PARTNER_ENV_VAR] == "CustomerApp"
 
 
 def test_run_fails_while_loading_code():

@@ -43,3 +43,6 @@ directory_type = "project"
 root_module = "ingestion_patterns"
 defs_module = "ingestion_patterns.defs"
 code_location_target_module = "ingestion_patterns.definitions"
+
+[tool.uv]
+exclude-newer = "48h"

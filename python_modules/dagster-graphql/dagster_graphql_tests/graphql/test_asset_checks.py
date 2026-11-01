@@ -66,6 +66,24 @@ query AssetNodeChecksLimitQuery($assetKeys: [AssetKeyInput!], $limit: Int, $pipe
 }
 """
 
+GET_ASSET_CHECK_PARTITION_KEYS_QUERY = """
+query AssetCheckPartitionKeysQuery($assetKeys: [AssetKeyInput!], $startIdx: Int, $endIdx: Int) {
+    assetNodes(assetKeys: $assetKeys) {
+        assetChecksOrError {
+            ... on AssetChecks {
+                checks {
+                    name
+                    partitionKeysByDimension(startIdx: $startIdx, endIdx: $endIdx) {
+                        name
+                        partitionKeys
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
 GET_ASSET_CHECK_HISTORY_WITH_ID = """
 query GetAssetChecksQuery($assetKey: AssetKeyInput!, $checkName: String!, $limit: Int!, $cursor: String) {
     assetCheckExecutions(assetKey: $assetKey, checkName: $checkName, limit: $limit, cursor: $cursor) {
@@ -258,6 +276,27 @@ query RunAssetChecksQuery($runId: ID!) {
 }
 """
 
+RUN_EXECUTION_PLAN_QUERY = """
+query RunExecutionPlanQuery($runId: ID!) {
+    pipelineRunOrError(runId: $runId) {
+        ... on Run {
+            id
+            executionPlan {
+                assetKeys {
+                    path
+                }
+                assetCheckKeys {
+                    name
+                    assetKey {
+                        path
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
 
 def _planned_event(run_id: str, planned: AssetCheckEvaluationPlanned) -> EventLogEntry:
     return EventLogEntry(
@@ -359,6 +398,25 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                 }
             ]
         }
+
+    def test_asset_check_partition_keys_by_dimension(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        res = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CHECK_PARTITION_KEYS_QUERY,
+            variables={"assetKeys": [{"path": ["partitioned_asset_for_checks"]}]},
+        )
+        assert res.data
+        checks = res.data["assetNodes"][0]["assetChecksOrError"]["checks"]
+        assert checks == [
+            {
+                "name": "partitioned_asset_check",
+                "partitionKeysByDimension": [
+                    {"name": "default", "partitionKeys": ["a", "b", "c", "d"]}
+                ],
+            }
+        ]
 
     def test_asset_check_asset_node_limit(self, graphql_context: WorkspaceRequestContext):
         res = execute_dagster_graphql(graphql_context, GET_ASSET_CHECK_NAMES_QUERY)
@@ -1614,6 +1672,83 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             {"name": "my_check", "assetKey": {"path": ["my_asset"]}},
             {"name": "my_unplanned_check", "assetKey": {"path": ["my_asset"]}},
         ]
+
+    def test_execution_plan_asset_check_keys(self, graphql_context: WorkspaceRequestContext):
+        @dg.asset
+        def my_asset():
+            return 1
+
+        @dg.asset_check(asset=my_asset)
+        def my_check():
+            return dg.AssetCheckResult(passed=True)
+
+        @dg.asset_check(asset=my_asset)
+        def my_other_check():
+            return dg.AssetCheckResult(passed=True)
+
+        @dg.asset
+        def outside_asset():
+            return 1
+
+        @dg.asset_check(asset=outside_asset)
+        def outside_check():
+            return dg.AssetCheckResult(passed=True)
+
+        defs = dg.Definitions(
+            assets=[my_asset, outside_asset],
+            asset_checks=[my_check, my_other_check, outside_check],
+            jobs=[
+                dg.define_asset_job(
+                    "checks_only_job", selection=dg.AssetSelection.checks(outside_check)
+                )
+            ],
+        )
+
+        def execution_plan_data(job_def, step_keys_to_execute=None):
+            job_snapshot = job_def.get_job_snapshot()
+            execution_plan_snapshot = snapshot_from_execution_plan(
+                create_execution_plan(job_def, step_keys_to_execute=step_keys_to_execute),
+                job_snapshot.snapshot_id,
+            )
+            run = create_run_for_test(
+                graphql_context.instance,
+                job_name=job_def.name,
+                job_snapshot=job_snapshot,
+                execution_plan_snapshot=execution_plan_snapshot,
+                asset_check_selection=None,
+            )
+            res = execute_dagster_graphql(
+                graphql_context,
+                RUN_EXECUTION_PLAN_QUERY,
+                variables={"runId": run.run_id},
+            )
+            plan = res.data["pipelineRunOrError"]["executionPlan"]
+            return (
+                sorted(key["path"] for key in plan["assetKeys"]),
+                sorted((c["assetKey"]["path"], c["name"]) for c in plan["assetCheckKeys"]),
+            )
+
+        global_job_def = defs.resolve_implicit_global_asset_job_def()
+
+        assert execution_plan_data(global_job_def) == (
+            [["my_asset"], ["outside_asset"]],
+            [
+                (["my_asset"], "my_check"),
+                (["my_asset"], "my_other_check"),
+                (["outside_asset"], "outside_check"),
+            ],
+        )
+
+        # Re-executing only a check step plans that check and no assets.
+        assert execution_plan_data(
+            global_job_def,
+            step_keys_to_execute=["my_asset_my_check"],
+        ) == ([], [(["my_asset"], "my_check")])
+
+        assert execution_plan_data(defs.resolve_job_def("checks_only_job")) == (
+            [],
+            [(["outside_asset"], "outside_check")],
+        )
 
     def test_partitioned_asset_check_executions(self, graphql_context: WorkspaceRequestContext):
         """Test retrieving asset check executions with partition subsets."""

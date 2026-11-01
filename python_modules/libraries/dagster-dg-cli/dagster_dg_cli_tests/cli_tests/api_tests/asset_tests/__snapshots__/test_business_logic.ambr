@@ -220,6 +220,7 @@
     'backfill_policy': dict({
       'max_partitions_per_run': 10,
     }),
+    'compute_kind': None,
     'dependency_keys': list([
     ]),
     'description': 'Daily aggregated metrics',
@@ -227,7 +228,9 @@
       'reporting/dashboard_metrics',
       'reporting/weekly_summary',
     ]),
+    'freshness_policy': None,
     'group_name': 'analytics',
+    'health': None,
     'id': 'extended-asset',
     'job_names': list([
       'analytics_daily_job',
@@ -237,6 +240,8 @@
       'dbt',
       'table',
     ]),
+    'latest_failed_to_materialize_timestamp': None,
+    'latest_materialization_timestamp': None,
     'metadata_entries': list([
       dict({
         'description': 'data-team',
@@ -398,17 +403,22 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
         ]),
         'description': 'User data table',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'core_tables',
+        'health': None,
         'id': 'asset-1',
         'job_names': None,
         'kinds': list([
           'dbt',
           'table',
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
           dict({
             'description': 'data-team',
@@ -433,17 +443,22 @@
         ]),
         'automation_condition': None,
         'backfill_policy': None,
+        'compute_kind': None,
         'dependency_keys': list([
         ]),
         'description': 'Aggregated user metrics',
         'downstream_keys': None,
+        'freshness_policy': None,
         'group_name': 'analytics',
+        'health': None,
         'id': 'asset-2',
         'job_names': None,
         'kinds': list([
           'dbt',
           'view',
         ]),
+        'latest_failed_to_materialize_timestamp': None,
+        'latest_materialization_timestamp': None,
         'metadata_entries': list([
         ]),
         'owners': None,
@@ -480,17 +495,22 @@
     ]),
     'automation_condition': None,
     'backfill_policy': None,
+    'compute_kind': None,
     'dependency_keys': list([
     ]),
     'description': 'User data table',
     'downstream_keys': None,
+    'freshness_policy': None,
     'group_name': 'core_tables',
+    'health': None,
     'id': 'asset-1',
     'job_names': None,
     'kinds': list([
       'dbt',
       'table',
     ]),
+    'latest_failed_to_materialize_timestamp': None,
+    'latest_materialization_timestamp': None,
     'metadata_entries': list([
       dict({
         'description': 'data-team',

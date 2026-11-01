@@ -31,7 +31,7 @@ The translator is a `@dataclass`, so subclassing and overriding individual metho
 
 ## The resource
 
-`DataStageResource` is a <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that exposes a single `run` method dispatching to a demo or production path based on the `demo_mode` flag. In both paths it yields a `MaterializeResult` and two `AssetCheckResult` objects per table — all from the same step.
+`DataStageResource` is a <PyObject section="resources" module="dagster" object="ConfigurableResource" /> that exposes a single `run` method dispatching to a demo or production path based on the `demo_mode` flag. In both paths it yields a `MaterializeResult` and two `AssetCheckResult` objects per table — all from the same step.
 
 The class definition, `run` dispatcher, and demo path are shown below. Demo mode simulates a successful replication with random row counts so the pipeline can be run locally without a `cpdctl` installation:
 
@@ -57,7 +57,7 @@ Running checks inline with materialization means the checks always reflect the d
 
 ## The multi-asset factory
 
-`datastage_assets` is a decorator factory that builds a <PyObject section="assets" module="dagster" object="multi_asset"/> from the table list in the project configuration. It creates one `AssetSpec` per table and two `AssetCheckSpec` per table, a row count check and a freshness check:
+`datastage_assets` is a decorator factory that builds a <PyObject section="assets" module="dagster" object="multi_asset" /> from the table list in the project configuration. It creates one `AssetSpec` per table and two `AssetCheckSpec` per table, a row count check and a freshness check:
 
 <CodeExample
   path="docs_projects/project_datastage/src/project_datastage/components/data_stage_job_component.py"

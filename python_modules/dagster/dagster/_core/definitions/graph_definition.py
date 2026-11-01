@@ -1,15 +1,6 @@
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
-from typing import (  # noqa: UP035
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar, Union, cast  # noqa: UP035
 
 from toposort import CircularDependencyError
 from typing_extensions import Self

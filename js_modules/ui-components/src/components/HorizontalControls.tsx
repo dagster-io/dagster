@@ -11,7 +11,7 @@ interface Props {
 
 export const HorizontalControls = ({controls}: Props) => {
   return (
-    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} className={styles.container}>
+    <Box flex={{direction: 'row', alignItems: 'center'}} className={styles.container}>
       {controls.map(({key, control}) =>
         control ? (
           <div key={key} className={styles.item}>

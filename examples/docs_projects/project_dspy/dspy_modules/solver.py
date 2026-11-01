@@ -1,7 +1,6 @@
 """DSPy solver for Connections puzzles."""
 
 import time
-from typing import List
 
 import dspy  # ty: ignore[unresolved-import]
 
@@ -91,7 +90,7 @@ class ConnectionsSolver(dspy.Module):
 
 
 # start_create_dataset
-def create_dataset(puzzles: List[Puzzle]) -> List[dspy.Example]:
+def create_dataset(puzzles: list[Puzzle]) -> list[dspy.Example]:
     """Convert puzzles to DSPy examples."""
     examples = []
     for puzzle in puzzles:

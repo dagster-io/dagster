@@ -23,7 +23,7 @@ import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {RunsFeedDialogState} from './RunsFeedTable';
 import {getBackfillPath} from './RunsFeedUtils';
-import {RunFilterToken} from './RunsFilterInput';
+import {RunFilterToken} from './RunsFilterUtils';
 import styles from './css/RunsFeedRow.module.css';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';

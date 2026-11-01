@@ -1,4 +1,4 @@
-import {useLayoutEffect, useReducer} from 'react';
+import {useCallback, useLayoutEffect, useReducer} from 'react';
 
 type State = {
   checkedIds: Set<string>;
@@ -11,11 +11,11 @@ type Action =
       type: 'toggle-slice';
       payload: {checked: boolean; id: string; allIds: string[]};
     }
+  | {type: 'toggle-many'; payload: {checked: boolean; ids: string[]}}
   | {type: 'toggle-all'; payload: {checked: boolean; allIds: string[]}}
   | {type: 'set-all-ids'; payload: {allIds: string[]}};
 
 const reducer = (state: State, action: Action): State => {
-  const copy = new Set(state.checkedIds);
   switch (action.type) {
     case 'set-all-ids': {
       const allIdsSet = new Set(action.payload.allIds);
@@ -26,6 +26,7 @@ const reducer = (state: State, action: Action): State => {
     }
     case 'toggle-one': {
       const {checked, id} = action.payload;
+      const copy = new Set(state.checkedIds);
       if (checked) {
         copy.add(id);
       } else {
@@ -44,18 +45,35 @@ const reducer = (state: State, action: Action): State => {
         return state;
       }
 
-      const [start, end] = [indexOfLast, indexOfChecked].sort();
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      allIds.slice(start, end! + 1).forEach((id) => {
+      const start = Math.min(indexOfLast, indexOfChecked);
+      const end = Math.max(indexOfLast, indexOfChecked);
+      const copy = new Set(state.checkedIds);
+      allIds.slice(start, end + 1).forEach((rangeId) => {
+        if (checked) {
+          copy.add(rangeId);
+        } else {
+          copy.delete(rangeId);
+        }
+      });
+
+      return {
+        lastCheckedId: id,
+        checkedIds: copy,
+      };
+    }
+
+    case 'toggle-many': {
+      const {checked, ids} = action.payload;
+      const copy = new Set(state.checkedIds);
+      ids.forEach((id) => {
         if (checked) {
           copy.add(id);
         } else {
           copy.delete(id);
         }
       });
-
       return {
-        lastCheckedId: id,
+        lastCheckedId: ids.at(-1) ?? state.lastCheckedId,
         checkedIds: copy,
       };
     }
@@ -95,5 +113,10 @@ export function useSelectionReducer(allIds: string[]) {
     dispatch({type: 'toggle-all', payload: {checked, allIds}});
   };
 
-  return [state, {onToggleFactory, onToggleAll}] as const;
+  // Use this rather than calling `onToggleFactory` in a loop, which copies the set once per id.
+  const onToggleMany = useCallback((ids: string[], checked: boolean) => {
+    dispatch({type: 'toggle-many', payload: {checked, ids}});
+  }, []);
+
+  return [state, {onToggleFactory, onToggleAll, onToggleMany}] as const;
 }

@@ -87,6 +87,9 @@ def test_in_airflow_package_implicit_requirements(temp_venv: Path):
             "fastapi<0.118",
             # https://github.com/apache/airflow/issues/57419
             "structlog<25.5.0",
+            # sqlalchemy-utils, which airflow pulls in, subclasses names SQLAlchemy
+            # 2.1 made private (ScalarAttributeImpl).
+            "sqlalchemy<2.1",
         ],
         check=True,
         capture_output=True,

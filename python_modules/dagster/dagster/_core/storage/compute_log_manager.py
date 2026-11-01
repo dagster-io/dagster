@@ -337,7 +337,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     def get_log_keys_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], io_type: ComputeIOType
-    ) -> Sequence[Sequence[str]]:
+    ) -> Sequence[list[str]]:
         """Returns the logs keys for a given log key prefix. This is determined by looking at the
         directory defined by the log key prefix and creating a log_key for each file in the directory.
         """
@@ -388,7 +388,7 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             log_key_to_fetch_idx = 0
             line_cursor = 0
         else:
-            log_key_to_fetch_idx = log_keys.index(log_cursor.log_key)
+            log_key_to_fetch_idx = log_keys.index(list(log_cursor.log_key))
             line_cursor = log_cursor.line
 
         if line_cursor == -1:

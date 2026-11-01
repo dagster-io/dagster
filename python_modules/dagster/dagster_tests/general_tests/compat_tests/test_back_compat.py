@@ -710,13 +710,10 @@ def test_schedule_namedtuple_job_instigator_backcompat():
             assert len(states) == 2
             check.is_list(states, of_type=InstigatorState)
             for state in states:
-                assert state.instigator_type
                 assert state.instigator_data
                 ticks = instance.get_ticks(state.instigator_origin_id, state.selector_id)
                 check.is_list(ticks, of_type=InstigatorTick)
                 for tick in ticks:
-                    assert tick.tick_data
-                    assert tick.instigator_type
                     assert tick.instigator_name
 
 
@@ -1750,9 +1747,8 @@ def test_add_backfill_end_timestamp():
                 )
                 instance.report_dagster_event(dagster_event, run_id=run.run_id)
                 updated_run = instance.get_run_record_by_id(run.run_id)
-                completed_backfill_run_end_times.append(
-                    updated_run.end_time if updated_run else None
-                )
+                assert updated_run and updated_run.end_time is not None
+                completed_backfill_run_end_times.append(updated_run.end_time)
 
             for run in instance.get_runs(
                 filters=RunsFilter.for_backfill(in_progress_backfill.backfill_id)

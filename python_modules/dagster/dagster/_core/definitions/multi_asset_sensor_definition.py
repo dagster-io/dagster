@@ -1082,8 +1082,8 @@ AssetMaterializationFunctionReturn: TypeAlias = (
     | Sequence[RunRequest]
     | RunRequest
     | SkipReason
-    | None
     | SensorResult
+    | None
 )
 AssetMaterializationFunction = Callable[
     ...,

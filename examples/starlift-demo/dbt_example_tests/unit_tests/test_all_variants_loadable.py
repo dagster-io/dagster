@@ -21,7 +21,7 @@ def dbt_project_dir() -> Generator[None, None, None]:
 
 def test_inclusion(dbt_project_dir) -> None:
     """Include from dbt_example to ensure that nothing is broken module-wide."""
-    assert AIRFLOW_BASE_URL
+    assert AIRFLOW_BASE_URL  # ty: ignore[redundant-condition]
 
 
 def test_complete(dbt_project_dir) -> None:

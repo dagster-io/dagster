@@ -1,5 +1,5 @@
 ---
-title: Additional Prompt
+title: Additional prompt
 description: Using an additional prompt
 last_update:
   author: Dennis Hume

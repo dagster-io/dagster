@@ -34,4 +34,5 @@ registry_modules = [
     "project_dbt.components.*",
 ]
 
-
+[tool.uv]
+exclude-newer = "48h"

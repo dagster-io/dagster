@@ -353,8 +353,8 @@ class AssetDaemonScenarioState(ScenarioState):
             for rr in expected_run_requests
             for ak in (rr.asset_selection or set())
         }
-        assert (
-            latest_tick.status == TickStatus.SUCCESS
+        assert latest_tick.status == (
+            TickStatus.SUCCESS
             if len(expected_requested_asset_partitions) > 0
             else TickStatus.SKIPPED
         )

@@ -11,3 +11,30 @@
   padding: 12px 20px;
   height: 300px;
 }
+
+.tabs {
+  padding: 0 var(--page-gutter, 24px);
+}
+
+.detailsLabel {
+  width: 360px;
+  min-width: 360px;
+  vertical-align: middle;
+}
+
+.libraryName {
+  width: 360px;
+}
+
+:global(.dagster-mobile) .detailsLabel {
+  width: 96px;
+  min-width: 0;
+}
+
+:global(.dagster-mobile) .libraryName {
+  width: auto;
+}
+
+:global(.dagster-mobile) .imageName {
+  overflow-wrap: anywhere;
+}

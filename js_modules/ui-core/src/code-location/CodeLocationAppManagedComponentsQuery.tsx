@@ -43,6 +43,10 @@ export const SET_APP_MANAGED_COMPONENT_MUTATION = gql`
           ...AppManagedComponentFragment
         }
       }
+      ... on AppManagedComponentValidationError {
+        message
+        errors
+      }
       ... on UnauthorizedError {
         message
       }

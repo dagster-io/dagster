@@ -33,6 +33,7 @@ import dagster as dg
 import patito as pt
 import polars as pl
 
+
 class User(pt.Model):
     uid: str = pt.Field(unique=True, description="User ID")
     age: int | None = pt.Field(gt=18, description="User age")

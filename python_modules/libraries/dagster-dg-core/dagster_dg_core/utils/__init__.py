@@ -409,7 +409,7 @@ class DgClickHelpMixin:
         rich_format_help(obj=self, ctx=context, markup_mode="rich")
 
 
-class DgClickCommand(DgClickHelpMixin, click.Command):
+class DgClickCommand(DgClickHelpMixin, click.Command):  # ty: ignore[invalid-method-override]
     def __init__(self, *args, unlaunched: bool = False, **kwargs):
         """DgClickCommand with conditional hiding for unlaunched features.
 
@@ -422,7 +422,7 @@ class DgClickCommand(DgClickHelpMixin, click.Command):
         super().__init__(*args, **kwargs)
 
 
-class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):
+class DgClickGroup(DgClickHelpMixin, ClickAliasedGroup):  # ty: ignore[invalid-method-override]
     def __init__(self, *args, unlaunched: bool = False, **kwargs):
         """DgClickGroup with conditional hiding for unlaunched features.
 

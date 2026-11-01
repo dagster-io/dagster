@@ -1,6 +1,6 @@
 ---
 title: 'BigQuery integration reference'
-description: Store your Dagster assets in BigQuery
+description: Reference for the Dagster BigQuery I/O manager, covering credentials, column selection, partitioned assets, multiple datasets, and Pandas and PySpark DataFrames.
 sidebar_position: 200
 ---
 
@@ -66,12 +66,7 @@ from dagster_gcp import BigQueryIOManager
 from dagster import Definitions, EnvVar
 
 defs = Definitions(
-    resources={
-        "io_manager": BigQueryIOManager(
-            project=EnvVar("GCP_PROJECT"),
-            write_mode="replace"
-        )
-    }
+    resources={"io_manager": BigQueryIOManager(project=EnvVar("GCP_PROJECT"), write_mode="replace")}
 )
 ```
 

@@ -125,6 +125,12 @@ ALERT_TYPES = [
         config_snippet=None,
     ),
     AlertType(
+        condition_description="when a code location is successfully deployed",
+        alert_name="code-location-deploy-success",
+        event_types=["CODE_LOCATION_DEPLOY_SUCCESS"],
+        config_snippet=None,
+    ),
+    AlertType(
         condition_description="when a Hybrid agent hasn't sent a heartbeat in the last 5 minutes",
         alert_name="agent-unavailable-alert",
         event_types=["AGENT_UNAVAILABLE"],

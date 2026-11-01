@@ -290,6 +290,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
     tags: Mapping[str, str]
     failure_type: AssetMaterializationFailureType
     reason: AssetMaterializationFailureReason
+    will_retry: bool | None = None
 
     """Event that indicates that an asset failed to materialize.
 
@@ -304,6 +305,9 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
         failure_type: (AssetMaterializationFailureType): An enum indicating the type of failure.
         reason: (AssetMaterializationFailureReason): An enum indicating why the asset failed to
             materialize.
+        will_retry (Optional[bool]): Whether the run that produced this failure will be
+            automatically retried, derived from the run's ``WILL_RETRY_TAG`` at emit time. None
+            when unknown or not applicable (e.g. an asset skipped in a successful run).
     """
 
     def __new__(
@@ -315,6 +319,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
         metadata: Mapping[str, RawMetadataValue] | None = None,
         partition: str | None = None,
         tags: Mapping[str, str] | None = None,
+        will_retry: bool | None = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -339,6 +344,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
             partition=partition,
             failure_type=failure_type,
             reason=reason,
+            will_retry=will_retry,
         )
 
     @property
@@ -360,6 +366,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
             tags=self.tags,
             reason=self.reason,
             failure_type=self.failure_type,
+            will_retry=self.will_retry,
         )
 
 

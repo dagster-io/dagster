@@ -11,7 +11,7 @@ authors = [{name = "Dagster Labs", email = "hello@dagsterlabs.com"}]
 license = "Apache-2.0"
 dependencies = [
     "Jinja2",
-    "tomlkit<0.13.3",  # bug in this version
+    "tomlkit!=0.13.3,<0.16",  # bug in 0.13.3
     "click>=8,<9",
     "click-aliases",
     "typing_extensions>=4.4.0,<5",
@@ -25,7 +25,8 @@ dependencies = [
     "setuptools",  # Needed to parse setup.cfg
     "packaging",
     "python-dotenv",
-    "typer>=0.15.1,<1.0",
+    # typer 0.26 vendors its own click fork, which breaks our click-based help rendering.
+    "typer>=0.15.1,<0.26",
     "dagster-shared==1!0+dev",
     "dagster-cloud-cli==1!0+dev",
 ]
@@ -66,6 +67,9 @@ test-plus = [
     "dagster-k8s",
     "dagster-docker",
 ]
+
+[tool.uv]
+exclude-newer = "48h"
 
 [tool.uv.sources]
 dagster = { path = "../../../python_modules/dagster", editable = true }

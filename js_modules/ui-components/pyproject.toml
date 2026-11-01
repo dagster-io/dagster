@@ -7,3 +7,6 @@ dependencies = []
 
 [dependency-groups]
 test = []
+
+[tool.uv]
+exclude-newer = "48h"

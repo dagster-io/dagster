@@ -9,13 +9,20 @@ import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 interface Props {
-  assetKey: AssetKey;
+  assetKey: AssetKey | null;
   assetCheckName?: string;
+  jobName?: string;
   isPartitioned: boolean;
   evaluation: AssetConditionEvaluationRecordFragment;
 }
 
-export const EvaluationListRow = ({evaluation, assetKey, assetCheckName, isPartitioned}: Props) => {
+export const EvaluationListRow = ({
+  evaluation,
+  assetKey,
+  assetCheckName,
+  jobName,
+  isPartitioned,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('evaluation');
 
@@ -38,6 +45,7 @@ export const EvaluationListRow = ({evaluation, assetKey, assetCheckName, isParti
         <td style={{verticalAlign: 'middle'}}>
           <EvaluationStatusTag
             assetKey={assetKey}
+            jobName={jobName}
             isPartitioned={isPartitioned}
             selectedEvaluation={evaluation}
             selectPartition={() => {}}
@@ -62,8 +70,9 @@ export const EvaluationListRow = ({evaluation, assetKey, assetCheckName, isParti
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         evaluationID={evaluation.evaluationId}
-        assetKeyPath={assetKey.path}
+        assetKeyPath={assetKey?.path}
         assetCheckName={assetCheckName}
+        jobName={jobName}
         initialTab={tab}
         showEvaluationsButton={false}
       />

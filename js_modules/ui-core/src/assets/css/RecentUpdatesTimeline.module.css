@@ -1,3 +1,11 @@
+/* Mobile: the range and event-type pickers are wider than a phone, so the header wraps
+   rather than pushing them off the page. */
+:global(.dagster-mobile) .headerRow,
+:global(.dagster-mobile) .headerControls {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
 /* Track layout sizing. Keep in sync with LABEL_HEIGHT_PX / TRACK_HEIGHT_PX. */
 .timelineContainer {
   --label-height: 18px;

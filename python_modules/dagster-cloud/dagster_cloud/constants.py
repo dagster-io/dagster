@@ -1,3 +1,5 @@
+# SF_PARTNER is deliberately absent: this list also blocks customers from creating a secret with
+# the name, and a customer setting their own partner name should win.
 RESERVED_ENV_VAR_NAMES = [
     "DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT",
     "DAGSTER_CLOUD_DEPLOYMENT_NAME",

@@ -34,6 +34,9 @@ test = [
     "psutil",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-pipes = { path = "../../../python_modules/dagster-pipes", editable = true }
 dagster = { path = "../../../python_modules/dagster", editable = true }

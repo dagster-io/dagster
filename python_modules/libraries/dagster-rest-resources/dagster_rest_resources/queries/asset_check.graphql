@@ -1,8 +1,8 @@
-query ListAssetChecks($assetKey: AssetKeyInput!) {
+query ListAssetChecks($assetKey: AssetKeyInput!, $limit: Int) {
   assetNodeOrError(assetKey: $assetKey) {
     __typename
     ... on AssetNode {
-      assetChecksOrError {
+      assetChecksOrError(limit: $limit) {
         __typename
         ... on AssetChecks {
           checks {

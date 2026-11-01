@@ -19,6 +19,7 @@ import {Link} from 'react-router-dom';
 import {LatestTickHoverButton} from './LatestTickHoverButton';
 import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {RunStatusOverlay} from '../runs/RunStatusPez';
 import {useCronInformation} from '../schedules/CronTag';
@@ -29,6 +30,7 @@ import {
   ScheduleAssetSelectionQueryVariables,
 } from '../schedules/types/ScheduleAssetSelectionsQuery.types';
 import {TimeFromNow} from '../ui/TimeFromNow';
+import styles from '../ui/css/ListItemText.module.css';
 import {SINGLE_SCHEDULE_QUERY} from '../workspace/VirtualizedScheduleRow';
 import {RepoAddress} from '../workspace/types';
 import {
@@ -48,6 +50,7 @@ interface ScheduleRowProps {
 export const ObserveAutomationScheduleRow = forwardRef(
   (props: ScheduleRowProps, ref: ForwardedRef<HTMLDivElement>) => {
     const {index, name, repoAddress, checked, onToggleChecked} = props;
+    const isMobile = useIsMobile();
 
     // Wait 100ms before querying in case we're scrolling the table really fast
     const shouldQuery = useDelayedState(100);
@@ -136,7 +139,8 @@ export const ObserveAutomationScheduleRow = forwardRef(
             },
             {
               key: 'tick',
-              control: <LatestTickHoverButton tick={tick ?? null} />,
+              // On mobile the name column needs the room more than the tick indicator.
+              control: isMobile ? null : <LatestTickHoverButton tick={tick ?? null} />,
             },
             {
               key: 'switch',
@@ -168,9 +172,9 @@ export const ObserveAutomationScheduleRow = forwardRef(
             <div>
               <Icon name="schedule" />
             </div>
-            <Box flex={{direction: 'column', gap: 4}}>
+            <Box flex={{direction: 'column', gap: 4}} className={styles.text}>
               <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>{name}</Box>
+                <span className={styles.line}>{name}</span>
                 {scheduleData?.description ? (
                   <Tooltip
                     content={<div style={{maxWidth: 320}}>{scheduleData.description}</div>}
@@ -181,7 +185,7 @@ export const ObserveAutomationScheduleRow = forwardRef(
                 ) : null}
               </Box>
               {withHumanTimezone ? (
-                <Text size={12}>
+                <Text size={12} className={styles.line}>
                   Scheduled{' '}
                   <Tooltip
                     placement="top"

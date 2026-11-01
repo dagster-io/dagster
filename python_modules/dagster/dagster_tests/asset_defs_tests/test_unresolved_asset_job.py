@@ -213,10 +213,7 @@ def test_resolve_subset_job_errors(job_selection, use_multi, expected_error):
         # assert exception context has the expected message and class
         assert check.not_none(error_info.cause).cls_name == expected_class.__name__
         if expected_message:
-            assert (
-                re.compile(expected_message).search(check.not_none(error_info.cause).message)
-                is not None
-            )
+            assert re.search(expected_message, check.not_none(error_info.cause).message) is not None
 
     else:
         assert create_test_asset_job(_get_assets_defs(use_multi), selection=job_selection)

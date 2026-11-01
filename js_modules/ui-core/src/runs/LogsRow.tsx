@@ -1,10 +1,11 @@
-import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
+import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
   EventTypeColumn,
+  MessageColumn,
   OpColumn,
   Row,
   StructuredContent,
@@ -365,9 +366,7 @@ const UnstructuredMemoizedContent = React.memo((props: UnstructuredMemoizedConte
       <EventTypeColumn>
         <span style={{marginLeft: 8}}>{node.level}</span>
       </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}} ref={messageEl}>
-        {messageClipped}
-      </Box>
+      <MessageColumn ref={messageEl}>{messageClipped}</MessageColumn>
     </Row>
   );
 });

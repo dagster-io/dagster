@@ -138,3 +138,34 @@ class DataframeTableIOManagerWithMetadata(dg.ConfigurableIOManager):
 @dg.job(resource_defs={"io_manager": DataframeTableIOManagerWithMetadata()})
 def my_job_with_metadata():
     op_2(op_1())
+
+
+# start_read_definition_metadata_marker
+class MetadataReadingIOManager(dg.ConfigurableIOManager):
+    def handle_output(self, context: dg.OutputContext, obj):
+        # `definition_metadata` is the metadata attached to this asset's
+        # definition, e.g. `@dg.asset(metadata={"table_name": ...})`.
+        write_dataframe_to_table(
+            name=context.definition_metadata["table_name"], dataframe=obj
+        )
+
+    def load_input(self, context: dg.InputContext):
+        # To read the definition metadata of the *upstream* asset being loaded,
+        # use `context.upstream_output.definition_metadata`.
+        if context.upstream_output:
+            return read_dataframe_from_table(
+                name=context.upstream_output.definition_metadata["table_name"]
+            )
+
+
+# end_read_definition_metadata_marker
+
+
+@dg.asset(metadata={"table_name": "upstream_table"})
+def upstream_asset_with_definition_metadata():
+    return []
+
+
+@dg.asset(metadata={"table_name": "downstream_table"})
+def downstream_asset_with_definition_metadata(upstream_asset_with_definition_metadata):
+    return []

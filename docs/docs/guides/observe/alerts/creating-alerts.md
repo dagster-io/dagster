@@ -59,3 +59,5 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 
   </TabItem>
 </Tabs>
+
+A sync applies every alert policy in the file and deletes code-backed policies the file no longer contains. Alert policies created in the UI are left alone. For more information, see [Code-backed and app-managed alerts](/guides/observe/alerts/code-backed-and-app-managed-alerts).

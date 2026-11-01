@@ -232,6 +232,10 @@ class AssetBackfillPreviewParams(BaseModel):
     asset_selection: list["AssetKeyInput"] = Field(alias="assetSelection")
 
 
+class AssetJobKeyInput(BaseModel):
+    job_name: str = Field(alias="jobName")
+
+
 class SecretScopesInput(BaseModel):
     full_deployment_scope: Optional[bool] = Field(
         alias="fullDeploymentScope", default=None

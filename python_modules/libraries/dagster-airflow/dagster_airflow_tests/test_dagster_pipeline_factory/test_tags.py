@@ -2,7 +2,6 @@ import datetime
 import os
 
 import pytest
-from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator  # type: ignore
 from airflow.utils.dates import days_ago
@@ -59,18 +58,11 @@ def check_captured_logs(manager, result, execution_date_fmt):
 
 
 def get_dag():
-    if airflow_version >= "2.0.0":
-        dag = DAG(
-            dag_id="test_tags_dag",
-            default_args=default_args,
-            schedule=None,
-        )
-    else:
-        dag = DAG(
-            dag_id="test_tags_dag",
-            default_args=default_args,
-            schedule_interval=None,
-        )
+    dag = DAG(
+        dag_id="test_tags_dag",
+        default_args=default_args,
+        schedule=None,
+    )
 
     templated_command = """
     echo 'command for dt {{ ds }}'

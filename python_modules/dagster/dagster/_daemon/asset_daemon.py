@@ -1375,11 +1375,7 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
             return reserved_run_id, check.not_none(asset_graph_subset.asset_keys)
-        elif (
-            run_request.job_name
-            and not run_request.asset_selection
-            and not run_request.asset_check_keys
-        ):
+        elif run_request.is_job_entity_request:
             # job-entity run: a traditional whole-job run rather than an asset run
             submitted_run = await submit_job_entity_run(
                 run_id=reserved_run_id,
@@ -1400,7 +1396,7 @@ class AssetDaemon(DagsterDaemon):
                 debug_crash_flags=debug_crash_flags,
                 logger=self._logger,
             )
-            return submitted_run.run_id, {AssetJobKey(run_request.job_name)}
+            return submitted_run.run_id, {AssetJobKey(check.not_none(run_request.job_name))}
         else:
             submitted_run = await submit_asset_run(
                 run_id=reserved_run_id,

@@ -6,8 +6,6 @@ import {buildSVGPathHorizontal, buildSVGPathVertical} from './Utils';
 import {AssetLayoutDirection, AssetLayoutEdge} from './layout';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
-const MAX_EDGES = 200;
-
 interface AssetEdgesProps {
   edges: AssetLayoutEdge[];
   selected: string[] | null;
@@ -17,12 +15,15 @@ interface AssetEdgesProps {
   viewportRect: {top: number; left: number; right: number; bottom: number};
 }
 
+/** @worker function - must not require anything in parent scope other than globals */
 function getEdgesToShow({
   viewportRect,
   highlighted,
   selected,
   edges,
 }: Pick<AssetEdgesProps, 'viewportRect' | 'selected' | 'edges' | 'highlighted'>) {
+  const MAX_EDGES = 200;
+
   try {
     const viewportDistance =
       Math.pow(viewportRect.right - viewportRect.left, 2) +

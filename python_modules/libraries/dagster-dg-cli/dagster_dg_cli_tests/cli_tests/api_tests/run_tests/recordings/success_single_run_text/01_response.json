@@ -5,8 +5,22 @@
     "endTime": 1757703732.670455,
     "id": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
     "jobName": "__ASSET_JOB",
+    "runConfigYaml": "ops: {}\n",
     "runId": "2e562bd3-7e72-4448-9f05-32bad2ea8046",
     "startTime": 1757703690.474944,
-    "status": "SUCCESS"
+    "stats": {
+      "__typename": "RunStatsSnapshot",
+      "expectations": 1,
+      "materializations": 2,
+      "stepsFailed": 0,
+      "stepsSucceeded": 3
+    },
+    "status": "SUCCESS",
+    "tags": [
+      {
+        "key": "dagster/partition",
+        "value": "2024-01-01"
+      }
+    ]
   }
 }

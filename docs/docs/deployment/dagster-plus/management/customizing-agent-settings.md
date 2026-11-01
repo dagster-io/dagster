@@ -44,6 +44,47 @@ user_code_launcher:
         ttl_seconds: 3600 # 1 hour
 ```
 
+## Retrying code locations that fail to start
+
+By default, if a code location's code server fails to start (for example, an image pull failure or a startup timeout), the agent reports the failure and leaves the location as it is until you redeploy it. You can instead have the agent retry the start automatically.
+
+Retries are off by default. Setting `max_attempts` above `0` enables them:
+
+```yaml
+# dagster.yaml
+instance_class:
+  module: dagster_cloud.instance
+  class: DagsterCloudAgentInstance
+
+dagster_cloud_api:
+  agent_token:
+    env: DAGSTER_CLOUD_AGENT_TOKEN
+  deployment: prod
+
+user_code_launcher:
+  module: dagster_cloud.workspace.docker
+  class: DockerUserCodeLauncher
+  config:
+    code_location_start_retry:
+      max_attempts: 3 # Retries are disabled when this is 0 (the default)
+      backoff_seconds: 300 # Delay before the first retry (default 300), doubled after each attempt
+```
+
+- Only start failures are retried. Errors in your code, such as an import error, are never retried.
+- Image errors that a retry can't fix are not retried, such as a missing tag or manifest, an invalid image name, an unsupported architecture, or an image setting the agent can't use. Transient failures such as registry timeouts, rate limits, expired pull credentials, and startup timeouts are retried. The agent logs a warning when it skips a retry for this reason.
+- The retry count resets each time a new version of the location is deployed.
+- Each retry redeploys the location and reports the result to Dagster+, so the location's status updates if a retry succeeds.
+
+For [Kubernetes agents](/deployment/dagster-plus/hybrid/kubernetes) deployed with the Helm chart, use the `workspace.codeLocationStartRetry` value:
+
+```yaml
+# values.yaml
+workspace:
+  codeLocationStartRetry:
+    maxAttempts: 3
+    backoffSeconds: 300
+```
+
 ## Streaming compute logs
 
 You can set up streaming compute logs by configuring the log upload interval (in seconds).

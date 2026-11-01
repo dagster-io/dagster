@@ -288,9 +288,7 @@ class CustomPointer(CodePointer, IHaveNew, LegacyNamedTupleMixin):
     # - `CustomCodePointer` has collection attributes that are unhashable by default
     def __hash__(self) -> int:
         if not hasattr(self, "_hash"):
-            self._hash = hash_collection(
-                self,
-            )
+            self._hash = hash_collection(self)  # ty: ignore[invalid-argument-type]
         return self._hash
 
 

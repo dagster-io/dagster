@@ -12,9 +12,9 @@ This reference describes the various configuration options Dagster+ currently su
 To see the different customizations that can be applied to the Kubernetes agent, you can view the chart's default values:
 
 ```shell
-helm repo add dagster-plus https://dagster-io.github.io/helm-user-cloud
+helm repo add dagster-cloud https://dagster-io.github.io/helm-user-cloud
 helm repo update
-helm show values dagster-plus/dagster-plus-agent
+helm show values dagster-cloud/dagster-cloud-agent
 ```
 
 You can also view the chart values on [ArtifactHub](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values).
@@ -146,12 +146,12 @@ The `isolatedAgents` setting controls how run termination is handled in Kubernet
 | `false` (default) | The agent triggers termination requests through the Kubernetes API. Recommended for simpler deployments. |
 | `true`            | Runs check for termination themselves using a background thread in each worker pod.                      |
 
-To enable isolated agents, set `isolatedAgents: true` in your Helm `values.yaml`:
+To enable isolated agents, set `isolatedAgents.enabled: true` in your Helm `values.yaml`:
 
 ```yaml
 # values.yaml
-dagsterCloudAgent:
-  isolatedAgents: true
+isolatedAgents:
+  enabled: true
 ```
 
 When isolated agents are enabled, you must also set up separate resource allocations for each agent and configure routing for multiple agents if needed.
@@ -173,9 +173,9 @@ You can also configure your Dagster job with the <PyObject section="libraries" i
 import dagster as dg
 from dagster_k8s import k8s_job_executor
 
+
 @dg.job(executor_def=k8s_job_executor)
-def k8s_job():
-    ...
+def k8s_job(): ...
 ```
 
 ## Per-job and per-op configuration

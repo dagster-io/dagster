@@ -72,9 +72,7 @@ with open_dagster_pipes() as pipes:
     # ... your code that computes and persists the asset
 
     pipes.report_asset_materialization(
-        metadata={
-            "some_metric": {"raw_value": 2, "type": "int"}
-        },
+        metadata={"some_metric": {"raw_value": 2, "type": "int"}},
         data_version="alpha",
     )
 ```
@@ -142,13 +140,9 @@ from dagster_k8s import PipesK8sClient
 
 @dg.asset
 def k8s_pipes_asset(context: dg.AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
-  return k8s_pipes_client.run(
-      context=context,
-      image="pipes-example:v1",
-      extras={
-            "some_parameter": 1
-      }
-  ).get_materialize_result()
+    return k8s_pipes_client.run(
+        context=context, image="pipes-example:v1", extras={"some_parameter": 1}
+    ).get_materialize_result()
 ```
 
 Here's what we did in this example:
@@ -207,13 +201,9 @@ from dagster_k8s import PipesK8sClient
 
 @dg.asset
 def k8s_pipes_asset(context: dg.AssetExecutionContext, k8s_pipes_client: PipesK8sClient):
-  return k8s_pipes_client.run(
-      context=context,
-      image="pipes-example:v1",
-      extras={
-            "some_parameter": 1
-      }
-  ).get_materialize_result()
+    return k8s_pipes_client.run(
+        context=context, image="pipes-example:v1", extras={"some_parameter": 1}
+    ).get_materialize_result()
 ```
 
 ```python title="src/<project_name>/defs/resources.py"

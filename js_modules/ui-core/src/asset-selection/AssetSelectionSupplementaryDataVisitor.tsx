@@ -9,8 +9,8 @@ import {
   StatusAttributeExprContext,
 } from './generated/AssetSelectionParser';
 import {AssetSelectionVisitor} from './generated/AssetSelectionVisitor';
-import {AntlrInputErrorListener} from './parseAssetSelectionQuery';
 import {getValue} from './util';
+import {AntlrInputErrorListener} from '../selection/AntlrInputErrorListener';
 
 export type Filter =
   | {field: 'status'; value: string}

@@ -3,7 +3,6 @@ from typing import ContextManager, cast  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.config import MySqlStorageConfig, mysql_config
@@ -25,6 +24,7 @@ from dagster._core.storage.sqlalchemy_compat import db_result
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._time import datetime_from_timestamp
+from sqlalchemy.dialects import mysql
 from sqlalchemy.engine import Connection
 
 from dagster_mysql.utils import (
@@ -162,7 +162,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
     def add_daemon_heartbeat(self, daemon_heartbeat: DaemonHeartbeat) -> None:
         with self.connect() as conn:
             conn.execute(
-                db_dialects.mysql.insert(DaemonHeartbeatsTable)
+                mysql.insert(DaemonHeartbeatsTable)
                 .values(
                     timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
@@ -181,7 +181,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         db_values = [{"key": k, "value": v} for k, v in pairs.items()]
 
         with self.connect() as conn:
-            insert_stmt = db_dialects.mysql.insert(KeyValueStoreTable).values(db_values)
+            insert_stmt = mysql.insert(KeyValueStoreTable).values(db_values)
             conn.execute(
                 insert_stmt.on_duplicate_key_update(
                     value=insert_stmt.inserted.value,

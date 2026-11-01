@@ -1,4 +1,27 @@
-import {humanCronString} from '../humanCronString';
+import {humanCronString, isValidCronString} from '../humanCronString';
+
+describe('isValidCronString', () => {
+  it.each([
+    '0 0 * * *',
+    '*/15 * * * *',
+    '0 9 * * 1',
+    '1-5 * * * *',
+    '0,30 * * * *',
+    '* * * * *',
+    // Forms the previous hand-rolled regex wrongly rejected:
+    '@daily',
+    '@hourly',
+    '0 0 * * MON',
+    '0 23 ? * MON-FRI',
+    '0 0 * * * *', // 6 fields (seconds)
+  ])('accepts %s', (expr) => {
+    expect(isValidCronString(expr)).toBe(true);
+  });
+
+  it.each(['', '0 0 * *', 'not a cron', '99abc * * * *', '* * * *'])('rejects %s', (expr) => {
+    expect(isValidCronString(expr)).toBe(false);
+  });
+});
 
 describe('humanCronString', () => {
   it('parses special strings correctly', () => {

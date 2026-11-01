@@ -46,6 +46,9 @@ test = [
     "pytest-rerunfailures",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-graphql = { path = "../../dagster-graphql", editable = true }
 dagster-pipes = { path = "../../dagster-pipes", editable = true }
