@@ -159,7 +159,7 @@ class InstanceConcurrencyContext:
             return 0.0
 
         now = time.time()
-        return min([0, *[ready_at - now for ready_at in self._pending_timeouts.values()]])
+        return max(0.0, min(self._pending_timeouts.values(), default=now) - now)
 
     def pending_claim_steps(self) -> list[str]:
         return list(self._pending_claims)

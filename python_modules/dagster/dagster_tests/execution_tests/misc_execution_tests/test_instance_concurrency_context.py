@@ -430,3 +430,29 @@ def test_default_granularity(concurrency_instance_default_granularity):
         "foo"
     )
     assert foo_info.active_slot_count == 1
+
+
+@pytest.mark.parametrize("offset, expected_interval", [(0.25, 0.75), (1.0, 0.0), (1.25, 0.0)])
+def test_pending_claim_interval(
+    concurrency_instance_op_granularity: dg.DagsterInstance,
+    offset: float,
+    expected_interval: float,
+) -> None:
+    instance = concurrency_instance_op_granularity
+    run = instance.create_run_for_job(define_foo_job())
+    instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+    with (
+        InstanceConcurrencyContext(instance, run) as context,
+        mock.patch("dagster._core.execution.plan.instance_concurrency_context.time") as clock,
+    ):
+        clock.time.return_value = 100.0
+        assert context.interval_to_next_pending_claim_check() == 0.0
+        assert context.claim("foo", "occupied")
+        assert not context.claim("foo", "first")
+        clock.time.return_value = 100.5
+        assert not context.claim("foo", "second")
+
+        clock.time.return_value = 100.0 + offset
+        assert context.interval_to_next_pending_claim_check() == expected_interval
+        context.free_step("occupied")
