@@ -1,0 +1,31 @@
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 9px;
+  z-index: 2;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  outline: none;
+}
+
+.resizeHandle > div {
+  width: 1px;
+  background: transparent;
+}
+
+.resizeHandle:hover > div,
+.resizeHandle:focus-visible > div {
+  width: 2px;
+  background: var(--color-accent-gray);
+}
+
+.resizeHandleDragging > div {
+  width: 2px;
+  background: var(--color-accent-blue);
+}
