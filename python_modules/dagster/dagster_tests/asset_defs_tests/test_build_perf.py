@@ -3,7 +3,6 @@ import statistics
 import time
 
 import dagster as dg
-import pytest
 
 
 class _Resource(dg.ConfigurableResource):
@@ -33,30 +32,12 @@ def _build_check(i: int, asset_def: dg.AssetsDefinition) -> dg.AssetChecksDefini
     return _c
 
 
-def test_construction_scales(capsys: pytest.CaptureFixture) -> None:
-    """Build many asset/check definitions, and check it is not too slow.
-
-    Run with ``-s`` to see the per-definition timing.
-    """
+def test_construction_scales() -> None:
+    """Smoke-test the retained-results workload without a hardware-dependent time limit."""
     n = 1000
-
-    _build_check(n, _build_asset(n))  # Warm up import/first-call costs
-
-    start = time.perf_counter()
     assets = [_build_asset(i) for i in range(n)]
     checks = [_build_check(i, asset_def) for i, asset_def in enumerate(assets)]
-    elapsed = time.perf_counter() - start
-
     assert len(assets) == len(checks) == n
-    per_def_us = elapsed / (2 * n) * 1e6
-    with capsys.disabled():
-        print(  # noqa: T201, used for benchmarking
-            f"\nbuilt {n} assets + {n} checks in {elapsed * 1e3:.0f} ms ({per_def_us:.1f} us/def)"
-        )
-
-    # Very rough upper bound: construction should be ~0.1-0.3 ms/def,
-    # 5 ms/def should indicate a real regression.
-    assert elapsed < 2 * n * 5e-3, f"definition construction is too slow: {per_def_us:.1f} us/def"
 
 
 def benchmark_construction(n: int = 1000, repeats: int = 7) -> list[float]:
