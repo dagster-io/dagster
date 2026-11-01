@@ -4882,7 +4882,20 @@ def test_asset_backfill_max_queued_runs(tmp_path: Path):
         assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
         assert instance.get_runs_count() == 2
 
-        submitted_counts = []
+        # Canceling the queued runs frees capacity; the held-back iteration also records their
+        # partitions as failed, without waiting for every pending run to be submitted.
+        _dequeue_all_runs(instance)
+        assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+        backfill = check.not_none(instance.get_backfill("asset_backfill"))
+        assert len(backfill.submitting_run_requests) == 1
+        failed_partitions = (
+            backfill.get_asset_backfill_data(asset_graph)
+            .failed_and_downstream_subset.get_partitions_subset(dg.AssetKey("daily_1"))
+            .get_partition_keys()
+        )
+        assert sorted(failed_partitions) == target_partitions[:2]
+
+        submitted_counts = [instance.get_runs_count()]
         while instance.get_runs_count() < num_partitions:
             _dequeue_all_runs(instance)
             assert all(not error for error in execute_backfill_iteration(workspace_context, logger))

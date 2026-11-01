@@ -1099,9 +1099,20 @@ async def execute_asset_backfill_iteration(
                     f"Continuing to submit {len(backfill.submitting_run_requests)} pending runs"
                     f" (max_queued_runs={max_queued_runs})."
                 )
+            backfill_data = previous_asset_backfill_data
+            if max_queued_runs is not None:
+                # Pending runs can be held back for many iterations, so keep the materialized
+                # and failed partitions up to date in the meantime. Downstream partitions are
+                # requested once all pending runs are submitted.
+                backfill_data = get_canceling_asset_backfill_iteration_data(
+                    backfill.backfill_id,
+                    previous_asset_backfill_data,
+                    asset_graph_view,
+                    backfill.backfill_timestamp,
+                )
             result = AssetBackfillIterationResult(
                 run_requests=backfill.submitting_run_requests,
-                backfill_data=previous_asset_backfill_data,
+                backfill_data=backfill_data,
                 reserved_run_ids=backfill.reserved_run_ids,
             )
 
@@ -1352,8 +1363,9 @@ def get_canceling_asset_backfill_iteration_data(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
 ) -> AssetBackfillData:
-    """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
-    materialized and failed subsets.
+    """Fetch the asset backfill data with the updated materialized and failed subsets, without
+    requesting new partitions. Used for asset backfills in the "canceling" state, and for
+    backfills whose pending runs are held back by backfills.max_queued_runs.
     """
     asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
