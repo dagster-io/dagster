@@ -406,9 +406,12 @@ class K8sStepHandler(StepHandler):
         by the run ID label, instead of one Job GET per step.
 
         Steps whose Job is not in the list (just created, or labels overridden by user config)
-        are left out so the executor checks them individually.
+        are left out so the executor checks them individually. Subclasses that override
+        check_step_health keep their per-step behavior: no results are returned.
         """
         if len(step_handler_contexts) < 2:
+            return {}
+        if type(self).check_step_health is not K8sStepHandler.check_step_health:
             return {}
 
         run_ids = {context.execute_step_args.run_id for context in step_handler_contexts}

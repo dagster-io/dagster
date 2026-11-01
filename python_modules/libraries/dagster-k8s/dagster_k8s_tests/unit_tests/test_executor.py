@@ -919,3 +919,40 @@ def test_check_step_health_batch(kubeconfig_file, k8s_instance):
     # A single running step is checked with a GET, so no LIST is made.
     assert handler.check_step_health_batch([contexts["running"]]) == {}
     mock_k8s_client_batch_api.list_namespaced_job.assert_called_once()
+
+
+class _CustomHealthK8sStepHandler(K8sStepHandler):
+    def check_step_health(self, step_handler_context):
+        return super().check_step_health(step_handler_context)
+
+
+def test_check_step_health_batch_skipped_when_single_check_overridden(
+    kubeconfig_file, k8s_instance
+):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    handler = _CustomHealthK8sStepHandler(
+        image="bizbuz",
+        container_context=K8sContainerContext(namespace="foo"),
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+    run = create_run_for_test(
+        k8s_instance,
+        job_name="three_ops",
+        job_code_origin=reconstructable(three_ops).get_python_origin(),
+    )
+    executor = _get_executor(k8s_instance, reconstructable(three_ops))
+    contexts = [
+        _step_handler_context(
+            job_def=reconstructable(three_ops),
+            dagster_run=run,
+            instance=k8s_instance,
+            executor=executor,
+            step=step,
+        )
+        for step in ("running", "failed")
+    ]
+
+    assert handler.check_step_health_batch(contexts) == {}
+    mock_k8s_client_batch_api.list_namespaced_job.assert_not_called()

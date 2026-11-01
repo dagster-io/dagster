@@ -980,3 +980,28 @@ def test_check_run_health_batch_splits_run_ids(kubeconfig_file, monkeypatch):
         assert sorted(run_id for ids in selected_run_ids for run_id in ids) == sorted(
             run.run_id for run in runs
         )
+
+
+class _CustomHealthK8sRunLauncher(K8sRunLauncher):
+    def check_run_worker_health(self, run):
+        return super().check_run_worker_health(run)
+
+
+def test_check_run_health_batch_skipped_when_single_check_overridden(kubeconfig_file):
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["list_namespaced_job"])
+    k8s_run_launcher = _CustomHealthK8sRunLauncher(
+        service_account_name="webserver-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+    with instance_for_test() as instance:
+        k8s_run_launcher.register_instance(instance)
+        run = create_run_for_test(instance, job_name="demo_job", status=DagsterRunStatus.STARTED)
+
+        assert k8s_run_launcher.check_run_worker_health_batch([run]) == {}
+        mock_k8s_client_batch_api.list_namespaced_job.assert_not_called()

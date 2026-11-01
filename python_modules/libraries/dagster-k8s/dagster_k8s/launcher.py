@@ -455,7 +455,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     ) -> Mapping[str, CheckRunHealthResult]:
         """Check run workers with one Job LIST per namespace and up to RUN_IDS_PER_JOB_LIST runs,
         instead of one Job GET per run.
+
+        Subclasses that override check_run_worker_health keep their per-run behavior: no
+        results are returned, so the caller checks each run with the override.
         """
+        if type(self).check_run_worker_health is not K8sRunLauncher.check_run_worker_health:
+            return {}
+
         job_names_by_namespace: dict[str, list[tuple[DagsterRun, str]]] = defaultdict(list)
         results: dict[str, CheckRunHealthResult] = {}
         for run in runs:
