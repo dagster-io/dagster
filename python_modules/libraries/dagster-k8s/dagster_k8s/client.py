@@ -546,7 +546,8 @@ class DagsterKubernetesClient:
 
         Lists with resource_version="0", so the API server can answer from its watch cache
         instead of etcd. Results may be slightly stale, which is fine for periodic health checks.
-        Before Kubernetes 1.27, the watch cache ignores limit and returns every Job in one page.
+        Servers may ignore the requested page size. Follow continuation tokens when provided;
+        do not assume the page size is a bound on the number of returned Jobs.
         """
         statuses: dict[str, V1JobStatus] = {}
         continue_token = None
