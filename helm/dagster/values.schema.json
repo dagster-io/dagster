@@ -162,6 +162,18 @@
                     "title": "Usethreads",
                     "type": "boolean"
                 },
+                "cancelRunsInParallel": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Cancelrunsinparallel"
+                },
                 "numWorkers": {
                     "anyOf": [
                         {

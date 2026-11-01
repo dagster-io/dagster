@@ -1,7 +1,7 @@
 import logging
 import sys
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from unittest import mock
 
 import dagster as dg
@@ -116,3 +116,43 @@ def test_cancel_error_is_raised_with_threadpool(instance: dg.DagsterInstance):
             cancel_backfill_runs_and_cancellation_complete(
                 instance, BACKFILL_ID, logger, threadpool_executor=threadpool_executor
             )
+
+
+def test_cancellation_waits_for_inflight_work_before_raising(instance: dg.DagsterInstance):
+    run_ids = _create_backfill_runs(instance, DagsterRunStatus.STARTED, 2)
+    slow_started = threading.Event()
+    release_slow = threading.Event()
+
+    def terminate(run_id: str) -> bool:
+        if run_id == run_ids[0]:
+            assert slow_started.wait(5)
+            raise RuntimeError("termination failed")
+        slow_started.set()
+        assert release_slow.wait(5)
+        run = instance.get_run_by_id(run_id)
+        assert run
+        instance.report_run_canceling(run)
+        return True
+
+    with (
+        ThreadPoolExecutor(2) as pool,
+        ThreadPoolExecutor(1) as callers,
+        mock.patch.object(instance.run_launcher, "terminate", side_effect=terminate),
+    ):
+        future = callers.submit(
+            cancel_backfill_runs_and_cancellation_complete,
+            instance,
+            BACKFILL_ID,
+            logger,
+            pool,
+        )
+        try:
+            assert slow_started.wait(5)
+            with pytest.raises(TimeoutError):
+                future.result(timeout=0.1)
+        finally:
+            release_slow.set()
+        with pytest.raises(RuntimeError, match="termination failed"):
+            future.result(timeout=5)
+        run = instance.get_run_by_id(run_ids[1])
+        assert run and run.status == DagsterRunStatus.CANCELING

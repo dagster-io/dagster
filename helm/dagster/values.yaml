@@ -1231,10 +1231,11 @@ dagsterDaemon:
     #   to allow more backfills to run in parallel, but may require allocating more resources to the
     #   daemon.
     #   numWorkers: 4
-    #   Uncomment to use a threadpool to submit runs from backfills in parallel, and to cancel
-    #   the runs of a canceled backfill in parallel. Can be used to decrease latency when a
-    #   backfill enqueues many run requests.
+    #   Uncomment to submit runs from backfills in parallel.
     #   numSubmitWorkers: 4
+    #   Opt into using those threads for cancellation as well. Requires storage and a run
+    #   launcher that support concurrent cancellation calls; defaults to serial cancellation.
+    #   cancelRunsInParallel: true
 
   # Additional environment variables to set.
   # These will be directly applied to the daemon container. See

@@ -4761,10 +4761,12 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
     assert failed == {AssetKeyPartitionKey(partially_failing_ranged_asset.key, partition_keys[-1])}
 
 
+@pytest.mark.parametrize("parallel_cancellation", [False, True])
 def test_backfill_cancellation_uses_submit_threadpool(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
     remote_repo: RemoteRepository,
+    parallel_cancellation: bool,
 ):
     partition_set = remote_repo.get_partition_set("the_job_partition_set")
     backfill = PartitionBackfill(
@@ -4778,12 +4780,18 @@ def test_backfill_cancellation_uses_submit_threadpool(
         backfill_timestamp=get_current_timestamp(),
     )
     instance.add_backfill(backfill)
-    submit_threadpool_executor = ThreadPoolExecutor(2)
-
-    with mock.patch(
-        "dagster._core.execution.job_backfill.cancel_backfill_runs_and_cancellation_complete",
-        return_value=True,
-    ) as cancel:
+    with (
+        ThreadPoolExecutor(2) as submit_threadpool_executor,
+        mock.patch.object(
+            instance,
+            "get_backfill_settings",
+            return_value={"cancel_runs_in_parallel": parallel_cancellation},
+        ),
+        mock.patch(
+            "dagster._core.execution.job_backfill.cancel_backfill_runs_and_cancellation_complete",
+            return_value=True,
+        ) as cancel,
+    ):
         list(
             execute_backfill_iteration(
                 workspace_context,
@@ -4792,7 +4800,9 @@ def test_backfill_cancellation_uses_submit_threadpool(
             )
         )
 
-    assert cancel.call_args.kwargs["threadpool_executor"] is submit_threadpool_executor
+    assert cancel.call_args.kwargs["threadpool_executor"] is (
+        submit_threadpool_executor if parallel_cancellation else None
+    )
     assert check.not_none(instance.get_backfill(backfill.backfill_id)).status == (
         BulkActionStatus.CANCELED
     )

@@ -74,6 +74,7 @@ class Schedules(BaseModel):
 
 class Backfills(BaseModel):
     useThreads: bool
+    cancelRunsInParallel: bool | None = None
     numWorkers: int | None = None
     numSubmitWorkers: int | None = None
 

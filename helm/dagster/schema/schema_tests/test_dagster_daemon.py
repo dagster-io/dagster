@@ -641,7 +641,9 @@ def test_backfill_threading(instance_template: HelmTemplate):
 
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            backfills=Backfills.construct(useThreads=True, numWorkers=4, numSubmitWorkers=8)
+            backfills=Backfills.construct(
+                useThreads=True, numWorkers=4, numSubmitWorkers=8, cancelRunsInParallel=True
+            )
         )
     )
 
@@ -653,6 +655,7 @@ def test_backfill_threading(instance_template: HelmTemplate):
     assert instance["backfills"]["use_threads"] is True
     assert instance["backfills"]["num_workers"] == 4
     assert instance["backfills"]["num_submit_workers"] == 8
+    assert instance["backfills"]["cancel_runs_in_parallel"] is True
 
 
 def test_scheduler_name(template: HelmTemplate):
@@ -835,3 +838,16 @@ def test_daemon_extra_prepend_init_containers(template: HelmTemplate):
         container.name == "extra-init-container" and container.image == "busybox"
         for container in daemon_deployment.spec.template.spec.init_containers
     )
+
+
+def test_backfill_parallel_cancellation_can_be_explicitly_disabled(instance_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            backfills=Backfills.construct(
+                useThreads=True, numSubmitWorkers=4, cancelRunsInParallel=False
+            )
+        )
+    )
+    configmap = instance_template.render(helm_values)[0]
+    instance = yaml.full_load(configmap.data["dagster.yaml"])
+    assert instance["backfills"]["cancel_runs_in_parallel"] is False

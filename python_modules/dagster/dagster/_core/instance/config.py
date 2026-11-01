@@ -365,13 +365,21 @@ def backfills_daemon_config() -> Field:
                 is_required=False,
                 description="How many threads to use to process multiple backfills in parallel",
             ),
+            "cancel_runs_in_parallel": Field(
+                Bool,
+                is_required=False,
+                default_value=False,
+                description=(
+                    "Opt into parallel cancellation using num_submit_workers. Requires storage"
+                    " and a run launcher that support concurrent cancellation calls."
+                ),
+            ),
             "num_submit_workers": Field(
                 int,
                 is_required=False,
                 description=(
-                    "How many threads to use to submit runs from backfills, and to cancel the"
-                    " runs of a canceled backfill. Can be used to decrease latency for backfill"
-                    " run submission and cancellation."
+                    "How many threads to use to submit runs from backfills. Also used for"
+                    " cancellation when cancel_runs_in_parallel is enabled."
                 ),
             ),
         },

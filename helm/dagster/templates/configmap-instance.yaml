@@ -149,6 +149,9 @@ data:
     {{- if and (.Values.dagsterDaemon.enabled) ($backfills) }}
     backfills:
       use_threads: {{ $backfills.useThreads }}
+      {{- if ne $backfills.cancelRunsInParallel nil }}
+      cancel_runs_in_parallel: {{ $backfills.cancelRunsInParallel }}
+      {{- end }}
       {{- if $backfills.numWorkers }}
       num_workers: {{ $backfills.numWorkers }}
       {{- end }}

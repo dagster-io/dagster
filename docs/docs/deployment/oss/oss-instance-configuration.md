@@ -393,4 +393,13 @@ To process multiple backfills in parallel simultaneously, set the `use_threads` 
   endBefore="end_marker_backfills"
 />
 
-You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs. The same threads are used to cancel the runs of a canceled backfill in parallel.
+You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs. Cancellation remains serial unless you also opt in with `cancel_runs_in_parallel: true`:
+
+```yaml
+backfills:
+  use_threads: true
+  num_submit_workers: 4
+  cancel_runs_in_parallel: true
+```
+
+Enable parallel cancellation only with event/run storage and a run launcher that support concurrent cancellation calls. It reuses the submission pool, so cancellation can compete with other backfills for those threads. Without a configured submission pool, cancellation remains serial. Failed cancellation calls wait for their in-flight operations before returning an error, so later daemon iterations do not overlap those operations.

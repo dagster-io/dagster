@@ -1,7 +1,7 @@
 import logging
 import os
 from collections.abc import Mapping, Sequence
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -571,9 +571,15 @@ def _cancel_runs(
         for run in runs:
             _cancel(run)
     else:
-        # As in the serial case, the first error is raised; the runs left cancelable are picked
-        # up by the next daemon iteration.
-        list(threadpool_executor.map(_cancel, runs))
+        futures: list[Future[None]] = []
+        try:
+            futures.extend(threadpool_executor.submit(_cancel, run) for run in runs)
+            for future in futures:
+                future.result()
+        finally:
+            # The pool is shared with other backfills. Do not return or retry while this
+            # page still has in-flight operations, including after submit/result errors.
+            wait(futures)
 
 
 def cancel_backfill_runs_and_cancellation_complete(
@@ -587,8 +593,9 @@ def cancel_backfill_runs_and_cancellation_complete(
     marked CANCELED. Yields a boolean indicating the backfill can be considered canceled
     (ie all runs are canceled).
 
-    If a threadpool executor is given (the backfill daemon's run submission threadpool, set with
-    backfills.num_submit_workers), runs are canceled concurrently.
+    Passing a threadpool executor explicitly opts into concurrent cancellation. The daemon
+    does so only when backfills.cancel_runs_in_parallel is enabled, using the submission pool.
+    The storage and launcher must support concurrent cancellation calls.
     """
     if not instance.run_coordinator:
         check.failed("The instance must have a run coordinator in order to cancel runs")

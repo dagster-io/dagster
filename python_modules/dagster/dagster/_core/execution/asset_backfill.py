@@ -1077,7 +1077,7 @@ async def execute_asset_backfill_iteration(
         )
         if backfill.submitting_run_requests:
             # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
-            logger.warn(
+            logger.warning(
                 f"Resuming previous backfill iteration and re-submitting {len(backfill.submitting_run_requests)} runs."
             )
             result = AssetBackfillIterationResult(
@@ -1246,7 +1246,11 @@ async def execute_asset_backfill_iteration(
             instance=instance,
             backfill_id=backfill.backfill_id,
             logger=logger,
-            threadpool_executor=submit_threadpool_executor,
+            threadpool_executor=(
+                submit_threadpool_executor
+                if instance.get_backfill_settings().get("cancel_runs_in_parallel", False)
+                else None
+            ),
         )
 
         try:
