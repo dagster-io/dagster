@@ -1,6 +1,7 @@
 import logging
 import os
 from collections.abc import Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -31,7 +32,6 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
@@ -41,10 +41,6 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
 CANCELABLE_RUNS_BATCH_SIZE = int(os.getenv("DAGSTER_BACKFILL_CANCEL_RUNS_BATCH_SIZE", "500"))
-# Number of runs canceled concurrently. Each cancellation writes run events and, for started
-# runs, calls the run launcher (for example to delete a Kubernetes Job), so canceling a large
-# backfill one run at a time can take a long time.
-CANCEL_RUNS_MAX_WORKERS = int(os.getenv("DAGSTER_BACKFILL_CANCEL_RUNS_MAX_WORKERS", "1"))
 
 
 @whitelist_for_serdes
@@ -552,11 +548,14 @@ class PartitionBackfill(
 
 
 def _cancel_runs(
-    instance: "DagsterInstance", runs: Sequence[DagsterRun], logger: logging.Logger
+    instance: "DagsterInstance",
+    runs: Sequence[DagsterRun],
+    logger: logging.Logger,
+    threadpool_executor: ThreadPoolExecutor | None,
 ) -> None:
-    """Cancels queued runs and terminates started runs, using up to CANCEL_RUNS_MAX_WORKERS
-    threads. Either way the run status is synchronously set to CANCELING or CANCELED, so the run
-    is not returned as cancelable again.
+    """Cancels queued runs and terminates started runs, concurrently if a threadpool executor is
+    given. Either way the run status is synchronously set to CANCELING or CANCELED, so the run is
+    not returned as cancelable again.
     """
 
     def _cancel(run: DagsterRun) -> None:
@@ -568,27 +567,28 @@ def _cancel_runs(
             logger.info(f"Terminating submitted run {run.run_id}")
             instance.run_launcher.terminate(run.run_id)
 
-    if CANCEL_RUNS_MAX_WORKERS <= 1 or len(runs) <= 1:
+    if threadpool_executor is None:
         for run in runs:
             _cancel(run)
-        return
-
-    # As in the serial case, the first error is raised; the runs left cancelable are picked up by
-    # the next daemon iteration.
-    with InheritContextThreadPoolExecutor(
-        max_workers=min(CANCEL_RUNS_MAX_WORKERS, len(runs)),
-        thread_name_prefix="backfill_cancel_worker",
-    ) as executor:
-        list(executor.map(_cancel, runs))
+    else:
+        # As in the serial case, the first error is raised; the runs left cancelable are picked
+        # up by the next daemon iteration.
+        list(threadpool_executor.map(_cancel, runs))
 
 
 def cancel_backfill_runs_and_cancellation_complete(
-    instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
+    instance: "DagsterInstance",
+    backfill_id: str,
+    logger: logging.Logger,
+    threadpool_executor: ThreadPoolExecutor | None = None,
 ) -> bool:
     """Cancels all cancelable runs associated with the backfill_id. Ensures that
     all runs for the backfill are in a terminal state before indicating that the backfill can be
     marked CANCELED. Yields a boolean indicating the backfill can be considered canceled
     (ie all runs are canceled).
+
+    If a threadpool executor is given (the backfill daemon's run submission threadpool, set with
+    backfills.num_submit_workers), runs are canceled concurrently.
     """
     if not instance.run_coordinator:
         check.failed("The instance must have a run coordinator in order to cancel runs")
@@ -626,7 +626,7 @@ def cancel_backfill_runs_and_cancellation_complete(
                 break
 
         canceled_any_runs = True
-        _cancel_runs(instance, runs_to_cancel_in_iteration, logger)
+        _cancel_runs(instance, runs_to_cancel_in_iteration, logger, threadpool_executor)
 
     if canceled_any_runs:
         # since we are canceling some runs in this iteration, we know that there is more work to do.

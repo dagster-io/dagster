@@ -88,6 +88,7 @@ def execute_job_backfill_iteration(
             instance=instance,
             backfill_id=backfill.backfill_id,
             logger=logger,
+            threadpool_executor=submit_threadpool_executor,
         )
 
         if all_runs_canceled:

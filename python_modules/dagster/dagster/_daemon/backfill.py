@@ -190,6 +190,7 @@ def execute_backfill_iteration_with_instigation_logger(
                             backfill_logger,
                             workspace_process_context,
                             instance,
+                            submit_threadpool_executor=submit_threadpool_executor,
                         )
                     )
                 else:

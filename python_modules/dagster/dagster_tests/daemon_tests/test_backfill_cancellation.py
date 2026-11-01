@@ -1,12 +1,12 @@
 import logging
 import sys
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from unittest import mock
 
 import dagster as dg
 import pytest
 from dagster._core.events import DagsterEventType
-from dagster._core.execution import backfill as backfill_module
 from dagster._core.execution.backfill import cancel_backfill_runs_and_cancellation_complete
 from dagster._core.remote_origin import (
     InProcessCodeLocationOrigin,
@@ -53,11 +53,8 @@ def instance():
         yield instance
 
 
-@pytest.mark.parametrize("max_workers", [1, 4])
-def test_backfill_runs_are_canceled(
-    instance: dg.DagsterInstance, monkeypatch: pytest.MonkeyPatch, max_workers: int
-):
-    monkeypatch.setattr(backfill_module, "CANCEL_RUNS_MAX_WORKERS", max_workers)
+@pytest.mark.parametrize("use_threadpool", [False, True])
+def test_backfill_runs_are_canceled(instance: dg.DagsterInstance, use_threadpool: bool):
     queued_run_ids = _create_backfill_runs(instance, DagsterRunStatus.QUEUED, 6)
     started_run_ids = _create_backfill_runs(instance, DagsterRunStatus.STARTED, 6)
     thread_ids: set[int] = set()
@@ -71,15 +68,23 @@ def test_backfill_runs_are_canceled(
         instance.report_run_canceling(run)
         return True
 
-    with mock.patch.object(instance.run_launcher, "terminate", side_effect=_terminate) as terminate:
+    with (
+        ThreadPoolExecutor(max_workers=4) as threadpool_executor,
+        mock.patch.object(instance.run_launcher, "terminate", side_effect=_terminate) as terminate,
+    ):
         # Queued runs are canceled first, then started runs, in the same call.
-        assert not cancel_backfill_runs_and_cancellation_complete(instance, BACKFILL_ID, logger)
+        assert not cancel_backfill_runs_and_cancellation_complete(
+            instance,
+            BACKFILL_ID,
+            logger,
+            threadpool_executor=threadpool_executor if use_threadpool else None,
+        )
 
     assert sorted(call.args[0] for call in terminate.call_args_list) == sorted(started_run_ids)
-    if max_workers == 1:
-        assert thread_ids == {threading.get_ident()}
-    else:
+    if use_threadpool:
         assert threading.get_ident() not in thread_ids
+    else:
+        assert thread_ids == {threading.get_ident()}
 
     for run_id in queued_run_ids:
         run = instance.get_run_by_id(run_id)
@@ -98,12 +103,16 @@ def test_backfill_runs_are_canceled(
         assert run and run.status == DagsterRunStatus.CANCELING
 
 
-def test_cancel_error_is_raised(instance: dg.DagsterInstance, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(backfill_module, "CANCEL_RUNS_MAX_WORKERS", 4)
+def test_cancel_error_is_raised_with_threadpool(instance: dg.DagsterInstance):
     _create_backfill_runs(instance, DagsterRunStatus.STARTED, 3)
 
-    with mock.patch.object(
-        instance.run_launcher, "terminate", side_effect=Exception("terminate failed")
+    with (
+        ThreadPoolExecutor(max_workers=4) as threadpool_executor,
+        mock.patch.object(
+            instance.run_launcher, "terminate", side_effect=Exception("terminate failed")
+        ),
     ):
         with pytest.raises(Exception, match="terminate failed"):
-            cancel_backfill_runs_and_cancellation_complete(instance, BACKFILL_ID, logger)
+            cancel_backfill_runs_and_cancellation_complete(
+                instance, BACKFILL_ID, logger, threadpool_executor=threadpool_executor
+            )

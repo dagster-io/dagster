@@ -4759,3 +4759,40 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
         AssetKeyPartitionKey(partially_failing_ranged_asset.key, pk) for pk in partition_keys[:-1]
     }
     assert failed == {AssetKeyPartitionKey(partially_failing_ranged_asset.key, partition_keys[-1])}
+
+
+def test_backfill_cancellation_uses_submit_threadpool(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    partition_set = remote_repo.get_partition_set("the_job_partition_set")
+    backfill = PartitionBackfill(
+        backfill_id="cancel_with_threadpool",
+        partition_set_origin=partition_set.get_remote_origin(),
+        status=BulkActionStatus.CANCELING,
+        partition_names=["one", "two", "three"],
+        from_failure=False,
+        reexecution_steps=None,
+        tags=None,
+        backfill_timestamp=get_current_timestamp(),
+    )
+    instance.add_backfill(backfill)
+    submit_threadpool_executor = ThreadPoolExecutor(2)
+
+    with mock.patch(
+        "dagster._core.execution.job_backfill.cancel_backfill_runs_and_cancellation_complete",
+        return_value=True,
+    ) as cancel:
+        list(
+            execute_backfill_iteration(
+                workspace_context,
+                get_default_daemon_logger("BackfillDaemon"),
+                submit_threadpool_executor=submit_threadpool_executor,
+            )
+        )
+
+    assert cancel.call_args.kwargs["threadpool_executor"] is submit_threadpool_executor
+    assert check.not_none(instance.get_backfill(backfill.backfill_id)).status == (
+        BulkActionStatus.CANCELED
+    )

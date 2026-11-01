@@ -369,8 +369,9 @@ def backfills_daemon_config() -> Field:
                 int,
                 is_required=False,
                 description=(
-                    "How many threads to use to submit runs from backfills. Can be used to"
-                    " decrease latency for backfill run submission."
+                    "How many threads to use to submit runs from backfills, and to cancel the"
+                    " runs of a canceled backfill. Can be used to decrease latency for backfill"
+                    " run submission and cancellation."
                 ),
             ),
         },

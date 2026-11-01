@@ -393,4 +393,4 @@ To process multiple backfills in parallel simultaneously, set the `use_threads` 
   endBefore="end_marker_backfills"
 />
 
-You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs.
+You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs. The same threads are used to cancel the runs of a canceled backfill in parallel.
