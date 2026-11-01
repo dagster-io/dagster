@@ -119,7 +119,7 @@ class StepDelegatingExecutor(Executor):
             ].storage_id
             self._event_cursor = EventLogCursor.from_storage_id(desired_next_storage_id).to_string()
 
-            logging.getLogger("dagster").warn(
+            logging.getLogger("dagster").warning(
                 f"Event tailer query returned a list of {self._pop_events_limit} storage IDs that had already been returned before. Setting the cursor to {desired_next_storage_id} to ensure it advances."
             )
         else:
@@ -174,14 +174,16 @@ class StepDelegatingExecutor(Executor):
         logged as engine events and do not fail the step.
         """
         step_handler_contexts: dict[str, StepHandlerContext] = {}
+        context_errors: dict[str, SerializableErrorInfo] = {}
         for step in running_steps.values():
             try:
                 step_handler_contexts[step.key] = self._get_step_handler_context(
                     plan_context, [step], active_execution
                 )
             except Exception:
-                # Rebuilt below, where the error is reported for the step.
-                pass
+                # Preserve the original per-step failure rather than retrying a context
+                # builder that may have side effects or fail differently on a second call.
+                context_errors[step.key] = serializable_error_info_from_exc_info(sys.exc_info())
 
         try:
             batch_health_results = self._step_handler.check_step_health_batch(
@@ -198,13 +200,19 @@ class StepDelegatingExecutor(Executor):
 
         for step in running_steps.values():
             step_context = plan_context.for_step(step)
+            if step.key in context_errors:
+                DagsterEvent.engine_event(
+                    step_context,
+                    f"Error while checking health for step {step.key}",
+                    EngineEventData(error=context_errors[step.key]),
+                )
+                continue
 
             try:
                 health_check_result = batch_health_results.get(step.key)
                 if health_check_result is None:
                     health_check_result = self._step_handler.check_step_health(
-                        step_handler_contexts.get(step.key)
-                        or self._get_step_handler_context(plan_context, [step], active_execution)
+                        step_handler_contexts[step.key]
                     )
                 if not health_check_result.is_healthy:
                     health_check_error = SerializableErrorInfo(

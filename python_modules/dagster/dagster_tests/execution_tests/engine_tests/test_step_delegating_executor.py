@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from unittest import mock
 
 import dagster as dg
 import pytest
@@ -733,3 +734,35 @@ def test_check_step_health_batch_falls_back_to_individual_checks(batch_raises: b
         and "Error while checking step health in batch" in (event.message or "")
     ]
     assert bool(batch_error_events) == batch_raises
+
+
+def test_batch_health_does_not_retry_failed_context_creation():
+    handler = TestStepHandler()
+    executor = StepDelegatingExecutor(step_handler=handler, retries=RetryMode.DISABLED)
+    bad_step = mock.Mock(key="bad")
+    good_step = mock.Mock(key="good")
+    good_context = mock.Mock()
+    plan_context = mock.Mock()
+    with (
+        mock.patch.object(
+            executor,
+            "_get_step_handler_context",
+            side_effect=[RuntimeError("context failed"), good_context],
+        ) as build_context,
+        mock.patch.object(handler, "check_step_health_batch", return_value={}) as batch,
+        mock.patch.object(
+            handler, "check_step_health", return_value=CheckStepHealthResult.healthy()
+        ) as single,
+        mock.patch(
+            "dagster._core.executor.step_delegating.step_delegating_executor.DagsterEvent.engine_event"
+        ) as engine_event,
+    ):
+        executor._check_running_steps_health(  # noqa: SLF001 -- Test context error handling directly.
+            plan_context, mock.Mock(), {"bad": bad_step, "good": good_step}
+        )
+    assert build_context.call_count == 2
+    batch.assert_called_once_with([good_context])
+    single.assert_called_once_with(good_context)
+    engine_event.assert_called_once()
+    assert engine_event.call_args.args[1] == "Error while checking health for step bad"
+    assert "context failed" in engine_event.call_args.args[2].error.message
