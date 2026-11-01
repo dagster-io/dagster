@@ -1235,7 +1235,7 @@ dagsterDaemon:
     #   used to decrease latency when a backfill enqueues many run requests.
     #   numSubmitWorkers: 4
     #   Uncomment to limit how many runs each backfill can have queued at once. The backfill
-    #   submits more runs as queued runs are dequeued.
+    #   submits more runs as queued runs are dequeued. Requires a run coordinator that queues runs.
     #   maxQueuedRuns: 100
 
   # Additional environment variables to set.

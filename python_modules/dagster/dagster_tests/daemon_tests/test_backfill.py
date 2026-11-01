@@ -5,7 +5,7 @@ import random
 import string
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from pathlib import Path
@@ -4766,7 +4766,7 @@ def test_asset_backfill_completes_when_ranged_run_partially_fails(
 @contextmanager
 def _queued_instance_and_workspace(
     tmp_path: Path, max_queued_runs: int
-) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext]]:
+) -> Generator[tuple[DagsterInstance, WorkspaceProcessContext], None, None]:
     """Runs submitted by backfills stay QUEUED: no run coordinator daemon dequeues them."""
     with dg.instance_for_test(
         overrides={
@@ -4920,3 +4920,55 @@ def test_backfill_daemon_rejects_non_positive_max_queued_runs(max_queued_runs: i
 
     with pytest.raises(dg.DagsterInvariantViolationError, match="max_queued_runs must be positive"):
         BackfillDaemon(settings={"max_queued_runs": max_queued_runs})
+
+
+def test_asset_backfill_queue_cap_recovers_existing_not_started_run(tmp_path: Path):
+    with _queued_instance_and_workspace(tmp_path, max_queued_runs=1) as (
+        instance,
+        workspace_context,
+    ):
+        asset_graph = workspace_context.create_request_context().asset_graph
+        partitions = daily_partitions_def.get_partition_keys()[:2]
+        instance.add_backfill(
+            PartitionBackfill.from_asset_partitions(
+                asset_graph=asset_graph,
+                backfill_id="recover_at_cap",
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+                asset_selection=[dg.AssetKey("daily_1")],
+                partition_names=partitions,
+                dynamic_partitions_store=instance,
+                all_partitions=False,
+                title=None,
+                description=None,
+                run_config=None,
+            )
+        )
+        logger = get_default_daemon_logger("BackfillDaemon")
+        # Fail after creating the reserved run but before it can enter the queue.
+        with mock.patch.object(
+            instance, "submit_run", side_effect=RuntimeError("submission failed")
+        ):
+            errors = list(execute_backfill_iteration(workspace_context, logger))
+        assert any(errors)
+        runs = instance.get_runs()
+        assert len(runs) == 1 and runs[0].status == DagsterRunStatus.NOT_STARTED
+        reserved_id = runs[0].run_id
+        assert check.not_none(instance.get_backfill("recover_at_cap")).status == (
+            BulkActionStatus.REQUESTED
+        )
+
+        # The NOT_STARTED run fills the cap, but resuming it creates no new run record.
+        assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        assert runs[0].run_id == reserved_id and runs[0].status == DagsterRunStatus.QUEUED
+        assert (
+            len(check.not_none(instance.get_backfill("recover_at_cap")).submitting_run_requests)
+            == 1
+        )
+
+        _dequeue_all_runs(instance)
+        assert all(not error for error in execute_backfill_iteration(workspace_context, logger))
+        assert instance.get_runs_count() == 2
+        assert not check.not_none(instance.get_backfill("recover_at_cap")).submitting_run_requests

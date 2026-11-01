@@ -380,7 +380,8 @@ def backfills_daemon_config() -> Field:
                     "Maximum number of queued runs per backfill. Once a backfill has this many"
                     " runs waiting in the run queue, it stops submitting runs until some of them"
                     " are dequeued. Limits the size of the run queue for large backfills and the"
-                    " number of runs to cancel if the backfill is canceled."
+                    " number of runs to cancel if the backfill is canceled. Only has an effect"
+                    " with a run coordinator that queues runs, such as the QueuedRunCoordinator."
                 ),
             ),
         },

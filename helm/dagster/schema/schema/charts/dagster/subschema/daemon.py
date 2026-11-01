@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, PositiveInt
 
 from schema.charts.dagster.subschema.config import IntSource
 from schema.charts.utils import kubernetes
@@ -76,7 +76,7 @@ class Backfills(BaseModel):
     useThreads: bool
     numWorkers: int | None = None
     numSubmitWorkers: int | None = None
-    maxQueuedRuns: int | None = None
+    maxQueuedRuns: PositiveInt | None = None
 
 
 class RunRetries(BaseModel):

@@ -155,7 +155,7 @@ data:
       {{- if $backfills.numSubmitWorkers }}
       num_submit_workers: {{ $backfills.numSubmitWorkers }}
       {{- end }}
-      {{- if $backfills.maxQueuedRuns }}
+      {{- if ne $backfills.maxQueuedRuns nil }}
       max_queued_runs: {{ $backfills.maxQueuedRuns }}
       {{- end }}
     {{- end }}

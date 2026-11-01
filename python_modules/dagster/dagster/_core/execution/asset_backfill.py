@@ -745,9 +745,11 @@ async def _submit_runs_and_update_backfill_in_chunks(
     run_tags: Mapping[str, str],
     max_runs_to_submit: int | None = None,
 ) -> None:
-    """Submits the iteration's run requests, or the first max_runs_to_submit of them. Run
-    requests that are not submitted stay in the backfill's submitting_run_requests and are
-    submitted by later iterations.
+    """Submit at most max_runs_to_submit new runs, resuming existing reserved runs as needed.
+
+    Existing runs already contribute to the queue-cap count. Finishing their submission or
+    acknowledging a previously submitted run must not consume another capacity slot.
+    Unsubmitted requests stay in the backfill for later iterations.
     """
     from dagster._core.execution.backfill import BulkActionStatus
     from dagster._daemon.utils import DaemonErrorCapture
@@ -771,9 +773,19 @@ async def _submit_runs_and_update_backfill_in_chunks(
 
     chunk_size = get_asset_backfill_run_chunk_size()
 
-    run_requests_to_submit = (
-        run_requests if max_runs_to_submit is None else run_requests[:max_runs_to_submit]
-    )
+    run_requests_to_submit = run_requests
+    if max_runs_to_submit is not None:
+        remaining_capacity = max_runs_to_submit
+        num_requests_to_submit = 0
+        for idx in range(len(run_requests)):
+            reserved_run_id = reserved_run_ids[idx] if reserved_run_ids else None
+            existing_run = instance.get_run_by_id(reserved_run_id) if reserved_run_id else None
+            if existing_run is None:
+                if remaining_capacity == 0:
+                    break
+                remaining_capacity -= 1
+            num_requests_to_submit += 1
+        run_requests_to_submit = run_requests[:num_requests_to_submit]
     for run_request_idx, run_request in enumerate(run_requests_to_submit):
         run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
         try:
@@ -1104,7 +1116,7 @@ async def execute_asset_backfill_iteration(
                 # Pending runs can be held back for many iterations, so keep the materialized
                 # and failed partitions up to date in the meantime. Downstream partitions are
                 # requested once all pending runs are submitted.
-                backfill_data = get_canceling_asset_backfill_iteration_data(
+                backfill_data = _get_asset_backfill_data_with_updated_statuses(
                     backfill.backfill_id,
                     previous_asset_backfill_data,
                     asset_graph_view,
@@ -1363,9 +1375,22 @@ def get_canceling_asset_backfill_iteration_data(
     asset_graph_view: AssetGraphView,
     backfill_start_timestamp: float,
 ) -> AssetBackfillData:
+    """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
+    materialized and failed subsets.
+    """
+    return _get_asset_backfill_data_with_updated_statuses(
+        backfill_id, asset_backfill_data, asset_graph_view, backfill_start_timestamp
+    )
+
+
+def _get_asset_backfill_data_with_updated_statuses(
+    backfill_id: str,
+    asset_backfill_data: AssetBackfillData,
+    asset_graph_view: AssetGraphView,
+    backfill_start_timestamp: float,
+) -> AssetBackfillData:
     """Fetch the asset backfill data with the updated materialized and failed subsets, without
-    requesting new partitions. Used for asset backfills in the "canceling" state, and for
-    backfills whose pending runs are held back by backfills.max_queued_runs.
+    requesting new partitions.
     """
     asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()

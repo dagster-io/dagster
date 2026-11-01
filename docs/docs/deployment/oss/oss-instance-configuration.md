@@ -395,4 +395,14 @@ To process multiple backfills in parallel simultaneously, set the `use_threads` 
 
 You can also set the optional `num_submit_workers` key to create multiple runs from the same backfill in parallel, which can help decrease latency when a single backfill creates many runs.
 
-To limit how many runs each backfill can have queued at once, set the optional `max_queued_runs` key. Once a backfill has that many runs waiting in the run queue, it stops submitting runs until some of them are dequeued. This keeps the run queue small for large backfills, and leaves fewer queued runs to cancel if the backfill is canceled.
+To limit how many runs each backfill can have queued at once, set the optional `max_queued_runs` key. Once a backfill has that many runs waiting in the run queue, it stops submitting runs until some of them are dequeued. This keeps the run queue small for large backfills, and leaves fewer queued runs to cancel if the backfill is canceled. It only has an effect when runs are queued, for example with the `QueuedRunCoordinator`.
+
+
+The limit must be a positive integer; leaving it unset preserves existing behavior. For example:
+
+```yaml
+backfills:
+  max_queued_runs: 100
+```
+
+This limits new submissions by the backfill daemon, not running workers or all backfill state. Runs in `NOT_STARTED` or `QUEUED` count toward the limit. Existing reserved runs are still resumed after interrupted submissions, even when the cap is full, without creating duplicate run records. Retries or runs submitted outside the backfill daemon are not governed by this setting. Choose enough queue capacity to keep workers utilized.
