@@ -27,6 +27,7 @@ import {useMutation} from '../apollo-client';
 import {isExternalRun} from './externalRuns';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/ConcurrencyQueries';
 import {
@@ -57,6 +58,8 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const {refetch} = useContext(RunsQueryRefetchContext);
 
   const history = useHistory();
+  // Icon-only on mobile, so the actions fit beside the run's status tags.
+  const isMobile = useIsMobile();
 
   const [freeSlots] = useMutation<
     FreeConcurrencySlotsMutation,
@@ -87,17 +90,29 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
         <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason}>
-            <Button icon={<Icon name={jobLink.icon} />} disabled>
-              {jobLink.label}
+            <Button
+              icon={<Icon name={jobLink.icon} />}
+              aria-label={isMobile ? jobLink.label : undefined}
+              disabled
+            >
+              {isMobile ? null : jobLink.label}
             </Button>
           </Tooltip>
         ) : (
-          <AnchorButton icon={<Icon name={jobLink.icon} />} to={jobLink.to}>
-            {jobLink.label}
+          <AnchorButton
+            icon={<Icon name={jobLink.icon} />}
+            aria-label={isMobile ? jobLink.label : undefined}
+            to={jobLink.to}
+          >
+            {isMobile ? null : jobLink.label}
           </AnchorButton>
         )}
-        <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
-          View tags and config
+        <Button
+          icon={<Icon name="tag" />}
+          aria-label={isMobile ? 'View tags and config' : undefined}
+          onClick={() => setVisibleDialog('config')}
+        >
+          {isMobile ? null : 'View tags and config'}
         </Button>
         {run.allPools && run.allPools.length ? (
           <Tooltip content="View pools" position="top">
@@ -209,7 +224,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             }
           }}
           onTerminateInstead={() => setVisibleDialog('terminate')}
-          selectedRuns={{[run.id]: run.canTerminate}}
+          selectedRuns={{[run.id]: run.canTerminate && run.hasTerminatePermission}}
         />
       ) : null}
       {run.hasTerminatePermission ? (

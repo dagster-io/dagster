@@ -5,7 +5,7 @@ Dagster runs for processing.
 """
 
 import time
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 import dagster as dg
 from kafka import KafkaConsumer  # ty: ignore[unresolved-import]
@@ -50,7 +50,7 @@ class KafkaResource(dg.ConfigurableResource):
 
 def kafka_sensor_factory(
     replica_id: int = 0,
-    target_asset_key: Optional[dg.AssetKey] = None,
+    target_asset_key: dg.AssetKey | None = None,
 ) -> dg.SensorDefinition:
     """Create a Kafka sensor that consumes events and triggers asset materializations.
 
@@ -88,7 +88,7 @@ def kafka_sensor_factory(
                 if not message_batch:
                     break
 
-                for _topic_partition, messages in message_batch.items():
+                for messages in message_batch.values():
                     for message in messages:
                         batch_data.append(
                             {

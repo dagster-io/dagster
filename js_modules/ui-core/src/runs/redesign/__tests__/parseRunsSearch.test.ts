@@ -1,0 +1,195 @@
+import {tokensAsStringArray} from '@dagster-io/ui-components';
+
+import {parseRunsSearch} from '../parseRunsSearch';
+
+const getTokenStrings = (text: string) => {
+  const {tokens} = parseRunsSearch(text);
+  return tokens ? tokensAsStringArray(tokens) : null;
+};
+
+const RUN_A = '8d3e6c1a-4f2b-4c3d-9e8f-0a1b2c3d4e5f';
+const RUN_B = '2b7f9e4d-1c3a-4e5b-8f6d-9a0b1c2d3e4f';
+const RUN_C = 'f1e2d3c4-b5a6-4978-8a6b-5c4d3e2f1a0b';
+
+const getFirstError = (text: string) => parseRunsSearch(text).errors[0];
+
+describe('parseRunsSearch', () => {
+  it.each([
+    {text: '', tokens: []},
+    {text: '   ', tokens: []},
+    {text: ' \tjob:my_job', tokens: ['job:my_job']},
+    {text: `id:"${RUN_A}"`, tokens: [`id:${RUN_A}`]},
+    {text: `id:"${RUN_A.toUpperCase()}"`, tokens: [`id:${RUN_A}`]},
+    {text: `id:" ${RUN_A} "`, tokens: [`id:${RUN_A}`]},
+    {text: 'status:failure', tokens: ['status:FAILURE']},
+    {text: 'job:my_job', tokens: ['job:my_job']},
+    {text: 'snapshot_id:abc', tokens: ['snapshotId:abc']},
+    {
+      text: 'code_location:"repo@location"',
+      tokens: ['tag:.dagster/repository=repo@location'],
+    },
+    {
+      text: 'code_location:location',
+      tokens: ['tag:.dagster/repository=__repository__@location'],
+    },
+    {text: 'sensor:my_sensor', tokens: ['tag:dagster/sensor_name=my_sensor']},
+    {text: 'schedule:daily', tokens: ['tag:dagster/schedule_name=daily']},
+    {text: 'user:"a@b.com"', tokens: ['tag:user=a@b.com']},
+    {text: 'backfill:abcdef', tokens: ['tag:dagster/backfill=abcdef']},
+    {text: 'partition:"2024-01-01"', tokens: ['tag:dagster/partition=2024-01-01']},
+    {text: 'tag:team=data', tokens: ['tag:team=data']},
+    {text: 'tag:"dagster/auto_materialize"=true', tokens: ['tag:dagster/auto_materialize=true']},
+    {text: 'job:"and"', tokens: ['job:and']},
+    {text: 'job:"a*"', tokens: ['job:a*']},
+    {text: `id:"${RUN_A}" or id:"${RUN_B}"`, tokens: [`id:${RUN_A}`, `id:${RUN_B}`]},
+    {text: `id:"${RUN_A}", id:"${RUN_B}"`, tokens: [`id:${RUN_A}`, `id:${RUN_B}`]},
+    {text: '(status:failure or status:canceled)', tokens: ['status:FAILURE', 'status:CANCELED']},
+    {
+      text: `(id:"${RUN_A}" or id:"${RUN_B}") or id:"${RUN_C}"`,
+      tokens: [`id:${RUN_A}`, `id:${RUN_B}`, `id:${RUN_C}`],
+    },
+    {text: `id:"${RUN_A}" and id:"${RUN_A}"`, tokens: [`id:${RUN_A}`]},
+    {text: 'sensor:s and tag:dagster/sensor_name=s', tokens: ['tag:dagster/sensor_name=s']},
+    {
+      text: `tag:team=data and job:my_job and (status:failure or status:canceled) and id:"${RUN_A}"`,
+      tokens: ['status:FAILURE', 'status:CANCELED', 'job:my_job', `id:${RUN_A}`, 'tag:team=data'],
+    },
+  ])('parses $text', ({text, tokens}) => {
+    expect(getTokenStrings(text)).toEqual(tokens);
+  });
+
+  it.each([
+    {
+      text: 'job:a job:b',
+      message: 'Check the search syntax, for example job:my_job and status:FAILURE',
+    },
+    {text: 'my_job', message: 'Add an attribute, for example job:my_job'},
+    {text: 'foo:bar', message: 'Unsupported attribute: "foo"'},
+    {text: 'not job:a', message: "not isn't supported in runs search"},
+    {text: 'not', message: "not isn't supported in runs search"},
+    {text: 'id:', message: 'Add a value after id:'},
+    {text: 'job:""', message: 'Add a value after job:'},
+    {text: 'tag:', message: 'tag needs key=value, for example tag:team=data'},
+    {text: 'tag:team', message: 'tag needs key=value, for example tag:team=data'},
+    {text: 'tag:team=', message: 'tag needs key=value, for example tag:team=data'},
+    {text: 'tag:"a=b"=c', message: "Tag keys can't contain `=`"},
+    {text: 'job:a=b', message: 'Only tag takes key=value, for example tag:team=data'},
+    {text: 'job:a and', message: 'Add a search term after and'},
+    {text: 'id:a or', message: 'Add a search term after or'},
+    {text: '(id:a', message: 'Finish the search before applying it'},
+    {text: 'id:a,', message: 'Finish the search before applying it'},
+    {text: 'id:"abc', message: 'Close the quote around this value'},
+    {text: '+job:a', message: "Traversal (+) isn't supported in runs search"},
+    {text: 'sinks(job:a)', message: "Functions aren't supported in runs search"},
+    {text: 'job:<null>', message: "<null> isn't supported in runs search"},
+    {text: 'job:*a*', message: "Wildcards (*) aren't supported in runs search"},
+    {text: '*', message: "Wildcards (*) aren't supported in runs search"},
+    {text: 'status:bogus', message: 'Unknown status: bogus'},
+    {text: 'created_after:1700000000', message: 'Unsupported attribute: "created_after"'},
+    {text: 'created_before:1700000000', message: 'Unsupported attribute: "created_before"'},
+    {text: `id:"${RUN_A}" and id:"${RUN_B}"`, message: 'Use or to match any of several IDs'},
+    {
+      text: `(id:"${RUN_A}" or id:"${RUN_B}") and (id:"${RUN_A}" or id:"${RUN_C}")`,
+      message: 'Use or to match any of several IDs',
+    },
+    {text: 'job:a and job:b', message: 'Only one job per search'},
+    {text: 'job:a or job:b', message: 'Only one job per search'},
+    {text: 'sensor:a and tag:dagster/sensor_name=b', message: 'Only one sensor per search'},
+    {text: 'tag:team=a and tag:team=b', message: 'Only one value per tag key'},
+    {text: `id:"${RUN_A}" or status:failure`, message: 'or only combines IDs or statuses'},
+    {
+      text: `(id:"${RUN_A}" and job:b) or id:"${RUN_C}"`,
+      message: 'or only combines IDs or statuses',
+    },
+  ])('rejects $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: expect.arrayContaining([expect.objectContaining({message})]),
+    });
+  });
+
+  it.each([
+    {text: 'tag:team="a=b"', expected: [{token: 'tag', value: 'team=a=b'}]},
+    {text: 'user:"a=b"', expected: [{token: 'tag', value: 'user=a=b'}]},
+    {
+      text: 'partition:"region=west"',
+      expected: [{token: 'tag', value: 'dagster/partition=region=west'}],
+    },
+  ])('accepts a value containing = in $text', ({text, expected}) => {
+    expect(parseRunsSearch(text)).toEqual({tokens: expected, errors: []});
+  });
+
+  it.each([
+    {text: `id:${RUN_A}`, message: `Add quotes: \`id:"${RUN_A}"\``},
+    {text: 'user:a@b.com', message: 'Add quotes: `user:"a@b.com"`'},
+    {text: 'tag:team=a-b', message: 'Add quotes: `tag:team="a-b"`'},
+    {text: 'tag:a-b=team', message: 'Add quotes: `tag:"a-b"=team`'},
+    {text: 'tag:a-b=c-d', message: 'Add quotes: `tag:"a-b"="c-d"`'},
+    {text: 'job:a\u200bb', message: 'Remove the hidden character (U+200B)'},
+    {text: 'id:a\u00a0b', message: 'Remove the hidden character (U+00A0)'},
+    {text: 'tag:a\\b=c', message: "Backslashes aren't supported"},
+    {text: 'job:a-b*', message: "Wildcards (*) aren't supported in runs search"},
+    {text: 'status:fail-ed', message: 'Unknown status: fail-ed'},
+    {text: 'tag:"a=b"=c-d', message: "Tag keys can't contain `=`"},
+  ])('rejects the unquoted special characters in $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message, from: 0, to: text.length}],
+    });
+  });
+
+  it.each([
+    'id:abc',
+    'id:8d3e6c1a',
+    'id:"8d3e6c1a"',
+    'id:abc-123',
+    'id:"8d3e6c1a-4f2b-4c3d-9e8f--a1b2c3d4e5f"',
+  ])('asks for the full run ID in %s', (text) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message: 'Use the full 36-character run ID', from: 0, to: text.length}],
+    });
+  });
+
+  it.each([
+    {text: 'tag:a-b=c\\d', message: "Backslashes aren't supported"},
+    {text: 'tag:c\\d=a-b', message: "Backslashes aren't supported"},
+    {text: 'tag:a-b="c', message: 'Close the quote around this value'},
+    {text: 'tag:a-b', message: 'tag needs key=value, for example tag:team=data'},
+    {text: 'job:a-b=x', message: 'Only tag takes key=value, for example tag:team=data'},
+  ])('reports the error quoting would not fix in $text', ({text, message}) => {
+    expect(parseRunsSearch(text)).toEqual({
+      tokens: null,
+      errors: [{message, from: 0, to: text.length}],
+    });
+  });
+
+  it('points errors at the offending term', () => {
+    expect(getFirstError('job:a and job:b')).toEqual({
+      message: 'Only one job per search',
+      from: 10,
+      to: 15,
+    });
+    expect(getFirstError('job:a and foo:bar and id:x')).toEqual({
+      message: 'Unsupported attribute: "foo"',
+      from: 10,
+      to: 17,
+    });
+  });
+
+  it('points errors past leading whitespace', () => {
+    expect(getFirstError('  job:a and job:b')).toEqual({
+      message: 'Only one job per search',
+      from: 12,
+      to: 17,
+    });
+  });
+
+  it('counts an emoji as two characters when pointing at a later term', () => {
+    expect(getFirstError('job:"😀" and job:"x"')).toEqual({
+      message: 'Only one job per search',
+      from: 13,
+      to: 20,
+    });
+  });
+});

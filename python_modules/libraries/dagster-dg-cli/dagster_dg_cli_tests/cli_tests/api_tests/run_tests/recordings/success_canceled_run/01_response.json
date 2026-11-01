@@ -5,8 +5,22 @@
     "endTime": 1751036909.142719,
     "id": "e0248005-fc38-4e55-a9fb-472c8694303b",
     "jobName": "run_etl_pipeline",
+    "runConfigYaml": "ops: {}\n",
     "runId": "e0248005-fc38-4e55-a9fb-472c8694303b",
     "startTime": 1751036903.35325,
-    "status": "CANCELED"
+    "stats": {
+      "__typename": "RunStatsSnapshot",
+      "expectations": 1,
+      "materializations": 2,
+      "stepsFailed": 0,
+      "stepsSucceeded": 3
+    },
+    "status": "CANCELED",
+    "tags": [
+      {
+        "key": "dagster/partition",
+        "value": "2024-01-01"
+      }
+    ]
   }
 }

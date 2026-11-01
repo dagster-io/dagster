@@ -24,11 +24,13 @@ import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
 import {useQuery} from '../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
 import {humanCronString} from '../schedules/humanCronString';
 import {ScheduleSwitchFragment} from '../schedules/types/ScheduleSwitchFragment.types';
 import {SensorSwitch} from '../sensors/SensorSwitch';
 import {SensorSwitchFragment} from '../sensors/types/SensorSwitchFragment.types';
+import styles from '../ui/css/ListItemText.module.css';
 
 interface JobRowProps {
   index: number;
@@ -40,6 +42,7 @@ interface JobRowProps {
 export const VirtualizedObserveJobRow = forwardRef(
   (props: JobRowProps, ref: React.ForwardedRef<HTMLDivElement>) => {
     const {index, name, isJob, repoAddress} = props;
+    const isMobile = useIsMobile();
 
     // Wait 100ms before querying in case we're scrolling the table really fast
     const shouldQuery = useDelayedState(100);
@@ -114,10 +117,11 @@ export const VirtualizedObserveJobRow = forwardRef(
                 </Box>
               ),
             },
+            // The automation indicators don't fit a phone; the name column needs the room.
             {
               key: 'schedules',
               control:
-                schedules.length > 0 ? (
+                !isMobile && schedules.length > 0 ? (
                   <AutomationButton
                     type="schedule"
                     enabled={schedules.some(
@@ -131,7 +135,7 @@ export const VirtualizedObserveJobRow = forwardRef(
             {
               key: 'sensors',
               control:
-                sensors.length > 0 ? (
+                !isMobile && sensors.length > 0 ? (
                   <AutomationButton
                     type="sensor"
                     enabled={sensors.some((sensor) => sensor.sensorState.status === 'RUNNING')}
@@ -143,7 +147,7 @@ export const VirtualizedObserveJobRow = forwardRef(
             {
               key: 'automations',
               control:
-                sensors.length === 0 && schedules.length === 0 ? (
+                !isMobile && sensors.length === 0 && schedules.length === 0 ? (
                   <Tooltip content="No automations" placement="top">
                     <AutomationButton type="none" />
                   </Tooltip>
@@ -172,9 +176,9 @@ export const VirtualizedObserveJobRow = forwardRef(
         renderLink={({href, ...props}) => <Link to={href || '#'} {...props} />}
         left={
           <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} className={styles.text}>
               <Icon name="job" />
-              {name}
+              <span className={styles.line}>{name}</span>
             </Box>
             {pipeline?.description ? (
               <Tooltip

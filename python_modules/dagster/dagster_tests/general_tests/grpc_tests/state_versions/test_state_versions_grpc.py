@@ -258,6 +258,8 @@ def test_state_versions_grpc(entrypoint, execution_method):
             str(port),
             "--python-file",
             str(project_dir / "src/foo_bar/definitions.py"),
+            "--location-name",
+            "foo-bar",
             "--instance-ref",
             dg.serialize_value(instance.get_ref()),
             "--defs-state-info",

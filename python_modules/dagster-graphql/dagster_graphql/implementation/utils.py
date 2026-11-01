@@ -28,7 +28,7 @@ from dagster._core.definitions.selector import (
     SensorSelector,
 )
 from dagster._core.definitions.temporal_context import TemporalContext
-from dagster._core.errors import DagsterError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.remote_representation.code_location import is_implicit_asset_job_name
 from dagster._core.remote_representation.external import RemoteJob, RemoteSchedule, RemoteSensor
@@ -69,7 +69,7 @@ def require_permission_check(
         if iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            async def _async_fn(self, graphene_info, *args, **kwargs):
                 result = await fn(self, graphene_info, *args, **kwargs)
                 if not graphene_info.context.was_permission_checked(permission):
                     raise Exception(f"Permission {permission} was never checked during the request")
@@ -79,7 +79,7 @@ def require_permission_check(
         else:
 
             @functools.wraps(fn)
-            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            def _fn(self, graphene_info, *args, **kwargs):
                 result = fn(self, graphene_info, *args, **kwargs)
 
                 if not graphene_info.context.was_permission_checked(permission):
@@ -99,7 +99,7 @@ def check_permission(
         if iscoroutinefunction(fn):
 
             @functools.wraps(fn)
-            async def _async_fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            async def _async_fn(self, graphene_info, *args, **kwargs):
                 assert_permission(graphene_info, permission)
 
                 return await fn(self, graphene_info, *args, **kwargs)
@@ -108,7 +108,7 @@ def check_permission(
         else:
 
             @functools.wraps(fn)
-            def _fn(self, graphene_info, *args: P.args, **kwargs: P.kwargs):
+            def _fn(self, graphene_info, *args, **kwargs):
                 assert_permission(graphene_info, permission)
 
                 return fn(self, graphene_info, *args, **kwargs)
@@ -740,15 +740,17 @@ def apply_cursor_limit_reverse(
 
 
 def get_query_limit_with_default(provided_limit: int | None, default_limit: int) -> int:
+    """Resolve a page size against the server-side default, which also caps it.
+
+    Over-large limits clamp rather than raise: the cap is operator-tunable, so rejecting them
+    would break any caller hard-coding a larger limit. Callers paginate via the returned cursor.
+    """
     check.opt_int_param(provided_limit, "provided_limit")
 
     if provided_limit is None:
         return default_limit
 
-    if provided_limit > default_limit:
-        raise DagsterError(f"Limit of {provided_limit} is too large. Max is {default_limit}")
-
-    return provided_limit
+    return min(provided_limit, default_limit)
 
 
 BackfillParams: TypeAlias = Mapping[str, Any]

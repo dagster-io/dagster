@@ -34,6 +34,7 @@ export const useAssetSelectionInput = <
         onChange={setAssetSelection}
         assets={graphQueryItems}
         onErrorStateChange={onErrorStateChange}
+        showRecentSearches
       />
     );
   }, [assetSelection, graphQueryItems, onErrorStateChange, setAssetSelection]);

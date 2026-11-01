@@ -29,14 +29,6 @@ def check_output(*args, **kwargs):
         raise Exception(output) from exc
 
 
-def which_(exe):
-    """Uses distutils to look for an executable, mimicking unix which."""
-    from distutils import spawn
-
-    # https://github.com/PyCQA/pylint/issues/73
-    return spawn.find_executable(exe)
-
-
 def get_test_namespace(prefix="dagster-test"):
     namespace_suffix = hex(random.randint(0, 16**6))[2:]
     return f"{prefix}-{namespace_suffix}"

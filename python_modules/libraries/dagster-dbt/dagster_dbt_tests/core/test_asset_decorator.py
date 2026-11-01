@@ -262,7 +262,9 @@ def test_snapshot_id(
 ):
     # we dont make strong guarantees about stable ids, but try to have the basic case stable
 
-    with multiprocessing.Pool(1) as pool:
+    # spawn rather than fork: forked children inherit pytest process state, which can
+    # include dead DagsterInstance weakrefs that fail snapshot resolution
+    with multiprocessing.get_context("spawn").Pool(1) as pool:
         results = pool.map(partial(_get_snapshot_id, test_jaffle_shop_manifest), range(5))
 
     assert len(set(results)) == 1

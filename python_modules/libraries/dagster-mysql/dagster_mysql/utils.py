@@ -104,7 +104,7 @@ def retry_mysql_creation_fn(
         ) as exc:
             if (
                 isinstance(exc, db_exc.ProgrammingError)
-                and exc.orig
+                and isinstance(exc.orig, mysql.Error)
                 and exc.orig.errno == mysql_errorcode.ER_TABLE_EXISTS_ERROR
             ) or (
                 isinstance(exc, mysql.ProgrammingError)

@@ -1,7 +1,8 @@
+import copy
 import logging
 import sys
 from collections.abc import Callable, Sequence
-from typing import cast
+from typing import Any, cast
 
 logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(message)s")
 
@@ -105,22 +106,66 @@ def _filter_step(
 
 
 def repeat_steps(steps: Sequence[StepConfiguration], n: int) -> Sequence[StepConfiguration]:
-    repeated_steps = []
+    """Emit ``n`` copies of each step, for surfacing flaky tests.
+
+    Copies get a distinct key (``<key>-repeat-<i>``); duplicate keys are rejected
+    at upload.
+
+    Steps that something depends on are emitted once instead of copied — a
+    repeated suite should reuse the single image build it waits on, not rebuild it
+    ``n`` times. That also leaves every ``depends_on`` value pointing at a key
+    that still exists.
+    """
+    return _repeat_steps(steps, n, _get_dependency_target_keys(steps))
+
+
+def _repeat_steps(
+    steps: Sequence[StepConfiguration], n: int, dependency_targets: set[str]
+) -> list[StepConfiguration]:
+    repeated_steps: list[StepConfiguration] = []
     for step in steps:
         if is_group_step(step):
-            repeated_substeps = repeat_steps(step["steps"], n)
             repeated_steps.append(
                 cast(
                     "GroupStepConfiguration",
-                    {**step, "steps": repeated_substeps},
+                    {**step, "steps": _repeat_steps(step["steps"], n, dependency_targets)},
                 )
             )
-        else:
-            for i in range(n):
-                step_copy = step.copy()
-                step_copy["label"] = f"{step.get('label', '')} [{i + 1}]"
-                repeated_steps.append(step_copy)
+            continue
+
+        key = step.get("key")
+        if key in dependency_targets:
+            repeated_steps.append(step)
+            continue
+
+        for i in range(n):
+            step_copy = copy.deepcopy(step)
+            step_copy["label"] = f"{step.get('label', '')} [{i + 1}]"
+            if key:
+                step_copy["key"] = f"{key}-repeat-{i + 1}"
+            repeated_steps.append(step_copy)
     return repeated_steps
+
+
+def _get_dependency_target_keys(steps: Sequence[StepConfiguration]) -> set[str]:
+    targets: set[str] = set()
+
+    def _visit(step: StepConfiguration) -> None:
+        if is_group_step(step):
+            for substep in step["steps"]:
+                _visit(substep)
+            return
+        # `depends_on` is absent from GroupStepConfiguration in the type, so the
+        # union rejects the lookup even though the group case returned above.
+        deps = cast("dict[str, Any]", step).get("depends_on")
+        if isinstance(deps, str):
+            targets.add(deps)
+        elif isinstance(deps, list):
+            targets.update(d for d in deps if isinstance(d, str))
+
+    for step in steps:
+        _visit(step)
+    return targets
 
 
 # ########################

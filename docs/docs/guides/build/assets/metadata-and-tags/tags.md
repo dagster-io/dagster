@@ -1,7 +1,8 @@
 ---
 description: Organize and search Dagster assets using key-value pair tags.
 sidebar_position: 1000
-title: Tags
+title: Asset tags
+sidebar_label: Tags
 ---
 
 **Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/guides/observe/asset-catalog) in Dagster+. They're structured as key-value pairs of strings.
@@ -40,11 +41,8 @@ Tag values must:
 A label is a tag that only contains a key. To create a label, set the tag value to an empty string:
 
 ```python
-@dg.asset(
-    tags={"private":""}
-)
-def my_asset() -> None:
-    ...
+@dg.asset(tags={"private": ""})
+def my_asset() -> None: ...
 ```
 
 A label will look like the following in the UI:

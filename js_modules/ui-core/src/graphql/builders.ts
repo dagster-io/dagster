@@ -115,6 +115,13 @@ type AppManagedComponent = {
   componentType: Scalars['String']['output'];
 };
 
+type AppManagedComponentValidationError = {
+  __typename: 'AppManagedComponentValidationError';
+  componentId: Scalars['String']['output'];
+  errors: Array<Scalars['String']['output']>;
+  message: Scalars['String']['output'];
+};
+
 type AppManagedComponents = {
   __typename: 'AppManagedComponents';
   components: Array<AppManagedComponent>;
@@ -552,9 +559,34 @@ type AssetHealthMaterializationHealthyPartitionedMeta = {
 type AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedNotPartitionedMeta
   | AssetHealthMaterializationDegradedPartitionedMeta
-  | AssetHealthMaterializationHealthyPartitionedMeta;
+  | AssetHealthMaterializationHealthyPartitionedMeta
+  | AssetHealthMaterializationWarningNotPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta;
+
+type AssetHealthMaterializationWarningNotPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+  failedRunId: Maybe<Scalars['String']['output']>;
+};
+
+type AssetHealthMaterializationWarningPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+  latestFailedRunId: Maybe<Scalars['String']['output']>;
+  latestRunId: Maybe<Scalars['String']['output']>;
+  numMissingPartitions: Scalars['Int']['output'];
+  numUpForRetryPartitions: Scalars['Int']['output'];
+  totalNumPartitions: Scalars['Int']['output'];
+};
 
 export {AssetHealthStatus};
+
+type AssetJobKey = {
+  __typename: 'AssetJobKey';
+  jobName: Scalars['String']['output'];
+};
+
+type AssetJobKeyInput = {
+  jobName: Scalars['String']['input'];
+};
 
 type AssetKey = {
   __typename: 'AssetKey';
@@ -1025,6 +1057,17 @@ type CodeReferencesMetadataEntry = MetadataEntry & {
   label: Scalars['String']['output'];
 };
 
+type Component = {
+  __typename: 'Component';
+  attributes: Maybe<Scalars['String']['output']>;
+  componentId: Scalars['String']['output'];
+  componentType: Scalars['String']['output'];
+  defsStateInfo: Maybe<DefsKeyStateInfo>;
+  defsStateKey: Maybe<Scalars['String']['output']>;
+  defsStateManagementType: Maybe<DefsStateManagementType>;
+  isAppManaged: Scalars['Boolean']['output'];
+};
+
 type ComponentFormSchema = {
   __typename: 'ComponentFormSchema';
   dataSchema: Scalars['JsonSchema']['output'];
@@ -1040,6 +1083,7 @@ type ComponentTypeInfo = {
   name: Scalars['String']['output'];
   namespace: Scalars['String']['output'];
   owners: Maybe<Array<Scalars['String']['output']>>;
+  produces: Maybe<Array<Scalars['String']['output']>>;
   schema: Maybe<Scalars['JsonSchema']['output']>;
   tags: Maybe<Array<Scalars['String']['output']>>;
 };
@@ -1051,6 +1095,14 @@ type ComponentTypes = {
 };
 
 type ComponentTypesOrError = ComponentTypes | PythonError | RepositoryLocationNotFound;
+
+type Components = {
+  __typename: 'Components';
+  components: Array<Component>;
+  locationName: Scalars['String']['output'];
+};
+
+type ComponentsOrError = Components | PythonError;
 
 type CompositeConfigType = ConfigType & {
   __typename: 'CompositeConfigType';
@@ -1248,9 +1300,11 @@ type DagsterRunEvent =
   | RunDequeuedEvent
   | RunEnqueuedEvent
   | RunFailureEvent
+  | RunResumedEvent
   | RunStartEvent
   | RunStartingEvent
   | RunSuccessEvent
+  | RunSuspendedEvent
   | StepExpectationResultEvent
   | StepWorkerStartedEvent
   | StepWorkerStartingEvent;
@@ -1371,7 +1425,8 @@ type DeleteAppManagedComponentSuccess = {
 type DeleteDynamicPartitionsResult =
   | DeleteDynamicPartitionsSuccess
   | PythonError
-  | UnauthorizedError;
+  | UnauthorizedError
+  | UnsupportedOperationError;
 
 type DeleteDynamicPartitionsSuccess = {
   __typename: 'DeleteDynamicPartitionsSuccess';
@@ -1515,7 +1570,7 @@ type EngineEvent = DisplayableEvent &
     timestamp: Scalars['String']['output'];
   };
 
-type EntityKey = AssetCheckhandle | AssetKey;
+type EntityKey = AssetCheckhandle | AssetJobKey | AssetKey;
 
 type EnumConfigType = ConfigType & {
   __typename: 'EnumConfigType';
@@ -1646,6 +1701,7 @@ type ExecutionParams = {
 type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetCheckKeys: Array<AssetCheckhandle>;
   assetKeys: Array<AssetKey>;
   assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
@@ -2343,7 +2399,9 @@ type InstigationTick = {
   originRunIds: Array<Scalars['String']['output']>;
   requestedAssetKeys: Array<AssetKey>;
   requestedAssetMaterializationCount: Scalars['Int']['output'];
+  requestedJobRunCount: Scalars['Int']['output'];
   requestedMaterializationsForAssets: Array<RequestedMaterializationsForAsset>;
+  requestedRunsForJobs: Array<RequestedRunsForJob>;
   runIds: Array<Scalars['String']['output']>;
   runKeys: Array<Scalars['String']['output']>;
   runs: Array<Run>;
@@ -2396,6 +2454,7 @@ type InvalidSubsetError = Error & {
 type Job = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'Job';
+    automationCondition: Maybe<AutomationCondition>;
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
@@ -2979,6 +3038,7 @@ type Mutation = {
   launchRunReexecution: LaunchRunReexecutionResult;
   logTelemetry: LogTelemetryMutationResult;
   reexecutePartitionBackfill: LaunchBackfillResult;
+  refreshComponentState: RefreshComponentStateResult;
   reloadRepositoryLocation: ReloadRepositoryLocationMutationResult;
   reloadWorkspace: ReloadWorkspaceMutationResult;
   reportAssetCheckEvaluations: ReportAssetCheckEvaluationResult;
@@ -3027,6 +3087,7 @@ type MutationDeleteDynamicPartitionsArgs = {
   partitionKeys: Array<Scalars['String']['input']>;
   partitionsDefName: Scalars['String']['input'];
   repositorySelector: RepositorySelector;
+  wipeMaterializations?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 type MutationDeletePipelineRunArgs = {
@@ -3081,6 +3142,11 @@ type MutationLogTelemetryArgs = {
 
 type MutationReexecutePartitionBackfillArgs = {
   reexecutionParams?: InputMaybe<ReexecutionParams>;
+};
+
+type MutationRefreshComponentStateArgs = {
+  defsStateKey: Scalars['String']['input'];
+  locationName: Scalars['String']['input'];
 };
 
 type MutationReloadRepositoryLocationArgs = {
@@ -3746,6 +3812,7 @@ type Permission = {
 type Pipeline = IPipelineSnapshot &
   SolidContainer & {
     __typename: 'Pipeline';
+    automationCondition: Maybe<AutomationCondition>;
     dagsterTypeOrError: DagsterTypeOrError;
     dagsterTypes: Array<ListDagsterType | NullableDagsterType | RegularDagsterType>;
     description: Maybe<Scalars['String']['output']>;
@@ -4139,6 +4206,7 @@ type Query = {
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
   componentTypesForLocationOrError: ComponentTypesOrError;
+  componentsForLocationOrError: ComponentsOrError;
   executionPlanOrError: ExecutionPlanOrError;
   graphOrError: GraphOrError;
   instance: Instance;
@@ -4212,6 +4280,7 @@ type QueryAssetConditionEvaluationForPartitionArgs = {
 
 type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
   assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
+  assetJobKey?: InputMaybe<AssetJobKeyInput>;
   assetKey?: InputMaybe<AssetKeyInput>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
@@ -4292,6 +4361,10 @@ type QueryCapturedLogsMetadataArgs = {
 };
 
 type QueryComponentTypesForLocationOrErrorArgs = {
+  locationName: Scalars['String']['input'];
+};
+
+type QueryComponentsForLocationOrErrorArgs = {
   locationName: Scalars['String']['input'];
 };
 
@@ -4444,6 +4517,7 @@ type QueryTopLevelResourceDetailsOrErrorArgs = {
 };
 
 type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
+  assetJobKey?: InputMaybe<AssetJobKeyInput>;
   assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
@@ -4465,6 +4539,31 @@ type ReexecutionParams = {
 };
 
 export {ReexecutionStrategy};
+
+type RefreshComponentStateAccepted = {
+  __typename: 'RefreshComponentStateAccepted';
+  defsStateKey: Scalars['String']['output'];
+  locationName: Scalars['String']['output'];
+};
+
+type RefreshComponentStateError = {
+  __typename: 'RefreshComponentStateError';
+  defsStateKey: Scalars['String']['output'];
+  locationName: Scalars['String']['output'];
+  message: Scalars['String']['output'];
+};
+
+type RefreshComponentStateResult =
+  | PythonError
+  | RefreshComponentStateAccepted
+  | RefreshComponentStateError
+  | RefreshComponentStateSuccess
+  | UnauthorizedError;
+
+type RefreshComponentStateSuccess = {
+  __typename: 'RefreshComponentStateSuccess';
+  component: Component;
+};
 
 type RegularConfigType = ConfigType & {
   __typename: 'RegularConfigType';
@@ -4691,6 +4790,12 @@ type RepositorySelector = {
 type RequestedMaterializationsForAsset = {
   __typename: 'RequestedMaterializationsForAsset';
   assetKey: AssetKey;
+  partitionKeys: Array<Scalars['String']['output']>;
+};
+
+type RequestedRunsForJob = {
+  __typename: 'RequestedRunsForJob';
+  jobName: Scalars['String']['output'];
   partitionKeys: Array<Scalars['String']['output']>;
 };
 
@@ -5151,6 +5256,19 @@ type RunRequest = {
   tags: Array<PipelineTag>;
 };
 
+type RunResumedEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'RunResumedEvent';
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
 type RunStartEvent = MessageEvent &
   RunEvent & {
     __typename: 'RunStartEvent';
@@ -5211,6 +5329,19 @@ type RunStepStats = PipelineRunStepStats & {
 type RunSuccessEvent = MessageEvent &
   RunEvent & {
     __typename: 'RunSuccessEvent';
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    pipelineName: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
+
+type RunSuspendedEvent = MessageEvent &
+  RunEvent & {
+    __typename: 'RunSuspendedEvent';
     eventType: Maybe<DagsterEventType>;
     level: LogLevel;
     message: Scalars['String']['output'];
@@ -5560,7 +5691,11 @@ type Sensors = {
 
 type SensorsOrError = PythonError | RepositoryNotFoundError | Sensors;
 
-type SetAppManagedComponentResult = PythonError | SetAppManagedComponentSuccess | UnauthorizedError;
+type SetAppManagedComponentResult =
+  | AppManagedComponentValidationError
+  | PythonError
+  | SetAppManagedComponentSuccess
+  | UnauthorizedError;
 
 type SetAppManagedComponentSuccess = {
   __typename: 'SetAppManagedComponentSuccess';
@@ -6331,6 +6466,21 @@ export const buildAppManagedComponent = (
       overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'fugiat',
     componentType:
       overrides && overrides.hasOwnProperty('componentType') ? overrides.componentType! : 'totus',
+  };
+};
+
+export const buildAppManagedComponentValidationError = (
+  overrides?: Partial<AppManagedComponentValidationError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AppManagedComponentValidationError'} & AppManagedComponentValidationError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AppManagedComponentValidationError');
+  return {
+    __typename: 'AppManagedComponentValidationError',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'vado',
+    errors: overrides && overrides.hasOwnProperty('errors') ? overrides.errors! : [],
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'dicta',
   };
 };
 
@@ -7273,6 +7423,75 @@ export const buildAssetHealthMaterializationHealthyPartitionedMeta = (
       overrides && overrides.hasOwnProperty('totalNumPartitions')
         ? overrides.totalNumPartitions!
         : 4019,
+  };
+};
+
+export const buildAssetHealthMaterializationWarningNotPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationWarningNotPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta';
+} & AssetHealthMaterializationWarningNotPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationWarningNotPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationWarningNotPartitionedMeta',
+    failedRunId:
+      overrides && overrides.hasOwnProperty('failedRunId') ? overrides.failedRunId! : 'tumultus',
+  };
+};
+
+export const buildAssetHealthMaterializationWarningPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationWarningPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+} & AssetHealthMaterializationWarningPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationWarningPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationWarningPartitionedMeta',
+    latestFailedRunId:
+      overrides && overrides.hasOwnProperty('latestFailedRunId')
+        ? overrides.latestFailedRunId!
+        : 'vulariter',
+    latestRunId:
+      overrides && overrides.hasOwnProperty('latestRunId') ? overrides.latestRunId! : 'supra',
+    numMissingPartitions:
+      overrides && overrides.hasOwnProperty('numMissingPartitions')
+        ? overrides.numMissingPartitions!
+        : 1285,
+    numUpForRetryPartitions:
+      overrides && overrides.hasOwnProperty('numUpForRetryPartitions')
+        ? overrides.numUpForRetryPartitions!
+        : 7818,
+    totalNumPartitions:
+      overrides && overrides.hasOwnProperty('totalNumPartitions')
+        ? overrides.totalNumPartitions!
+        : 8637,
+  };
+};
+
+export const buildAssetJobKey = (
+  overrides?: Partial<AssetJobKey>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetJobKey'} & AssetJobKey => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetJobKey');
+  return {
+    __typename: 'AssetJobKey',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'saepe',
+  };
+};
+
+export const buildAssetJobKeyInput = (
+  overrides?: Partial<AssetJobKeyInput>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetJobKeyInput => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetJobKeyInput');
+  return {
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'harum',
   };
 };
 
@@ -8230,6 +8449,38 @@ export const buildCodeReferencesMetadataEntry = (
   };
 };
 
+export const buildComponent = (
+  overrides?: Partial<Component>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Component'} & Component => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Component');
+  return {
+    __typename: 'Component',
+    attributes: overrides && overrides.hasOwnProperty('attributes') ? overrides.attributes! : 'ago',
+    componentId:
+      overrides && overrides.hasOwnProperty('componentId') ? overrides.componentId! : 'attollo',
+    componentType:
+      overrides && overrides.hasOwnProperty('componentType')
+        ? overrides.componentType!
+        : 'reprehenderit',
+    defsStateInfo:
+      overrides && overrides.hasOwnProperty('defsStateInfo')
+        ? overrides.defsStateInfo!
+        : relationshipsToOmit.has('DefsKeyStateInfo')
+          ? ({} as DefsKeyStateInfo)
+          : buildDefsKeyStateInfo({}, relationshipsToOmit),
+    defsStateKey:
+      overrides && overrides.hasOwnProperty('defsStateKey') ? overrides.defsStateKey! : 'defleo',
+    defsStateManagementType:
+      overrides && overrides.hasOwnProperty('defsStateManagementType')
+        ? overrides.defsStateManagementType!
+        : DefsStateManagementType.LEGACY_CODE_SERVER_SNAPSHOTS,
+    isAppManaged:
+      overrides && overrides.hasOwnProperty('isAppManaged') ? overrides.isAppManaged! : true,
+  };
+};
+
 export const buildComponentFormSchema = (
   overrides?: Partial<ComponentFormSchema>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -8269,6 +8520,7 @@ export const buildComponentTypeInfo = (
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'adinventitias',
     namespace: overrides && overrides.hasOwnProperty('namespace') ? overrides.namespace! : 'minima',
     owners: overrides && overrides.hasOwnProperty('owners') ? overrides.owners! : [],
+    produces: overrides && overrides.hasOwnProperty('produces') ? overrides.produces! : [],
     schema:
       overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : JSON.stringify({}),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
@@ -8287,6 +8539,20 @@ export const buildComponentTypes = (
       overrides && overrides.hasOwnProperty('componentTypes') ? overrides.componentTypes! : [],
     locationName:
       overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'cursim',
+  };
+};
+
+export const buildComponents = (
+  overrides?: Partial<Components>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Components'} & Components => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Components');
+  return {
+    __typename: 'Components',
+    components: overrides && overrides.hasOwnProperty('components') ? overrides.components! : [],
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'viriliter',
   };
 };
 
@@ -9286,6 +9552,8 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetCheckKeys:
+      overrides && overrides.hasOwnProperty('assetCheckKeys') ? overrides.assetCheckKeys! : [],
     assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
@@ -10432,9 +10700,17 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('requestedAssetMaterializationCount')
         ? overrides.requestedAssetMaterializationCount!
         : 412,
+    requestedJobRunCount:
+      overrides && overrides.hasOwnProperty('requestedJobRunCount')
+        ? overrides.requestedJobRunCount!
+        : 1259,
     requestedMaterializationsForAssets:
       overrides && overrides.hasOwnProperty('requestedMaterializationsForAssets')
         ? overrides.requestedMaterializationsForAssets!
+        : [],
+    requestedRunsForJobs:
+      overrides && overrides.hasOwnProperty('requestedRunsForJobs')
+        ? overrides.requestedRunsForJobs!
         : [],
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : [],
@@ -10538,6 +10814,12 @@ export const buildJob = (
   relationshipsToOmit.add('Job');
   return {
     __typename: 'Job',
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+          ? ({} as AutomationCondition)
+          : buildAutomationCondition({}, relationshipsToOmit),
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
@@ -11656,6 +11938,12 @@ export const buildMutation = (
         : relationshipsToOmit.has('ConflictingExecutionParamsError')
           ? ({} as ConflictingExecutionParamsError)
           : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    refreshComponentState:
+      overrides && overrides.hasOwnProperty('refreshComponentState')
+        ? overrides.refreshComponentState!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
     reloadRepositoryLocation:
       overrides && overrides.hasOwnProperty('reloadRepositoryLocation')
         ? overrides.reloadRepositoryLocation!
@@ -11713,9 +12001,9 @@ export const buildMutation = (
     setAppManagedComponent:
       overrides && overrides.hasOwnProperty('setAppManagedComponent')
         ? overrides.setAppManagedComponent!
-        : relationshipsToOmit.has('PythonError')
-          ? ({} as PythonError)
-          : buildPythonError({}, relationshipsToOmit),
+        : relationshipsToOmit.has('AppManagedComponentValidationError')
+          ? ({} as AppManagedComponentValidationError)
+          : buildAppManagedComponentValidationError({}, relationshipsToOmit),
     setAutoMaterializePaused:
       overrides && overrides.hasOwnProperty('setAutoMaterializePaused')
         ? overrides.setAutoMaterializePaused!
@@ -12871,6 +13159,12 @@ export const buildPipeline = (
   relationshipsToOmit.add('Pipeline');
   return {
     __typename: 'Pipeline',
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+          ? ({} as AutomationCondition)
+          : buildAutomationCondition({}, relationshipsToOmit),
     dagsterTypeOrError:
       overrides && overrides.hasOwnProperty('dagsterTypeOrError')
         ? overrides.dagsterTypeOrError!
@@ -13616,6 +13910,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('ComponentTypes')
           ? ({} as ComponentTypes)
           : buildComponentTypes({}, relationshipsToOmit),
+    componentsForLocationOrError:
+      overrides && overrides.hasOwnProperty('componentsForLocationOrError')
+        ? overrides.componentsForLocationOrError!
+        : relationshipsToOmit.has('Components')
+          ? ({} as Components)
+          : buildComponents({}, relationshipsToOmit),
     executionPlanOrError:
       overrides && overrides.hasOwnProperty('executionPlanOrError')
         ? overrides.executionPlanOrError!
@@ -13879,6 +14179,54 @@ export const buildReexecutionParams = (
       overrides && overrides.hasOwnProperty('useParentRunTags')
         ? overrides.useParentRunTags!
         : false,
+  };
+};
+
+export const buildRefreshComponentStateAccepted = (
+  overrides?: Partial<RefreshComponentStateAccepted>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RefreshComponentStateAccepted'} & RefreshComponentStateAccepted => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RefreshComponentStateAccepted');
+  return {
+    __typename: 'RefreshComponentStateAccepted',
+    defsStateKey:
+      overrides && overrides.hasOwnProperty('defsStateKey') ? overrides.defsStateKey! : 'adicio',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'cultellus',
+  };
+};
+
+export const buildRefreshComponentStateError = (
+  overrides?: Partial<RefreshComponentStateError>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RefreshComponentStateError'} & RefreshComponentStateError => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RefreshComponentStateError');
+  return {
+    __typename: 'RefreshComponentStateError',
+    defsStateKey:
+      overrides && overrides.hasOwnProperty('defsStateKey') ? overrides.defsStateKey! : 'sufficio',
+    locationName:
+      overrides && overrides.hasOwnProperty('locationName') ? overrides.locationName! : 'delibero',
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'vicinus',
+  };
+};
+
+export const buildRefreshComponentStateSuccess = (
+  overrides?: Partial<RefreshComponentStateSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RefreshComponentStateSuccess'} & RefreshComponentStateSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RefreshComponentStateSuccess');
+  return {
+    __typename: 'RefreshComponentStateSuccess',
+    component:
+      overrides && overrides.hasOwnProperty('component')
+        ? overrides.component!
+        : relationshipsToOmit.has('Component')
+          ? ({} as Component)
+          : buildComponent({}, relationshipsToOmit),
   };
 };
 
@@ -14316,6 +14664,20 @@ export const buildRequestedMaterializationsForAsset = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    partitionKeys:
+      overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
+  };
+};
+
+export const buildRequestedRunsForJob = (
+  overrides?: Partial<RequestedRunsForJob>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RequestedRunsForJob'} & RequestedRunsForJob => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RequestedRunsForJob');
+  return {
+    __typename: 'RequestedRunsForJob',
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'atqui',
     partitionKeys:
       overrides && overrides.hasOwnProperty('partitionKeys') ? overrides.partitionKeys! : [],
   };
@@ -15109,6 +15471,30 @@ export const buildRunRequest = (
   };
 };
 
+export const buildRunResumedEvent = (
+  overrides?: Partial<RunResumedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunResumedEvent'} & RunResumedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunResumedEvent');
+  return {
+    __typename: 'RunResumedEvent',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'sollers',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'tempora',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'tabesco',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'voco',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'concedo',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'aer',
+  };
+};
+
 export const buildRunStartEvent = (
   overrides?: Partial<RunStartEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -15237,6 +15623,30 @@ export const buildRunSuccessEvent = (
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'alter',
     timestamp:
       overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'subiungo',
+  };
+};
+
+export const buildRunSuspendedEvent = (
+  overrides?: Partial<RunSuspendedEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'RunSuspendedEvent'} & RunSuspendedEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('RunSuspendedEvent');
+  return {
+    __typename: 'RunSuspendedEvent',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'arcus',
+    pipelineName:
+      overrides && overrides.hasOwnProperty('pipelineName') ? overrides.pipelineName! : 'sonitus',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'addo',
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID') ? overrides.solidHandleID! : 'thema',
+    stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'denuo',
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'qui',
   };
 };
 

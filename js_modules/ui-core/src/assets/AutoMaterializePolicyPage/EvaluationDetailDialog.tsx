@@ -25,6 +25,7 @@ import {
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {useQuery} from '../../apollo-client';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
+import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {AnchorButton} from '../../ui/AnchorButton';
@@ -34,8 +35,9 @@ export type Tab = 'evaluation' | 'runs';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  assetKeyPath: string[];
+  assetKeyPath?: string[];
   assetCheckName?: string;
+  jobName?: string;
   evaluationID: string;
   initialTab?: Tab;
   showEvaluationsButton?: boolean;
@@ -47,6 +49,7 @@ export const EvaluationDetailDialog = ({
   evaluationID,
   assetKeyPath,
   assetCheckName,
+  jobName,
   initialTab = 'evaluation',
   showEvaluationsButton = true,
 }: Props) => {
@@ -56,6 +59,7 @@ export const EvaluationDetailDialog = ({
         initialEvaluationID={evaluationID}
         initialAssetKeyPath={assetKeyPath}
         initialAssetCheckName={assetCheckName}
+        initialJobName={jobName}
         onClose={onClose}
         initialTab={initialTab}
         showEvaluationsButton={showEvaluationsButton}
@@ -66,8 +70,9 @@ export const EvaluationDetailDialog = ({
 
 interface ContentProps {
   initialEvaluationID: string;
-  initialAssetKeyPath: string[];
+  initialAssetKeyPath?: string[];
   initialAssetCheckName?: string;
+  initialJobName?: string;
   onClose: () => void;
   initialTab?: Tab;
   showEvaluationsButton?: boolean;
@@ -77,6 +82,7 @@ const EvaluationDetailDialogContents = ({
   initialEvaluationID,
   initialAssetKeyPath,
   initialAssetCheckName,
+  initialJobName,
   onClose,
   initialTab = 'evaluation',
   showEvaluationsButton = true,
@@ -90,6 +96,7 @@ const EvaluationDetailDialogContents = ({
       evaluationID: initialEvaluationID,
       assetKeyPath: initialAssetKeyPath,
       assetCheckName: initialAssetCheckName,
+      jobName: initialJobName,
     },
   ]);
   useEffect(() => {
@@ -98,13 +105,15 @@ const EvaluationDetailDialogContents = ({
         evaluationID: initialEvaluationID,
         assetKeyPath: initialAssetKeyPath,
         assetCheckName: initialAssetCheckName,
+        jobName: initialJobName,
       },
     ]);
-  }, [initialEvaluationID, initialAssetKeyPath, initialAssetCheckName]);
-  const {assetCheckName, evaluationID, assetKeyPath} = evaluationHistoryStack[0] || {
+  }, [initialEvaluationID, initialAssetKeyPath, initialAssetCheckName, initialJobName]);
+  const {assetCheckName, evaluationID, assetKeyPath, jobName} = evaluationHistoryStack[0] || {
     assetCheckName: initialAssetCheckName,
     evaluationID: initialEvaluationID,
     assetKeyPath: initialAssetKeyPath,
+    jobName: initialJobName,
   };
   const pushHistory = useCallback(
     (item: EvaluationHistoryStackItem) => {
@@ -126,23 +135,26 @@ const EvaluationDetailDialogContents = ({
     GET_SLIM_EVALUATIONS_QUERY,
     {
       variables: {
-        assetKey: assetCheckName ? null : {path: assetKeyPath},
-        assetCheckKey: assetCheckName
-          ? {assetKey: {path: assetKeyPath}, name: assetCheckName}
-          : null,
+        assetKey: assetCheckName || jobName ? null : assetKeyPath ? {path: assetKeyPath} : null,
+        assetCheckKey:
+          assetCheckName && assetKeyPath
+            ? {assetKey: {path: assetKeyPath}, name: assetCheckName}
+            : null,
+        assetJobKey: jobName ? {jobName} : null,
         cursor: `${BigInt(evaluationID) + 1n}`,
         limit: 2,
       },
     },
   );
 
-  const {partitions: allPartitions, loading: partitionsLoading} =
-    usePartitionsForAssetKey(assetKeyPath);
+  const {partitions: allPartitions, loading: partitionsLoading} = usePartitionsForAssetKey(
+    assetKeyPath ?? null,
+  );
 
-  const entityKey = buildEntityKey(assetKeyPath, assetCheckName);
+  const entityKey = buildEntityKey(assetKeyPath ?? [], assetCheckName, jobName);
   const viewAllPath = useMemo(() => {
     // todo dish: I don't think the asset check evaluations list is permalinkable yet.
-    if (assetCheckName) {
+    if (assetCheckName || jobName || !assetKeyPath) {
       return null;
     }
 
@@ -152,12 +164,18 @@ const EvaluationDetailDialogContents = ({
     }).toString();
 
     return `/assets/${assetKeyPath.join('/')}?${queryString}`;
-  }, [assetCheckName, evaluationID, assetKeyPath]);
+  }, [assetCheckName, jobName, evaluationID, assetKeyPath]);
 
   if (loading || partitionsLoading) {
     return (
       <DialogContents
-        header={<DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />}
+        header={
+          <DialogHeader
+            assetKeyPath={assetKeyPath}
+            assetCheckName={assetCheckName}
+            jobName={jobName}
+          />
+        }
         selectedTabId={tabId}
         onTabChange={setTabId}
         body={
@@ -175,7 +193,13 @@ const EvaluationDetailDialogContents = ({
   if (record?.__typename === 'AutoMaterializeAssetEvaluationNeedsMigrationError') {
     return (
       <DialogContents
-        header={<DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />}
+        header={
+          <DialogHeader
+            assetKeyPath={assetKeyPath}
+            assetCheckName={assetCheckName}
+            jobName={jobName}
+          />
+        }
         selectedTabId={tabId}
         onTabChange={setTabId}
         body={
@@ -197,7 +221,13 @@ const EvaluationDetailDialogContents = ({
   if (!evaluation) {
     return (
       <DialogContents
-        header={<DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />}
+        header={
+          <DialogHeader
+            assetKeyPath={assetKeyPath}
+            assetCheckName={assetCheckName}
+            jobName={jobName}
+          />
+        }
         selectedTabId={tabId}
         onTabChange={setTabId}
         onDone={onClose}
@@ -263,6 +293,7 @@ const EvaluationDetailDialogContents = ({
         <DialogHeader
           assetKeyPath={assetKeyPath}
           assetCheckName={assetCheckName}
+          jobName={jobName}
           timestamp={evaluation.timestamp}
           navigateBack={popHistory}
           hasBackButton={evaluationHistoryStack.length > 1}
@@ -298,18 +329,22 @@ const EvaluationDetailDialogContents = ({
 const DialogHeader = ({
   assetKeyPath,
   assetCheckName,
+  jobName,
   timestamp,
   navigateBack,
   hasBackButton,
 }: {
-  assetKeyPath: string[];
+  assetKeyPath?: string[];
   assetCheckName?: string;
+  jobName?: string;
   timestamp?: number;
   hasBackButton?: boolean;
   navigateBack?: () => void;
 }) => {
-  const assetKeyPathString = assetKeyPath.join('/');
-  const assetLabel = assetCheckName ? (
+  const assetKeyPathString = assetKeyPath ? displayNameForAssetKey({path: assetKeyPath}) : '';
+  const assetLabel = jobName ? (
+    <span>{jobName}</span>
+  ) : assetCheckName ? (
     <span>
       {assetCheckName} on {assetKeyPathString}
     </span>

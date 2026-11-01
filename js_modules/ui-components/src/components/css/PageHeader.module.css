@@ -1,5 +1,35 @@
 .container {
   width: 100%;
+  /* Tunable by the surrounding layout, e.g. the mobile layout. */
+  padding-left: var(--page-header-inset-left, var(--page-gutter, 24px));
+  padding-right: var(--page-gutter, 24px);
+}
+
+/* Mobile: the page actions can't shrink to fit beside a long title, so they wrap onto
+   their own line rather than running off the screen. */
+:global(.dagster-mobile) .titleRow {
+  flex-wrap: wrap;
+}
+
+/* ...and the title shrinks below its content width, so whatever truncation the title
+   node provides engages instead of the text running under the page edge. */
+:global(.dagster-mobile) .titleAndTags {
+  min-width: 0;
+}
+
+/* Once wrapped, the actions are alone on their line, where space-between would leave
+   them at the start. */
+:global(.dagster-mobile) .titleRight {
+  margin-left: auto;
+}
+
+/* The floating nav button in the mobile layout overlaps the title row only, so the tab
+   row pulls back off the inset and starts at the page gutter. Zero on desktop, where
+   the inset and the gutter are the same value. */
+.tabs {
+  margin-left: calc(
+    var(--page-gutter, 24px) - var(--page-header-inset-left, var(--page-gutter, 24px))
+  );
 }
 
 /**

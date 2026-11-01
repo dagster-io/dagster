@@ -1,0 +1,89 @@
+# Maintainer Edits Gate (OSS)
+#
+# Fails on fork PRs whose author has not enabled "Allow edits and access to
+# secrets by maintainers", so maintainers can push fixes to the branch directly
+# instead of iterating through review rounds.
+#
+# Required status check: the job name "maintainer-edits-gate".
+#
+# Passes automatically for:
+#   - branches in this repo (not a fork)
+#   - org-owned forks (GitHub does not let those grant maintainer edits)
+#   - PRs labeled `skip-maintainer-edits-check`
+#   - the merge_group trigger (the real check already ran on the PR)
+#
+# Uses pull_request_target so the job has a write token for commenting. It never
+# checks out or runs PR code; it only reads event metadata.
+#
+# Toggling the checkbox does not emit a webhook, so after enabling it the
+# contributor must push (or a maintainer must re-run the job) for the check to
+# go green.
+
+name: Maintainer Edits Gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  maintainer-edits-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check maintainer edit access
+        if: github.event_name == 'pull_request_target'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_OWNER_TYPE: ${{ github.event.pull_request.head.repo.owner.type }}
+          MAINTAINER_CAN_MODIFY: ${{ github.event.pull_request.maintainer_can_modify }}
+          SKIP_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'skip-maintainer-edits-check') }}
+        run: |
+          set -euo pipefail
+
+          if [ "$HEAD_REPO" = "$REPO" ]; then
+            echo "Branch lives in $REPO; maintainers can already push"
+            exit 0
+          fi
+
+          if [ "$MAINTAINER_CAN_MODIFY" = "true" ]; then
+            echo "Maintainer edits are enabled"
+            exit 0
+          fi
+
+          if [ "$HEAD_OWNER_TYPE" = "Organization" ]; then
+            echo "Fork is org-owned; GitHub does not allow granting maintainer edits"
+            exit 0
+          fi
+
+          if [ "$SKIP_LABEL" = "true" ]; then
+            echo "PR carries the skip-maintainer-edits-check label"
+            exit 0
+          fi
+
+          MARKER="<!-- maintainer-edits-gate -->"
+          ALREADY_COMMENTED=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+            --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | wc -l)
+
+          if [ "$ALREADY_COMMENTED" -eq 0 ]; then
+            BODY_FILE=$(mktemp)
+            cat > "$BODY_FILE" <<EOF
+          $MARKER
+          Thanks for the contribution! This repo requires **Allow edits and access to secrets by maintainers** to be enabled on fork PRs so maintainers can push fixes directly to your branch instead of going through extra review rounds.
+
+          To enable it, open the PR page and check the box in the right-hand sidebar (below the Reviewers/Assignees section). Then push a commit, or ask a maintainer to re-run the \`maintainer-edits-gate\` check, so this check re-evaluates.
+
+          See [GitHub's docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork) for details.
+          EOF
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file "$BODY_FILE"
+          fi
+
+          echo "::error::This fork PR does not allow edits from maintainers."
+          echo "::error::Enable 'Allow edits and access to secrets by maintainers' in the PR sidebar, then push or re-run this check."
+          exit 1

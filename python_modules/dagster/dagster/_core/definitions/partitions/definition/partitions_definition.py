@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Generic, Optional, cast
+from typing import TYPE_CHECKING, AbstractSet, Generic, Optional, cast  # noqa: UP035
 
 from typing_extensions import TypeVar
 
@@ -162,6 +162,14 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
     def has_partition_key(self, partition_key: str) -> bool:
         return partition_key in self.get_partition_keys()
+
+    def filter_valid_partition_keys(self, partition_keys: set[str]) -> AbstractSet[str]:
+        """Return the subset of ``partition_keys`` that are valid keys of this definition.
+
+        Subclasses that can answer this more cheaply than one membership check per key should
+        override.
+        """
+        return {pk for pk in partition_keys if self.has_partition_key(pk)}
 
     def validate_partition_key(self, partition_key: str, context: PartitionLoadingContext) -> None:
         with partition_loading_context(new_ctx=context):

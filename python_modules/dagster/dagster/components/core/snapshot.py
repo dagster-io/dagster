@@ -46,12 +46,14 @@ def get_package_entry_snap(key: EnvRegistryKey, obj: object) -> EnvRegistryObjec
     type_data = []
     owners = []
     tags = []
+    produces = []
     aliases = []
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
         spec = obj.get_spec()
         owners = spec.owners
         tags = spec.tags
+        produces = spec.produces
         if obj.__module__ != key.namespace:
             # add the module that defines the class as an alias
             aliases.append(EnvRegistryKey(namespace=obj.__module__, name=obj.__name__))
@@ -67,4 +69,5 @@ def get_package_entry_snap(key: EnvRegistryKey, obj: object) -> EnvRegistryObjec
         tags=tags,
         description=description,
         feature_data=type_data,
+        produces=produces,
     )

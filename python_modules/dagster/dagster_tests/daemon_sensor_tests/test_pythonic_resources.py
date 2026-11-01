@@ -259,7 +259,6 @@ def sensor_run_status_with_cm(
 
 @dg.run_failure_sensor(monitor_all_repositories=True, request_job=the_job)
 def sensor_run_failure(my_resource: MyResource, not_called_context: RunFailureSensorContext):
-    assert not_called_context.failure_event
     assert not_called_context.resources.my_resource.a_str == my_resource.a_str
     return dg.RunRequest(my_resource.a_str, run_config={}, tags={})
 
@@ -268,7 +267,6 @@ def sensor_run_failure(my_resource: MyResource, not_called_context: RunFailureSe
 def sensor_run_failure_with_cm(
     my_cm_resource: dg.ResourceParam[str], not_called_context: RunFailureSensorContext
 ):
-    assert not_called_context.failure_event
     assert not_called_context.resources.my_cm_resource == my_cm_resource
     assert is_in_cm
     return dg.RunRequest(my_cm_resource, run_config={}, tags={})

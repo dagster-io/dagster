@@ -29,7 +29,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type SelectedTickQueryVariables = Exact<{
   instigationSelector: Types.InstigationSelector;
@@ -54,6 +55,7 @@ export type SelectedTickQuery = {
           cursor: string | null;
           instigationType: Types.InstigationType;
           skipReason: string | null;
+          requestedJobRunCount: number;
           runIds: Array<string>;
           originRunIds: Array<string>;
           logKey: Array<string> | null;
@@ -63,6 +65,11 @@ export type SelectedTickQuery = {
             __typename: 'RequestedMaterializationsForAsset';
             partitionKeys: Array<string>;
             assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+          requestedRunsForJobs: Array<{
+            __typename: 'RequestedRunsForJob';
+            jobName: string;
+            partitionKeys: Array<string>;
           }>;
           runs: Array<{__typename: 'Run'; id: string; status: Types.RunStatus}>;
           error: {
@@ -88,4 +95,4 @@ export type SelectedTickQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SelectedTickQueryVersion = '10c228399d8224b30ce4520d24f0c6f675a534abc7cbe268b0c8cc870b3f0e90';
+export const SelectedTickQueryVersion = 'ac85427c7250ff5e14c8bf1ae2790bd6129a406f64a598db42407eeee6d43afc';

@@ -48,9 +48,11 @@ export type DagsterEventType =
   | 'RUN_DEQUEUED'
   | 'RUN_ENQUEUED'
   | 'RUN_FAILURE'
+  | 'RUN_RESUMED'
   | 'RUN_START'
   | 'RUN_STARTING'
   | 'RUN_SUCCESS'
+  | 'RUN_SUSPENDED'
   | 'STEP_EXPECTATION_RESULT'
   | 'STEP_FAILURE'
   | 'STEP_INPUT'
@@ -78,7 +80,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type PipelineRunLogsSubscriptionVariables = Exact<{
   runId: string;
@@ -3356,6 +3359,15 @@ export type PipelineRunLogsSubscription = {
               } | null;
             }
           | {
+              __typename: 'RunResumedEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
               __typename: 'RunStartEvent';
               runId: string;
               message: string;
@@ -3375,6 +3387,15 @@ export type PipelineRunLogsSubscription = {
             }
           | {
               __typename: 'RunSuccessEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'RunSuspendedEvent';
               runId: string;
               message: string;
               timestamp: string;
@@ -7142,6 +7163,15 @@ export type RunLogsSubscriptionSuccessFragment = {
         } | null;
       }
     | {
+        __typename: 'RunResumedEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
         __typename: 'RunStartEvent';
         runId: string;
         message: string;
@@ -7161,6 +7191,15 @@ export type RunLogsSubscriptionSuccessFragment = {
       }
     | {
         __typename: 'RunSuccessEvent';
+        runId: string;
+        message: string;
+        timestamp: string;
+        level: Types.LogLevel;
+        stepKey: string | null;
+        eventType: Types.DagsterEventType | null;
+      }
+    | {
+        __typename: 'RunSuspendedEvent';
         runId: string;
         message: string;
         timestamp: string;
@@ -11003,6 +11042,15 @@ export type RunLogsQuery = {
               } | null;
             }
           | {
+              __typename: 'RunResumedEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
               __typename: 'RunStartEvent';
               runId: string;
               message: string;
@@ -11022,6 +11070,15 @@ export type RunLogsQuery = {
             }
           | {
               __typename: 'RunSuccessEvent';
+              runId: string;
+              message: string;
+              timestamp: string;
+              level: Types.LogLevel;
+              stepKey: string | null;
+              eventType: Types.DagsterEventType | null;
+            }
+          | {
+              __typename: 'RunSuspendedEvent';
               runId: string;
               message: string;
               timestamp: string;

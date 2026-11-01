@@ -26,7 +26,6 @@ def raw_erp_events(context: dg.AssetExecutionContext) -> None:
     """
     # This is a placeholder - actual execution happens via the Kafka sensor
     # The sensor triggers runs that populate this asset
-    pass
 
 
 @dg.asset(
@@ -39,7 +38,6 @@ def raw_crm_events(context: dg.AssetExecutionContext) -> None:
     Consumes event-based data from Kafka topics populated by CRM systems.
     Events include customer balance updates, support interactions, and account changes.
     """
-    pass
 
 
 # end_kafka_assets
@@ -85,7 +83,6 @@ def salesforce_data(context: dg.AssetExecutionContext) -> None:
 
     Includes accounts, opportunities, contacts, and leads from Salesforce CRM.
     """
-    pass
 
 
 @dg.asset(
@@ -97,7 +94,6 @@ def hubspot_data(context: dg.AssetExecutionContext) -> None:
 
     Includes marketing campaigns, email engagement, and lead scoring data.
     """
-    pass
 
 
 # ============================================================================
@@ -116,7 +112,6 @@ def legacy_customer_data(context: dg.AssetExecutionContext) -> None:
     Connects to on-premise SQL Server databases through Unity Catalog federation.
     Contains historical customer records and legacy system data.
     """
-    pass
 
 
 @dg.asset(
@@ -130,7 +125,6 @@ def legacy_transaction_data(context: dg.AssetExecutionContext) -> None:
     Connects to PostgreSQL databases through Unity Catalog federation.
     Contains historical transaction records and financial data.
     """
-    pass
 
 
 # ============================================================================
@@ -149,7 +143,6 @@ def enriched_customer_profiles(context: dg.AssetExecutionContext) -> None:
     Joins Kafka event streams with legacy customer data to create comprehensive
     customer profiles including balance history, transaction patterns, and interactions.
     """
-    pass
 
 
 @dg.asset(
@@ -163,7 +156,6 @@ def order_fulfillment_status(context: dg.AssetExecutionContext) -> None:
     Processes invoice and order events from Kafka and enriches with Salesforce
     opportunity data to track end-to-end order fulfillment across systems.
     """
-    pass
 
 
 # ============================================================================
@@ -184,7 +176,6 @@ def customer_360_view(context: dg.AssetExecutionContext) -> None:
 
     Used by business intelligence tools and customer-facing applications.
     """
-    pass
 
 
 @dg.asset(
@@ -198,4 +189,3 @@ def marketing_attribution(context: dg.AssetExecutionContext) -> None:
     Links customer transactions and behavior to marketing touchpoints from HubSpot
     to measure campaign effectiveness and ROI.
     """
-    pass

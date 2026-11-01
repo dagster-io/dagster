@@ -1,3 +1,9 @@
+/* Mobile only: see the comment at its single call site. */
+.filterInput {
+  flex: 1;
+  min-width: 0;
+}
+
 .assetEventMetadataScrollContainer {
   width: 100%;
   overflow-x: auto;

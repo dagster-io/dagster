@@ -1,9 +1,9 @@
-import {Box, Colors, Intent, Tag} from '@dagster-io/ui-components';
+import {Colors, Intent, Tag} from '@dagster-io/ui-components';
 import qs from 'qs';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {EventTypeColumn} from './LogsRowComponents';
+import {EventTypeColumn, MessageColumn} from './LogsRowComponents';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {
@@ -199,6 +199,8 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
     case 'RunEnqueuedEvent':
     case 'RunDequeuedEvent':
     case 'RunStartingEvent':
+    case 'RunSuspendedEvent':
+    case 'RunResumedEvent':
     case 'RunCancelingEvent':
     case 'ResourceInitStartedEvent':
     case 'ResourceInitSuccessEvent':
@@ -289,10 +291,10 @@ const DefaultContent = ({
       <EventTypeColumn>
         {eventType && <Tag intent={eventIntent}>{eventTypeToDisplayType(eventType)}</Tag>}
       </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
+      <MessageColumn>
         {message}
         {children}
-      </Box>
+      </MessageColumn>
     </>
   );
 };
@@ -360,13 +362,13 @@ const FailureContent = ({
       <EventTypeColumn>
         <Tag intent="danger">{eventTypeToDisplayType(eventType)}</Tag>
       </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
+      <MessageColumn>
         {contextMessage}
         {errorMessage}
         <MetadataEntries entries={metadataEntries} />
         {errorStack}
         {errorCause}
-      </Box>
+      </MessageColumn>
     </>
   );
 };
@@ -424,12 +426,12 @@ const StepUpForRetryContent = ({
       <EventTypeColumn>
         <Tag intent="warning">{eventTypeToDisplayType(DagsterEventType.STEP_UP_FOR_RETRY)}</Tag>
       </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
+      <MessageColumn>
         {contextMessage}
         {errorMessage}
         {errorStack}
         {errorCause}
-      </Box>
+      </MessageColumn>
     </>
   );
 };

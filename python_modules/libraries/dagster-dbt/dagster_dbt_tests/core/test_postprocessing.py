@@ -160,6 +160,33 @@ def test_insights_skips_unsupported_adapter(
     ), [record.message for record in caplog.records]
 
 
+def test_postprocessing_without_an_adapter(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: dict[str, Any],
+) -> None:
+    # `DbtCliResource` swallows a failed adapter initialization and carries on with `adapter=None`.
+    # Both adapter-backed post-processors must then skip their metadata rather than fail the step.
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+
+    with mock.patch.object(
+        DbtCliResource, "_initialize_dbt_core_adapter", side_effect=Exception("boom")
+    ):
+        result = materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        )
+
+    assert result.success
+
+    materialization_events = result.get_asset_materialization_events()
+    assert materialization_events
+    assert all(
+        "dagster/row_count" not in event.materialization.metadata
+        for event in materialization_events
+    )
+
+
 @pytest.mark.parametrize(
     "target, manifest_fixture_name",
     [

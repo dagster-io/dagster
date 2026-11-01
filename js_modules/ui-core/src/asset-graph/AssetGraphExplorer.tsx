@@ -54,7 +54,6 @@ import {useFullScreen, useFullScreenAllowedView} from '../app/AppTopNav/AppTopNa
 import {useFeatureFlags} from '../app/useFeatureFlags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
-import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
@@ -136,7 +135,6 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
       key={props.explorerPath.pipelineName}
       assetGraphData={assetGraphData}
       fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
-      allAssetKeys={allAssetKeys}
       graphQueryItems={graphQueryItems}
       loading={graphDataLoading}
       {...props}
@@ -145,7 +143,6 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
 });
 
 type WithDataProps = Props & {
-  allAssetKeys: AssetKey[];
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
@@ -164,7 +161,6 @@ const AssetGraphExplorerWithData = ({
   fullAssetGraphData,
   graphQueryItems,
   fetchOptions,
-  allAssetKeys,
   viewType,
   loading: dataLoading,
   setHideEdgesToNodesOutsideQuery,
@@ -240,11 +236,12 @@ const AssetGraphExplorerWithData = ({
 
   const onSelectNode = React.useCallback(
     async (
-      e: React.MouseEvent<any> | React.KeyboardEvent<any>,
+      e: React.MouseEvent<any> | React.KeyboardEvent<any> | undefined,
       assetKey: {path: string[]},
       node: GraphNode | null,
     ) => {
-      e.stopPropagation();
+      // No event when an asset is picked with Enter in the sidebar search.
+      e?.stopPropagation();
 
       const token = tokenForAssetKey(assetKey);
       const nodeIsInDisplayedGraph = node?.definition;
@@ -252,21 +249,24 @@ const AssetGraphExplorerWithData = ({
       if (!nodeIsInDisplayedGraph) {
         // The asset's definition was not provided in our query for job.assetNodes. It's either
         // in another job or asset group, or is a source asset not defined in any repository.
-        return onNavigateToSourceAssetNode(e, await findAssetLocation(assetKey));
+        return onNavigateToSourceAssetNode(
+          {metaKey: !!e?.metaKey},
+          await findAssetLocation(assetKey),
+        );
       }
 
       // This asset is in a job and we can stay in the job graph explorer!
       // If it's in our current job, allow shift / meta multi-selection.
       let nextOpsNameSelection = token;
 
-      if (e.shiftKey || e.metaKey) {
+      if (e?.shiftKey || e?.metaKey) {
         // Meta key adds the node you clicked to your existing selection
         let tokensToAdd = [token];
 
         // Shift key adds the nodes between the node you clicked and your existing selection.
         // To better support clicking a bunch of leaves and extending selection, we try to reach
         // the new node from each node in your current selection until we find a path.
-        if (e.shiftKey && selectedGraphNodes.length && node) {
+        if (e?.shiftKey && selectedGraphNodes.length && node) {
           const reversed = [...selectedGraphNodes].reverse();
           for (const from of reversed) {
             const tokensInRange = assetKeyTokensInRange({from, to: node, graph: assetGraphData});
@@ -388,7 +388,7 @@ const AssetGraphExplorerWithData = ({
   };
 
   const toggleSelectAllGroupNodesById = React.useCallback(
-    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any> | undefined, groupId: string) => {
       const assets = groupedAssets[groupId] || [];
       const childNodeTokens = assets.map((n) => tokenForAssetKey(n.assetKey));
 
@@ -411,9 +411,9 @@ const AssetGraphExplorerWithData = ({
   );
 
   const selectGroup = React.useCallback(
-    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, groupId: string) => {
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any> | undefined, groupId: string) => {
       zoomToGroup(groupId);
-      if (e.metaKey) {
+      if (e?.metaKey) {
         toggleSelectAllGroupNodesById(e, groupId);
       }
     },
@@ -421,7 +421,7 @@ const AssetGraphExplorerWithData = ({
   );
 
   const selectAssetNode = React.useCallback(
-    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, node: GraphNode) => {
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any> | undefined, node: GraphNode) => {
       onSelectNode(e, node.assetKey, node);
 
       const nodeBounds = layout && layout.nodes[node.id]?.bounds;
@@ -438,7 +438,7 @@ const AssetGraphExplorerWithData = ({
   );
 
   const selectNodeById = React.useCallback(
-    (e: React.MouseEvent<any> | React.KeyboardEvent<any>, nodeId?: string) => {
+    (e: React.MouseEvent<any> | React.KeyboardEvent<any> | undefined, nodeId?: string) => {
       if (!nodeId) {
         return;
       }
@@ -829,6 +829,7 @@ const AssetGraphExplorerWithData = ({
                               setErrorState(errors);
                             }
                           }}
+                          showRecentSearches
                         />
                       </div>
                       <CreateCatalogViewButton
@@ -926,7 +927,6 @@ const AssetGraphExplorerWithData = ({
         showSidebar ? (
           <AssetGraphExplorerSidebar
             viewType={viewType}
-            allAssetKeys={allAssetKeys}
             assetGraphData={assetGraphData}
             fullAssetGraphData={fullAssetGraphData}
             selectedNodes={selectedGraphNodes}

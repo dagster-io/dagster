@@ -71,6 +71,34 @@ def test_run_task_retryrable_failure(ecs, instance, workspace, run, other_run, m
     assert ex.match("Capacity is unavailable")
 
 
+def test_run_task_agent_failure_is_retryable(ecs, instance, workspace, run):
+    original = ecs.run_task
+
+    retryable_failures = iter(
+        [
+            {
+                "tasks": [],
+                "failures": [
+                    {
+                        "arn": "disconnected-container-instance",
+                        "reason": "AGENT",
+                    }
+                ],
+            }
+        ]
+    )
+
+    def run_task(*args, **kwargs):
+        try:
+            return next(retryable_failures)
+        except StopIteration:
+            return original(*args, **kwargs)
+
+    instance.run_launcher.ecs.run_task = run_task
+
+    instance.launch_run(run.run_id, workspace)
+
+
 def test_run_task_throttle_failure(ecs, instance, workspace, run, other_run, monkeypatch):
     original = ecs.run_task
 

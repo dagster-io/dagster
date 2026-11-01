@@ -304,9 +304,6 @@ def test_fetch_last_updated_timestamps_empty():
 
 
 @pytest.mark.skip_if_no_snowflake_credentials
-@pytest.mark.importorskip(
-    "snowflake.sqlalchemy", reason="sqlalchemy is not available in the test environment"
-)
 @pytest.mark.integration
 def test_fetch_last_updated_timestamps_missing_table():
     with SnowflakeResource(
@@ -395,9 +392,6 @@ def test_fetch_last_updated_timestamps(db_str: str):
 
 
 @pytest.mark.skip_if_no_snowflake_credentials
-@pytest.mark.importorskip(
-    "snowflake.sqlalchemy", reason="sqlalchemy is not available in the test environment"
-)
 @pytest.mark.integration
 def test_resources_snowflake_sqlalchemy_connection():
     with SnowflakeResource(

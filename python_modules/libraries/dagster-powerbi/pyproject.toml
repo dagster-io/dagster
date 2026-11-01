@@ -37,6 +37,9 @@ test = [
     "dagster-dg-cli==1!0+dev",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster-pipes = { path = "../../dagster-pipes", editable = true }
 dagster = { path = "../../dagster", editable = true }

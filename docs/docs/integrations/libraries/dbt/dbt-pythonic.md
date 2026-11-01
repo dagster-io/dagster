@@ -59,6 +59,8 @@ With the dbt resource defined, you can use the dbt project to generate the dbt a
   language="python"
 />
 
+Note that `resources.py` returns a <PyObject section="definitions" module="dagster" object="Definitions" /> object while `assets.py` does not. Resources are only ever supplied as part of a `Definitions`, so they need the wrapper, which the `@dg.definitions` decorator provides. Assets do not: anything under `defs/` that defines an <PyObject section="assets" module="dagster" object="AssetsDefinition" /> at module scope — including the one the `@dbt_assets` decorator produces — is discovered and loaded automatically.
+
 ## Step 4: Run your dbt models
 
 To execute your dbt models, you can use the `dg launch` command to kick off a run through the CLI:

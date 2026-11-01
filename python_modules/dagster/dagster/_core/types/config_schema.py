@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Iterator
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Iterator
+from collections.abc import Set as AbstractSet
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import dagster._check as check
 from dagster._annotations import public
@@ -33,7 +33,7 @@ class DagsterTypeLoader(ABC):
 
     def construct_from_config_value(
         self,
-        context: "DagsterTypeLoaderContext",  # noqa: ARG002
+        context: "DagsterTypeLoaderContext",
         config_value: object,
     ) -> object:
         """How to create a runtime value from config data."""
@@ -45,7 +45,7 @@ class DagsterTypeLoader(ABC):
     def get_resource_requirements(
         self, type_display_name: str
     ) -> Iterator[ResourceRequirement]:
-        for resource_key in sorted(list(self.required_resource_keys())):
+        for resource_key in sorted(self.required_resource_keys()):
             yield TypeLoaderResourceRequirement(
                 key=resource_key, type_display_name=type_display_name
             )

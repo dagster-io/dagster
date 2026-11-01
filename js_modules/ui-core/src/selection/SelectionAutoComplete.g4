@@ -111,6 +111,7 @@ value:
 	| INCOMPLETE_LEFT_QUOTED_STRING		# IncompleteLeftQuotedStringValue
 	| INCOMPLETE_RIGHT_QUOTED_STRING	# IncompleteRightQuotedStringValue
 	| IDENTIFIER						# UnquotedStringValue
+	| UNQUOTED_REJECTED_STRING			# UnquotedRejectedValue
 	| NULL_STRING    					# NullStringValue
 	| DIGITS							# DigitsValue;
 
@@ -139,6 +140,10 @@ EQUAL: '=';
 
 // Identifiers (attributes and functions)
 IDENTIFIER: [a-zA-Z0-9_*][a-zA-Z0-9_*/]*;
+
+// Any other unquoted run, so a value with characters IDENTIFIER rejects stays whole. After the
+// tokens above, so equal-length matches still lex as them.
+UNQUOTED_REJECTED_STRING: ~[ \t\r\n"():=,+]+;
 
 // Whitespace
 WS: [ \t\r\n]+;

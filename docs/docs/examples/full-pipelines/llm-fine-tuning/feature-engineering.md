@@ -1,6 +1,6 @@
 ---
 title: Feature engineering
-description: Feature Engineering Book Categories
+description: Feature engineering book categories
 last_update:
   author: Dennis Hume
 sidebar_position: 30
@@ -60,9 +60,18 @@ A lot of these shelves would be hard to use for modeling (such as `owned` or `de
 
 ```python
 CATEGORIES = [
-    "fantasy", "horror", "humor", "adventure",
-    "action", "romance", "ya", "superheroes",
-    "comedy", "mystery", "supernatural", "drama",
+    "fantasy",
+    "horror",
+    "humor",
+    "adventure",
+    "action",
+    "romance",
+    "ya",
+    "superheroes",
+    "comedy",
+    "mystery",
+    "supernatural",
+    "drama",
 ]
 ```
 

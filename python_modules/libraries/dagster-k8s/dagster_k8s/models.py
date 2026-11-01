@@ -13,39 +13,50 @@ from kubernetes.client.configuration import Configuration
 T_KubernetesModel = TypeVar("T_KubernetesModel")
 
 
+# kubernetes 37 regenerated every model as a pydantic BaseModel. Those constructors are
+# keyword-only, forbid unknown fields, and no longer accept local_vars_configuration.
+K8S_MODELS_ARE_PYDANTIC = hasattr(kubernetes.client.models.V1ObjectMeta, "model_fields")
+
 # Create a single Configuration object to pass through to each model creation -
 # the default otherwise in the OpenAPI version currently in use by the k8s
 # client will create one on each model creation otherwise, which can cause
 # lock contention since it acquires the global python logger lock
 # see: https://github.com/kubernetes-client/python/issues/1921
-shared_k8s_model_configuration = Configuration()
+# Pydantic models never build one, so there is nothing to share from 37 on.
+shared_k8s_model_configuration = None if K8S_MODELS_ARE_PYDANTIC else Configuration()
 
 
 def _get_k8s_class(classname: str) -> type[Any]:
     if classname in ApiClient.NATIVE_TYPES_MAPPING:
         return ApiClient.NATIVE_TYPES_MAPPING[classname]
+    elif classname == "bytes":
+        # 37 types binary attributes (V1Secret.data, ca_bundle, ...) as bytes; older clients
+        # called them str. NATIVE_TYPES_MAPPING covers neither.
+        return bytes
     else:
         return getattr(kubernetes.client.models, classname)
 
 
+# Container types are spelled differently across client majors: 12 uses dict(K, V), 35 and 36 use
+# dict[K, V], and 37 switched to the typing spellings List[X] / Dict[K, V].
 def _is_openapi_list_type(attr_type: str) -> bool:
-    return attr_type.startswith("list[")
+    return attr_type.startswith(("list[", "List["))
 
 
 def _get_openapi_list_element_type(attr_type: str) -> str:
-    match = check.not_none(re.match(r"list\[(.*)\]", attr_type))
+    match = check.not_none(re.match(r"[Ll]ist\[(.*)\]", attr_type))
     return match.group(1)
 
 
 def _is_openapi_dict_type(attr_type: str) -> bool:
-    return attr_type.startswith("dict(") or attr_type.startswith("dict[")
+    return attr_type.startswith(("dict(", "dict[", "Dict["))
 
 
 def _get_openapi_dict_value_type(attr_type: str) -> str:
     # group(2) because value, not key
     match = check.not_none(
         re.match(r"dict\(([^,]*), (.*)\)", attr_type)
-        or re.match(r"dict\[([^,]*),\s*(.*)\]", attr_type)
+        or re.match(r"[Dd]ict\[([^,]*),\s*(.*)\]", attr_type)
     )
 
     return match.group(2)
@@ -162,10 +173,14 @@ def k8s_model_from_dict(
     if len(invalid_keys):
         raise Exception(f"Unexpected keys in model class {model_class.__name__}: {invalid_keys}")
 
-    # Pass through the configuration object since the default implementation creates a new one
+    # Pass through the configuration object since the pre-37 implementation creates a new one
     # in the constructor, which can create lock contention if multiple threads are calling this
     # simultaneously
-    kwargs = {"local_vars_configuration": shared_k8s_model_configuration}
+    kwargs: dict[str, Any] = (
+        {}
+        if K8S_MODELS_ARE_PYDANTIC
+        else {"local_vars_configuration": shared_k8s_model_configuration}
+    )
     for attr, attr_type in model_class.openapi_types.items():  # type: ignore
         # e.g. config_map => configMap
         if attr in model_dict:

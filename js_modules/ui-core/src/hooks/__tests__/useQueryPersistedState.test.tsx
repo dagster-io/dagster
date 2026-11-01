@@ -1,7 +1,8 @@
 import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {createMemoryHistory} from 'history';
 import {type SetStateAction, useCallback, useMemo} from 'react';
-import {MemoryRouter, useHistory} from 'react-router-dom';
+import {MemoryRouter, Router, useHistory} from 'react-router-dom';
 
 import {Route} from '../../app/Route';
 import {useQueryPersistedState} from '../useQueryPersistedState';
@@ -606,5 +607,23 @@ describe('useQueryPersistedState', () => {
     });
 
     expect(querySearch).toEqual('?q=B'); // end up back on initial route
+  });
+
+  it('keeps the location state on replace', async () => {
+    const user = userEvent.setup();
+    const history = createMemoryHistory({
+      initialEntries: [{pathname: '/page', search: '?q=B', state: {kept: true}}],
+    });
+
+    render(
+      <Router history={history}>
+        <Test options={{queryKey: 'q', behavior: 'replace'}} />
+      </Router>,
+    );
+
+    await user.click(await screen.findByText(`[B]`));
+    expect(await screen.findByText(`[Navigated]`)).toBeVisible();
+    expect(history.location.search).toEqual('?q=Navigated');
+    expect(history.location.state).toEqual({kept: true});
   });
 });

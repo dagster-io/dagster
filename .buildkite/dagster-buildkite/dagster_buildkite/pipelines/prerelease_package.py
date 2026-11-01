@@ -55,7 +55,7 @@ def build_prerelease_package_steps(ctx: BuildkiteContext) -> list[StepConfigurat
             "uv pip install --system build",
             "sh ./scripts/build_and_publish.sh",
         )
-        .on_test_image(env=["PYPI_TOKEN"])
+        .on_test_image()
         .build()
     )
 

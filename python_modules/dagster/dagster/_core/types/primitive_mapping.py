@@ -2,6 +2,8 @@ import dagster._check as check
 from dagster._builtins import Bool, Float, Int, String
 from dagster._core.types.dagster_type import (
     Any as RuntimeAny,
+)
+from dagster._core.types.dagster_type import (
     List,
 )
 from dagster._core.types.python_dict import PythonDict

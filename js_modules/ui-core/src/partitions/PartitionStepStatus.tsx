@@ -54,7 +54,7 @@ import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {RunStatus} from '../graphql/types';
 import {linkToRunEvent} from '../runs/RunUtils';
-import {RunFilterToken} from '../runs/RunsFilterInput';
+import {RunFilterToken} from '../runs/RunsFilterUtils';
 import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';

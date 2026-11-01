@@ -8,9 +8,7 @@ def iris_dataset():
 
 # start_example
 
-from dagster_clickhouse_pandas import (
-    ClickhousePandasIOManager,  # ty: ignore[unresolved-import]
-)
+from dagster_clickhouse_pandas import ClickhousePandasIOManager  # ty: ignore[unresolved-import]
 
 from dagster import Definitions
 

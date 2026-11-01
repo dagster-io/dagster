@@ -1,7 +1,7 @@
 import {useCallback, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
-import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
+import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, LaunchBehavior, handleLaunchResult} from './RunUtils';
 import {gql, useApolloClient, useMutation} from '../apollo-client';
 import {ReexecutionDialog, ReexecutionDialogProps} from './ReexecutionDialog';
 import {DagsterTag} from './RunTag';
@@ -40,12 +40,17 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
 
   const [dialogProps, setDialogProps] = useState<ReexecutionDialogProps | null>(null);
+
+  // Launching takes a round trip, during which a second click would launch a second run. Ignore
+  // clicks until the launch settles; callers can show `loading` meanwhile.
+  const [loading, setLoading] = useState(false);
+
   const onClick = useCallback(
     async (
       run: {id: string; pipelineName: string; tags: {key: string; value: string}[]},
       param: ReexecutionStrategy | ExecutionParams,
       forceLaunchpad: boolean,
-      options?: {openInNewTab?: boolean},
+      options?: {openInNewTab?: boolean; behavior?: LaunchBehavior},
     ) => {
       const backfillTag = run.tags.find((t) => t.key === DagsterTag.Backfill);
 
@@ -61,64 +66,74 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         return;
       }
 
-      if (backfillTag) {
-        const {data} = await client.query<
-          CheckBackfillStatusQuery,
-          CheckBackfillStatusQueryVariables
-        >({
-          query: CHECK_BACKFILL_STATUS_QUERY,
-          fetchPolicy: 'no-cache',
-          variables: {
-            backfillId: backfillTag.value,
-          },
-        });
-        const backfillRunning =
-          data.partitionBackfillOrError.__typename === 'PartitionBackfill'
-            ? data.partitionBackfillOrError.status === BulkActionStatus.REQUESTED
-            : false;
-
-        if (!backfillRunning) {
-          try {
-            await confirm({
-              title: 'Re-execution within backfill',
-              description: `This run is part of a completed backfill. Re-executing will not update the backfill status or launch runs of downstream dependencies.`,
-              intent: 'primary',
-              catchOnCancel: true,
-            });
-          } catch {
-            return;
-          }
-        }
+      if (loading) {
+        return;
       }
+      setLoading(true);
 
       try {
-        const result = await launchPipelineReexecution({
-          variables:
-            typeof param === 'string'
-              ? {
-                  reexecutionParams: {
-                    parentRunId: run.id,
-                    strategy: param,
-                    extraTags: UI_EXECUTION_TAGS,
-                  },
-                }
-              : {executionParams: paramsWithUIExecutionTags(param)},
-        });
-        handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
-          preserveQuerystring: true,
-          behavior: 'open',
-          openInNewTab: options?.openInNewTab ? openInNewTab : undefined,
-        });
-        onCompleted?.();
-      } catch (error) {
-        showLaunchError(error as Error);
+        if (backfillTag) {
+          const {data} = await client.query<
+            CheckBackfillStatusQuery,
+            CheckBackfillStatusQueryVariables
+          >({
+            query: CHECK_BACKFILL_STATUS_QUERY,
+            fetchPolicy: 'no-cache',
+            variables: {
+              backfillId: backfillTag.value,
+            },
+          });
+          const backfillRunning =
+            data.partitionBackfillOrError.__typename === 'PartitionBackfill'
+              ? data.partitionBackfillOrError.status === BulkActionStatus.REQUESTED
+              : false;
+
+          if (!backfillRunning) {
+            try {
+              await confirm({
+                title: 'Re-execution within backfill',
+                description: `This run is part of a completed backfill. Re-executing will not update the backfill status or launch runs of downstream dependencies.`,
+                intent: 'primary',
+                catchOnCancel: true,
+              });
+            } catch {
+              return;
+            }
+          }
+        }
+
+        try {
+          const result = await launchPipelineReexecution({
+            variables:
+              typeof param === 'string'
+                ? {
+                    reexecutionParams: {
+                      parentRunId: run.id,
+                      strategy: param,
+                      extraTags: UI_EXECUTION_TAGS,
+                    },
+                  }
+                : {executionParams: paramsWithUIExecutionTags(param)},
+          });
+          handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
+            preserveQuerystring: true,
+            behavior: options?.behavior ?? 'open',
+            openInNewTab: options?.openInNewTab ? openInNewTab : undefined,
+          });
+          onCompleted?.();
+        } catch (error) {
+          showLaunchError(error as Error);
+        }
+      } finally {
+        setLoading(false);
       }
     },
-    [client, confirm, launchPipelineReexecution, history, onCompleted, openInNewTab],
+    [client, confirm, launchPipelineReexecution, history, loading, onCompleted, openInNewTab],
   );
 
   return {
     onClick,
+    loading,
     launchpadElement: dialogProps ? <ReexecutionDialog {...dialogProps} /> : null,
   };
 };

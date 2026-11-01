@@ -16,6 +16,9 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_layer import AssetLayer
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.declarative_automation.operators.job_operators import (
+    contains_job_root_assets_condition,
+)
 from dagster._core.definitions.dependency import (
     DependencyMapping,
     DependencyStructure,
@@ -252,7 +255,16 @@ class JobDefinition(IHasInternalInit):
                     " resolving per-partition config, so this combination is not currently"
                     " supported."
                 )
+            if not contains_job_root_assets_condition(self._automation_condition):
+                raise DagsterInvalidDefinitionError(
+                    f"Job '{self.name}' has an automation_condition that does not evaluate"
+                    " against the job's root assets. Asset-level conditions such as"
+                    " `AutomationCondition.eager()` cannot be applied to a job directly;"
+                    " wrap them with `AutomationCondition.any_job_root_assets_match(...)` or"
+                    " `AutomationCondition.all_job_root_assets_match(...)`."
+                )
 
+    @staticmethod
     def dagster_internal_init(
         *,
         graph_def: GraphDefinition,

@@ -26,7 +26,8 @@ import {useQuery} from '../../apollo-client';
 interface Props {
   description: string;
   status?: AssetConditionEvaluationStatus;
-  assetKeyPath: string[];
+  assetKeyPath: string[] | null;
+  jobName?: string;
   evaluationId: string;
   nodeUniqueId: string;
   selectPartition?: (partitionKey: string | null) => void;
@@ -39,6 +40,7 @@ export const PartitionSubsetList = ({
   description,
   status,
   assetKeyPath,
+  jobName,
   evaluationId,
   nodeUniqueId,
   selectPartition,
@@ -55,7 +57,8 @@ export const PartitionSubsetList = ({
     PARTITION_SUBSET_LIST_QUERY,
     {
       variables: {
-        assetKey: {path: assetKeyPath},
+        assetKey: !jobName && assetKeyPath ? {path: assetKeyPath} : null,
+        assetJobKey: jobName ? {jobName} : null,
         evaluationId,
         nodeUniqueId,
       },

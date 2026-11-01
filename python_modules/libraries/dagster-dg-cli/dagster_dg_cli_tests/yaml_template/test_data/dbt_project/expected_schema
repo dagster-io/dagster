@@ -12,6 +12,7 @@ attributes:  # Optional: Attributes details
     # packaged_project_dir: <string>  # Optional: 
     # state_path: <string>  # Optional: 
     # prepare_project_cli_args: <one of: array of string, string>  # Optional: 
+    # install_deps: <one of: boolean, string>  # Optional: 
     #
     # Option 2 - RemoteGitDbtProjectManagerModel:
     # repo_url: <string>  # Optional: 

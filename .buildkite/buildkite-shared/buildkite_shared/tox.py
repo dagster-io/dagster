@@ -5,7 +5,6 @@ from typing import Literal
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
     CommandStepBuilder,
     CommandStepConfiguration,
     ResourceRequests,
@@ -33,7 +32,6 @@ class ToxFactor:
     concurrency_group: str | None = None
     pytest_args: list[str] | None = None
     label_suffix: str | None = None
-    queue: BuildkiteQueue | None = None
     resources: ResourceRequests | None = None
     soft_fail: bool = False
     # Overrides the PackageSpec-level image when set. Useful for packages that
@@ -60,11 +58,8 @@ def build_tox_step(
     extra_commands_pre: list[str] | None = None,
     extra_commands_post_cd: list[str] | None = None,
     extra_commands_post: list[str] | None = None,
-    env: list[str] | None = None,
     image: ToxImage = "test",
     python_version: AvailablePythonVersion | None = None,
-    ecr_account_ids: list[str | None] | None = None,
-    queue: BuildkiteQueue | None = None,
     depends_on: str | Sequence[str] | None = None,
     skip_reason: str | None = None,
     pytest_args: list[str] | None = None,
@@ -73,7 +68,6 @@ def build_tox_step(
     resources: ResourceRequests | None = None,
     soft_fail: bool = False,
     with_docker: bool = True,
-    ecr_passthru: bool = False,
     section_header: str | None = None,
     command_wrapper: Callable[[str], str] | None = None,
     mutator: StepBuilderMutator | None = None,
@@ -84,9 +78,9 @@ def build_tox_step(
     splits — this factory returns exactly one step per call.
 
     image controls which CommandStepBuilder image method is invoked:
-      - "test":             .on_test_image(python_version.value, env=env)
-      - "integration":      .on_integration_image(env=env, ecr_account_ids=ecr_account_ids)
-      - "integration_slim": .on_integration_slim_image(env=env)
+      - "test":             .on_test_image(python_version.value)
+      - "integration":      .on_integration_image()
+      - "integration_slim": .on_integration_slim_image()
 
     command_wrapper, if provided, wraps the rendered `tox ...` command string before it
     is added to .run() — e.g. for buildevents/Honeycomb instrumentation.
@@ -129,27 +123,21 @@ def build_tox_step(
 
     if image == "test":
         resolved_version = python_version or AvailablePythonVersion.get_default()
-        builder.on_test_image(resolved_version.value, env=env or [])
+        builder.on_test_image(resolved_version.value)
     elif image == "integration":
-        integration_kwargs: dict[str, object] = {"env": env or []}
-        if ecr_account_ids is not None:
-            integration_kwargs["ecr_account_ids"] = ecr_account_ids
+        integration_kwargs: dict[str, object] = {}
         builder.on_integration_image(**integration_kwargs)  # type: ignore[arg-type]
     elif image == "integration_slim":
-        builder.on_integration_slim_image(env=env or [])
+        builder.on_integration_slim_image()
 
     builder.run(*commands)
     builder.depends_on(depends_on)
     builder.skip(skip_reason)
 
-    if queue is not None:
-        builder.on_queue(queue)
     if resources is not None:
         builder.resources(resources)
     if with_docker:
         builder.with_docker()
-    if ecr_passthru:
-        builder.with_ecr_passthru()
 
     if concurrency is not None or concurrency_group is not None:
         if concurrency is None or concurrency_group is None:

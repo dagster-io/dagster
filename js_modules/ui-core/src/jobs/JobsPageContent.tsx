@@ -1,6 +1,7 @@
 import {Box, Colors, NonIdealState, Spinner, SpinnerWithText} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
+import styles from './css/JobsPageContent.module.css';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {filterJobSelectionByQuery} from '../job-selection/AntlrJobSelection';
@@ -98,7 +99,7 @@ export const JobsPageContent = () => {
 
   return (
     <>
-      <Box padding={{horizontal: 24, vertical: 12}} border="bottom">
+      <Box border="bottom" className={styles.filterRow}>
         <JobSelectionInput items={allJobs} value={selection} onChange={setSelection} />
       </Box>
       {loading && !repoCount ? (

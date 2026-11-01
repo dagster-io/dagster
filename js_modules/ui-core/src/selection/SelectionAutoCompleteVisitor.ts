@@ -1,8 +1,14 @@
 import {ParserRuleContext, TerminalNode} from 'antlr4ng';
 
 import {BaseSelectionVisitor} from './BaseSelectionVisitor';
-import {SelectionAutoCompleteProvider, Suggestion} from './SelectionAutoCompleteProvider';
 import {
+  QuotedValue,
+  SelectionAutoCompleteProvider,
+  Suggestion,
+} from './SelectionAutoCompleteProvider';
+import {
+  KEY_VALUE_ATTRIBUTES,
+  getUnquotedValueProblem,
   getValueNodeValue,
   isInsideExpressionlessParenthesizedExpression,
   removeQuotesFromString,
@@ -16,10 +22,14 @@ import {
   ColonTokenContext,
   DownTraversalContext,
   FunctionNameContext,
+  IncompleteAttributeExpressionMissingSecondValueContext,
   IncompleteAttributeExpressionMissingValueContext,
+  IncompleteLeftQuotedStringValueContext,
   IncompletePlusTraversalExpressionContext,
   IncompletePlusTraversalExpressionMissingValueContext,
+  IncompleteRightQuotedStringValueContext,
   LeftParenTokenContext,
+  NullStringValueContext,
   OrTokenContext,
   PostDigitsWhitespaceContext,
   PostDownwardTraversalWhitespaceContext,
@@ -27,13 +37,95 @@ import {
   PostNeighborTraversalWhitespaceContext,
   PostNotOperatorWhitespaceContext,
   PostUpwardTraversalWhitespaceContext,
+  QuotedStringValueContext,
   UnmatchedValueContext,
+  UnquotedRejectedValueContext,
   UpTraversalContext,
 } from './generated/SelectionAutoCompleteParser';
 
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 const DEBUG = false;
+
+/** What may follow a value that ends where it was typed: whitespace, `)`, or nothing. */
+const VALUE_END_PATTERN = /^(?:[ \t\r\n)]|$)/;
+
+/** On pages with traversal, a complete downstream layer (`+` or `+2`) can also follow a value. */
+const TRAVERSAL_VALUE_END_PATTERN = /^(?:\+[0-9]*)?(?:[ \t\r\n)]|$)/;
+
+type AttributeValueResultsOptions = {
+  quotedValue?: QuotedValue;
+  key?: string;
+};
+
+/**
+ * The expression's value with quotes added, when the shared grammar rejects part of it unquoted
+ * and quoting can fix it.
+ */
+function getQuotedValue(
+  ctx: AttributeExpressionContext,
+  supportsTraversal: boolean | undefined,
+): QuotedValue | undefined {
+  const values = ctx.attributeValue().map((attributeValue) => attributeValue.value());
+  const problems = values
+    .filter((value) => value instanceof UnquotedRejectedValueContext)
+    .map((value) => getUnquotedValueProblem(value.getText()));
+  if (!problems.length) {
+    return undefined;
+  }
+
+  // A backslash can't be escaped yet and a hidden character should be removed, so quoting isn't
+  // offered for unquoted values with either.
+  if (
+    problems.some(
+      (problem) => problem?.type === 'hidden-character' || problem?.type === 'backslash',
+    )
+  ) {
+    return undefined;
+  }
+
+  // With an incomplete quote the parser can't tell where the value ends, so quoting could cut it short.
+  if (
+    values.some(
+      (value) =>
+        value instanceof IncompleteLeftQuotedStringValueContext ||
+        value instanceof IncompleteRightQuotedStringValueContext,
+    )
+  ) {
+    return undefined;
+  }
+
+  // The parser ends a value at characters like `+` and `:`, so when the typed text runs on past it,
+  // quoting would wrap only the start of what was typed.
+  const lastValueToken = ctx.attributeValue().at(-1)?.stop;
+  const stream = lastValueToken?.inputStream;
+  const rest = stream
+    ? stream.getTextFromRange((lastValueToken?.stop ?? 0) + 1, stream.size - 1)
+    : '';
+  const valueEndPattern = supportsTraversal ? TRAVERSAL_VALUE_END_PATTERN : VALUE_END_PATTERN;
+  if (!valueEndPattern.test(rest)) {
+    return undefined;
+  }
+
+  // Only tag attributes take key=value, so quoting a pair on another attribute is still invalid.
+  const attribute = ctx.attributeName().getText();
+  if (values.length > 1 && !(KEY_VALUE_ATTRIBUTES as readonly string[]).includes(attribute)) {
+    return undefined;
+  }
+
+  const text = values
+    .map((value) =>
+      // A bare <null> means an empty value where it's supported, so quoting it would match the
+      // literal text "<null>" instead.
+      value instanceof NullStringValueContext ? value.getText() : `"${getValueNodeValue(value)}"`,
+    )
+    .join('=');
+  // Accepted unquoted values can hold a `*` too, and the quoted text quotes every value.
+  const hasUnquotedAsterisk = values.some(
+    (value) => !(value instanceof QuotedStringValueContext) && value.getText().includes('*'),
+  );
+  return {text, hasUnquotedAsterisk};
+}
 
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
@@ -43,6 +135,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
   private createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
   private supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
+  private supportsNot: SelectionAutoCompleteProvider['supportsNot'];
 
   public list: Array<Suggestion> = [];
 
@@ -59,6 +152,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getAllResults,
     createOperatorSuggestion,
     supportsTraversal,
+    supportsNot,
   }: {
     line: string;
     cursorIndex: number;
@@ -69,6 +163,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
     createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
     supportsTraversal: SelectionAutoCompleteProvider['supportsTraversal'];
+    supportsNot: SelectionAutoCompleteProvider['supportsNot'];
   }) {
     super({line, cursorIndex});
     this.getAttributeResultsMatchingQuery = getAttributeResultsMatchingQuery;
@@ -80,6 +175,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this._startReplacementIndex = cursorIndex;
     this._stopReplacementIndex = cursorIndex;
     this.supportsTraversal = supportsTraversal;
+    this.supportsNot = supportsNot;
   }
 
   set startReplacementIndex(newValue: number) {
@@ -185,7 +281,9 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
 
   public visitAttributeValue(ctx: AttributeValueContext) {
     const stopIndex = ctx.stop?.stop ?? 0;
+    // A lone `"` lexes as an opening quote, so only a closing quote ends the value here.
     if (
+      !(ctx.value() instanceof IncompleteLeftQuotedStringValueContext) &&
       this.cursorIndex >= stopIndex &&
       this.line[this.cursorIndex - 1] === '"' &&
       this.line[this.cursorIndex] !== '"'
@@ -196,10 +294,10 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.startReplacementIndex = ctx.start?.start ?? 0;
     this.stopReplacementIndex = (ctx.stop?.stop ?? 0) + 1;
 
-    const parentContext = ctx.parent;
-    if (parentContext instanceof AttributeExpressionContext) {
-      const colonToken = parentContext.colonToken();
-      const postWhitespace = parentContext.postAttributeValueWhitespace();
+    const expression = ctx.parent instanceof AttributeExpressionContext ? ctx.parent : undefined;
+    if (expression) {
+      const colonToken = expression.colonToken();
+      const postWhitespace = expression.postAttributeValueWhitespace();
       if (colonToken?.start) {
         this.startReplacementIndex = colonToken.start.start + 1;
       }
@@ -211,7 +309,14 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     const parentChildren = ctx.parent?.children ?? [];
     if (parentChildren[0] instanceof AttributeNameContext) {
       const rawValue = getValueNodeValue(ctx.value());
-      this.addAttributeValueResults(parentChildren[0].getText(), rawValue);
+      const quotedValue = expression
+        ? getQuotedValue(expression, this.supportsTraversal)
+        : undefined;
+      const key =
+        expression?.attributeValue(1) === ctx
+          ? getValueNodeValue(expression.attributeValue(0))
+          : undefined;
+      this.addAttributeValueResults(parentChildren[0].getText(), rawValue, {quotedValue, key});
     }
   }
 
@@ -333,6 +438,21 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     }
   }
 
+  public visitIncompleteAttributeExpressionMissingSecondValue(
+    ctx: IncompleteAttributeExpressionMissingSecondValueContext,
+  ) {
+    const attribute = ctx.attributeName().getText();
+    const isKeyValueAttribute = (KEY_VALUE_ATTRIBUTES as readonly string[]).includes(attribute);
+    if (!isKeyValueAttribute || this.cursorIndex <= ctx.EQUAL().symbol.start) {
+      this.visitChildren(ctx);
+      return;
+    }
+    const keyCtx = ctx.attributeValue();
+    this.startReplacementIndex = keyCtx.start?.start ?? 0;
+    this.stopReplacementIndex = this.cursorIndex;
+    this.addAttributeValueResults(attribute, '', {key: getValueNodeValue(keyCtx)});
+  }
+
   public visitPostNotOperatorWhitespace(ctx: PostNotOperatorWhitespaceContext) {
     const needsWhitespace = this.cursorIndex === (ctx.start?.start ?? 0);
     this.addUnmatchedValueResults('', (value) => `${needsWhitespace ? ' ' : ''}${value}`, {
@@ -420,13 +540,13 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     options: {excludeNot?: boolean; excludePlus?: boolean} = {},
   ) {
     const value = _value.trim();
-    if (value) {
-      this.list.push(
-        this.getSubstringResultMatchingQuery({
-          query: value,
-          textCallback,
-        }),
-      );
+    // The substring row can't express a quote or backslash inside its quoted pattern.
+    const canMatchSubstring = value !== '' && !/["\\]/.test(value);
+    const substringResult = canMatchSubstring
+      ? this.getSubstringResultMatchingQuery({query: value, textCallback})
+      : null;
+    if (substringResult) {
+      this.list.push(substringResult);
     }
     this.addAttributeResults(value, textCallback);
     this.addFunctionResults(value, textCallback, true);
@@ -440,7 +560,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       );
     }
 
-    if (!options.excludeNot && 'not'.startsWith(value)) {
+    if (this.supportsNot && !options.excludeNot && 'not'.startsWith(value)) {
       this.list.push(
         this.createOperatorSuggestion({
           text: textCallback('not '),
@@ -470,16 +590,18 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   private addAttributeValueResults(
-    attributeKey: string,
+    attribute: string,
     value: string,
-    textCallback: (value: string) => string = DEFAULT_TEXT_CALLBACK,
+    {quotedValue, key}: AttributeValueResultsOptions = {},
   ) {
     const unquotedValue = removeQuotesFromString(value);
     this.list.push(
       ...this.getAttributeValueResultsMatchingQuery({
-        attribute: attributeKey,
+        attribute,
         query: unquotedValue,
-        textCallback,
+        textCallback: DEFAULT_TEXT_CALLBACK,
+        quotedValue,
+        key,
       }),
     );
   }

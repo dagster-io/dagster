@@ -344,7 +344,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         unique_partitions_defs = {
             spec.partitions_def for spec in normalized_specs if spec.partitions_def is not None
         }
-        if len(unique_partitions_defs) > 1 and not can_subset:
+        # Unexecutable assets (node_def is None) are required to have can_subset=False, so this
+        # check would be unsatisfiable for them. Nothing is subset if nothing executes.
+        if len(unique_partitions_defs) > 1 and not can_subset and node_def is not None:
             raise DagsterInvalidDefinitionError(
                 "If different AssetSpecs have different partitions_defs, can_subset must be True"
             )
@@ -372,6 +374,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             spec.key: spec for spec in self._check_specs_by_output_name.values()
         }
 
+    @staticmethod
     def dagster_internal_init(
         *,
         keys_by_input_name: Mapping[str, AssetKey],

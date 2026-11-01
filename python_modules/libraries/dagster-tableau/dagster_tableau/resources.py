@@ -168,9 +168,11 @@ class BaseTableauClient:
         self, specs: Sequence[AssetSpec], refreshable_workbook_ids: Sequence[str] | None
     ) -> Iterator[AssetObservation | Output]:
         """Refreshes workbooks for the given workbook IDs and materializes workbook views given the asset specs."""
-        refreshed_workbook_ids = set()
+        refreshed_workbook_ids: set[str] = set()
         for refreshable_workbook_id in refreshable_workbook_ids or []:
-            refreshed_workbook_ids.add(self.refresh_and_poll_workbook(refreshable_workbook_id))
+            refreshed_workbook_id = self.refresh_and_poll_workbook(refreshable_workbook_id)
+            if refreshed_workbook_id is not None:
+                refreshed_workbook_ids.add(refreshed_workbook_id)
 
         for spec in specs:
             view_id = check.inst(TableauMetadataSet.extract(spec.metadata).id, str)
@@ -199,11 +201,11 @@ class BaseTableauClient:
         """Refreshes data sources for the given data source IDs and materializes Tableau assets given the asset specs.
         Only data sources with extracts can be refreshed.
         """
-        refreshed_data_source_ids = set()
+        refreshed_data_source_ids: set[str] = set()
         for refreshable_data_source_id in refreshable_data_source_ids or []:
-            refreshed_data_source_ids.add(
-                self.refresh_and_poll_data_source(refreshable_data_source_id)
-            )
+            refreshed_data_source_id = self.refresh_and_poll_data_source(refreshable_data_source_id)
+            if refreshed_data_source_id is not None:
+                refreshed_data_source_ids.add(refreshed_data_source_id)
 
         # If a sheet depends on a refreshed data source, then its workbook is considered refreshed
         refreshed_workbook_ids = set()
@@ -645,116 +647,162 @@ class BaseTableauWorkspace(ConfigurableResource):
             for wb in all_workbooks:
                 workbook_id = wb.id
                 workbook_name = wb.name
-                workbook = client.get_workbook(workbook_id=workbook_id)
-                workbook_data_list = check.is_list(
-                    workbook["data"]["workbooks"],  # ty: ignore[not-subscriptable]
-                    additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
-                )
-                if not workbook_data_list:
+                # A single empty or malformed workbook must never bring down the entire code
+                # location load. We parse each workbook in isolation, accumulating its content
+                # into local collections that are only committed once parsing fully succeeds.
+                # Any failure (or a workbook with no usable content) logs a warning and is skipped.
+                try:
+                    workbook = client.get_workbook(workbook_id=workbook_id)
+                    workbook_data_list = check.is_list(
+                        workbook["data"]["workbooks"],  # ty: ignore[not-subscriptable]
+                        additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
+                    )
+                    if not workbook_data_list:
+                        self._log.warning(
+                            f"No data retrieved for Tableau workbook {workbook_name} with id {workbook_id}. Skipping."
+                        )
+                        continue
+                    workbook_data = workbook_data_list[0]
+
+                    # An empty or malformed workbook may omit `sheets`/`dashboards` entirely (or
+                    # set them to null), which previously raised a KeyError and failed the load.
+                    # Coerce missing values to empty lists, and skip workbooks with no content.
+                    workbook_sheets = workbook_data.get("sheets") or []
+                    workbook_dashboards = workbook_data.get("dashboards") or []
+                    if not workbook_sheets and not workbook_dashboards:
+                        self._log.warning(
+                            f"Tableau workbook {workbook_name} with id {workbook_id} contains no "
+                            "sheets or dashboards. Skipping."
+                        )
+                        continue
+
+                    workbook_sheets_data: list[TableauContentData] = []
+                    workbook_dashboards_data: list[TableauContentData] = []
+                    workbook_data_sources_data: list[TableauContentData] = []
+                    # Data source IDs newly discovered in this workbook, used to dedupe against
+                    # both other workbooks (`data_source_ids`) and this workbook's own sheets.
+                    workbook_data_source_ids: set[str] = set()
+
+                    # We keep track of data source IDs for each sheet to augment the dashboard data.
+                    # Hidden sheets don't have LUIDs, so we use metadata IDs as keys.
+                    data_source_ids_by_sheet_metadata_id = defaultdict(set)
+                    for sheet_data in workbook_sheets:
+                        sheet_id = sheet_data["luid"]
+                        sheet_metadata_id = sheet_data["id"]
+                        if sheet_id or sheet_metadata_id:
+                            augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
+                            workbook_sheets_data.append(
+                                TableauContentData(
+                                    content_type=TableauContentType.SHEET,
+                                    properties=augmented_sheet_data,
+                                )
+                            )
+                        """
+                        Lineage formation depends on the availability of published data sources.
+                        If published data sources are available (i.e., parentPublishedDatasources exists and is not empty),
+                        it means you can form the lineage by using the luid of those published sources.
+                        If the published data sources are missing,
+                        you create assets for embedded data sources by using their id.
+                        """
+                        for embedded_data_source_data in sheet_data.get(
+                            "parentEmbeddedDatasources", []
+                        ):
+                            published_data_source_list = embedded_data_source_data.get(
+                                "parentPublishedDatasources", []
+                            )
+                            for published_data_source_data in published_data_source_list:
+                                data_source_id = published_data_source_data["luid"]
+                                data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
+                                    data_source_id
+                                )
+                                if (
+                                    data_source_id
+                                    and data_source_id not in data_source_ids
+                                    and data_source_id not in workbook_data_source_ids
+                                ):
+                                    workbook_data_source_ids.add(data_source_id)
+                                    augmented_published_data_source_data = {
+                                        **published_data_source_data,
+                                        "isPublished": True,
+                                    }
+                                    workbook_data_sources_data.append(
+                                        TableauContentData(
+                                            content_type=TableauContentType.DATA_SOURCE,
+                                            properties=augmented_published_data_source_data,
+                                        )
+                                    )
+                            if not published_data_source_list:
+                                """While creating TableauWorkspaceData luid is mandatory for all TableauContentData
+                                and in case of embedded_data_source its missing hence we are using its id as luid"""
+                                data_source_id = embedded_data_source_data["id"]
+                                data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
+                                    data_source_id
+                                )
+                                if (
+                                    data_source_id
+                                    and data_source_id not in data_source_ids
+                                    and data_source_id not in workbook_data_source_ids
+                                ):
+                                    workbook_data_source_ids.add(data_source_id)
+                                    embedded_data_source_data["luid"] = data_source_id
+                                    augmented_embedded_data_source_data = {
+                                        **embedded_data_source_data,
+                                        "isPublished": False,
+                                        "workbook": {"luid": workbook_id},
+                                    }
+                                    workbook_data_sources_data.append(
+                                        TableauContentData(
+                                            content_type=TableauContentType.DATA_SOURCE,
+                                            properties=augmented_embedded_data_source_data,
+                                        )
+                                    )
+
+                    for dashboard_data in workbook_dashboards:
+                        dashboard_id = dashboard_data["luid"]
+                        if dashboard_id:
+                            dashboard_upstream_sheets = dashboard_data.get("sheets", [])
+                            # Sheets for which LUID is null are hidden sheets
+                            hidden_sheet_metadata_ids = {
+                                sheet["id"]
+                                for sheet in dashboard_upstream_sheets
+                                if not sheet["luid"]
+                            }
+                            dashboard_upstream_data_source_ids = set()
+                            for hidden_sheet_metadata_id in hidden_sheet_metadata_ids:
+                                dashboard_upstream_data_source_ids.update(
+                                    data_source_ids_by_sheet_metadata_id.get(
+                                        hidden_sheet_metadata_id, []
+                                    )
+                                )
+
+                            augmented_dashboard_data = {
+                                **dashboard_data,
+                                "workbook": {"luid": workbook_id},
+                                "data_source_ids": list(dashboard_upstream_data_source_ids),
+                            }
+                            workbook_dashboards_data.append(
+                                TableauContentData(
+                                    content_type=TableauContentType.DASHBOARD,
+                                    properties=augmented_dashboard_data,
+                                )
+                            )
+                except Exception as e:
                     self._log.warning(
-                        f"No data retrieved for Tableau workbook {workbook_name} with id {workbook_id}. Skipping."
+                        f"Failed to process Tableau workbook {workbook_name} with id {workbook_id}: "
+                        f"{e}. Skipping."
                     )
                     continue
-                workbook_data = workbook_data_list[0]
+
+                # The workbook parsed successfully; commit its content to the workspace data.
                 workbooks.append(
                     TableauContentData(
                         content_type=TableauContentType.WORKBOOK, properties=workbook_data
                     )
                 )
-
-                # We keep track of data source IDs for each sheet to augment the dashboard data.
-                # Hidden sheets don't have LUIDs, so we use metadata IDs as keys.
-                data_source_ids_by_sheet_metadata_id = defaultdict(set)
-                for sheet_data in workbook_data["sheets"]:
-                    sheet_id = sheet_data["luid"]
-                    sheet_metadata_id = sheet_data["id"]
-                    if sheet_id or sheet_metadata_id:
-                        augmented_sheet_data = {**sheet_data, "workbook": {"luid": workbook_id}}
-                        sheets.append(
-                            TableauContentData(
-                                content_type=TableauContentType.SHEET,
-                                properties=augmented_sheet_data,
-                            )
-                        )
-                    """
-                    Lineage formation depends on the availability of published data sources.
-                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), 
-                    it means you can form the lineage by using the luid of those published sources.
-                    If the published data sources are missing, 
-                    you create assets for embedded data sources by using their id.
-                    """
-                    for embedded_data_source_data in sheet_data.get(
-                        "parentEmbeddedDatasources", []
-                    ):
-                        published_data_source_list = embedded_data_source_data.get(
-                            "parentPublishedDatasources", []
-                        )
-                        for published_data_source_data in published_data_source_list:
-                            data_source_id = published_data_source_data["luid"]
-                            data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
-                                data_source_id
-                            )
-                            if data_source_id and data_source_id not in data_source_ids:
-                                data_source_ids.add(data_source_id)
-                                augmented_published_data_source_data = {
-                                    **published_data_source_data,
-                                    "isPublished": True,
-                                }
-                                data_sources.append(
-                                    TableauContentData(
-                                        content_type=TableauContentType.DATA_SOURCE,
-                                        properties=augmented_published_data_source_data,
-                                    )
-                                )
-                        if not published_data_source_list:
-                            """While creating TableauWorkspaceData luid is mandatory for all TableauContentData
-                            and in case of embedded_data_source its missing hence we are using its id as luid"""
-                            data_source_id = embedded_data_source_data["id"]
-                            data_source_ids_by_sheet_metadata_id[sheet_metadata_id].add(
-                                data_source_id
-                            )
-                            if data_source_id and data_source_id not in data_source_ids:
-                                data_source_ids.add(data_source_id)
-                                embedded_data_source_data["luid"] = data_source_id
-                                augmented_embedded_data_source_data = {
-                                    **embedded_data_source_data,
-                                    "isPublished": False,
-                                    "workbook": {"luid": workbook_id},
-                                }
-                                data_sources.append(
-                                    TableauContentData(
-                                        content_type=TableauContentType.DATA_SOURCE,
-                                        properties=augmented_embedded_data_source_data,
-                                    )
-                                )
-
-                for dashboard_data in workbook_data["dashboards"]:
-                    dashboard_id = dashboard_data["luid"]
-                    if dashboard_id:
-                        dashboard_upstream_sheets = dashboard_data.get("sheets", [])
-                        # Sheets for which LUID is null are hidden sheets
-                        hidden_sheet_metadata_ids = {
-                            sheet["id"] for sheet in dashboard_upstream_sheets if not sheet["luid"]
-                        }
-                        dashboard_upstream_data_source_ids = set()
-                        for hidden_sheet_metadata_id in hidden_sheet_metadata_ids:
-                            dashboard_upstream_data_source_ids.update(
-                                data_source_ids_by_sheet_metadata_id.get(
-                                    hidden_sheet_metadata_id, []
-                                )
-                            )
-
-                        augmented_dashboard_data = {
-                            **dashboard_data,
-                            "workbook": {"luid": workbook_id},
-                            "data_source_ids": list(dashboard_upstream_data_source_ids),
-                        }
-                        dashboards.append(
-                            TableauContentData(
-                                content_type=TableauContentType.DASHBOARD,
-                                properties=augmented_dashboard_data,
-                            )
-                        )
+                sheets.extend(workbook_sheets_data)
+                dashboards.extend(workbook_dashboards_data)
+                data_sources.extend(workbook_data_sources_data)
+                data_source_ids.update(workbook_data_source_ids)
 
             """
             We add to the data all the published-data-sources, that weren't already added from a workbook.
@@ -864,11 +912,13 @@ class BaseTableauWorkspace(ConfigurableResource):
         ]
 
         with self.get_client() as client:
-            refreshed_data_source_ids = set()
+            refreshed_data_source_ids: set[str] = set()
             for refreshable_data_source_id in refreshable_data_source_ids:
-                refreshed_data_source_ids.add(
-                    client.refresh_and_poll_data_source(refreshable_data_source_id)
+                refreshed_data_source_id = client.refresh_and_poll_data_source(
+                    refreshable_data_source_id
                 )
+                if refreshed_data_source_id is not None:
+                    refreshed_data_source_ids.add(refreshed_data_source_id)
 
             data_source_specs = [
                 spec

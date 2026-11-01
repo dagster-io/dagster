@@ -38,12 +38,12 @@ def definition_owner_from_owner_str(
 
 # legacy classes for backcompatibility
 class GrapheneUserAssetOwner(GrapheneUserDefinitionOwner):
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         name = "UserAssetOwner"
 
 
 class GrapheneTeamAssetOwner(GrapheneTeamDefinitionOwner):
-    class Meta:
+    class Meta:  # ty: ignore[invalid-attribute-override]
         name = "TeamAssetOwner"
 
 

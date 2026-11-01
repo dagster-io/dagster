@@ -1,8 +1,36 @@
+import inspect
+from typing import Any
+
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
     get_function_params,
+    get_type_hints,
     validate_expected_params,
 )
+
+
+class Widget:
+    pass
+
+
+def widget_signature(widget: Widget) -> Widget:
+    raise NotImplementedError
+
+
+def string_annotated_widget_signature(widget: "Widget") -> "Widget":
+    raise NotImplementedError
+
+
+class CallableWithCustomSignature:
+    def __init__(self, sig: inspect.Signature) -> None:
+        self.__signature__ = sig
+
+    def __call__(self, **kwargs: Any) -> Any: ...
+
+
+class CallableWithoutCustomSignature:
+    def __call__(self, widget: Widget) -> Widget:
+        raise NotImplementedError
 
 
 def decorated_function_one_positional():
@@ -96,3 +124,23 @@ def test_empty():
         """"""  # noqa: D419
 
     assert format_docstring_for_description(empty_docstring) == ""
+
+
+def test_get_type_hints_honors_custom_signature():
+    # A callable object whose `__call__` only takes `**kwargs` but which advertises a custom
+    # `__signature__`: hints must be keyed off the same signature `get_function_params` reads, or
+    # callers match parameter names against annotations that describe a different function.
+    wrapper = CallableWithCustomSignature(inspect.signature(widget_signature))
+
+    assert [p.name for p in get_function_params(wrapper)] == ["widget"]
+    assert get_type_hints(wrapper) == {"widget": Widget, "return": Widget}
+
+    # String annotations in the signature are resolved, not passed through as strings.
+    string_wrapper = CallableWithCustomSignature(
+        inspect.signature(string_annotated_widget_signature)
+    )
+    assert get_type_hints(string_wrapper) == {"widget": Widget, "return": Widget}
+
+    # Callables with no custom signature are unaffected.
+    assert get_type_hints(widget_signature) == {"widget": Widget, "return": Widget}
+    assert get_type_hints(CallableWithoutCustomSignature()) == {"widget": Widget, "return": Widget}

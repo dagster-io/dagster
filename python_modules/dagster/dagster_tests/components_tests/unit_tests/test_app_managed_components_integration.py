@@ -79,13 +79,10 @@ class TestAppManagedDefinitionsLoc:
         )
 
     def test_display_key_aggregate(self):
-        assert AppManagedDefinitionsLoc().get_display_key(Path("/fake")) == "<ui>"
+        assert AppManagedDefinitionsLoc().get_display_key(Path("/fake")) == "APP_ROOT"
 
     def test_display_key_with_instance(self):
-        assert (
-            AppManagedDefinitionsLoc(instance_key="abc").get_display_key(Path("/fake"))
-            == "<ui>/abc"
-        )
+        assert AppManagedDefinitionsLoc(instance_key="abc").get_display_key(Path("/fake")) == "abc"
 
 
 class TestCodeLocationNamePlumbing:

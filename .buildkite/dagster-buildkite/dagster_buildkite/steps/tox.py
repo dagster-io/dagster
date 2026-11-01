@@ -6,7 +6,6 @@ from pathlib import Path
 
 from buildkite_shared.python_version import AvailablePythonVersion
 from buildkite_shared.step_builders.command_step_builder import (
-    BuildkiteQueue,
     CommandStepConfiguration,
     ResourceRequests,
 )
@@ -32,17 +31,14 @@ def build_tox_step(
     tox_file: str | None = None,
     extra_commands_pre: list[str] | None = None,
     extra_commands_post: list[str] | None = None,
-    env: list[str] | None = None,
     depends_on: list[str] | Sequence[str] | None = None,
     timeout_in_minutes: int | None = None,
-    queue: BuildkiteQueue | None = None,
     skip_reason: str | None = None,
     pytest_args: list[str] | None = None,
     concurrency: int | None = None,
     concurrency_group: str | None = None,
     resources: ResourceRequests | None = None,
     soft_fail: bool = False,
-    ecr_passthru: bool = False,
 ) -> CommandStepConfiguration:
     base_label = base_label or os.path.basename(root_dir)
     emoji = _COMMAND_TYPE_TO_EMOJI_MAP[command_type]
@@ -61,13 +57,11 @@ def build_tox_step(
         tox_file=tox_file,
         extra_commands_pre=extra_commands_pre,
         extra_commands_post=extra_commands_post,
-        env=env,
         # OSS tox suites broadly use docker-compose-backed fixtures (postgres,
         # redis, kafka, redpanda), so opt the whole factory in.
         with_docker=True,
         image="test",
         python_version=resolved_python_version,
-        queue=queue,
         depends_on=depends_on,
         skip_reason=skip_reason,
         pytest_args=pytest_args,
@@ -75,7 +69,6 @@ def build_tox_step(
         concurrency_group=concurrency_group,
         resources=resources,
         soft_fail=soft_fail,
-        ecr_passthru=ecr_passthru,
         section_header=section_header,
     )
 

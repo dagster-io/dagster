@@ -1,6 +1,11 @@
 import {buildInstigationTick} from '../../graphql/builders';
 import {InstigationTickStatus} from '../../graphql/types';
-import {getTickResultType, isStuckStartedTick} from '../util';
+import {
+  getTickResultType,
+  isStuckStartedTick,
+  mostSevereTickStatus,
+  tickSummaryRank,
+} from '../util';
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -47,5 +52,74 @@ describe('getTickResultType', () => {
   it('shows runs for a tick that requested no materializations', () => {
     // Plain sensor/schedule tick that launched runs.
     expect(getTickResultType({requestedAssetMaterializationCount: 0})).toBe('runs');
+  });
+});
+
+describe('mostSevereTickStatus', () => {
+  const ticks = (...statuses: InstigationTickStatus[]) => statuses.map((status) => ({status}));
+
+  it('surfaces a failure batched alongside quieter ticks', () => {
+    expect(
+      mostSevereTickStatus(
+        ticks(
+          InstigationTickStatus.SKIPPED,
+          InstigationTickStatus.FAILURE,
+          InstigationTickStatus.SUCCESS,
+        ),
+      ),
+    ).toBe(InstigationTickStatus.FAILURE);
+  });
+
+  it('prefers a success over an in-progress or skipped tick', () => {
+    expect(
+      mostSevereTickStatus(
+        ticks(
+          InstigationTickStatus.SKIPPED,
+          InstigationTickStatus.STARTED,
+          InstigationTickStatus.SUCCESS,
+        ),
+      ),
+    ).toBe(InstigationTickStatus.SUCCESS);
+  });
+
+  it('reports skipped for an all-skipped or empty batch', () => {
+    expect(mostSevereTickStatus(ticks(InstigationTickStatus.SKIPPED))).toBe(
+      InstigationTickStatus.SKIPPED,
+    );
+    expect(mostSevereTickStatus([])).toBe(InstigationTickStatus.SKIPPED);
+  });
+});
+
+describe('tickSummaryRank', () => {
+  const rank = (
+    status: InstigationTickStatus,
+    counts: {requestedAssetMaterializationCount?: number; runIds?: string[]} = {},
+  ) => tickSummaryRank({status, ...counts}, 'runs');
+
+  it('sorts a failure ahead of a tick that requested runs, and both ahead of a skip', () => {
+    const failed = rank(InstigationTickStatus.FAILURE);
+    const requested = rank(InstigationTickStatus.SUCCESS, {runIds: ['a']});
+    const skipped = rank(InstigationTickStatus.SKIPPED, {runIds: []});
+
+    expect(failed).toBeLessThan(requested);
+    expect(requested).toBeLessThan(skipped);
+  });
+
+  it('keeps a successful tick above the skipped ones even when it requested nothing', () => {
+    expect(rank(InstigationTickStatus.SUCCESS, {runIds: []})).toBeLessThan(
+      rank(InstigationTickStatus.SKIPPED, {runIds: []}),
+    );
+  });
+
+  it('counts materializations rather than runs for a materialization tick', () => {
+    const tick = {
+      status: InstigationTickStatus.SKIPPED,
+      requestedAssetMaterializationCount: 3,
+      runIds: [],
+    };
+
+    expect(tickSummaryRank(tick, 'materializations')).toBeLessThan(
+      tickSummaryRank({...tick, requestedAssetMaterializationCount: 0}, 'materializations'),
+    );
   });
 });

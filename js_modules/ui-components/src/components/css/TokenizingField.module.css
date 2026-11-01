@@ -38,7 +38,7 @@
 .input {
   background-color: var(--color-background-default);
   color: var(--color-text-default);
-  font-size: 14px;
+  font-size: var(--input-font-size, 14px);
   font-weight: 400;
   padding-left: 4px;
   padding-bottom: 2px;

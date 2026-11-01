@@ -8,6 +8,9 @@ import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToStri
 import {AssetKey} from '../assets/types';
 import {isExternalRun} from '../runs/externalRuns';
 
+export const OPEN_LAUNCHPAD_UNKNOWN =
+  'Launchpad is unavailable because the pipeline is not present in the current repository.';
+
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;
   return `/locations/${buildRepoPathForURL(repoName, repoLocation)}${finalPath}`;

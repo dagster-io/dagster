@@ -73,3 +73,32 @@ def test_no_spark_home():
         "$SPARK_HOME in your environment (got None)."
         in result.failure_data_for_node("spark_op").error.cause.message  # ty: ignore[unresolved-attribute]
     )
+
+
+def test_command_injection_repro_is_neutralized(tmp_path):
+    marker = tmp_path / "dagster_injection_marker.txt"
+    payload = f"realarg ; id > {marker} ; echo INJECTED_MARKER"
+
+    spark_op = create_spark_op("spark_op", main_class="org.example.Main")
+    run_config = {
+        "ops": {
+            "spark_op": {
+                "config": {
+                    "master_url": "local[*]",
+                    # A real file so we get past the jar-existence check and reach execution.
+                    "application_jar": file_relative_path(__file__, "fake.jar"),
+                    # A path with no spark-submit binary, mirroring the original repro.
+                    "spark_home": str(tmp_path / "nonexistent_spark"),
+                    "application_arguments": payload,
+                }
+            }
+        }
+    }
+    result = wrap_op_in_graph_and_execute(
+        spark_op, run_config=run_config, raise_on_error=False, resources=RESOURCE_DEFS
+    )
+
+    # The injected command must never run.
+    assert not marker.exists()
+    # The absent spark-submit must be reported as a failure, not masked as SUCCESS.
+    assert result.is_node_failed("spark_op")

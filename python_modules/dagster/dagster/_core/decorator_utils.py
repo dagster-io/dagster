@@ -3,7 +3,7 @@ import inspect
 import re
 import textwrap
 from collections.abc import Mapping, Sequence
-from inspect import Parameter, signature
+from inspect import Parameter, Signature, signature
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
@@ -67,6 +67,33 @@ def get_function_params(fn: Callable[..., Any]) -> Sequence[Parameter]:
     return list(signature(fn).parameters.values())
 
 
+def _type_hints_from_signature(sig: Signature, target: Callable[..., Any]) -> Mapping[str, Any]:
+    """Pull type hints off an explicitly set `__signature__`.
+
+    String annotations are resolved against the module the callable was defined in. That is a best
+    guess -- a `__signature__` can be copied from a function in any module.
+    """
+    hints = {
+        name: param.annotation
+        for name, param in sig.parameters.items()
+        if param.annotation is not Parameter.empty
+    }
+    if sig.return_annotation is not Signature.empty:
+        hints["return"] = sig.return_annotation
+
+    if not any(isinstance(hint, str) for hint in hints.values()):
+        return hints
+
+    # `typing.get_type_hints` resolves strings off an object, not off a bare annotations dict, so
+    # hang them on a stub function.
+    def annotation_holder() -> None: ...
+
+    annotation_holder.__annotations__ = hints
+    return typing_get_type_hints(
+        annotation_holder, globalns=getattr(target, "__globals__", None), include_extras=True
+    )
+
+
 def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     if isinstance(fn, functools.partial):
         target = fn.func
@@ -77,7 +104,15 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     else:
         check.failed(f"Unhandled Callable object {fn}")
 
+    # `get_function_params` reads parameters off `signature(fn)`, which honors an explicitly set
+    # `__signature__`. When there is one, the hints have to come from that same signature, or
+    # callers match parameter names from one signature against annotations from another -- e.g. a
+    # wrapper that advertises `__signature__` but whose `__call__` only takes `**kwargs`.
+    explicit_signature = getattr(fn, "__signature__", None)
+
     try:
+        if explicit_signature is not None:
+            return _type_hints_from_signature(explicit_signature, target)
         return typing_get_type_hints(target, include_extras=True)
     except NameError as e:
         match = re.search(r"'(\w+)'", str(e))

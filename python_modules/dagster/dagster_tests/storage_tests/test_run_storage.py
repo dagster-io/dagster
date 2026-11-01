@@ -160,9 +160,9 @@ async def test_batch_run_loader():
             dagster_run(job_name="some_pipeline", tags={"foo": "bar"})
         )
 
-        records = await dg.RunRecord.gen_many(context, [run_1.run_id, run_2.run_id, run_3.run_id])
-        assert records
-        records = list(records)
+        records = list(
+            await dg.RunRecord.gen_many(context, [run_1.run_id, run_2.run_id, run_3.run_id])
+        )
 
         assert len(records) == 3
         assert check.not_none(records[0]).dagster_run.run_id == run_1.run_id

@@ -37,6 +37,9 @@ test = [
     "duckdb",
 ]
 
+[tool.uv]
+exclude-newer = "48h"
+
 [tool.uv.sources]
 dagster = { path = "../../dagster", editable = true }
 dagster-test = { path = "../../dagster-test", editable = true }

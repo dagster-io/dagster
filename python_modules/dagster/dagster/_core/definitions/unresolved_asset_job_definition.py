@@ -5,15 +5,10 @@ from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Annotated, Any, Optional, Union  # noqa: UP035
 
 from dagster_shared.record import IHaveNew, record_custom, replace
+from dagster_shared.utils.warnings import preview_warning
 
 import dagster._check as check
-from dagster._annotations import (
-    deprecated,
-    deprecated_param,
-    hidden_param,
-    only_allow_hidden_params_in_kwargs,
-    public,
-)
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets.job.asset_job import build_asset_job, get_asset_graph_for_job
@@ -267,13 +262,6 @@ class UnresolvedAssetJobDefinition(IHaveNew):
     breaking_version="2.0.0",
     additional_warn_text="Partitioning is inferred from the selected assets, so setting this is redundant.",
 )
-@hidden_param(
-    param="automation_condition",
-    breaking_version="",
-    additional_warn_text="This parameter is hidden while job-level declarative automation is "
-    "under development and will be made public in a future release.",
-    emit_runtime_warning=False,
-)
 @public
 def define_asset_job(
     name: str,
@@ -288,7 +276,7 @@ def define_asset_job(
     hooks: AbstractSet[HookDefinition] | None = None,
     op_retry_policy: Optional["RetryPolicy"] = None,
     owners: Sequence[str] | None = None,
-    **kwargs: Any,
+    automation_condition: Optional["AutomationCondition[AssetJobKey]"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe
     a selection of source assets. This will only be resolved to a JobDefinition once placed in a
@@ -357,6 +345,9 @@ def define_asset_job(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the job. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        automation_condition (Optional[AutomationCondition[AssetJobKey]]): (Preview) A
+            job-scoped automation condition. When the condition becomes true, the job is
+            launched by the automation condition sensor/daemon.
 
     Returns:
         UnresolvedAssetJobDefinition: The job, which can be placed inside a project.
@@ -414,10 +405,11 @@ def define_asset_job(
     """
     from dagster._core.definitions import AssetSelection
 
-    only_allow_hidden_params_in_kwargs(define_asset_job, kwargs)
-    automation_condition: AutomationCondition[AssetJobKey] | None = kwargs.get(
-        "automation_condition"
-    )
+    if automation_condition is not None:
+        preview_warning(
+            "Parameter `automation_condition` of function `define_asset_job`",
+            stacklevel=4,  # stacklevel 4 to attribute the warning to the caller of `define_asset_job`
+        )
 
     # convert string-based selections to AssetSelection objects
     if selection is None:

@@ -28,6 +28,7 @@ In our case, we'll create an asset check on the `raw_customers` asset. We want t
 Our asset check queries the table directly to determine if the data is valid. Based on the result of the query, we either set the <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" /> to pass or fail.
 
 :::info
+
 The asset check is using the same `DuckDBResource` resource we defined for the asset. Resources can be shared across all objects in Dagster.
 
 ```mermaid

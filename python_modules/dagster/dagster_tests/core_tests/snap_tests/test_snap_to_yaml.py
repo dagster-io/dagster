@@ -270,3 +270,52 @@ def test_discriminated_union_empty_dict_default_preserved(instance) -> None:
     assert "auth:" in yaml_output
     assert "default:" in yaml_output
     assert "extra: {}" in yaml_output
+
+
+class InputFile(dg.Config):
+    kind: Literal["file"] = "file"
+    path: str = "data/input.csv"
+
+
+class InputUrl(dg.Config):
+    kind: Literal["url"] = "url"
+    url: str = "https://example.com/data.csv"
+
+
+def job_def_with_discriminated_union_default():
+    class MyOpConfig(dg.Config):
+        data_source: InputFile | InputUrl = pydantic.Field(default=InputUrl(), discriminator="kind")
+
+    @dg.op
+    def an_op(config: MyOpConfig):
+        pass
+
+    @dg.job
+    def a_job():
+        an_op()
+
+    return dg.Definitions(jobs=[a_job])
+
+
+def test_discriminated_union_with_default_emits_only_default_branch(instance) -> None:
+    """A discriminated-union field with a Pydantic default must emit ONLY the
+    default's branch in the defaults YAML. Emitting every selector branch produces
+    invalid config (a Selector permits exactly one field).
+    """
+    repo = _remote_repository_for_function(instance, job_def_with_discriminated_union_default)
+    remote_job = repo.get_full_job("a_job")
+    root_config_key = remote_job.root_config_key
+    assert root_config_key
+    root_type = remote_job.config_schema_snapshot.get_config_snap(root_config_key)
+    yaml_output = default_values_yaml_from_type_snap(remote_job.config_schema_snapshot, root_type)
+
+    assert (
+        yaml_output
+        == """ops:
+  an_op:
+    config:
+      data_source:
+        url:
+          url: https://example.com/data.csv
+"""
+    )

@@ -62,6 +62,7 @@ import {QuotedStringValueContext} from './SelectionAutoCompleteParser.js';
 import {IncompleteLeftQuotedStringValueContext} from './SelectionAutoCompleteParser.js';
 import {IncompleteRightQuotedStringValueContext} from './SelectionAutoCompleteParser.js';
 import {UnquotedStringValueContext} from './SelectionAutoCompleteParser.js';
+import {UnquotedRejectedValueContext} from './SelectionAutoCompleteParser.js';
 import {NullStringValueContext} from './SelectionAutoCompleteParser.js';
 import {DigitsValueContext} from './SelectionAutoCompleteParser.js';
 
@@ -782,6 +783,18 @@ export class SelectionAutoCompleteListener implements ParseTreeListener {
    * @param ctx the parse tree
    */
   exitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => void;
+  /**
+   * Enter a parse tree produced by the `UnquotedRejectedValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   */
+  enterUnquotedRejectedValue?: (ctx: UnquotedRejectedValueContext) => void;
+  /**
+   * Exit a parse tree produced by the `UnquotedRejectedValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   */
+  exitUnquotedRejectedValue?: (ctx: UnquotedRejectedValueContext) => void;
   /**
    * Enter a parse tree produced by the `NullStringValue`
    * labeled alternative in `SelectionAutoCompleteParser.value`.

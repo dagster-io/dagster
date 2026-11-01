@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import IHaveNew, record_custom
+from dagster_shared.serdes.objects.package_entry import ComponentProducesKind
 from dagster_shared.yaml_utils.source_position import SourcePosition
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
@@ -45,6 +46,12 @@ class ComponentTypeSpec(IHaveNew):
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
         tags (Optional[Sequence[str]]): Tags for filtering and organizing.
+        produces (Optional[Sequence[str]]): The kinds of Dagster primitives this component
+            creates. Must be values from ``ComponentProducesKind``: ``asset``,
+            ``asset_check``, ``schedule``, ``sensor``, ``job``, ``resource``.
+            Declared (not derived) because a component's definitions are only known once it
+            is instantiated with config; the type-level listing has neither. Surfaced on
+            ``ComponentTypeInfo`` for UI picker filtering and contextual entry points.
 
     """
 
@@ -52,6 +59,7 @@ class ComponentTypeSpec(IHaveNew):
     tags: PublicAttr[Sequence[str]]
     owners: PublicAttr[Sequence[str]]
     metadata: PublicAttr[Mapping[str, Any]]
+    produces: PublicAttr[Sequence[str]]
 
     def __new__(
         cls,
@@ -59,10 +67,20 @@ class ComponentTypeSpec(IHaveNew):
         tags: Sequence[str] | None = None,
         owners: Sequence[str] | None = None,
         metadata: Mapping[str, Any] | None = None,
+        produces: Sequence[str] | None = None,
     ):
         owners = check.opt_sequence_param(owners, "owners", of_type=str)
         for owner in owners:
             validate_component_owner(owner)
+
+        produces = check.opt_sequence_param(produces, "produces", of_type=str)
+        allowed_produces = {kind.value for kind in ComponentProducesKind}
+        invalid_produces = sorted({p for p in produces if p not in allowed_produces})
+        check.param_invariant(
+            not invalid_produces,
+            "produces",
+            f"Invalid produces kind(s): {invalid_produces}. Allowed kinds: {sorted(allowed_produces)}.",
+        )
 
         return super().__new__(
             cls,
@@ -70,6 +88,7 @@ class ComponentTypeSpec(IHaveNew):
             tags=check.opt_sequence_param(tags, "tags", of_type=str),
             owners=owners,
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            produces=[p.value if isinstance(p, ComponentProducesKind) else p for p in produces],
         )
 
 

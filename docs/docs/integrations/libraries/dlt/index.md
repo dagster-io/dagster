@@ -7,6 +7,7 @@ tags: [dagster-supported, etl, component]
 source: https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt
 pypi: https://pypi.org/project/dagster-dlt/
 sidebar_custom_props:
+  componentAvailable: true
   logo: images/integrations/dlthub.jpeg
 partnerlink: https://dlthub.com/
 canonicalUrl: '/integrations/libraries/dlt'

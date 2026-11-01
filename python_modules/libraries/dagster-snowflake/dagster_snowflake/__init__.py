@@ -1,8 +1,15 @@
+import importlib.util
+
 from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_snowflake.components import (
     SnowflakeConnectionComponent as SnowflakeConnectionComponent,
 )
+
+if importlib.util.find_spec("dagster_dbt") is not None:
+    from dagster_snowflake.components.dbt_project.component import (
+        SnowflakeDbtProjectComponent as SnowflakeDbtProjectComponent,
+    )
 from dagster_snowflake.ops import snowflake_op_for_query as snowflake_op_for_query
 from dagster_snowflake.resources import (
     SnowflakeConnection as SnowflakeConnection,

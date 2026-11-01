@@ -1,0 +1,205 @@
+# ty `airflow` environment.
+#
+# Self-contained env definition: deps + uv.lock + the env's `[tool.ty.*]`
+# config all live here. `scripts/run-ty.py` reads the `[tool.ty]` block,
+# translates it to a temp ty.toml at `dagster-oss/` (the project root,
+# per the convention: envs under `dagster-oss/` anchor at `dagster-oss/`,
+# everything else at the worktree root), and invokes ty with
+# `--config-file=<temp>` from that cwd. Include paths in `[tool.ty.src]`
+# are therefore anchored to `dagster-oss/`.
+#
+# Exists because airflow 2.x requires `sqlalchemy<2` (2.11.2:
+# `sqlalchemy>=1.4.36,<2.0`) while the rest of the ecosystem the `master`
+# env checks — prefect 3 in particular — requires `sqlalchemy>=2`. Rather
+# than hold all of dagster's storage layer to sqlalchemy 1.4's stubs, the
+# airflow-bound packages are checked here and `master` resolves
+# sqlalchemy 2.
+#
+# This env is expected to be temporary. `apache-airflow-core` 3.2 moved to
+# `sqlalchemy[asyncio]>=2.0.48`, so once the packages below check against
+# airflow >=3.2 they can fold back into `master` and this directory goes
+# away.
+#
+# To add a dependency: append it to `[project].dependencies` (and to
+# `[tool.uv.sources]` with an editable path entry if it lives in this repo),
+# then run `just rebuild_ty_pins` from `dagster-oss/`.
+
+[project]
+name = "ty-airflow"
+version = "0.0.0"
+description = "ty environment for the airflow-bound packages, pinned to sqlalchemy 1.x."
+# Pinned to 3.12 (not 3.13+) deliberately: dagster-airlift resolves
+# `apache-airflow>=2.11,<3` below 3.13 and `apache-airflow>=3.0.0` at or
+# above it. 3.12 is what the checked code's airflow-2 paths run on.
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+  # ---- Packages this env owns (see `[tool.ty.src].include`)
+  "dagster-airflow",
+  "dagster-airlift[mwaa]",
+  "kitchen-sink",                   # dagster-airlift/kitchen-sink/
+  "perf-harness",                   # dagster-airlift/perf-harness/
+  "airlift-federation-tutorial",
+  "airlift-migration-tutorial",
+  "airlift-mwaa-example",
+  "starlift-demo",
+
+  # `[test]` supplies pytest etc. so the checked test files resolve their
+  # imports; `[pyright]` supplies the `types-*` stub packages. Both mirror
+  # `master`, so the split does not change the type surface these packages
+  # are checked against.
+  "dagster[pyright,test]",
+
+  # ---- In-repo (editable) libraries pulled in only transitively.
+  # uv applies this file's `[tool.uv.sources]` only to requirements declared
+  # in this file, so every dagster lib that must resolve to the editable
+  # `1!0+dev` tree (rather than a published release) has to be listed here
+  # as a direct dependency.
+  "create-dagster",
+  "dagster-aws[stubs]",
+  "dagster-celery",
+  "dagster-celery-docker",
+  "dagster-celery-k8s",
+  "dagster-cloud-cli",
+  "dagster-dbt",
+  "dagster-dg-cli",
+  "dagster-dg-core",
+  "dagster-docker",
+  "dagster-duckdb",
+  "dagster-duckdb-pandas",
+  "dagster-fivetran",
+  "dagster-gcp",
+  "dagster-graphql",
+  "dagster-k8s",
+  "dagster-managed-elements",
+  "dagster-pandas",
+  "dagster-pipes[stubs]",
+  "dagster-postgres",
+  "dagster-pyspark",
+  "dagster-rest-resources",
+  "dagster-shared",
+  "dagster-slack",
+  "dagster-sling",
+  "dagster-spark",
+  "dagster-test",
+  "dagster-webserver",
+  "dagstermill",
+
+  # ---- Constrained beyond runtime
+  # This env has a much narrower dependency set than `master`, so without
+  # floors the resolver settles on the oldest versions airflow 2.x tolerates
+  # — several of which carry known CVEs that `master` had already resolved
+  # past. These pin the env to at least what `master` held before the split.
+  "apache-airflow>=2.11.2",
+  "apache-airflow-providers-fab>=1.5.4",
+  "werkzeug>=3.0.6",
+  # setuptools is not floored: dagster-airflow itself caps it below 71, and
+  # 70.3.0 is what `master` resolved too, so this env is no worse off.
+  # sqlalchemy 1.4 is not py.typed; without these stubs its API surfaces as
+  # `Any` and the diagnostics this env exists to produce would be silently lost.
+  "types-sqlalchemy==1.4.53.34",
+]
+
+[tool.uv]
+# Virtual project: this package exists only to declare the env's dependency
+# set — uv installs the deps and never builds `ty-airflow` itself.
+package = false
+# Aikido blocks PyPI packages newer than 48h. Pin globally so `uv lock` works
+# from dev machines without setting UV_EXCLUDE_NEWER ad-hoc.
+exclude-newer = "48h"
+
+[tool.uv.sources]
+# In-repo editable paths. Relative to this pyproject.toml
+# (`dagster-oss/ty/airflow/`).
+
+# Top-level
+dagster                     = { path = "../../python_modules/dagster",                    editable = true }
+dagster-graphql             = { path = "../../python_modules/dagster-graphql",            editable = true }
+dagster-pipes               = { path = "../../python_modules/dagster-pipes",              editable = true }
+dagster-test                = { path = "../../python_modules/dagster-test",               editable = true }
+dagster-webserver           = { path = "../../python_modules/dagster-webserver",          editable = true }
+
+# python_modules/libraries/*
+create-dagster              = { path = "../../python_modules/libraries/create-dagster",              editable = true }
+dagster-airflow             = { path = "../../python_modules/libraries/dagster-airflow",             editable = true }
+dagster-airlift             = { path = "../../python_modules/libraries/dagster-airlift",             editable = true }
+dagster-aws                 = { path = "../../python_modules/libraries/dagster-aws",                 editable = true }
+dagster-celery              = { path = "../../python_modules/libraries/dagster-celery",              editable = true }
+dagster-celery-docker       = { path = "../../python_modules/libraries/dagster-celery-docker",       editable = true }
+dagster-celery-k8s          = { path = "../../python_modules/libraries/dagster-celery-k8s",          editable = true }
+dagster-cloud-cli           = { path = "../../python_modules/libraries/dagster-cloud-cli",           editable = true }
+dagster-dbt                 = { path = "../../python_modules/libraries/dagster-dbt",                 editable = true }
+dagster-dg-cli              = { path = "../../python_modules/libraries/dagster-dg-cli",              editable = true }
+dagster-dg-core             = { path = "../../python_modules/libraries/dagster-dg-core",             editable = true }
+dagster-docker              = { path = "../../python_modules/libraries/dagster-docker",              editable = true }
+dagster-duckdb              = { path = "../../python_modules/libraries/dagster-duckdb",              editable = true }
+dagster-duckdb-pandas       = { path = "../../python_modules/libraries/dagster-duckdb-pandas",       editable = true }
+dagster-fivetran            = { path = "../../python_modules/libraries/dagster-fivetran",            editable = true }
+dagster-gcp                 = { path = "../../python_modules/libraries/dagster-gcp",                 editable = true }
+dagster-k8s                 = { path = "../../python_modules/libraries/dagster-k8s",                 editable = true }
+dagster-managed-elements    = { path = "../../python_modules/libraries/dagster-managed-elements",    editable = true }
+dagstermill                 = { path = "../../python_modules/libraries/dagstermill",                 editable = true }
+dagster-pandas              = { path = "../../python_modules/libraries/dagster-pandas",              editable = true }
+dagster-postgres            = { path = "../../python_modules/libraries/dagster-postgres",            editable = true }
+dagster-pyspark             = { path = "../../python_modules/libraries/dagster-pyspark",             editable = true }
+dagster-rest-resources      = { path = "../../python_modules/libraries/dagster-rest-resources",      editable = true }
+dagster-shared              = { path = "../../python_modules/libraries/dagster-shared",              editable = true }
+dagster-slack               = { path = "../../python_modules/libraries/dagster-slack",               editable = true }
+dagster-sling               = { path = "../../python_modules/libraries/dagster-sling",               editable = true }
+dagster-spark               = { path = "../../python_modules/libraries/dagster-spark",               editable = true }
+
+# Airlift sub-projects
+kitchen-sink                = { path = "../../python_modules/libraries/dagster-airlift/kitchen-sink", editable = true }
+perf-harness                = { path = "../../python_modules/libraries/dagster-airlift/perf-harness", editable = true }
+
+# Examples
+airlift-federation-tutorial = { path = "../../examples/airlift-federation-tutorial", editable = true }
+airlift-migration-tutorial  = { path = "../../examples/airlift-migration-tutorial",  editable = true }
+airlift-mwaa-example        = { path = "../../examples/airlift-mwaa-example",        editable = true }
+starlift-demo               = { path = "../../examples/starlift-demo",               editable = true }
+
+# ########################
+# ##### TY (Type Checker)
+# ########################
+#
+# [Docs root]
+#   https://docs.astral.sh/ty/
+# [Configuration reference]
+#   https://docs.astral.sh/ty/configuration/
+#
+# Include / exclude paths are anchored to `dagster-oss/` (this env's
+# project root, set by `run-ty.py` via cwd when invoking ty).
+
+[tool.ty.environment]
+# Minimum version of Python on which the checked code must run.
+python-version = "3.10"
+
+[tool.ty.rules]
+# Kept in lock-step with the other ty envs — the
+# `test_ty_config_consistency` lint asserts identical `[tool.ty.rules]`
+# across every committed ty config.
+deprecated = "ignore"
+possibly-missing-attribute = "ignore"
+possibly-missing-import = "ignore"
+# Misfires on dynamically-generated pydantic models (e.g. dagster's
+# Resolvable machinery), whose synthesized fields ty cannot see.
+pydantic-discarded-extra-argument = "ignore"
+unused-type-ignore-comment = "ignore"
+unused-ignore-comment = "ignore"
+
+[tool.ty.src]
+# Mirrored by `master`'s exclude list — every path here is excluded there,
+# so the two envs partition the tree rather than double-checking it.
+# `kitchen-sink/` and `perf-harness/` live under the dagster-airlift dir
+# and are covered by that entry.
+include = [
+  "python_modules/libraries/dagster-airflow",
+  "python_modules/libraries/dagster-airlift",
+  "examples/airlift-federation-tutorial",
+  "examples/airlift-migration-tutorial",
+  "examples/airlift-mwaa-example",
+  "examples/starlift-demo",
+]
+
+# Ignore all files that are git-ignored unless explicitly included.
+respect-ignore-files = true

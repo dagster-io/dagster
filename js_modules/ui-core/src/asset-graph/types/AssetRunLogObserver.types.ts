@@ -72,9 +72,11 @@ export type AssetLiveRunLogsSubscription = {
           | {__typename: 'RunDequeuedEvent'}
           | {__typename: 'RunEnqueuedEvent'}
           | {__typename: 'RunFailureEvent'}
+          | {__typename: 'RunResumedEvent'}
           | {__typename: 'RunStartEvent'}
           | {__typename: 'RunStartingEvent'}
           | {__typename: 'RunSuccessEvent'}
+          | {__typename: 'RunSuspendedEvent'}
           | {__typename: 'StepExpectationResultEvent'}
           | {__typename: 'StepWorkerStartedEvent'}
           | {__typename: 'StepWorkerStartingEvent'}

@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import pandas as pd
 from dagster import (
     DagsterInvariantViolationError,
@@ -140,7 +142,7 @@ def create_dagster_pandas_dataframe_type(
     name,
     description=None,
     columns=None,
-    metadata_fn=None,
+    metadata_fn: Callable | None = None,
     dataframe_constraints=None,
     loader=None,
 ):

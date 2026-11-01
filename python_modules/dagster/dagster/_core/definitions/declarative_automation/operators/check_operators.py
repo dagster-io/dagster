@@ -126,7 +126,7 @@ class AnyChecksCondition(ChecksAutomationCondition):
                     None,
                     i,
                 ],  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
-                candidate_subset=context.candidate_subset,
+                candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             for i, check_key in enumerate(
                 sorted(self._get_check_keys(context.key, context.asset_graph))
@@ -135,7 +135,7 @@ class AnyChecksCondition(ChecksAutomationCondition):
 
         check_results = await asyncio.gather(*coroutines)
         for check_result in check_results:
-            true_subset = true_subset.compute_union(check_result.true_subset)
+            true_subset = true_subset.compute_union(check_result.true_subset)  # ty: ignore[invalid-argument-type]
 
         true_subset = context.candidate_subset.compute_intersection(true_subset)
         return AutomationResult(context, true_subset=true_subset, child_results=check_results)
@@ -165,9 +165,9 @@ class AllChecksCondition(ChecksAutomationCondition):
                     None,
                     i,
                 ],  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
-                candidate_subset=context.candidate_subset,
+                candidate_subset=context.candidate_subset,  # ty: ignore[invalid-argument-type]
             ).evaluate_async()
             check_results.append(check_result)
-            true_subset = true_subset.compute_intersection(check_result.true_subset)
+            true_subset = true_subset.compute_intersection(check_result.true_subset)  # ty: ignore[invalid-argument-type]
 
         return AutomationResult(context, true_subset=true_subset, child_results=check_results)

@@ -97,7 +97,7 @@ const RepoRouteContainer = () => {
       >
         <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
-      <Route path="/locations/:repoPath" exact>
+      <Route path="/locations/:repoPath" exact mobile="supported">
         <CodeLocationOverviewRoot repoAddress={addressForPath} />
       </Route>
       <Route path="/locations/:repoPath/definitions" exact>

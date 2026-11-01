@@ -4,7 +4,9 @@ import sys
 import tempfile
 from time import sleep
 
+import pytest
 from dagster_pipes import (
+    DagsterPipesError,
     PipesDefaultLogWriter,
     PipesDefaultMessageWriter,
     PipesFileMessageWriterChannel,
@@ -81,3 +83,9 @@ def test_pipes_default_log_writer(capsys):
 
             assert "Writing this to stdout" in stdout_text
             assert "And this to stderr" in stderr_text
+
+
+def test_default_writer_suggests_passing_a_writer_for_unknown_params():
+    with pytest.raises(DagsterPipesError, match="pass it as `message_writer`"):
+        with PipesDefaultMessageWriter().open({"bucket": "my-bucket"}):
+            pass

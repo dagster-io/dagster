@@ -4,7 +4,6 @@ import csv
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Set
 
 # Color to difficulty mapping
 COLOR_TO_DIFFICULTY = {
@@ -22,7 +21,7 @@ class PuzzleGroup:
 
     name: str
     color: str
-    words: List[str]
+    words: list[str]
 
 
 @dataclass
@@ -32,8 +31,8 @@ class Puzzle:
     id: int
     date: str
     difficulty: float
-    words: List[str]
-    groups: List[PuzzleGroup]
+    words: list[str]
+    groups: list[PuzzleGroup]
 
 
 @dataclass
@@ -41,7 +40,7 @@ class GameState:
     """Tracks the state of a game in progress."""
 
     puzzle: Puzzle
-    solved_groups: Set[str]  # group colors that have been solved
+    solved_groups: set[str]  # group colors that have been solved
     guess_count: int
     mistake_count: int
     invalid_count: int
@@ -70,7 +69,7 @@ def create_game_state(puzzle: Puzzle) -> GameState:
 
 
 # start_load_puzzles_from_csv
-def load_puzzles_from_csv(csv_path: Path) -> List[Puzzle]:
+def load_puzzles_from_csv(csv_path: Path) -> list[Puzzle]:
     """Load puzzles from CSV file format."""
     puzzles_dict = {}
 
@@ -176,7 +175,7 @@ class ConnectionsGameLogic:
     # end_validate_puzzle
 
     @staticmethod
-    def parse_response(response: str) -> List[str]:
+    def parse_response(response: str) -> list[str]:
         """Parse response into list of words."""
         try:
             words = [word.strip().upper() for word in response.split(",")]
@@ -186,7 +185,7 @@ class ConnectionsGameLogic:
         return [word for word in words if word]  # Remove empty strings
 
     @staticmethod
-    def validate_guess(state: GameState, words: List[str]) -> str | None:
+    def validate_guess(state: GameState, words: list[str]) -> str | None:
         """
         Validate a guess.
         Returns: Error message if invalid, None if valid
@@ -218,7 +217,7 @@ class ConnectionsGameLogic:
         return None
 
     @staticmethod
-    def get_remaining_words(state: GameState) -> List[str]:
+    def get_remaining_words(state: GameState) -> list[str]:
         """Get words that are still available (not from solved groups)."""
         solved_words = set()
         for group in state.puzzle.groups:
@@ -280,8 +279,8 @@ class ConnectionsGameLogic:
 
 # start_shuffle_and_split_puzzles
 def shuffle_and_split_puzzles(
-    puzzles: List[Puzzle], train_ratio: float = 0.25, seed: int = 42
-) -> tuple[List[Puzzle], List[Puzzle]]:
+    puzzles: list[Puzzle], train_ratio: float = 0.25, seed: int = 42
+) -> tuple[list[Puzzle], list[Puzzle]]:
     """Shuffle puzzles and split into train/test sets."""
     random.seed(seed)
     shuffled = puzzles.copy()

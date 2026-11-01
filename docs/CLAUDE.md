@@ -16,7 +16,7 @@ This directory contains the Dagster documentation site which is built with
 
 - To check for broken links and other build errors, first generate API docs with
   `yarn build-api-docs` then build the site with `yarn build`.
-- Building API docs requires a Python environment. Run `make dev_install` as
+- Building API docs requires a Python environment. Run `just dev_install` as
   outlined in the Dagster contributing guide to set it up. Avoid this step unless necessary because it can be slow.
 
 ## Linting and formatting

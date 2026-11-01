@@ -44,7 +44,8 @@ export type RunStatus =
   | 'QUEUED'
   | 'STARTED'
   | 'STARTING'
-  | 'SUCCESS';
+  | 'SUCCESS'
+  | 'SUSPENDED';
 
 export type AssetCheckKeyFragment = {
   __typename: 'AssetCheck';

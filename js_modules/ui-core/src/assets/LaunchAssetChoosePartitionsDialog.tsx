@@ -18,7 +18,7 @@ import {
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useLaunchWithTelemetry} from '@shared/launchpad/useLaunchWithTelemetry';
 import reject from 'lodash/reject';
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useContext, useEffect, useMemo, useState} from 'react';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
@@ -48,6 +48,7 @@ import {PartitionDimensionSelection, usePartitionHealthData} from './usePartitio
 import {gql, useApolloClient, useQuery} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PipelineRunTag} from '../app/ExecutionSessionStorage';
+import {TimeContext} from '../app/time/TimeContext';
 import {
   __ASSET_JOB_PREFIX,
   displayNameForAssetKey,
@@ -77,6 +78,13 @@ import {
 } from '../partitions/BackfillMessaging';
 import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
 import {assembleIntoSpans, stringForSpan} from '../partitions/SpanRepresentation';
+import {detectDatePartitions} from '../partitions/isDateFormattedPartitions';
+import {
+  PartitionDateFilter,
+  RECENT_PARTITIONS_DAYS,
+  filterPartitionKeysByDate,
+  recentPartitionsFilter,
+} from '../partitions/partitionDateFilter';
 import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
@@ -208,6 +216,51 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     shouldReadPartitionQueryStringParam: true,
     defaultSelection: 'empty',
   });
+
+  // Partition selection opens scoped to a recent window rather than the full
+  // history, which can run to tens of thousands of keys on an hourly asset.
+  const {resolvedTimezone} = useContext(TimeContext);
+  const defaultDateFilter = useMemo(
+    () => recentPartitionsFilter(resolvedTimezone),
+    [resolvedTimezone],
+  );
+
+  // `undefined` until the user picks a range of their own; `null` is their
+  // explicit choice of all time.
+  const [chosenDateFilter, setChosenDateFilter] = useState<PartitionDateFilter | null | undefined>(
+    undefined,
+  );
+  const [hiddenPartitionsNoticeDismissed, setHiddenPartitionsNoticeDismissed] = useState(false);
+
+  const onDateFilterChange = useCallback((next: PartitionDateFilter | null) => {
+    setChosenDateFilter(next);
+  }, []);
+
+  // Only a lone time-window dimension gets a date window - the same condition
+  // DimensionRangeWizards applies it under.
+  const windowedDimension = useMemo(() => {
+    const dimension = selections.length === 1 ? selections[0]?.dimension : undefined;
+    return dimension &&
+      dimension.type === PartitionDefinitionType.TIME_WINDOW &&
+      detectDatePartitions(dimension.partitionKeys)
+      ? dimension
+      : null;
+  }, [selections]);
+
+  // The notice only speaks for the default window, so it goes away once the
+  // user takes over the picker.
+  const {dateFilter, hiddenPartitionCount} = useMemo(() => {
+    if (chosenDateFilter !== undefined) {
+      return {dateFilter: chosenDateFilter, hiddenPartitionCount: 0};
+    }
+    // Skip the default window when nothing falls inside it, so an asset whose
+    // partitions all predate it doesn't open with an empty selector.
+    const partitionKeys = windowedDimension?.partitionKeys ?? [];
+    const visible = filterPartitionKeysByDate(partitionKeys, defaultDateFilter).length;
+    return visible > 0
+      ? {dateFilter: defaultDateFilter, hiddenPartitionCount: partitionKeys.length - visible}
+      : {dateFilter: null, hiddenPartitionCount: 0};
+  }, [chosenDateFilter, defaultDateFilter, windowedDimension]);
 
   const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = useState(false);
   const canLaunchWithRangesAsTags =
@@ -439,6 +492,13 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   return (
     <>
       <div data-testid={testId('choose-partitions-dialog')}>
+        {hiddenPartitionCount > 0 && !hiddenPartitionsNoticeDismissed ? (
+          <HiddenPartitionsNotice
+            hiddenCount={hiddenPartitionCount}
+            onShowAll={() => onDateFilterChange(null)}
+            onDismiss={() => setHiddenPartitionsNoticeDismissed(true)}
+          />
+        ) : null}
         <Warnings
           displayedPartitionDefinition={displayedPartitionDefinition}
           launchAsBackfill={launchAsBackfill}
@@ -504,6 +564,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               setSelections={setSelections}
               displayedHealth={displayedHealth}
               displayedPartitionDefinition={displayedPartitionDefinition}
+              dateFilter={dateFilter}
+              onDateFilterChange={onDateFilterChange}
             />
           </ToggleableSection>
         )}
@@ -851,6 +913,38 @@ const Warnings = ({
         {alerts}
       </Box>
     </ToggleableSection>
+  );
+};
+
+const HiddenPartitionsNotice = ({
+  hiddenCount,
+  onShowAll,
+  onDismiss,
+}: {
+  hiddenCount: number;
+  onShowAll: () => void;
+  onDismiss: () => void;
+}) => {
+  return (
+    <Box padding={{horizontal: 16, top: 16}} data-testid={testId('hidden-partitions-notice')}>
+      <Alert
+        intent="info"
+        title={`Showing the last ${RECENT_PARTITIONS_DAYS} days`}
+        description={
+          <>
+            {`${partitionCountString(hiddenCount, 'older')} are outside this range and won't be included. `}
+            <ButtonLink
+              underline="always"
+              onClick={onShowAll}
+              data-testid={testId('show-all-partitions-link')}
+            >
+              Show all partitions
+            </ButtonLink>
+          </>
+        }
+        onClose={onDismiss}
+      />
+    </Box>
   );
 };
 

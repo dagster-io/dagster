@@ -23,6 +23,7 @@ import {
 } from './types/RunUtils.types';
 import {ExecutionTag, ReexecutionStrategy} from '../graphql/types';
 import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
+import {shortenId} from '../util/shortenId';
 
 export interface ReexecutionDialogProps {
   isOpen: boolean;
@@ -363,7 +364,7 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
                 <li key={runId}>
                   <Box flex={{direction: 'row', gap: 8, alignItems: 'baseline'}}>
                     <Text size={14} family="mono">
-                      {runId.slice(0, 8)}
+                      {shortenId(runId)}
                     </Text>
                     {errors[runId] ? <div>{errorText(errors[runId])}</div> : null}
                   </Box>
