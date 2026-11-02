@@ -9,6 +9,7 @@ import {
   isGroupId,
   parseGroupId,
 } from './Utils';
+import {applyAssetGroupLineageRouting} from './assetGroupLineageRouting';
 import type {IBounds, IPoint} from '../graph/common';
 
 export type AssetLayoutDirection = 'vertical' | 'horizontal';
@@ -33,6 +34,8 @@ export type AssetLayoutEdge = {
   fromId: string;
   to: IPoint;
   toId: string;
+  sourceBoundary?: number;
+  targetBoundary?: number;
 };
 
 export type AssetGraphLayout = {
@@ -412,13 +415,54 @@ export const layoutAssetGraphImpl = (
     }
   }
 
-  return {
+  const finalGroups = groupsPresent ? visibleGroups : {};
+  const finalVisibleGroupIds = new Set(Object.keys(finalGroups));
+  const groupParentById: Record<string, string | null> = {};
+  for (const id of finalVisibleGroupIds) {
+    const ancestors = ancestorGroupIds(id);
+    const immediateParent = ancestors[ancestors.length - 1];
+    groupParentById[id] =
+      immediateParent !== undefined && finalVisibleGroupIds.has(immediateParent)
+        ? immediateParent
+        : null;
+  }
+
+  const ownerGroupByNodeId: Record<string, string | null> = {};
+  for (const node of renderedNodes) {
+    if (!nodes[node.id]) {
+      continue;
+    }
+    const leafId = node.definition.groupName ? groupIdForNode(node) : null;
+    ownerGroupByNodeId[node.id] = leafId && finalVisibleGroupIds.has(leafId) ? leafId : null;
+  }
+
+  const endpointGroupById: Record<string, string | null> = {};
+  for (const edge of edges) {
+    for (const endpointId of [edge.fromId, edge.toId]) {
+      endpointGroupById[endpointId] = isGroupId(endpointId)
+        ? endpointId
+        : (ownerGroupByNodeId[endpointId] ?? null);
+    }
+  }
+
+  const baseline: AssetGraphLayout = {
     nodes,
     edges,
     width: maxWidth + MARGIN,
     height: maxHeight + MARGIN,
-    groups: groupsPresent ? visibleGroups : {},
+    groups: finalGroups,
   };
+
+  return applyAssetGroupLineageRouting(baseline, {
+    direction: opts.direction,
+    ranksep: Number(config.ranksep ?? Config[opts.direction].ranksep),
+    trailingGroupPadding: opts.direction === 'horizontal' ? 15 : Number(config.groupPaddingBottom),
+    margin: MARGIN,
+    groupParentById,
+    ownerGroupByNodeId,
+    endpointGroupById,
+    alignGroupsOnSecondaryAxis: groupsPresent,
+  });
 };
 
 export const ASSET_LINK_NAME_MAX_LENGTH = 30;
