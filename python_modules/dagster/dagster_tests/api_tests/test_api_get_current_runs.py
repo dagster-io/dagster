@@ -44,6 +44,9 @@ def test_launch_run_grpc():
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for run exited"
             )
 
-            # have to wait for grpc server cleanup thread to run
-            time.sleep(1)
+            # Worker exit and inventory cleanup are asynchronous. Wait for the condition
+            # rather than assuming a single cleanup tick is enough on a loaded machine.
+            deadline = time.monotonic() + 10
+            while code_location.get_current_runs() and time.monotonic() < deadline:
+                time.sleep(0.1)
             assert code_location.get_current_runs() == []
