@@ -3,3 +3,11 @@
     line-height: 20px;
   }
 }
+
+/* Mobile: long names and cron descriptions wrap instead of running off the page. */
+:global(.dagster-mobile) .title,
+:global(.dagster-mobile) .cronRow {
+  flex-wrap: wrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

@@ -3,3 +3,11 @@
     line-height: 20px;
   }
 }
+
+/* Mobile: long names and cursors wrap instead of running off the page. */
+:global(.dagster-mobile) .title,
+:global(.dagster-mobile) .cursorRow {
+  flex-wrap: wrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

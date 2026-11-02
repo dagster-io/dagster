@@ -12,7 +12,3 @@
 .toolbar {
   padding: 12px var(--page-gutter, 24px);
 }
-
-:global(.dagster-mobile) .emptyState {
-  padding: 0 var(--page-gutter);
-}

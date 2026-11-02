@@ -1,0 +1,3 @@
+:global(.dagster-mobile) .emptyState {
+  padding: 0 var(--page-gutter);
+}

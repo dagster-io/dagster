@@ -7,6 +7,7 @@ import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
 import {SensorPreviousRuns} from './SensorPreviousRuns';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/SensorRoot.module.css';
 import {
   SensorAssetSelectionQuery,
   SensorAssetSelectionQueryVariables,
@@ -193,19 +194,15 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         <>
           {/* The window and status controls narrow the timeline and the tick list below it,
           and have nothing to say about the runs feed, so they head this tab alone. */}
-          <Box
-            padding={{vertical: 12, horizontal: 24}}
-            flex={{
-              direction: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 16,
-            }}
-          >
+          <div className={styles.evaluationsBar}>
             {tabs}
-            <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+            <Box
+              className={styles.evaluationsFilters}
+              flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+            >
               <TickStatusFilter status={tickStatus} onChange={setTickStatus} />
               <TickTimelineControls
+                className={styles.timelineControls}
                 tickWindow={tickWindow}
                 onSelectTickWindow={onSelectTickWindow}
                 onPageEarlier={onPageEarlier}
@@ -213,7 +210,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
                 onPageLater={onPageLater}
               />
             </Box>
-          </Box>
+          </div>
           <TickHistoryTimeline
             tickResultType={tickResultType}
             repoAddress={repoAddress}

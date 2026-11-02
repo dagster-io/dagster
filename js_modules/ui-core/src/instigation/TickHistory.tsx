@@ -46,6 +46,7 @@ import {NetworkStatus, gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {
   DynamicPartitionsRequestType,
@@ -130,6 +131,7 @@ export const TicksTable = ({
   windowKey,
 }: TicksTableProps) => {
   const {tickStatus, statuses} = useTickStatusFilter();
+  const isMobile = useIsMobile();
 
   const [showDetailsForTick, setShowDetailsForTick] = useState<HistoryTickFragment | null>(null);
   const [showLogsForTick, setShowLogsForTick] = useState<HistoryTickFragment | null>(null);
@@ -237,44 +239,46 @@ export const TicksTable = ({
     return null;
   }
 
+  const tickRows = ticks.map((tick, index) => (
+    <TickRow
+      key={tick.id}
+      tick={tick}
+      tickResultType={tickResultType}
+      instigationSelector={instigationSelector}
+      index={index}
+      onShowDetails={setShowDetailsForTick}
+      onShowLogs={setShowLogsForTick}
+    />
+  ));
+
   return (
     <>
-      {actionBarComponents ? (
-        <Box padding={{vertical: 12, horizontal: 24}}>{actionBarComponents}</Box>
-      ) : null}
+      {actionBarComponents ? <div className={styles.actionBar}>{actionBarComponents}</div> : null}
       {/* Only a change of window, page or filter, not the background refresh, which would
       otherwise pulse the bar every fifteen seconds. */}
       <IndeterminateLoadingBar
         $loading={queryResult.networkStatus === NetworkStatus.setVariables}
       />
       {ticks.length ? (
-        <Table className={styles.tableWrapper}>
-          <thead>
-            <tr>
-              <th style={{width: 120}}>Timestamp</th>
-              <th style={{width: 90}}>Status</th>
-              <th style={{width: 90}}>Duration</th>
-              {instigationType === InstigationType.SENSOR ? (
-                <th style={{width: 120}}>Cursor</th>
-              ) : null}
-              <th style={{width: 180}}>Result</th>
-              <th style={{width: 80}}>Logs</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ticks.map((tick, index) => (
-              <TickRow
-                key={tick.id}
-                tick={tick}
-                tickResultType={tickResultType}
-                instigationSelector={instigationSelector}
-                index={index}
-                onShowDetails={setShowDetailsForTick}
-                onShowLogs={setShowLogsForTick}
-              />
-            ))}
-          </tbody>
-        </Table>
+        isMobile ? (
+          <div className={styles.mobileTickList}>{tickRows}</div>
+        ) : (
+          <Table className={styles.tableWrapper}>
+            <thead>
+              <tr>
+                <th style={{width: 120}}>Timestamp</th>
+                <th style={{width: 90}}>Status</th>
+                <th style={{width: 90}}>Duration</th>
+                {instigationType === InstigationType.SENSOR ? (
+                  <th style={{width: 120}}>Cursor</th>
+                ) : null}
+                <th style={{width: 180}}>Result</th>
+                <th style={{width: 80}}>Logs</th>
+              </tr>
+            </thead>
+            <tbody>{tickRows}</tbody>
+          </Table>
+        )
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
@@ -581,105 +585,157 @@ function TickRow({
   const isStuckStarted = isStuckStartedTick(tick, index);
 
   return (
-    <tr>
-      <td>
-        <TimestampDisplay
-          timestamp={tick.timestamp}
-          timeFormat={{showTimezone: false, showSeconds: true}}
-        />
-      </td>
-      <td>
-        <TickStatusTag
-          tick={tick}
-          tickResultType={tickResultType}
-          isStuckStarted={isStuckStarted}
-        />
-      </td>
-      <td>
-        {isStuckStarted ? (
+    <TickRowLayout
+      cells={{
+        timestamp: (
+          <TimestampDisplay
+            timestamp={tick.timestamp}
+            timeFormat={{showTimezone: false, showSeconds: true}}
+          />
+        ),
+        status: (
+          <TickStatusTag
+            tick={tick}
+            tickResultType={tickResultType}
+            isStuckStarted={isStuckStarted}
+          />
+        ),
+        duration: isStuckStarted ? (
           '- '
         ) : (
           <TimeElapsed
             startUnix={tick.timestamp}
             endUnix={tick.endTimestamp || Date.now() / 1000}
           />
-        )}
-      </td>
-      {tick.instigationType === InstigationType.SENSOR ? (
-        <td>
-          {tick.cursor ? (
-            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <div
-                style={{
-                  fontFamily: FontFamily.monospace,
-                  fontSize: '14px',
-                  maxWidth: '400px',
-                  overflow: 'hidden',
-                }}
-              >
-                <MiddleTruncate text={humanizeSensorCursor(tick.cursor) || ''} />
-              </div>
-              <CopyIconButton value={tick.cursor || ''} />
-            </Box>
-          ) : (
-            <>&mdash;</>
-          )}
-        </td>
-      ) : null}
-      <td>
-        <Box flex={{direction: 'column', gap: 6}}>
-          {tickResultType === 'runs' ? (
-            <Box flex={{alignItems: 'center', gap: 8}}>
-              <ButtonLink onClick={() => onShowDetails(tick)}>
-                {tick.runIds.length === 1
-                  ? '1 run requested'
-                  : `${tick.runIds.length} runs requested`}
-              </ButtonLink>
-              {tick.runs.length === 1
-                ? tick.runs.map((run) => (
-                    <React.Fragment key={run.id}>
-                      <RunStatusLink run={run} />
-                    </React.Fragment>
-                  ))
-                : null}
-            </Box>
-          ) : (
-            <Box flex={{alignItems: 'center', gap: 8}}>
-              <ButtonLink onClick={() => onShowDetails(tick)}>
-                {labelForRequestedMaterializationsAndJobRuns(
-                  tick.requestedAssetMaterializationCount,
-                  tick.requestedJobRunCount,
-                )}
-              </ButtonLink>
-            </Box>
-          )}
-          {addedPartitions || deletedPartitions ? (
-            <Text size={12}>
-              (
-              {addedPartitions ? (
-                <span>
-                  {addedPartitions} partition{ifPlural(addedPartitions, '', 's')} created
-                  {deletedPartitions ? ',' : ''}
-                </span>
-              ) : null}
-              {deletedPartitions ? (
-                <span>
-                  {deletedPartitions} partition{ifPlural(deletedPartitions, '', 's')} deleted,
-                </span>
-              ) : null}
-              )
-            </Text>
-          ) : null}
-        </Box>
-      </td>
-      <td>
-        <Button onClick={() => onShowLogs(tick)}>View logs</Button>
-      </td>
-    </tr>
+        ),
+        cursor: tickCursorCell(tick),
+        result: (
+          <Box flex={{direction: 'column', gap: 6}}>
+            {tickResultType === 'runs' ? (
+              <Box flex={{alignItems: 'center', gap: 8}}>
+                <ButtonLink onClick={() => onShowDetails(tick)}>
+                  {tick.runIds.length === 1
+                    ? '1 run requested'
+                    : `${tick.runIds.length} runs requested`}
+                </ButtonLink>
+                {tick.runs.length === 1
+                  ? tick.runs.map((run) => (
+                      <React.Fragment key={run.id}>
+                        <RunStatusLink run={run} />
+                      </React.Fragment>
+                    ))
+                  : null}
+              </Box>
+            ) : (
+              <Box flex={{alignItems: 'center', gap: 8}}>
+                <ButtonLink onClick={() => onShowDetails(tick)}>
+                  {labelForRequestedMaterializationsAndJobRuns(
+                    tick.requestedAssetMaterializationCount,
+                    tick.requestedJobRunCount,
+                  )}
+                </ButtonLink>
+              </Box>
+            )}
+            {addedPartitions || deletedPartitions ? (
+              <Text size={12}>
+                (
+                {addedPartitions ? (
+                  <span>
+                    {addedPartitions} partition{ifPlural(addedPartitions, '', 's')} created
+                    {deletedPartitions ? ',' : ''}
+                  </span>
+                ) : null}
+                {deletedPartitions ? (
+                  <span>
+                    {deletedPartitions} partition{ifPlural(deletedPartitions, '', 's')} deleted,
+                  </span>
+                ) : null}
+                )
+              </Text>
+            ) : null}
+          </Box>
+        ),
+        logs: <Button onClick={() => onShowLogs(tick)}>View logs</Button>,
+      }}
+    />
   );
 }
 
-const TICK_HISTORY_QUERY = gql`
+function tickCursorCell(tick: HistoryTickFragment) {
+  if (tick.instigationType !== InstigationType.SENSOR) {
+    return null;
+  }
+  if (!tick.cursor) {
+    return <>&mdash;</>;
+  }
+  return (
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+      <div
+        style={{
+          fontFamily: FontFamily.monospace,
+          fontSize: '14px',
+          maxWidth: '400px',
+          overflow: 'hidden',
+        }}
+      >
+        <MiddleTruncate text={humanizeSensorCursor(tick.cursor) || ''} />
+      </div>
+      <CopyIconButton value={tick.cursor} />
+    </Box>
+  );
+}
+
+type TickRowCells = {
+  timestamp: React.ReactNode;
+  status: React.ReactNode;
+  duration: React.ReactNode;
+  // Sensors only; `null` omits the column.
+  cursor: React.ReactNode | null;
+  result: React.ReactNode;
+  logs: React.ReactNode;
+};
+
+/**
+ * A tick's cells as a table row, or as a stacked item in the mobile layout, where the table's
+ * columns don't fit. A new cell must be added to `TickRowCells`, so both layouts get it.
+ */
+const TickRowLayout = ({cells}: {cells: TickRowCells}) => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div className={styles.mobileTick}>
+        <div className={styles.mobileTickHeader}>
+          {cells.timestamp}
+          {cells.status}
+        </div>
+        {cells.result}
+        <div className={styles.mobileTickFooter}>
+          <div className={styles.mobileTickMeta}>
+            {cells.duration}
+            {cells.cursor !== null ? (
+              <div className={styles.mobileTickCursor}>{cells.cursor}</div>
+            ) : null}
+          </div>
+          {cells.logs}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <tr>
+      <td>{cells.timestamp}</td>
+      <td>{cells.status}</td>
+      <td>{cells.duration}</td>
+      {cells.cursor !== null ? <td>{cells.cursor}</td> : null}
+      <td>{cells.result}</td>
+      <td>{cells.logs}</td>
+    </tr>
+  );
+};
+
+export const TICK_HISTORY_QUERY = gql`
   query TickHistoryQuery(
     $instigationSelector: InstigationSelector!
     $dayRange: Int

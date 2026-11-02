@@ -2,21 +2,15 @@ import {Box, CursorHistoryControls, Heading, PageHeader} from '@dagster-io/ui-co
 import {useEffect, useMemo, useRef} from 'react';
 
 import {RunsDateRangeSelect} from './RunsDateRangeSelect';
-import {RunsFeedList} from './RunsFeedList';
+import {RunsFeed} from './RunsFeed';
 import {RunsSearchInput} from './RunsSearchInput';
 import styles from './css/RunsPage.module.css';
-import {MappedRunsFeedEntry} from './mapRunsFeedData';
 import {useRunsFeed} from './useRunsFeed';
-import {ApolloError} from '../../apollo-client';
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {useTrackPageView} from '../../app/analytics';
 import {useIsMobile} from '../../app/layout/IsMobileContext';
-import {PythonErrorFragment} from '../../app/types/PythonErrorFragment.types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {RunTableEmptyState} from '../RunTableEmptyState';
 import {RunsQueryRefetchContext} from '../RunUtils';
-import {RunsFeedError} from '../RunsFeedError';
 import {
   getRunsFeedDocumentTitle,
   getRunsFeedQueryView,
@@ -135,39 +129,6 @@ export const RunsPage = () => {
       </div>
     </div>
   );
-};
-
-type RunsFeedProps = {
-  entries: MappedRunsFeedEntry[];
-  error: ApolloError | PythonErrorFragment | undefined;
-  isLoading: boolean;
-  isFiltered: boolean;
-};
-
-const RunsFeed = ({entries, error, isLoading, isFiltered}: RunsFeedProps) => {
-  const isMobile = useIsMobile();
-
-  if (error instanceof ApolloError) {
-    return <RunsFeedError error={error} />;
-  }
-
-  if (error) {
-    return (
-      <Box padding={24}>
-        <PythonErrorInfo error={error} />
-      </Box>
-    );
-  }
-
-  if (entries.length === 0 && !isLoading) {
-    return (
-      <div className={styles.emptyState}>
-        <RunTableEmptyState anyFilter={isFiltered} shrinkable={isMobile} />
-      </div>
-    );
-  }
-
-  return <RunsFeedList entries={entries} isLoading={isLoading} />;
 };
 
 // Imported via React.lazy, which requires a default export.

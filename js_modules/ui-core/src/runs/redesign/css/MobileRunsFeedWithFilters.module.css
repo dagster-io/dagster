@@ -1,0 +1,11 @@
+.actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px var(--page-gutter, 24px);
+}
+
+.belowActionBar {
+  padding: 0 var(--page-gutter, 24px) 12px;
+}

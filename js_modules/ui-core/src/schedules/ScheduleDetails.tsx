@@ -38,7 +38,12 @@ export const ScheduleDetails = (props: {
     <>
       <PageHeader
         title={
-          <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Heading
+            size={16}
+            weight={600}
+            className={styles.title}
+            style={{display: 'flex', flexDirection: 'row', gap: 4}}
+          >
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
@@ -151,7 +156,7 @@ export const ScheduleDetails = (props: {
             <td>Schedule</td>
             <td>
               {cronSchedule ? (
-                <Box flex={{direction: 'row', gap: 8}}>
+                <Box className={styles.cronRow} flex={{direction: 'row', gap: 8}}>
                   <span>
                     {humanCronString(cronSchedule, {
                       longTimezoneName: executionTimezone || 'UTC',

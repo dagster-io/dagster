@@ -7,6 +7,7 @@ import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
 import {gql, useQuery} from '../apollo-client';
+import styles from './css/ScheduleRoot.module.css';
 import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
@@ -114,6 +115,7 @@ export const ScheduleRoot = (props: Props) => {
               <TicksTable
                 actionBarComponents={
                   <Box
+                    className={styles.ticksActionBar}
                     flex={{
                       direction: 'row',
                       justifyContent: 'space-between',

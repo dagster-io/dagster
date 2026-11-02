@@ -114,7 +114,12 @@ export const SensorDetails = ({
     <>
       <PageHeader
         title={
-          <Heading size={16} weight={600} style={{display: 'flex', flexDirection: 'row', gap: 4}}>
+          <Heading
+            size={16}
+            weight={600}
+            className={styles.title}
+            style={{display: 'flex', flexDirection: 'row', gap: 4}}
+          >
             <Link to="/automation">Automation</Link>
             <span>/</span>
             {name}
@@ -232,7 +237,10 @@ export const SensorDetails = ({
                 </Box>
               </td>
               <td>
-                <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+                <Box
+                  className={styles.cursorRow}
+                  flex={{direction: 'row', gap: 12, alignItems: 'center'}}
+                >
                   <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
                     {cursor ? humanizeSensorCursor(cursor) : 'None'}
                   </span>

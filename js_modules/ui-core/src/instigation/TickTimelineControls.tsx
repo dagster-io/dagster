@@ -23,6 +23,7 @@ interface Props {
   onPageEarlier: () => void;
   onPageNow: () => void;
   onPageLater: () => void;
+  className?: string;
 }
 
 export const TickTimelineControls = ({
@@ -31,8 +32,9 @@ export const TickTimelineControls = ({
   onPageEarlier,
   onPageNow,
   onPageLater,
+  className,
 }: Props) => (
-  <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+  <Box className={className} flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
     <ButtonGroup<'live'>
       activeItems={new Set(tickWindow === 'live' ? ['live' as const] : [])}
       buttons={LIVE_BUTTON}

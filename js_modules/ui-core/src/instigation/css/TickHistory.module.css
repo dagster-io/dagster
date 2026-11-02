@@ -4,3 +4,40 @@
     vertical-align: middle !important;
   }
 }
+
+.actionBar {
+  padding: 12px var(--page-gutter, 24px);
+}
+
+.mobileTickList {
+  border-top: 1px solid var(--color-keyline-default);
+}
+
+.mobileTick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px var(--page-gutter, 24px);
+  border-bottom: 1px solid var(--color-keyline-default);
+}
+
+.mobileTickHeader,
+.mobileTickFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobileTickMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  color: var(--color-text-light);
+}
+
+.mobileTickCursor {
+  min-width: 0;
+  overflow: hidden;
+}
