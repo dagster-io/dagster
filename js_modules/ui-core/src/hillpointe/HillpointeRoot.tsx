@@ -253,7 +253,7 @@ const SummaryTiles = ({runs, statsByRun}: {runs: Run[]; statsByRun: StatsByRun})
   const monthLabel = new Date().toLocaleDateString(undefined, {month: 'long', year: 'numeric'});
   const counts = {success: 0, failure: 0, canceled: 0, inProgress: 0, queued: 0};
   runs.forEach((r) => counts[bucketFor(r.status)]++);
-  // Canceled runs are neither passes nor failures, so they sit outside the rate.
+  // Canceled runs are neither passes nor failures, so they do not count.
   const finished = counts.success + counts.failure;
   const durations = runs
     .filter((r) => r.endTime)
@@ -319,21 +319,19 @@ const EMPTY_DAY = Colors.backgroundLighter();
 // Written by each copy step; the same label scripts/daily_row_totals.py sums.
 const ROW_COUNT_LABEL = 'rows_copied';
 
-// Share of finished runs that succeeded: at or above GOOD is green, at or above
-// MIXED is yellow, below that is red.
-const HEALTH_GOOD = 0.8;
-const HEALTH_MIXED = 0.5;
+// Failed runs in the day: none is green, any is yellow, at or above BAD is red.
+const HEALTH_BAD_FAILURES = 5;
 
 type Health = 'good' | 'mixed' | 'bad' | 'running' | 'none';
 
-// Canceled runs are neither passes nor failures, so they sit outside the rate.
+// Canceled runs are neither passes nor failures, so they do not count.
 const healthFor = (counts: Partial<Record<Bucket, number>>): Health => {
   const finished = (counts.success ?? 0) + (counts.failure ?? 0);
   if (!finished) {
     return counts.inProgress || counts.queued ? 'running' : 'none';
   }
-  const rate = (counts.success ?? 0) / finished;
-  return rate >= HEALTH_GOOD ? 'good' : rate >= HEALTH_MIXED ? 'mixed' : 'bad';
+  const failed = counts.failure ?? 0;
+  return failed === 0 ? 'good' : failed >= HEALTH_BAD_FAILURES ? 'bad' : 'mixed';
 };
 
 const HEALTH_FILL: Record<Health, string> = {
