@@ -1297,7 +1297,7 @@ class DagsterApiServer(DagsterApiServicer):
                     self._termination_events[run_id].set()
                     self._termination_times[run_id] = time.time()
                     success = True
-        except Exception:
+        except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
         return CancelExecutionResult(success=success, message=None, serializable_error_info=error)
 
@@ -1309,7 +1309,7 @@ class DagsterApiServer(DagsterApiServicer):
                 request.serialized_cancel_execution_request, CancelExecutionRequest
             )
             result = self._cancel_execution(cancel_request.run_id)
-        except Exception:
+        except:
             result = CancelExecutionResult(
                 success=False,
                 message=None,
@@ -1320,7 +1320,7 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def CancelExecutions(
-        self, request: dagster_api_pb2.CancelExecutionsRequest, _context: grpc.ServicerContext
+        self, request: dagster_api_pb2.CancelExecutionsRequest, context: grpc.ServicerContext
     ) -> dagster_api_pb2.CancelExecutionsReply:
         batch = deserialize_value(
             request.serialized_cancel_executions_request, CancelExecutionsRequest

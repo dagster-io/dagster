@@ -1,3 +1,4 @@
+import json
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from threading import Event, Lock
@@ -7,9 +8,11 @@ import dagster._check as check
 import grpc
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.launcher.base import RunLauncher
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._grpc.__generated__ import dagster_api_pb2
 from dagster._grpc.__generated__.dagster_api_pb2_grpc import add_DagsterApiServicer_to_server
@@ -31,7 +34,8 @@ def cancellation_server(run_ids):
     servicer._executions = dict.fromkeys(run_ids)
     servicer._termination_events = {run_id: Event() for run_id in run_ids}
     servicer._termination_times = {}
-    server = grpc.server(ThreadPoolExecutor(max_workers=2))
+    executor = ThreadPoolExecutor(max_workers=2)
+    server = grpc.server(executor)
     add_DagsterApiServicer_to_server(servicer, server)
     port = server.add_insecure_port("127.0.0.1:0")
     server.start()
@@ -39,6 +43,7 @@ def cancellation_server(run_ids):
         yield servicer, DagsterGrpcClient(host="127.0.0.1", port=port)
     finally:
         server.stop(grace=None).wait()
+        executor.shutdown(wait=True)
 
 
 def test_native_batch_rpc_preserves_per_worker_results():
@@ -128,8 +133,17 @@ def test_default_launcher_groups_servers_and_skips_finished_runs():
             launcher = DefaultRunLauncher()
             launcher.register_instance(instance)
             clients = {runs[0].run_id: first, runs[1].run_id: first, runs[2].run_id: second}
+            for run_id, client in clients.items():
+                instance.add_run_tags(
+                    run_id, {GRPC_INFO_TAG: json.dumps({"host": client.host, "port": client.port})}
+                )
             with (
-                patch.object(launcher, "_get_grpc_client_for_termination", side_effect=clients.get),
+                patch.object(instance, "get_runs", wraps=instance.get_runs) as lookup,
+                patch.object(
+                    launcher,
+                    "_get_grpc_client_for_run",
+                    side_effect=lambda run: clients.get(run.run_id),
+                ),
                 patch.object(
                     first, "cancel_executions", wraps=first.cancel_executions
                 ) as first_batch,
@@ -138,6 +152,7 @@ def test_default_launcher_groups_servers_and_skips_finished_runs():
                 ) as second_batch,
             ):
                 result = launcher.terminate_runs([run.run_id for run in [*runs, finished]])
+            lookup.assert_called_once()
             first_batch.assert_called_once_with([run.run_id for run in runs[:2]])
             second_batch.assert_called_once_with([runs[2].run_id])
             assert result == {**{run.run_id: True for run in runs}, finished.run_id: False}
@@ -203,12 +218,88 @@ def test_default_launcher_bounds_batch_size():
         launcher = DefaultRunLauncher()
         launcher.register_instance(instance)
         with (
+            patch.object(
+                instance,
+                "get_runs",
+                side_effect=lambda filters: [runs[run_id] for run_id in filters.run_ids],
+            ) as lookup,
             patch.object(instance, "get_run_by_id", side_effect=runs.get),
             patch.object(instance, "report_run_canceling"),
-            patch.object(launcher, "_get_grpc_client_for_termination", return_value=client),
+            patch.object(launcher, "_get_grpc_client_for_run", return_value=client),
             patch.object(client, "cancel_executions", wraps=client.cancel_executions) as batch,
         ):
             result = launcher.terminate_runs(list(runs))
+        assert lookup.call_count == 2
         assert [len(call.args[0]) for call in batch.call_args_list] == [500, 1]
         assert len(result) == 501
         assert all(result.values())
+
+
+def test_custom_termination_client_override_is_preserved():
+    with instance_for_test() as instance:
+        runs = [create_run_for_test(instance, status=DagsterRunStatus.STARTED) for _ in range(2)]
+        with cancellation_server([run.run_id for run in runs]) as (_, client):
+
+            class CustomLauncher(DefaultRunLauncher):
+                def _get_grpc_client_for_termination(self, run_id):
+                    return client
+
+            launcher = CustomLauncher()
+            launcher.register_instance(instance)
+            with patch.object(client, "cancel_execution", wraps=client.cancel_execution) as single:
+                assert all(launcher.terminate_runs([run.run_id for run in runs]).values())
+            assert single.call_count == 2
+
+
+def test_run_finishing_after_bulk_lookup_is_not_canceled():
+    with instance_for_test() as instance:
+        runs = [create_run_for_test(instance, status=DagsterRunStatus.STARTED) for _ in range(2)]
+        with cancellation_server([run.run_id for run in runs]) as (server, client):
+            for run in runs:
+                instance.add_run_tags(
+                    run.run_id,
+                    {GRPC_INFO_TAG: json.dumps({"host": client.host, "port": client.port})},
+                )
+            launcher = DefaultRunLauncher()
+            launcher.register_instance(instance)
+            get_runs = instance.get_runs
+
+            def finishing_get_runs(filters):
+                snapshot = get_runs(filters)
+                instance.report_dagster_event(
+                    DagsterEvent(DagsterEventType.RUN_SUCCESS.value, job_name=runs[1].job_name),
+                    runs[1].run_id,
+                )
+                return snapshot
+
+            with patch.object(instance, "get_runs", side_effect=finishing_get_runs):
+                result = launcher.terminate_runs([run.run_id for run in runs])
+            assert result == {runs[0].run_id: True, runs[1].run_id: False}
+            assert instance.get_run_by_id(runs[1].run_id).status == DagsterRunStatus.SUCCESS
+            assert not server._termination_events[runs[1].run_id].is_set()  # noqa: SLF001
+
+
+def test_preparation_failure_sends_already_prepared_requests():
+    with instance_for_test() as instance:
+        runs = [create_run_for_test(instance, status=DagsterRunStatus.STARTED) for _ in range(2)]
+        with cancellation_server([run.run_id for run in runs]) as (server, client):
+            for run in runs:
+                instance.add_run_tags(
+                    run.run_id,
+                    {GRPC_INFO_TAG: json.dumps({"host": client.host, "port": client.port})},
+                )
+            launcher = DefaultRunLauncher()
+            launcher.register_instance(instance)
+            report = instance.report_run_canceling
+
+            def failing_report(run):
+                if run.run_id == runs[1].run_id:
+                    raise RuntimeError("preparation failed")
+                report(run)
+
+            with patch.object(instance, "report_run_canceling", side_effect=failing_report):
+                with pytest.raises(RuntimeError, match="preparation failed"):
+                    launcher.terminate_runs([run.run_id for run in runs])
+            assert server._termination_events[runs[0].run_id].is_set()  # noqa: SLF001
+            assert not server._termination_events[runs[1].run_id].is_set()  # noqa: SLF001
+            assert instance.get_run_by_id(runs[1].run_id).status == DagsterRunStatus.STARTED

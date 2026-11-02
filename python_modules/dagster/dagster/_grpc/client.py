@@ -698,8 +698,8 @@ class DagsterGrpcClient:
                     )
                 ),
             )
-        except grpc.RpcError as error:
-            if error.code() == grpc.StatusCode.UNIMPLEMENTED:
+        except Exception as error:
+            if isinstance(error, grpc.RpcError) and error.code() == grpc.StatusCode.UNIMPLEMENTED:
                 return CancelExecutionsResult(
                     results={
                         run_id: deserialize_value(
