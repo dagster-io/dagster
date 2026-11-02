@@ -44,16 +44,12 @@ WHERE started_at >= ? AND started_at < ?
 ORDER BY started_at DESC
 """
 
-# The newest rows of the raw log, oldest first. Capped so the page stays quick.
+# The newest rows of the raw log, newest first. Capped so the page stays quick.
 API_LOG_LIMIT = 500
 _API_LOG_SQL = """
-SELECT id, job_name, started_at, finished_at, success
-FROM (
-    SELECT TOP (?) id, job_name, started_at, finished_at, success
-    FROM dev.entrata_report_api_log
-    ORDER BY id DESC
-) newest
-ORDER BY id ASC
+SELECT TOP (?) id, job_name, started_at, finished_at, success
+FROM dev.entrata_report_api_log
+ORDER BY id DESC
 """
 
 # SQL Agent history of the nightly Realpage restore; step 0 is the whole job.
@@ -185,7 +181,7 @@ async def friday_report_endpoint(request: Request) -> JSONResponse:
 
 
 async def entrata_api_log_endpoint(request: Request) -> JSONResponse:
-    """GET /hillpointe/entrata_api_log: the newest rows of the raw log, oldest first."""
+    """GET /hillpointe/entrata_api_log: the newest rows of the raw log, newest first."""
     if error := _not_configured():
         return error
 

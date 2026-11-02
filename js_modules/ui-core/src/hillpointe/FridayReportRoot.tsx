@@ -381,7 +381,7 @@ const FridayReportRoot = () => {
             <div className={styles.cardTitle}>
               Entrata API log
               <span className={styles.cardSub}>
-                Newest {log.data?.rows.length ?? ''} rows of dev.entrata_report_api_log, oldest
+                Newest {log.data?.rows.length ?? ''} rows of dev.entrata_report_api_log, newest
                 first
               </span>
             </div>
