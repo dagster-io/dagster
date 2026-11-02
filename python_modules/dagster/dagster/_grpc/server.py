@@ -86,6 +86,8 @@ from dagster._grpc.types import (
     CanCancelExecutionResult,
     CancelExecutionRequest,
     CancelExecutionResult,
+    CancelExecutionsRequest,
+    CancelExecutionsResult,
     ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -1286,33 +1288,47 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
+    def _cancel_execution(self, run_id: str) -> CancelExecutionResult:
+        success = False
+        error = None
+        try:
+            with self._execution_lock:
+                if run_id in self._executions:
+                    self._termination_events[run_id].set()
+                    self._termination_times[run_id] = time.time()
+                    success = True
+        except Exception:
+            error = serializable_error_info_from_exc_info(sys.exc_info())
+        return CancelExecutionResult(success=success, message=None, serializable_error_info=error)
+
     def CancelExecution(  # ty: ignore[invalid-method-override]
         self, request: dagster_api_pb2.CancelExecutionRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.CancelExecutionReply:
-        success = False
-        message = None
-        serializable_error_info = None
         try:
-            cancel_execution_request = deserialize_value(
-                request.serialized_cancel_execution_request,
-                CancelExecutionRequest,
+            cancel_request = deserialize_value(
+                request.serialized_cancel_execution_request, CancelExecutionRequest
             )
-            with self._execution_lock:
-                if cancel_execution_request.run_id in self._executions:
-                    self._termination_events[cancel_execution_request.run_id].set()
-                    self._termination_times[cancel_execution_request.run_id] = time.time()
-                    success = True
-
-        except:
-            serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
-
+            result = self._cancel_execution(cancel_request.run_id)
+        except Exception:
+            result = CancelExecutionResult(
+                success=False,
+                message=None,
+                serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
+            )
         return dagster_api_pb2.CancelExecutionReply(
-            serialized_cancel_execution_result=serialize_value(
-                CancelExecutionResult(
-                    success=success,
-                    message=message,
-                    serializable_error_info=serializable_error_info,
-                )
+            serialized_cancel_execution_result=serialize_value(result)
+        )
+
+    def CancelExecutions(
+        self, request: dagster_api_pb2.CancelExecutionsRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.CancelExecutionsReply:
+        batch = deserialize_value(
+            request.serialized_cancel_executions_request, CancelExecutionsRequest
+        )
+        results = {run_id: self._cancel_execution(run_id) for run_id in batch.run_ids}
+        return dagster_api_pb2.CancelExecutionsReply(
+            serialized_cancel_executions_result=serialize_value(
+                CancelExecutionsResult(results=results)
             )
         )
 

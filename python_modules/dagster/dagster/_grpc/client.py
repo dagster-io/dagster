@@ -22,6 +22,9 @@ from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
+    CancelExecutionResult,
+    CancelExecutionsRequest,
+    CancelExecutionsResult,
     ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -39,7 +42,7 @@ from dagster._grpc.utils import (
     max_rx_bytes,
     max_send_bytes,
 )
-from dagster._serdes import serialize_value
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 CLIENT_HEARTBEAT_INTERVAL = 1
@@ -680,6 +683,41 @@ class DagsterGrpcClient:
         )
 
         return res.serialized_cancel_execution_result
+
+    def cancel_executions(self, run_ids: Sequence[str]) -> CancelExecutionsResult:
+        """Cancel runs with one RPC, falling back only for servers without the new method."""
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        if not run_ids:
+            return CancelExecutionsResult(results={})
+        try:
+            response = self._get_response(
+                "CancelExecutions",
+                dagster_api_pb2.CancelExecutionsRequest(
+                    serialized_cancel_executions_request=serialize_value(
+                        CancelExecutionsRequest(run_ids=run_ids)
+                    )
+                ),
+            )
+        except grpc.RpcError as error:
+            if error.code() == grpc.StatusCode.UNIMPLEMENTED:
+                return CancelExecutionsResult(
+                    results={
+                        run_id: deserialize_value(
+                            self.cancel_execution(CancelExecutionRequest(run_id=run_id)),
+                            CancelExecutionResult,
+                        )
+                        for run_id in run_ids
+                    }
+                )
+            # Never replay a timeout or transport failure: the server may have accepted it.
+            self._raise_grpc_exception(error, timeout=DEFAULT_GRPC_TIMEOUT)
+        result = deserialize_value(
+            response.serialized_cancel_executions_result, CancelExecutionsResult
+        )
+        check.invariant(
+            set(result.results) == set(run_ids), "Incomplete batch cancellation response"
+        )
+        return result
 
     def can_cancel_execution(
         self,

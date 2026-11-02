@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
@@ -81,6 +82,15 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         Returns False is the process was already terminated. Returns true if
         the process was alive and was successfully terminated
         """
+
+    def terminate_runs(self, run_ids: Sequence[str]) -> Mapping[str, bool]:
+        """Request termination of multiple workers, returning a result for every run ID.
+
+        Launchers may override this to batch requests at their backend boundary. The default
+        preserves single-run termination, including its exceptions and execution order. A true
+        result acknowledges the request; it does not imply that the worker has exited.
+        """
+        return {run_id: self.terminate(run_id) for run_id in run_ids}
 
     def dispose(self) -> None:
         """Do any resource cleanup that should happen when the DagsterInstance is

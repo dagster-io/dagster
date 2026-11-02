@@ -498,6 +498,18 @@ class CancelExecutionResult:
 
 @whitelist_for_serdes
 @record
+class CancelExecutionsRequest:
+    run_ids: Sequence[str]
+
+
+@whitelist_for_serdes
+@record
+class CancelExecutionsResult:
+    results: Mapping[str, CancelExecutionResult]
+
+
+@whitelist_for_serdes
+@record
 class CanCancelExecutionRequest:
     run_id: str
 

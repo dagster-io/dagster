@@ -1,5 +1,5 @@
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, cast
 
 import dagster_shared.seven as seven
@@ -182,6 +182,49 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             raise DagsterUserCodeProcessError.from_error_info(res.serializable_error_info)
 
         return res.success
+
+    def terminate_runs(self, run_ids: Sequence[str]) -> Mapping[str, bool]:
+        # Existing subclasses that customize single-run termination keep their behavior.
+        if type(self).terminate is not DefaultRunLauncher.terminate:
+            return super().terminate_runs(run_ids)
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        if not self.has_instance:
+            return {run_id: False for run_id in run_ids}
+
+        results = {run_id: False for run_id in run_ids}
+        groups: dict[
+            tuple[str, int | None, str | None, bool],
+            tuple[DagsterGrpcClient, list[DagsterRun]],
+        ] = {}
+        for run_id in run_ids:
+            run = self._instance.get_run_by_id(run_id)
+            if not run or run.is_finished:
+                continue
+            client = self._get_grpc_client_for_termination(run_id)
+            if client is None:
+                # Preserve existing status and diagnostic reporting for missing clients.
+                results[run_id] = self.terminate(run_id)
+                continue
+            key = (client.host, client.port, client.socket, client.use_ssl)
+            if key not in groups:
+                groups[key] = (client, [])
+            groups[key][1].append(run)
+
+        for client, runs in groups.values():
+            # Bound request size even for callers other than the backfill daemon.
+            for offset in range(0, len(runs), 500):
+                page = runs[offset : offset + 500]
+                for run in page:
+                    self._instance.report_run_canceling(run)
+                response = client.cancel_executions([run.run_id for run in page])
+                for run in page:
+                    result = response.results[run.run_id]
+                    if result.serializable_error_info:
+                        raise DagsterUserCodeProcessError.from_error_info(
+                            result.serializable_error_info
+                        )
+                    results[run.run_id] = result.success
+        return results
 
     def join(self, timeout=30):
         # If this hasn't been initialized at all, we can just do a noop

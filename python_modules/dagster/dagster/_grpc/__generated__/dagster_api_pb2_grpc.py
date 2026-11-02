@@ -8,7 +8,6 @@
 """Client and server classes corresponding to protobuf-defined services."""
 
 import grpc
-import grpc.experimental
 
 from . import dagster_api_pb2 as dagster__api__pb2
 
@@ -126,6 +125,11 @@ class DagsterApiStub(object):
             "/api.DagsterApi/CancelExecution",
             request_serializer=dagster__api__pb2.CancelExecutionRequest.SerializeToString,
             response_deserializer=dagster__api__pb2.CancelExecutionReply.FromString,
+        )
+        self.CancelExecutions = channel.unary_unary(
+            "/api.DagsterApi/CancelExecutions",
+            request_serializer=dagster__api__pb2.CancelExecutionsRequest.SerializeToString,
+            response_deserializer=dagster__api__pb2.CancelExecutionsReply.FromString,
         )
         self.CanCancelExecution = channel.unary_unary(
             "/api.DagsterApi/CanCancelExecution",
@@ -293,6 +297,12 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def CancelExecutions(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
     def CanCancelExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -442,6 +452,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.CancelExecution,
             request_deserializer=dagster__api__pb2.CancelExecutionRequest.FromString,
             response_serializer=dagster__api__pb2.CancelExecutionReply.SerializeToString,
+        ),
+        "CancelExecutions": grpc.unary_unary_rpc_method_handler(
+            servicer.CancelExecutions,
+            request_deserializer=dagster__api__pb2.CancelExecutionsRequest.FromString,
+            response_serializer=dagster__api__pb2.CancelExecutionsReply.SerializeToString,
         ),
         "CanCancelExecution": grpc.unary_unary_rpc_method_handler(
             servicer.CanCancelExecution,
@@ -1086,6 +1101,35 @@ class DagsterApi(object):
             "/api.DagsterApi/CancelExecution",
             dagster__api__pb2.CancelExecutionRequest.SerializeToString,
             dagster__api__pb2.CancelExecutionReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def CancelExecutions(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/CancelExecutions",
+            dagster__api__pb2.CancelExecutionsRequest.SerializeToString,
+            dagster__api__pb2.CancelExecutionsReply.FromString,
             options,
             channel_credentials,
             insecure,
