@@ -5,6 +5,7 @@ import {ReactNode, useContext} from 'react';
 import {NavCollapseContext} from './NavCollapseProvider';
 import styles from './css/AppContainer.module.css';
 import {NavigationGroup} from './types';
+import {FallLeaves} from '../../hillpointe/FallLeaves';
 
 interface Props {
   topGroups: NavigationGroup[];
@@ -35,6 +36,7 @@ export const AppContainer = (props: Props) => {
         <div>{banner}</div>
         <div className={styles.child}>{children}</div>
       </div>
+      <FallLeaves />
     </div>
   );
 };

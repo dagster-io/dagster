@@ -1,0 +1,51 @@
+.leaf {
+  position: fixed;
+  pointer-events: none;
+  z-index: 5;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.85;
+}
+
+/* Starts just above the viewport and ends with its bottom edge on the viewport bottom. */
+.falling {
+  top: -40px;
+  animation: fall linear forwards;
+}
+
+.landed {
+  transition:
+    transform 0.7s ease-in,
+    opacity 0.7s ease-in;
+}
+
+/* Swept off to the right by the rake. */
+.raked {
+  transform: translateX(60vw) rotate(540deg) !important;
+  opacity: 0;
+}
+
+.rake {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 6;
+}
+
+@keyframes fall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-30px, 25vh) rotate(90deg);
+  }
+  50% {
+    transform: translate(20px, 50vh) rotate(200deg);
+  }
+  75% {
+    transform: translate(-25px, 75vh) rotate(290deg);
+  }
+  100% {
+    transform: translate(0, var(--land)) rotate(360deg);
+  }
+}
