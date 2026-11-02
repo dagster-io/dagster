@@ -1,12 +1,21 @@
-.tableWrapper {
-  th,
-  td {
-    vertical-align: middle !important;
-  }
+.rowGrid {
+  display: grid;
 }
 
+/* No bottom padding, so the selected tab's underline meets the table. */
 .actionBar {
-  padding: 12px var(--page-gutter, 24px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--page-gutter, 24px) 0;
+}
+
+/* Mobile: the pager and filter wrap below the tabs and need room above the list. */
+:global(.dagster-mobile) .actionBar {
+  flex-wrap: wrap;
+  row-gap: 8px;
+  padding-bottom: 12px;
 }
 
 .mobileTickList {

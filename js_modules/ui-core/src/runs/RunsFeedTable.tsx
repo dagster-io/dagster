@@ -42,6 +42,8 @@ interface RunsFeedTableProps {
   hideTags?: string[];
   refetch: () => void;
   actionBarComponents?: React.ReactNode;
+  // For tabs in the action bar: drops the gap so the selected tab's underline meets the table.
+  flushActionBar?: boolean;
   belowActionBarComponents?: React.ReactNode;
   terminateAllRunsButton?: React.ReactNode;
   paginationProps: CursorPaginationProps;
@@ -62,6 +64,7 @@ export const RunsFeedTable = ({
   hideTags,
   refetch,
   actionBarComponents,
+  flushActionBar,
   belowActionBarComponents,
   terminateAllRunsButton,
   paginationProps,
@@ -252,7 +255,7 @@ export const RunsFeedTable = ({
       padding={{vertical: 12}}
       style={scroll ? {height: '100%', minHeight: 0} : {}}
     >
-      <Box flex={{direction: 'column', gap: 8}} padding={{bottom: 12}}>
+      <Box flex={{direction: 'column', gap: 8}} padding={{bottom: flushActionBar ? 0 : 12}}>
         {actionBar}
       </Box>
       <IndeterminateLoadingBar $loading={loading} />
@@ -268,7 +271,12 @@ type RunsFeedTableWithFiltersProps = {
   includeRunsFromBackfills: boolean;
 } & Pick<
   RunsFeedTableProps,
-  'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
+  | 'actionBarComponents'
+  | 'flushActionBar'
+  | 'belowActionBarComponents'
+  | 'emptyState'
+  | 'hideTags'
+  | 'scroll'
 >;
 
 // The wide table doesn't fit a phone, so pages that embed a runs feed get the runs page's card

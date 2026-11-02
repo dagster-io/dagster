@@ -27,7 +27,6 @@ import {
   EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT,
 } from '../assets/asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AttributeAndValue} from '../assets/overview/Common';
 import {WorkspaceAssetNode} from '../assets/useAllAssets';
 import {
   healthRefreshHintFromLiveData,
@@ -45,6 +44,7 @@ import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
 import {AnchorButton} from '../ui/AnchorButton';
+import {AttributeAndValue} from '../ui/AttributeAndValue';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

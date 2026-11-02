@@ -2,10 +2,11 @@ import {Box, Popover, Tag, Text} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {insitigatorsByType} from '../AssetNodeInstigatorTag';
-import {AttributeAndValue, SectionEmptyState, SectionSkeleton, isEmptyChildren} from './Common';
+import {SectionEmptyState, SectionSkeleton} from './Common';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
 import {ScheduleOrSensorTag} from '../../nav/ScheduleOrSensorTag';
 import {PipelineTag} from '../../pipelines/PipelineReference';
+import {AttributeAndValue, isEmptyChildren} from '../../ui/AttributeAndValue';
 import {RepoAddress} from '../../workspace/types';
 import {EvaluationUserLabel} from '../AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {freshnessPolicyDescription} from '../OverdueTag';

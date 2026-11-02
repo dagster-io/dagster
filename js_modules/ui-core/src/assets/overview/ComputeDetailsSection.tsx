@@ -10,11 +10,12 @@ import {
 import {Link} from 'react-router-dom';
 
 import {metadataForAssetNode} from '../AssetMetadata';
-import {AttributeAndValue, SectionSkeleton} from './Common';
+import {SectionSkeleton} from './Common';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
 import {PoolTag} from '../../instance/PoolTag';
+import {AttributeAndValue} from '../../ui/AttributeAndValue';
 import {buildTagString} from '../../ui/tagAsString';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';

@@ -50,17 +50,16 @@ const renderTicksTable = (isMobile: boolean) =>
   );
 
 describe('TicksTable', () => {
-  it('renders ticks as table rows on desktop', async () => {
+  it('renders ticks as grid rows on desktop', async () => {
     renderTicksTable(false);
     expect(await screen.findAllByRole('button', {name: 'View logs'})).toHaveLength(2);
-    expect(screen.getByRole('table')).toBeVisible();
-    expect(screen.getByRole('columnheader', {name: 'Cursor'})).toBeVisible();
+    expect(screen.getByText('Cursor')).toBeVisible();
   });
 
   it('renders the same ticks as stacked items on mobile', async () => {
     renderTicksTable(true);
     expect(await screen.findAllByRole('button', {name: 'View logs'})).toHaveLength(2);
-    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByText('Cursor')).toBeNull();
     expect(screen.getAllByRole('button', {name: '1 run requested'})).toHaveLength(2);
   });
 });

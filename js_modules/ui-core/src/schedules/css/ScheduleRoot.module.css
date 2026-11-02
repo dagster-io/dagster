@@ -1,5 +1,0 @@
-/* Mobile: the status filter wraps below the tabs. */
-:global(.dagster-mobile) .ticksActionBar {
-  flex-wrap: wrap;
-  row-gap: 8px;
-}

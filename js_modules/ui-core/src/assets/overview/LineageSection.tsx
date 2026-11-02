@@ -2,9 +2,9 @@ import {Box, Button, Heading, MiddleTruncate} from '@dagster-io/ui-components';
 import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 
-import {NoValue} from './Common';
 import {displayNameForAssetKey, sortAssetKeys, tokenForAssetKey} from '../../asset-graph/Utils';
 import {StatusDot} from '../../asset-graph/sidebar/StatusDot';
+import {NoValue} from '../../ui/AttributeAndValue';
 import {DependsOnSelfBanner} from '../DependsOnSelfBanner';
 import {assetDetailsPathForKey} from '../assetDetailsPathForKey';
 import {WorkspaceAssetNode} from '../useAllAssets';

@@ -6,15 +6,17 @@ import {
   ButtonLink,
   CursorHistoryControls,
   FontFamily,
+  HeaderCell,
+  HeaderRow,
   Icon,
   Menu,
   MenuItem,
   MiddleTruncate,
   NonIdealState,
+  RowCell,
   Select,
   Spinner,
   SpinnerWithText,
-  Table,
   Text,
   ifPlural,
 } from '@dagster-io/ui-components';
@@ -98,7 +100,8 @@ interface TicksTableProps {
   name: string;
   repoAddress: RepoAddress;
   tickResultType: TickResultType;
-  // Rendered above the table. Omit when the page puts these controls somewhere of its own.
+  // Rendered at the left of a bar above the table that also holds the pager and status filter.
+  // Omit when the page puts the filter somewhere of its own; the pager then sits below the table.
   actionBarComponents?: React.ReactNode;
   // Limits the table to ticks within this window. Omit to list all ticks.
   rangeMs?: [number, number];
@@ -130,7 +133,7 @@ export const TicksTable = ({
   rangeMs,
   windowKey,
 }: TicksTableProps) => {
-  const {tickStatus, statuses} = useTickStatusFilter();
+  const {tickStatus, setTickStatus, statuses} = useTickStatusFilter();
   const isMobile = useIsMobile();
 
   const [showDetailsForTick, setShowDetailsForTick] = useState<HistoryTickFragment | null>(null);
@@ -253,7 +256,19 @@ export const TicksTable = ({
 
   return (
     <>
-      {actionBarComponents ? <div className={styles.actionBar}>{actionBarComponents}</div> : null}
+      {actionBarComponents ? (
+        <div className={styles.actionBar}>
+          {actionBarComponents}
+          <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+            <CursorHistoryControls
+              {...paginationProps}
+              style={{marginTop: 0}}
+              iconOnly={isMobile}
+            />
+            <TickStatusFilter status={tickStatus} onChange={setTickStatus} />
+          </Box>
+        </div>
+      ) : null}
       {/* Only a change of window, page or filter, not the background refresh, which would
       otherwise pulse the bar every fifteen seconds. */}
       <IndeterminateLoadingBar
@@ -263,28 +278,14 @@ export const TicksTable = ({
         isMobile ? (
           <div className={styles.mobileTickList}>{tickRows}</div>
         ) : (
-          <Table className={styles.tableWrapper}>
-            <thead>
-              <tr>
-                <th style={{width: 120}}>Timestamp</th>
-                <th style={{width: 90}}>Status</th>
-                <th style={{width: 90}}>Duration</th>
-                {instigationType === InstigationType.SENSOR ? (
-                  <th style={{width: 120}}>Cursor</th>
-                ) : null}
-                <th style={{width: 180}}>Result</th>
-                <th style={{width: 80}}>Logs</th>
-              </tr>
-            </thead>
-            <tbody>{tickRows}</tbody>
-          </Table>
+          <TickGrid rows={tickRows} showCursor={instigationType === InstigationType.SENSOR} />
         )
       ) : (
         <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
           <NonIdealState icon="no-results" title="No ticks to display" />
         </Box>
       )}
-      {ticks.length > 0 ? (
+      {ticks.length > 0 && !actionBarComponents ? (
         <div style={{marginTop: '16px'}}>
           <CursorHistoryControls {...paginationProps} />
         </div>
@@ -331,7 +332,7 @@ export const TickStatusFilter = ({status, onChange}: TickStatusFilterProps) => {
             onClick={props.handleClick}
             key={item.key}
             text={item.label}
-            style={{width: '300px'}}
+            style={{width: '225px'}}
           />
         );
       }}
@@ -343,7 +344,7 @@ export const TickStatusFilter = ({status, onChange}: TickStatusFilterProps) => {
     >
       <Button
         rightIcon={<Icon name="arrow_drop_down" />}
-        style={{minWidth: '200px', display: 'flex', justifyContent: 'space-between'}}
+        style={{minWidth: '150px', display: 'flex', justifyContent: 'space-between'}}
       >
         {activeItem?.label}
       </Button>
@@ -724,16 +725,51 @@ const TickRowLayout = ({cells}: {cells: TickRowCells}) => {
   }
 
   return (
-    <tr>
-      <td>{cells.timestamp}</td>
-      <td>{cells.status}</td>
-      <td>{cells.duration}</td>
-      {cells.cursor !== null ? <td>{cells.cursor}</td> : null}
-      <td>{cells.result}</td>
-      <td>{cells.logs}</td>
-    </tr>
+    <Box
+      className={styles.rowGrid}
+      border="bottom"
+      style={{
+        gridTemplateColumns:
+          cells.cursor !== null ? TEMPLATE_COLUMNS_WITH_CURSOR : TEMPLATE_COLUMNS,
+      }}
+    >
+      <RowCell>{cells.timestamp}</RowCell>
+      <RowCell style={{alignItems: 'flex-start'}}>{cells.status}</RowCell>
+      <RowCell>{cells.duration}</RowCell>
+      {cells.cursor !== null ? <RowCell>{cells.cursor}</RowCell> : null}
+      <RowCell>{cells.result}</RowCell>
+      <RowCell style={{alignItems: 'flex-start'}}>{cells.logs}</RowCell>
+    </Box>
   );
 };
+
+const TEMPLATE_COLUMNS = 'minmax(0, 1fr) minmax(0, 1fr) 120px minmax(0, 1.5fr) 124px';
+const TEMPLATE_COLUMNS_WITH_CURSOR =
+  'minmax(0, 1fr) minmax(0, 1fr) 120px minmax(0, 1.5fr) minmax(0, 1.5fr) 124px';
+
+interface TickGridProps {
+  rows: React.ReactNode[];
+  showCursor: boolean;
+}
+
+// A page holds at most PAGE_SIZE ticks and the table doesn't scroll on its own, so the rows
+// render directly rather than through a virtualizer.
+const TickGrid = ({rows, showCursor}: TickGridProps) => (
+  <div>
+    <HeaderRow
+      templateColumns={showCursor ? TEMPLATE_COLUMNS_WITH_CURSOR : TEMPLATE_COLUMNS}
+      sticky
+    >
+      <HeaderCell>Timestamp</HeaderCell>
+      <HeaderCell>Status</HeaderCell>
+      <HeaderCell>Duration</HeaderCell>
+      {showCursor ? <HeaderCell>Cursor</HeaderCell> : null}
+      <HeaderCell>Result</HeaderCell>
+      <HeaderCell>Logs</HeaderCell>
+    </HeaderRow>
+    {rows}
+  </div>
+);
 
 export const TICK_HISTORY_QUERY = gql`
   query TickHistoryQuery(

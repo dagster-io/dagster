@@ -4,7 +4,6 @@ import {
   FontFamily,
   Heading,
   Icon,
-  MetadataTableWIP,
   PageHeader,
   Tag,
   Tooltip,
@@ -19,17 +18,21 @@ import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {SensorFragment} from './types/SensorFragment.types';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
+import styles from './css/SensorDetails.module.css';
+import sectionStyles from '../automation/css/AutomationDetailsSections.module.css';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
-import {SensorFragment} from './types/SensorFragment.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
+import {AttributeAndValue, NoValue} from '../ui/AttributeAndValue';
+import {LargeCollapsibleSection} from '../ui/LargeCollapsibleSection';
 import {RepoAddress} from '../workspace/types';
-import styles from './css/SensorDetails.module.css';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
 
@@ -109,6 +112,7 @@ export const SensorDetails = ({
     sensor.sensorState.typeSpecificData.lastCursor;
 
   const running = status === InstigationStatus.RUNNING;
+  const isMobile = useIsMobile();
 
   return (
     <>
@@ -144,131 +148,106 @@ export const SensorDetails = ({
           </Box>
         }
       />
-      <MetadataTableWIP>
-        <tbody>
-          {sensor.description ? (
-            <tr>
-              <td>Description</td>
-              <td>{sensor.description}</td>
-            </tr>
-          ) : null}
-          {sensor.owners.length > 0 && (
-            <tr>
-              <td>Owners</td>
-              <td>
-                <DefinitionOwners owners={sensor.owners} />
-              </td>
-            </tr>
-          )}
-          <tr>
-            <td>Latest tick</td>
-            <td>
+      <div className={sectionStyles.sections}>
+        <LargeCollapsibleSection header="Status" icon="status" storageKey="automation-status">
+          <div className={sectionStyles.attributeGrid}>
+            <AttributeAndValue label="Latest tick">
               {latestTick ? (
-                <>
-                  <Box
-                    flex={{direction: 'row', gap: 8, alignItems: 'center'}}
-                    style={{marginTop: '-2px'}}
-                  >
-                    <TimestampDisplay timestamp={latestTick.timestamp} timeFormat={TIME_FORMAT} />
-                    <TickStatusTag tick={latestTick} tickResultType="runs" />
-                  </Box>
-                </>
+                <Box flex={{direction: 'row', gap: 8, alignItems: 'center', wrap: 'wrap'}}>
+                  <TimestampDisplay timestamp={latestTick.timestamp} timeFormat={TIME_FORMAT} />
+                  <TickStatusTag tick={latestTick} tickResultType="runs" />
+                </Box>
               ) : (
                 'Sensor has never run'
               )}
-            </td>
-          </tr>
-          {sensor.nextTick && daemonHealth && running && (
-            <tr>
-              <td>Next tick</td>
-              <td>
-                {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+            </AttributeAndValue>
+            <AttributeAndValue label="Next tick">
+              {sensor.nextTick && daemonHealth && running ? (
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 <TimestampDisplay timestamp={sensor.nextTick.timestamp!} timeFormat={TIME_FORMAT} />
-              </td>
-            </tr>
-          )}
-          {(sensor.targets && sensor.targets.length) || assetSelection ? (
-            <tr>
-              <td>Target</td>
-              <td className={styles.targetCell}>
-                <AutomationTargetList
-                  targets={sensor.targets}
-                  repoAddress={repoAddress}
-                  assetSelection={assetSelection || null}
-                  automationType={sensor.sensorType}
-                />
-              </td>
-            </tr>
-          ) : null}
-          <tr>
-            <td>
-              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                Running
-              </Box>
-            </td>
-            <td>
-              <Box
-                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
-                style={{height: '32px'}}
-              >
+              ) : (
+                <NoValue />
+              )}
+            </AttributeAndValue>
+            <AttributeAndValue label="Running">
+              {/* Sized to the reset button, so the row is the same height when it's absent. */}
+              <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}} style={{minHeight: 32}}>
                 <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
                 {sensor.canReset && <SensorResetButton repoAddress={repoAddress} sensor={sensor} />}
               </Box>
-            </td>
-          </tr>
-          <tr>
-            <td>Frequency</td>
-            <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
-          </tr>
-          {metadata.assetKeys && metadata.assetKeys.length ? (
-            <tr>
-              <td>Monitored assets</td>
-              <td>
-                <SensorMonitoredAssets metadata={metadata} />
-              </td>
-            </tr>
-          ) : null}
-          {sensor.sensorType !== SensorType.AUTO_MATERIALIZE &&
-          sensor.sensorType !== SensorType.AUTOMATION ? (
-            <tr>
-              <td>
-                <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                  Cursor
-                </Box>
-              </td>
-              <td>
-                <Box
-                  className={styles.cursorRow}
-                  flex={{direction: 'row', gap: 12, alignItems: 'center'}}
-                >
-                  <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
-                    {cursor ? humanizeSensorCursor(cursor) : 'None'}
-                  </span>
-                  <Tooltip
-                    canShow={!sensor.hasCursorUpdatePermissions}
-                    content={DEFAULT_DISABLED_REASON}
+            </AttributeAndValue>
+          </div>
+        </LargeCollapsibleSection>
+        <LargeCollapsibleSection
+          header="Definition"
+          icon="info"
+          storageKey="automation-definition"
+          collapsedByDefault={isMobile}
+        >
+          <Box flex={{direction: 'column', gap: 16}}>
+            <div className={sectionStyles.attributeGrid}>
+              {(sensor.targets && sensor.targets.length) || assetSelection ? (
+                <AttributeAndValue label="Target">
+                  <div className={sectionStyles.targetCell}>
+                    <AutomationTargetList
+                      targets={sensor.targets}
+                      repoAddress={repoAddress}
+                      assetSelection={assetSelection || null}
+                      automationType={sensor.sensorType}
+                    />
+                  </div>
+                </AttributeAndValue>
+              ) : null}
+              <AttributeAndValue label="Frequency">
+                {humanizeSensorInterval(sensor.minIntervalSeconds)}
+              </AttributeAndValue>
+              {sensor.sensorType !== SensorType.AUTO_MATERIALIZE &&
+              sensor.sensorType !== SensorType.AUTOMATION ? (
+                <AttributeAndValue label="Cursor">
+                  <Box
+                    className={styles.cursorRow}
+                    flex={{direction: 'row', gap: 12, alignItems: 'center'}}
                   >
-                    <Button
-                      icon={<Icon name="edit" />}
-                      disabled={!sensor.hasCursorUpdatePermissions}
-                      onClick={() => setCursorEditing(true)}
+                    <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
+                      {cursor ? humanizeSensorCursor(cursor) : 'None'}
+                    </span>
+                    <Tooltip
+                      canShow={!sensor.hasCursorUpdatePermissions}
+                      content={DEFAULT_DISABLED_REASON}
                     >
-                      {cursor !== humanizeSensorCursor(cursor) ? 'View Raw / Edit' : 'Edit'}
-                    </Button>
-                  </Tooltip>
-                </Box>
-                <EditCursorDialog
-                  isOpen={isCursorEditing}
-                  sensorSelector={sensorSelector}
-                  cursor={cursor ? cursor : ''}
-                  onClose={() => setCursorEditing(false)}
-                />
-              </td>
-            </tr>
-          ) : null}
-          <SensorAlertDetails repoAddress={repoAddress} sensorName={name} />
-        </tbody>
-      </MetadataTableWIP>
+                      <Button
+                        icon={<Icon name="edit" />}
+                        disabled={!sensor.hasCursorUpdatePermissions}
+                        onClick={() => setCursorEditing(true)}
+                      >
+                        {cursor !== humanizeSensorCursor(cursor) ? 'View Raw / Edit' : 'Edit'}
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                  <EditCursorDialog
+                    isOpen={isCursorEditing}
+                    sensorSelector={sensorSelector}
+                    cursor={cursor ? cursor : ''}
+                    onClose={() => setCursorEditing(false)}
+                  />
+                </AttributeAndValue>
+              ) : null}
+              {metadata.assetKeys && metadata.assetKeys.length ? (
+                <AttributeAndValue label="Monitored assets">
+                  <SensorMonitoredAssets metadata={metadata} />
+                </AttributeAndValue>
+              ) : null}
+              {sensor.owners.length > 0 && (
+                <AttributeAndValue label="Owners">
+                  <DefinitionOwners owners={sensor.owners} />
+                </AttributeAndValue>
+              )}
+            </div>
+            <AttributeAndValue label="Description">{sensor.description}</AttributeAndValue>
+          </Box>
+        </LargeCollapsibleSection>
+        <SensorAlertDetails repoAddress={repoAddress} sensorName={name} />
+      </div>
     </>
   );
 };

@@ -1,4 +1,4 @@
-import {Box, ButtonGroup, Colors, NonIdealState, Page, Spinner} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState, Page, Spinner, Tab, Tabs} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
@@ -119,16 +119,10 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   const {data, loading} = queryResult;
 
   const tabs = (
-    <ButtonGroup
-      activeItems={new Set([selectedTab])}
-      buttons={[
-        {id: 'evaluations', label: 'Evaluations'},
-        {id: 'runs', label: 'Runs'},
-      ]}
-      onClick={(id: 'evaluations' | 'runs') => {
-        setSelectedTab(id);
-      }}
-    />
+    <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
+      <Tab id="evaluations" title="Evaluation history" />
+      <Tab id="runs" title="Run history" />
+    </Tabs>
   );
 
   if (!data && loading) {
@@ -218,7 +212,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
             rangeMs={windowRangeMs}
             statuses={statuses}
           />
-          <Box margin={{top: 32}} border="top">
+          <Box margin={{top: 32}}>
             <TicksTable
               tickResultType={tickResultType}
               repoAddress={repoAddress}
@@ -231,9 +225,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
       ) : (
         // The runs feed has its own action bar, so the tabs ride along in it rather than
         // sitting in a bar of their own.
-        <Box border="top">
-          <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
-        </Box>
+        <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
       )}
     </Page>
   );

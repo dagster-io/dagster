@@ -1,4 +1,4 @@
-import {Box, Code, Heading, MetadataTableWIP, PageHeader, Tag} from '@dagster-io/ui-components';
+import {Box, Code, Heading, PageHeader, Tag, Text} from '@dagster-io/ui-components';
 import {ScheduleAlertDetails} from '@shared/schedules/ScheduleAlertDetails';
 import {Link} from 'react-router-dom';
 
@@ -6,18 +6,22 @@ import {SchedulePartitionStatus} from './SchedulePartitionStatus';
 import {ScheduleResetButton} from './ScheduleResetButton';
 import {ScheduleSwitch} from './ScheduleSwitch';
 import {TimestampDisplay} from './TimestampDisplay';
+import styles from './css/ScheduleDetails.module.css';
 import {humanCronString} from './humanCronString';
 import {ScheduleFragment} from './types/ScheduleUtils.types';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
+import {useIsMobile} from '../app/layout/IsMobileContext';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
+import sectionStyles from '../automation/css/AutomationDetailsSections.module.css';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
 import {InstigationStatus} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {DefinitionOwners} from '../owners/DefinitionOwners';
 import {EvaluateTickButtonSchedule} from '../ticks/EvaluateTickButtonSchedule';
 import {TickStatusTag} from '../ticks/TickStatusTag';
+import {AttributeAndValue, NoValue} from '../ui/AttributeAndValue';
+import {LargeCollapsibleSection} from '../ui/LargeCollapsibleSection';
 import {RepoAddress} from '../workspace/types';
-import styles from './css/ScheduleDetails.module.css';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 
@@ -33,6 +37,7 @@ export const ScheduleDetails = (props: {
   const {status, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const running = status === InstigationStatus.RUNNING;
+  const isMobile = useIsMobile();
 
   return (
     <>
@@ -65,27 +70,12 @@ export const ScheduleDetails = (props: {
           </Box>
         }
       />
-      <MetadataTableWIP>
-        <tbody>
-          {schedule.description ? (
-            <tr>
-              <td>Description</td>
-              <td>{schedule.description}</td>
-            </tr>
-          ) : null}
-          {schedule.owners.length > 0 && (
-            <tr>
-              <td>Owners</td>
-              <td>
-                <DefinitionOwners owners={schedule.owners} />
-              </td>
-            </tr>
-          )}
-          <tr>
-            <td>Latest tick</td>
-            <td>
+      <div className={sectionStyles.sections}>
+        <LargeCollapsibleSection header="Status" icon="status" storageKey="automation-status">
+          <div className={sectionStyles.attributeGrid}>
+            <AttributeAndValue label="Latest tick">
               {latestTick ? (
-                <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                <Box flex={{direction: 'row', gap: 8, alignItems: 'center', wrap: 'wrap'}}>
                   <TimestampDisplay
                     timestamp={latestTick.timestamp}
                     timezone={executionTimezone}
@@ -96,88 +86,94 @@ export const ScheduleDetails = (props: {
               ) : (
                 'Schedule has never run'
               )}
-            </td>
-          </tr>
-          {futureTicks.results[0] && running && (
-            <tr>
-              <td>Next tick</td>
-              <td>
+            </AttributeAndValue>
+            <AttributeAndValue label="Next tick">
+              {futureTicks.results[0] && running ? (
                 <TimestampDisplay
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   timestamp={futureTicks.results[0].timestamp!}
                   timezone={executionTimezone}
                   timeFormat={TIME_FORMAT}
                 />
-              </td>
-            </tr>
-          )}
-          {schedule.pipelineName || assetSelection ? (
-            <tr>
-              <td>Target</td>
-              <td className={styles.targetCell}>
-                <AutomationTargetList
-                  targets={schedule.pipelineName ? [{pipelineName: schedule.pipelineName}] : null}
-                  repoAddress={repoAddress}
-                  assetSelection={assetSelection || null}
-                  automationType="schedule"
-                />
-              </td>
-            </tr>
-          ) : null}
-          <tr>
-            <td>
-              <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
-                Running
-              </Box>
-            </td>
-            <td>
-              <Box
-                flex={{direction: 'row', gap: 12, alignItems: 'center'}}
-                style={{height: '32px'}}
-              >
+              ) : (
+                <NoValue />
+              )}
+            </AttributeAndValue>
+            <AttributeAndValue label="Running">
+              {/* Sized to the reset button, so the row is the same height when it's absent. */}
+              <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}} style={{minHeight: 32}}>
                 <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
                 {schedule.canReset && (
                   <ScheduleResetButton repoAddress={repoAddress} schedule={schedule} />
                 )}
               </Box>
-            </td>
-          </tr>
-          <tr>
-            <td>Partition set</td>
-            <td>
-              {partitionSet ? (
-                <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
-              ) : (
-                'None'
+            </AttributeAndValue>
+          </div>
+        </LargeCollapsibleSection>
+        <LargeCollapsibleSection
+          header="Definition"
+          icon="info"
+          storageKey="automation-definition"
+          collapsedByDefault={isMobile}
+        >
+          <Box flex={{direction: 'column', gap: 16}}>
+            <div className={sectionStyles.attributeGrid}>
+              <AttributeAndValue label="Schedule">
+                {cronSchedule ? (
+                  <Box flex={{direction: 'column', gap: 4}}>
+                    <Box
+                      className={styles.cronRow}
+                      flex={{direction: 'row', gap: 8, wrap: 'wrap', alignItems: 'center'}}
+                    >
+                      <span>
+                        {humanCronString(cronSchedule, {
+                          longTimezoneName: executionTimezone || 'UTC',
+                        })}
+                      </span>
+                      <Code>({cronSchedule})</Code>
+                    </Box>
+                    {executionTimezone ? (
+                      <Text size={12} color="textLighter">
+                        Timezone: {executionTimezone}
+                      </Text>
+                    ) : null}
+                  </Box>
+                ) : (
+                  <NoValue />
+                )}
+              </AttributeAndValue>
+              {schedule.pipelineName || assetSelection ? (
+                <AttributeAndValue label="Target">
+                  <div className={sectionStyles.targetCell}>
+                    <AutomationTargetList
+                      targets={
+                        schedule.pipelineName ? [{pipelineName: schedule.pipelineName}] : null
+                      }
+                      repoAddress={repoAddress}
+                      assetSelection={assetSelection || null}
+                      automationType="schedule"
+                    />
+                  </div>
+                </AttributeAndValue>
+              ) : null}
+              <AttributeAndValue label="Partition set">
+                {partitionSet ? (
+                  <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
+                ) : (
+                  <NoValue />
+                )}
+              </AttributeAndValue>
+              {schedule.owners.length > 0 && (
+                <AttributeAndValue label="Owners">
+                  <DefinitionOwners owners={schedule.owners} />
+                </AttributeAndValue>
               )}
-            </td>
-          </tr>
-          <tr>
-            <td>Schedule</td>
-            <td>
-              {cronSchedule ? (
-                <Box className={styles.cronRow} flex={{direction: 'row', gap: 8}}>
-                  <span>
-                    {humanCronString(cronSchedule, {
-                      longTimezoneName: executionTimezone || 'UTC',
-                    })}
-                  </span>
-                  <Code>({cronSchedule})</Code>
-                </Box>
-              ) : (
-                <div>&mdash;</div>
-              )}
-            </td>
-          </tr>
-          {executionTimezone ? (
-            <tr>
-              <td>Execution timezone</td>
-              <td>{executionTimezone}</td>
-            </tr>
-          ) : null}
-          <ScheduleAlertDetails repoAddress={repoAddress} scheduleName={name} />
-        </tbody>
-      </MetadataTableWIP>
+            </div>
+            <AttributeAndValue label="Description">{schedule.description}</AttributeAndValue>
+          </Box>
+        </LargeCollapsibleSection>
+        <ScheduleAlertDetails repoAddress={repoAddress} scheduleName={name} />
+      </div>
     </>
   );
 };

@@ -13,6 +13,7 @@ export const LargeCollapsibleSection = ({
   collapsedByDefault = false,
   padHeader = false,
   padChildren = true,
+  storageKey,
 }: {
   header: string;
   count?: number;
@@ -22,9 +23,12 @@ export const LargeCollapsibleSection = ({
   collapsedByDefault?: boolean;
   padHeader?: boolean;
   padChildren?: boolean;
+  // Remembers the collapsed state under this key instead of the header, so sections that
+  // share a header on unrelated pages don't collapse together.
+  storageKey?: string;
 }) => {
   const [isCollapsed, setIsCollapsed] = useStateWithStorage<boolean>(
-    `collapsible-section-${header}`,
+    `collapsible-section-${storageKey ?? header}`,
     (storedValue) =>
       storedValue === true || storedValue === false ? storedValue : collapsedByDefault,
   );
