@@ -8,6 +8,7 @@ import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
 import RunsFeedRoot from '../runs/RunsFeedRoot';
 import {lazy} from '../util/lazy';
+import styles from './css/ContentRoot.module.css';
 
 const WorkspaceRoot = lazy(() => import('../workspace/WorkspaceRoot'));
 const OverviewRoot = lazy(() => import('../overview/OverviewRoot'));
@@ -36,80 +37,86 @@ export const ContentRoot = memo(() => {
     main.current?.scrollTo({top: 0});
   }, [pathname]);
 
+  // Remount the page wrapper (replaying its enter animation) when the page changes,
+  // but not when only a deeper tab or query within the same page does.
+  const pageKey = pathname.split('/').slice(0, 3).join('/');
+
   return (
     <MainContent ref={main}>
       <ErrorBoundary region="page" resetErrorOnChange={[pathname]}>
-        <Switch>
-          <Route path="/asset-groups(/?.*)">
-            <AssetsGlobalGraphRoot />
-          </Route>
-          <Route path="/assets(/?.*)">
-            <AssetFeatureProvider>
-              <AssetsOverviewRoot
-                headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
-                documentTitlePrefix="Assets"
-              />
-            </AssetFeatureProvider>
-          </Route>
-          <Route path="/runs/b/:backfillId" key="1">
-            <RunsFeedBackfillPage />
-          </Route>
-          ,
-          <Route path={['/runs', '/backfills']} exact key="2">
-            <RunsFeedRoot />
-          </Route>
-          <Route path="/runs/:runId" exact>
-            <RunRoot />
-          </Route>
-          <Route path="/snapshots/:pipelinePath/:tab?">
-            <SnapshotRoot />
-          </Route>
-          <Route path="/health">
-            <InstanceHealthPage />
-          </Route>
-          <Route path="/concurrency">
-            <InstanceConcurrencyPage />
-          </Route>
-          <Route path="/config">
-            <InstanceConfig />
-          </Route>
-          <Route path="/locations" exact>
-            <Redirect to="/deployment/locations" />
-          </Route>
-          <Route path="/locations">
-            <WorkspaceRoot />
-          </Route>
-          <Route path="/guess/:jobPath">
-            <GuessJobLocationRoot />
-          </Route>
-          <Route path="/overview">
-            <OverviewRoot />
-          </Route>
-          <Route path="/jobs">
-            <JobsRoot />
-          </Route>
-          <Route path="/automation">
-            <MergedAutomationRoot />
-          </Route>
-          <Route path="/deployment">
-            <SettingsRoot />
-          </Route>
-          <Route path="/hillpointe/timings/:jobName?">
-            <JobTimingsRoot />
-          </Route>
-          <Route path="/hillpointe/friday">
-            <FridayReportRoot />
-          </Route>
-          <Route path="/hillpointe">
-            <HillpointeRoot />
-          </Route>
-          <Route path="/m">
-            <Redirect to="/overview" />
-          </Route>
-          <Route path="*" isNestingRoute>
-            <FallthroughRoot />
-          </Route>
-        </Switch>
+        <div key={pageKey} className={styles.page}>
+          <Switch>
+            <Route path="/asset-groups(/?.*)">
+              <AssetsGlobalGraphRoot />
+            </Route>
+            <Route path="/assets(/?.*)">
+              <AssetFeatureProvider>
+                <AssetsOverviewRoot
+                  headerBreadcrumbs={[{text: 'Assets', href: '/assets'}]}
+                  documentTitlePrefix="Assets"
+                />
+              </AssetFeatureProvider>
+            </Route>
+            <Route path="/runs/b/:backfillId" key="1">
+              <RunsFeedBackfillPage />
+            </Route>
+            ,
+            <Route path={['/runs', '/backfills']} exact key="2">
+              <RunsFeedRoot />
+            </Route>
+            <Route path="/runs/:runId" exact>
+              <RunRoot />
+            </Route>
+            <Route path="/snapshots/:pipelinePath/:tab?">
+              <SnapshotRoot />
+            </Route>
+            <Route path="/health">
+              <InstanceHealthPage />
+            </Route>
+            <Route path="/concurrency">
+              <InstanceConcurrencyPage />
+            </Route>
+            <Route path="/config">
+              <InstanceConfig />
+            </Route>
+            <Route path="/locations" exact>
+              <Redirect to="/deployment/locations" />
+            </Route>
+            <Route path="/locations">
+              <WorkspaceRoot />
+            </Route>
+            <Route path="/guess/:jobPath">
+              <GuessJobLocationRoot />
+            </Route>
+            <Route path="/overview">
+              <OverviewRoot />
+            </Route>
+            <Route path="/jobs">
+              <JobsRoot />
+            </Route>
+            <Route path="/automation">
+              <MergedAutomationRoot />
+            </Route>
+            <Route path="/deployment">
+              <SettingsRoot />
+            </Route>
+            <Route path="/hillpointe/timings/:jobName?">
+              <JobTimingsRoot />
+            </Route>
+            <Route path="/hillpointe/friday">
+              <FridayReportRoot />
+            </Route>
+            <Route path="/hillpointe">
+              <HillpointeRoot />
+            </Route>
+            <Route path="/m">
+              <Redirect to="/overview" />
+            </Route>
+            <Route path="*" isNestingRoute>
+              <FallthroughRoot />
+            </Route>
+          </Switch>
+        </div>
       </ErrorBoundary>
     </MainContent>
   );
