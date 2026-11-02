@@ -9,6 +9,7 @@ export enum DagsterTheme {
   AlinosLight = 'AlinosLight',
   AlinosDark = 'AlinosDark',
   Halloween = 'Halloween',
+  Fall = 'Fall',
 }
 
 export const themeToClassName = {
@@ -22,6 +23,7 @@ export const themeToClassName = {
   [DagsterTheme.AlinosLight]: 'themeAlinosLight',
   [DagsterTheme.AlinosDark]: 'themeAlinosDark',
   [DagsterTheme.Halloween]: 'themeHalloween',
+  [DagsterTheme.Fall]: 'themeFall',
 };
 
 export const DAGSTER_THEME_KEY = 'dagster-theme';

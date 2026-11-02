@@ -861,3 +861,164 @@
   0%, 100% { transform: rotate(-6deg) translateY(0); }
   50% { transform: rotate(6deg) translateY(10px); }
 }
+
+/* Fall: espresso and bark backgrounds, cream text, pumpkin and maple accents,
+   with a couple of leaves drifting down the top-right corner. */
+.themeFall {
+  --browser-color-scheme: dark;
+
+  --color-background-default: hsl(24 30% 8%);
+  --color-background-default-hover: hsl(24 28% 11%);
+  --color-background-light: hsl(24 28% 11%);
+  --color-background-light-hover: hsl(24 26% 15%);
+  --color-background-lighter: hsl(24 26% 15%);
+  --color-background-lighter-hover: hsl(24 24% 20%);
+  --color-background-disabled: hsl(30 40% 80% / .1);
+
+  --color-text-default: hsl(38 45% 92%);
+  --color-text-light: hsl(32 30% 76%);
+  --color-text-lighter: hsl(30 20% 60%);
+  --color-text-disabled: hsl(30 20% 60%);
+
+  --color-accent-primary: hsl(22 90% 55%);
+  --color-accent-primary-hover: hsl(26 92% 62%);
+  --color-accent-blue: hsl(22 90% 55%);
+  --color-accent-blue-hover: hsl(26 92% 62%);
+  --color-accent-reversed: hsl(24 30% 8%);
+  --color-accent-reversed-hover: hsl(24 28% 11%);
+  --color-accent-gray: hsl(30 20% 60%);
+  --color-accent-gray-hover: hsl(32 30% 76%);
+  --color-link-default: hsl(22 90% 55%);
+  --color-link-hover: hsl(26 92% 62%);
+  --color-link-disabled: hsl(30 20% 60%);
+  --color-text-blue: hsl(22 90% 55%);
+  --color-focus-ring: hsl(22 90% 55% / .6);
+  --color-checkbox-checked: hsl(22 90% 55%);
+  --color-checkbox-unchecked: hsl(30 20% 60%);
+  --color-checkbox-disabled: hsl(30 20% 60%);
+
+  --color-border-default: hsl(30 40% 80% / .14);
+  --color-border-hover: hsl(30 40% 80% / .26);
+  --color-border-disabled: hsl(30 40% 80% / .14);
+  --color-keyline-default: hsl(30 40% 80% / .14);
+
+  --color-accent-green: hsl(85 55% 50%);
+  --color-accent-green-hover: hsl(85 60% 58%);
+  --color-accent-red: hsl(5 80% 55%);
+  --color-accent-red-hover: hsl(5 82% 63%);
+  --color-accent-yellow: hsl(42 95% 58%);
+  --color-accent-yellow-hover: hsl(42 95% 66%);
+  --color-text-green: hsl(85 55% 50%);
+  --color-text-red: hsl(5 80% 55%);
+  --color-text-yellow: hsl(42 95% 58%);
+  --color-background-green: hsl(85 55% 50% / .2);
+  --color-background-green-hover: hsl(85 55% 50% / .3);
+  --color-background-red: hsl(5 80% 55% / .2);
+  --color-background-red-hover: hsl(5 80% 55% / .3);
+  --color-background-yellow: hsl(42 95% 58% / .2);
+  --color-background-yellow-hover: hsl(42 95% 58% / .3);
+  --color-background-blue: hsl(22 90% 55% / .2);
+  --color-background-blue-hover: hsl(22 90% 55% / .3);
+  --color-background-gray: hsl(30 40% 80% / .2);
+  --color-background-gray-hover: hsl(30 40% 80% / .3);
+
+  --color-nav-background: hsl(18 45% 18%);
+  --color-nav-text: hsl(32 30% 76%);
+  --color-nav-text-hover: hsl(38 45% 92%);
+  --color-nav-text-selected: hsl(38 45% 92%);
+  --color-nav-button: hsl(24 26% 15%);
+  --color-nav-button-hover: hsl(24 24% 20%);
+
+  --color-popover-background: hsl(24 26% 15%);
+  --color-popover-background-hover: hsl(24 24% 20%);
+  --color-dialog-background: hsl(24 40% 3% / .75);
+  --color-tooltip-background: hsl(18 45% 18%);
+  --color-tooltip-text: hsl(38 45% 92%);
+  --color-shadow-default: hsl(22 90% 45% / .25);
+
+  --color-lineage-edge: hsl(30 40% 80% / .26);
+  --color-lineage-edge-highlighted: hsl(22 90% 55%);
+  --color-lineage-node-background: hsl(24 26% 15%);
+  --color-lineage-node-background-hover: hsl(24 24% 20%);
+  --color-lineage-node-border: hsl(30 40% 80% / .14);
+  --color-lineage-node-border-hover: hsl(30 40% 80% / .26);
+  --color-lineage-node-border-selected: hsl(22 90% 55%);
+  --color-lineage-group-node-background: hsl(24 28% 11%);
+  --color-lineage-group-node-background-hover: hsl(24 26% 15%);
+  --color-lineage-group-node-border: hsl(30 40% 80% / .14);
+  --color-lineage-group-node-border-hover: hsl(30 40% 80% / .26);
+
+  --color-data-viz-green: hsl(85 55% 50%);
+  --color-data-viz-green-alt: hsl(85 60% 58%);
+  --color-data-viz-red: hsl(5 80% 55%);
+  --color-data-viz-red-alt: hsl(5 82% 63%);
+  --color-data-viz-blue: hsl(22 90% 55%);
+  --color-data-viz-blue-alt: hsl(350 60% 40%);
+  --color-data-viz-yellow: hsl(42 95% 58%);
+  --color-data-viz-yellow-alt: hsl(42 95% 66%);
+  --color-data-viz-gray: hsl(30 20% 60%);
+  --color-data-viz-gray-alt: hsl(32 30% 76%);
+}
+
+.themeFall .hp-nav {
+  background: linear-gradient(180deg, hsl(18 45% 18%) 55%, hsl(350 55% 24%) 100%);
+  box-shadow: inset -1px 0 0 hsl(0 0% 100% / 0.25);
+  --color-text-default: hsl(0 0% 100%);
+  --color-text-light: hsl(0 0% 100% / 0.9);
+  --color-text-lighter: hsl(0 0% 100% / 0.78);
+  --color-accent-gray: hsl(0 0% 100% / 0.78);
+  --color-accent-primary: hsl(0 0% 100%);
+  --color-accent-blue: hsl(0 0% 100%);
+  --color-link-default: hsl(0 0% 100%);
+  --color-link-hover: hsl(0 0% 100%);
+  --color-background-light: hsl(0 0% 100% / 0.1);
+  --color-background-lighter: hsl(0 0% 100% / 0.12);
+  --color-background-lighter-hover: hsl(0 0% 100% / 0.18);
+  --color-background-blue: hsl(0 0% 100% / 0.22);
+  --color-background-blue-hover: hsl(0 0% 100% / 0.3);
+  --color-keyline-default: hsl(0 0% 100% / 0.18);
+  --color-border-default: hsl(0 0% 100% / 0.18);
+  --color-focus-ring: hsl(0 0% 100% / 0.6);
+}
+
+.themeFall .hp-main {
+  box-shadow: inset 0 4px 0 hsl(22 90% 55%);
+}
+
+/* Two maple leaves drifting down from the top-right corner, offset in time. */
+.themeFall .hp-main::before,
+.themeFall .hp-main::after {
+  content: '';
+  position: fixed;
+  top: -40px;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  z-index: 5;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.85;
+  animation: hpLeafFall 14s linear infinite;
+}
+
+.themeFall .hp-main::before {
+  right: 60px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e8742a'%3E%3Cpath d='M21 3C12 3 4 8 3 19c0 1 0 2 1 2 2-5 6-9 11-12-4 4-7 8-9 13 9 0 15-7 15-19z'/%3E%3C/svg%3E");
+}
+
+.themeFall .hp-main::after {
+  right: 160px;
+  width: 22px;
+  height: 22px;
+  animation-delay: -7s;
+  animation-duration: 18s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c9a227'%3E%3Cpath d='M21 3C12 3 4 8 3 19c0 1 0 2 1 2 2-5 6-9 11-12-4 4-7 8-9 13 9 0 15-7 15-19z'/%3E%3C/svg%3E");
+}
+
+@keyframes hpLeafFall {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-30px, 25vh) rotate(90deg); }
+  50% { transform: translate(20px, 50vh) rotate(200deg); }
+  75% { transform: translate(-25px, 75vh) rotate(290deg); }
+  100% { transform: translate(10px, 105vh) rotate(360deg); }
+}
