@@ -714,7 +714,10 @@ class DagsterGrpcClient:
                 ),
             )
         except Exception as error:
-            if isinstance(error, grpc.RpcError) and error.code() == grpc.StatusCode.UNIMPLEMENTED:
+            if (
+                isinstance(error, grpc.RpcError)
+                and cast("grpc.Call", error).code() == grpc.StatusCode.UNIMPLEMENTED
+            ):
                 results: dict[str, CancelExecutionResult] = {}
                 for run_id in run_ids:
                     try:

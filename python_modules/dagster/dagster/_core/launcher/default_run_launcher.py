@@ -210,7 +210,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
         results = {run_id: False for run_id in run_ids}
         groups: dict[
-            tuple[str, int | None, str | None, bool],
+            tuple[str | None, int | None, str | None, bool],
             tuple[DagsterGrpcClient, list[DagsterRun]],
         ] = {}
         for run_id in run_ids:
