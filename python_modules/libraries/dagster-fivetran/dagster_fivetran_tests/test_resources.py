@@ -1,8 +1,9 @@
 import re
 from typing import cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 import responses
 from dagster import AssetExecutionContext, AssetKey, Failure, RetryRequested
 from dagster._config.field_utils import EnvVar
@@ -743,3 +744,32 @@ def test_fetch_workspace_data_empty_groups_warning(
         # Verify warning was logged
         assert any("No Fivetran groups found" in record.message for record in caplog.records)
         assert any("RBAC" in record.message for record in caplog.records)
+
+
+@pytest.mark.parametrize("max_retries", [0, 2])
+def test_request_without_response_raises_failure(max_retries: int) -> None:
+    """A connection error never produces a response, so exhausting the retries
+    must raise, not return an unbound local (#34383)."""
+    client = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID,
+        api_key=TEST_API_KEY,
+        api_secret=TEST_API_SECRET,
+        request_max_retries=max_retries,
+        request_retry_delay=0,
+    ).get_client()
+
+    with patch(
+        "dagster_fivetran.resources.requests.request",
+        side_effect=requests.exceptions.ConnectionError("boom"),
+    ) as request_mock:
+        with pytest.raises(
+            Failure,
+            match=re.escape(
+                f"Max retries ({max_retries}) exceeded with url:"
+                f" {get_fivetran_connector_api_url('my_connector')}. Caused by boom"
+            ),
+        ):
+            client.get_connector_details("my_connector")
+
+    assert request_mock.call_count == max_retries + 1
+

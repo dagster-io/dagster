@@ -609,7 +609,17 @@ class FivetranClient:
             except RequestException as e:
                 self._log.error("Request to Fivetran API failed: %s", e)
                 if num_retries == self.request_max_retries:
-                    return response
+                    if e.response is not None:
+                        # An HTTP error: hand the response back so callers can
+                        # act on its status (a 404 means "no schema config"
+                        # for get_schema_config_for_connector).
+                        return e.response
+                    # No response was ever received (connection error, timeout):
+                    # `response` is unbound here, so raise instead.
+                    raise Failure(
+                        f"Max retries ({self.request_max_retries}) exceeded with url: {url}."
+                        f" Caused by {e}"
+                    ) from e
                 num_retries += 1
                 delay = self.request_retry_delay * (self.request_backoff_factor**num_retries)
                 self._log.info(
