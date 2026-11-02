@@ -243,7 +243,7 @@ class DagsterInstance(
     def ephemeral(
         tempdir: str | None = None,
         preload: Sequence["DebugRunPayload"] | None = None,
-        settings: dict | None = None,
+        settings: Mapping[str, Any] | None = None,
     ) -> "DagsterInstance":
         """Create a `DagsterInstance` suitable for ephemeral execution, useful in test contexts. An
         ephemeral instance uses mostly in-memory components. Use `local_temp` to create a test
@@ -253,7 +253,7 @@ class DagsterInstance(
             tempdir (Optional[str]): The path of a directory to be used for local artifact storage.
             preload (Optional[Sequence[DebugRunPayload]]): A sequence of payloads to load into the
                 instance's run storage. Useful for debugging.
-            settings (Optional[Dict]): Settings for the instance.
+            settings (Optional[Mapping[str, Any]]): Settings for the instance.
 
         Returns:
             DagsterInstance: An ephemeral DagsterInstance.

@@ -79,7 +79,7 @@ RawMetadataValue: TypeAlias = (
     | TableSchema
     | TableColumnLineage
     | AssetKey
-    | os.PathLike
+    | os.PathLike[str]
     | dict[Any, Any]
     | float
     | int
