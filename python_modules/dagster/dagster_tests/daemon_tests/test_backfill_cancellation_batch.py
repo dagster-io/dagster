@@ -53,11 +53,9 @@ def test_queued_cancellation_events_and_listeners(batch_supported, page_size):
         storage = instance.event_log_storage
         with (
             patch.object(
-                type(storage), "supports_run_event_batch", new_callable=PropertyMock
+                type(storage), "supports_queued_run_cancellation", new_callable=PropertyMock
             ) as supported,
-            patch.object(
-                storage, "store_run_event_batch", wraps=storage.store_run_event_batch
-            ) as batch,
+            patch.object(storage, "cancel_queued_runs", wraps=storage.cancel_queued_runs) as batch,
             patch("dagster._core.execution.backfill.CANCELABLE_RUNS_BATCH_SIZE", page_size),
             patch.object(instance.run_launcher, "terminate") as terminate,
         ):
@@ -68,7 +66,7 @@ def test_queued_cancellation_events_and_listeners(batch_supported, page_size):
             assert cancel_backfill_runs_and_cancellation_complete(
                 instance, "backfill", logging.getLogger(__name__)
             )
-            assert batch.call_count == ((3 + page_size - 1) // page_size if batch_supported else 0)
+            batch.assert_not_called()  # Instance listeners retain serial reporting.
             terminate.assert_not_called()
         assert instance.get_run_by_id(other.run_id).status == DagsterRunStatus.QUEUED
         assert notifications == [
@@ -92,16 +90,16 @@ def test_queued_cancellation_events_and_listeners(batch_supported, page_size):
             assert instance.get_run_record_by_id(run.run_id).end_time is not None
 
 
-def test_batch_write_failure_is_not_replayed_as_single_writes():
+def test_atomic_cancellation_failure_is_not_replayed_as_single_writes():
     with instance_for_test() as instance:
         run = _queued_run(instance, status=DagsterRunStatus.QUEUED)
         storage = instance.event_log_storage
         with (
             patch.object(
-                type(storage), "supports_run_event_batch", new_callable=PropertyMock
+                type(storage), "supports_queued_run_cancellation", new_callable=PropertyMock
             ) as supported,
             patch.object(
-                storage, "store_run_event_batch", side_effect=RuntimeError("write failed")
+                storage, "cancel_queued_runs", side_effect=RuntimeError("write failed")
             ) as batch,
             patch.object(storage, "store_event") as single,
         ):
@@ -152,10 +150,34 @@ def test_empty_cancellation_batch_does_not_write():
         storage = instance.event_log_storage
         with (
             patch.object(
-                type(storage), "supports_run_event_batch", new_callable=PropertyMock
+                type(storage), "supports_queued_run_cancellation", new_callable=PropertyMock
             ) as supported,
-            patch.object(storage, "store_run_event_batch") as batch,
+            patch.object(storage, "cancel_queued_runs") as batch,
         ):
             supported.return_value = True
             instance.report_run_cancellation_batch([])
             batch.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["report_run_canceling", "report_run_canceled", "handle_new_event", "should_store_event"],
+)
+def test_custom_reporting_hooks_retain_serial_path(method):
+    with instance_for_test() as instance:
+        run = _queued_run(instance)
+        storage = instance.event_log_storage
+        with (
+            patch.object(
+                type(storage),
+                "supports_queued_run_cancellation",
+                new_callable=PropertyMock,
+                return_value=True,
+            ),
+            patch.object(storage, "cancel_queued_runs") as batch,
+            patch.object(instance, method, wraps=getattr(instance, method)) as hook,
+        ):
+            instance.report_run_cancellation_batch([run])
+            batch.assert_not_called()
+            assert hook.called
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED

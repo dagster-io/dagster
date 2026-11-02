@@ -55,6 +55,7 @@ from dagster._utils.warnings import deprecation_warning
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
     from dagster._core.storage.asset_check_state import AssetCheckState
+    from dagster._core.storage.dagster_run import DagsterRun
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -444,30 +445,18 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
             self.store_event(event)
 
     @property
-    def supports_run_event_batch(self) -> bool:
-        """Whether cancellation lifecycle events can be stored in a batch.
-
-        This is separate from asset event batching. Implementations must preserve event order
-        within each run and any notifications emitted by single-event writes.
-        """
+    def supports_queued_run_cancellation(self) -> bool:
+        """Whether queued-run state and cancellation events can be committed atomically."""
         return False
 
-    def store_run_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
-        """Store RUN_CANCELING / RUN_CANCELED events, with a single-event fallback.
+    def cancel_queued_runs(self, runs: Sequence["DagsterRun"]) -> Sequence[str]:
+        """Atomically cancel still-queued runs and return the IDs actually canceled.
 
-        Implementations must propagate write failures. Callers must not replay an uncertain
-        batch as individual writes, since the batch may already have been committed.
+        Implementations must revalidate queued status, preserve both cancellation events and
+        end timestamps, and commit state, events and notifications together. No automatic
+        replay is safe if the caller cannot determine whether the transaction committed.
         """
-        check.invariant(
-            all(
-                event.dagster_event_type
-                in {DagsterEventType.RUN_CANCELING, DagsterEventType.RUN_CANCELED}
-                for event in events
-            ),
-            "Only run cancellation events are supported.",
-        )
-        for event in events:
-            self.store_event(event)
+        raise NotImplementedError("This storage does not support atomic queued-run cancellation")
 
     @abstractmethod
     def delete_events(self, run_id: str) -> None:
