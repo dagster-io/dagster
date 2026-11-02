@@ -159,6 +159,19 @@ def test_sensor_preview_since(gen_sensor_args):
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
+def test_sensor_preview_unknown_sensor(gen_sensor_args):
+    with gen_sensor_args as (cli_args, instance):
+        runner = CliRunner()
+        with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
+            _instance.return_value = instance
+
+            result = runner.invoke(sensor_preview_command, cli_args + ["nonexistent_sensor"])
+
+            assert result.exit_code == 0
+            assert "Failed to resolve sensor for nonexistent_sensor" in result.output
+
+
+@pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
 def test_sensor_cursor(gen_sensor_args):
     with gen_sensor_args as (cli_args, instance):
         runner = CliRunner()
