@@ -76,8 +76,8 @@ module.exports = (phase) => {
               destination: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}/graphql`,
             },
             {
-              source: '/hillpointe/friday_report',
-              destination: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}/hillpointe/friday_report`,
+              source: '/hillpointe/:endpoint(friday_report|entrata_api_log|realpage_restore)',
+              destination: `${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}/hillpointe/:endpoint`,
             },
             {
               source: '/:path*',

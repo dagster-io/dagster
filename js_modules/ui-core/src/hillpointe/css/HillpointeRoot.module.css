@@ -1032,3 +1032,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* The raw log is long; scroll it inside its card. */
+.fridayLog {
+  max-height: 480px;
+  overflow: auto;
+}

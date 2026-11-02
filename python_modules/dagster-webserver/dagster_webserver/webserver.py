@@ -41,7 +41,11 @@ from dagster_webserver.external_assets import (
     handle_report_asset_observation_request,
 )
 from dagster_webserver.graphql import GraphQLServer
-from dagster_webserver.hillpointe import friday_report_endpoint
+from dagster_webserver.hillpointe import (
+    entrata_api_log_endpoint,
+    friday_report_endpoint,
+    realpage_restore_endpoint,
+)
 from dagster_webserver.version import __version__
 
 mimetypes.init()
@@ -303,6 +307,8 @@ class DagsterWebserver(
                 Route("/server_info", self.webserver_info_endpoint),
                 Route("/dagit_info", self.webserver_info_endpoint),
                 Route("/hillpointe/friday_report", friday_report_endpoint),
+                Route("/hillpointe/entrata_api_log", entrata_api_log_endpoint),
+                Route("/hillpointe/realpage_restore", realpage_restore_endpoint),
                 Route(
                     "/graphql",
                     self.graphql_http_endpoint,
