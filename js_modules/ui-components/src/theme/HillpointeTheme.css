@@ -19,202 +19,207 @@
  * ========================================================================== */
 
 @media (prefers-color-scheme: light) {
-  :root, .themeSystem, .themeSystemNoRedGreen {
-  --browser-color-scheme: light;
+  :root,
+  .themeSystem,
+  .themeSystemNoRedGreen {
+    --browser-color-scheme: light;
 
-  --color-background-default: hsl(40 34% 96%);
-  --color-background-default-hover: hsl(40 40% 97.5%);
-  --color-background-light: hsl(40 40% 97.5%);
-  --color-background-light-hover: hsl(42 46% 99%);
-  --color-background-lighter: hsl(42 46% 99%);
-  --color-background-lighter-hover: hsl(0 0% 100%);
-  --color-background-disabled: hsl(211 26% 18% / .08);
+    --color-background-default: hsl(40 34% 96%);
+    --color-background-default-hover: hsl(40 40% 97.5%);
+    --color-background-light: hsl(40 40% 97.5%);
+    --color-background-light-hover: hsl(42 46% 99%);
+    --color-background-lighter: hsl(42 46% 99%);
+    --color-background-lighter-hover: hsl(0 0% 100%);
+    --color-background-disabled: hsl(211 26% 18% / 0.08);
 
-  --color-text-default: hsl(211 28% 15%);
-  --color-text-light: hsl(211 16% 36%);
-  --color-text-lighter: hsl(211 12% 45%);
-  --color-text-disabled: hsl(211 12% 45%);
+    --color-text-default: hsl(211 28% 15%);
+    --color-text-light: hsl(211 16% 36%);
+    --color-text-lighter: hsl(211 12% 45%);
+    --color-text-disabled: hsl(211 12% 45%);
 
-  --color-accent-primary: hsl(211 74% 45%);
-  --color-accent-primary-hover: hsl(211 78% 39%);
-  --color-accent-blue: hsl(211 74% 45%);
-  --color-accent-blue-hover: hsl(211 78% 39%);
-  --color-accent-reversed: hsl(40 34% 96%);
-  --color-accent-reversed-hover: hsl(40 40% 97.5%);
-  --color-accent-gray: hsl(211 12% 45%);
-  --color-accent-gray-hover: hsl(211 16% 36%);
-  --color-link-default: hsl(211 74% 45%);
-  --color-link-hover: hsl(211 78% 39%);
-  --color-link-disabled: hsl(211 12% 45%);
-  --color-text-blue: hsl(211 74% 45%);
-  --color-focus-ring: hsl(211 74% 45% / .42);
-  --color-checkbox-checked: hsl(211 74% 45%);
-  --color-checkbox-unchecked: hsl(211 12% 45%);
-  --color-checkbox-disabled: hsl(211 12% 45%);
+    --color-accent-primary: hsl(211 74% 45%);
+    --color-accent-primary-hover: hsl(211 78% 39%);
+    --color-accent-blue: hsl(211 74% 45%);
+    --color-accent-blue-hover: hsl(211 78% 39%);
+    --color-accent-reversed: hsl(40 34% 96%);
+    --color-accent-reversed-hover: hsl(40 40% 97.5%);
+    --color-accent-gray: hsl(211 12% 45%);
+    --color-accent-gray-hover: hsl(211 16% 36%);
+    --color-link-default: hsl(211 74% 45%);
+    --color-link-hover: hsl(211 78% 39%);
+    --color-link-disabled: hsl(211 12% 45%);
+    --color-text-blue: hsl(211 74% 45%);
+    --color-focus-ring: hsl(211 74% 45% / 0.42);
+    --color-checkbox-checked: hsl(211 74% 45%);
+    --color-checkbox-unchecked: hsl(211 12% 45%);
+    --color-checkbox-disabled: hsl(211 12% 45%);
 
-  --color-border-default: hsl(211 26% 18% / .12);
-  --color-border-hover: hsl(211 24% 18% / .2);
-  --color-border-disabled: hsl(211 26% 18% / .12);
-  --color-keyline-default: hsl(211 26% 18% / .12);
+    --color-border-default: hsl(211 26% 18% / 0.12);
+    --color-border-hover: hsl(211 24% 18% / 0.2);
+    --color-border-disabled: hsl(211 26% 18% / 0.12);
+    --color-keyline-default: hsl(211 26% 18% / 0.12);
 
-  --color-accent-green: hsl(145 60% 27%);
-  --color-accent-green-hover: hsl(145 60% 22%);
-  --color-accent-red: hsl(0 70% 44%);
-  --color-accent-red-hover: hsl(0 70% 39%);
-  --color-accent-yellow: hsl(48 66% 40%);
-  --color-accent-yellow-hover: hsl(48 64% 43%);
-  --color-text-green: hsl(145 60% 27%);
-  --color-text-red: hsl(0 70% 44%);
-  --color-text-yellow: hsl(48 66% 31%);
-  --color-background-green: hsl(145 60% 27% / .1);
-  --color-background-green-hover: hsl(145 60% 27% / .15);
-  --color-background-red: hsl(0 70% 44% / .1);
-  --color-background-red-hover: hsl(0 70% 44% / .15);
-  --color-background-yellow: hsl(48 66% 40% / .1);
-  --color-background-yellow-hover: hsl(48 66% 40% / .15);
-  --color-background-blue: hsl(211 74% 45% / .1);
-  --color-background-blue-hover: hsl(211 74% 45% / .15);
-  --color-background-gray: hsl(211 26% 18% / .1);
-  --color-background-gray-hover: hsl(211 26% 18% / .15);
+    --color-accent-green: hsl(145 60% 27%);
+    --color-accent-green-hover: hsl(145 60% 22%);
+    --color-accent-red: hsl(0 70% 44%);
+    --color-accent-red-hover: hsl(0 70% 39%);
+    --color-accent-yellow: hsl(48 66% 40%);
+    --color-accent-yellow-hover: hsl(48 64% 43%);
+    --color-text-green: hsl(145 60% 27%);
+    --color-text-red: hsl(0 70% 44%);
+    --color-text-yellow: hsl(48 66% 31%);
+    --color-background-green: hsl(145 60% 27% / 0.1);
+    --color-background-green-hover: hsl(145 60% 27% / 0.15);
+    --color-background-red: hsl(0 70% 44% / 0.1);
+    --color-background-red-hover: hsl(0 70% 44% / 0.15);
+    --color-background-yellow: hsl(48 66% 40% / 0.1);
+    --color-background-yellow-hover: hsl(48 66% 40% / 0.15);
+    --color-background-blue: hsl(211 74% 45% / 0.1);
+    --color-background-blue-hover: hsl(211 74% 45% / 0.15);
+    --color-background-gray: hsl(211 26% 18% / 0.1);
+    --color-background-gray-hover: hsl(211 26% 18% / 0.15);
 
-  --color-nav-background: hsl(211 67% 4%);
-  --color-nav-text: hsl(211 16% 36%);
-  --color-nav-text-hover: hsl(211 28% 15%);
-  --color-nav-text-selected: hsl(211 28% 15%);
-  --color-nav-button: hsl(42 46% 99%);
-  --color-nav-button-hover: hsl(0 0% 100%);
+    --color-nav-background: hsl(211 67% 4%);
+    --color-nav-text: hsl(211 16% 36%);
+    --color-nav-text-hover: hsl(211 28% 15%);
+    --color-nav-text-selected: hsl(211 28% 15%);
+    --color-nav-button: hsl(42 46% 99%);
+    --color-nav-button-hover: hsl(0 0% 100%);
 
-  --color-popover-background: hsl(42 46% 99%);
-  --color-popover-background-hover: hsl(0 0% 100%);
-  --color-dialog-background: hsl(211 28% 15% / .35);
-  --color-tooltip-background: hsl(211 28% 15%);
-  --color-tooltip-text: hsl(40 34% 96%);
-  --color-shadow-default: hsl(211 28% 28% / .16);
+    --color-popover-background: hsl(42 46% 99%);
+    --color-popover-background-hover: hsl(0 0% 100%);
+    --color-dialog-background: hsl(211 28% 15% / 0.35);
+    --color-tooltip-background: hsl(211 28% 15%);
+    --color-tooltip-text: hsl(40 34% 96%);
+    --color-shadow-default: hsl(211 28% 28% / 0.16);
 
-  --color-lineage-edge: hsl(211 24% 18% / .2);
-  --color-lineage-edge-highlighted: hsl(211 74% 45%);
-  --color-lineage-node-background: hsl(42 46% 99%);
-  --color-lineage-node-background-hover: hsl(0 0% 100%);
-  --color-lineage-node-border: hsl(211 26% 18% / .12);
-  --color-lineage-node-border-hover: hsl(211 24% 18% / .2);
-  --color-lineage-node-border-selected: hsl(211 74% 45%);
-  --color-lineage-group-node-background: hsl(40 40% 97.5%);
-  --color-lineage-group-node-background-hover: hsl(42 46% 99%);
-  --color-lineage-group-node-border: hsl(211 26% 18% / .12);
-  --color-lineage-group-node-border-hover: hsl(211 24% 18% / .2);
+    --color-lineage-edge: hsl(211 24% 18% / 0.2);
+    --color-lineage-edge-highlighted: hsl(211 74% 45%);
+    --color-lineage-node-background: hsl(42 46% 99%);
+    --color-lineage-node-background-hover: hsl(0 0% 100%);
+    --color-lineage-node-border: hsl(211 26% 18% / 0.12);
+    --color-lineage-node-border-hover: hsl(211 24% 18% / 0.2);
+    --color-lineage-node-border-selected: hsl(211 74% 45%);
+    --color-lineage-group-node-background: hsl(40 40% 97.5%);
+    --color-lineage-group-node-background-hover: hsl(42 46% 99%);
+    --color-lineage-group-node-border: hsl(211 26% 18% / 0.12);
+    --color-lineage-group-node-border-hover: hsl(211 24% 18% / 0.2);
 
-  --color-data-viz-green: hsl(176 50% 32%);
-  --color-data-viz-green-alt: hsl(145 60% 22%);
-  --color-data-viz-red: hsl(0 64% 46%);
-  --color-data-viz-red-alt: hsl(0 70% 39%);
-  --color-data-viz-blue: hsl(211 74% 45%);
-  --color-data-viz-blue-alt: hsl(211 72% 36%);
-  --color-data-viz-yellow: hsl(42 85% 52%);
-  --color-data-viz-yellow-alt: hsl(48 64% 43%);
-  --color-data-viz-gray: hsl(211 12% 45%);
-  --color-data-viz-gray-alt: hsl(211 16% 36%);
+    --color-data-viz-green: hsl(176 50% 32%);
+    --color-data-viz-green-alt: hsl(145 60% 22%);
+    --color-data-viz-red: hsl(0 64% 46%);
+    --color-data-viz-red-alt: hsl(0 70% 39%);
+    --color-data-viz-blue: hsl(211 74% 45%);
+    --color-data-viz-blue-alt: hsl(211 72% 36%);
+    --color-data-viz-yellow: hsl(42 85% 52%);
+    --color-data-viz-yellow-alt: hsl(48 64% 43%);
+    --color-data-viz-gray: hsl(211 12% 45%);
+    --color-data-viz-gray-alt: hsl(211 16% 36%);
   }
 }
 
 @media (prefers-color-scheme: dark) {
-  :root, .themeSystem, .themeSystemNoRedGreen {
-  --browser-color-scheme: dark;
+  :root,
+  .themeSystem,
+  .themeSystemNoRedGreen {
+    --browser-color-scheme: dark;
 
-  --color-background-default: hsl(211 67% 4%);
-  --color-background-default-hover: hsl(211 65% 7%);
-  --color-background-light: hsl(211 65% 7%);
-  --color-background-light-hover: hsl(211 63% 12%);
-  --color-background-lighter: hsl(211 63% 12%);
-  --color-background-lighter-hover: hsl(211 59% 17%);
-  --color-background-disabled: hsl(41 42% 93% / .08);
+    --color-background-default: hsl(211 67% 4%);
+    --color-background-default-hover: hsl(211 65% 7%);
+    --color-background-light: hsl(211 65% 7%);
+    --color-background-light-hover: hsl(211 63% 12%);
+    --color-background-lighter: hsl(211 63% 12%);
+    --color-background-lighter-hover: hsl(211 59% 17%);
+    --color-background-disabled: hsl(41 42% 93% / 0.08);
 
-  --color-text-default: hsl(41 42% 93%);
-  --color-text-light: hsl(211 34% 71%);
-  --color-text-lighter: hsl(211 21% 58%);
-  --color-text-disabled: hsl(211 21% 58%);
+    --color-text-default: hsl(41 42% 93%);
+    --color-text-light: hsl(211 34% 71%);
+    --color-text-lighter: hsl(211 21% 58%);
+    --color-text-disabled: hsl(211 21% 58%);
 
-  --color-accent-primary: hsl(211 87% 69%);
-  --color-accent-primary-hover: hsl(211 94% 74%);
-  --color-accent-blue: hsl(211 87% 69%);
-  --color-accent-blue-hover: hsl(211 94% 74%);
-  --color-accent-reversed: hsl(211 67% 4%);
-  --color-accent-reversed-hover: hsl(211 65% 7%);
-  --color-accent-gray: hsl(211 21% 58%);
-  --color-accent-gray-hover: hsl(211 34% 71%);
-  --color-link-default: hsl(211 87% 69%);
-  --color-link-hover: hsl(211 94% 74%);
-  --color-link-disabled: hsl(211 21% 58%);
-  --color-text-blue: hsl(211 87% 69%);
-  --color-focus-ring: hsl(211 87% 69% / .5);
-  --color-checkbox-checked: hsl(211 87% 69%);
-  --color-checkbox-unchecked: hsl(211 21% 58%);
-  --color-checkbox-disabled: hsl(211 21% 58%);
+    --color-accent-primary: hsl(211 87% 69%);
+    --color-accent-primary-hover: hsl(211 94% 74%);
+    --color-accent-blue: hsl(211 87% 69%);
+    --color-accent-blue-hover: hsl(211 94% 74%);
+    --color-accent-reversed: hsl(211 67% 4%);
+    --color-accent-reversed-hover: hsl(211 65% 7%);
+    --color-accent-gray: hsl(211 21% 58%);
+    --color-accent-gray-hover: hsl(211 34% 71%);
+    --color-link-default: hsl(211 87% 69%);
+    --color-link-hover: hsl(211 94% 74%);
+    --color-link-disabled: hsl(211 21% 58%);
+    --color-text-blue: hsl(211 87% 69%);
+    --color-focus-ring: hsl(211 87% 69% / 0.5);
+    --color-checkbox-checked: hsl(211 87% 69%);
+    --color-checkbox-unchecked: hsl(211 21% 58%);
+    --color-checkbox-disabled: hsl(211 21% 58%);
 
-  --color-border-default: hsl(41 42% 93% / .08);
-  --color-border-hover: hsl(41 42% 93% / .15);
-  --color-border-disabled: hsl(41 42% 93% / .08);
-  --color-keyline-default: hsl(41 42% 93% / .08);
+    --color-border-default: hsl(41 42% 93% / 0.08);
+    --color-border-hover: hsl(41 42% 93% / 0.15);
+    --color-border-disabled: hsl(41 42% 93% / 0.08);
+    --color-keyline-default: hsl(41 42% 93% / 0.08);
 
-  --color-accent-green: hsl(145 65% 62%);
-  --color-accent-green-hover: hsl(145 65% 68%);
-  --color-accent-red: hsl(0 85% 68%);
-  --color-accent-red-hover: hsl(0 85% 74%);
-  --color-accent-yellow: hsl(48 46% 61%);
-  --color-accent-yellow-hover: hsl(48 82% 61%);
-  --color-text-green: hsl(145 65% 62%);
-  --color-text-red: hsl(0 85% 68%);
-  --color-text-yellow: hsl(48 46% 61%);
-  --color-background-green: hsl(145 65% 62% / .12);
-  --color-background-green-hover: hsl(145 65% 62% / .18);
-  --color-background-red: hsl(0 85% 68% / .12);
-  --color-background-red-hover: hsl(0 85% 68% / .18);
-  --color-background-yellow: hsl(48 46% 61% / .12);
-  --color-background-yellow-hover: hsl(48 46% 61% / .18);
-  --color-background-blue: hsl(211 87% 69% / .12);
-  --color-background-blue-hover: hsl(211 87% 69% / .18);
-  --color-background-gray: hsl(41 42% 93% / .12);
-  --color-background-gray-hover: hsl(41 42% 93% / .18);
+    --color-accent-green: hsl(145 65% 62%);
+    --color-accent-green-hover: hsl(145 65% 68%);
+    --color-accent-red: hsl(0 85% 68%);
+    --color-accent-red-hover: hsl(0 85% 74%);
+    --color-accent-yellow: hsl(48 46% 61%);
+    --color-accent-yellow-hover: hsl(48 82% 61%);
+    --color-text-green: hsl(145 65% 62%);
+    --color-text-red: hsl(0 85% 68%);
+    --color-text-yellow: hsl(48 46% 61%);
+    --color-background-green: hsl(145 65% 62% / 0.12);
+    --color-background-green-hover: hsl(145 65% 62% / 0.18);
+    --color-background-red: hsl(0 85% 68% / 0.12);
+    --color-background-red-hover: hsl(0 85% 68% / 0.18);
+    --color-background-yellow: hsl(48 46% 61% / 0.12);
+    --color-background-yellow-hover: hsl(48 46% 61% / 0.18);
+    --color-background-blue: hsl(211 87% 69% / 0.12);
+    --color-background-blue-hover: hsl(211 87% 69% / 0.18);
+    --color-background-gray: hsl(41 42% 93% / 0.12);
+    --color-background-gray-hover: hsl(41 42% 93% / 0.18);
 
-  --color-nav-background: hsl(211 65% 7%);
-  --color-nav-text: hsl(211 34% 71%);
-  --color-nav-text-hover: hsl(41 42% 93%);
-  --color-nav-text-selected: hsl(41 42% 93%);
-  --color-nav-button: hsl(211 63% 12%);
-  --color-nav-button-hover: hsl(211 59% 17%);
+    --color-nav-background: hsl(211 65% 7%);
+    --color-nav-text: hsl(211 34% 71%);
+    --color-nav-text-hover: hsl(41 42% 93%);
+    --color-nav-text-selected: hsl(41 42% 93%);
+    --color-nav-button: hsl(211 63% 12%);
+    --color-nav-button-hover: hsl(211 59% 17%);
 
-  --color-popover-background: hsl(211 63% 12%);
-  --color-popover-background-hover: hsl(211 59% 17%);
-  --color-dialog-background: hsl(0 0% 0% / .55);
-  --color-tooltip-background: hsl(211 59% 17%);
-  --color-tooltip-text: hsl(41 42% 93%);
-  --color-shadow-default: hsl(0 0% 0% / .5);
+    --color-popover-background: hsl(211 63% 12%);
+    --color-popover-background-hover: hsl(211 59% 17%);
+    --color-dialog-background: hsl(0 0% 0% / 0.55);
+    --color-tooltip-background: hsl(211 59% 17%);
+    --color-tooltip-text: hsl(41 42% 93%);
+    --color-shadow-default: hsl(0 0% 0% / 0.5);
 
-  --color-lineage-edge: hsl(41 42% 93% / .15);
-  --color-lineage-edge-highlighted: hsl(211 87% 69%);
-  --color-lineage-node-background: hsl(211 63% 12%);
-  --color-lineage-node-background-hover: hsl(211 59% 17%);
-  --color-lineage-node-border: hsl(41 42% 93% / .08);
-  --color-lineage-node-border-hover: hsl(41 42% 93% / .15);
-  --color-lineage-node-border-selected: hsl(211 87% 69%);
-  --color-lineage-group-node-background: hsl(211 65% 7%);
-  --color-lineage-group-node-background-hover: hsl(211 63% 12%);
-  --color-lineage-group-node-border: hsl(41 42% 93% / .08);
-  --color-lineage-group-node-border-hover: hsl(41 42% 93% / .15);
+    --color-lineage-edge: hsl(41 42% 93% / 0.15);
+    --color-lineage-edge-highlighted: hsl(211 87% 69%);
+    --color-lineage-node-background: hsl(211 63% 12%);
+    --color-lineage-node-background-hover: hsl(211 59% 17%);
+    --color-lineage-node-border: hsl(41 42% 93% / 0.08);
+    --color-lineage-node-border-hover: hsl(41 42% 93% / 0.15);
+    --color-lineage-node-border-selected: hsl(211 87% 69%);
+    --color-lineage-group-node-background: hsl(211 65% 7%);
+    --color-lineage-group-node-background-hover: hsl(211 63% 12%);
+    --color-lineage-group-node-border: hsl(41 42% 93% / 0.08);
+    --color-lineage-group-node-border-hover: hsl(41 42% 93% / 0.15);
 
-  --color-data-viz-green: hsl(145 65% 62%);
-  --color-data-viz-green-alt: hsl(145 65% 68%);
-  --color-data-viz-red: hsl(0 85% 68%);
-  --color-data-viz-red-alt: hsl(0 85% 74%);
-  --color-data-viz-blue: hsl(211 87% 69%);
-  --color-data-viz-blue-alt: hsl(211 60% 45%);
-  --color-data-viz-yellow: hsl(48 46% 61%);
-  --color-data-viz-yellow-alt: hsl(48 82% 61%);
-  --color-data-viz-gray: hsl(211 21% 58%);
-  --color-data-viz-gray-alt: hsl(211 34% 71%);
+    --color-data-viz-green: hsl(145 65% 62%);
+    --color-data-viz-green-alt: hsl(145 65% 68%);
+    --color-data-viz-red: hsl(0 85% 68%);
+    --color-data-viz-red-alt: hsl(0 85% 74%);
+    --color-data-viz-blue: hsl(211 87% 69%);
+    --color-data-viz-blue-alt: hsl(211 60% 45%);
+    --color-data-viz-yellow: hsl(48 46% 61%);
+    --color-data-viz-yellow-alt: hsl(48 82% 61%);
+    --color-data-viz-gray: hsl(211 21% 58%);
+    --color-data-viz-gray-alt: hsl(211 34% 71%);
   }
 }
 
-.themeLight, .themeLightNoRedGreen {
+.themeLight,
+.themeLightNoRedGreen {
   --browser-color-scheme: light;
 
   --color-background-default: hsl(40 34% 96%);
@@ -223,7 +228,7 @@
   --color-background-light-hover: hsl(42 46% 99%);
   --color-background-lighter: hsl(42 46% 99%);
   --color-background-lighter-hover: hsl(0 0% 100%);
-  --color-background-disabled: hsl(211 26% 18% / .08);
+  --color-background-disabled: hsl(211 26% 18% / 0.08);
 
   --color-text-default: hsl(211 28% 15%);
   --color-text-light: hsl(211 16% 36%);
@@ -242,15 +247,15 @@
   --color-link-hover: hsl(211 78% 39%);
   --color-link-disabled: hsl(211 12% 45%);
   --color-text-blue: hsl(211 74% 45%);
-  --color-focus-ring: hsl(211 74% 45% / .42);
+  --color-focus-ring: hsl(211 74% 45% / 0.42);
   --color-checkbox-checked: hsl(211 74% 45%);
   --color-checkbox-unchecked: hsl(211 12% 45%);
   --color-checkbox-disabled: hsl(211 12% 45%);
 
-  --color-border-default: hsl(211 26% 18% / .12);
-  --color-border-hover: hsl(211 24% 18% / .2);
-  --color-border-disabled: hsl(211 26% 18% / .12);
-  --color-keyline-default: hsl(211 26% 18% / .12);
+  --color-border-default: hsl(211 26% 18% / 0.12);
+  --color-border-hover: hsl(211 24% 18% / 0.2);
+  --color-border-disabled: hsl(211 26% 18% / 0.12);
+  --color-keyline-default: hsl(211 26% 18% / 0.12);
 
   --color-accent-green: hsl(145 60% 27%);
   --color-accent-green-hover: hsl(145 60% 22%);
@@ -261,16 +266,16 @@
   --color-text-green: hsl(145 60% 27%);
   --color-text-red: hsl(0 70% 44%);
   --color-text-yellow: hsl(48 66% 31%);
-  --color-background-green: hsl(145 60% 27% / .1);
-  --color-background-green-hover: hsl(145 60% 27% / .15);
-  --color-background-red: hsl(0 70% 44% / .1);
-  --color-background-red-hover: hsl(0 70% 44% / .15);
-  --color-background-yellow: hsl(48 66% 40% / .1);
-  --color-background-yellow-hover: hsl(48 66% 40% / .15);
-  --color-background-blue: hsl(211 74% 45% / .1);
-  --color-background-blue-hover: hsl(211 74% 45% / .15);
-  --color-background-gray: hsl(211 26% 18% / .1);
-  --color-background-gray-hover: hsl(211 26% 18% / .15);
+  --color-background-green: hsl(145 60% 27% / 0.1);
+  --color-background-green-hover: hsl(145 60% 27% / 0.15);
+  --color-background-red: hsl(0 70% 44% / 0.1);
+  --color-background-red-hover: hsl(0 70% 44% / 0.15);
+  --color-background-yellow: hsl(48 66% 40% / 0.1);
+  --color-background-yellow-hover: hsl(48 66% 40% / 0.15);
+  --color-background-blue: hsl(211 74% 45% / 0.1);
+  --color-background-blue-hover: hsl(211 74% 45% / 0.15);
+  --color-background-gray: hsl(211 26% 18% / 0.1);
+  --color-background-gray-hover: hsl(211 26% 18% / 0.15);
 
   --color-nav-background: hsl(211 67% 4%);
   --color-nav-text: hsl(211 16% 36%);
@@ -281,22 +286,22 @@
 
   --color-popover-background: hsl(42 46% 99%);
   --color-popover-background-hover: hsl(0 0% 100%);
-  --color-dialog-background: hsl(211 28% 15% / .35);
+  --color-dialog-background: hsl(211 28% 15% / 0.35);
   --color-tooltip-background: hsl(211 28% 15%);
   --color-tooltip-text: hsl(40 34% 96%);
-  --color-shadow-default: hsl(211 28% 28% / .16);
+  --color-shadow-default: hsl(211 28% 28% / 0.16);
 
-  --color-lineage-edge: hsl(211 24% 18% / .2);
+  --color-lineage-edge: hsl(211 24% 18% / 0.2);
   --color-lineage-edge-highlighted: hsl(211 74% 45%);
   --color-lineage-node-background: hsl(42 46% 99%);
   --color-lineage-node-background-hover: hsl(0 0% 100%);
-  --color-lineage-node-border: hsl(211 26% 18% / .12);
-  --color-lineage-node-border-hover: hsl(211 24% 18% / .2);
+  --color-lineage-node-border: hsl(211 26% 18% / 0.12);
+  --color-lineage-node-border-hover: hsl(211 24% 18% / 0.2);
   --color-lineage-node-border-selected: hsl(211 74% 45%);
   --color-lineage-group-node-background: hsl(40 40% 97.5%);
   --color-lineage-group-node-background-hover: hsl(42 46% 99%);
-  --color-lineage-group-node-border: hsl(211 26% 18% / .12);
-  --color-lineage-group-node-border-hover: hsl(211 24% 18% / .2);
+  --color-lineage-group-node-border: hsl(211 26% 18% / 0.12);
+  --color-lineage-group-node-border-hover: hsl(211 24% 18% / 0.2);
 
   --color-data-viz-green: hsl(176 50% 32%);
   --color-data-viz-green-alt: hsl(145 60% 22%);
@@ -310,7 +315,8 @@
   --color-data-viz-gray-alt: hsl(211 16% 36%);
 }
 
-.themeDark, .themeDarkNoRedGreen {
+.themeDark,
+.themeDarkNoRedGreen {
   --browser-color-scheme: dark;
 
   --color-background-default: hsl(211 67% 4%);
@@ -319,7 +325,7 @@
   --color-background-light-hover: hsl(211 63% 12%);
   --color-background-lighter: hsl(211 63% 12%);
   --color-background-lighter-hover: hsl(211 59% 17%);
-  --color-background-disabled: hsl(41 42% 93% / .08);
+  --color-background-disabled: hsl(41 42% 93% / 0.08);
 
   --color-text-default: hsl(41 42% 93%);
   --color-text-light: hsl(211 34% 71%);
@@ -338,15 +344,15 @@
   --color-link-hover: hsl(211 94% 74%);
   --color-link-disabled: hsl(211 21% 58%);
   --color-text-blue: hsl(211 87% 69%);
-  --color-focus-ring: hsl(211 87% 69% / .5);
+  --color-focus-ring: hsl(211 87% 69% / 0.5);
   --color-checkbox-checked: hsl(211 87% 69%);
   --color-checkbox-unchecked: hsl(211 21% 58%);
   --color-checkbox-disabled: hsl(211 21% 58%);
 
-  --color-border-default: hsl(41 42% 93% / .08);
-  --color-border-hover: hsl(41 42% 93% / .15);
-  --color-border-disabled: hsl(41 42% 93% / .08);
-  --color-keyline-default: hsl(41 42% 93% / .08);
+  --color-border-default: hsl(41 42% 93% / 0.08);
+  --color-border-hover: hsl(41 42% 93% / 0.15);
+  --color-border-disabled: hsl(41 42% 93% / 0.08);
+  --color-keyline-default: hsl(41 42% 93% / 0.08);
 
   --color-accent-green: hsl(145 65% 62%);
   --color-accent-green-hover: hsl(145 65% 68%);
@@ -357,16 +363,16 @@
   --color-text-green: hsl(145 65% 62%);
   --color-text-red: hsl(0 85% 68%);
   --color-text-yellow: hsl(48 46% 61%);
-  --color-background-green: hsl(145 65% 62% / .12);
-  --color-background-green-hover: hsl(145 65% 62% / .18);
-  --color-background-red: hsl(0 85% 68% / .12);
-  --color-background-red-hover: hsl(0 85% 68% / .18);
-  --color-background-yellow: hsl(48 46% 61% / .12);
-  --color-background-yellow-hover: hsl(48 46% 61% / .18);
-  --color-background-blue: hsl(211 87% 69% / .12);
-  --color-background-blue-hover: hsl(211 87% 69% / .18);
-  --color-background-gray: hsl(41 42% 93% / .12);
-  --color-background-gray-hover: hsl(41 42% 93% / .18);
+  --color-background-green: hsl(145 65% 62% / 0.12);
+  --color-background-green-hover: hsl(145 65% 62% / 0.18);
+  --color-background-red: hsl(0 85% 68% / 0.12);
+  --color-background-red-hover: hsl(0 85% 68% / 0.18);
+  --color-background-yellow: hsl(48 46% 61% / 0.12);
+  --color-background-yellow-hover: hsl(48 46% 61% / 0.18);
+  --color-background-blue: hsl(211 87% 69% / 0.12);
+  --color-background-blue-hover: hsl(211 87% 69% / 0.18);
+  --color-background-gray: hsl(41 42% 93% / 0.12);
+  --color-background-gray-hover: hsl(41 42% 93% / 0.18);
 
   --color-nav-background: hsl(211 65% 7%);
   --color-nav-text: hsl(211 34% 71%);
@@ -377,22 +383,22 @@
 
   --color-popover-background: hsl(211 63% 12%);
   --color-popover-background-hover: hsl(211 59% 17%);
-  --color-dialog-background: hsl(0 0% 0% / .55);
+  --color-dialog-background: hsl(0 0% 0% / 0.55);
   --color-tooltip-background: hsl(211 59% 17%);
   --color-tooltip-text: hsl(41 42% 93%);
-  --color-shadow-default: hsl(0 0% 0% / .5);
+  --color-shadow-default: hsl(0 0% 0% / 0.5);
 
-  --color-lineage-edge: hsl(41 42% 93% / .15);
+  --color-lineage-edge: hsl(41 42% 93% / 0.15);
   --color-lineage-edge-highlighted: hsl(211 87% 69%);
   --color-lineage-node-background: hsl(211 63% 12%);
   --color-lineage-node-background-hover: hsl(211 59% 17%);
-  --color-lineage-node-border: hsl(41 42% 93% / .08);
-  --color-lineage-node-border-hover: hsl(41 42% 93% / .15);
+  --color-lineage-node-border: hsl(41 42% 93% / 0.08);
+  --color-lineage-node-border-hover: hsl(41 42% 93% / 0.15);
   --color-lineage-node-border-selected: hsl(211 87% 69%);
   --color-lineage-group-node-background: hsl(211 65% 7%);
   --color-lineage-group-node-background-hover: hsl(211 63% 12%);
-  --color-lineage-group-node-border: hsl(41 42% 93% / .08);
-  --color-lineage-group-node-border-hover: hsl(41 42% 93% / .15);
+  --color-lineage-group-node-border: hsl(41 42% 93% / 0.08);
+  --color-lineage-group-node-border-hover: hsl(41 42% 93% / 0.15);
 
   --color-data-viz-green: hsl(145 65% 62%);
   --color-data-viz-green-alt: hsl(145 65% 68%);
@@ -415,7 +421,7 @@
   --color-background-light-hover: hsl(30 8% 15%);
   --color-background-lighter: hsl(30 8% 15%);
   --color-background-lighter-hover: hsl(30 8% 20%);
-  --color-background-disabled: hsl(40 30% 90% / .08);
+  --color-background-disabled: hsl(40 30% 90% / 0.08);
 
   --color-text-default: hsl(40 30% 90%);
   --color-text-light: hsl(35 15% 72%);
@@ -434,15 +440,15 @@
   --color-link-hover: hsl(38 100% 66%);
   --color-link-disabled: hsl(35 10% 58%);
   --color-text-blue: hsl(35 95% 58%);
-  --color-focus-ring: hsl(35 95% 58% / .5);
+  --color-focus-ring: hsl(35 95% 58% / 0.5);
   --color-checkbox-checked: hsl(35 95% 58%);
   --color-checkbox-unchecked: hsl(35 10% 58%);
   --color-checkbox-disabled: hsl(35 10% 58%);
 
-  --color-border-default: hsl(40 30% 90% / .1);
-  --color-border-hover: hsl(40 30% 90% / .18);
-  --color-border-disabled: hsl(40 30% 90% / .1);
-  --color-keyline-default: hsl(40 30% 90% / .1);
+  --color-border-default: hsl(40 30% 90% / 0.1);
+  --color-border-hover: hsl(40 30% 90% / 0.18);
+  --color-border-disabled: hsl(40 30% 90% / 0.1);
+  --color-keyline-default: hsl(40 30% 90% / 0.1);
 
   --color-accent-green: hsl(145 70% 50%);
   --color-accent-green-hover: hsl(145 70% 58%);
@@ -453,16 +459,16 @@
   --color-text-green: hsl(145 70% 50%);
   --color-text-red: hsl(0 85% 62%);
   --color-text-yellow: hsl(48 95% 55%);
-  --color-background-green: hsl(145 70% 50% / .14);
-  --color-background-green-hover: hsl(145 70% 50% / .2);
-  --color-background-red: hsl(0 85% 62% / .14);
-  --color-background-red-hover: hsl(0 85% 62% / .2);
-  --color-background-yellow: hsl(48 95% 55% / .14);
-  --color-background-yellow-hover: hsl(48 95% 55% / .2);
-  --color-background-blue: hsl(35 95% 58% / .14);
-  --color-background-blue-hover: hsl(35 95% 58% / .2);
-  --color-background-gray: hsl(40 30% 90% / .14);
-  --color-background-gray-hover: hsl(40 30% 90% / .2);
+  --color-background-green: hsl(145 70% 50% / 0.14);
+  --color-background-green-hover: hsl(145 70% 50% / 0.2);
+  --color-background-red: hsl(0 85% 62% / 0.14);
+  --color-background-red-hover: hsl(0 85% 62% / 0.2);
+  --color-background-yellow: hsl(48 95% 55% / 0.14);
+  --color-background-yellow-hover: hsl(48 95% 55% / 0.2);
+  --color-background-blue: hsl(35 95% 58% / 0.14);
+  --color-background-blue-hover: hsl(35 95% 58% / 0.2);
+  --color-background-gray: hsl(40 30% 90% / 0.14);
+  --color-background-gray-hover: hsl(40 30% 90% / 0.2);
 
   --color-nav-background: hsl(30 10% 6%);
   --color-nav-text: hsl(35 15% 72%);
@@ -473,22 +479,22 @@
 
   --color-popover-background: hsl(30 8% 15%);
   --color-popover-background-hover: hsl(30 8% 20%);
-  --color-dialog-background: hsl(0 0% 0% / .6);
+  --color-dialog-background: hsl(0 0% 0% / 0.6);
   --color-tooltip-background: hsl(30 8% 20%);
   --color-tooltip-text: hsl(40 30% 90%);
-  --color-shadow-default: hsl(0 0% 0% / .6);
+  --color-shadow-default: hsl(0 0% 0% / 0.6);
 
-  --color-lineage-edge: hsl(40 30% 90% / .18);
+  --color-lineage-edge: hsl(40 30% 90% / 0.18);
   --color-lineage-edge-highlighted: hsl(35 95% 58%);
   --color-lineage-node-background: hsl(30 8% 15%);
   --color-lineage-node-background-hover: hsl(30 8% 20%);
-  --color-lineage-node-border: hsl(40 30% 90% / .1);
-  --color-lineage-node-border-hover: hsl(40 30% 90% / .18);
+  --color-lineage-node-border: hsl(40 30% 90% / 0.1);
+  --color-lineage-node-border-hover: hsl(40 30% 90% / 0.18);
   --color-lineage-node-border-selected: hsl(35 95% 58%);
   --color-lineage-group-node-background: hsl(30 9% 11%);
   --color-lineage-group-node-background-hover: hsl(30 8% 15%);
-  --color-lineage-group-node-border: hsl(40 30% 90% / .1);
-  --color-lineage-group-node-border-hover: hsl(40 30% 90% / .18);
+  --color-lineage-group-node-border: hsl(40 30% 90% / 0.1);
+  --color-lineage-group-node-border-hover: hsl(40 30% 90% / 0.18);
 
   --color-data-viz-green: hsl(145 70% 50%);
   --color-data-viz-green-alt: hsl(145 70% 58%);
@@ -511,7 +517,7 @@
   --color-background-light-hover: hsl(42 46% 99%);
   --color-background-lighter: hsl(42 46% 99%);
   --color-background-lighter-hover: hsl(0 0% 100%);
-  --color-background-disabled: hsl(211 26% 18% / .08);
+  --color-background-disabled: hsl(211 26% 18% / 0.08);
 
   --color-text-default: hsl(211 28% 15%);
   --color-text-light: hsl(211 16% 36%);
@@ -530,15 +536,15 @@
   --color-link-hover: hsl(211 78% 39%);
   --color-link-disabled: hsl(211 12% 45%);
   --color-text-blue: hsl(211 74% 45%);
-  --color-focus-ring: hsl(211 74% 45% / .42);
+  --color-focus-ring: hsl(211 74% 45% / 0.42);
   --color-checkbox-checked: hsl(211 74% 45%);
   --color-checkbox-unchecked: hsl(211 12% 45%);
   --color-checkbox-disabled: hsl(211 12% 45%);
 
-  --color-border-default: hsl(211 26% 18% / .12);
-  --color-border-hover: hsl(211 24% 18% / .2);
-  --color-border-disabled: hsl(211 26% 18% / .12);
-  --color-keyline-default: hsl(211 26% 18% / .12);
+  --color-border-default: hsl(211 26% 18% / 0.12);
+  --color-border-hover: hsl(211 24% 18% / 0.2);
+  --color-border-disabled: hsl(211 26% 18% / 0.12);
+  --color-keyline-default: hsl(211 26% 18% / 0.12);
 
   --color-accent-green: hsl(176 50% 32%);
   --color-accent-green-hover: hsl(176 50% 27%);
@@ -549,16 +555,16 @@
   --color-text-green: hsl(176 50% 32%);
   --color-text-red: hsl(0 64% 46%);
   --color-text-yellow: hsl(48 66% 31%);
-  --color-background-green: hsl(176 50% 32% / .1);
-  --color-background-green-hover: hsl(176 50% 32% / .15);
-  --color-background-red: hsl(0 64% 46% / .1);
-  --color-background-red-hover: hsl(0 64% 46% / .15);
-  --color-background-yellow: hsl(48 66% 40% / .1);
-  --color-background-yellow-hover: hsl(48 66% 40% / .15);
-  --color-background-blue: hsl(211 74% 45% / .1);
-  --color-background-blue-hover: hsl(211 74% 45% / .15);
-  --color-background-gray: hsl(211 26% 18% / .1);
-  --color-background-gray-hover: hsl(211 26% 18% / .15);
+  --color-background-green: hsl(176 50% 32% / 0.1);
+  --color-background-green-hover: hsl(176 50% 32% / 0.15);
+  --color-background-red: hsl(0 64% 46% / 0.1);
+  --color-background-red-hover: hsl(0 64% 46% / 0.15);
+  --color-background-yellow: hsl(48 66% 40% / 0.1);
+  --color-background-yellow-hover: hsl(48 66% 40% / 0.15);
+  --color-background-blue: hsl(211 74% 45% / 0.1);
+  --color-background-blue-hover: hsl(211 74% 45% / 0.15);
+  --color-background-gray: hsl(211 26% 18% / 0.1);
+  --color-background-gray-hover: hsl(211 26% 18% / 0.15);
 
   --color-nav-background: hsl(211 67% 4%);
   --color-nav-text: hsl(211 16% 36%);
@@ -569,22 +575,22 @@
 
   --color-popover-background: hsl(42 46% 99%);
   --color-popover-background-hover: hsl(0 0% 100%);
-  --color-dialog-background: hsl(211 28% 15% / .35);
+  --color-dialog-background: hsl(211 28% 15% / 0.35);
   --color-tooltip-background: hsl(211 28% 15%);
   --color-tooltip-text: hsl(40 34% 96%);
-  --color-shadow-default: hsl(211 28% 28% / .16);
+  --color-shadow-default: hsl(211 28% 28% / 0.16);
 
-  --color-lineage-edge: hsl(211 24% 18% / .2);
+  --color-lineage-edge: hsl(211 24% 18% / 0.2);
   --color-lineage-edge-highlighted: hsl(211 74% 45%);
   --color-lineage-node-background: hsl(42 46% 99%);
   --color-lineage-node-background-hover: hsl(0 0% 100%);
-  --color-lineage-node-border: hsl(211 26% 18% / .12);
-  --color-lineage-node-border-hover: hsl(211 24% 18% / .2);
+  --color-lineage-node-border: hsl(211 26% 18% / 0.12);
+  --color-lineage-node-border-hover: hsl(211 24% 18% / 0.2);
   --color-lineage-node-border-selected: hsl(211 74% 45%);
   --color-lineage-group-node-background: hsl(40 40% 97.5%);
   --color-lineage-group-node-background-hover: hsl(42 46% 99%);
-  --color-lineage-group-node-border: hsl(211 26% 18% / .12);
-  --color-lineage-group-node-border-hover: hsl(211 24% 18% / .2);
+  --color-lineage-group-node-border: hsl(211 26% 18% / 0.12);
+  --color-lineage-group-node-border-hover: hsl(211 24% 18% / 0.2);
 
   --color-data-viz-green: hsl(176 50% 32%);
   --color-data-viz-green-alt: hsl(176 50% 27%);
@@ -607,7 +613,7 @@
   --color-background-light-hover: hsl(211 63% 12%);
   --color-background-lighter: hsl(211 63% 12%);
   --color-background-lighter-hover: hsl(211 59% 17%);
-  --color-background-disabled: hsl(41 42% 93% / .08);
+  --color-background-disabled: hsl(41 42% 93% / 0.08);
 
   --color-text-default: hsl(41 42% 93%);
   --color-text-light: hsl(211 34% 71%);
@@ -626,15 +632,15 @@
   --color-link-hover: hsl(211 94% 74%);
   --color-link-disabled: hsl(211 21% 58%);
   --color-text-blue: hsl(211 87% 69%);
-  --color-focus-ring: hsl(211 87% 69% / .5);
+  --color-focus-ring: hsl(211 87% 69% / 0.5);
   --color-checkbox-checked: hsl(211 87% 69%);
   --color-checkbox-unchecked: hsl(211 21% 58%);
   --color-checkbox-disabled: hsl(211 21% 58%);
 
-  --color-border-default: hsl(41 42% 93% / .08);
-  --color-border-hover: hsl(41 42% 93% / .15);
-  --color-border-disabled: hsl(41 42% 93% / .08);
-  --color-keyline-default: hsl(41 42% 93% / .08);
+  --color-border-default: hsl(41 42% 93% / 0.08);
+  --color-border-hover: hsl(41 42% 93% / 0.15);
+  --color-border-disabled: hsl(41 42% 93% / 0.08);
+  --color-keyline-default: hsl(41 42% 93% / 0.08);
 
   --color-accent-green: hsl(176 68% 70%);
   --color-accent-green-hover: hsl(176 68% 76%);
@@ -645,16 +651,16 @@
   --color-text-green: hsl(176 68% 70%);
   --color-text-red: hsl(0 100% 74%);
   --color-text-yellow: hsl(48 46% 61%);
-  --color-background-green: hsl(176 68% 70% / .12);
-  --color-background-green-hover: hsl(176 68% 70% / .18);
-  --color-background-red: hsl(0 100% 74% / .12);
-  --color-background-red-hover: hsl(0 100% 74% / .18);
-  --color-background-yellow: hsl(48 46% 61% / .12);
-  --color-background-yellow-hover: hsl(48 46% 61% / .18);
-  --color-background-blue: hsl(211 87% 69% / .12);
-  --color-background-blue-hover: hsl(211 87% 69% / .18);
-  --color-background-gray: hsl(41 42% 93% / .12);
-  --color-background-gray-hover: hsl(41 42% 93% / .18);
+  --color-background-green: hsl(176 68% 70% / 0.12);
+  --color-background-green-hover: hsl(176 68% 70% / 0.18);
+  --color-background-red: hsl(0 100% 74% / 0.12);
+  --color-background-red-hover: hsl(0 100% 74% / 0.18);
+  --color-background-yellow: hsl(48 46% 61% / 0.12);
+  --color-background-yellow-hover: hsl(48 46% 61% / 0.18);
+  --color-background-blue: hsl(211 87% 69% / 0.12);
+  --color-background-blue-hover: hsl(211 87% 69% / 0.18);
+  --color-background-gray: hsl(41 42% 93% / 0.12);
+  --color-background-gray-hover: hsl(41 42% 93% / 0.18);
 
   --color-nav-background: hsl(211 65% 7%);
   --color-nav-text: hsl(211 34% 71%);
@@ -665,22 +671,22 @@
 
   --color-popover-background: hsl(211 63% 12%);
   --color-popover-background-hover: hsl(211 59% 17%);
-  --color-dialog-background: hsl(0 0% 0% / .55);
+  --color-dialog-background: hsl(0 0% 0% / 0.55);
   --color-tooltip-background: hsl(211 59% 17%);
   --color-tooltip-text: hsl(41 42% 93%);
-  --color-shadow-default: hsl(0 0% 0% / .5);
+  --color-shadow-default: hsl(0 0% 0% / 0.5);
 
-  --color-lineage-edge: hsl(41 42% 93% / .15);
+  --color-lineage-edge: hsl(41 42% 93% / 0.15);
   --color-lineage-edge-highlighted: hsl(211 87% 69%);
   --color-lineage-node-background: hsl(211 63% 12%);
   --color-lineage-node-background-hover: hsl(211 59% 17%);
-  --color-lineage-node-border: hsl(41 42% 93% / .08);
-  --color-lineage-node-border-hover: hsl(41 42% 93% / .15);
+  --color-lineage-node-border: hsl(41 42% 93% / 0.08);
+  --color-lineage-node-border-hover: hsl(41 42% 93% / 0.15);
   --color-lineage-node-border-selected: hsl(211 87% 69%);
   --color-lineage-group-node-background: hsl(211 65% 7%);
   --color-lineage-group-node-background-hover: hsl(211 63% 12%);
-  --color-lineage-group-node-border: hsl(41 42% 93% / .08);
-  --color-lineage-group-node-border-hover: hsl(41 42% 93% / .15);
+  --color-lineage-group-node-border: hsl(41 42% 93% / 0.08);
+  --color-lineage-group-node-border-hover: hsl(41 42% 93% / 0.15);
 
   --color-data-viz-green: hsl(176 68% 70%);
   --color-data-viz-green-alt: hsl(176 68% 76%);
@@ -693,7 +699,6 @@
   --color-data-viz-gray: hsl(211 21% 58%);
   --color-data-viz-gray-alt: hsl(211 34% 71%);
 }
-
 
 .themeCustom1 {
   --font-default: Geist Mono, Roboto Mono, Menlo, monospace;
@@ -715,7 +720,7 @@
   --color-background-light-hover: hsl(268 36% 14%);
   --color-background-lighter: hsl(268 36% 14%);
   --color-background-lighter-hover: hsl(268 34% 19%);
-  --color-background-disabled: hsl(270 40% 80% / .1);
+  --color-background-disabled: hsl(270 40% 80% / 0.1);
 
   --color-text-default: hsl(40 30% 93%);
   --color-text-light: hsl(270 30% 78%);
@@ -734,15 +739,15 @@
   --color-link-hover: hsl(28 100% 64%);
   --color-link-disabled: hsl(270 20% 62%);
   --color-text-blue: hsl(25 100% 56%);
-  --color-focus-ring: hsl(25 100% 56% / .6);
+  --color-focus-ring: hsl(25 100% 56% / 0.6);
   --color-checkbox-checked: hsl(25 100% 56%);
   --color-checkbox-unchecked: hsl(270 20% 62%);
   --color-checkbox-disabled: hsl(270 20% 62%);
 
-  --color-border-default: hsl(270 40% 80% / .14);
-  --color-border-hover: hsl(270 40% 80% / .26);
-  --color-border-disabled: hsl(270 40% 80% / .14);
-  --color-keyline-default: hsl(270 40% 80% / .14);
+  --color-border-default: hsl(270 40% 80% / 0.14);
+  --color-border-hover: hsl(270 40% 80% / 0.26);
+  --color-border-disabled: hsl(270 40% 80% / 0.14);
+  --color-keyline-default: hsl(270 40% 80% / 0.14);
 
   --color-accent-green: hsl(100 85% 55%);
   --color-accent-green-hover: hsl(100 90% 63%);
@@ -753,16 +758,16 @@
   --color-text-green: hsl(100 85% 55%);
   --color-text-red: hsl(355 90% 58%);
   --color-text-yellow: hsl(45 100% 60%);
-  --color-background-green: hsl(100 85% 55% / .2);
-  --color-background-green-hover: hsl(100 85% 55% / .3);
-  --color-background-red: hsl(355 90% 58% / .2);
-  --color-background-red-hover: hsl(355 90% 58% / .3);
-  --color-background-yellow: hsl(45 100% 60% / .2);
-  --color-background-yellow-hover: hsl(45 100% 60% / .3);
-  --color-background-blue: hsl(25 100% 56% / .2);
-  --color-background-blue-hover: hsl(25 100% 56% / .3);
-  --color-background-gray: hsl(270 40% 80% / .2);
-  --color-background-gray-hover: hsl(270 40% 80% / .3);
+  --color-background-green: hsl(100 85% 55% / 0.2);
+  --color-background-green-hover: hsl(100 85% 55% / 0.3);
+  --color-background-red: hsl(355 90% 58% / 0.2);
+  --color-background-red-hover: hsl(355 90% 58% / 0.3);
+  --color-background-yellow: hsl(45 100% 60% / 0.2);
+  --color-background-yellow-hover: hsl(45 100% 60% / 0.3);
+  --color-background-blue: hsl(25 100% 56% / 0.2);
+  --color-background-blue-hover: hsl(25 100% 56% / 0.3);
+  --color-background-gray: hsl(270 40% 80% / 0.2);
+  --color-background-gray-hover: hsl(270 40% 80% / 0.3);
 
   --color-nav-background: hsl(272 55% 20%);
   --color-nav-text: hsl(270 30% 78%);
@@ -773,22 +778,22 @@
 
   --color-popover-background: hsl(268 36% 14%);
   --color-popover-background-hover: hsl(268 34% 19%);
-  --color-dialog-background: hsl(268 50% 3% / .75);
+  --color-dialog-background: hsl(268 50% 3% / 0.75);
   --color-tooltip-background: hsl(272 55% 20%);
   --color-tooltip-text: hsl(40 30% 93%);
-  --color-shadow-default: hsl(25 100% 50% / .25);
+  --color-shadow-default: hsl(25 100% 50% / 0.25);
 
-  --color-lineage-edge: hsl(270 40% 80% / .26);
+  --color-lineage-edge: hsl(270 40% 80% / 0.26);
   --color-lineage-edge-highlighted: hsl(25 100% 56%);
   --color-lineage-node-background: hsl(268 36% 14%);
   --color-lineage-node-background-hover: hsl(268 34% 19%);
-  --color-lineage-node-border: hsl(270 40% 80% / .14);
-  --color-lineage-node-border-hover: hsl(270 40% 80% / .26);
+  --color-lineage-node-border: hsl(270 40% 80% / 0.14);
+  --color-lineage-node-border-hover: hsl(270 40% 80% / 0.26);
   --color-lineage-node-border-selected: hsl(25 100% 56%);
   --color-lineage-group-node-background: hsl(268 38% 10%);
   --color-lineage-group-node-background-hover: hsl(268 36% 14%);
-  --color-lineage-group-node-border: hsl(270 40% 80% / .14);
-  --color-lineage-group-node-border-hover: hsl(270 40% 80% / .26);
+  --color-lineage-group-node-border: hsl(270 40% 80% / 0.14);
+  --color-lineage-group-node-border-hover: hsl(270 40% 80% / 0.26);
 
   --color-data-viz-green: hsl(100 85% 55%);
   --color-data-viz-green-alt: hsl(100 90% 63%);
@@ -801,7 +806,6 @@
   --color-data-viz-gray: hsl(270 20% 62%);
   --color-data-viz-gray-alt: hsl(270 30% 78%);
 }
-
 
 .themeHalloween .hp-nav {
   background: linear-gradient(180deg, hsl(272 55% 20%) 55%, hsl(25 90% 32%) 100%);
@@ -827,7 +831,6 @@
 .themeHalloween .hp-main {
   box-shadow: inset 0 4px 0 hsl(25 100% 56%);
 }
-
 
 .themeHalloween .hp-main::before,
 .themeHalloween .hp-main::after {
@@ -858,8 +861,13 @@
 }
 
 @keyframes hpSpiderSwing {
-  0%, 100% { transform: rotate(-6deg) translateY(0); }
-  50% { transform: rotate(6deg) translateY(10px); }
+  0%,
+  100% {
+    transform: rotate(-6deg) translateY(0);
+  }
+  50% {
+    transform: rotate(6deg) translateY(10px);
+  }
 }
 
 /* Fall: espresso and bark backgrounds, cream text, pumpkin and maple accents,
@@ -867,125 +875,135 @@
 .themeFall {
   --browser-color-scheme: dark;
 
-  --color-background-default: hsl(24 30% 8%);
-  --color-background-default-hover: hsl(24 28% 11%);
-  --color-background-light: hsl(24 28% 11%);
-  --color-background-light-hover: hsl(24 26% 15%);
-  --color-background-lighter: hsl(24 26% 15%);
-  --color-background-lighter-hover: hsl(24 24% 20%);
-  --color-background-disabled: hsl(30 40% 80% / .1);
+  --color-background-default: hsl(18 38% 7%);
+  --color-background-default-hover: hsl(18 35% 10%);
+  --color-background-light: hsl(18 35% 10%);
+  --color-background-light-hover: hsl(20 32% 14%);
+  --color-background-lighter: hsl(20 32% 14%);
+  --color-background-lighter-hover: hsl(22 30% 19%);
+  --color-background-disabled: hsl(30 50% 80% / 0.1);
 
-  --color-text-default: hsl(38 45% 92%);
-  --color-text-light: hsl(32 30% 76%);
-  --color-text-lighter: hsl(30 20% 60%);
-  --color-text-disabled: hsl(30 20% 60%);
+  --color-text-default: hsl(36 60% 93%);
+  --color-text-light: hsl(32 42% 78%);
+  --color-text-lighter: hsl(28 26% 62%);
+  --color-text-disabled: hsl(28 26% 62%);
 
-  --color-accent-primary: hsl(22 90% 55%);
-  --color-accent-primary-hover: hsl(26 92% 62%);
-  --color-accent-blue: hsl(22 90% 55%);
-  --color-accent-blue-hover: hsl(26 92% 62%);
-  --color-accent-reversed: hsl(24 30% 8%);
-  --color-accent-reversed-hover: hsl(24 28% 11%);
-  --color-accent-gray: hsl(30 20% 60%);
-  --color-accent-gray-hover: hsl(32 30% 76%);
-  --color-link-default: hsl(22 90% 55%);
-  --color-link-hover: hsl(26 92% 62%);
-  --color-link-disabled: hsl(30 20% 60%);
-  --color-text-blue: hsl(22 90% 55%);
-  --color-focus-ring: hsl(22 90% 55% / .6);
-  --color-checkbox-checked: hsl(22 90% 55%);
-  --color-checkbox-unchecked: hsl(30 20% 60%);
-  --color-checkbox-disabled: hsl(30 20% 60%);
+  --color-accent-primary: hsl(24 92% 54%);
+  --color-accent-primary-hover: hsl(28 95% 62%);
+  --color-accent-blue: hsl(24 92% 54%);
+  --color-accent-blue-hover: hsl(28 95% 62%);
+  --color-accent-reversed: hsl(18 38% 7%);
+  --color-accent-reversed-hover: hsl(18 35% 10%);
+  --color-accent-gray: hsl(28 26% 62%);
+  --color-accent-gray-hover: hsl(32 42% 78%);
+  --color-link-default: hsl(28 95% 62%);
+  --color-link-hover: hsl(34 98% 70%);
+  --color-link-disabled: hsl(28 26% 62%);
+  --color-text-blue: hsl(28 95% 62%);
+  --color-focus-ring: hsl(24 92% 54% / 0.6);
+  --color-checkbox-checked: hsl(24 92% 54%);
+  --color-checkbox-unchecked: hsl(28 26% 62%);
+  --color-checkbox-disabled: hsl(28 26% 62%);
 
-  --color-border-default: hsl(30 40% 80% / .14);
-  --color-border-hover: hsl(30 40% 80% / .26);
-  --color-border-disabled: hsl(30 40% 80% / .14);
-  --color-keyline-default: hsl(30 40% 80% / .14);
+  --color-border-default: hsl(30 50% 80% / 0.14);
+  --color-border-hover: hsl(30 50% 80% / 0.26);
+  --color-border-disabled: hsl(30 50% 80% / 0.14);
+  --color-keyline-default: hsl(30 50% 80% / 0.14);
 
-  --color-accent-green: hsl(85 55% 50%);
-  --color-accent-green-hover: hsl(85 60% 58%);
-  --color-accent-red: hsl(5 80% 55%);
-  --color-accent-red-hover: hsl(5 82% 63%);
-  --color-accent-yellow: hsl(42 95% 58%);
-  --color-accent-yellow-hover: hsl(42 95% 66%);
-  --color-text-green: hsl(85 55% 50%);
-  --color-text-red: hsl(5 80% 55%);
-  --color-text-yellow: hsl(42 95% 58%);
-  --color-background-green: hsl(85 55% 50% / .2);
-  --color-background-green-hover: hsl(85 55% 50% / .3);
-  --color-background-red: hsl(5 80% 55% / .2);
-  --color-background-red-hover: hsl(5 80% 55% / .3);
-  --color-background-yellow: hsl(42 95% 58% / .2);
-  --color-background-yellow-hover: hsl(42 95% 58% / .3);
-  --color-background-blue: hsl(22 90% 55% / .2);
-  --color-background-blue-hover: hsl(22 90% 55% / .3);
-  --color-background-gray: hsl(30 40% 80% / .2);
-  --color-background-gray-hover: hsl(30 40% 80% / .3);
+  --color-accent-green: hsl(72 45% 46%);
+  --color-accent-green-hover: hsl(72 50% 54%);
+  --color-accent-red: hsl(355 75% 52%);
+  --color-accent-red-hover: hsl(355 78% 60%);
+  --color-accent-yellow: hsl(40 95% 56%);
+  --color-accent-yellow-hover: hsl(42 95% 64%);
+  --color-text-green: hsl(72 45% 50%);
+  --color-text-red: hsl(355 75% 58%);
+  --color-text-yellow: hsl(40 95% 58%);
+  --color-background-green: hsl(72 45% 46% / 0.2);
+  --color-background-green-hover: hsl(72 45% 46% / 0.3);
+  --color-background-red: hsl(355 75% 52% / 0.2);
+  --color-background-red-hover: hsl(355 75% 52% / 0.3);
+  --color-background-yellow: hsl(40 95% 56% / 0.2);
+  --color-background-yellow-hover: hsl(40 95% 56% / 0.3);
+  --color-background-blue: hsl(24 92% 54% / 0.2);
+  --color-background-blue-hover: hsl(24 92% 54% / 0.3);
+  --color-background-gray: hsl(30 50% 80% / 0.2);
+  --color-background-gray-hover: hsl(30 50% 80% / 0.3);
 
-  --color-nav-background: hsl(18 45% 18%);
-  --color-nav-text: hsl(32 30% 76%);
-  --color-nav-text-hover: hsl(38 45% 92%);
-  --color-nav-text-selected: hsl(38 45% 92%);
-  --color-nav-button: hsl(24 26% 15%);
-  --color-nav-button-hover: hsl(24 24% 20%);
+  --color-nav-background: hsl(14 52% 15%);
+  --color-nav-text: hsl(32 42% 78%);
+  --color-nav-text-hover: hsl(36 60% 93%);
+  --color-nav-text-selected: hsl(36 60% 93%);
+  --color-nav-button: hsl(20 32% 14%);
+  --color-nav-button-hover: hsl(22 30% 19%);
 
-  --color-popover-background: hsl(24 26% 15%);
-  --color-popover-background-hover: hsl(24 24% 20%);
-  --color-dialog-background: hsl(24 40% 3% / .75);
-  --color-tooltip-background: hsl(18 45% 18%);
-  --color-tooltip-text: hsl(38 45% 92%);
-  --color-shadow-default: hsl(22 90% 45% / .25);
+  --color-popover-background: hsl(20 32% 14%);
+  --color-popover-background-hover: hsl(22 30% 19%);
+  --color-dialog-background: hsl(18 45% 3% / 0.75);
+  --color-tooltip-background: hsl(14 52% 15%);
+  --color-tooltip-text: hsl(36 60% 93%);
+  --color-shadow-default: hsl(24 92% 40% / 0.3);
 
-  --color-lineage-edge: hsl(30 40% 80% / .26);
-  --color-lineage-edge-highlighted: hsl(22 90% 55%);
-  --color-lineage-node-background: hsl(24 26% 15%);
-  --color-lineage-node-background-hover: hsl(24 24% 20%);
-  --color-lineage-node-border: hsl(30 40% 80% / .14);
-  --color-lineage-node-border-hover: hsl(30 40% 80% / .26);
-  --color-lineage-node-border-selected: hsl(22 90% 55%);
-  --color-lineage-group-node-background: hsl(24 28% 11%);
-  --color-lineage-group-node-background-hover: hsl(24 26% 15%);
-  --color-lineage-group-node-border: hsl(30 40% 80% / .14);
-  --color-lineage-group-node-border-hover: hsl(30 40% 80% / .26);
+  --color-lineage-edge: hsl(30 50% 80% / 0.26);
+  --color-lineage-edge-highlighted: hsl(24 92% 54%);
+  --color-lineage-node-background: hsl(20 32% 14%);
+  --color-lineage-node-background-hover: hsl(22 30% 19%);
+  --color-lineage-node-border: hsl(30 50% 80% / 0.14);
+  --color-lineage-node-border-hover: hsl(30 50% 80% / 0.26);
+  --color-lineage-node-border-selected: hsl(24 92% 54%);
+  --color-lineage-group-node-background: hsl(18 35% 10%);
+  --color-lineage-group-node-background-hover: hsl(20 32% 14%);
+  --color-lineage-group-node-border: hsl(30 50% 80% / 0.14);
+  --color-lineage-group-node-border-hover: hsl(30 50% 80% / 0.26);
 
-  --color-data-viz-green: hsl(85 55% 50%);
-  --color-data-viz-green-alt: hsl(85 60% 58%);
-  --color-data-viz-red: hsl(5 80% 55%);
-  --color-data-viz-red-alt: hsl(5 82% 63%);
-  --color-data-viz-blue: hsl(22 90% 55%);
-  --color-data-viz-blue-alt: hsl(350 60% 40%);
-  --color-data-viz-yellow: hsl(42 95% 58%);
-  --color-data-viz-yellow-alt: hsl(42 95% 66%);
-  --color-data-viz-gray: hsl(30 20% 60%);
-  --color-data-viz-gray-alt: hsl(32 30% 76%);
+  --color-data-viz-green: hsl(72 45% 46%);
+  --color-data-viz-green-alt: hsl(72 50% 54%);
+  --color-data-viz-red: hsl(355 75% 52%);
+  --color-data-viz-red-alt: hsl(355 78% 60%);
+  --color-data-viz-blue: hsl(24 92% 54%);
+  --color-data-viz-blue-alt: hsl(350 60% 38%);
+  --color-data-viz-yellow: hsl(40 95% 56%);
+  --color-data-viz-yellow-alt: hsl(42 95% 64%);
+  --color-data-viz-gray: hsl(28 26% 62%);
+  --color-data-viz-gray-alt: hsl(32 42% 78%);
 }
 
+/* Nav: deep bark brown fading into burgundy, with a pumpkin stripe along the top. */
 .themeFall .hp-nav {
-  background: linear-gradient(180deg, hsl(18 45% 18%) 55%, hsl(350 55% 24%) 100%);
-  box-shadow: inset -1px 0 0 hsl(0 0% 100% / 0.25);
-  --color-text-default: hsl(0 0% 100%);
-  --color-text-light: hsl(0 0% 100% / 0.9);
-  --color-text-lighter: hsl(0 0% 100% / 0.78);
-  --color-accent-gray: hsl(0 0% 100% / 0.78);
-  --color-accent-primary: hsl(0 0% 100%);
-  --color-accent-blue: hsl(0 0% 100%);
-  --color-link-default: hsl(0 0% 100%);
-  --color-link-hover: hsl(0 0% 100%);
-  --color-background-light: hsl(0 0% 100% / 0.1);
-  --color-background-lighter: hsl(0 0% 100% / 0.12);
-  --color-background-lighter-hover: hsl(0 0% 100% / 0.18);
-  --color-background-blue: hsl(0 0% 100% / 0.22);
-  --color-background-blue-hover: hsl(0 0% 100% / 0.3);
-  --color-keyline-default: hsl(0 0% 100% / 0.18);
-  --color-border-default: hsl(0 0% 100% / 0.18);
-  --color-focus-ring: hsl(0 0% 100% / 0.6);
+  background: linear-gradient(
+    180deg,
+    hsl(14 52% 15%) 0%,
+    hsl(10 48% 17%) 45%,
+    hsl(350 55% 20%) 100%
+  );
+  box-shadow:
+    inset 0 4px 0 hsl(24 92% 54%),
+    inset -1px 0 0 hsl(30 60% 80% / 0.2);
+  --color-text-default: hsl(36 60% 95%);
+  --color-text-light: hsl(36 60% 95% / 0.9);
+  --color-text-lighter: hsl(36 60% 95% / 0.78);
+  --color-accent-gray: hsl(36 60% 95% / 0.78);
+  --color-accent-primary: hsl(34 98% 72%);
+  --color-accent-blue: hsl(34 98% 72%);
+  --color-link-default: hsl(36 60% 95%);
+  --color-link-hover: hsl(34 98% 72%);
+  --color-background-light: hsl(30 80% 70% / 0.1);
+  --color-background-lighter: hsl(30 80% 70% / 0.12);
+  --color-background-lighter-hover: hsl(30 80% 70% / 0.18);
+  --color-background-blue: hsl(24 92% 54% / 0.35);
+  --color-background-blue-hover: hsl(24 92% 54% / 0.45);
+  --color-keyline-default: hsl(30 60% 80% / 0.18);
+  --color-border-default: hsl(30 60% 80% / 0.18);
+  --color-focus-ring: hsl(34 98% 72% / 0.6);
 }
 
+/* Main area: pumpkin stripe on top and a warm glow that sits behind the page content. */
 .themeFall .hp-main {
-  box-shadow: inset 0 4px 0 hsl(22 90% 55%);
+  box-shadow: inset 0 4px 0 hsl(24 92% 54%);
+  background: radial-gradient(90% 40% at 50% 0%, hsl(22 70% 16%) 0%, hsl(18 38% 7%) 100%);
 }
 
-/* Two maple leaves drifting down from the top-right corner, offset in time. */
+/* Two leaves drifting down near the right edge, offset in time. */
 .themeFall .hp-main::before,
 .themeFall .hp-main::after {
   content: '';
@@ -1016,9 +1034,19 @@
 }
 
 @keyframes hpLeafFall {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(-30px, 25vh) rotate(90deg); }
-  50% { transform: translate(20px, 50vh) rotate(200deg); }
-  75% { transform: translate(-25px, 75vh) rotate(290deg); }
-  100% { transform: translate(10px, 105vh) rotate(360deg); }
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(-30px, 25vh) rotate(90deg);
+  }
+  50% {
+    transform: translate(20px, 50vh) rotate(200deg);
+  }
+  75% {
+    transform: translate(-25px, 75vh) rotate(290deg);
+  }
+  100% {
+    transform: translate(10px, 105vh) rotate(360deg);
+  }
 }
