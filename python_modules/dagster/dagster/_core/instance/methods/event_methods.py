@@ -247,10 +247,6 @@ class EventMethods:
             event (EventLogEntry): The event to handle.
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
-        from dagster._core.events import RunFailureReason
-        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
-        from dagster._time import datetime_from_timestamp
-
         if not self.should_store_event(event):
             return
 
@@ -285,6 +281,13 @@ class EventMethods:
                 )
                 for event in events:
                     self._event_storage_impl.store_event(event)
+
+        self._handle_stored_events(events)
+
+    def _handle_stored_events(self, events: Sequence["EventLogEntry"]) -> None:
+        from dagster._core.events import RunFailureReason
+        from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG, WILL_RETRY_TAG
+        from dagster._time import datetime_from_timestamp
 
         for event in events:
             run_id = event.run_id
@@ -454,6 +457,49 @@ class EventMethods:
         )
         self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
+
+    def report_run_cancellation_batch(self, runs: Sequence["DagsterRun"]) -> None:
+        """Report queued-run cancellation, preserving both lifecycle events for every run.
+
+        Storages must explicitly support cancellation-event batching; other storages retain
+        the existing single-run reporting path. This reports events, not worker termination.
+        Like the single-run methods, it does not atomically claim runs from the run queue.
+        """
+        from dagster._core.events import DagsterEvent, DagsterEventType
+        from dagster._core.events.log import EventLogEntry
+
+        if not self._event_storage_impl.supports_run_event_batch:
+            for run in runs:
+                self.report_run_canceling(run, message="Canceling run from the queue.")
+                self.report_run_canceled(run)
+            return
+
+        events = []
+        for run in runs:
+            for event_type, message, level in (
+                (DagsterEventType.RUN_CANCELING, "Canceling run from the queue.", logging.INFO),
+                (
+                    DagsterEventType.RUN_CANCELED,
+                    "This run has been marked as canceled from outside the execution context.",
+                    logging.ERROR,
+                ),
+            ):
+                event = EventLogEntry(
+                    error_info=None,
+                    level=level,
+                    user_message="",
+                    run_id=run.run_id,
+                    timestamp=get_current_timestamp(),
+                    job_name=run.job_name,
+                    dagster_event=DagsterEvent(
+                        event_type_value=event_type.value, job_name=run.job_name, message=message
+                    ),
+                )
+                if self.should_store_event(event):
+                    events.append(event)
+        if events:
+            self._event_storage_impl.store_run_event_batch(events)
+            self._handle_stored_events(events)
 
     def report_run_failed(
         self,

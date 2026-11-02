@@ -1,7 +1,6 @@
 import logging
 import os
 from collections.abc import Mapping, Sequence
-from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -27,7 +26,6 @@ from dagster._core.remote_representation.external_data import job_name_for_parti
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,
-    DagsterRun,
     DagsterRunStatus,
     RunsFilter,
 )
@@ -547,55 +545,13 @@ class PartitionBackfill(
         )
 
 
-def _cancel_runs(
-    instance: "DagsterInstance",
-    runs: Sequence[DagsterRun],
-    logger: logging.Logger,
-    threadpool_executor: ThreadPoolExecutor | None,
-) -> None:
-    """Cancels queued runs and terminates started runs, concurrently if a threadpool executor is
-    given. Either way the run status is synchronously set to CANCELING or CANCELED, so the run is
-    not returned as cancelable again.
-    """
-
-    def _cancel(run: DagsterRun) -> None:
-        if run.status == DagsterRunStatus.QUEUED:
-            logger.info(f"Canceling queued run {run.run_id}")
-            instance.report_run_canceling(run, message="Canceling run from the queue.")
-            instance.report_run_canceled(run)
-        else:
-            logger.info(f"Terminating submitted run {run.run_id}")
-            instance.run_launcher.terminate(run.run_id)
-
-    if threadpool_executor is None:
-        for run in runs:
-            _cancel(run)
-    else:
-        futures: list[Future[None]] = []
-        try:
-            futures.extend(threadpool_executor.submit(_cancel, run) for run in runs)
-            for future in futures:
-                future.result()
-        finally:
-            # The pool is shared with other backfills. Do not return or retry while this
-            # page still has in-flight operations, including after submit/result errors.
-            wait(futures)
-
-
 def cancel_backfill_runs_and_cancellation_complete(
-    instance: "DagsterInstance",
-    backfill_id: str,
-    logger: logging.Logger,
-    threadpool_executor: ThreadPoolExecutor | None = None,
+    instance: "DagsterInstance", backfill_id: str, logger: logging.Logger
 ) -> bool:
     """Cancels all cancelable runs associated with the backfill_id. Ensures that
     all runs for the backfill are in a terminal state before indicating that the backfill can be
     marked CANCELED. Yields a boolean indicating the backfill can be considered canceled
     (ie all runs are canceled).
-
-    Passing a threadpool executor explicitly opts into concurrent cancellation. The daemon
-    does so only when backfills.cancel_runs_in_parallel is enabled, using the submission pool.
-    The storage and launcher must support concurrent cancellation calls.
     """
     if not instance.run_coordinator:
         check.failed("The instance must have a run coordinator in order to cancel runs")
@@ -633,7 +589,32 @@ def cancel_backfill_runs_and_cancellation_complete(
                 break
 
         canceled_any_runs = True
-        _cancel_runs(instance, runs_to_cancel_in_iteration, logger, threadpool_executor)
+        if runs_to_cancel_in_iteration[0].status == DagsterRunStatus.QUEUED:
+            # Re-read the page immediately before reporting cancellation. Runs that left the
+            # queue since selection need launcher termination rather than queued cancellation.
+            # This does not eliminate the coordinator's existing dequeue/cancel race.
+            current_runs = {
+                run.run_id: run
+                for run in instance.get_runs(
+                    RunsFilter(run_ids=[run.run_id for run in runs_to_cancel_in_iteration])
+                )
+            }
+            runs_to_cancel_in_iteration = [
+                current_runs[run.run_id]
+                for run in runs_to_cancel_in_iteration
+                if run.run_id in current_runs
+            ]
+            queued_runs = [
+                run for run in runs_to_cancel_in_iteration if run.status == DagsterRunStatus.QUEUED
+            ]
+            for run in queued_runs:
+                logger.info(f"Canceling queued run {run.run_id}")
+            instance.report_run_cancellation_batch(queued_runs)
+
+        for run in runs_to_cancel_in_iteration:
+            if run.status != DagsterRunStatus.QUEUED and run.status in CANCELABLE_RUN_STATUSES:
+                logger.info(f"Terminating submitted run {run.run_id}")
+                instance.run_launcher.terminate(run.run_id)
 
     if canceled_any_runs:
         # since we are canceling some runs in this iteration, we know that there is more work to do.

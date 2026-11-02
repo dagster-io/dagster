@@ -4,7 +4,6 @@ import os
 import sys
 import time
 from collections.abc import Iterable, Mapping, Sequence
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, cast
@@ -1026,7 +1025,6 @@ async def execute_asset_backfill_iteration(
     logger: logging.Logger,
     workspace_process_context: IWorkspaceProcessContext,
     instance: DagsterInstance,
-    submit_threadpool_executor: ThreadPoolExecutor | None = None,
 ) -> None:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
     in the DB.
@@ -1077,7 +1075,7 @@ async def execute_asset_backfill_iteration(
         )
         if backfill.submitting_run_requests:
             # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
-            logger.warning(
+            logger.warn(
                 f"Resuming previous backfill iteration and re-submitting {len(backfill.submitting_run_requests)} runs."
             )
             result = AssetBackfillIterationResult(
@@ -1246,11 +1244,6 @@ async def execute_asset_backfill_iteration(
             instance=instance,
             backfill_id=backfill.backfill_id,
             logger=logger,
-            threadpool_executor=(
-                submit_threadpool_executor
-                if instance.get_backfill_settings().get("cancel_runs_in_parallel", False)
-                else None
-            ),
         )
 
         try:

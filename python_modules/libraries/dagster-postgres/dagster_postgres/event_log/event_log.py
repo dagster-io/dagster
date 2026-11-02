@@ -221,6 +221,43 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if event.is_dagster_event and event.dagster_event_type in ASSET_CHECK_EVENTS:
             self.store_asset_check_event(event, event_id)
 
+    @property
+    def supports_run_event_batch(self) -> bool:
+        # Preserve custom single-event behavior unless the subclass explicitly opts in.
+        return type(self).store_event is PostgresEventLogStorage.store_event
+
+    def store_run_event_batch(self, events: Sequence[EventLogEntry]) -> None:
+        from dagster import DagsterEventType
+
+        check.sequence_param(events, "events", of_type=EventLogEntry)
+        check.invariant(
+            all(
+                event.dagster_event_type
+                in {DagsterEventType.RUN_CANCELING, DagsterEventType.RUN_CANCELED}
+                for event in events
+            ),
+            "Only run cancellation events are supported.",
+        )
+        # Bound SQL statement size independently of the daemon's configured page size.
+        for offset in range(0, len(events), 1000):
+            batch = events[offset : offset + 1000]
+            with self._connect() as conn:
+                result = conn.execute(
+                    self.prepare_insert_event_batch(batch).returning(
+                        SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
+                    )
+                )
+                notifications = [f"{run_id}_{event_id}" for run_id, event_id in result.fetchall()]
+                result.close()
+                # Preserve the LISTEN/NOTIFY compatibility path without one request per event.
+                conn.execute(
+                    db.text(
+                        "SELECT pg_notify(:channel, notification) "
+                        "FROM unnest(CAST(:notifications AS text[])) AS notification"
+                    ),
+                    {"channel": CHANNEL_NAME, "notifications": notifications},
+                ).close()
+
     def store_event_batch(self, events: Sequence[EventLogEntry]) -> None:
         from dagster import DagsterEventType
 

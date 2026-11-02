@@ -20,7 +20,7 @@ from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_t
 from dagster._core.utils import make_new_run_id
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_shared.yaml_utils import safe_load_yaml
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import QueuePool
 
 ensure_dagster_tests_import()
@@ -234,3 +234,39 @@ def test_all_asset_keys_excludes_wiped_asset_on_legacy_index_path(conn_string):
 
         assert asset_key not in storage.all_asset_keys()
         assert storage.get_latest_materialization_events([asset_key]).get(asset_key) is None
+
+
+def test_run_cancellation_batch(conn_string):
+    with (
+        _clean_storage(conn_string),
+        instance_for_test(
+            overrides={"storage": {"postgres": {"postgres_url": conn_string}}}
+        ) as instance,
+    ):
+        _check_run_cancellation_batch(instance)
+
+
+def _check_run_cancellation_batch(instance):
+    from dagster._core.storage.dagster_run import DagsterRunStatus
+    from dagster._core.test_utils import create_run_for_test
+    from sqlalchemy import event as sql_event
+
+    runs = [create_run_for_test(instance) for _ in range(3)]
+    statements = []
+
+    def before_execute(conn, cursor, statement, parameters, context, executemany):
+        statements.append(statement)
+
+    sql_event.listen(Engine, "before_cursor_execute", before_execute)
+    try:
+        instance.report_run_cancellation_batch(runs)
+    finally:
+        sql_event.remove(Engine, "before_cursor_execute", before_execute)
+    assert len([s for s in statements if s.startswith("INSERT INTO event_logs")]) == 1
+    assert len([s for s in statements if "pg_notify" in s]) == 1
+    for run in runs:
+        assert instance.get_run_by_id(run.run_id).status == DagsterRunStatus.CANCELED
+        assert [event.dagster_event_type for event in instance.all_logs(run.run_id)] == [
+            DagsterEventType.RUN_CANCELING,
+            DagsterEventType.RUN_CANCELED,
+        ]

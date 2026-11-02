@@ -443,6 +443,32 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         for event in events:
             self.store_event(event)
 
+    @property
+    def supports_run_event_batch(self) -> bool:
+        """Whether cancellation lifecycle events can be stored in a batch.
+
+        This is separate from asset event batching. Implementations must preserve event order
+        within each run and any notifications emitted by single-event writes.
+        """
+        return False
+
+    def store_run_event_batch(self, events: Sequence["EventLogEntry"]) -> None:
+        """Store RUN_CANCELING / RUN_CANCELED events, with a single-event fallback.
+
+        Implementations must propagate write failures. Callers must not replay an uncertain
+        batch as individual writes, since the batch may already have been committed.
+        """
+        check.invariant(
+            all(
+                event.dagster_event_type
+                in {DagsterEventType.RUN_CANCELING, DagsterEventType.RUN_CANCELED}
+                for event in events
+            ),
+            "Only run cancellation events are supported.",
+        )
+        for event in events:
+            self.store_event(event)
+
     @abstractmethod
     def delete_events(self, run_id: str) -> None:
         """Remove events for a given run id."""
