@@ -670,8 +670,9 @@ const TrendCard = ({runs}: {runs: Run[]}) => {
 
 // ---- Tonight's schedule ----------------------------------------------------
 // One row per job: how its last run went, and a live countdown to its next
-// scheduled run. Jobs without a schedule get an expected time 24h after their
-// last run, marked as such.
+// scheduled run. Every scheduled job is listed, stopped schedules included (marked
+// "off"), even if it has not run lately. Jobs without a schedule get an expected
+// time 24h after their last run, marked as such.
 
 const DAY = 24 * HOUR;
 const LOOKBACK_FOR_ROWS_DAYS = 2;
@@ -684,12 +685,13 @@ const BOARD_END_REST_MS = 10000;
 
 type BoardRow = {
   job: string;
-  status: RunStatus;
-  start: number;
+  status: RunStatus | null;
+  start: number | null;
   duration: number | null;
   rows: number;
   next: number | null;
   nextIsGuess: boolean;
+  scheduleOff: boolean;
 };
 
 const formatCountdown = (secs: number) => {
@@ -735,9 +737,10 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
     return map;
   }, [rowResult.data]);
 
-  // Next tick per job from its schedules; the earliest wins.
+  // Next tick per job from its schedules, the earliest wins; `off` when none of
+  // the job's schedules is running. Stopped schedules still report their ticks.
   const nextByJob = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, {tick: number | null; off: boolean}>();
     const ws = scheduleResult.data?.workspaceOrError;
     if (ws?.__typename !== 'Workspace') {
       return map;
@@ -749,14 +752,13 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
       }
       loc.repositories.forEach((repo) =>
         repo.schedules.forEach((sched) => {
-          if (sched.scheduleState.status !== InstigationStatus.RUNNING) {
-            return;
-          }
-          const tick = sched.futureTicks.results[0]?.timestamp;
-          if (tick) {
-            const prev = map.get(sched.pipelineName);
-            map.set(sched.pipelineName, prev === undefined ? tick : Math.min(prev, tick));
-          }
+          const tick = sched.futureTicks.results[0]?.timestamp ?? null;
+          const on = sched.scheduleState.status === InstigationStatus.RUNNING;
+          const prev = map.get(sched.pipelineName);
+          map.set(sched.pipelineName, {
+            tick: prev?.tick && tick ? Math.min(prev.tick, tick) : (prev?.tick ?? tick),
+            off: (prev?.off ?? true) && !on,
+          });
         }),
       );
     });
@@ -774,23 +776,38 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
         latest.set(r.jobName, r);
       }
     });
-    return [...latest.values()]
-      .map((r) => {
-        const start = r.startTime ?? 0;
-        const scheduled = nextByJob.get(r.jobName);
-        // No schedule: expect it again a day after it last started, if that is still ahead.
-        const guess = start + DAY > now ? start + DAY : null;
-        return {
-          job: r.jobName,
-          status: r.status,
-          start,
-          duration: durationSec(r.startTime, r.endTime),
-          rows: rowsByRun.get(r.runId) ?? 0,
-          next: scheduled ?? guess,
-          nextIsGuess: scheduled === undefined,
-        };
-      })
-      .sort((a, b) => (a.next ?? Infinity) - (b.next ?? Infinity));
+    const fromRuns: BoardRow[] = [...latest.values()].map((r) => {
+      const start = r.startTime ?? 0;
+      const scheduled = nextByJob.get(r.jobName);
+      // No schedule: expect it again a day after it last started, if that is still ahead.
+      const guess = start + DAY > now ? start + DAY : null;
+      return {
+        job: r.jobName,
+        status: r.status,
+        start,
+        duration: durationSec(r.startTime, r.endTime),
+        rows: rowsByRun.get(r.runId) ?? 0,
+        next: scheduled ? scheduled.tick : guess,
+        nextIsGuess: scheduled === undefined,
+        scheduleOff: scheduled?.off ?? false,
+      };
+    });
+    // Scheduled jobs that have not run in the window still get a row.
+    const scheduledOnly: BoardRow[] = [...nextByJob]
+      .filter(([job]) => !latest.has(job))
+      .map(([job, sched]) => ({
+        job,
+        status: null,
+        start: null,
+        duration: null,
+        rows: 0,
+        next: sched.tick,
+        nextIsGuess: false,
+        scheduleOff: sched.off,
+      }));
+    return [...fromRuns, ...scheduledOnly].sort(
+      (a, b) => (a.next ?? Infinity) - (b.next ?? Infinity),
+    );
   }, [runs, rowsByRun, nextByJob, now]);
 
   // The list is a real scroll container, so the wheel and touch work. When the
@@ -859,21 +876,28 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
   };
 
   if (!board.length) {
-    return <div className={styles.muted}>No runs this month yet.</div>;
+    return <div className={styles.muted}>No runs or schedules this month yet.</div>;
   }
 
   const renderRow = (row: BoardRow, key: string) => {
-    const running = bucketFor(row.status) === 'inProgress' || bucketFor(row.status) === 'queued';
+    const bucket = row.status ? bucketFor(row.status) : null;
+    const running = bucket === 'inProgress' || bucket === 'queued';
     return (
       <div key={key} className={styles.boardRow}>
         <span className={styles.boardJob} title={row.job}>
           {row.job}
         </span>
         <span className={styles.boardStatus}>
-          <RunStatusTag status={row.status} />
-          <span className={styles.muted}>
-            <TimeFromNow unixTimestamp={row.start} />
-          </span>
+          {row.status && row.start !== null ? (
+            <>
+              <RunStatusTag status={row.status} />
+              <span className={styles.muted}>
+                <TimeFromNow unixTimestamp={row.start} />
+              </span>
+            </>
+          ) : (
+            <span className={styles.muted}>no recent run</span>
+          )}
         </span>
         <span className={styles.boardNum}>{row.rows ? row.rows.toLocaleString() : '—'}</span>
         <span className={styles.boardNum}>{formatDuration(row.duration)}</span>
@@ -888,7 +912,7 @@ const ScheduleBoard = ({runs}: {runs: Run[]}) => {
                   hour: 'numeric',
                   minute: '2-digit',
                 })}
-                {row.nextIsGuess ? ' · expected' : ''}
+                {row.nextIsGuess ? ' · expected' : row.scheduleOff ? ' · schedule off' : ''}
               </span>
             </>
           ) : (
