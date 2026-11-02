@@ -5,6 +5,7 @@ import time
 from contextlib import ExitStack
 from typing import TYPE_CHECKING
 
+import grpc
 from dagster_shared.serdes.objects.models.defs_state_info import DefsStateInfo
 
 import dagster._check as check
@@ -21,6 +22,7 @@ from dagster._grpc.client import (
 )
 from dagster._grpc.constants import GrpcServerCommand
 from dagster._grpc.types import (
+    MAX_CANCEL_EXECUTIONS_BATCH_SIZE,
     CancelExecutionRequest,
     CancelExecutionResult,
     CancelExecutionsRequest,
@@ -416,11 +418,15 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         batch = deserialize_value(
             request.serialized_cancel_executions_request, CancelExecutionsRequest
         )
+        if len(batch.run_ids) > MAX_CANCEL_EXECUTIONS_BATCH_SIZE:
+            context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT, "Too many run IDs in cancellation request"
+            )
         # A proxy can retain runs from several code-server generations after a reload.
         # Route each run to its original server rather than the current server.
         by_client: dict[DagsterGrpcClient, list[str]] = {}
         results: dict[str, CancelExecutionResult] = {}
-        for run_id in batch.run_ids:
+        for run_id in dict.fromkeys(batch.run_ids):
             client = self._run_clients.get(run_id)
             if client is None:
                 try:

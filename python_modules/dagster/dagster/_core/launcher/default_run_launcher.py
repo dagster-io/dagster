@@ -14,7 +14,7 @@ from dagster._core.errors import (
     DagsterUserCodeProcessError,
 )
 from dagster._core.launcher.base import LaunchRunContext, RunLauncher
-from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import GRPC_INFO_TAG
 from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
@@ -178,24 +178,33 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         return res.success
 
     def terminate_runs(self, run_ids: Sequence[str]) -> Mapping[str, bool]:
-        # Existing subclasses that customize single-run termination keep their behavior.
-        if (
-            type(self).terminate is not DefaultRunLauncher.terminate
-            or type(self)._get_grpc_client_for_termination  # noqa: SLF001
-            is not DefaultRunLauncher._get_grpc_client_for_termination
+        from dagster._grpc.types import MAX_CANCEL_EXECUTIONS_BATCH_SIZE
+
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        run_ids = list(dict.fromkeys(run_ids))
+        # Preserve bound-instance overrides as well as subclass customizations. In
+        # particular, custom clients may carry different authorization metadata.
+        if any(
+            getattr(getattr(self, name), "__func__", None) is not getattr(DefaultRunLauncher, name)
+            for name in (
+                "terminate",
+                "_get_grpc_client_for_termination",
+                "_get_grpc_client_for_run",
+            )
         ):
             return super().terminate_runs(run_ids)
-        check.sequence_param(run_ids, "run_ids", of_type=str)
         if not run_ids or not self.has_instance:
             return {run_id: False for run_id in run_ids}
 
         current_runs: dict[str, DagsterRun] = {}
-        for offset in range(0, len(run_ids), 500):
+        for offset in range(0, len(run_ids), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
             current_runs.update(
                 {
                     run.run_id: run
                     for run in self._instance.get_runs(
-                        RunsFilter(run_ids=run_ids[offset : offset + 500])
+                        RunsFilter(
+                            run_ids=run_ids[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]
+                        )
                     )
                 }
             )
@@ -220,10 +229,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
         for client, runs in groups.values():
             # Bound request size even for callers other than the backfill daemon.
-            for offset in range(0, len(runs), 500):
+            for offset in range(0, len(runs), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
                 page: list[DagsterRun] = []
                 try:
-                    for run in runs[offset : offset + 500]:
+                    for run in runs[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]:
                         # Metadata is loaded in bulk, but preserve the single-run path's fresh
                         # terminal check immediately before reporting cancellation.
                         current = self._instance.get_run_by_id(run.run_id)
@@ -232,8 +241,17 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                         if current.tags.get(GRPC_INFO_TAG) != run.tags.get(GRPC_INFO_TAG):
                             results[run.run_id] = self.terminate(run.run_id)
                             continue
-                        self._instance.report_run_canceling(current)
-                        page.append(current)
+                        try:
+                            self._instance.report_run_canceling(current)
+                        except BaseException:
+                            # Reporting can fail after persisting CANCELING (for example,
+                            # in a listener). Include that run in the first-send drain too.
+                            latest = self._instance.get_run_by_id(current.run_id)
+                            if latest and latest.status == DagsterRunStatus.CANCELING:
+                                page.append(latest)
+                            raise
+                        else:
+                            page.append(current)
                 finally:
                     # A later preparation failure must not leave earlier runs CANCELING
                     # without ever sending their requests. This is a first send, not a retry.

@@ -496,6 +496,9 @@ class CancelExecutionResult:
     serializable_error_info: SerializableErrorInfo | None
 
 
+MAX_CANCEL_EXECUTIONS_BATCH_SIZE = 500
+
+
 @whitelist_for_serdes
 @record
 class CancelExecutionsRequest:

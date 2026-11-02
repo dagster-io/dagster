@@ -20,6 +20,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import DagsterApiStub, dagster_api_pb2
 from dagster._grpc.server import GrpcServerProcess
 from dagster._grpc.types import (
+    MAX_CANCEL_EXECUTIONS_BATCH_SIZE,
     CanCancelExecutionRequest,
     CancelExecutionRequest,
     CancelExecutionResult,
@@ -685,10 +686,24 @@ class DagsterGrpcClient:
         return res.serialized_cancel_execution_result
 
     def cancel_executions(self, run_ids: Sequence[str]) -> CancelExecutionsResult:
-        """Cancel runs with one RPC, falling back only for servers without the new method."""
+        """Cancel unique run IDs in bounded requests, retaining per-run results.
+
+        Requests may partially succeed across chunks. Uncertain transport failures are
+        propagated without replay. Older servers attempt every single-run request, even
+        when one fails, so already-prepared cancellation markers are not stranded.
+        """
         check.sequence_param(run_ids, "run_ids", of_type=str)
-        if not run_ids:
-            return CancelExecutionsResult(results={})
+        unique_run_ids = list(dict.fromkeys(run_ids))
+        results: dict[str, CancelExecutionResult] = {}
+        for offset in range(0, len(unique_run_ids), MAX_CANCEL_EXECUTIONS_BATCH_SIZE):
+            results.update(
+                self._cancel_executions(
+                    unique_run_ids[offset : offset + MAX_CANCEL_EXECUTIONS_BATCH_SIZE]
+                ).results
+            )
+        return CancelExecutionsResult(results=results)
+
+    def _cancel_executions(self, run_ids: Sequence[str]) -> CancelExecutionsResult:
         try:
             response = self._get_response(
                 "CancelExecutions",
@@ -700,15 +715,22 @@ class DagsterGrpcClient:
             )
         except Exception as error:
             if isinstance(error, grpc.RpcError) and error.code() == grpc.StatusCode.UNIMPLEMENTED:
-                return CancelExecutionsResult(
-                    results={
-                        run_id: deserialize_value(
+                results: dict[str, CancelExecutionResult] = {}
+                for run_id in run_ids:
+                    try:
+                        results[run_id] = deserialize_value(
                             self.cancel_execution(CancelExecutionRequest(run_id=run_id)),
                             CancelExecutionResult,
                         )
-                        for run_id in run_ids
-                    }
-                )
+                    except Exception:
+                        results[run_id] = CancelExecutionResult(
+                            success=False,
+                            message=None,
+                            serializable_error_info=serializable_error_info_from_exc_info(
+                                sys.exc_info()
+                            ),
+                        )
+                return CancelExecutionsResult(results=results)
             # Never replay a timeout or transport failure: the server may have accepted it.
             self._raise_grpc_exception(error, timeout=DEFAULT_GRPC_TIMEOUT)
         result = deserialize_value(

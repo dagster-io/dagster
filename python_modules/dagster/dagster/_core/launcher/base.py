@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
+import dagster._check as check
 from dagster._annotations import public
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._core.origin import JobPythonOrigin
@@ -86,11 +87,12 @@ class RunLauncher(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def terminate_runs(self, run_ids: Sequence[str]) -> Mapping[str, bool]:
         """Request termination of multiple workers, returning a result for every run ID.
 
-        Launchers may override this to batch requests at their backend boundary. The default
+        Repeated IDs are coalesced. Launchers may override this to batch requests at their backend boundary. The default
         preserves single-run termination, including its exceptions and execution order. A true
         result acknowledges the request; it does not imply that the worker has exited.
         """
-        return {run_id: self.terminate(run_id) for run_id in run_ids}
+        check.sequence_param(run_ids, "run_ids", of_type=str)
+        return {run_id: self.terminate(run_id) for run_id in dict.fromkeys(run_ids)}
 
     def dispose(self) -> None:
         """Do any resource cleanup that should happen when the DagsterInstance is

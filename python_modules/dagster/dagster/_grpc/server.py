@@ -82,6 +82,7 @@ from dagster._grpc.impl import (
     start_run_in_subprocess,
 )
 from dagster._grpc.types import (
+    MAX_CANCEL_EXECUTIONS_BATCH_SIZE,
     CanCancelExecutionRequest,
     CanCancelExecutionResult,
     CancelExecutionRequest,
@@ -1325,7 +1326,13 @@ class DagsterApiServer(DagsterApiServicer):
         batch = deserialize_value(
             request.serialized_cancel_executions_request, CancelExecutionsRequest
         )
-        results = {run_id: self._cancel_execution(run_id) for run_id in batch.run_ids}
+        if len(batch.run_ids) > MAX_CANCEL_EXECUTIONS_BATCH_SIZE:
+            context.abort(
+                grpc.StatusCode.INVALID_ARGUMENT, "Too many run IDs in cancellation request"
+            )
+        results = {
+            run_id: self._cancel_execution(run_id) for run_id in dict.fromkeys(batch.run_ids)
+        }
         return dagster_api_pb2.CancelExecutionsReply(
             serialized_cancel_executions_result=serialize_value(
                 CancelExecutionsResult(results=results)
