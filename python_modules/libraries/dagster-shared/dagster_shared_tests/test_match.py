@@ -62,6 +62,13 @@ class TotalTrueChild(_TotalFalseBase):
         ("nope", Literal["hello", "world"], False),
         (3, Literal[3, 5], True),
         (4, Literal[3, 5], False),
+        (True, Literal[1], False),
+        (False, Literal[0], False),
+        (1, Literal[True], False),
+        (0, Literal[False], False),
+        (1.0, Literal[1], False),
+        (True, Literal[True], True),
+        (1, Literal[1], True),
         # list[]
         ([1, 2, 3], list[int], True),
         ([1, "x"], list[int], False),
