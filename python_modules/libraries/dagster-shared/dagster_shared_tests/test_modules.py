@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 from dagster_shared.seven import resolve_module_pattern
+from dagster_shared.utils import find_uv_workspace_root
 
 
 @pytest.mark.parametrize("matches_exist", [True, False])
@@ -142,3 +144,15 @@ def test_resolve_module_pattern_embedded_wildcard_end(monkeypatch, matches_exist
 @dataclass
 class _FakeModuleSpec:
     submodule_search_locations: list[str] | None = None
+
+
+def test_find_uv_workspace_root_accepts_empty_workspace_section(tmp_path: Path):
+    (tmp_path / "pyproject.toml").write_text("[tool.uv.workspace]\n", encoding="utf-8")
+    child = tmp_path / "project"
+    child.mkdir()
+    assert find_uv_workspace_root(child) == (tmp_path, {})
+
+
+def test_find_uv_workspace_root_does_not_accept_plain_uv_config(tmp_path: Path):
+    (tmp_path / "pyproject.toml").write_text("[tool.uv]\nmanaged = false\n", encoding="utf-8")
+    assert find_uv_workspace_root(tmp_path) is None
