@@ -3,7 +3,6 @@ from typing import Any
 import wandb
 from dagster import Field, InitResourceContext, String, StringSource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from wandb.sdk.internal.internal_api import Api
 
 WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
 
@@ -60,11 +59,5 @@ def wandb_resource(context: InitResourceContext) -> dict[str, Any]:
         host=host,
         anonymous="never",
     )
-    client_settings = wandb.Settings(
-        api_key=api_key,
-        base_url=host,
-        anonymous="never",
-        launch=True,
-    )
-    api = Api(default_settings=client_settings, load_settings=False)
+    api = wandb.Api(overrides={"base_url": host}, api_key=api_key)
     return {"sdk": wandb, "api": api, "host": host}
