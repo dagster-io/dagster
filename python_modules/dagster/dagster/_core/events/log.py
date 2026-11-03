@@ -1,5 +1,5 @@
 from collections.abc import Callable, Mapping
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
@@ -40,6 +40,7 @@ class EventLogEntry(
             ("step_key", PublicAttr[str | None]),
             ("job_name", PublicAttr[str | None]),
             ("dagster_event", PublicAttr[DagsterEvent | None]),
+            ("dagster_user_metadata", PublicAttr[Mapping[str, Any] | None]),
         ],
     )
 ):
@@ -64,6 +65,8 @@ class EventLogEntry(
             generated outside of a job context.
         dagster_event (Optional[DagsterEvent]): For framework and user events, the associated
             structured event.
+        dagster_user_metadata (Optional[Dict[str, Any]]): Arbitrary user-supplied key-value pairs
+            passed via the `extra` argument to `context.log.info()` and similar methods.
     """
 
     def __new__(
@@ -76,6 +79,7 @@ class EventLogEntry(
         step_key=None,
         job_name=None,
         dagster_event=None,
+        dagster_user_metadata=None,
     ):
         return super().__new__(
             cls,
@@ -87,6 +91,7 @@ class EventLogEntry(
             check.opt_str_param(step_key, "step_key"),
             check.opt_str_param(job_name, "job_name"),
             check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
+            check.opt_mapping_param(dagster_user_metadata, "dagster_user_metadata"),
         )
 
     @public
@@ -192,6 +197,7 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
         job_name=logger_message.meta.get("job_name"),
         dagster_event=logger_message.meta.get("dagster_event"),
         error_info=None,
+        dagster_user_metadata=logger_message.meta.get("dagster_user_metadata"),
     )
 
 
