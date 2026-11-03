@@ -12,16 +12,22 @@ from dagster_dbt.cloud_v2.sensor_builder import (
     DbtCloudPollingSensorCursor,
     build_dbt_cloud_polling_sensor,
 )
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
+    SAMPLE_LIST_RUN_ARTIFACTS,
     TEST_ACCOUNT_ID,
+    TEST_ANOTHER_JOB_ID,
     TEST_ENVIRONMENT_ID,
     TEST_PROJECT_ID,
     TEST_REST_API_BASE_URL,
     TEST_RUN_URL,
     build_and_invoke_sensor,
     fully_loaded_repo_from_dbt_cloud_workspace,
+    get_sample_list_runs_sample,
+    get_sample_run_data,
+    get_sample_run_results_json,
 )
 
 
@@ -104,6 +110,66 @@ def test_no_runs(
         instance=instance,
     )
     assert len(result.asset_events) == 0
+
+
+def test_run_without_materializations_does_not_end_iteration(
+    init_load_context: None, instance: DagsterInstance, all_api_mocks: responses.RequestsMock
+) -> None:
+    """A run that produces no materializations (e.g. a `dbt test` job) must not stop the sensor
+    from processing the runs that come after it.
+    """
+    test_only_run_id = 8888
+    test_only_run_data = {
+        **get_sample_run_data(
+            run_status=int(DbtCloudJobRunStatusType.SUCCESS), job_id=TEST_ANOTHER_JOB_ID
+        ),
+        "id": test_only_run_id,
+    }
+    run_results = get_sample_run_results_json()
+    test_only_run_results = {
+        **run_results,
+        "metadata": {
+            **run_results["metadata"],
+            "env": {**run_results["metadata"]["env"], "DBT_CLOUD_RUN_ID": str(test_only_run_id)},
+        },
+        "results": [
+            result for result in run_results["results"] if result["unique_id"].startswith("test.")
+        ],
+    }
+    model_run_data = get_sample_run_data(
+        run_status=int(DbtCloudJobRunStatusType.SUCCESS), job_id=TEST_ANOTHER_JOB_ID
+    )
+
+    all_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs",
+        json=get_sample_list_runs_sample(
+            data=[test_only_run_data, model_run_data], count=2, total_count=2
+        ),
+    )
+    all_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{test_only_run_id}",
+        json={"data": test_only_run_data},
+    )
+    all_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{test_only_run_id}/artifacts",
+        json=SAMPLE_LIST_RUN_ARTIFACTS,
+    )
+    all_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{test_only_run_id}/artifacts/run_results.json",
+        json=test_only_run_results,
+    )
+
+    result, context = build_and_invoke_sensor(instance=instance)
+
+    assert len(result.asset_events) == 8
+    assert context.cursor
+    new_cursor = deserialize_value(context.cursor, DbtCloudPollingSensorCursor)
+    assert new_cursor.finished_at_upper_bound is None
+    assert new_cursor.offset == 0
 
 
 _CALLCOUNT = [0]
