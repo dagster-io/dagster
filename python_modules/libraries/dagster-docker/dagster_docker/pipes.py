@@ -64,7 +64,7 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
     Args:
         env (Optional[Mapping[str, str]]): An optional dict of environment variables to pass to the
             container.
-        register (Optional[Mapping[str, str]]): An optional dict of registry credentials to login to
+        registry (Optional[Mapping[str, str]]): An optional dict of registry credentials to login to
             the docker client.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the docker container process. Defaults to :py:class:`PipesEnvContextInjector`.
