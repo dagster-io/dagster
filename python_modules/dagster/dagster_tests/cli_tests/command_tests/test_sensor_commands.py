@@ -1,4 +1,5 @@
 import re
+from contextlib import AbstractContextManager
 from unittest import mock
 
 import click
@@ -159,7 +160,9 @@ def test_sensor_preview_since(gen_sensor_args):
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
-def test_sensor_preview_unknown_sensor(gen_sensor_args):
+def test_sensor_preview_unknown_sensor(
+    gen_sensor_args: AbstractContextManager[tuple[list[str], dg.DagsterInstance]],
+) -> None:
     with gen_sensor_args as (cli_args, instance):
         runner = CliRunner()
         with mock.patch("dagster._core.instance.DagsterInstance.get") as _instance:
