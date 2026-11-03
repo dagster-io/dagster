@@ -86,6 +86,10 @@ def compute_fields_hash(fields, description, field_aliases=None):
         _add_hash(m, ":type_key: " + field.config_type.key)
         if field.description:
             _add_hash(m, ":description: " + field.description)
+        # only added to the hash when set, so that config type keys for fields that do not
+        # opt in to is_secret are unchanged
+        if field.is_secret:
+            _add_hash(m, ":is_secret: " + str(field.is_secret))
 
     field_aliases = check.opt_dict_param(
         field_aliases, "field_aliases", key_type=str, value_type=str
