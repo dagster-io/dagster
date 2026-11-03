@@ -250,7 +250,11 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         table: {
           __typename: 'Table',
           schema: MetadataTableSchema,
-          records: ['1\tBen\tGotow', '2\tOther\tUser', '3\tFirst\tLast'],
+          records: [
+            JSON.stringify({id: 1, first_name: 'Ben', last_name: 'Gotow'}),
+            JSON.stringify({id: 2, first_name: 'Other', last_name: 'User'}),
+            JSON.stringify({id: 3, first_name: 'First', last_name: 'Last'}),
+          ],
         },
       };
     case 'TableSchemaMetadataEntry':
