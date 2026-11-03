@@ -28,6 +28,11 @@ def get_fixed_minute_interval(cron_schedule: str) -> int | None:
         return 1
 
     cron_parts = cron_schedule.split()
+    if len(cron_parts) != 5:
+        # Not a standard 5-field cron string (an empty string, or one with too few
+        # fields), so the gap between two ticks cannot be determined.
+        return None
+
     is_wildcard = [part == "*" for part in cron_parts]
 
     # Every field other than the minute field must be a wildcard. Otherwise the gap between ticks is

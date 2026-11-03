@@ -63,3 +63,9 @@ def test_get_fixed_minute_interval_is_order_independent() -> None:
         == get_fixed_minute_interval("0,15,30,45 * * * *")
         == 15
     )
+
+@pytest.mark.parametrize("cron_schedule", ["", "   ", "*/15 * * *"])
+def test_get_fixed_minute_interval_ignores_a_malformed_cron_schedule(cron_schedule: str) -> None:
+    # An empty string used to raise IndexError, and a string with too few fields used to
+    # report the interval of its minute field - a gap that never happens.
+    assert get_fixed_minute_interval(cron_schedule) is None
