@@ -30,6 +30,26 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.types.dagster_type import Any, Int, Nothing
 
 
+def test_asset_ins_dict_values_must_be_asset_in() -> None:
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not an AssetIn"):
+
+        @dg.asset(ins={"input1": None})
+        def asset1(input1):
+            return input1
+
+
+def test_asset_check_additional_ins_values_must_be_asset_in() -> None:
+    @dg.asset
+    def upstream():
+        return 1
+
+    with pytest.raises(dg.DagsterInvalidDefinitionError, match="is not an AssetIn"):
+
+        @dg.asset_check(asset=upstream, additional_ins={"input1": None})
+        def check1(input1):
+            return dg.AssetCheckResult(passed=True)
+
+
 def test_with_replaced_asset_keys():
     @dg.asset(ins={"input2": dg.AssetIn(key_prefix="something_else")})
     def asset1(input1, input2):

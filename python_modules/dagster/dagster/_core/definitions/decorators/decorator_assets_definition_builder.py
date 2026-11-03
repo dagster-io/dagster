@@ -99,6 +99,15 @@ def build_and_validate_named_ins(
     # e.g. def fn(**kwargs)
     has_var_kwargs = any(param.kind == Parameter.VAR_KEYWORD for param in asset_input_params)
 
+    # validate that every value provided in the ins dict is an AssetIn
+    for input_name, asset_in in passed_asset_ins.items():
+        if not isinstance(asset_in, AssetIn):
+            raise DagsterInvalidDefinitionError(
+                f"Value for key '{input_name}' in provided ins dict is not an AssetIn. "
+                f"Got value of type {type(asset_in).__name__}. Values in the ins dict "
+                "must be AssetIn objects."
+            )
+
     # validate that all passed_asset_ins reference valid input names
     for input_name, asset_in in passed_asset_ins.items():
         if not (
