@@ -132,7 +132,7 @@ def _telemetry_wrapper(
 
     if instance_index is None:
         raise DagsterInvariantViolationError(
-            "Attempted to log telemetry for function {name} that does not take a DagsterInstance "
+            f"Attempted to log telemetry for function {f.__name__} that does not take a DagsterInstance "  # ty: ignore[unresolved-attribute]
             "in a parameter called 'instance'"
         )
 
