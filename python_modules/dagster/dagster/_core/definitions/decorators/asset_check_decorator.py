@@ -57,6 +57,14 @@ def _build_asset_check_named_ins(
             f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `additional_deps`."
             " It can only be passed to one of these parameters."
         )
+    for in_name, asset_in in additional_ins.items():
+        if not isinstance(asset_in, AssetIn):
+            raise DagsterInvalidDefinitionError(
+                f"Value for key '{in_name}' in provided additional_ins dict is not an "
+                f"AssetIn. Got value of type {type(asset_in).__name__}. Values in the "
+                "additional_ins dict must be AssetIn objects."
+            )
+
     if asset_key in [asset_in.key for asset_in in additional_ins.values()]:
         raise DagsterInvalidDefinitionError(
             f"When defining check '{name}', asset '{asset_key.to_user_string()}' was passed to `asset` and `additional_ins`."
