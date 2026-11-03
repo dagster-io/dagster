@@ -222,6 +222,9 @@ class NewlyUpdatedCondition(TimedSubsetAutomationCondition[AssetOrCheckKey]):
         subset = await context.asset_graph_view.compute_updated_since_temporal_context_subset(
             key=context.key, temporal_context=context.previous_temporal_context
         )
+        # restrict to the candidate subset, as with the other operands. otherwise, within
+        # any_deps_match, updates to dep partitions that don't map to a candidate count as true
+        subset = context.candidate_subset.compute_intersection(subset)
         if subset.is_empty:
             return subset, None
 
