@@ -1014,7 +1014,7 @@ class SnowflakeConnection:
                     parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                     cursor.execute(sql, parameters)
                     if use_pandas_result:
-                        results = results.append(cursor.fetch_pandas_all())  # type: ignore
+                        results.append(cursor.fetch_pandas_all())
                     elif fetch_results:
                         results.append(cursor.fetchall())
 
