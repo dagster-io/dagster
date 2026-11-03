@@ -10,22 +10,27 @@ const BASE_URL = '/docs/';
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
 /**
- * The sitemap's `lastmod: 'date'` takes each page's date from the newest git commit that touched its
- * source file. In a shallow clone every file untouched within the fetched depth reports the clone's
- * boundary commit, so the whole site would look modified on the day of the build. Vercel clones with
- * `--depth=10` unless the project sets `VERCEL_DEEP_CLONE=true`; emit no `<lastmod>` rather than
- * wrong ones.
+ * `lastmod: 'date'` makes the sitemap plugin run `git log` for every page, which only gives real dates
+ * in a full clone. The docs are deployed with the Vercel CLI from GitHub Actions (.github/workflows/
+ * build-docs.yml), so the Vercel build has no `.git` at all (git exits 128 and Docusaurus aborts the
+ * build), and the Actions checkout is shallow (`fetch-depth` = PR commits + 1), where every untouched
+ * file would report the boundary commit. Only ask for lastmod when git history can answer truthfully;
+ * otherwise the sitemap is emitted without `<lastmod>`, as before.
  */
-function isShallowGitClone(): boolean {
+function hasFullGitHistory(): boolean {
+  const git = (args: string) => execSync(`git ${args}`, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']}).trim();
   try {
-    const out = execSync('git rev-parse --is-shallow-repository', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-    return out.trim() === 'true';
+    return git('rev-parse --is-inside-work-tree') === 'true' && git('rev-parse --is-shallow-repository') === 'false';
   } catch {
     return false;
   }
+}
+
+const SITEMAP_LASTMOD = hasFullGitHistory() ? 'date' : null;
+if (SITEMAP_LASTMOD === null) {
+  console.warn(
+    '[sitemap] No full git history available (no repository, or a shallow clone): sitemap.xml is generated without <lastmod>.',
+  );
 }
 
 const config: Config = {
@@ -284,7 +289,7 @@ const config: Config = {
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
-          lastmod: 'date',
+          lastmod: SITEMAP_LASTMOD,
           changefreq: 'weekly',
           priority: 0.5,
           ignorePatterns: [`${BASE_URL}tags/**`, `${BASE_URL}search`],
@@ -293,18 +298,10 @@ const config: Config = {
             const {defaultCreateSitemapItems, ...rest} = params;
             const items = await defaultCreateSitemapItems(rest);
             //return items.filter((item) => !item.url.includes('/page/'));
-            const shallow = isShallowGitClone();
-            if (shallow) {
-              console.warn(
-                '[sitemap] Shallow git clone detected: omitting <lastmod> from sitemap.xml. Set VERCEL_DEEP_CLONE=true on the Vercel project to restore it.',
-              );
-            }
-            return items.map((item) => ({
-              ...item,
-              // Vercel redirects `/docs/` to `/docs`, so list the homepage without the trailing slash
-              url: item.url === `${config.url}${BASE_URL}` ? item.url.replace(/\/$/, '') : item.url,
-              ...(shallow && {lastmod: null}),
-            }));
+            // Vercel redirects `/docs/` to `/docs`, so list the homepage without the trailing slash
+            return items.map((item) =>
+              item.url === `${config.url}${BASE_URL}` ? {...item, url: item.url.replace(/\/$/, '')} : item,
+            );
           },
         },
       } satisfies Preset.Options,
