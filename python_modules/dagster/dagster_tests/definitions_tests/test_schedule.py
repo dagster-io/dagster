@@ -32,6 +32,12 @@ def test_default_name_job():
     assert schedule.name == "my_job_schedule"
 
 
+def test_default_name_from_invalid_job_name():
+    # job_name derives the schedule name and has to be a valid Dagster name
+    with pytest.raises(dg.DagsterInvalidDefinitionError):
+        dg.ScheduleDefinition(job_name="bad name!!", cron_schedule="0 0 * * *")
+
+
 def test_jobs_attr():
     @dg.graph
     def my_graph():

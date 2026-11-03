@@ -670,7 +670,9 @@ class ScheduleDefinition(IHasInternalInit):
         if name:
             self._name = check_valid_name(name)
         elif job_name:
-            self._name = job_name + "_schedule"
+            # job_name derives the schedule name and is also used to resolve the
+            # target job later, so it has to be a valid Dagster name
+            self._name = check_valid_name(job_name) + "_schedule"
         elif job:
             self._name = job.name + "_schedule"
 
