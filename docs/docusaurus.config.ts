@@ -3,10 +3,30 @@ import type * as Preset from '@docusaurus/preset-classic';
 import type {Config} from '@docusaurus/types';
 import AnnouncementBar from '@theme/AnnouncementBar';
 import {themes as prismThemes} from 'prism-react-renderer';
+import {execSync} from 'node:child_process';
 
 const BASE_URL = '/docs/';
 
 const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
+
+/**
+ * The sitemap's `lastmod: 'date'` takes each page's date from the newest git commit that touched its
+ * source file. In a shallow clone every file untouched within the fetched depth reports the clone's
+ * boundary commit, so the whole site would look modified on the day of the build. Vercel clones with
+ * `--depth=10` unless the project sets `VERCEL_DEEP_CLONE=true`; emit no `<lastmod>` rather than
+ * wrong ones.
+ */
+function isShallowGitClone(): boolean {
+  try {
+    const out = execSync('git rev-parse --is-shallow-repository', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return out.trim() === 'true';
+  } catch {
+    return false;
+  }
+}
 
 const config: Config = {
   title: 'Dagster Docs',
@@ -264,19 +284,27 @@ const config: Config = {
         },
         // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-sitemap#ex-config
         sitemap: {
-          //lastmod: 'date',
+          lastmod: 'date',
           changefreq: 'weekly',
           priority: 0.5,
-          ignorePatterns: [`${BASE_URL}tags/**`],
+          ignorePatterns: [`${BASE_URL}tags/**`, `${BASE_URL}search`],
           filename: 'sitemap.xml',
           createSitemapItems: async (params) => {
             const {defaultCreateSitemapItems, ...rest} = params;
             const items = await defaultCreateSitemapItems(rest);
             //return items.filter((item) => !item.url.includes('/page/'));
-            // Vercel redirects `/docs/` to `/docs`, so list the homepage without the trailing slash
-            return items.map((item) =>
-              item.url === `${config.url}${BASE_URL}` ? {...item, url: item.url.replace(/\/$/, '')} : item,
-            );
+            const shallow = isShallowGitClone();
+            if (shallow) {
+              console.warn(
+                '[sitemap] Shallow git clone detected: omitting <lastmod> from sitemap.xml. Set VERCEL_DEEP_CLONE=true on the Vercel project to restore it.',
+              );
+            }
+            return items.map((item) => ({
+              ...item,
+              // Vercel redirects `/docs/` to `/docs`, so list the homepage without the trailing slash
+              url: item.url === `${config.url}${BASE_URL}` ? item.url.replace(/\/$/, '') : item.url,
+              ...(shallow && {lastmod: null}),
+            }));
           },
         },
       } satisfies Preset.Options,
