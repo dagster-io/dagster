@@ -19,6 +19,7 @@ class DagsterHelmValues(BaseModel, extra="allow"):
     dagsterUserDeployments: UserDeployments = Field(..., alias="dagster-user-deployments")
     postgresql: subschema.PostgreSQL
     generatePostgresqlPasswordSecret: bool
+    postgresqlSecretAnnotations: kubernetes.Annotations = kubernetes.Annotations(root={})
     generateCeleryConfigSecret: bool
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis

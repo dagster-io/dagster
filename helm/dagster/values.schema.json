@@ -4035,6 +4035,10 @@
             "title": "Generatepostgresqlpasswordsecret",
             "type": "boolean"
         },
+        "postgresqlSecretAnnotations": {
+            "$ref": "#/$defs/Annotations",
+            "default": {}
+        },
         "generateCeleryConfigSecret": {
             "title": "Generateceleryconfigsecret",
             "type": "boolean"
