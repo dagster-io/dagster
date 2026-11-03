@@ -561,9 +561,11 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
             )
             conn = engine.raw_connection() if raw_conn else engine.connect()
 
-            yield conn
-            conn.close()
-            engine.dispose()
+            try:
+                yield conn
+            finally:
+                conn.close()
+                engine.dispose()
         elif self.connector == "adbc":
             import adbc_driver_snowflake.dbapi
 
@@ -571,15 +573,19 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext,
                 db_kwargs=self._adbc_connection_args,  # ty: ignore[invalid-argument-type]
             )
 
-            yield conn
-            conn.close()
+            try:
+                yield conn
+            finally:
+                conn.close()
         else:
             conn = snowflake.connector.connect(**self._connection_args)
 
-            yield conn
-            if not self.autocommit:
-                conn.commit()
-            conn.close()
+            try:
+                yield conn
+                if not self.autocommit:
+                    conn.commit()
+            finally:
+                conn.close()
 
     def get_object_to_set_on_execution_context(self) -> Any:
         # Directly create a SnowflakeConnection here for backcompat since the SnowflakeConnection
