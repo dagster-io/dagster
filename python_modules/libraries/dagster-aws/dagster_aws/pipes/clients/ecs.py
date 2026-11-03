@@ -1,3 +1,4 @@
+import unicodedata
 from pprint import pformat
 from typing import TYPE_CHECKING, Any, Optional, cast
 
@@ -28,6 +29,16 @@ if TYPE_CHECKING:
         RunTaskRequestTypeDef,
         RunTaskResponseTypeDef,
     )
+
+
+def _sanitize_ecs_tag_value(value: str) -> str:
+    # ECS accepts Unicode letters, numbers, separators, and these punctuation characters.
+    # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Tag.html
+    # This is lossy display metadata, not an identifier. Leave the Pipes context unchanged.
+    return "".join(
+        char if unicodedata.category(char)[0] in "LNZ" or char in "+-=._:/@" else "-"
+        for char in value
+    )[:256]
 
 
 class PipesECSClient(PipesClient, TreatAsResourceParam):
@@ -160,7 +171,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             # inject Dagster tags
             tags = list(run_task_params.get("tags", []))
             for key, value in session.default_remote_invocation_info.items():
-                tags.append({"key": key, "value": value})
+                tags.append({"key": key, "value": _sanitize_ecs_tag_value(value)})
             run_task_params["tags"] = tags
 
             response = self._client.run_task(**run_task_params)
