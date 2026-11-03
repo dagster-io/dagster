@@ -4,9 +4,18 @@ import {useEffect, useState} from 'react';
 
 import styles from './css/FallLeaves.module.css';
 import {useThemeState} from '../app/useThemeState';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
-// Leaves drift down the right side of the screen, settle into a pile along the bottom,
-// and a rake button sweeps the pile away. Only rendered on the Fall theme.
+// Leaves drift down across the screen, settle into a pile along the bottom,
+// and a rake button sweeps the pile away. Only rendered on the Fall theme, and can be
+// switched off in user settings.
+
+const LEAVES_STORAGE_KEY = 'hillpointe-fall-leaves';
+
+export const useFallLeavesEnabled = () =>
+  useStateWithStorage(LEAVES_STORAGE_KEY, (value: any) =>
+    typeof value === 'boolean' ? value : true,
+  );
 
 const COLORS = ['%23e8742a', '%23c9a227', '%23b8322a'];
 const LEAF_PATH = 'M21 3C12 3 4 8 3 19c0 1 0 2 1 2 2-5 6-9 11-12-4 4-7 8-9 13 9 0 15-7 15-19z';
@@ -32,7 +41,7 @@ let nextId = 1;
 
 const makeLeaf = (): Leaf => ({
   id: nextId++,
-  left: 58 + Math.random() * 36,
+  left: 2 + Math.random() * 92,
   size: 18 + Math.round(Math.random() * 10),
   duration: 10 + Math.random() * 6,
   tilt: Math.round(Math.random() * 80 - 40),
@@ -41,7 +50,8 @@ const makeLeaf = (): Leaf => ({
 
 export const FallLeaves = () => {
   const {theme} = useThemeState();
-  const active = theme === DagsterTheme.Fall;
+  const [enabled] = useFallLeavesEnabled();
+  const active = enabled && theme === DagsterTheme.Fall;
 
   const [falling, setFalling] = useState<Leaf[]>([]);
   const [pile, setPile] = useState<Leaf[]>([]);

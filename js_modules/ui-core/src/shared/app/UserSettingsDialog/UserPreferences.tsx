@@ -3,6 +3,7 @@ import {
   Button,
   Checkbox,
   Colors,
+  DagsterTheme,
   FontFamily,
   Heading,
   Icon,
@@ -18,6 +19,7 @@ import {TimeContext} from '../../../app/time/TimeContext';
 import {TimezoneSelect} from '../../../app/time/TimezoneSelect';
 import {localTimezoneLabel, orgTimezoneLabel} from '../../../app/time/browserTimezone';
 import {useThemeState} from '../../../app/useThemeState';
+import {useFallLeavesEnabled} from '../../../hillpointe/FallLeaves';
 import {useStateWithStorage} from '../../../hooks/useStateWithStorage';
 
 export const UserPreferences = ({
@@ -34,6 +36,7 @@ export const UserPreferences = ({
   const {showAssetsWithoutDefinitions, setShowAssetsWithoutDefinitions} =
     useShowAssetsWithoutDefinitions();
   const {theme, setTheme} = useThemeState();
+  const [fallLeavesEnabled, setFallLeavesEnabled] = useFallLeavesEnabled();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
 
@@ -109,6 +112,16 @@ export const UserPreferences = ({
         <div>Theme</div>
         <ThemeSelect theme={theme} onChange={setTheme} />
       </Box>
+      {theme === DagsterTheme.Fall ? (
+        <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
+          <div>Falling leaves</div>
+          <Checkbox
+            checked={fallLeavesEnabled}
+            format="switch"
+            onChange={(e) => setFallLeavesEnabled(e.target.checked)}
+          />
+        </Box>
+      ) : null}
       <Box padding={{vertical: 8}} flex={{justifyContent: 'space-between', alignItems: 'center'}}>
         <div>Enable keyboard shortcuts</div>
         <Checkbox checked={shortcutsEnabled} format="switch" onChange={toggleKeyboardShortcuts} />
