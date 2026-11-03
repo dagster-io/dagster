@@ -16,6 +16,7 @@ from dagster_shared.yaml_utils import (
     merge_yamls,
     safe_load_yaml,
 )
+from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 
 def file_relative_path(file, path):
@@ -171,3 +172,20 @@ def test_load_datetime_string():
     assert load_run_config_yaml(date_config_yaml) == {
         "ops": {"my_op": {"config": {"start": "2022-06-10T00:00:00.000000+00:00"}}}
     }
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"type": "string", "examples": [""]},
+        {"type": "number", "examples": [0]},
+        {"type": "null", "examples": [None]},
+        {"type": "array", "items": {"type": "string"}, "examples": [[]]},
+        {"type": "object", "properties": {"name": {"type": "string"}}, "examples": [{}]},
+        {"anyOf": [{"type": "string"}, {"type": "boolean"}], "examples": [False]},
+    ],
+)
+def test_sample_yaml_preserves_falsy_examples(schema):
+    generated = yaml.safe_load(generate_sample_yaml("test.Component", schema))
+    assert generated["attributes"] == schema["examples"][0]
+    assert type(generated["attributes"]) is type(schema["examples"][0])
