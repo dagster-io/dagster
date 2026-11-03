@@ -73,8 +73,10 @@ class IndentingPrinter:
         if text is not None:
             self.line(text)
         self.increase_indent()
-        yield
-        self.decrease_indent()
+        try:
+            yield
+        finally:
+            self.decrease_indent()
 
 
 class IndentingStringIoPrinter(IndentingPrinter):
