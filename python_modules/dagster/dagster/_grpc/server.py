@@ -1438,7 +1438,10 @@ class DagsterApiServer(DagsterApiServicer):
         # returning so that CanCancel will never return True
         if not success:
             with self._execution_lock:
-                self._clear_run(run_id)
+                # The cleanup thread may have already observed the process exit and
+                # cleared the run while this RPC was handling its startup failure.
+                if run_id in self._executions:
+                    self._clear_run(run_id)
 
         return dagster_api_pb2.StartRunReply(
             serialized_start_run_result=serialize_value(
