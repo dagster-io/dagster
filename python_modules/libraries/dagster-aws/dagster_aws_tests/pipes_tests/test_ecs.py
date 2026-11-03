@@ -4,6 +4,7 @@ import re
 import sys
 import time
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 
 import boto3
 import botocore
@@ -316,3 +317,68 @@ def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
         )
         mat = instance.get_latest_materialization_event(ecs_asset.key)
         assert mat and mat.asset_materialization
+
+
+def _make_mock_ecs_client(run_task_response: dict) -> MagicMock:
+    client = MagicMock()
+    client.describe_task_definition.return_value = {
+        "taskDefinition": {
+            "containerDefinitions": [
+                {
+                    "name": "test-container",
+                    "logConfiguration": {
+                        "logDriver": "awslogs",
+                        "options": {"awslogs-group": "g", "awslogs-stream-prefix": "ecs"},
+                    },
+                }
+            ]
+        }
+    }
+    client.run_task.return_value = run_task_response
+    client.meta.region_name = "us-east-1"
+    return client
+
+
+def test_ecs_pipes_run_task_returns_no_tasks():
+    """run_task can succeed at the API level while starting zero tasks, reporting
+    the cause in the ``failures`` list instead (e.g. insufficient capacity). This
+    must surface as a clear RuntimeError carrying the ECS failure reason/detail,
+    not an IndexError. Uses a pure MagicMock client -- no moto server required.
+    """
+    pipes = PipesECSClient(
+        client=_make_mock_ecs_client(
+            {
+                "tasks": [],
+                "failures": [
+                    {
+                        "reason": "RESOURCE:EC2",
+                        "detail": "No Container Instances were found in cluster test-cluster",
+                    }
+                ],
+            }
+        ),  # type: ignore
+        message_reader=PipesCloudWatchMessageReader(client=MagicMock()),
+    )
+    with instance_for_test() as instance:
+        with pytest.raises(RuntimeError) as exc_info:
+            materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes})
+
+    message = str(exc_info.value)
+    assert "RESOURCE:EC2" in message
+    assert "No Container Instances were found in cluster test-cluster" in message
+
+
+def test_ecs_pipes_run_task_returns_malformed_task():
+    """A task entry missing ``taskArn``/``containers`` must surface as a clear
+    RuntimeError, not a KeyError. Uses a pure MagicMock client -- no moto
+    server required.
+    """
+    pipes = PipesECSClient(
+        client=_make_mock_ecs_client({"tasks": [{}], "failures": []}),  # type: ignore
+        message_reader=PipesCloudWatchMessageReader(client=MagicMock()),
+    )
+    with instance_for_test() as instance:
+        with pytest.raises(RuntimeError) as exc_info:
+            materialize([ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes})
+
+    assert "taskArn" in str(exc_info.value)

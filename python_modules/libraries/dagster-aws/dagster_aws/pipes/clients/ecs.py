@@ -165,6 +165,27 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
 
             response = self._client.run_task(**run_task_params)
 
+            if not response.get("tasks"):
+                # run_task can succeed at the API level while starting no tasks,
+                # reporting the cause in the failures list instead (e.g. no
+                # capacity in the cluster). Surface those failures instead of
+                # crashing with an IndexError on tasks[0] below.
+                failure_details = []
+                for failure in response.get("failures") or []:
+                    parts = [
+                        f"{key}: {failure[key]}"
+                        for key in ("arn", "reason", "detail")
+                        if failure.get(key)
+                    ]
+                    failure_details.append(", ".join(parts) if parts else pformat(failure))
+                failures_text = (
+                    "; ".join(failure_details) if failure_details else "no failures reported by ECS"
+                )
+                raise RuntimeError(
+                    f"ECS run_task returned no tasks (cluster={cluster!r}, "
+                    f"taskDefinition={task_definition!r}): {failures_text}"
+                )
+
             if len(response["tasks"]) > 1:
                 # this error should never happen, as we're running a single task
                 raise DagsterInvariantViolationError(
@@ -172,6 +193,14 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
                 )
 
             task = response["tasks"][0]
+
+            if not task.get("taskArn") or "containers" not in task:
+                raise RuntimeError(
+                    "ECS run_task returned a malformed task missing 'taskArn' and/or "
+                    f"'containers' (cluster={cluster!r}, taskDefinition={task_definition!r}): "
+                    f"{pformat(task)}"
+                )
+
             task_arn = task["taskArn"]
             task_id = task_arn.split("/")[-1]
             containers = task["containers"]
