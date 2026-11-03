@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, AbstractSet  # noqa: UP035
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetKey, EntityKey
+from dagster._core.definitions.asset_key import AssetJobKey, AssetKey, EntityKey
 from dagster._core.definitions.assets.graph.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -17,6 +17,9 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationResult,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.operators.job_operators import (
+    get_job_root_asset_keys,
+)
 from dagster._core.definitions.partitions.context import partition_loading_context
 from dagster._core.instance import DagsterInstance
 from dagster._time import get_current_datetime
@@ -98,6 +101,14 @@ class AutomationConditionEvaluator:
     @property
     def evaluated_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
         asset_keys = {ek for ek in self.entity_keys if isinstance(ek, AssetKey)}
+        # job conditions are evaluated against the job's root assets, so their records (and those
+        # of their parents) are needed as well
+        asset_keys |= {
+            asset_key
+            for ek in self.entity_keys
+            if isinstance(ek, AssetJobKey) and self.asset_graph.has(ek)
+            for asset_key in get_job_root_asset_keys(ek, self.asset_graph)
+        }
         return {
             parent for ek in asset_keys for parent in self.asset_graph.get(ek).parent_keys
         } | asset_keys
@@ -112,10 +123,9 @@ class AutomationConditionEvaluator:
         new parent materializations is calculated, as this can result in materializations being
         ignored if they happen between the two calculations.
         """
-        self.logger.info(
-            f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
-        )
-        self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
+        asset_records_to_prefetch = self.asset_records_to_prefetch
+        self.logger.info(f"Prefetching asset records for {len(asset_records_to_prefetch)} records.")
+        self.instance_queryer.prefetch_asset_records(asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
     def evaluate(
