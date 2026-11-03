@@ -160,6 +160,9 @@ deployments:
 
     # Override the default K8s scheduler
     # schedulerName: ~
+    # Set the PriorityClass for the pod. See:
+    # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption
+    # priorityClassName: ~
 
     # Readiness probe detects when the pod is ready to serve requests.
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes

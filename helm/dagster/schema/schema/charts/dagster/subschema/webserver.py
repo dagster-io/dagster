@@ -45,6 +45,7 @@ class Webserver(BaseModel, extra="forbid"):
     logLevel: str | None = None
     logFormat: str | None = None
     schedulerName: str | None = None
+    priorityClassName: str | None = None
     volumeMounts: list[kubernetes.VolumeMount] | None = None
     volumes: list[kubernetes.Volume] | None = None
     initContainerResources: kubernetes.Resources | None = None

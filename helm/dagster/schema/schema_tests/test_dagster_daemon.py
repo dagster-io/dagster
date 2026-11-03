@@ -665,6 +665,24 @@ def test_scheduler_name(template: HelmTemplate):
     assert daemon_deployment.spec.template.spec.scheduler_name == "custom"
 
 
+def test_priority_class_name(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(priorityClassName="high-priority")
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert daemon_deployment.spec.template.spec.priority_class_name == "high-priority"
+
+
+def test_priority_class_name_default(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterDaemon=Daemon.construct())
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert daemon_deployment.spec.template.spec.priority_class_name is None
+
+
 def test_init_container_resources(template: HelmTemplate):
     init_container_resources = {
         "limits": {"cpu": "200m"},
