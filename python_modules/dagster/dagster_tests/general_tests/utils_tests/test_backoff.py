@@ -1,6 +1,7 @@
 import time
 
 import pytest
+from dagster._check import ParameterCheckError
 from dagster._utils.backoff import backoff, exponential_delay_generator
 
 
@@ -86,3 +87,28 @@ def test_backoff(fake_sleep_times):
             fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={"foo": "bar"}, max_retries=1
         )
     assert fn.call_count == 2
+
+
+@pytest.mark.parametrize("base_delay", [-0.1, -1, float("nan"), float("inf"), "0.1", None])
+def test_exponential_delay_generator_rejects_a_bad_base_delay(base_delay):
+    with pytest.raises(ParameterCheckError, match="base_delay"):
+        exponential_delay_generator(base_delay=base_delay)
+
+
+@pytest.mark.parametrize("backoff_factor", [0, -2, float("nan"), "2", None])
+def test_exponential_delay_generator_rejects_a_bad_factor(backoff_factor):
+    with pytest.raises(ParameterCheckError, match="backoff_factor"):
+        exponential_delay_generator(backoff_factor=backoff_factor)
+
+
+def test_backoff_with_a_bad_delay_is_rejected_before_the_first_call():
+    fn = Failer(fails=100)
+
+    with pytest.raises(ParameterCheckError, match="base_delay"):
+        backoff(
+            fn,
+            retry_on=(RetryableException,),
+            delay_generator=exponential_delay_generator(base_delay=-0.1),
+        )
+
+    assert fn.call_count == 0

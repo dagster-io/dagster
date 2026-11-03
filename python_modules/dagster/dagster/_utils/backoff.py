@@ -1,4 +1,5 @@
 import asyncio
+import math
 import time
 from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
 from typing import TypeVar
@@ -10,6 +11,26 @@ T = TypeVar("T")
 
 def exponential_delay_generator(
     base_delay: float = 0.1, backoff_factor: float = 2.0
+) -> Iterator[float]:
+    check.float_param(base_delay, "base_delay")
+    check.float_param(backoff_factor, "backoff_factor")
+    check.param_invariant(
+        math.isfinite(base_delay) and base_delay >= 0,
+        "base_delay",
+        "expected a finite, non-negative delay in seconds",
+    )
+    check.param_invariant(
+        math.isfinite(backoff_factor) and backoff_factor > 0,
+        "backoff_factor",
+        "expected a finite, positive backoff factor",
+    )
+    # The generator body only runs on the first ``next()``; validating here
+    # surfaces a bad parameter at the call site instead of in the retry loop.
+    return _exponential_delay_generator(base_delay, backoff_factor)
+
+
+def _exponential_delay_generator(
+    base_delay: float, backoff_factor: float
 ) -> Iterator[float]:
     i = base_delay
     while True:
