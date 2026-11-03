@@ -315,6 +315,72 @@ def test_asset_out_multiple_static_partitions():
     assert handler.handle_input_calls[0][1] == table_slice
 
 
+def test_asset_out_multi_partitioned_with_dynamic_dimension():
+    # Outside of execute_in_process there is no instance to list dynamic partitions with,
+    # so the dynamic dimension's keys have to come from the context.
+    handler = IntHandler()
+    connect_mock = MagicMock()
+    db_client = MagicMock(
+        spec=DbClient,
+        get_select_statement=MagicMock(return_value=""),
+        connect=connect_mock,
+        get_table_name=mock_table_name,
+    )
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+    asset_key = dg.AssetKey(["schema1", "table1"])
+    partitions_def = dg.MultiPartitionsDefinition(
+        {
+            "date": dg.DailyPartitionsDefinition(start_date="2020-01-01"),
+            "customer": dg.DynamicPartitionsDefinition(name="customers"),
+        }
+    )
+    partition_keys = [
+        dg.MultiPartitionKey({"date": "2020-01-02", "customer": "globex"}),
+        dg.MultiPartitionKey({"date": "2020-01-02", "customer": "acme"}),
+    ]
+    partition_key_range = dg.PartitionKeyRange(start=partition_keys[1], end=partition_keys[0])
+    output_context = MagicMock(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        asset_partition_key_range=partition_key_range,
+        asset_partition_keys=partition_keys,
+        definition_metadata={"partition_expr": {"date": "date_col", "customer": "customer_col"}},
+        asset_partitions_def=partitions_def,
+    )
+    manager.handle_output(output_context, 5)
+    input_context = MagicMock(
+        asset_key=asset_key,
+        upstream_output=output_context,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(int),
+        asset_partition_key_range=partition_key_range,
+        asset_partition_keys=partition_keys,
+        definition_metadata=None,
+        asset_partitions_def=partitions_def,
+    )
+    assert manager.load_input(input_context) == 7
+
+    table_slice = TableSlice(
+        database="database_abc",
+        schema="schema1",
+        table="table1",
+        partition_dimensions=[
+            TablePartitionDimension(
+                partitions=["acme", "globex"],
+                partition_expr="customer_col",
+            ),
+            TablePartitionDimension(
+                partitions=dg.TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)),
+                partition_expr="date_col",
+            ),
+        ],
+    )
+    assert len(handler.handle_output_calls) == 1
+    assert handler.handle_output_calls[0][1:] == (table_slice, 5)
+    assert len(handler.handle_input_calls) == 1
+    assert handler.handle_input_calls[0][1] == table_slice
+
+
 def test_different_output_and_input_types():
     int_handler = IntHandler()
     str_handler = StringHandler()
