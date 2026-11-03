@@ -11,6 +11,7 @@ from dagster_pipes import (
     PipesDefaultMessageWriter,
     PipesFileMessageWriterChannel,
     PipesStdioFileLogWriter,
+    PipesStdioLogWriterChannel,
 )
 
 
@@ -89,3 +90,33 @@ def test_default_writer_suggests_passing_a_writer_for_unknown_params():
     with pytest.raises(DagsterPipesError, match="pass it as `message_writer`"):
         with PipesDefaultMessageWriter().open({"bucket": "my-bucket"}):
             pass
+
+
+def test_stdio_capture_closes_saved_file_descriptors(capsys, monkeypatch):
+    saved_fds = []
+    real_dup = os.dup
+
+    def record_dup(fd):
+        saved = real_dup(fd)
+        saved_fds.append(saved)
+        return saved
+
+    monkeypatch.setattr(os, "dup", record_dup)
+    monkeypatch.setattr(PipesStdioLogWriterChannel, "WAIT_FOR_TEE_SECONDS", 0.01)
+    try:
+        with tempfile.TemporaryDirectory() as tempdir:
+            with (
+                capsys.disabled(),
+                PipesStdioFileLogWriter(interval=0.01).open({"logs_dir": tempdir}),
+            ):
+                pass
+        assert len(saved_fds) == 2
+        for fd in saved_fds:
+            with pytest.raises(OSError):
+                os.fstat(fd)
+    finally:
+        for fd in saved_fds:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
