@@ -417,3 +417,63 @@ def test_definitions_method():
         job_name="my_job",
     )
     assert result.success
+
+
+def test_execute_in_process_skip_unblocked_by_abandon():
+    # Regression test for https://github.com/dagster-io/dagster/issues/33661.
+    # Abandoning executed_op unblocks a skip of collector; the engine must process
+    # that skip instead of hanging forever in a busy loop. Completion is the assertion.
+
+    @dg.op(out=dg.Out(is_required=False))
+    def only_if_present_erroneous_op_settings():
+        yield dg.Output(value=None)
+
+    @dg.op
+    def erroneous_op(settings):
+        raise RuntimeError()
+
+    @dg.op(out=dg.Out(is_required=False))
+    def only_if_present_not_executed_settings():
+        # Must be a generator so the op produces no output; a plain `return` would be
+        # wrapped as Output(None), which changes the skip semantics under test.
+        return
+        yield
+
+    @dg.op
+    def not_executed_op(out, settings):
+        return out
+
+    @dg.op(out=dg.Out(is_required=False))
+    def only_if_present_executed_setting():
+        yield dg.Output(value=None)
+
+    @dg.op
+    def executed_op(out, settings):
+        return out
+
+    @dg.op
+    def collector(not_executed_result, executed_result):
+        pass
+
+    @dg.job
+    def pipeline():
+        erroneous_op_settings = only_if_present_erroneous_op_settings()
+        erroneous_op_result = erroneous_op(erroneous_op_settings)
+
+        not_executed_settings = only_if_present_not_executed_settings()
+        not_executed_result = not_executed_op(erroneous_op_result, not_executed_settings)
+
+        executed_setting = only_if_present_executed_setting()
+        executed_result = executed_op(erroneous_op_result, executed_setting)
+        collector(not_executed_result, executed_result)
+
+    result = pipeline.execute_in_process(raise_on_error=False)
+
+    assert not result.success
+    failures = result.filter_events(lambda evt: evt.is_step_failure)
+    assert len(failures) == 1
+    assert failures[0].step_key == "erroneous_op"
+    skipped_step_keys = {
+        evt.step_key for evt in result.filter_events(lambda evt: evt.is_step_skipped)
+    }
+    assert skipped_step_keys == {"not_executed_op", "collector"}
