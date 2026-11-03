@@ -2,7 +2,14 @@ import os
 
 import pytest
 from dagster._check import CheckError, ParameterCheckError
-from dagster._utils import EventGenerationManager, ensure_dir, ensure_gen, ensure_single_item
+from dagster._utils import (
+    EventGenerationManager,
+    ensure_dir,
+    ensure_file,
+    ensure_gen,
+    ensure_single_item,
+    touch_file,
+)
 
 
 def test_ensure_single_item():
@@ -56,3 +63,13 @@ def test_event_generation_manager():
     assert result == 2
     teardown_events = list(basic_manager.generate_teardown_events())
     assert teardown_events == ["C"]
+
+
+@pytest.mark.parametrize("create_file", [ensure_file, touch_file])
+def test_file_helpers_accept_relative_basename(tmp_path, monkeypatch, create_file):
+    monkeypatch.chdir(tmp_path)
+    create_file("output.txt")
+    assert (tmp_path / "output.txt").is_file()
+    (tmp_path / "output.txt").write_text("preserved", encoding="utf-8")
+    create_file("output.txt")
+    assert (tmp_path / "output.txt").read_text(encoding="utf-8") == "preserved"
