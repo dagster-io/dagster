@@ -33,6 +33,7 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     ROOT_RUN_ID_TAG,
+    WILL_RETRY_TAG,
 )
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
@@ -137,49 +138,82 @@ def execute_job_backfill_iteration(
                 backfill.with_partition_checkpoint(checkpoint).with_failure_count(0)
             )
             time.sleep(CHECKPOINT_INTERVAL)
-        else:
-            unfinished_runs = instance.get_runs(
-                RunsFilter(
-                    tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
-                    statuses=NOT_FINISHED_STATUSES,
-                ),
-                limit=1,
-            )
-            if unfinished_runs:
-                logger.info(
-                    f"Backfill {backfill.backfill_id} has unfinished runs. Status will be updated when all runs are finished."
-                )
-                instance.update_backfill(
-                    backfill.with_partition_checkpoint(checkpoint).with_failure_count(0)
-                )
-                return
-            partition_names = cast("Sequence[str]", backfill.partition_names)
+            continue
+
+        # All backfill runs have been submitted, check backfill status
+        unfinished_runs = instance.get_runs(
+            RunsFilter(
+                backfill_id=backfill.backfill_id,
+                statuses=NOT_FINISHED_STATUSES,
+            ),
+            limit=1,
+        )
+        if unfinished_runs:
             logger.info(
-                f"Backfill completed for {backfill.backfill_id} for"
-                f" {len(partition_names)} partitions"
+                f"Backfill {backfill.backfill_id} has unfinished runs. Status will be updated when all runs are finished."
             )
-            if (
-                len(
-                    instance.get_run_ids(
-                        filters=RunsFilter(
-                            tags=DagsterRun.tags_for_backfill_id(backfill.backfill_id),
-                            statuses=[DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED],
-                        )
-                    )
+            instance.update_backfill(
+                backfill.with_partition_checkpoint(checkpoint).with_failure_count(0)
+            )
+            return
+
+        # The auto-reexecution daemon marks failed runs with WILL_RETRY_TAG=true
+        # *before* it creates the retry. If we evaluated the final status now we would
+        # race the retry daemon and mark the backfill COMPLETED_FAILED before the retry
+        # ever lands. Defer one more iteration until those retries are launched (and
+        # show up as either in-progress or terminal runs).
+        runs_waiting_to_retry = [
+            run
+            for run in instance.get_runs(
+                filters=RunsFilter(
+                    backfill_id=backfill.backfill_id,
+                    tags={WILL_RETRY_TAG: "true"},
+                    statuses=[DagsterRunStatus.FAILURE],
                 )
-                > 0
-            ):
-                instance.update_backfill(
-                    backfill.with_status(BulkActionStatus.COMPLETED_FAILED).with_end_timestamp(
-                        get_current_timestamp()
-                    )
-                )
-            else:
-                instance.update_backfill(
-                    backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS).with_end_timestamp(
-                        get_current_timestamp()
-                    )
-                )
+            )
+            if run.is_complete_and_waiting_to_retry
+        ]
+        if runs_waiting_to_retry:
+            logger.info(
+                f"Backfill {backfill.backfill_id} has {len(runs_waiting_to_retry)} failed "
+                "run(s) waiting to be retried. Status will be updated when retries complete."
+            )
+            instance.update_backfill(
+                backfill.with_partition_checkpoint(checkpoint).with_failure_count(0)
+            )
+            return
+
+        partition_names = cast("Sequence[str]", backfill.partition_names)
+        logger.info(
+            f"Backfill completed for {backfill.backfill_id} for {len(partition_names)} partitions"
+        )
+
+        # Group runs by their retry chain (root run id) so that a successful retry
+        # supersedes the original failed attempt. Without this, a run retried by the
+        # run_retries daemon that ultimately succeeded would still mark the backfill
+        # as failed because the original run keeps its FAILURE status forever.
+        # Iterate oldest-first so each root_id ends up mapped to the status of the
+        # newest run in its retry chain.
+        backfill_runs = instance.get_runs(
+            filters=RunsFilter(backfill_id=backfill.backfill_id),
+            ascending=True,
+        )
+        latest_status_by_root: dict[str, DagsterRunStatus] = {}
+        for run in backfill_runs:
+            root_id = run.root_run_id or run.run_id
+            latest_status_by_root[root_id] = run.status
+
+        if any(
+            status in (DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED)
+            for status in latest_status_by_root.values()
+        ):
+            final_backfill_status = BulkActionStatus.COMPLETED_FAILED
+        else:
+            final_backfill_status = BulkActionStatus.COMPLETED_SUCCESS
+
+        instance.update_backfill(
+            backfill.with_status(final_backfill_status).with_end_timestamp(get_current_timestamp())
+        )
 
 
 def _get_partition_set(
@@ -244,9 +278,7 @@ def _get_partitions_chunk(
         partition_names = partition_names[index + 1 :]
 
     # for idempotence, fetch all runs with the current backfill id
-    backfill_runs = instance.get_runs(
-        RunsFilter(tags=DagsterRun.tags_for_backfill_id(backfill_job.backfill_id))
-    )
+    backfill_runs = instance.get_runs(RunsFilter(backfill_id=backfill_job.backfill_id))
     # fetching the partitions def of a legacy dynamic partitioned op-job will raise an error
     # so guard against it by checking if the partitions def exists first
     partitions_def = (
