@@ -312,16 +312,19 @@ export const useGroupNodeContextMenu = ({
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
 
+  const executableAssets = assets.filter((asset) => asset.definition.isExecutable);
+
   const menu = (
     <Menu>
       {canSeeMaterializeAction ? (
         <>
           <MenuItem
             icon="materialization"
-            text={`Materialize assets (${numberFormatter.format(assets.length)})`}
+            text={`Materialize assets (${numberFormatter.format(executableAssets.length)}${executableAssets.length !== assets.length ? ` of ${numberFormatter.format(assets.length)}` : ''})`}
+            disabled={executableAssets.length === 0}
             onClick={(e) => {
               onClick(
-                assets.map((asset) => asset.assetKey),
+                executableAssets.map((asset) => asset.assetKey),
                 e,
               );
             }}
