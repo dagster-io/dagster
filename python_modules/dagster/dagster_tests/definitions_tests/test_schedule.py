@@ -53,8 +53,7 @@ def test_invalid_cron_schedule():
         dg.DagsterInvalidDefinitionError,
         match="invalid cron schedule",
     ):
-        schedule = dg.ScheduleDefinition(job_name="my_pipeline", cron_schedule="oopsies * * * *")
-        assert schedule.name == "my_pipeline_schedule"
+        dg.ScheduleDefinition(job_name="my_pipeline", cron_schedule="oopsies * * * *")
 
 
 def test_weird_cron_inteval():
