@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: raw
+    tables:
+      - name: orders
+
+models:
+  - name: orders_from_source
+
+  - name: explicit_asset_key
+    config:
+      meta:
+        dagster:
+          asset_key: ["override", "explicit_asset_key"]
