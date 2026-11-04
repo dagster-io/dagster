@@ -1,5 +1,5 @@
-from collections.abc import Callable, Iterable, Mapping, Sequence
-from typing import Any, TypeAlias
+from collections.abc import Callable, Coroutine, Iterable, Mapping, Sequence
+from typing import Any, Optional, TypeAlias
 
 from dagster import _check as check
 from dagster._annotations import public
@@ -39,7 +39,7 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.warnings import disable_dagster_warnings
 
-AssetCheckFunctionReturn: TypeAlias = AssetCheckResult
+AssetCheckFunctionReturn: TypeAlias = AssetCheckResult | Coroutine[Any, Any, AssetCheckResult]
 AssetCheckFunction: TypeAlias = Callable[..., AssetCheckFunctionReturn]
 
 
