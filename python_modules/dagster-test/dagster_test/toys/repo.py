@@ -259,3 +259,10 @@ def freshness_repository():
     from dagster_test.toys.freshness import get_freshness_assets
 
     return get_freshness_assets()
+
+
+@repository
+def source_observable_repository():
+    from dagster_test.toys.source_observable import get_source_observable_assets
+
+    return get_source_observable_assets()
