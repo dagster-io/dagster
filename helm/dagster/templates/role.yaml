@@ -3,6 +3,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ template "dagster.fullname" . }}-role
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "dagster.name" . }}
     chart: {{ template "dagster.chart" .  }}
