@@ -1054,6 +1054,7 @@ def graph_multi_asset(
     outs: Mapping[str, AssetOut],
     name: str | None = None,
     ins: Mapping[str, AssetIn] | None = None,
+    internal_asset_deps: Mapping[str, set[AssetKey]] | None = None,
     partitions_def: PartitionsDefinition | None = None,
     hooks: AbstractSet[HookDefinition] | None = None,
     backfill_policy: BackfillPolicy | None = None,
@@ -1074,6 +1075,11 @@ def graph_multi_asset(
         outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to information
             about the input.
+        internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+            that all assets produced by the graph depend on all assets that are consumed by that
+            graph. If this default is not correct, you pass in a map of output names to a
+            corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be
+            either used as input to the asset or produced within the graph.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the assets.
         hooks (Optional[AbstractSet[HookDefinition]]): A list of hooks to attach to the asset.
@@ -1176,6 +1182,7 @@ def graph_multi_asset(
             keys_by_output_name={
                 output_name: asset_key for asset_key, (output_name, _) in named_outs.items()
             },
+            internal_asset_deps=internal_asset_deps,
             partitions_def=partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
             group_name=group_name,
