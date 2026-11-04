@@ -13,7 +13,7 @@ SM_PLUGIN = "seek-oss/aws-sm#v2.3.1"
 KUBERNETES_EKS_QUEUE = os.getenv("BUILDKITE_KUBERNETES_QUEUE_EKS", "kubernetes-eks")
 BASE_IMAGE_NAME = "buildkite-test"
 BASE_IMAGE_TAG = "2026-05-04T142331"
-BUILDKITE_TEST_IMAGE_PY_SLIM = "buildkite-test-image-py-slim:prod-1777949196"
+BUILDKITE_TEST_IMAGE_PY_SLIM = "buildkite-test-image-py-slim:prod-1793631430"
 
 AWS_ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID")
 AWS_ECR_REGION = "us-west-2"
