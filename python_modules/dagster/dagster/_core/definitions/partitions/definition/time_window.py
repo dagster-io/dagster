@@ -35,6 +35,7 @@ from dagster._time import (
 )
 from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
 from dagster._utils.schedules import (
+    cron_string_includes,
     cron_string_iterator,
     is_valid_cron_schedule,
     reverse_cron_string_iterator,
@@ -355,9 +356,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             cron_string for cron_string in self.exclusions if isinstance(cron_string, str)
         ]
         for cron_string in excluded_cron_strings:
-            if window_start == next(
-                cron_string_iterator(window_start.timestamp(), cron_string, self.timezone)
-            ):
+            if cron_string_includes(window_start.timestamp(), cron_string, self.timezone):
                 return True
         return False
 
