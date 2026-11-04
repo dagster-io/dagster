@@ -31,7 +31,6 @@ test = [
     "dagster-pipes",
     "dagster-snowflake",
     "dagster-shared",
-    "certifi==2025.1.31",
 ]
 
 [tool.uv]

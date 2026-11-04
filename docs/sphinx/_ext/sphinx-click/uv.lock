@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.8"
 resolution-markers = [
     "python_full_version >= '3.11' and extra != 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async'",
@@ -192,7 +192,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "tomli" },
 ]
 
 [[package]]
@@ -311,7 +311,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "tomli" },
 ]
 
 [[package]]
@@ -435,7 +435,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "(python_full_version >= '3.10' and python_full_version <= '3.11') or (python_full_version < '3.10' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async') or (python_full_version > '3.11' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
 ]
 
 [[package]]
@@ -452,8 +452,8 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", version = "4.13.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.9' and python_full_version < '3.11') or (python_full_version >= '3.11' and python_full_version < '3.13' and extra == 'group-12-sphinx-click-test-click8') or (python_full_version >= '3.11' and python_full_version < '3.13' and extra != 'group-12-sphinx-click-test-click8-async') or (python_full_version < '3.9' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async') or (python_full_version >= '3.13' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "typing-extensions", version = "4.13.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or python_full_version >= '3.11'" },
+    { name = "typing-extensions", version = "4.15.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.9' and python_full_version < '3.11') or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -544,12 +544,12 @@ resolution-markers = [
     "python_full_version < '3.9'",
 ]
 dependencies = [
-    { name = "colorama", marker = "(python_full_version < '3.9' and sys_platform == 'win32') or (python_full_version >= '3.9' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async') or (sys_platform != 'win32' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "exceptiongroup", marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "iniconfig", version = "2.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "packaging", marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pluggy", version = "1.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "tomli", marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "exceptiongroup" },
+    { name = "iniconfig", version = "2.1.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "packaging" },
+    { name = "pluggy", version = "1.5.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "tomli" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ae/3c/c9d525a414d506893f0cd8a8d0de7706446213181570cdbd766691164e40/pytest-8.3.5.tar.gz", hash = "sha256:f4efe70cc14e511565ac476b57c279e12a855b11f48f212af1080ef2263d3845", size = 1450891, upload-time = "2025-03-02T12:54:54.503Z" }
 wheels = [
@@ -564,13 +564,13 @@ resolution-markers = [
     "python_full_version == '3.9.*'",
 ]
 dependencies = [
-    { name = "colorama", marker = "(python_full_version == '3.9.*' and sys_platform == 'win32') or (python_full_version != '3.9.*' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async') or (sys_platform != 'win32' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "exceptiongroup", marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "iniconfig", version = "2.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "packaging", marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pluggy", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pygments", marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "tomli", marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "exceptiongroup" },
+    { name = "iniconfig", version = "2.1.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "packaging" },
+    { name = "pluggy", version = "1.6.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "pygments" },
+    { name = "tomli" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
 wheels = [
@@ -588,13 +588,13 @@ resolution-markers = [
     "python_full_version >= '3.10' and extra != 'group-12-sphinx-click-test-click8' and extra != 'group-12-sphinx-click-test-click8-async'",
 ]
 dependencies = [
-    { name = "colorama", marker = "(python_full_version >= '3.10' and sys_platform == 'win32') or (python_full_version < '3.10' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async') or (sys_platform != 'win32' and extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "exceptiongroup", marker = "python_full_version == '3.10.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "iniconfig", version = "2.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "packaging", marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pluggy", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pygments", marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "tomli", marker = "python_full_version == '3.10.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
+    { name = "iniconfig", version = "2.3.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "packaging" },
+    { name = "pluggy", version = "1.6.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "pygments" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
@@ -609,8 +609,8 @@ resolution-markers = [
     "python_full_version < '3.9'",
 ]
 dependencies = [
-    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"] },
+    { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/74/67/00efc8d11b630c56f15f4ad9c7f9223f1e5ec275aaae3fa9118c6a223ad2/pytest-cov-5.0.0.tar.gz", hash = "sha256:5837b58e9f6ebd335b0f8060eecce69b662415b16dc503883a02f45dfeb14857", size = 63042, upload-time = "2024-03-24T20:16:34.856Z" }
 wheels = [
@@ -631,11 +631,11 @@ resolution-markers = [
     "python_full_version == '3.9.*' and extra != 'group-12-sphinx-click-test-click8' and extra != 'group-12-sphinx-click-test-click8-async'",
 ]
 dependencies = [
-    { name = "coverage", version = "7.10.7", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "coverage", version = "7.14.0", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pluggy", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "coverage", version = "7.10.7", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.10'" },
+    { name = "coverage", version = "7.14.0", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.10'" },
+    { name = "pluggy", version = "1.6.0", source = { registry = "https://pypi.org/simple" } },
+    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b1/51/a849f96e117386044471c8ec2bd6cfebacda285da9525c9106aeb28da671/pytest_cov-7.1.0.tar.gz", hash = "sha256:30674f2b5f6351aa09702a9c8c364f6a01c27aae0c1366ae8016160d1efc56b2", size = 55592, upload-time = "2026-03-21T20:11:16.284Z" }
 wheels = [
@@ -649,15 +649,15 @@ source = { editable = "." }
 
 [package.dev-dependencies]
 test = [
-    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "coverage", version = "7.10.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "coverage", version = "7.14.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "coverage", version = "7.10.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
+    { name = "coverage", version = "7.14.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "defusedxml" },
-    { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest-cov", version = "5.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
-    { name = "pytest-cov", version = "7.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9' or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },
+    { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pytest", version = "8.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
+    { name = "pytest", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pytest-cov", version = "5.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pytest-cov", version = "7.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
 ]
 test-click8 = [
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.10' and extra == 'group-12-sphinx-click-test-click8') or (extra == 'group-12-sphinx-click-test-click8' and extra == 'group-12-sphinx-click-test-click8-async')" },

@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -165,11 +165,11 @@ wheels = [
 
 [[package]]
 name = "certifi"
-version = "2025.1.31"
+version = "2026.10.23"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1c/ab/c9f1e32b7b1bf505bf26f0ef697775960db7932abeb7b516de930ba2705f/certifi-2025.1.31.tar.gz", hash = "sha256:3d5da6925056f6f18f119200434a4780a94263f10d1c21d032a6f6b2baa20651", size = 167577, upload-time = "2025-01-31T02:16:47.166Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/11/b524cbd9bbdaca58608e4cf4053fd463417549e1959fa8d3aa18319f9555/certifi-2026.10.23.tar.gz", hash = "sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd", size = 136225, upload-time = "2026-10-23T11:36:16.478Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/fc/bce832fd4fd99766c04d1ee0eead6b0ec6486fb100ae5e74c1d91292b982/certifi-2025.1.31-py3-none-any.whl", hash = "sha256:ca78db4565a652026a4db2bcdf68f2fb589ea80d0be70e03929ed730746b84fe", size = 166393, upload-time = "2025-01-31T02:16:45.015Z" },
+    { url = "https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl", hash = "sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1", size = 135082, upload-time = "2026-10-23T11:36:14.763Z" },
 ]
 
 [[package]]
@@ -835,7 +835,7 @@ wheels = [
 
 [[package]]
 name = "dbt-adapters"
-version = "1.22.4"
+version = "1.24.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agate" },
@@ -846,9 +846,9 @@ dependencies = [
     { name = "pytz" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b0/09/eb7bbc3bb8809e839b0a3756193625a2ed8bb271effbc8ea367cc9760012/dbt_adapters-1.22.4.tar.gz", hash = "sha256:d0cbfa3f1570b9e62d2e205f9b4bbe83d2a791f4b29ddf773823b56e52eefdb6", size = 136149, upload-time = "2026-01-08T05:28:49.1Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/d4/bea32dd730def5b875a76c05d281d397ed720b9184d936cc4cedac605948/dbt_adapters-1.24.5.tar.gz", hash = "sha256:87de096a0d5b219905f1079b002f13e3447ffb63558f4f3c5b7278670d198acb", size = 146532, upload-time = "2026-07-15T07:18:49.036Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/62/38519942eff0a9755cd94327fd4abbf0c3a06665daf3198748224a046fe1/dbt_adapters-1.22.4-py3-none-any.whl", hash = "sha256:e3f624e8880d7f905598345a4f99184c1406ed7243951e3e0ae07cb92ba74148", size = 172524, upload-time = "2026-01-08T05:28:47.146Z" },
+    { url = "https://files.pythonhosted.org/packages/9c/c0/07f0e315458128c6ef246ba9698dc0f5e9333394ab8844508adac468c617/dbt_adapters-1.24.5-py3-none-any.whl", hash = "sha256:32345118b921160722a13f12c3e369b9d59a0fb8fb9b3297e29d8cd53f973411", size = 177259, upload-time = "2026-07-15T07:18:47.314Z" },
 ]
 
 [[package]]
@@ -967,7 +967,7 @@ wheels = [
 
 [[package]]
 name = "dbt-snowflake"
-version = "1.11.1"
+version = "1.12.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "agate" },
@@ -975,11 +975,12 @@ dependencies = [
     { name = "dbt-adapters" },
     { name = "dbt-common" },
     { name = "dbt-core" },
+    { name = "pyopenssl" },
     { name = "snowflake-connector-python", extra = ["secure-local-storage"] },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/94/bc8a405b364036c6e0918dc190c88cdbfbe7982472086b8d4a1bb4facd71/dbt_snowflake-1.11.1.tar.gz", hash = "sha256:0b6b92d77bf037d02e6745e0add44732cba7bb34b0a0cd3a1c6166278e41b340", size = 130456, upload-time = "2026-01-08T18:23:50.58Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/0a/2ca52d0082e5740eb16875733333a4d902eb72cd71b5e78a652270e67eee/dbt_snowflake-1.12.4.tar.gz", hash = "sha256:83efb205b84ed0f9ddc9e6a78f5aa7205f1ffb4b23dfbf36d55dacf31478ff9e", size = 208228, upload-time = "2026-10-22T08:35:10.441Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/51/9e8a1e3f148d2f85dfc6632b32d36c1498973bfc4fce91049f76646c8283/dbt_snowflake-1.11.1-py3-none-any.whl", hash = "sha256:3fc20653bd5202cfb445867b6631fb1c810114762387f19cc0f30e2d6dc976ab", size = 75700, upload-time = "2026-01-08T18:23:49.075Z" },
+    { url = "https://files.pythonhosted.org/packages/26/ac/a36c354e893e2a13da612ce94909121f83001aef4daf9bd36637be5b8651/dbt_snowflake-1.12.4-py3-none-any.whl", hash = "sha256:2413e6c3959efab6a4871c3edb0d7ad1788e0610bec9d5f426b811e15686342b", size = 101447, upload-time = "2026-10-22T08:35:08.805Z" },
 ]
 
 [[package]]

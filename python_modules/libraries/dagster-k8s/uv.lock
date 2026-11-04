@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -45,15 +45,15 @@ name = "aiohttp"
 version = "3.14.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "aiohappyeyeballs", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
-    { name = "aiosignal", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "aiohappyeyeballs", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "aiosignal", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
     { name = "async-timeout", marker = "(python_full_version < '3.11' and extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "attrs", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
-    { name = "frozenlist", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
-    { name = "multidict", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
-    { name = "propcache", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "attrs", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "frozenlist", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "multidict", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "propcache", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
     { name = "typing-extensions", marker = "(python_full_version < '3.13' and extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "yarl", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "yarl", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/58/d9/22ce5786ac0c1653ae8b6c23bded02c1686d11f0dbb45b31ce128e0df985/aiohttp-3.14.3.tar.gz", hash = "sha256:9491196535a88924a60afd5b5f434b5b203b6cc616250878dbdb223a8f7844bc", size = 7971213, upload-time = "2026-07-23T01:57:27.037Z" }
 wheels = [
@@ -194,7 +194,7 @@ name = "aiosignal"
 version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "frozenlist", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35')" },
+    { name = "frozenlist", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35')" },
     { name = "typing-extensions", marker = "(python_full_version < '3.13' and extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/61/62/06741b579156360248d1ec624842ad0edf697050bbaf7c3e46394e106ad1/aiosignal-1.4.0.tar.gz", hash = "sha256:f47eecd9468083c2029cc99945502cb7708b082c232f9aca65da147157b251c7", size = 25007, upload-time = "2025-07-03T22:54:43.528Z" }
@@ -209,7 +209,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mako" },
     { name = "sqlalchemy" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/13/8b084e0f2efb0275a1d534838844926f798bd766566b1375174e2448cd31/alembic-1.18.4.tar.gz", hash = "sha256:cb6e1fd84b6174ab8dbb2329f86d631ba9559dd78df550b57804d607672cedbc", size = 2056725, upload-time = "2026-02-10T16:00:47.195Z" }
@@ -252,9 +252,9 @@ name = "anyio"
 version = "4.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "idna" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/61/cc/a381afa6efea9f496eff839d4a6a1aed3bfafc7b3ab4b0d1b243a12573dd/anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f", size = 260176, upload-time = "2026-07-12T20:29:07.082Z" }
 wheels = [
@@ -382,7 +382,7 @@ dependencies = [
     { name = "click-didyoumean" },
     { name = "click-plugins" },
     { name = "click-repl" },
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "kombu" },
     { name = "python-dateutil" },
     { name = "tzlocal" },
@@ -395,11 +395,11 @@ wheels = [
 
 [[package]]
 name = "certifi"
-version = "2026.7.22"
+version = "2026.10.23"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a3/c2/24167ea9858356b47a87a50d39908bfdb72ceeefe0041586e704e5376b3a/certifi-2026.7.22.tar.gz", hash = "sha256:741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55", size = 138112, upload-time = "2026-07-22T03:35:12.644Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/11/b524cbd9bbdaca58608e4cf4053fd463417549e1959fa8d3aa18319f9555/certifi-2026.10.23.tar.gz", hash = "sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd", size = 136225, upload-time = "2026-10-23T11:36:16.478Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl", hash = "sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775", size = 136983, upload-time = "2026-07-22T03:35:11.276Z" },
+    { url = "https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl", hash = "sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1", size = 135082, upload-time = "2026-10-23T11:36:14.763Z" },
 ]
 
 [[package]]
@@ -407,7 +407,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -594,7 +594,7 @@ name = "click"
 version = "8.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/63/f9e1ea081ce35720d8b92acde70daaedace594dc93b693c869e0d5910718/click-8.3.3.tar.gz", hash = "sha256:398329ad4837b2ff7cbe1dd166a4c0f8900c3ca3a218de04466f38f6497f18a2", size = 328061, upload-time = "2026-04-22T15:11:27.506Z" }
 wheels = [
@@ -774,7 +774,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version <= '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
 ]
 
 [[package]]
@@ -782,8 +782,8 @@ name = "cryptography"
 version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/ad/5d6702db60b1e40b41ef513b6967ff5848f307d50f8449baf1634f5908f1/cryptography-50.0.1.tar.gz", hash = "sha256:5dd9bda1c12b4162f6ff568eeb5e0ff956c28d14406e875cfe8a63a2d414ff20", size = 880381, upload-time = "2026-08-25T19:45:45.499Z" }
 wheels = [
@@ -851,10 +851,10 @@ dependencies = [
     { name = "grpcio-health-checking" },
     { name = "jinja2" },
     { name = "protobuf" },
-    { name = "psutil", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "psutil", marker = "sys_platform == 'win32'" },
     { name = "python-dotenv" },
     { name = "pytz" },
-    { name = "pywin32", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "rich" },
     { name = "six" },
@@ -909,8 +909,8 @@ requires-dist = [
     { name = "filelock" },
     { name = "grpcio", marker = "python_full_version < '3.13'", specifier = ">=1.44.0" },
     { name = "grpcio", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2" },
-    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0,<1.82" },
-    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2,<1.82" },
+    { name = "grpcio-health-checking", marker = "python_full_version < '3.13'", specifier = ">=1.44.0,!=1.82.0" },
+    { name = "grpcio-health-checking", marker = "python_full_version >= '3.13'", specifier = ">=1.66.2,!=1.82.0" },
     { name = "grpcio-tools", marker = "python_full_version >= '3.13' and extra == 'test'", specifier = ">=1.66.2" },
     { name = "grpcio-tools", marker = "python_full_version < '3.13' and extra == 'test'", specifier = ">=1.44.0" },
     { name = "jinja2" },
@@ -922,8 +922,8 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'test-components'", specifier = "<3.0.0" },
     { name = "pandas-stubs", marker = "extra == 'pyright'" },
     { name = "pandas-stubs", marker = "extra == 'ty'" },
-    { name = "protobuf", marker = "python_full_version < '3.11'", specifier = ">=3.20.0,<7" },
-    { name = "protobuf", marker = "python_full_version >= '3.11'", specifier = ">=4,<7" },
+    { name = "protobuf", marker = "python_full_version < '3.11'", specifier = ">=3.20.0,<8" },
+    { name = "protobuf", marker = "python_full_version >= '3.11'", specifier = ">=4,<8" },
     { name = "psutil", marker = "sys_platform == 'win32'", specifier = ">=1.0" },
     { name = "psutil", marker = "extra == 'test'" },
     { name = "pyright", marker = "extra == 'pyright'", specifier = "==1.1.389" },
@@ -1017,6 +1017,7 @@ test-old-protobuf = [
     { name = "protobuf", marker = "python_full_version < '3.11'", specifier = "<4" },
     { name = "setuptools", marker = "python_full_version < '3.11'", specifier = "<82" },
 ]
+test-protobuf-6 = [{ name = "protobuf", specifier = "<7" }]
 test-sqlalchemy-1-3 = [{ name = "sqlalchemy", specifier = "<1.4" }]
 test-sqlalchemy-1-4 = [{ name = "sqlalchemy", specifier = "<2" }]
 
@@ -1246,7 +1247,7 @@ dependencies = [
     { name = "google-auth" },
     { name = "kubernetes", version = "12.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-12' or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
     { name = "kubernetes", version = "35.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-35' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "kubernetes", version = "36.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "kubernetes", version = "36.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
     { name = "kubernetes", version = "37.0.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-11-dagster-k8s-test-kubernetes-37' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra != 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-35' and extra != 'group-11-dagster-k8s-test-kubernetes-36')" },
 ]
 
@@ -1447,8 +1448,8 @@ name = "db-dtypes"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "packaging" },
     { name = "pandas" },
     { name = "pyarrow" },
@@ -1472,7 +1473,7 @@ name = "docker"
 version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pywin32", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "urllib3" },
 ]
@@ -1504,7 +1505,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1896,18 +1897,14 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b0/03/84359833f7e1d49a883e92777637c592306030e30cee5e2b1e6476f95c88/greenlet-3.5.0-cp310-cp310-macosx_11_0_universal2.whl", hash = "sha256:29ea813b2e1f45fa9649a17853b2b5465c4072fbcb072e5af6cd3a288216574a", size = 283502, upload-time = "2026-04-27T12:20:55.213Z" },
     { url = "https://files.pythonhosted.org/packages/25/ce/6f9f008266273aa14a2e011945797ac5802b97b8b40efe7afe1ee6c1afc9/greenlet-3.5.0-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:804a70b328e706b785c6ef16187051c394a63dd1a906d89be24b6ad77759f13f", size = 600508, upload-time = "2026-04-27T12:52:37.876Z" },
     { url = "https://files.pythonhosted.org/packages/e0/6d/b0f3272c2368ea2c1aa19a5ad70db0be8f8dff6e6d3d1eb82efa00cbcf19/greenlet-3.5.0-cp310-cp310-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:884f649de075b84739713d41dd4dfd41e2b910bfb769c4a3ea02ec1da52cd9bb", size = 613283, upload-time = "2026-04-27T12:59:37.957Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/ae/1db979ff6ae7958d80b288f63d5f6c30df96682700ea9fc340ce994d94a1/greenlet-3.5.0-cp310-cp310-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:4d0eadc7e4d9ffb2af4247b606cae307be8e448911e5a0d0b16d72fc3d224cfd", size = 619894, upload-time = "2026-04-27T13:02:35.13Z" },
     { url = "https://files.pythonhosted.org/packages/ed/ac/0b509b6fb93551ce5a01612ee1acda7f7dda4bbb66c99aeb2ab403d205dc/greenlet-3.5.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4b28037cb07768933c54d81bfe47a85f9f402f57d7d69743b991a713b63954eb", size = 613418, upload-time = "2026-04-27T12:25:23.852Z" },
-    { url = "https://files.pythonhosted.org/packages/ce/94/b0590e3d1978f02419f30502341c40d72f77eb0a2198119fe27df47714ee/greenlet-3.5.0-cp310-cp310-manylinux_2_39_riscv64.whl", hash = "sha256:f8c30c2225f40dd76c50790f0eb3b5c7c18431efb299e2782083e1981feed243", size = 415681, upload-time = "2026-04-27T13:05:11.494Z" },
     { url = "https://files.pythonhosted.org/packages/03/03/2b2b680ec87aaa97998fb5b8d76658d4d3560386864f17efab33ba7c2e24/greenlet-3.5.0-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:cda05425526240807408156b6960a17a79a0c760b813573b67027823be760977", size = 1572229, upload-time = "2026-04-27T12:53:23.509Z" },
     { url = "https://files.pythonhosted.org/packages/61/e4/42b259e7a19aff1a270a4bd82caf6353109ed6860c9454e18f37162b83ae/greenlet-3.5.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:9c615f869163e14bb1ced20322d8038fb680b08236521ac3f30cd4c1288785a0", size = 1639886, upload-time = "2026-04-27T12:25:22.325Z" },
     { url = "https://files.pythonhosted.org/packages/6f/b4/733ca47b883b67c57f90d3ecb21055c9ec753597d10754ac201644061f9d/greenlet-3.5.0-cp310-cp310-win_amd64.whl", hash = "sha256:ba8f0bdc2fae6ce915dfd0c16d2d00bca7e4247c1eae4416e06430e522137858", size = 237795, upload-time = "2026-04-27T12:21:40.118Z" },
     { url = "https://files.pythonhosted.org/packages/8b/0f/a91f143f356523ff682309732b175765a9bc2836fd7c081c2c67fedc1ad4/greenlet-3.5.0-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:8f1cc966c126639cd152fdaa52624d2655f492faa79e013fea161de3e6dda082", size = 284726, upload-time = "2026-04-27T12:20:51.402Z" },
     { url = "https://files.pythonhosted.org/packages/95/82/800646c7ffc5dbabd75ddd2f6b519bb898c0c9c969e5d0473bfe5d20bcce/greenlet-3.5.0-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:362624e6a8e5bca3b8233e45eef33903a100e9539a2b995c364d595dbc4018b3", size = 604264, upload-time = "2026-04-27T12:52:39.494Z" },
     { url = "https://files.pythonhosted.org/packages/ca/ac/354867c0bba812fc33b15bc55aedafedd0aee3c7dd91dfca22444157dc0c/greenlet-3.5.0-cp311-cp311-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:5ecd83806b0f4c2f53b1018e0005cd82269ea01d42befc0368730028d850ed1c", size = 616099, upload-time = "2026-04-27T12:59:39.623Z" },
-    { url = "https://files.pythonhosted.org/packages/c9/ab/192090c4a5b30df148c22bf4b8895457d739a7c7c5a7b9c41e5dd7f537f2/greenlet-3.5.0-cp311-cp311-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:fa94cb2288681e3a11645958f1871d48ee9211bd2f66628fdace505927d6e564", size = 623976, upload-time = "2026-04-27T13:02:37.363Z" },
     { url = "https://files.pythonhosted.org/packages/ff/b0/815bece7399e01cadb69014219eebd0042339875c59a59b0820a46ece356/greenlet-3.5.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0ff251e9a0279522e62f6176412869395a64ddf2b5c5f782ff609a8216a4e662", size = 615198, upload-time = "2026-04-27T12:25:25.928Z" },
-    { url = "https://files.pythonhosted.org/packages/24/11/05eb2b9b188c6df7d68a89c99134d644a7af616a40b9808e8e6ced315d5d/greenlet-3.5.0-cp311-cp311-manylinux_2_39_riscv64.whl", hash = "sha256:64d6ac45f7271f48e45f67c95b54ef73534c52ec041fcda8edf520c6d811f4bc", size = 418379, upload-time = "2026-04-27T13:05:12.755Z" },
     { url = "https://files.pythonhosted.org/packages/10/80/3b2c0a895d6698f6ddb31b07942ebfa982f3e30888bc5546a5b5990de8b2/greenlet-3.5.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:6d874e79afd41a96e11ff4c5d0bc90a80973e476fda1c2c64985667397df432b", size = 1574927, upload-time = "2026-04-27T12:53:25.81Z" },
     { url = "https://files.pythonhosted.org/packages/44/0e/f354af514a4c61454dbc68e44d47544a5a4d6317e30b77ddfa3a09f4c5f3/greenlet-3.5.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:0ed006e4b86c59de7467eb2601cd1b77b5a7d657d1ee55e30fe30d76451edba4", size = 1642683, upload-time = "2026-04-27T12:25:23.9Z" },
     { url = "https://files.pythonhosted.org/packages/fa/6a/87f38255201e993a1915265ebb80cd7c2c78b04a45744995abbf6b259fd8/greenlet-3.5.0-cp311-cp311-win_amd64.whl", hash = "sha256:703cb211b820dbffbbc55a16bfc6e4583a6e6e990f33a119d2cc8b83211119c8", size = 238115, upload-time = "2026-04-27T12:21:48.845Z" },
@@ -1915,9 +1912,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/32/f2ce6d4cac3e55bc6173f92dbe627e782e1850f89d986c3606feb63aafa7/greenlet-3.5.0-cp312-cp312-macosx_11_0_universal2.whl", hash = "sha256:db2910d3c809444e0a20147361f343fe2798e106af8d9d8506f5305302655a9f", size = 286228, upload-time = "2026-04-27T12:20:34.421Z" },
     { url = "https://files.pythonhosted.org/packages/b7/aa/caed9e5adf742315fc7be2a84196373aab4816e540e38ba0d76cb7584d68/greenlet-3.5.0-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3ec9ea74e7268ace7f9aab1b1a4e730193fc661b39a993cd91c606c32d4a3628", size = 601775, upload-time = "2026-04-27T12:52:41.045Z" },
     { url = "https://files.pythonhosted.org/packages/c7/af/90ae08497400a941595d12774447f752d3dfe0fbb012e35b76bc5c0ff37e/greenlet-3.5.0-cp312-cp312-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:54d243512da35485fc7a6bf3c178fdda6327a9d6506fcdd62b1abd1e41b2927b", size = 614436, upload-time = "2026-04-27T12:59:41.595Z" },
-    { url = "https://files.pythonhosted.org/packages/3f/e9/4eeadf8cb3403ac274245ba75f07844abc7fa5f6787583fc9156ba741e0f/greenlet-3.5.0-cp312-cp312-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:41353ec2ecedf7aa8f682753a41919f8718031a6edac46b8d3dc7ed9e1ceb136", size = 620610, upload-time = "2026-04-27T13:02:39.194Z" },
     { url = "https://files.pythonhosted.org/packages/2b/e0/2e13df68f367e2f9960616927d60857dd7e56aaadd59a47c644216b2f920/greenlet-3.5.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9d280a7f5c331622c69f97eb167f33577ff2d1df282c41cd15907fc0a3ca198c", size = 611388, upload-time = "2026-04-27T12:25:28.008Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/ef/f913b3c0eb7d26d86a2401c5e1546c9d46b657efee724b06f6f4ac5d8824/greenlet-3.5.0-cp312-cp312-manylinux_2_39_riscv64.whl", hash = "sha256:58c1c374fe2b3d852f9b6b11a7dff4c85404e51b9a596fd9e89cf904eb09866d", size = 422775, upload-time = "2026-04-27T13:05:14.261Z" },
     { url = "https://files.pythonhosted.org/packages/82/f7/393c64055132ac0d488ef6be549253b7e6274194863967ddc0bc8f5b87b8/greenlet-3.5.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:1eb67d5adefb5bd2e182d42678a328979a209e4e82eb93575708185d31d1f588", size = 1570768, upload-time = "2026-04-27T12:53:28.099Z" },
     { url = "https://files.pythonhosted.org/packages/b8/4b/eaf7735253522cf56d1b74d672a58f54fc114702ceaf05def59aae72f6e1/greenlet-3.5.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:2628d6c86f6cb0cb45e0c3c54058bbec559f57eaae699447748cb3928150577e", size = 1635983, upload-time = "2026-04-27T12:25:26.903Z" },
     { url = "https://files.pythonhosted.org/packages/4c/fe/4fb3a0805bd5165da5ebf858da7cc01cce8061674106d2cf5bdab32cbfde/greenlet-3.5.0-cp312-cp312-win_amd64.whl", hash = "sha256:d4d9f0624c775f2dfc56ba54d515a8c771044346852a918b405914f6b19d7fd8", size = 238840, upload-time = "2026-04-27T12:23:54.806Z" },
@@ -1925,9 +1920,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0c/58/fc576f99037ce19c5aa16628e4c3226b6d1419f72a62c79f5f40576e6eb3/greenlet-3.5.0-cp313-cp313-macosx_11_0_universal2.whl", hash = "sha256:5a5ed18de6a0f6cc7087f1563f6bd93fc7df1c19165ca01e9bde5a5dc281d106", size = 285066, upload-time = "2026-04-27T12:23:05.033Z" },
     { url = "https://files.pythonhosted.org/packages/4a/ba/b28ddbe6bfad6a8ac196ef0e8cff37bc65b79735995b9e410923fffeeb70/greenlet-3.5.0-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3a717fbc46d8a354fa675f7c1e813485b6ba3885f9bef0cd56e5ba27d758ff5b", size = 604414, upload-time = "2026-04-27T12:52:42.358Z" },
     { url = "https://files.pythonhosted.org/packages/09/06/4b69f8f0b67603a8be2790e55107a190b376f2627fe0eaf5695d85ffb3cd/greenlet-3.5.0-cp313-cp313-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:ddc090c5c1792b10246a78e8c2163ebbe04cf877f9d785c230a7b27b39ad038e", size = 617349, upload-time = "2026-04-27T12:59:43.32Z" },
-    { url = "https://files.pythonhosted.org/packages/6a/15/a643b4ecd09969e30b8a150d5919960caae0abe4f5af75ab040b1ab85e78/greenlet-3.5.0-cp313-cp313-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:4964101b8585c144cbda5532b1aa644255126c08a265dae90c16e7a0e63aaa9d", size = 623234, upload-time = "2026-04-27T13:02:40.611Z" },
     { url = "https://files.pythonhosted.org/packages/8a/17/a3918541fd0ddefe024a69de6d16aa7b46d36ac19562adaa63c7fa180eff/greenlet-3.5.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2094acd54b272cb6eae8c03dd87b3fa1820a4cef18d6889c378d503500a1dc13", size = 613927, upload-time = "2026-04-27T12:25:30.28Z" },
-    { url = "https://files.pythonhosted.org/packages/77/18/3b13d5ef1275b0ffaf933b05efa21408ac4ca95823c7411d79682e4fdcff/greenlet-3.5.0-cp313-cp313-manylinux_2_39_riscv64.whl", hash = "sha256:7022615368890680e67b9965d33f5773aade330d5343bbe25560135aaa849eae", size = 425243, upload-time = "2026-04-27T13:05:15.689Z" },
     { url = "https://files.pythonhosted.org/packages/ee/e1/bd0af6213c7dd33175d8a462d4c1fe1175124ebed4855bc1475a5b5242c2/greenlet-3.5.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:5e05ba267789ea87b5a155cf0e810b1ab88bf18e9e8740813945ceb8ee4350ba", size = 1570893, upload-time = "2026-04-27T12:53:29.483Z" },
     { url = "https://files.pythonhosted.org/packages/9b/2a/0789702f864f5382cb476b93d7a9c823c10472658102ccd65f415747d2e2/greenlet-3.5.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:0ecec963079cd58cbd14723582384f11f166fd58883c15dcbfb342e0bc9b5846", size = 1636060, upload-time = "2026-04-27T12:25:28.845Z" },
     { url = "https://files.pythonhosted.org/packages/b2/8f/22bf9df92bbff0eb07842b60f7e63bf7675a9742df628437a9f02d09137f/greenlet-3.5.0-cp313-cp313-win_amd64.whl", hash = "sha256:728d9667d8f2f586644b748dbd9bb67e50d6a9381767d1357714ea6825bb3bf5", size = 238740, upload-time = "2026-04-27T12:24:01.341Z" },
@@ -1935,9 +1928,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/94/5e/a70f31e3e8d961c4ce589c15b28e4225d63704e431a23932a3808cbcc867/greenlet-3.5.0-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:f35807464c4c58c55f0d31dfa83c541a5615d825c2fe3d2b95360cf7c4e3c0a8", size = 285564, upload-time = "2026-04-27T12:23:08.555Z" },
     { url = "https://files.pythonhosted.org/packages/af/a6/046c0a28e21833e4086918218cfb3d8bed51c075a1b700f20b9d7861c0f4/greenlet-3.5.0-cp314-cp314-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:55fa7ea52771be44af0de27d8b80c02cd18c2c3cddde6c847ecebdf72418b6a1", size = 651166, upload-time = "2026-04-27T12:52:43.644Z" },
     { url = "https://files.pythonhosted.org/packages/47/f8/4af27f71c5ff32a7fbc516adb46370d9c4ae2bc7bd3dc7d066ac542b4b15/greenlet-3.5.0-cp314-cp314-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:a97e4821aa710603f94de0da25f25096454d78ffdace5dc77f3a006bc01abba3", size = 663792, upload-time = "2026-04-27T12:59:44.93Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/89/2dadb89793c37ee8b4c237857188293e9060dc085f19845c292e00f8e091/greenlet-3.5.0-cp314-cp314-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:bf2d8a80bec89ab46221ae45c5373d5ba0bd36c19aa8508e85c6cd7e5106cd37", size = 668086, upload-time = "2026-04-27T13:02:42.314Z" },
     { url = "https://files.pythonhosted.org/packages/a3/59/1bd6d7428d6ed9106efbb8c52310c60fd04f6672490f452aeaa3829aa436/greenlet-3.5.0-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8f52a464e4ed91780bdfbbdd2b97197f3accaa629b98c200f4dffada759f3ae7", size = 660933, upload-time = "2026-04-27T12:25:33.276Z" },
-    { url = "https://files.pythonhosted.org/packages/82/35/75722be7e26a2af4cbd2dc35b0ed382dacf9394b7e75551f76ed1abe87f2/greenlet-3.5.0-cp314-cp314-manylinux_2_39_riscv64.whl", hash = "sha256:1bae92a1dd94c5f9d9493c3a212dd874c202442047cf96446412c862feca83a2", size = 470799, upload-time = "2026-04-27T13:05:17.094Z" },
     { url = "https://files.pythonhosted.org/packages/83/e4/b903e5a5fae1e8a28cdd32a0cfbfd560b668c25b692f67768822ddc5f40f/greenlet-3.5.0-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:762612baf1161ccb8437c0161c668a688223cba28e1bf038f4eb47b13e39ccdf", size = 1618401, upload-time = "2026-04-27T12:53:31.062Z" },
     { url = "https://files.pythonhosted.org/packages/0e/e3/5ec408a329acb854fb607a122e1ee5fb3ff649f9a97952948a90803c0d8e/greenlet-3.5.0-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:57a43c6079a89713522bc4bcb9f75070ecf5d3dbad7792bfe42239362cbf2a16", size = 1682038, upload-time = "2026-04-27T12:25:31.838Z" },
     { url = "https://files.pythonhosted.org/packages/91/20/6b165108058767ee643c55c5c4904d591a830ee2b3c7dbd359828fbc829f/greenlet-3.5.0-cp314-cp314-win_amd64.whl", hash = "sha256:3bc59be3945ae9750b9e7d45067d01ae3fe90ea5f9ade99239dabdd6e28a5033", size = 239835, upload-time = "2026-04-27T12:24:54.136Z" },
@@ -1945,9 +1936,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/78/a8/4522939255bb5409af4e87132f915446bf3622c2c292d14d3c38d128ae82/greenlet-3.5.0-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:a10a732421ab4fec934783ce3e54763470d0181db6e3468f9103a275c3ed1853", size = 293614, upload-time = "2026-04-27T12:24:12.874Z" },
     { url = "https://files.pythonhosted.org/packages/15/5e/8744c52e2c027b5a8772a01561934c8835f869733e101f62075c60430340/greenlet-3.5.0-cp314-cp314t-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7fc391b1566f2907d17aaebe78f8855dc45675159a775fcf9e61f8ee0078e87f", size = 650723, upload-time = "2026-04-27T12:52:45.412Z" },
     { url = "https://files.pythonhosted.org/packages/00/ef/7b4c39c03cf46ceca512c5d3f914afd85aa30b2cc9a93015b0dd73e4be6c/greenlet-3.5.0-cp314-cp314t-manylinux_2_24_ppc64le.manylinux_2_28_ppc64le.whl", hash = "sha256:680bd0e7ad5e8daa8a4aa89f68fd6adc834b8a8036dc256533f7e08f4a4b01f7", size = 656529, upload-time = "2026-04-27T12:59:46.295Z" },
-    { url = "https://files.pythonhosted.org/packages/5f/5c/0602239503b124b70e39355cbdb39361ecfe65b87a5f2f63752c32f5286f/greenlet-3.5.0-cp314-cp314t-manylinux_2_24_s390x.manylinux_2_28_s390x.whl", hash = "sha256:1aa4ce8debcd4ea7fb2e150f3036588c41493d1d52c43538924ae1819003f4ce", size = 657015, upload-time = "2026-04-27T13:02:43.973Z" },
     { url = "https://files.pythonhosted.org/packages/0b/b5/c7768f352f5c010f92064d0063f987e7dc0cd290a6d92a34109015ce4aa1/greenlet-3.5.0-cp314-cp314t-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ddb36c7d6c9c0a65f18c7258634e0c416c6ab59caac8c987b96f80c2ebda0112", size = 654364, upload-time = "2026-04-27T12:25:35.64Z" },
-    { url = "https://files.pythonhosted.org/packages/38/51/8699f865f125dc952384cb432b0f7138aa4d8f2969a7d12d0df5b94d054d/greenlet-3.5.0-cp314-cp314t-manylinux_2_39_riscv64.whl", hash = "sha256:728a73687e39ae9ca34e4694cbf2f049d3fbc7174639468d0f67200a97d8f9e2", size = 488275, upload-time = "2026-04-27T13:05:18.28Z" },
     { url = "https://files.pythonhosted.org/packages/ef/d0/079ebe12e4b1fc758857ce5be1a5e73f06870f2101e52611d1e71925ce54/greenlet-3.5.0-cp314-cp314t-musllinux_1_2_aarch64.whl", hash = "sha256:e5ddf316ced87539144621453c3aef229575825fe60c604e62bedc4003f372b2", size = 1614204, upload-time = "2026-04-27T12:53:32.618Z" },
     { url = "https://files.pythonhosted.org/packages/6d/89/6c2fb63df3596552d20e58fb4d96669243388cf680cff222758812c7bfaa/greenlet-3.5.0-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:4a448128607be0de65342dc9b31be7f948ef4cc0bc8832069350abefd310a8f2", size = 1675480, upload-time = "2026-04-27T12:25:34.168Z" },
     { url = "https://files.pythonhosted.org/packages/15/32/77ee8a6c1564fc345a491a4e85b3bf360e4cf26eac98c4532d2fdb96e01f/greenlet-3.5.0-cp314-cp314t-win_amd64.whl", hash = "sha256:d60097128cb0a1cab9ea541186ea13cd7b847b8449a7787c2e2350da0cb82d86", size = 245324, upload-time = "2026-04-27T12:24:40.295Z" },
@@ -2121,7 +2110,7 @@ name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyreadline3", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "pyreadline3", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/3f/2c29224acb2e2df4d2046e4c73ee2662023c58ff5b113c4c1adac0886c43/humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc", size = 360702, upload-time = "2021-09-17T21:40:43.31Z" }
 wheels = [
@@ -2249,16 +2238,16 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "aiohttp", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "certifi", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "durationpy", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "python-dateutil", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "pyyaml", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "requests", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "requests-oauthlib", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "six", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "urllib3", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "websocket-client", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra != 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "aiohttp", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "certifi", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "durationpy", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "python-dateutil", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "pyyaml", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "requests", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "requests-oauthlib", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "six", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "urllib3", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "websocket-client", marker = "extra == 'group-11-dagster-k8s-test-kubernetes-36' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bf/59/dc635e4e9afb3884bc5c57f14fe23783e4c04601aa20b835ac75c41d1625/kubernetes-36.0.0.tar.gz", hash = "sha256:027b606bb8032e6c6464a53236bdd9bd9a94c237e1063bc45a303c25b304ced9", size = 2346728, upload-time = "2026-05-20T20:44:24.28Z" }
 wheels = [
@@ -2436,7 +2425,7 @@ name = "multidict"
 version = "6.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1a/c2/c2d94cbe6ac1753f3fc980da97b3d930efe1da3af3c9f5125354436c073d/multidict-6.7.1.tar.gz", hash = "sha256:ec6652a1bee61c53a3e5776b6049172c53b6aaba34f18c9ad04f82712bac623d", size = 102010, upload-time = "2026-01-26T02:46:45.979Z" }
 wheels = [
@@ -2780,8 +2769,8 @@ name = "pandas"
 version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "python-dateutil" },
     { name = "pytz" },
     { name = "tzdata" },
@@ -3348,7 +3337,7 @@ version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/45/7b/c0e1333b61d41c69e59e5366e727b18c4992688caf0de1be10b3e5265f6b/pyproject_api-1.10.0.tar.gz", hash = "sha256:40c6f2d82eebdc4afee61c773ed208c04c19db4c4a60d97f8d7be3ebc0bbb330", size = 22785, upload-time = "2025-10-09T19:12:27.21Z" }
 wheels = [
@@ -3369,13 +3358,13 @@ name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
     { name = "pygments" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
@@ -3387,9 +3376,9 @@ name = "pytest-asyncio"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "backports-asyncio-runner", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "backports-asyncio-runner", marker = "python_full_version < '3.11'" },
     { name = "pytest" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/90/2c/8af215c0f776415f3590cac4f9086ccefd6fd463befeae41cd4d3f193e5a/pytest_asyncio-1.3.0.tar.gz", hash = "sha256:d7f52f36d231b80ee124cd216ffb19369aa168fc10095013c6b014a34d3ee9e5", size = 50087, upload-time = "2025-11-10T16:07:47.256Z" }
 wheels = [
@@ -3829,7 +3818,7 @@ name = "sqlalchemy"
 version = "2.0.49"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "greenlet", marker = "platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "greenlet", marker = "platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/45/461788f35e0364a8da7bda51a1fe1b09762d0c32f12f63727998d85a873b/sqlalchemy-2.0.49.tar.gz", hash = "sha256:d15950a57a210e36dd4cec1aac22787e2a4d57ba9318233e2ef8b2daf9ff2d5f", size = 9898221, upload-time = "2026-04-03T16:38:11.704Z" }
@@ -3890,7 +3879,7 @@ version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b5/b4/205b0d5241d934e8add0c38aa924c4f9fb7330834ff11e5444db964ec3f9/starlette-1.6.0.tar.gz", hash = "sha256:d4e3ac5e546444960c710297a3c9fc3f7ebae1b7e963f3d36173b49da535be9b", size = 2716969, upload-time = "2026-08-08T18:27:57.512Z" }
 wheels = [
@@ -3902,7 +3891,7 @@ name = "structlog"
 version = "25.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/52/9ba0f43b686e7f3ddfeaa78ac3af750292662284b3661e91ad5494f21dbc/structlog-25.5.0.tar.gz", hash = "sha256:098522a3bebed9153d4570c6d0288abf80a031dfdb2048d59a49e9dc2190fc98", size = 1460830, upload-time = "2025-10-27T08:28:23.028Z" }
 wheels = [
@@ -4024,9 +4013,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pyproject-api" },
     { name = "python-discovery" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tomli-w" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
     { name = "virtualenv" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a0/d7/a8e0f889eb6872740e2f013a93a8f9c6c23c3f02fe0911bbd91673615636/tox-4.53.1.tar.gz", hash = "sha256:7be9805ed4a34242510c7acc9a7e3a01a35942e08f31f8bd69067c3a37130afc", size = 276809, upload-time = "2026-05-02T08:34:41.655Z" }
@@ -4052,7 +4041,7 @@ version = "1.35.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tox" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0a/cb/168dc1ccf24e4065a9a0a33df55709ed2b5eb73bd2b13ddd53187e5dffb8/tox_uv_bare-1.35.2.tar.gz", hash = "sha256:49e28a804c97f23ea17e25859960c0fa78f35bccb7e14344cfd840e89a9aade9", size = 32333, upload-time = "2026-05-05T01:34:18.916Z" }
@@ -4065,7 +4054,7 @@ name = "tqdm"
 version = "4.67.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
@@ -4125,7 +4114,7 @@ name = "tzlocal"
 version = "5.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "tzdata", marker = "sys_platform == 'win32' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8b/2e/c14812d3d4d9cd1773c6be938f89e5735a1f11a9f184ac3639b93cef35d5/tzlocal-5.3.1.tar.gz", hash = "sha256:cceffc7edecefea1f595541dbd6e990cb1ea3d19bf01b2809f362a03dd7921fd", size = 30761, upload-time = "2025-03-05T21:17:41.549Z" }
 wheels = [
@@ -4164,28 +4153,28 @@ wheels = [
 
 [[package]]
 name = "uv"
-version = "0.12.7"
+version = "0.13.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f7/ab/790e25d2c685f5a41b9567001a43fbe049a595c1b08b8a93bf82d5fc704b/uv-0.12.7.tar.gz", hash = "sha256:4b320f84763a80308fd830ecf5c4c44505a8ed910fe265c5977d0a3727cfcd55", size = 7107999, upload-time = "2026-08-27T22:13:22.978Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/d5/88d43310d425f6e3a43997ad771658ded3237d0ed78c16a89b2353eddf56/uv-0.13.6.tar.gz", hash = "sha256:d762215478854f6cf20c3faed8f1eb30c8101d568e7bc32a3abafc063929d5c5", size = 7545242, upload-time = "2026-10-27T00:45:57.605Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/63/cc236f80a868b28525e0f7aa61f7ee998a0540ccba8cc4d01b2d42fc7838/uv-0.12.7-py3-none-linux_armv6l.whl", hash = "sha256:d568fd3448c24354753fd8333c978aeeeb6b51db4b100e234461a7eb50882fae", size = 22215689, upload-time = "2026-08-27T22:12:36.485Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/c5/40f4a5736d2f795688977b3b8bf841daca1e9c93b358778b7ed3dcd747fe/uv-0.12.7-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ec5b437aa60e8c94da263ad709d0bf6c8f268ac81f305d89c6115badd7d1cbe7", size = 20471214, upload-time = "2026-08-27T22:12:39.147Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/3e/5946d33de437467190b51d7d9f9e74a53628782565d50b64f6051050f482/uv-0.12.7-py3-none-macosx_11_0_arm64.whl", hash = "sha256:016fe4b9a2e0d2a35b17b6c3efbb45b929189c5b4b37aa921265265ccfe42cc1", size = 17317478, upload-time = "2026-08-27T22:12:41.58Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/5b/0e42dd88d9928b51a4e85d89d8aed46933951187b508ae68c145b06e3334/uv-0.12.7-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:fe9a871bd638ee6d2fd73bf40c2ee98153e44d06f796a03fcecf9d12b36d42d8", size = 21379352, upload-time = "2026-08-27T22:12:44.123Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/5c/b6417812ef87fc713ec368b1001b41c78eaedbfa521789db7d103b56c500/uv-0.12.7-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:1014a13854c45eb1daa9a32602e0f4d07f3edd298826d3e8d22740eed60a7c95", size = 21686985, upload-time = "2026-08-27T22:12:47.686Z" },
-    { url = "https://files.pythonhosted.org/packages/69/23/a6284df1dc4233fea564227f77c402969b4f6aebcb647826ce9e82a413de/uv-0.12.7-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0ad3e91cc911596bb54197057853b64b36a066462d8f2fc4d4f60b61b707ffa8", size = 21744177, upload-time = "2026-08-27T22:12:50.572Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/e1/96526f3ea72667352e1a83dff3cbb8701dbfc830aafb3ac9dd532d4fb827/uv-0.12.7-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b6d4bd67b488ef2766cfa885947c1093c18caf5d665ba9156963ad0241f196e9", size = 22527940, upload-time = "2026-08-27T22:12:53.479Z" },
-    { url = "https://files.pythonhosted.org/packages/39/7b/816e7c4ef1b59faf295d4eec133b15d6d3a227dc4bc341dceccc31a3ba15/uv-0.12.7-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:debeccc5eca0063cd922bc67caa4a8c0df5f69090179866ed17fa7264905bda2", size = 23630281, upload-time = "2026-08-27T22:12:55.941Z" },
-    { url = "https://files.pythonhosted.org/packages/ac/63/03d00b74c5582163b8c544b2dc39396388d904a13118303fb2c32ece2811/uv-0.12.7-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:36c8f93d182b766b9ed4a9c1da5ec0f7dc9f934887df3404d996f66321fd18d5", size = 23345465, upload-time = "2026-08-27T22:12:58.726Z" },
-    { url = "https://files.pythonhosted.org/packages/8a/01/616cc5f80952eef6fa48c5dbd6ea8aeed04a494e7dfbe9f5f65cfcf85ad9/uv-0.12.7-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4545e87c7ac64af317d8daffd279e23e93b0e05035662363033d3525923339d2", size = 20058968, upload-time = "2026-08-27T22:13:01.239Z" },
-    { url = "https://files.pythonhosted.org/packages/66/23/051acc24b21bbf0e67bc00e2b4239892e37cf39fdd6428fc246a2ae62b79/uv-0.12.7-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:56a5730f8eff477501b3276a0059c2c2843302d5d4a6cc10f993a5cd66ddace8", size = 19450815, upload-time = "2026-08-27T22:13:03.636Z" },
-    { url = "https://files.pythonhosted.org/packages/42/a4/a84adae83d6891401284ec4929ea7892c7efc5484cb53283147fbb4881b6/uv-0.12.7-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:d83419298e202f56e381cef6406b519b9336e58fc90a559617d86576a3d8a4e8", size = 22402981, upload-time = "2026-08-27T22:13:06.247Z" },
-    { url = "https://files.pythonhosted.org/packages/8a/35/6fcdff1292ba1cc027d1d741531dfc4d19f92e1312262833beacf3b7fbe8/uv-0.12.7-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:fc57436f2f012b885454f465dbf077f573745f0d4275a6a38194203b67e94ea4", size = 22535567, upload-time = "2026-08-27T22:13:08.802Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/ea/7ac04384642a4ba808b20a94cb09e0f4b4a6aef6cf9671858be0567c153a/uv-0.12.7-py3-none-musllinux_1_1_i686.whl", hash = "sha256:b2bd0f25f17f0000a2415347471e713cd1597f4525cd3412d17875b131f4b1ac", size = 21667314, upload-time = "2026-08-27T22:13:11.197Z" },
-    { url = "https://files.pythonhosted.org/packages/e1/c8/348089faf45a3c24c1d5a5ee3957cd1c7fb4a6aef1d9646114a4b7cc9c7a/uv-0.12.7-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:ff33305718665c6fba25efdd260c67a6bd500c665e3d5d61059612791ca10c90", size = 22919105, upload-time = "2026-08-27T22:13:13.596Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/7f/5fb8ed68270666ed675daead854bde3b14d7ab42c2b7c0d234b5ea8ea928/uv-0.12.7-py3-none-win32.whl", hash = "sha256:3ac3321ccd6097dbef154d27044e0762a67b2f6eb017dcc65be6574f4671fb0d", size = 19880506, upload-time = "2026-08-27T22:13:16.072Z" },
-    { url = "https://files.pythonhosted.org/packages/e7/97/40a91354862028e8f8e547ac27c6acd7b7cc67b9003acc28596d9e90cd6b/uv-0.12.7-py3-none-win_amd64.whl", hash = "sha256:277d326d7e63b912f3425c6e6d7d5d49f21b43d080d21859ff3c6819353f1847", size = 18085016, upload-time = "2026-08-27T22:13:18.352Z" },
-    { url = "https://files.pythonhosted.org/packages/52/69/6cdd022fff6a8d8f5c9af2686f61f2605ddd03b5709efb73df6e08f40249/uv-0.12.7-py3-none-win_arm64.whl", hash = "sha256:95c3a4fa65e72bab3ca1b4c8ce18fbe784cf3137e9f9234588b69d09b341a4a7", size = 19522843, upload-time = "2026-08-27T22:13:20.633Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/05/74c9ae1b59e0aa49f1fa84f31ea4ee0ec930825681d3af8430c017faa848/uv-0.13.6-py3-none-linux_armv6l.whl", hash = "sha256:4d20de8a3ed6c3d39b4e2f8f7d0411cd13a3959f5191b2b5d0209344034ed056", size = 18118786, upload-time = "2026-10-27T00:45:02.635Z" },
+    { url = "https://files.pythonhosted.org/packages/33/55/ff10d3f756c39a239e492e57262bd22fcda412a9f85a268175447cf33b09/uv-0.13.6-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:95f042b95e67ef8c3d3569bb6e9d895e592002c5e871cf3f1afe407c9d77a294", size = 17172613, upload-time = "2026-10-27T00:45:06.331Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/14/77230cc4f6a73a31578cb8070a5f67f58a76946ead643ae8a4155620d6da/uv-0.13.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:51361029b7cf91185d0092c4b356d110b4ad629e9cb11593f1e006ac72a72ca9", size = 14344205, upload-time = "2026-10-27T00:45:09.125Z" },
+    { url = "https://files.pythonhosted.org/packages/05/3b/f78583af6504f1270da95fd0d0935e381f58330c007260f450e81a1e5e1b/uv-0.13.6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:7ec5486476d67a4214c460b5492393ee2300d84e1de17b293100a019b413568b", size = 17764510, upload-time = "2026-10-27T00:45:12.133Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/c3/ee263d5c8e0f0bbd553b19692b1de2ce5860baf0f9653c6217535ff27833/uv-0.13.6-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:710c68ea4853aaf70ab2d0ccf2e147dee59449f035a1f8fe7759f087a31cdbf5", size = 17679194, upload-time = "2026-10-27T00:45:15.052Z" },
+    { url = "https://files.pythonhosted.org/packages/27/33/172e323f6e424f7bf4aef0480b514132dce6350b2acf14235d9b0671fa82/uv-0.13.6-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d4d7026c7327dd11fc2c0d4bae4735ff6944293d370644f35d2e6e917cdcae04", size = 17699951, upload-time = "2026-10-27T00:45:18.118Z" },
+    { url = "https://files.pythonhosted.org/packages/96/e6/29fa137fe3699a9f61f0e05640caff4713ac485cdf09b005f99f9bd595d4/uv-0.13.6-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:46c2ef1f744f20007be0cdd66db3022bb1ddcac477c754efda875e401a48d810", size = 18467553, upload-time = "2026-10-27T00:45:21.104Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/8c/bf3672027b68bd930e6764122147fcbd1f2dd9d76fc8e02707916c3e0727/uv-0.13.6-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:b2d25a49d135a441f688a6869d6d8062fb6f0a2e3e32e18b72c9de1d0eb9521e", size = 19763440, upload-time = "2026-10-27T00:45:25.536Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/c0/77c56a78a94b488cf0b54e505df5ecfae65b90b08cddb8e018bb2ae66268/uv-0.13.6-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b9f57153fc98b7aa41dd6720e3de7578747f60b7bff22f50b76dcc47205bdde3", size = 19616511, upload-time = "2026-10-27T00:45:28.505Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/43/0688ff5142934238f2812e348f4a24e09b57d48bfb38dd8f850325a0d9de/uv-0.13.6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:22759b8895e1103578de6fb4cd27e94b4399d021023378d29f01333717751fba", size = 17333810, upload-time = "2026-10-27T00:45:31.291Z" },
+    { url = "https://files.pythonhosted.org/packages/99/3a/451b544e105b3595b27f74535c0d6b1105b1b2dcb9b49ca5282dd27bcbc3/uv-0.13.6-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2e9a99100abe4f99605366974c4f9fe27f236615e05de8e78c0f357e38f09f97", size = 16527707, upload-time = "2026-10-27T00:45:34.282Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/59/9483985fadf5b2e60e64ca89e215f9e2da45a54d7323b9765ba03a5ebd80/uv-0.13.6-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:1cd4b0a35fa599b83da5437748150319ae0917c522da60898327645382942faa", size = 18014028, upload-time = "2026-10-27T00:45:37.33Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/c9/a412c2aa0494b307fce8c9c8234827f2fedb888954d3b3c8930a32a047c9/uv-0.13.6-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:8542dcf118ce8a7cf2e4ba1fea7f5cc1638bc02b5b30dab1ead7e9034dc62fd3", size = 17906467, upload-time = "2026-10-27T00:45:40.424Z" },
+    { url = "https://files.pythonhosted.org/packages/28/51/4fecb1d7a32ebf5c444643a4da9d1ae0878de0c71284792dbcdaaf61a5b8/uv-0.13.6-py3-none-musllinux_1_1_i686.whl", hash = "sha256:feb0f1d555798f68f28719cab437ab1dfb5d918db86ab4554215cbf9d940f63b", size = 17822518, upload-time = "2026-10-27T00:45:43.335Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/10/7a4c287b1d377353c939f451881529528c78815d57f36097a6607187ab1a/uv-0.13.6-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:d1efed1d15102ffdbf5e0fd49a440643dda2d921a2ad856792ae42ccd43c253f", size = 18932884, upload-time = "2026-10-27T00:45:46.227Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/b3/288467a6d1fdd99aca73dec3d4a919b80c201ec0d680093cd494d5b8efc7/uv-0.13.6-py3-none-win32.whl", hash = "sha256:29135609166960c74539abdaf4264f9819a0381be18b224125418356d67dd208", size = 16215356, upload-time = "2026-10-27T00:45:49.078Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/9d/714523188aea3054644d8e69ae8089aac70325a3cee2d3d05509d4f23398/uv-0.13.6-py3-none-win_amd64.whl", hash = "sha256:7c9bc35ccb65932d8dc10a0669f9c805eaa3c9827ce18ecbecb1bd67944b2cdf", size = 15334118, upload-time = "2026-10-27T00:45:52.086Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/7d/5ebb4cccbb11ae9e10f6cda704ce382722ab9dc68c9280a5b810378aee3e/uv-0.13.6-py3-none-win_arm64.whl", hash = "sha256:722c7f96803f115e53918b8ee8858d1680ea6077c614b6db750747d709ab8d9a", size = 15533875, upload-time = "2026-10-27T00:45:55.013Z" },
 ]
 
 [[package]]
@@ -4207,7 +4196,7 @@ dependencies = [
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "python-discovery" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-35') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-12' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-36') or (extra == 'group-11-dagster-k8s-test-kubernetes-35' and extra == 'group-11-dagster-k8s-test-kubernetes-37') or (extra == 'group-11-dagster-k8s-test-kubernetes-36' and extra == 'group-11-dagster-k8s-test-kubernetes-37')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7c/0c/e419d453f81fee6c01b40f30a38e45a9418c6877b1edee00bc71aedcf7b2/virtualenv-21.14.0.tar.gz", hash = "sha256:c3c0dbdf7259316edbb993020206ee7f7664a33063292dcc4a618e4c04cdf450", size = 5462847, upload-time = "2026-09-29T20:25:31.412Z" }
 wheels = [

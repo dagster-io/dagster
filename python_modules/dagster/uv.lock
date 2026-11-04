@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10, <3.15"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -42,9 +42,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "mako", marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3')" },
-    { name = "sqlalchemy", version = "1.3.24", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3')" },
-    { name = "typing-extensions", marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3')" },
+    { name = "mako", marker = "extra == 'group-7-dagster-test-sqlalchemy-1-3' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
+    { name = "sqlalchemy", version = "1.3.24", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-sqlalchemy-1-3' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
+    { name = "typing-extensions", marker = "extra == 'group-7-dagster-test-sqlalchemy-1-3' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/99/09/f844822e4e847a3f0bd41797f93c4674cd4d2462a3f6c459aa528cdf786e/alembic-1.14.1.tar.gz", hash = "sha256:496e888245a53adf1498fcab31713a469c65836f8de76e01399aa1c3e90dd213", size = 1918219, upload-time = "2025-01-19T23:15:30.12Z" }
 wheels = [
@@ -62,10 +62,10 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "mako", marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "sqlalchemy", version = "1.4.54", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "tomli", marker = "(python_full_version < '3.11' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (python_full_version < '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "typing-extensions", marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "mako", marker = "extra != 'group-7-dagster-test-sqlalchemy-1-3' or extra == 'group-7-dagster-test-sqlalchemy-1-4' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
+    { name = "sqlalchemy", version = "1.4.54", source = { registry = "https://pypi.org/simple" }, marker = "extra != 'group-7-dagster-test-sqlalchemy-1-3' or extra == 'group-7-dagster-test-sqlalchemy-1-4' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
+    { name = "tomli", marker = "(python_full_version < '3.11' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "extra != 'group-7-dagster-test-sqlalchemy-1-3' or extra == 'group-7-dagster-test-sqlalchemy-1-4' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/94/13/8b084e0f2efb0275a1d534838844926f798bd766566b1375174e2448cd31/alembic-1.18.4.tar.gz", hash = "sha256:cb6e1fd84b6174ab8dbb2329f86d631ba9559dd78df550b57804d607672cedbc", size = 2056725, upload-time = "2026-02-10T16:00:47.195Z" }
 wheels = [
@@ -104,9 +104,9 @@ name = "anyio"
 version = "4.14.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "idna" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/61/cc/a381afa6efea9f496eff839d4a6a1aed3bfafc7b3ab4b0d1b243a12573dd/anyio-4.14.2.tar.gz", hash = "sha256:cfa139f3ed1a23ee8f88a145ddb5ac7605b8bbfd8592baacd7ce3d8bb4313c7f", size = 260176, upload-time = "2026-07-12T20:29:07.082Z" }
 wheels = [
@@ -147,7 +147,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore-stubs" },
     { name = "types-s3transfer" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/65/8d/a2f47f54455d42071034177ac3c9c0bdfd1b51cab76c854f5619970ac57e/boto3_stubs-1.43.6.tar.gz", hash = "sha256:6c8b2e2977b5f85cdac82f1e3590cd7e7e452c92341654cc64c93a63da0f7bec", size = 102646, upload-time = "2026-05-07T21:15:34.897Z" }
 wheels = [
@@ -217,11 +217,11 @@ wheels = [
 
 [[package]]
 name = "certifi"
-version = "2026.4.22"
+version = "2026.10.23"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/25/ee/6caf7a40c36a1220410afe15a1cc64993a1f864871f698c0f93acb72842a/certifi-2026.4.22.tar.gz", hash = "sha256:8d455352a37b71bf76a79caa83a3d6c25afee4a385d632127b6afb3963f1c580", size = 137077, upload-time = "2026-04-22T11:26:11.191Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/11/b524cbd9bbdaca58608e4cf4053fd463417549e1959fa8d3aa18319f9555/certifi-2026.10.23.tar.gz", hash = "sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd", size = 136225, upload-time = "2026-10-23T11:36:16.478Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/30/7cd8fdcdfbc5b869528b079bfb76dcdf6056b1a2097a662e5e8c04f42965/certifi-2026.4.22-py3-none-any.whl", hash = "sha256:3cb2210c8f88ba2318d29b0388d1023c8492ff72ecdde4ebdaddbb13a31b1c4a", size = 135707, upload-time = "2026-04-22T11:26:09.372Z" },
+    { url = "https://files.pythonhosted.org/packages/32/d1/a3652fe2c19134d0d15922177821d863cbd7e842d53a21bbe7e8e3a1b5ac/certifi-2026.10.23-py3-none-any.whl", hash = "sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1", size = 135082, upload-time = "2026-10-23T11:36:14.763Z" },
 ]
 
 [[package]]
@@ -229,7 +229,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -416,7 +416,7 @@ name = "click"
 version = "8.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/63/f9e1ea081ce35720d8b92acde70daaedace594dc93b693c869e0d5910718/click-8.3.3.tar.gz", hash = "sha256:398329ad4837b2ff7cbe1dd166a4c0f8900c3ca3a218de04466f38f6497f18a2", size = 328061, upload-time = "2026-04-22T15:11:27.506Z" }
 wheels = [
@@ -571,7 +571,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version <= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
 ]
 
 [[package]]
@@ -603,8 +603,8 @@ name = "cryptography"
 version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_python_implementation != 'PyPy' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/ad/5d6702db60b1e40b41ef513b6967ff5848f307d50f8449baf1634f5908f1/cryptography-50.0.1.tar.gz", hash = "sha256:5dd9bda1c12b4162f6ff568eeb5e0ff956c28d14406e875cfe8a63a2d414ff20", size = 880381, upload-time = "2026-08-25T19:45:45.499Z" }
 wheels = [
@@ -660,8 +660,8 @@ name = "dagster"
 version = "1!0+dev"
 source = { editable = "." }
 dependencies = [
-    { name = "alembic", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3')" },
-    { name = "alembic", version = "1.18.4", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "alembic", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-sqlalchemy-1-3' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
+    { name = "alembic", version = "1.18.4", source = { registry = "https://pypi.org/simple" }, marker = "extra != 'group-7-dagster-test-sqlalchemy-1-3' or extra == 'group-7-dagster-test-sqlalchemy-1-4' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
     { name = "antlr4-python3-runtime" },
     { name = "click" },
     { name = "coloredlogs" },
@@ -670,22 +670,22 @@ dependencies = [
     { name = "docstring-parser" },
     { name = "filelock" },
     { name = "grpcio" },
-    { name = "grpcio-health-checking", version = "1.48.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "grpcio-health-checking", version = "1.81.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "grpcio-health-checking", version = "1.85.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio-health-checking", version = "1.48.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "grpcio-health-checking", version = "1.81.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio-health-checking", version = "1.85.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
     { name = "jinja2" },
-    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "psutil", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "psutil", marker = "sys_platform == 'win32'" },
     { name = "python-dotenv" },
     { name = "pytz" },
-    { name = "pywin32", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "rich" },
     { name = "six" },
-    { name = "sqlalchemy", version = "1.3.24", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3')" },
-    { name = "sqlalchemy", version = "1.4.54", source = { registry = "https://pypi.org/simple" }, marker = "(extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "sqlalchemy", version = "1.3.24", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-sqlalchemy-1-3' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
+    { name = "sqlalchemy", version = "1.4.54", source = { registry = "https://pypi.org/simple" }, marker = "extra != 'group-7-dagster-test-sqlalchemy-1-3' or extra == 'group-7-dagster-test-sqlalchemy-1-4' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6')" },
     { name = "structlog" },
     { name = "tabulate" },
     { name = "tomli" },
@@ -704,8 +704,8 @@ mypy = [
     { name = "mypy" },
 ]
 pyright = [
-    { name = "pandas-stubs", version = "2.3.3.260113", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "pandas-stubs", version = "3.0.0.260204", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "pandas-stubs", version = "2.3.3.260113", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "pandas-stubs", version = "3.0.0.260204", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyright" },
     { name = "types-backports" },
     { name = "types-certifi" },
@@ -729,12 +729,12 @@ ruff = [
 ]
 test = [
     { name = "docker" },
-    { name = "grpcio-tools", version = "1.48.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "grpcio-tools", version = "1.81.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "grpcio-tools", version = "1.85.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio-tools", version = "1.48.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio-tools", version = "1.81.1", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio-tools", version = "1.85.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
     { name = "morefs", extra = ["asynclocal"] },
-    { name = "mypy-protobuf", version = "3.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "mypy-protobuf", version = "5.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "mypy-protobuf", version = "3.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "mypy-protobuf", version = "5.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "objgraph" },
     { name = "psutil" },
     { name = "pytest" },
@@ -760,8 +760,8 @@ test-components = [
 ]
 ty = [
     { name = "boto3-stubs", extra = ["essential"] },
-    { name = "pandas-stubs", version = "2.3.3.260113", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "pandas-stubs", version = "3.0.0.260204", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "pandas-stubs", version = "2.3.3.260113", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "pandas-stubs", version = "3.0.0.260204", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "ty" },
     { name = "types-backports" },
     { name = "types-certifi" },
@@ -805,7 +805,7 @@ test-old-protobuf = [
 ]
 test-protobuf-6 = [
     { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 test-sqlalchemy-1-3 = [
     { name = "sqlalchemy", version = "1.3.24", source = { registry = "https://pypi.org/simple" } },
@@ -956,9 +956,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "questionary" },
     { name = "requests" },
-    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typer" },
     { name = "validators" },
 ]
@@ -1013,7 +1013,7 @@ requires-dist = [
     { name = "dagster-dg-core", editable = "../libraries/dagster-dg-core" },
     { name = "dagster-rest-resources", editable = "../libraries/dagster-rest-resources" },
     { name = "requests" },
-    { name = "typer" },
+    { name = "typer", specifier = "<0.26" },
 ]
 provides-extras = ["ai"]
 
@@ -1059,8 +1059,8 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "rich" },
-    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "tomlkit" },
     { name = "typer" },
     { name = "typing-extensions" },
@@ -1092,7 +1092,7 @@ requires-dist = [
     { name = "rich" },
     { name = "setuptools" },
     { name = "tomlkit", specifier = "!=0.13.3,<0.16" },
-    { name = "typer", specifier = ">=0.15.1,<1.0" },
+    { name = "typer", specifier = ">=0.15.1,<0.26" },
     { name = "typing-extensions", specifier = ">=4.4.0,<5" },
     { name = "watchdog" },
     { name = "yaspin" },
@@ -1301,7 +1301,7 @@ name = "docker"
 version = "7.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pywin32", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "urllib3" },
 ]
@@ -1366,7 +1366,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -1631,9 +1631,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "grpcio", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio" },
+    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-old-protobuf' or extra == 'group-7-dagster-test-protobuf-6' or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/75/73/2506af34c6fe5532d82083d9c94d827cddde06755644490d01d3472ab092/grpcio-health-checking-1.48.2.tar.gz", hash = "sha256:a21021a2cbaa3e3ca11c2e35c7e472c07f993498dbd97c154d2d99348ea0ee64", size = 15985, upload-time = "2022-09-22T02:50:29.725Z" }
 wheels = [
@@ -1650,8 +1650,8 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/65/46/6b6678b5a922765ae7637205bb6d0618a4da8b35f2ce6116f8bcff262370/grpcio_health_checking-1.81.1.tar.gz", hash = "sha256:ecc61480e25058a4a04e11e4ab6900ad7439b32e60a8ce4ece7d9f219221c85d", size = 17107, upload-time = "2026-06-11T12:58:49.632Z" }
 wheels = [
@@ -1668,8 +1668,8 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2e/13/a4b884e7c0b2c653a0da3188482955daf301b5b16227f396459c9c52d04c/grpcio_health_checking-1.85.0.tar.gz", hash = "sha256:053eadfefcd3cc7ac679b624bc081efdde4e6893a1a34617c99e0ac2d4970ca0", size = 17855, upload-time = "2026-10-26T06:25:00.67Z" }
 wheels = [
@@ -1684,9 +1684,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "grpcio", marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio", marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/05/ea/f80452b50164b829c4e0f68ee0da45f4c232ee6121d4c46d1432a59f72f5/grpcio-tools-1.48.2.tar.gz", hash = "sha256:8902a035708555cddbd61b5467cea127484362decc52de03f061a1a520fe90cd", size = 2237584, upload-time = "2022-09-22T02:50:36.779Z" }
 wheels = [
@@ -1711,9 +1711,9 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/83/b3/1c5951352d6777fd7f99a0ccee04617fdfd8a5dbf2918a1f58c8b2b280b8/grpcio_tools-1.81.1.tar.gz", hash = "sha256:a22a3870180927fdd84e2b27d079ef5b7f5f8c6110181b6736afc17a463481f1", size = 6236155, upload-time = "2026-06-11T12:51:21.235Z" }
 wheels = [
@@ -1780,10 +1780,10 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "grpcio", marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "setuptools", version = "81.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "setuptools", version = "84.0.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a8/86/a71d768b0098bc57ff89a4e8dd19f4947cad9c7991d6578c32aa88fb1d1c/grpcio_tools-1.85.0.tar.gz", hash = "sha256:1583807d0245a7c4e12837b652516b7a62683f9c9174889b4ad1001ec30a74d6", size = 6579337, upload-time = "2026-10-26T06:22:21.256Z" }
 wheels = [
@@ -1924,7 +1924,7 @@ name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyreadline3", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "pyreadline3", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/3f/2c29224acb2e2df4d2046e4c73ee2662023c58ff5b113c4c1adac0886c43/humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc", size = 360702, upload-time = "2021-09-17T21:40:43.31Z" }
 wheels = [
@@ -2138,7 +2138,7 @@ name = "multidict"
 version = "6.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1a/c2/c2d94cbe6ac1753f3fc980da97b3d930efe1da3af3c9f5125354436c073d/multidict-6.7.1.tar.gz", hash = "sha256:ec6652a1bee61c53a3e5776b6049172c53b6aaba34f18c9ad04f82712bac623d", size = 102010, upload-time = "2026-01-26T02:46:45.979Z" }
 wheels = [
@@ -2277,7 +2277,7 @@ version = "1.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mypy-extensions" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/16/22/25fac51008f0a4b2186da0dba3039128bd75d3fab8c07acd3ea5894f95cc/mypy-1.8.0.tar.gz", hash = "sha256:6ff8b244d7085a0b425b56d327b480c3b29cafbd2eff27316a004f9a7391ae07", size = 2990299, upload-time = "2023-12-21T16:29:33.134Z" }
@@ -2305,7 +2305,7 @@ name = "mypy-boto3-cloudformation"
 version = "1.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bc/62/31c099df8c79b2c78a1f48a883049ae5a22a0bf5cf8a22bd332497a3ce1f/mypy_boto3_cloudformation-1.43.0.tar.gz", hash = "sha256:5be845bc3dc1b9cdbd8b6b071fad7c42d0221d4087ac0cc7c5b9dd219b324606", size = 61202, upload-time = "2026-04-29T22:58:21.903Z" }
 wheels = [
@@ -2317,7 +2317,7 @@ name = "mypy-boto3-dynamodb"
 version = "1.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/38/41/2823aad9f3abab6104cd8aaafebabfba19927227fbc277e2289c3b915c1d/mypy_boto3_dynamodb-1.43.0.tar.gz", hash = "sha256:f0cea38e058f1d07361ecb55d8f40665d824b42cf4864724c7fccc8bf3946fcd", size = 48755, upload-time = "2026-04-29T22:59:59.119Z" }
 wheels = [
@@ -2329,7 +2329,7 @@ name = "mypy-boto3-ec2"
 version = "1.43.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/19/c5/ef174f9ff1e5d2aca242184d0129d69f73f7a5753ffa5dc2a028f684a368/mypy_boto3_ec2-1.43.6.tar.gz", hash = "sha256:cd856ee6d746436a098c267fffcc7e0d9a300bfadda6fc3bbe9422662c697af5", size = 445260, upload-time = "2026-05-07T21:15:21.963Z" }
 wheels = [
@@ -2341,7 +2341,7 @@ name = "mypy-boto3-lambda"
 version = "1.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f8/d9/de2ca1f584ca9522ba94a7b3fd76ecde609d6a67ce3c598d2da705c1067f/mypy_boto3_lambda-1.43.0.tar.gz", hash = "sha256:a58de26b5c13be54deab31723ee9ab7aaa922be1dfbd093dc3a4ca12cc853157", size = 51934, upload-time = "2026-04-29T23:02:24.512Z" }
 wheels = [
@@ -2353,7 +2353,7 @@ name = "mypy-boto3-rds"
 version = "1.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/51/16/bfad073aa36888522761daef0623485ff8d6cdd4153f93537e929d118dd0/mypy_boto3_rds-1.43.0.tar.gz", hash = "sha256:64a46148172ba5d8b74f641dc39bfc58583b7436c609495906022b9a01d2505b", size = 87394, upload-time = "2026-04-29T23:04:47.581Z" }
 wheels = [
@@ -2365,7 +2365,7 @@ name = "mypy-boto3-s3"
 version = "1.43.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c8/f9/f6bb5e1b3d8d9087ab9e2142df640a1be853e371ec5e16ea519a60061b56/mypy_boto3_s3-1.43.5.tar.gz", hash = "sha256:ba67dbc3da825b6818839db3823722f3b12304dd116e94ed398eb7ade86b0f62", size = 77042, upload-time = "2026-05-06T20:47:46.655Z" }
 wheels = [
@@ -2377,7 +2377,7 @@ name = "mypy-boto3-sqs"
 version = "1.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/1e/226725696a99c7dadfe8ebfba01575107fa15146029a7fb0082c650d8689/mypy_boto3_sqs-1.43.0.tar.gz", hash = "sha256:3ec8e1e651e830affcf7fe151b2e3090b8ea98d73cb069053b09ca4c7f4c8636", size = 23318, upload-time = "2026-04-29T23:06:17.614Z" }
 wheels = [
@@ -2401,9 +2401,9 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version >= '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "types-protobuf", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "3.20.3", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-old-protobuf' or extra == 'group-7-dagster-test-protobuf-6' or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "types-protobuf" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9d/59/48f1df10f87cf87d0638dd38f54549e98cb43fcf7ce0ab6c159816e85f23/mypy-protobuf-3.3.0.tar.gz", hash = "sha256:24f3b0aecb06656e983f58e07c732a90577b9d7af3e1066fc2b663bbf0370248", size = 23640, upload-time = "2022-08-24T11:18:16.64Z" }
 wheels = [
@@ -2420,9 +2420,9 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and extra == 'group-7-dagster-test-old-protobuf') or (python_full_version >= '3.11' and extra != 'group-7-dagster-test-protobuf-6') or (python_full_version < '3.11' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (extra == 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "types-protobuf", marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "6.33.6", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-protobuf-6' or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "protobuf", version = "7.36.2", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-7-dagster-test-old-protobuf' or extra != 'group-7-dagster-test-protobuf-6' or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "types-protobuf" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/87/07/7ffb897eee5c01e816e037f51a6720bf1a0a8c17cca1a2382ae554f43044/mypy_protobuf-5.1.0.tar.gz", hash = "sha256:8493758852a9cdc075a11dbe96c6e37ea2feba5fd5f33ef7442b9a275322a94c", size = 37529, upload-time = "2026-04-28T15:56:40.356Z" }
 wheels = [
@@ -2610,8 +2610,8 @@ name = "pandas"
 version = "2.3.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "python-dateutil" },
     { name = "pytz" },
     { name = "tzdata" },
@@ -2675,8 +2675,8 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "types-pytz", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" } },
+    { name = "types-pytz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/92/5d/be23854a73fda69f1dbdda7bc10fbd6f930bd1fa87aaec389f00c901c1e8/pandas_stubs-2.3.3.260113.tar.gz", hash = "sha256:076e3724bcaa73de78932b012ec64b3010463d377fa63116f4e6850643d93800", size = 116131, upload-time = "2026-01-13T22:30:16.704Z" }
 wheels = [
@@ -2693,7 +2693,7 @@ resolution-markers = [
     "python_full_version == '3.11.*'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/27/1d/297ff2c7ea50a768a2247621d6451abb2a07c0e9be7ca6d36ebe371658e5/pandas_stubs-3.0.0.260204.tar.gz", hash = "sha256:bf9294b76352effcffa9cb85edf0bed1339a7ec0c30b8e1ac3d66b4228f1fbc3", size = 109383, upload-time = "2026-02-04T15:17:17.247Z" }
 wheels = [
@@ -3097,7 +3097,7 @@ name = "pyjwt"
 version = "2.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/43/ea/5194e52748b0da83d71e082d75496eaec6e58f419f5e184786ded517e6a9/pyjwt-2.15.1.tar.gz", hash = "sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8", size = 121252, upload-time = "2026-09-28T18:40:42.598Z" }
 wheels = [
@@ -3115,7 +3115,7 @@ version = "1.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/45/7b/c0e1333b61d41c69e59e5366e727b18c4992688caf0de1be10b3e5265f6b/pyproject_api-1.10.0.tar.gz", hash = "sha256:40c6f2d82eebdc4afee61c773ed208c04c19db4c4a60d97f8d7be3ebc0bbb330", size = 22785, upload-time = "2025-10-09T19:12:27.21Z" }
 wheels = [
@@ -3149,13 +3149,13 @@ name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
-    { name = "exceptiongroup", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
     { name = "pygments" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
@@ -3167,9 +3167,9 @@ name = "pytest-asyncio"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "backports-asyncio-runner", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "backports-asyncio-runner", marker = "python_full_version < '3.11'" },
     { name = "pytest" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/90/2c/8af215c0f776415f3590cac4f9086ccefd6fd463befeae41cd4d3f193e5a/pytest_asyncio-1.3.0.tar.gz", hash = "sha256:d7f52f36d231b80ee124cd216ffb19369aa168fc10095013c6b014a34d3ee9e5", size = 50087, upload-time = "2025-11-10T16:07:47.256Z" }
 wheels = [
@@ -3488,7 +3488,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "rpds-py" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/22/f5/df4e9027acead3ecc63e50fe1e36aca1523e1719559c499951bb4b53188f/referencing-0.37.0.tar.gz", hash = "sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8", size = 78036, upload-time = "2025-10-13T15:30:48.871Z" }
 wheels = [
@@ -3773,7 +3773,7 @@ resolution-markers = [
     "python_full_version < '3.11'",
 ]
 dependencies = [
-    { name = "greenlet", marker = "(platform_machine == 'AMD64' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'AMD64' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'WIN32' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'WIN32' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'aarch64' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'aarch64' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'amd64' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'amd64' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'ppc64le' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'ppc64le' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'win32' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'win32' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'x86_64' and extra != 'group-7-dagster-test-protobuf-6' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'x86_64' and extra != 'group-7-dagster-test-old-protobuf' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "greenlet", marker = "(platform_machine == 'AMD64' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'WIN32' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'aarch64' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'amd64' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'ppc64le' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'win32' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (platform_machine == 'x86_64' and extra != 'group-7-dagster-test-sqlalchemy-1-3') or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ce/af/20290b55d469e873cba9d41c0206ab5461ff49d759989b3fe65010f9d265/sqlalchemy-1.4.54.tar.gz", hash = "sha256:4470fbed088c35dc20b78a39aaf4ae54fe81790c783b3264872a0224f437c31a", size = 8470350, upload-time = "2024-09-05T15:54:10.398Z" }
 wheels = [
@@ -3802,7 +3802,7 @@ version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b5/b4/205b0d5241d934e8add0c38aa924c4f9fb7330834ff11e5444db964ec3f9/starlette-1.6.0.tar.gz", hash = "sha256:d4e3ac5e546444960c710297a3c9fc3f7ebae1b7e963f3d36173b49da535be9b", size = 2716969, upload-time = "2026-08-08T18:27:57.512Z" }
 wheels = [
@@ -3814,7 +3814,7 @@ name = "structlog"
 version = "25.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/52/9ba0f43b686e7f3ddfeaa78ac3af750292662284b3661e91ad5494f21dbc/structlog-25.5.0.tar.gz", hash = "sha256:098522a3bebed9153d4570c6d0288abf80a031dfdb2048d59a49e9dc2190fc98", size = 1460830, upload-time = "2025-10-27T08:28:23.028Z" }
 wheels = [
@@ -3945,9 +3945,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pyproject-api" },
     { name = "python-discovery" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tomli-w" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
     { name = "virtualenv" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a0/d7/a8e0f889eb6872740e2f013a93a8f9c6c23c3f02fe0911bbd91673615636/tox-4.53.1.tar.gz", hash = "sha256:7be9805ed4a34242510c7acc9a7e3a01a35942e08f31f8bd69067c3a37130afc", size = 276809, upload-time = "2026-05-02T08:34:41.655Z" }
@@ -3973,7 +3973,7 @@ version = "1.35.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
-    { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "tox" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0a/cb/168dc1ccf24e4065a9a0a33df55709ed2b5eb73bd2b13ddd53187e5dffb8/tox_uv_bare-1.35.2.tar.gz", hash = "sha256:49e28a804c97f23ea17e25859960c0fa78f35bccb7e14344cfd840e89a9aade9", size = 32333, upload-time = "2026-05-05T01:34:18.916Z" }
@@ -3986,7 +3986,7 @@ name = "tqdm"
 version = "4.67.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/a9/6ba95a270c6f1fbcd8dac228323f2777d886cb206987444e4bce66338dd4/tqdm-4.67.3.tar.gz", hash = "sha256:7d825f03f89244ef73f1d4ce193cb1774a8179fd96f31d7e1dcde62092b960bb", size = 169598, upload-time = "2026-02-03T17:35:53.048Z" }
 wheels = [
@@ -4322,28 +4322,28 @@ wheels = [
 
 [[package]]
 name = "uv"
-version = "0.12.7"
+version = "0.13.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f7/ab/790e25d2c685f5a41b9567001a43fbe049a595c1b08b8a93bf82d5fc704b/uv-0.12.7.tar.gz", hash = "sha256:4b320f84763a80308fd830ecf5c4c44505a8ed910fe265c5977d0a3727cfcd55", size = 7107999, upload-time = "2026-08-27T22:13:22.978Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/d5/88d43310d425f6e3a43997ad771658ded3237d0ed78c16a89b2353eddf56/uv-0.13.6.tar.gz", hash = "sha256:d762215478854f6cf20c3faed8f1eb30c8101d568e7bc32a3abafc063929d5c5", size = 7545242, upload-time = "2026-10-27T00:45:57.605Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/63/cc236f80a868b28525e0f7aa61f7ee998a0540ccba8cc4d01b2d42fc7838/uv-0.12.7-py3-none-linux_armv6l.whl", hash = "sha256:d568fd3448c24354753fd8333c978aeeeb6b51db4b100e234461a7eb50882fae", size = 22215689, upload-time = "2026-08-27T22:12:36.485Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/c5/40f4a5736d2f795688977b3b8bf841daca1e9c93b358778b7ed3dcd747fe/uv-0.12.7-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ec5b437aa60e8c94da263ad709d0bf6c8f268ac81f305d89c6115badd7d1cbe7", size = 20471214, upload-time = "2026-08-27T22:12:39.147Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/3e/5946d33de437467190b51d7d9f9e74a53628782565d50b64f6051050f482/uv-0.12.7-py3-none-macosx_11_0_arm64.whl", hash = "sha256:016fe4b9a2e0d2a35b17b6c3efbb45b929189c5b4b37aa921265265ccfe42cc1", size = 17317478, upload-time = "2026-08-27T22:12:41.58Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/5b/0e42dd88d9928b51a4e85d89d8aed46933951187b508ae68c145b06e3334/uv-0.12.7-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:fe9a871bd638ee6d2fd73bf40c2ee98153e44d06f796a03fcecf9d12b36d42d8", size = 21379352, upload-time = "2026-08-27T22:12:44.123Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/5c/b6417812ef87fc713ec368b1001b41c78eaedbfa521789db7d103b56c500/uv-0.12.7-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:1014a13854c45eb1daa9a32602e0f4d07f3edd298826d3e8d22740eed60a7c95", size = 21686985, upload-time = "2026-08-27T22:12:47.686Z" },
-    { url = "https://files.pythonhosted.org/packages/69/23/a6284df1dc4233fea564227f77c402969b4f6aebcb647826ce9e82a413de/uv-0.12.7-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0ad3e91cc911596bb54197057853b64b36a066462d8f2fc4d4f60b61b707ffa8", size = 21744177, upload-time = "2026-08-27T22:12:50.572Z" },
-    { url = "https://files.pythonhosted.org/packages/fb/e1/96526f3ea72667352e1a83dff3cbb8701dbfc830aafb3ac9dd532d4fb827/uv-0.12.7-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:b6d4bd67b488ef2766cfa885947c1093c18caf5d665ba9156963ad0241f196e9", size = 22527940, upload-time = "2026-08-27T22:12:53.479Z" },
-    { url = "https://files.pythonhosted.org/packages/39/7b/816e7c4ef1b59faf295d4eec133b15d6d3a227dc4bc341dceccc31a3ba15/uv-0.12.7-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:debeccc5eca0063cd922bc67caa4a8c0df5f69090179866ed17fa7264905bda2", size = 23630281, upload-time = "2026-08-27T22:12:55.941Z" },
-    { url = "https://files.pythonhosted.org/packages/ac/63/03d00b74c5582163b8c544b2dc39396388d904a13118303fb2c32ece2811/uv-0.12.7-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:36c8f93d182b766b9ed4a9c1da5ec0f7dc9f934887df3404d996f66321fd18d5", size = 23345465, upload-time = "2026-08-27T22:12:58.726Z" },
-    { url = "https://files.pythonhosted.org/packages/8a/01/616cc5f80952eef6fa48c5dbd6ea8aeed04a494e7dfbe9f5f65cfcf85ad9/uv-0.12.7-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4545e87c7ac64af317d8daffd279e23e93b0e05035662363033d3525923339d2", size = 20058968, upload-time = "2026-08-27T22:13:01.239Z" },
-    { url = "https://files.pythonhosted.org/packages/66/23/051acc24b21bbf0e67bc00e2b4239892e37cf39fdd6428fc246a2ae62b79/uv-0.12.7-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:56a5730f8eff477501b3276a0059c2c2843302d5d4a6cc10f993a5cd66ddace8", size = 19450815, upload-time = "2026-08-27T22:13:03.636Z" },
-    { url = "https://files.pythonhosted.org/packages/42/a4/a84adae83d6891401284ec4929ea7892c7efc5484cb53283147fbb4881b6/uv-0.12.7-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:d83419298e202f56e381cef6406b519b9336e58fc90a559617d86576a3d8a4e8", size = 22402981, upload-time = "2026-08-27T22:13:06.247Z" },
-    { url = "https://files.pythonhosted.org/packages/8a/35/6fcdff1292ba1cc027d1d741531dfc4d19f92e1312262833beacf3b7fbe8/uv-0.12.7-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:fc57436f2f012b885454f465dbf077f573745f0d4275a6a38194203b67e94ea4", size = 22535567, upload-time = "2026-08-27T22:13:08.802Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/ea/7ac04384642a4ba808b20a94cb09e0f4b4a6aef6cf9671858be0567c153a/uv-0.12.7-py3-none-musllinux_1_1_i686.whl", hash = "sha256:b2bd0f25f17f0000a2415347471e713cd1597f4525cd3412d17875b131f4b1ac", size = 21667314, upload-time = "2026-08-27T22:13:11.197Z" },
-    { url = "https://files.pythonhosted.org/packages/e1/c8/348089faf45a3c24c1d5a5ee3957cd1c7fb4a6aef1d9646114a4b7cc9c7a/uv-0.12.7-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:ff33305718665c6fba25efdd260c67a6bd500c665e3d5d61059612791ca10c90", size = 22919105, upload-time = "2026-08-27T22:13:13.596Z" },
-    { url = "https://files.pythonhosted.org/packages/3e/7f/5fb8ed68270666ed675daead854bde3b14d7ab42c2b7c0d234b5ea8ea928/uv-0.12.7-py3-none-win32.whl", hash = "sha256:3ac3321ccd6097dbef154d27044e0762a67b2f6eb017dcc65be6574f4671fb0d", size = 19880506, upload-time = "2026-08-27T22:13:16.072Z" },
-    { url = "https://files.pythonhosted.org/packages/e7/97/40a91354862028e8f8e547ac27c6acd7b7cc67b9003acc28596d9e90cd6b/uv-0.12.7-py3-none-win_amd64.whl", hash = "sha256:277d326d7e63b912f3425c6e6d7d5d49f21b43d080d21859ff3c6819353f1847", size = 18085016, upload-time = "2026-08-27T22:13:18.352Z" },
-    { url = "https://files.pythonhosted.org/packages/52/69/6cdd022fff6a8d8f5c9af2686f61f2605ddd03b5709efb73df6e08f40249/uv-0.12.7-py3-none-win_arm64.whl", hash = "sha256:95c3a4fa65e72bab3ca1b4c8ce18fbe784cf3137e9f9234588b69d09b341a4a7", size = 19522843, upload-time = "2026-08-27T22:13:20.633Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/05/74c9ae1b59e0aa49f1fa84f31ea4ee0ec930825681d3af8430c017faa848/uv-0.13.6-py3-none-linux_armv6l.whl", hash = "sha256:4d20de8a3ed6c3d39b4e2f8f7d0411cd13a3959f5191b2b5d0209344034ed056", size = 18118786, upload-time = "2026-10-27T00:45:02.635Z" },
+    { url = "https://files.pythonhosted.org/packages/33/55/ff10d3f756c39a239e492e57262bd22fcda412a9f85a268175447cf33b09/uv-0.13.6-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:95f042b95e67ef8c3d3569bb6e9d895e592002c5e871cf3f1afe407c9d77a294", size = 17172613, upload-time = "2026-10-27T00:45:06.331Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/14/77230cc4f6a73a31578cb8070a5f67f58a76946ead643ae8a4155620d6da/uv-0.13.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:51361029b7cf91185d0092c4b356d110b4ad629e9cb11593f1e006ac72a72ca9", size = 14344205, upload-time = "2026-10-27T00:45:09.125Z" },
+    { url = "https://files.pythonhosted.org/packages/05/3b/f78583af6504f1270da95fd0d0935e381f58330c007260f450e81a1e5e1b/uv-0.13.6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:7ec5486476d67a4214c460b5492393ee2300d84e1de17b293100a019b413568b", size = 17764510, upload-time = "2026-10-27T00:45:12.133Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/c3/ee263d5c8e0f0bbd553b19692b1de2ce5860baf0f9653c6217535ff27833/uv-0.13.6-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.musllinux_1_1_armv7l.whl", hash = "sha256:710c68ea4853aaf70ab2d0ccf2e147dee59449f035a1f8fe7759f087a31cdbf5", size = 17679194, upload-time = "2026-10-27T00:45:15.052Z" },
+    { url = "https://files.pythonhosted.org/packages/27/33/172e323f6e424f7bf4aef0480b514132dce6350b2acf14235d9b0671fa82/uv-0.13.6-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:d4d7026c7327dd11fc2c0d4bae4735ff6944293d370644f35d2e6e917cdcae04", size = 17699951, upload-time = "2026-10-27T00:45:18.118Z" },
+    { url = "https://files.pythonhosted.org/packages/96/e6/29fa137fe3699a9f61f0e05640caff4713ac485cdf09b005f99f9bd595d4/uv-0.13.6-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:46c2ef1f744f20007be0cdd66db3022bb1ddcac477c754efda875e401a48d810", size = 18467553, upload-time = "2026-10-27T00:45:21.104Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/8c/bf3672027b68bd930e6764122147fcbd1f2dd9d76fc8e02707916c3e0727/uv-0.13.6-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:b2d25a49d135a441f688a6869d6d8062fb6f0a2e3e32e18b72c9de1d0eb9521e", size = 19763440, upload-time = "2026-10-27T00:45:25.536Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/c0/77c56a78a94b488cf0b54e505df5ecfae65b90b08cddb8e018bb2ae66268/uv-0.13.6-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:b9f57153fc98b7aa41dd6720e3de7578747f60b7bff22f50b76dcc47205bdde3", size = 19616511, upload-time = "2026-10-27T00:45:28.505Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/43/0688ff5142934238f2812e348f4a24e09b57d48bfb38dd8f850325a0d9de/uv-0.13.6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:22759b8895e1103578de6fb4cd27e94b4399d021023378d29f01333717751fba", size = 17333810, upload-time = "2026-10-27T00:45:31.291Z" },
+    { url = "https://files.pythonhosted.org/packages/99/3a/451b544e105b3595b27f74535c0d6b1105b1b2dcb9b49ca5282dd27bcbc3/uv-0.13.6-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2e9a99100abe4f99605366974c4f9fe27f236615e05de8e78c0f357e38f09f97", size = 16527707, upload-time = "2026-10-27T00:45:34.282Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/59/9483985fadf5b2e60e64ca89e215f9e2da45a54d7323b9765ba03a5ebd80/uv-0.13.6-py3-none-manylinux_2_31_riscv64.musllinux_1_1_riscv64.whl", hash = "sha256:1cd4b0a35fa599b83da5437748150319ae0917c522da60898327645382942faa", size = 18014028, upload-time = "2026-10-27T00:45:37.33Z" },
+    { url = "https://files.pythonhosted.org/packages/8d/c9/a412c2aa0494b307fce8c9c8234827f2fedb888954d3b3c8930a32a047c9/uv-0.13.6-py3-none-manylinux_2_31_riscv64.whl", hash = "sha256:8542dcf118ce8a7cf2e4ba1fea7f5cc1638bc02b5b30dab1ead7e9034dc62fd3", size = 17906467, upload-time = "2026-10-27T00:45:40.424Z" },
+    { url = "https://files.pythonhosted.org/packages/28/51/4fecb1d7a32ebf5c444643a4da9d1ae0878de0c71284792dbcdaaf61a5b8/uv-0.13.6-py3-none-musllinux_1_1_i686.whl", hash = "sha256:feb0f1d555798f68f28719cab437ab1dfb5d918db86ab4554215cbf9d940f63b", size = 17822518, upload-time = "2026-10-27T00:45:43.335Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/10/7a4c287b1d377353c939f451881529528c78815d57f36097a6607187ab1a/uv-0.13.6-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:d1efed1d15102ffdbf5e0fd49a440643dda2d921a2ad856792ae42ccd43c253f", size = 18932884, upload-time = "2026-10-27T00:45:46.227Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/b3/288467a6d1fdd99aca73dec3d4a919b80c201ec0d680093cd494d5b8efc7/uv-0.13.6-py3-none-win32.whl", hash = "sha256:29135609166960c74539abdaf4264f9819a0381be18b224125418356d67dd208", size = 16215356, upload-time = "2026-10-27T00:45:49.078Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/9d/714523188aea3054644d8e69ae8089aac70325a3cee2d3d05509d4f23398/uv-0.13.6-py3-none-win_amd64.whl", hash = "sha256:7c9bc35ccb65932d8dc10a0669f9c805eaa3c9827ce18ecbecb1bd67944b2cdf", size = 15334118, upload-time = "2026-10-27T00:45:52.086Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/7d/5ebb4cccbb11ae9e10f6cda704ce382722ab9dc68c9280a5b810378aee3e/uv-0.13.6-py3-none-win_arm64.whl", hash = "sha256:722c7f96803f115e53918b8ee8858d1680ea6077c614b6db750747d709ab8d9a", size = 15533875, upload-time = "2026-10-27T00:45:55.013Z" },
 ]
 
 [[package]]
@@ -4353,7 +4353,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "h11" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1f/93/041fca8274050e40e6791f267d82e0e2e27dd165627bd640d3e0e378d877/uvicorn-0.46.0.tar.gz", hash = "sha256:fb9da0926999cc6cb22dc7cd71a94a632f078e6ae47ff683c5c420750fb7413d", size = 88758, upload-time = "2026-04-23T07:16:00.151Z" }
 wheels = [
@@ -4362,11 +4362,11 @@ wheels = [
 
 [package.optional-dependencies]
 standard = [
-    { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "colorama", marker = "sys_platform == 'win32'" },
     { name = "httptools" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
-    { name = "uvloop", marker = "(platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32') or (platform_python_implementation == 'PyPy' and extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (platform_python_implementation == 'PyPy' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (sys_platform == 'cygwin' and extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (sys_platform == 'win32' and extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (sys_platform == 'cygwin' and extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (sys_platform == 'cygwin' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (sys_platform == 'win32' and extra != 'group-7-dagster-test-protobuf-6' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4') or (sys_platform == 'win32' and extra != 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "uvloop", marker = "platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'" },
     { name = "watchfiles" },
     { name = "websockets" },
 ]
@@ -4434,7 +4434,7 @@ dependencies = [
     { name = "packaging" },
     { name = "platformdirs" },
     { name = "python-discovery" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' or (extra == 'group-7-dagster-test-old-protobuf' and extra == 'group-7-dagster-test-protobuf-6') or (extra == 'group-7-dagster-test-sqlalchemy-1-3' and extra == 'group-7-dagster-test-sqlalchemy-1-4')" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7c/0c/e419d453f81fee6c01b40f30a38e45a9418c6877b1edee00bc71aedcf7b2/virtualenv-21.14.0.tar.gz", hash = "sha256:c3c0dbdf7259316edbb993020206ee7f7664a33063292dcc4a618e4c04cdf450", size = 5462847, upload-time = "2026-09-29T20:25:31.412Z" }
 wheels = [

@@ -28,7 +28,6 @@ test = [
     "dagster-pipes",
     "dagster-snowflake",
     "dagster-shared",
-    "certifi==2025.1.31",
     "snowflake-connector-python[pandas]>=3.4.0",
 ]
 
