@@ -48,6 +48,13 @@ class ResourceWithS3Configuration(ConfigurableResource):
     aws_session_token: str | None = Field(
         default=None, description="AWS session token to use when creating the boto3 session."
     )
+    user_agent_extra: str | None = Field(
+        default=None,
+        description=(
+            "Optional value appended to the boto3 ``User-Agent`` via "
+            "``botocore.config.Config(user_agent_extra=...)``."
+        ),
+    )
 
 
 class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext):
@@ -97,6 +104,7 @@ class S3Resource(ResourceWithS3Configuration, IAttachDifferentObjectToOpContext)
             aws_access_key_id=self.aws_access_key_id,
             aws_secret_access_key=self.aws_secret_access_key,
             aws_session_token=self.aws_session_token,
+            user_agent_extra=self.user_agent_extra,
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
@@ -196,6 +204,7 @@ class S3FileManagerResource(ResourceWithS3Configuration, IAttachDifferentObjectT
                 aws_access_key_id=self.aws_access_key_id,
                 aws_secret_access_key=self.aws_secret_access_key,
                 aws_session_token=self.aws_session_token,
+                user_agent_extra=self.user_agent_extra,
             ),
             s3_bucket=self.s3_bucket,
             s3_base_key=self.s3_prefix,
