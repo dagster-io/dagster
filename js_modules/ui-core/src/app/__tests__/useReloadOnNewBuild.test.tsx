@@ -40,17 +40,17 @@ describe('useReloadOnNewBuild', () => {
     await flush();
     expect(reload).not.toHaveBeenCalled();
 
-    jest.advanceTimersByTime(5 * 60 * 1000);
+    jest.advanceTimersByTime(60 * 1000);
     await flush();
     expect(reload).not.toHaveBeenCalled();
 
     served = page('main.bbb');
-    jest.advanceTimersByTime(5 * 60 * 1000);
+    jest.advanceTimersByTime(60 * 1000);
     await flush();
     expect(reload).toHaveBeenCalledTimes(1);
 
     // The same new build seen again (e.g. a cached HTML) must not loop.
-    jest.advanceTimersByTime(5 * 60 * 1000);
+    jest.advanceTimersByTime(60 * 1000);
     await flush();
     expect(reload).toHaveBeenCalledTimes(1);
   });

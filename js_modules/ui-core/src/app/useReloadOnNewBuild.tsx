@@ -1,10 +1,10 @@
 import {useEffect} from 'react';
 
 // Unattended screens pick up new deploys by themselves. On load the page fetches its own HTML
-// and notes the script bundles it names; every few minutes it fetches again and compares.
+// and notes the script bundles it names; every minute it fetches again and compares.
 // Each build ships new hashed bundle names, so a difference means a new version is live,
 // and the page reloads itself to run it.
-const CHECK_EVERY_MS = 5 * 60 * 1000;
+const CHECK_EVERY_MS = 60 * 1000;
 const RELOADED_FOR_KEY = 'hp-build-reload-for';
 
 const bundleNames = (html: string) => {
