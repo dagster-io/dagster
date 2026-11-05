@@ -175,24 +175,30 @@ def test_refreshable_semantic_model(
 
     # materialize the semantic model
 
+    refresh_id = uuid.uuid4().hex
+    refresh_url = (
+        f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes"
+    )
     workspace_data_api_mocks.add(
         method=responses.POST,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        url=refresh_url,
         json={"notifyOption": "NoNotification"},
         status=202,
+        headers={"RequestId": refresh_id},
     )
 
     workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
-        json={"value": [{"status": "Unknown"}]},
-        status=200,
+        url=f"{refresh_url}/{refresh_id}",
+        json={"status": "Unknown"},
+        status=202,
     )
     workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{BASE_API_URL}/groups/{workspace_id}/datasets/{SAMPLE_SEMANTIC_MODEL['id']}/refreshes",
+        url=f"{refresh_url}/{refresh_id}",
         json={
-            "value": [{"status": "Completed" if success else "Failed", "serviceExceptionJson": {}}]
+            "status": "Completed" if success else "Failed",
+            "serviceExceptionJson": {},
         },
         status=200,
     )
