@@ -70,6 +70,22 @@ def test_process_log_stream_timestamp_precision(
     assert [item.log for item in items] == ["first", "second"]
 
 
+@pytest.mark.parametrize("fragment", ["v1.2.0Z", "release.1.2Z", ".invalid.Z"])
+def test_process_log_stream_handles_dotted_message_fragment(fragment: str):
+    timestamp = "2024-03-22T02:17:29.123456Z"
+    chunks = [
+        f"{timestamp} version ".encode(),
+        f"{fragment} ready".encode(),
+        b"2024-03-22T02:17:30.123456789Z next",
+    ]
+
+    items = list(_process_log_stream(iter(chunks)))
+
+    assert [item.log for item in items] == [f"version {fragment} ready", "next"]
+    assert items[0].timestamp == timestamp
+    assert not _is_kube_timestamp(fragment)
+
+
 def test_stream_retry_and_succeed():
     reader = PipesK8sPodLogsMessageReader()
 
